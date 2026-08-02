@@ -10,10 +10,24 @@ namespace SIMF.Api.Endpoints.Admin.Validators;
 /// <summary>
 /// D-127 — validates the walk-in registration request. Email is optional
 /// (the desk frequently registers walk-ins without one); the matching
-/// service synthesizes a placeholder. Every other field that the badge /
-/// profile needs is required — staff at the desk is collecting them
-/// face-to-face, so the validator pushes back on incomplete submissions
-/// rather than silently storing nulls.
+/// service synthesizes a placeholder.
+///
+/// <para>D-819 — this validator now owns the SHAPE rules only (lengths, the
+/// national-id / Iqama patterns and their Luhn checksum, the Saudi and E.164
+/// mobile formats, the plate format, the enum range), each applied when the
+/// field is supplied. The PRESENCE rules — which of those fields are mandatory
+/// — moved to <c>AdminAccountService.EnsureFullDeskFields</c>, because whether
+/// they are mandatory depends on whether the D-819 quick-register mode is
+/// armed, and that cannot be read here: FluentValidation is synchronous and
+/// FastEndpoints validators are singletons, so a constructor read would freeze
+/// the answer at startup. Putting the choice in the service also keeps it
+/// server-resolved, rather than a request flag any caller could set to opt
+/// itself out of validation.</para>
+///
+/// <para>With the mode disarmed the service reproduces the original presence
+/// checks with their exact bilingual messages, so the desk behaves as it always
+/// has: staff are collecting these face-to-face, and incomplete submissions are
+/// still pushed back rather than silently storing nulls.</para>
 /// </summary>
 public sealed class AdminWalkInRegistrationRequestValidator
     : Validator<AdminWalkInRegistrationRequest>
@@ -33,28 +47,16 @@ public sealed class AdminWalkInRegistrationRequestValidator
         });
 
         RuleFor(request => request.DisplayName)
-            .NotEmpty().Bilingual(
-                "Display name is required.",
-                "الاسم المعروض مطلوب.")
-            .MinimumLength(2).Bilingual(
-                "Display name must be at least 2 characters.",
-                "يجب أن يتكوّن الاسم المعروض من حرفين على الأقل.")
             .MaximumLength(128).Bilingual(
                 "Display name must be at most 128 characters.",
                 "يجب ألا يتجاوز الاسم المعروض 128 حرفًا.");
 
         RuleFor(request => request.ArabicName)
-            .NotEmpty().Bilingual(
-                "Arabic name is required.",
-                "الاسم بالعربية مطلوب.")
             .MaximumLength(50).Bilingual(
                 "Arabic name must be at most 50 characters.",
                 "يجب ألا يتجاوز الاسم بالعربية 50 حرفًا.");
 
         RuleFor(request => request.EnglishName)
-            .NotEmpty().Bilingual(
-                "English name is required.",
-                "الاسم بالإنجليزية مطلوب.")
             .MaximumLength(50).Bilingual(
                 "English name must be at most 50 characters.",
                 "يجب ألا يتجاوز الاسم بالإنجليزية 50 حرفًا.");
@@ -68,26 +70,19 @@ public sealed class AdminWalkInRegistrationRequestValidator
         // (non-null, non-empty Guid); the existence / IsActive check runs in
         // the service against the App DB (cross-context — FluentValidation is
         // sync), exactly like ProfileTypeId / NationalityCode.
-        RuleFor(request => request.OrganisationId)
-            .Must(id => id is { } orgId && orgId != Guid.Empty).Bilingual(
-                "Organisation is required.",
-                "الجهة مطلوبة.");
-
         RuleFor(request => request.NationalityCode)
-            .NotEmpty().Bilingual(
-                "Nationality is required.",
-                "الجنسية مطلوبة.")
-            .Length(2, 3).Bilingual(
+            .Length(2, 3)
+            .When(request => !string.IsNullOrWhiteSpace(request.NationalityCode))
+            .Bilingual(
                 "Nationality code must be 2-3 characters (ISO 3166-1).",
                 "يجب أن يتكوّن رمز الجنسية من 2-3 أحرف (ISO 3166-1).");
 
         When(request => request.IsSaudi, () =>
         {
             RuleFor(request => request.NationalId)
-                .NotEmpty().Bilingual(
-                    "Saudi national ID is required for Saudi nationals.",
-                    "الهوية الوطنية مطلوبة للمواطنين السعوديين.")
-                .Matches("^1[0-9]{9}$").Bilingual(
+                .Matches("^1[0-9]{9}$")
+                .When(request => !string.IsNullOrWhiteSpace(request.NationalId))
+                .Bilingual(
                     "The Saudi national ID is 10 digits and starts with 1.",
                     "الهوية الوطنية السعودية مكوّنة من 10 أرقام وتبدأ بالرقم 1.")
                 // D-459 — apply the same Luhn checksum the self-service path
@@ -102,12 +97,6 @@ public sealed class AdminWalkInRegistrationRequestValidator
             // Non-Saudi: either Iqama OR Passport must be supplied. When the
             // operator picks Iqama, it must match the residency pattern
             // (10 digits starting with 2).
-            RuleFor(request => request)
-                .Must(r => !string.IsNullOrWhiteSpace(r.IqamaNumber)
-                    || !string.IsNullOrWhiteSpace(r.PassportNumber))
-                .Bilingual(
-                    "An Iqama or passport number is required.",
-                    "رقم الإقامة أو جواز السفر مطلوب.");
             When(request => !string.IsNullOrWhiteSpace(request.IqamaNumber), () =>
             {
                 RuleFor(request => request.IqamaNumber!)
@@ -128,15 +117,6 @@ public sealed class AdminWalkInRegistrationRequestValidator
                         "يجب ألا يتجاوز رقم جواز السفر 20 حرفًا.");
             });
         });
-
-        // At least one phone — Saudi or international — so the desk can
-        // reach the visitor afterwards.
-        RuleFor(request => request)
-            .Must(r => !string.IsNullOrWhiteSpace(r.SaudiMobile)
-                || !string.IsNullOrWhiteSpace(r.InternationalMobile))
-            .Bilingual(
-                "A mobile number is required (Saudi or international).",
-                "رقم الجوال مطلوب (سعودي أو دولي).");
 
         // C4 (D-371) — the same standard phone shapes as the self-service
         // profile upsert (UpsertUserProfileRequestValidator), separators

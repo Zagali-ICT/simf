@@ -3,6 +3,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.Exhibitors.Abstractions;
@@ -49,6 +50,7 @@ internal sealed class ExhibitorVisitorService(
     IEmailTemplateResolver emailTemplates,
     IEmailQueue emailQueue,
     IAuditLog auditLog,
+    IQrResolver qrResolver,
     ILogger<ExhibitorVisitorService> logger) : IExhibitorVisitorService
 {
     private const int NoteMaxLength = 512;
@@ -86,7 +88,11 @@ internal sealed class ExhibitorVisitorService(
     {
         var exhibitor = await EnsureExhibitorAsync(exhibitorUserId, cancellationToken);
 
-        var normalised = (qrId ?? string.Empty).Trim().ToUpperInvariant();
+        // D-821 review — canonicalise first. A D-820 offline badge arrives as a
+        // ~61-character encrypted blob, not a QrId, so the direct lookup below
+        // would miss it and report an unknown badge. A minted serial passes
+        // through unchanged.
+        var normalised = qrResolver.ToStoredQrId(qrId ?? string.Empty);
         if (normalised.Length == 0)
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,

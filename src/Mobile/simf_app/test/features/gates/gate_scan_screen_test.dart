@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/gates/data/gate_models.dart';
+import 'package:simf_app/features/gates/data/gate_offline_config.dart';
+import 'package:simf_app/features/gates/data/offline_badge.dart';
 import 'package:simf_app/features/gates/data/gates_repository.dart';
 import 'package:simf_app/features/gates/gate_scan_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -32,9 +34,17 @@ class _FakeGates implements GatesRepository {
     this.scanStatus = 0,
     this.scanMessage = '',
     this.offline = false,
+    this.offlineVerdict,
   });
 
   List<OperatorGate> gates;
+
+  /// D-821 — what `judgeOffline` returns while [offline] is set.
+  final OfflineGateVerdict? offlineVerdict;
+
+  /// D-821 — how many times the console refreshed its offline rules.
+  int offlineConfigRefreshes = 0;
+
   final int listStatus;
 
   /// The server's own message on a failed my-assignments call. Blank models a
@@ -122,6 +132,26 @@ class _FakeGates implements GatesRepository {
 
   @override
   int pendingCount() => _pendingKeys.length;
+
+  // D-821 — the on-device verdict the console shows when the server is
+  // unreachable. Null (the default) is "the device could not decide", which is
+  // the pre-D-821 behaviour. The verdict LOGIC has its own suite
+  // (gate_offline_verdict_test.dart); these tests cover what the operator sees.
+  @override
+  Future<GateOfflineConfig?> refreshOfflineConfig() async {
+    offlineConfigRefreshes++;
+    return null;
+  }
+
+  @override
+  GateOfflineConfig? cachedOfflineConfig() => null;
+
+  @override
+  OfflineGateVerdict? judgeOffline({
+    required String gateId,
+    required String qr,
+  }) =>
+      offlineVerdict;
 
   @override
   Future<int> flushPending() async => _pendingKeys.length;
@@ -330,6 +360,64 @@ void main() {
       expect(find.text('Allowed'), findsNothing);
       expect(find.textContaining('waiting to sync'), findsOneWidget);
       expect(repo.pendingCount(), 1);
+    });
+
+    testWidgets('D-821: an offline ALLOWED verdict is shown as provisional, '
+        'never as a final answer', (tester) async {
+      final repo = _FakeGates(
+        gates: <OperatorGate>[_gate()],
+        offline: true,
+        offlineVerdict: const OfflineGateVerdict.allowed(
+          OfflineBadge(profileTypeCode: 1, sequence: 3000042),
+        ),
+      );
+      await _pump(tester, repo);
+      await _openScanner(tester);
+      await tester.enterText(find.byType(TextField), 'X');
+      await tester.tap(find.text('Check'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Allowed (offline) — saved for confirmation.'),
+          findsOneWidget);
+      // NOT the server's allowed card: the decision is still the server's when
+      // the queue drains, and the operator must not read this as final.
+      expect(find.text('Allowed'), findsNothing);
+      expect(repo.pendingCount(), 1);
+    });
+
+    testWidgets('D-821: an offline DENIED verdict names the reason and still '
+        'says the scan was saved', (tester) async {
+      final repo = _FakeGates(
+        gates: <OperatorGate>[_gate()],
+        offline: true,
+        offlineVerdict: const OfflineGateVerdict.denied(
+          OfflineDenialReason.profileTypeNotAllowed,
+        ),
+      );
+      await _pump(tester, repo);
+      await _openScanner(tester);
+      await tester.enterText(find.byType(TextField), 'X');
+      await tester.tap(find.text('Check'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.textContaining('This badge type is not allowed at this gate.'),
+        findsOneWidget,
+      );
+      // Saying only "denied" would imply nothing was recorded.
+      expect(find.textContaining('the scan was saved'), findsOneWidget);
+    });
+
+    testWidgets('D-821: opening the console refreshes the offline rules',
+        (tester) async {
+      // Without this the device would fall back on rules from whenever it last
+      // happened to sync, or on nothing at all.
+      final repo = _FakeGates(gates: <OperatorGate>[_gate()]);
+      await _pump(tester, repo);
+
+      expect(repo.offlineConfigRefreshes, greaterThanOrEqualTo(1));
     });
   });
 

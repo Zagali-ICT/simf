@@ -153,12 +153,21 @@ public interface IAdminUserProvisioningService
     /// A mismatch rejects with <c>AdminProfileTypeInvalid</c> instead of
     /// silently routing the account to the wrong queue. Null leaves the
     /// guard off (legacy callers).</summary>
+    /// <summary>D-819: <paramref name="presetQrId"/> is the OFFLINE badge upload
+    /// path. A desk that registered without a network already printed the badge,
+    /// so the account must be stored under the QR id that badge encodes rather
+    /// than a freshly minted one. Supplied only by the offline batch upload;
+    /// every interactive desk leaves it null and the QR is minted on approval as
+    /// before. The value goes onto the profile before the insert, so the minter
+    /// (which is mint-if-missing) leaves it alone and the UNIQUE constraint on
+    /// the column stays the single guard against a repeated upload.</summary>
     Task<AdminWalkInRegistrationResponse> RegisterOnSiteAsync(
         Guid actorUserId,
         SIMF.Common.Enums.UserType kind,
         AdminWalkInRegistrationRequest request,
         CancellationToken cancellationToken = default,
-        bool? expectedIsVisitor = null);
+        bool? expectedIsVisitor = null,
+        string? presetQrId = null);
 
     // -- D-357 (review follow-up) — per-family avatar scope guard -------------
 

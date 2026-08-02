@@ -4,6 +4,7 @@ using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Sessions;
@@ -20,7 +21,12 @@ public sealed class RecordArrivalEndpoint(IHallAttendanceService service)
     {
         Post("/app/sessions/{sessionId:guid}/arrival");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        // D-821 review: deliberately NOT on the operational (unlimited) policy.
+        // D-819 lifted the limits off the STAFF-operated surface, where an
+        // operator holding a named permission is the control. This is attendee
+        // SELF-SERVICE — any approved account can call it, and it does a session
+        // read plus a Haversine plus attendance writes. Exempting it removed the
+        // global per-IP cap from an endpoint with no permission gate at all.
         Tags("Sessions");
     }
 
@@ -44,7 +50,12 @@ public sealed class RecordDepartureEndpoint(IHallAttendanceService service)
     {
         Post("/app/sessions/{sessionId:guid}/departure");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        // D-821 review: deliberately NOT on the operational (unlimited) policy.
+        // D-819 lifted the limits off the STAFF-operated surface, where an
+        // operator holding a named permission is the control. This is attendee
+        // SELF-SERVICE — any approved account can call it, and it does a session
+        // read plus a Haversine plus attendance writes. Exempting it removed the
+        // global per-IP cap from an endpoint with no permission gate at all.
         Tags("Sessions");
     }
 

@@ -18,6 +18,30 @@ public sealed class RateLimitOptions
 {
     public const string SectionName = "RateLimit";
 
+    /// <summary>
+    /// D-819 — the policy name for the on-site OPERATIONAL endpoints: gate
+    /// scans, hall arrivals/departures, walk-in registration, approve /
+    /// bulk-approve, staff uploads and the offline batch upload. The policy is
+    /// deliberately UNLIMITED, and requests carrying it are also exempted from
+    /// the global per-IP cap.
+    ///
+    /// <para>Why: the Control Panel is a server-side BFF, so from the API's
+    /// point of view every CP desk shares ONE source IP — the CP host's. The
+    /// per-IP "auth" window (20/min) therefore capped the entire Control Panel
+    /// at 20 registrations per minute, and venue NAT put every staff tablet in
+    /// the same bucket. At an event with a large walk-in crowd that is not a
+    /// safety margin, it is an outage: desks and gates start returning 429
+    /// while the queue grows.</para>
+    ///
+    /// <para>These endpoints are safe to leave uncapped because every one of
+    /// them requires an authenticated operator holding a specific permission —
+    /// the permission gate is the real control, not the IP window. The
+    /// UNAUTHENTICATED surface (sign-in, sign-up, password reset, OTP, email
+    /// sends) keeps its caps, which is where per-IP throttling actually
+    /// belongs.</para>
+    /// </summary>
+    public const string OperationalPolicy = "operational";
+
     /// <summary>Requests permitted per window, per client IP.</summary>
     public int PermitLimit { get; set; } = 20;
 

@@ -124,4 +124,25 @@ public interface ISeatReservationService
     /// throws <c>ATTENDEE_QR_UNKNOWN</c>.</summary>
     Task<StaffSeatOccupant> ResolveBadgeSeatAsync(
         Guid sessionId, string qrId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// D-819 — records that a walk-in admitted to a session hall is occupying a
+    /// place, so the seating desk and the occupancy counts can see them.
+    ///
+    /// <para>ADVISORY, and deliberately unlike every other reservation path
+    /// here. It never throws and it never blocks: the person has already been
+    /// admitted through the door, so failing to record a seat must not undo
+    /// that. Returns false when they already hold a reservation for the session
+    /// (the filtered unique index on (SessionId, ReservedForUserId) is the
+    /// guard) or when the insert lost a race.</para>
+    ///
+    /// <para>Creates an <c>OpenSeating</c> hold with a null row and seat rather
+    /// than assigning a specific place. Picking a seat runs inside a SERIALIZABLE
+    /// transaction that counts capacity first, and running that per door scan
+    /// would deadlock-storm a rush; a null row and seat also never touch the
+    /// per-seat filtered unique index. <c>Expires</c> is left null so the no-show
+    /// sweep cannot release someone who is physically present.</para>
+    /// </summary>
+    Task<bool> EnsureWalkInHoldAsync(
+        Guid sessionId, Guid attendeeUserId, CancellationToken cancellationToken = default);
 }

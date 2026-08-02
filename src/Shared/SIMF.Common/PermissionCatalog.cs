@@ -1245,6 +1245,10 @@ public static class PermissionCatalog
         Gates.ViewOwnReports,    // /app/gates visitor list + my reports
         Visitors.RegisterOnsite, // /app/staff/visitors/register-onsite
         Seating.Assist,          // D-771 — /app/staff/sessions/{id}/seating/*
+        // D-819 — /admin/sessions/{id}/arrivals + /departures. Missing until
+        // now, so a staff tablet could scan a badge at a perimeter gate but
+        // could not record a hall arrival at all.
+        HallArrivals.Record,
     ];
 
     /// <summary>Moderator = Staff + content/user moderation.</summary>
@@ -1254,6 +1258,7 @@ public static class PermissionCatalog
         Gates.ViewOwnReports,
         Visitors.RegisterOnsite,
         Seating.Assist,          // D-771 — the seating desk (Moderator = Staff + …)
+        HallArrivals.Record,     // D-819 — hall arrivals from a staff tablet
         Questions.View,
         Questions.Moderate,
         SessionModeration.Moderate,

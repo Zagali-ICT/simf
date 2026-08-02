@@ -79,14 +79,14 @@ void main() {
       );
     });
 
-    test('exceeding maxItems keeps the newest 500 (oldest dropped)', () async {
+    test('exceeding maxItems keeps the newest (oldest dropped)', () async {
       final queue = GateScanQueue(FakePrefs());
       for (var i = 0; i <= GateScanQueue.maxItems; i++) {
         await queue.enqueue(_scan('$i'));
       }
       final keys = queue.all().map((s) => s.idempotencyKey).toList();
       expect(keys.length, GateScanQueue.maxItems);
-      // The very first (oldest) enqueue was dropped; '1'..'500' remain in order.
+      // The very first (oldest) enqueue was dropped; the rest remain in order.
       expect(keys.first, '1');
       expect(keys.last, '${GateScanQueue.maxItems}');
     });

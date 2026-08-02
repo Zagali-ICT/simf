@@ -120,6 +120,30 @@ var rateLimitOptions =
     builder.Configuration.GetSection(RateLimitOptions.SectionName).Get<RateLimitOptions>()
     ?? new RateLimitOptions();
 
+// D-819 — true when the resolved endpoint declares the operational
+// rate-limit policy. Reads the metadata that RequireRateLimiting(...) attaches,
+// so the global-limiter exemption is derived from the endpoints themselves and
+// cannot drift from them. Returns false when routing has not resolved an
+// endpoint, which leaves the caller on the per-IP limiter (the safe direction).
+static bool IsOperationalEndpoint(HttpContext httpContext) =>
+    httpContext.GetEndpoint()?.Metadata
+        .GetMetadata<EnableRateLimitingAttribute>()?.PolicyName
+        == RateLimitOptions.OperationalPolicy
+    // D-821 review — the exemption ALSO requires a bearer token on the request.
+    //
+    // UseRateLimiter runs BEFORE UseAuthentication (see the pipeline below), so
+    // at this point httpContext.User is empty and the permission gate the
+    // exemption's rationale leans on has not run yet. Without this check an
+    // ANONYMOUS flood against an operational route bypassed the global per-IP
+    // cap entirely — re-opening the H29 / SEV-2.1 finding the global limiter
+    // exists to close.
+    //
+    // A header check is all that is available this early. It is not
+    // authentication: a garbage bearer still reaches the exemption. It does mean
+    // an attacker must send one, and every genuine operator request carries one,
+    // so the owner's "no rate limit at the gates" requirement is untouched.
+    && httpContext.Request.Headers.Authorization.Count > 0;
+
 builder.Services.AddRateLimiter(rateLimiter =>
 {
     // H29 — D-088: every request gets a per-IP fixed-window cap. Closes
@@ -130,13 +154,43 @@ builder.Services.AddRateLimiter(rateLimiter =>
     // way above legitimate traffic) and stacks with the per-route
     // "auth" + "auth-email" caps for credential flows; both must pass.
     rateLimiter.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
-        httpContext => RateLimitPartition.GetFixedWindowLimiter(
-            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
+        httpContext =>
+        {
+            // D-819 — the on-site operational endpoints opt out of the global
+            // per-IP cap as well as the "auth" cap. Exempting them at the
+            // policy level alone would not be enough: the Control Panel is a
+            // server-side BFF, so every CP desk shares the CP host's IP and
+            // would still collide inside this global bucket.
+            //
+            // Detected from endpoint metadata rather than a path list so the
+            // exemption cannot drift from the endpoints that declare it. If
+            // routing has not resolved an endpoint yet, this falls through to
+            // the per-IP limiter, which is the safe direction.
+            if (IsOperationalEndpoint(httpContext))
             {
-                PermitLimit = rateLimitOptions.GlobalPermitLimit,
-                Window = TimeSpan.FromSeconds(rateLimitOptions.GlobalWindowSeconds),
-            }));
+                return RateLimitPartition.GetNoLimiter<string>("operational");
+            }
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = rateLimitOptions.GlobalPermitLimit,
+                    Window = TimeSpan.FromSeconds(rateLimitOptions.GlobalWindowSeconds),
+                });
+        });
+
+    // D-819 — the on-site operational surface: gate scans, hall arrivals,
+    // walk-in registration, approve / bulk-approve, staff uploads and the
+    // offline batch upload. Deliberately unlimited; see
+    // RateLimitOptions.OperationalPolicy for the full rationale. Every one of
+    // these endpoints is gated on an authenticated operator's permission, which
+    // is the real control here — EXCEPT that the permission check runs after
+    // this middleware, which is why IsOperationalEndpoint also requires an
+    // Authorization header before granting the exemption (D-821 review).
+    rateLimiter.AddPolicy(
+        RateLimitOptions.OperationalPolicy,
+        _ => RateLimitPartition.GetNoLimiter<string>("operational"));
 
     rateLimiter.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(

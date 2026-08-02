@@ -5,6 +5,7 @@ using SIMF.Api.Endpoints.Admin;
 using SIMF.Application.AccessControl;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Gates;
 
 namespace SIMF.Api.Endpoints.Gates;
@@ -31,6 +32,40 @@ public sealed class MyAssignmentsEndpoint(IGateOperatorService service)
     }
 }
 
+/// <summary>
+/// D-820 — <c>GET /app/gates/offline-config</c>. The snapshot a scanner caches
+/// so it can judge a badge with no network.
+///
+/// <para>Its own endpoint rather than a field on <c>my-assignments</c> because
+/// it carries the badge key: a secret should be visible in the access log as its
+/// own call, and be revocable without also breaking the assignment list.</para>
+/// </summary>
+public sealed class GateOfflineConfigEndpoint(IGateOperatorService service)
+    : EndpointWithoutRequest<ApiResult<GateOfflineConfig>>
+{
+    public override void Configure()
+    {
+        Get("/app/gates/offline-config");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
+                 PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Operate));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
+        Tags("Gates");
+        Summary(summary => summary.Summary =
+            "Offline scanning rules + badge key for this operator's gates (D-820).");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<GateOfflineConfig>.Ok(
+            await service.GetOfflineConfigAsync(operatorId, ct)), ct);
+    }
+}
+
 public sealed class PostScanRequest
 {
     public Guid GateId { get; set; }
@@ -53,7 +88,7 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
         Post("/app/gates/{gateId:guid}/scans");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
                  PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Operate));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Gates");
     }
     public override async Task HandleAsync(PostScanRequest req, CancellationToken ct)
@@ -146,7 +181,7 @@ public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)
         Post("/app/gates/{gateId:guid}/visitors/list");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
                  PermissionCatalog.PolicyFor(PermissionCatalog.Gates.ViewOwnReports));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Gates");
     }
     public override async Task HandleAsync(

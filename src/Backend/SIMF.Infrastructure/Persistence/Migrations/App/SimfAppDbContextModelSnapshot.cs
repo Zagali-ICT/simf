@@ -181,8 +181,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("QrIdAtScan")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasMaxLength(96)
+                        .HasColumnType("nvarchar(96)");
 
                     b.Property<DateTime>("ScannedAt")
                         .HasColumnType("datetime2");
@@ -4203,6 +4203,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
+                    b.Property<short>("Code")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0);
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -4259,6 +4264,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1 AND [Code] <> 0");
 
                     b.HasIndex("Name")
                         .IsUnique()

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-08-02 |
 
 > **Page shape (read from `OperationsToggles.razor`).** This is **not** a CRUD
 > grid — it is two **singleton** toggle sections on one surface (D-166, gap
@@ -22,7 +22,10 @@
 > 4. **Archive visibility → "Archive is visible to the public"** checkbox (`_archiveIsVisible`).
 > 5. **Archive visibility → "Save"** button → `SaveArchiveAsync` → `PUT /account/api/admin/archive/visibility`.
 >
-> Each section also renders a read-only **"Last changed"** `<dl>` (UTC string).
+> Each section also renders a read-only **"Last changed"** `<dl>`, formatted in
+> **Saudi local time**, 12-hour (`FormatSaudi("dd-MM-yyyy hh:mm tt")`). Since
+> D-823 the stored column IS the Saudi wall clock, so this is formatting with no
+> conversion.
 > The page is gated by `PermissionCatalog.Operations.View`; the two **PUT**
 > endpoints require `PermissionCatalog.Operations.Edit` — so a View-only admin
 > can open the page and read both states but cannot save (the BFF forwards the
@@ -35,7 +38,7 @@
 |----|----------|------|----------|--------|
 | E2E-OPS-001 | Golden round-trip — toggle registration gate closed → save → reload → reopen → save | happy | P0 | _to author_ |
 | E2E-OPS-002 | Schedule auto-close — set "Auto-close (Saudi time)" → save → field round-trips | happy | P1 | _to author_ |
-| E2E-OPS-003 | Toggle archive visibility — hide → save → public `GET /archive/visibility` reflects `IsVisible=false` | happy | P0 | _to author_ |
+| E2E-OPS-003 | Toggle archive visibility — hide → save → public `GET /api/v1/app/archive/visibility` reflects `IsVisible=false` | happy | P0 | _to author_ |
 | E2E-OPS-004 | Auth gate — admin lacking `Operations.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-OPS-005 | Edit gate — View-only admin can load but Save is rejected (403 → fallback toast) | auth | P0 | _to author_ |
 | E2E-OPS-006 | Validation — malformed "Auto-close (Saudi time)" → client bilingual error, no PUT fires | error | P1 | _to author_ |
@@ -67,7 +70,7 @@ Background:
 
 Scenario: Close registration, persist across reload, then reopen
   Given the "Registration gate" section shows the "Registration is open" checkbox TICKED
-  And the "Last changed" value shows a UTC timestamp
+  And the "Last changed" value shows a Saudi-local timestamp (dd-MM-yyyy hh:mm AM/PM)
   When the administrator UNTICKS "Registration is open"
   And clicks the "Save" button in the Registration gate section
   Then the BFF forwards PUT /account/api/admin/registration-gate
@@ -106,22 +109,24 @@ Scenario: Close registration, persist across reload, then reopen
 Scenario: Set a future auto-close moment and confirm it round-trips
   Given the "Registration is open" checkbox is TICKED
   And the "Auto-close (Saudi time)" field is empty
-  When the administrator types a future UTC datetime into "Auto-close (Saudi time)"
-    (e.g. "2026-12-31T23:59")
+  When the administrator types a future Saudi-local datetime into
+    "Auto-close (Saudi time)" (e.g. "2026-12-31T23:59")
   And clicks "Save" in the Registration gate section
   Then the BFF forwards PUT /account/api/admin/registration-gate
-    with body { "isOpen": true, "autoClose": "2026-12-31T23:59:00+00:00" }
+    with body { "isOpen": true, "autoClose": "2026-12-31T23:59:00" }
   And the API returns HTTP 200
   And the green "Registration gate updated." toast appears
 
   When the administrator reloads /admin/operations
   Then the "Auto-close (Saudi time)" field is pre-filled with "2026-12-31T23:59"
-    (the page formats AutoClose as "yyyy-MM-ddTHH:mm")
+    (the page renders AutoClose.ToSaudi() as "yyyy-MM-ddTHH:mm")
 
   # Past auto-close behaviour (verified at the API layer, see OperationsTogglesTests):
   # an auto-close moment <= now makes the gate behave closed even when IsOpen=true
-  And the value the page sent is interpreted as UTC (the input has no zone; the
-    page wraps it via DateTime.SpecifyKind(..., Utc) before sending)
+  And what the administrator typed is stored and served UNCHANGED - since
+    D-823 SIMF carries the Saudi wall clock end to end, the wire format is
+    zone-free ISO-8601 (no Z, no offset) and FromSaudiWallClock only normalises
+    the DateTimeKind, so no value is ever shifted
 ```
 
 **Evidence captured:**
@@ -137,7 +142,7 @@ Scenario: Set a future auto-close moment and confirm it round-trips
 Scenario: Hide the past-events archive and confirm the public endpoint follows
   Given the "Archive visibility" section shows the
     "Archive is visible to the public" checkbox TICKED
-  And the public GET http://localhost:5175/api/v1/archive/visibility
+  And the public GET http://localhost:5175/api/v1/app/archive/visibility
     (no auth header) returns ApiResult.Data.IsVisible = true
   When the administrator UNTICKS "Archive is visible to the public"
   And clicks the "Save" button in the Archive visibility section
@@ -147,7 +152,7 @@ Scenario: Hide the past-events archive and confirm the public endpoint follows
   And a green SimfAlert reads "Archive visibility updated." / "تم تحديث إظهار الأرشيف."
   And the section's "Last changed" timestamp advances
 
-  When an unauthenticated client calls GET /api/v1/archive/visibility again
+  When an unauthenticated client calls GET /api/v1/app/archive/visibility again
   Then it returns HTTP 200 with ApiResult.Data.IsVisible = false (no auth needed)
 
   # Restore so later runs start from the visible state
@@ -159,7 +164,7 @@ Scenario: Hide the past-events archive and confirm the public endpoint follows
 - Screenshot before/after: `docs/screenshots/cp-admin-operations-archive-before.png`,
   `docs/screenshots/cp-admin-operations-archive-after.png`
 - Network: `PUT /account/api/admin/archive/visibility` returns 200; the anonymous
-  `GET /api/v1/archive/visibility` returns 200 and mirrors the saved value
+  `GET /api/v1/app/archive/visibility` returns 200 and mirrors the saved value
 - Audit row: `ArchiveVisibilityUpdated`, `Outcome = Success`, actor id,
   `Detail = "isVisible=False"`
 
@@ -209,7 +214,7 @@ Scenario: A malformed Auto-close value is rejected client-side before any PUT
     into "Auto-close (Saudi time)" (e.g. via a forced non-date string)
   And clicks "Save" in the Registration gate section
   Then a red SimfAlert reads
-    "Auto-close must be a valid UTC datetime." / "يجب أن يكون الإغلاق التلقائي وقتاً UTC صحيحاً."
+    "Auto-close must be a valid date and time." / "يجب أن يكون الإغلاق التلقائي وقتاً صحيحاً."
   And NO PUT /account/api/admin/registration-gate request fires
   And the Save button returns from its Loading state
 ```
@@ -323,7 +328,7 @@ Scenario: Arabic toggle mirrors the whole page
   [`tests/SIMF.Api.Tests/OperationsTogglesTests.cs`](../../../tests/SIMF.Api.Tests/OperationsTogglesTests.cs)
   asserts: admin GET returns the seeded open state; closing the gate (and a
   past auto-close) makes `POST /auth/sign-up` return `403 REGISTRATION_CLOSED`;
-  sign-up succeeds when open; the public `GET /archive/visibility` needs no auth;
+  sign-up succeeds when open; the public `GET /api/v1/app/archive/visibility` needs no auth;
   admin toggling archive visibility is reflected on the public endpoint; and a
   non-admin caller gets `403` on both PUTs (the `Operations.Edit` gate). The
   related public archive read is also touched by
@@ -346,4 +351,7 @@ Scenario: Arabic toggle mirrors the whole page
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-08-02 by Claude — corrected the UTC-vs-Saudi-time statements
+and the public archive route (it is `/app/archive/visibility`, not
+`/archive/visibility`), and linked the now-authored page doc. Original catalogue
+rebuild 2026-06-02.

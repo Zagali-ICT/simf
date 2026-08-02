@@ -60,6 +60,10 @@ internal sealed partial class AdminAccountService(
     IPiiEncryptor pii,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
+    // D-819 — the standby walk-in capability (auto-approve + quick register).
+    // IOptionsMonitor so arming it in appsettings / set-env-* takes effect
+    // without a restart.
+    IOptionsMonitor<WalkInModeOptions> walkInMode,
     // #2d — read to decide whether forcing TwoFactorEnabled at creation is safe;
     // see CreateAccountAsync.
     IOptions<IdentityLifecycleOptions> lifecycleOptions,
@@ -69,6 +73,100 @@ internal sealed partial class AdminAccountService(
       IAdminUserProvisioningService,
       IAdminUserBulkService
 {
+    /// <summary>
+    /// D-819 — the desk's ORIGINAL presence rules, moved out of
+    /// <c>AdminWalkInRegistrationRequestValidator</c> so they can be skipped when
+    /// the quick-register mode is armed. Messages are the validator's word for
+    /// word, so with the mode disarmed a caller sees exactly what it saw before.
+    /// Shape rules (lengths, Luhn, E.164, plate) stay in the validator and always
+    /// apply.
+    /// </summary>
+    private static void EnsureFullDeskFields(AdminWalkInRegistrationRequest request)
+    {
+        // D-821 review: this one was DROPPED when the presence rules moved out of
+        // the validator, so a blank or one-character display name started
+        // returning 200 with the mode disarmed. The badge prints this name.
+        RequireDeskField(
+            request.DisplayName is { Length: >= 2 } displayName
+                && !string.IsNullOrWhiteSpace(displayName),
+            "Display name is required.", "الاسم المعروض مطلوب.");
+        RequireDeskField(
+            !string.IsNullOrWhiteSpace(request.ArabicName),
+            "Arabic name is required.", "الاسم بالعربية مطلوب.");
+        RequireDeskField(
+            !string.IsNullOrWhiteSpace(request.EnglishName),
+            "English name is required.", "الاسم بالإنجليزية مطلوب.");
+        RequireDeskField(
+            !string.IsNullOrWhiteSpace(request.NationalityCode),
+            "Nationality is required.", "الجنسية مطلوبة.");
+        RequireDeskField(
+            request.OrganisationId is { } organisationId && organisationId != Guid.Empty,
+            "Organisation is required.", "الجهة مطلوبة.");
+
+        if (request.IsSaudi)
+        {
+            RequireDeskField(
+                !string.IsNullOrWhiteSpace(request.NationalId),
+                "Saudi national ID is required for Saudi nationals.",
+                "الهوية الوطنية مطلوبة للمواطنين السعوديين.");
+        }
+        else
+        {
+            RequireDeskField(
+                !string.IsNullOrWhiteSpace(request.IqamaNumber)
+                    || !string.IsNullOrWhiteSpace(request.PassportNumber),
+                "An Iqama or passport number is required.",
+                "رقم الإقامة أو جواز السفر مطلوب.");
+        }
+
+        RequireDeskField(
+            !string.IsNullOrWhiteSpace(request.SaudiMobile)
+                || !string.IsNullOrWhiteSpace(request.InternationalMobile),
+            "A mobile number is required (Saudi or international).",
+            "رقم الجوال مطلوب (سعودي أو دولي).");
+    }
+
+    /// <summary>
+    /// D-819 — the quick-register floor. Everything else the full desk demands is
+    /// optional, but two things are not:
+    ///
+    /// <para>A NAME, because a badge with no name on it is unusable at a gate.
+    /// Any single script satisfies it; the service mirrors it into the other
+    /// language column, which is what keeps the NOT NULL pair valid.</para>
+    ///
+    /// <para>An IDENTITY DOCUMENT, because it is the only thing preventing one
+    /// person from collecting several badges: the duplicate-identity guard and
+    /// its three filtered unique indexes key off a blind index of it. The
+    /// plaintext columns are AES-GCM encrypted with a random nonce, so an id not
+    /// captured at the desk can never be reconstructed afterwards. Made optional
+    /// only by an explicit configuration choice, which the operator has to take
+    /// knowingly.</para>
+    /// </summary>
+    private static void EnsureQuickDeskFloor(
+        AdminWalkInRegistrationRequest request, bool requireIdentityDocument = true)
+    {
+        RequireDeskField(
+            !string.IsNullOrWhiteSpace(request.ArabicName)
+                || !string.IsNullOrWhiteSpace(request.EnglishName)
+                || !string.IsNullOrWhiteSpace(request.DisplayName),
+            "A name is required.", "الاسم مطلوب.");
+
+        if (!requireIdentityDocument) { return; }
+
+        RequireDeskField(
+            !string.IsNullOrWhiteSpace(request.NationalId)
+                || !string.IsNullOrWhiteSpace(request.IqamaNumber)
+                || !string.IsNullOrWhiteSpace(request.PassportNumber),
+            "An identity document number is required (national ID, Iqama or passport).",
+            "رقم وثيقة الهوية مطلوب (الهوية الوطنية أو الإقامة أو جواز السفر).");
+    }
+
+    private static void RequireDeskField(bool satisfied, string english, string arabic)
+    {
+        if (satisfied) { return; }
+        throw new ApiException(ErrorCodes.ValidationFailed, 400, english, arabic);
+    }
+
     private const string AdministratorRole = "Administrator";
     private const string AuthenticatorProvider = "[AspNetUserStore]";
     private const string ActiveSecretTokenName = "AuthenticatorKey";
@@ -239,7 +337,8 @@ internal sealed partial class AdminAccountService(
         UserType kind,
         AdminWalkInRegistrationRequest request,
         CancellationToken cancellationToken = default,
-        bool? expectedIsVisitor = null)
+        bool? expectedIsVisitor = null,
+        string? presetQrId = null)
     {
         // D-186: walk-in registration always creates a Visitor-typed
         // account. The `kind` argument stays on the signature for
@@ -325,25 +424,63 @@ internal sealed partial class AdminAccountService(
                 "بعض الاهتمامات المختارة غير معروفة أو لم تعد مفعّلة.");
         }
 
+        // D-819 — quick register. The desk validator's PRESENCE checks moved here
+        // so the reduced field set can be allowed only when the mode is armed:
+        // FluentValidation is synchronous and FastEndpoints validators are
+        // singletons, so the mode cannot be read inside the validator, and a
+        // request flag would let any caller with the permission opt themselves
+        // out of validation at will. Every SHAPE rule stays in the validator.
+        //
+        // With the mode disarmed, EnsureFullDeskFields reproduces the validator's
+        // original checks with their exact bilingual messages, so behaviour is
+        // byte-identical to before.
+        var quickRegister = walkInMode.CurrentValue
+            .QuickRegisterActive(timeProvider.SimfNow());
+        if (quickRegister)
+        {
+            EnsureQuickDeskFloor(
+                request,
+                walkInMode.CurrentValue.QuickRegisterRequiresIdentityDocument);
+        }
+        else
+        {
+            EnsureFullDeskFields(request);
+        }
+
         // D-151 — resolve the wire-side ISO code to the Country PK.
         // Rejected here (400) before any Identity row is created so we
         // never leak a dangling SimfUser for a stranger nationality.
+        //
+        // D-819 — in quick mode the code may be omitted, in which case
+        // NationalityId falls back to 0. That is the documented "no nationality
+        // chosen" value (UserProfileConfiguration) and is what bulk-badge
+        // placeholders already write. A code that IS supplied is still resolved
+        // and still rejected if unknown.
         var nationalityCode = (request.NationalityCode ?? string.Empty).Trim().ToUpperInvariant();
-        var nationality = await appDbContext.Countries
-            .AsNoTracking()
-            .Where(country => country.Code == nationalityCode && country.IsActive)
-            .Select(country => new { country.Id, country.IsInvited })
-            .SingleOrDefaultAsync(cancellationToken);
-        if (nationality is null)
+        var nationalityId = 0;
+        var nationalityIsInvited = false;
+        if (nationalityCode.Length > 0)
         {
-            throw new ApiException(
-                ErrorCodes.ProfileNationalityUnknown, 400,
-                $"Nationality code '{nationalityCode}' is not supported.",
-                $"الجنسية '{nationalityCode}' غير مدعومة.");
+            var nationality = await appDbContext.Countries
+                .AsNoTracking()
+                .Where(country => country.Code == nationalityCode && country.IsActive)
+                .Select(country => new { country.Id, country.IsInvited })
+                .SingleOrDefaultAsync(cancellationToken);
+            if (nationality is null)
+            {
+                throw new ApiException(
+                    ErrorCodes.ProfileNationalityUnknown, 400,
+                    $"Nationality code '{nationalityCode}' is not supported.",
+                    $"الجنسية '{nationalityCode}' غير مدعومة.");
+            }
+            nationalityId = nationality.Id;
+            nationalityIsInvited = nationality.IsInvited;
         }
         // D-473 (#10) — a delegate's nationality must be a country invited to
-        // send a delegation (وفد).
-        if (request.IsDelegate && !nationality.IsInvited)
+        // send a delegation (وفد). Unchanged by quick mode: a delegate always
+        // needs a nationality, because the invited-country rule is what the
+        // delegation programme is built on.
+        if (request.IsDelegate && !nationalityIsInvited)
         {
             throw new ApiException(
                 ErrorCodes.DelegateCountryNotInvited, 400,
@@ -351,25 +488,26 @@ internal sealed partial class AdminAccountService(
                 "يجب أن تكون جنسية عضو الوفد من دولة مدعوّة لإرسال وفد.");
         }
 
-        // B3 — D-221 (الجهة): the validator requires a non-empty id; confirm it
-        // resolves to an active Organisation before creating any Identity row,
-        // so a bad id surfaces as a clean 400 instead of a later FK violation.
-        if (request.OrganisationId is not { } organisationId || organisationId == Guid.Empty)
+        // B3 — D-221 (الجهة): confirm the id resolves to an active Organisation
+        // before creating any Identity row, so a bad id surfaces as a clean 400
+        // instead of a later FK violation. D-819 — optional in quick mode; the
+        // column and its FK are nullable, and profile stubs already leave it null.
+        Guid? organisationId = null;
+        if (request.OrganisationId is { } requestedOrganisationId
+            && requestedOrganisationId != Guid.Empty)
         {
-            throw new ApiException(
-                ErrorCodes.OrganisationInvalid, 400,
-                "Organisation is required.",
-                "الجهة مطلوبة.");
-        }
-        var organisationIsActive = await appDbContext.Organisations
-            .AsNoTracking()
-            .AnyAsync(o => o.Id == organisationId && o.IsActive, cancellationToken);
-        if (!organisationIsActive)
-        {
-            throw new ApiException(
-                ErrorCodes.OrganisationInvalid, 400,
-                "The selected organisation is not valid.",
-                "الجهة المحددة غير صالحة.");
+            var organisationIsActive = await appDbContext.Organisations
+                .AsNoTracking()
+                .AnyAsync(
+                    o => o.Id == requestedOrganisationId && o.IsActive, cancellationToken);
+            if (!organisationIsActive)
+            {
+                throw new ApiException(
+                    ErrorCodes.OrganisationInvalid, 400,
+                    "The selected organisation is not valid.",
+                    "الجهة المحددة غير صالحة.");
+            }
+            organisationId = requestedOrganisationId;
         }
 
         // H-1 — on-site duplicate-identity guard (soft, service-layer). A National
@@ -438,14 +576,31 @@ internal sealed partial class AdminAccountService(
                 "تعذّر إنشاء الحساب.");
         }
 
+        // D-819 — UserProfile.Name and .NameArabic are both NOT NULL, but quick
+        // register accepts a name in ONE script. Mirror whichever was captured
+        // into the other column (falling back to the display name) so the row is
+        // valid and a gate operator always has something to read off the badge.
+        // With the full desk both are present and this is a no-op.
+        var arabicName = (request.ArabicName ?? string.Empty).Trim();
+        var englishName = (request.EnglishName ?? string.Empty).Trim();
+        var fallbackName = (request.DisplayName ?? string.Empty).Trim();
+        if (arabicName.Length == 0)
+        {
+            arabicName = englishName.Length > 0 ? englishName : fallbackName;
+        }
+        if (englishName.Length == 0)
+        {
+            englishName = arabicName.Length > 0 ? arabicName : fallbackName;
+        }
+
         // Build the profile row with every captured field.
         var profile = new UserProfile
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
             ProfileTypeId = profileType.Id,
-            NameArabic = (request.ArabicName ?? string.Empty).Trim(),
-            Name = (request.EnglishName ?? string.Empty).Trim(),
+            NameArabic = arabicName,
+            Name = englishName,
             JobTitle = NormaliseOptional(request.JobTitle),
             JobTitleArabic = NormaliseOptional(request.JobTitleArabic),
             // V-1 (D-429) — VVIP/VIP موج extras; null for non-VIP walk-ins (the
@@ -455,7 +610,7 @@ internal sealed partial class AdminAccountService(
             Honorific = NormaliseOptional(request.Honorific),
             HonorificArabic = NormaliseOptional(request.HonorificArabic),
             PreferredLanguage = NormaliseOptional(request.PreferredLanguage),
-            NationalityId = nationality.Id,
+            NationalityId = nationalityId,
             DateOfBirth = request.DateOfBirth,
             PlaceOfBirth = (request.PlaceOfBirth ?? string.Empty).Trim(),
             // D-395 — gender + plate captured at the walk-in desk (columns
@@ -498,6 +653,17 @@ internal sealed partial class AdminAccountService(
                 profile.Interests.Add(interest);
             }
         }
+        // D-819 — the offline badge upload path. The desk printed this badge
+        // without a network, so its QR id is DERIVED from the sequence already
+        // encrypted into the paper rather than minted here. Set before the
+        // insert: the minter on the approval path is mint-if-missing, so it
+        // leaves a populated id alone, and the column's UNIQUE constraint is what
+        // makes a repeated upload of the same batch a clean conflict instead of
+        // a second account.
+        if (!string.IsNullOrEmpty(presetQrId))
+        {
+            profile.QrId = presetQrId;
+        }
         appDbContext.UserProfiles.Add(profile);
 
         // D-425: no QR at create — the account is PendingApproval; the approve
@@ -522,7 +688,140 @@ internal sealed partial class AdminAccountService(
                 ErrorCodes.DuplicateIdentity, cancellationToken);
             throw ApiException.DuplicateIdentity();
         }
+        // D-819 — two desks uploading the same batch at once. The pre-check in
+        // the upload service is a non-atomic read-then-insert, so the loser lands
+        // here; translate it into the same "already uploaded" answer the
+        // pre-check gives rather than a 500, and the retry stays idempotent.
+        catch (DbUpdateException ex) when (
+            !string.IsNullOrEmpty(presetQrId)
+            && ex.ViolatesAnyIndex("IX_UserProfiles_QrId"))
+        {
+            await AuditFailure(
+                AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
+                ErrorCodes.OfflineBadgeSequenceTaken, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.OfflineBadgeSequenceTaken, 409,
+                "This badge sequence has already been uploaded.",
+                "تم رفع هذا الرقم التسلسلي للبطاقة من قبل.");
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // D-819 — record WHICH fields a quick registration omitted, so the
+        // incomplete profiles can be chased and completed after the event. The
+        // CP visitor edit page and the attendee's own profile save already fill
+        // them in; this is the list of who to chase.
+        if (quickRegister)
+        {
+            var omitted = new List<string>(4);
+            if (nationalityId == 0) { omitted.Add("nationality"); }
+            if (organisationId is null) { omitted.Add("organisation"); }
+            if (string.IsNullOrWhiteSpace(request.SaudiMobile)
+                && string.IsNullOrWhiteSpace(request.InternationalMobile))
+            {
+                omitted.Add("mobile");
+            }
+            if (nationalId is null && iqamaNumber is null && passportNumber is null)
+            {
+                omitted.Add("identityDocument");
+            }
+
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.AdminQuickRegistered,
+                Outcome = AuditOutcome.Success,
+                ActorUserId = actorUserId,
+                SubjectUserId = user.Id,
+                SubjectEmail = email,
+                Detail = omitted.Count == 0
+                    ? "omitted=none"
+                    : "omitted=" + string.Join(",", omitted),
+            }, cancellationToken);
+        }
+
+        // D-819 — walk-in auto-approval. Approval is what MINTS THE QR, so
+        // without this a walk-in leaves the desk with no badge and the main gate
+        // correctly refuses them. This is the switch that makes the offline desk
+        // and session walk-in usable.
+        //
+        // Reuses the one approval path rather than writing a second: at this
+        // point the account is exactly the PendingApproval state ApproveAsync
+        // expects, so the call inherits the QR mint, the App-then-Identity write
+        // ordering, token revocation, the audit row and the notification. A
+        // parallel implementation would have to keep all five in step.
+        //
+        // AUDIENCE VISITORS ONLY. A partner / "Other" profile type can carry an
+        // operational MobileAppRole (Staff, Moderator, Exhibitor) and approval is
+        // exactly what activates it, so auto-approving that desk would hand out
+        // staff powers with nobody reviewing. Same rule bulk badge generation
+        // already enforces.
+        if (expectedIsVisitor == true
+            && walkInMode.CurrentValue.AutoApproveActive(timeProvider.SimfNow()))
+        {
+            try
+            {
+                await ApproveAsync(
+                    actorUserId, user.Id, ApprovalScope.AudienceVisitor,
+                    cancellationToken, profileTypeId: null,
+                    sendApprovalEmail: hasRealEmail);
+
+                // Re-read so the response carries the freshly minted QR.
+                profile.QrId = await appDbContext.UserProfiles
+                    .AsNoTracking()
+                    .Where(p => p.UserId == user.Id)
+                    .Select(p => p.QrId)
+                    .SingleOrDefaultAsync(cancellationToken);
+
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.AdminVisitorAutoApproved,
+                    Outcome = AuditOutcome.Success,
+                    ActorUserId = actorUserId,
+                    SubjectUserId = user.Id,
+                    SubjectEmail = email,
+                    Detail = $"qrId={profile.QrId}; profileType={profileType.Name}; "
+                        + "reason=walkInMode",
+                }, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // The visitor IS registered and sits in the normal pending queue.
+                // A failed auto-approve must never lose a registration during a
+                // rush, so this degrades to today's behaviour: the desk falls
+                // back to a paper slip while an admin approves from the queue.
+                //
+                // D-821 review — the QR is cleared from the RESPONSE explicitly.
+                // ApproveAsync saves the App DB (minting the QR onto this same
+                // tracked profile instance) before it flips Identity, so a
+                // failure in the second half leaves a real, persisted QrId on an
+                // account that is still PendingApproval. Returning it would have
+                // the desk print a badge the gate then refuses as
+                // HolderNotApproved. Access stays fail-closed either way; this
+                // keeps the desk from printing paper it cannot use.
+                profile.QrId = null;
+                logger.LogError(
+                    ex,
+                    "Walk-in auto-approve failed for {UserId}; left PendingApproval.",
+                    user.Id);
+                try
+                {
+                    await AuditFailure(
+                        AuditEvents.AdminVisitorAutoApproveFailed, actorUserId, email,
+                        user.Id, ErrorCodes.InternalError, cancellationToken);
+                }
+                catch (Exception auditFailure)
+                {
+                    // The likeliest cause of the approval failure is the database
+                    // itself, in which case this audit write fails too. Losing the
+                    // audit row is bad; throwing here would lose the operator's
+                    // whole response for a registration that DID commit, which is
+                    // worse.
+                    logger.LogError(
+                        auditFailure,
+                        "Could not audit the failed auto-approve for {UserId}.",
+                        user.Id);
+                }
+            }
+        }
 
         await auditLog.WriteAsync(new AuditEntry
         {

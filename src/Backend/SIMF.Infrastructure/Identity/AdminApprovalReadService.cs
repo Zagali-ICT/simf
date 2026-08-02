@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
+// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
@@ -7,6 +7,7 @@ using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Application.AccessControl.Abstractions;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -24,7 +25,8 @@ namespace SIMF.Infrastructure.Identity;
 /// </summary>
 internal sealed class AdminApprovalReadService(
     SimfIdentityDbContext dbContext,
-    SimfAppDbContext appDbContext)
+    SimfAppDbContext appDbContext,
+    IQrResolver qrResolver)
     : IAdminApprovalReadService
 {
     // D-186: every non-admin account is UserType.Visitor. The
@@ -51,7 +53,11 @@ internal sealed class AdminApprovalReadService(
         string qrId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
-        var normalised = qrId.Trim().ToUpperInvariant();
+        // D-821 review — canonicalise first. A D-820 offline badge arrives as a
+        // ~61-character encrypted blob, not a QrId, so the direct lookup below
+        // would miss it and report an unknown badge. A minted serial passes
+        // through unchanged.
+        var normalised = qrResolver.ToStoredQrId(qrId);
 
         var row = await appDbContext.UserProfiles
             .AsNoTracking()

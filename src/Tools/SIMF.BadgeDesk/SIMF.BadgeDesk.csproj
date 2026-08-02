@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    D-819 — the offline badge desk.
+
+    DELIBERATELY OUTSIDE SIMF.sln. This is a Windows-only executable (WinForms +
+    native printing) and the solution has to keep building on any host. Build and
+    publish it explicitly:
+
+      dotnet publish src/Tools/SIMF.BadgeDesk -c Release -r win-x64 -p:SelfContained=true
+
+    It references only SIMF.Common (the badge codec and the sequence-to-QR-id
+    mapping, so a desk and the server agree byte for byte) and SIMF.Contracts
+    (the upload shape). No EF, no database, no Infrastructure: a desk holds no
+    credentials and reaches nothing but the upload endpoint.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- Venue desks are routinely a laptop plus an external screen at a
+         different scale, and a blurry QR preview costs a reprint. Set here
+         rather than in a manifest, which modern WinForms rejects (WFO0003). -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <RootNamespace>SIMF.BadgeDesk</RootNamespace>
+    <AssemblyName>SIMF.BadgeDesk</AssemblyName>
+    <!-- Windows Forms + native printing are Windows-only by construction; the
+         analyser has nothing to add and TreatWarningsAsErrors would fail the
+         build on every Graphics call. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\SIMF.Common\SIMF.Common.csproj" />
+    <ProjectReference Include="..\..\Shared\SIMF.Contracts\SIMF.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

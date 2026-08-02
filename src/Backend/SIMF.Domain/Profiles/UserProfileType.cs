@@ -94,4 +94,20 @@ public sealed class UserProfileType : BaseAuditEntity
     /// partner (Other) types — visitor/audience types are curated separately;
     /// the CP exposes the checkbox on the "Others" profile-type form only.</summary>
     public bool ShowInPartnerDirectory { get; set; } = true;
+
+    /// <summary>
+    /// D-819 — a small stable number identifying this profile type inside the
+    /// offline event badge. <see cref="BaseAuditEntity.Id"/> is a Guid and will
+    /// not fit in a QR that has to stay readable when a badge is creased, so the
+    /// badge carries this code instead.
+    ///
+    /// <para>Carrying the type in the badge is what lets a gate decide OFFLINE:
+    /// it decrypts the badge, reads the code, and checks it against that gate's
+    /// allowed-profile-type list with no lookup and no network.</para>
+    ///
+    /// <para>Assigned once and never reused, because badges already printed
+    /// under a code stay in circulation. 0 means "not assigned", which no badge
+    /// can carry.</para>
+    /// </summary>
+    public short Code { get; set; }
 }

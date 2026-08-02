@@ -3,6 +3,7 @@
 // Tests: SIMF.Api.Tests/SeatChangeTests.cs (B1 — the atomic seat move)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Notifications;
 using SIMF.Application.SeatReservations.Abstractions;
@@ -27,6 +28,7 @@ internal sealed class SeatReservationService(
     IAuditLog auditLog,
     INotificationDispatcher notifications,
     TimeProvider timeProvider,
+    IQrResolver qrResolver,
     ILogger<SeatReservationService> logger) : ISeatReservationService
 {
     /// <summary>#6/#17 (owner 2026-07-20) — how long before a session starts an
@@ -1294,10 +1296,68 @@ internal sealed class SeatReservationService(
             occupant.HasPhoto, occupant.QrId, occupant.CheckedIn);
     }
 
+    public async Task<bool> EnsureWalkInHoldAsync(
+        Guid sessionId, Guid attendeeUserId, CancellationToken cancellationToken = default)
+    {
+        // Already holds a place here — nothing to add. Checked first so the
+        // common re-scan case costs one cheap read and never touches the index.
+        var alreadyHeld = await appDbContext.SeatReservations
+            .AsNoTracking()
+            .AnyAsync(
+                r => r.SessionId == sessionId
+                    && r.ReservedForUserId == attendeeUserId
+                    && r.ReleasedAt == null,
+                cancellationToken);
+        if (alreadyHeld) { return false; }
+
+        var hold = new SeatReservation
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            // Null row + seat: this records THAT they are here, not WHERE. It is
+            // also what keeps the hold clear of the per-seat filtered unique
+            // index, whose filter requires RowLabel IS NOT NULL.
+            RowLabel = null,
+            SeatNumber = null,
+            Kind = SeatReservationKind.OpenSeating,
+            Status = BookingStatus.Approved,
+            ReservedForUserId = attendeeUserId,
+            CreatedByUserId = attendeeUserId,
+            CreatedAt = timeProvider.SimfNow(),
+            // Never expires: the holder is physically in the hall, so the
+            // no-show sweep must not release them.
+            Expires = null,
+        };
+
+        appDbContext.SeatReservations.Add(hold);
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException ex)
+        {
+            // A rival scan won the race for the same attendee, or the store
+            // rejected the insert. Either way the person is already through the
+            // door: detach and report that nothing was added, rather than
+            // throwing into an admission that has already happened.
+            appDbContext.Entry(hold).State = EntityState.Detached;
+            logger.LogWarning(
+                ex,
+                "Walk-in seat hold not recorded for {UserId} at session {SessionId}.",
+                attendeeUserId, sessionId);
+            return false;
+        }
+    }
+
     public async Task<StaffSeatOccupant> ResolveBadgeSeatAsync(
         Guid sessionId, string qrId, CancellationToken cancellationToken = default)
     {
-        var code = (qrId ?? string.Empty).Trim();
+        // D-821 review — canonicalise first. A D-820 offline badge arrives as a
+        // ~61-character encrypted blob, not a QrId, so the direct lookup below
+        // would miss it and report an unknown badge. A minted serial passes
+        // through unchanged.
+        var code = qrResolver.ToStoredQrId(qrId ?? string.Empty);
         if (code.Length == 0)
         {
             throw new ApiException(

@@ -103,6 +103,12 @@ public static class ErrorCodes
     // D-115 — ProfileTypes CRUD (admin lookup management)
     public const string ProfileTypeNotFound = "PROFILE_TYPE_NOT_FOUND";
     public const string ProfileTypeInUse = "PROFILE_TYPE_IN_USE";
+
+    /// <summary>D-823 - two profile types were created at the same instant and
+    /// both allocated the same badge code. The filtered unique index refused the
+    /// loser; retrying succeeds. Translated so a genuine race is a typed 409 the
+    /// caller can act on rather than an unhandled 500.</summary>
+    public const string ProfileTypeCodeRace = "PROFILE_TYPE_CODE_RACE";
     public const string ProfileTypeInvalidUserType = "PROFILE_TYPE_INVALID_USER_TYPE";
     public const string ProfileTypeNameTaken = "PROFILE_TYPE_NAME_TAKEN";
 
@@ -494,6 +500,20 @@ public static class ErrorCodes
     public const string GateHallInvalid = "GATE_HALL_INVALID";
     public const string IdempotencyKeyConflict = "IDEMPOTENCY_KEY_CONFLICT";
     public const string GateFailureCircuitOpen = "GATE_FAILURE_CIRCUIT_OPEN";
+
+    // Offline badge desk (D-819).
+    /// <summary>The offline upload is not armed. Per-request, not a permission
+    /// failure: the caller holds the desk permission but the capability is off.</summary>
+    public const string OfflineUploadDisabled = "OFFLINE_UPLOAD_DISABLED";
+
+    /// <summary>A batch item's sequence is already on an account. Reported per
+    /// item as AlreadyUploaded, so a retried upload reconciles instead of
+    /// creating a second account for the same printed badge.</summary>
+    public const string OfflineBadgeSequenceTaken = "OFFLINE_BADGE_SEQUENCE_TAKEN";
+
+    /// <summary>The sequence is outside the range a badge id can express, or the
+    /// profile-type code on the badge is not a live profile type.</summary>
+    public const string OfflineBadgeInvalid = "OFFLINE_BADGE_INVALID";
 
     // Exhibitors + account provisioning (D-202 — D-199 #3).
     public const string ExhibitorInvalid = "EXHIBITOR_INVALID";

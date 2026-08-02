@@ -3,6 +3,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -19,7 +20,7 @@ public sealed class BulkApproveVisitorsEndpoint(IAdminUserApprovalService servic
         Post("/admin/visitors/bulk-approve");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Approve),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Bulk-approve a batch of pending visitors. Up to 500 ids per request.");
@@ -60,7 +61,7 @@ public sealed class BulkApproveOthersEndpoint(IAdminUserApprovalService service)
         Post("/admin/others/bulk-approve");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.Approve),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Admin");
     }
 
