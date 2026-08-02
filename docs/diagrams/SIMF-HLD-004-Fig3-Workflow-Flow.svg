@@ -106,7 +106,7 @@
 <circle cx="344" cy="609" r="11.5" fill="#3B6EA5"/>
 <text x="344" y="613" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">16</text>
 <text x="363" y="613" font-size="12.5" font-weight="bold" fill="#3B6EA5">Advisory AI filter</text>
-<text x="336" y="632" font-size="11" fill="#222">question text only, on-premises AI</text>
+<text x="336" y="632" font-size="11" fill="#222">question text only, when AI is enabled</text>
 <rect x="618" y="592" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#C0504D" stroke-width="1.8"/>
 <circle cx="636" cy="609" r="11.5" fill="#C0504D"/>
 <text x="636" y="613" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">17</text>
@@ -126,7 +126,7 @@
 <circle cx="344" cy="729" r="11.5" fill="#3B6EA5"/>
 <text x="344" y="733" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">20</text>
 <text x="363" y="733" font-size="12.5" font-weight="bold" fill="#3B6EA5">AI drafts the minutes</text>
-<text x="336" y="752" font-size="11" fill="#222">on-premises, no content leaves the site</text>
+<text x="336" y="752" font-size="11" fill="#222">only when a provider is enabled</text>
 <rect x="618" y="712" width="266" height="48" rx="3" fill="#FFFFFF" stroke="#C0504D" stroke-width="1.8"/>
 <circle cx="636" cy="729" r="11.5" fill="#C0504D"/>
 <text x="636" y="733" font-size="11.5" font-weight="bold" fill="#FFF" text-anchor="middle">21</text>
@@ -187,6 +187,6 @@
 <polyline points="326,796 300,796" fill="none" stroke="#3B6EA5" stroke-width="2.0"/>
 <polygon points="300.0,796.0 313.0,791.0 313.0,801.0" fill="#1F3864"/>
 <rect x="24" y="844" width="1152" height="36" fill="#F9FAFB" stroke="#9AA6B2" stroke-width="1.2"/>
-<text x="600" y="861" font-size="12" fill="#C00000" font-weight="bold" text-anchor="middle">All AI inference, at step 16 and step 20, runs on the on-premises AI service inside the SSA zone. The only outbound flow in this diagram is the optional caption import at step 19.</text>
+<text x="600" y="861" font-size="12" fill="#C00000" font-weight="bold" text-anchor="middle">No AI provider is enabled in this delivery, so steps 16 and 20 perform no inference. The only outbound flow in this diagram is the optional caption import at step 19.</text>
 <text x="600" y="875" font-size="12" fill="#6B2FA0" font-weight="bold" text-anchor="middle">Live video at step 13 is delivered by YouTube straight to the attendee device and never traverses a SIMF server.</text>
 </svg>

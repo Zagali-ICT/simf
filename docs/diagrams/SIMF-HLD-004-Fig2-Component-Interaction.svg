@@ -72,11 +72,12 @@
 <text x="675" y="553" font-size="11" fill="#C00000" font-weight="bold" text-anchor="middle">not activated on this build</text>
 <rect x="880" y="58" width="300" height="352" fill="none" stroke="#6B2FA0" stroke-width="1.4" stroke-dasharray="5,4"/>
 <text x="892" y="78" font-size="15" font-weight="bold" text-anchor="start" fill="#6B2FA0">Internal services (SSA zone)</text>
-<rect x="896" y="90" width="268" height="74" fill="#F1EAF8" stroke="#6B2FA0" stroke-width="1.6"/>
+<rect x="896" y="90" width="268" height="74" fill="#F1EAF8" stroke="#6B2FA0" stroke-width="1.6" stroke-dasharray="6,4"/>
 <rect x="896" y="90" width="268" height="22" fill="#6B2FA0"/>
-<text x="1030" y="106" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">On-premises AI service</text>
+<text x="1030" y="106" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">AI endpoint (configured)</text>
 <text x="1030" y="128" font-size="11.5" fill="#222" text-anchor="middle">summaries, question filter,</text>
 <text x="1030" y="143" font-size="11.5" fill="#222" text-anchor="middle">assistant, translation</text>
+<text x="1030" y="157" font-size="11" fill="#C00000" font-weight="bold" text-anchor="middle">no provider enabled</text>
 <rect x="896" y="180" width="268" height="60" fill="#EEF1F5" stroke="#5A6472" stroke-width="1.6"/>
 <rect x="896" y="180" width="268" height="22" fill="#5A6472"/>
 <text x="1030" y="196" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">SMTP relay</text>
@@ -174,7 +175,7 @@
 <text x="52" y="831.0" font-size="11.5" fill="#222" text-anchor="start">3   Control Panel to the load balancer, HTTPS 443, session affinity</text>
 <text x="52" y="844.5" font-size="11.5" fill="#222" text-anchor="start">4   Load balancer to SIMF.Api, HTTPS 443. Website and Control Panel hold no database connection</text>
 <text x="52" y="858.0" font-size="11.5" fill="#222" text-anchor="start">5   Layer calls inside one process, Api to Application to Infrastructure to Domain</text>
-<text x="52" y="871.5" font-size="11.5" fill="#222" text-anchor="start">6   SIMF.Infrastructure to the on-premises AI service, HTTPS 443, inside the SSA zone</text>
+<text x="52" y="871.5" font-size="11.5" fill="#222" text-anchor="start">6   SIMF.Infrastructure to the configured AI endpoint. No provider is enabled in this delivery</text>
 <text x="52" y="885.0" font-size="11.5" fill="#222" text-anchor="start">7   SIMF.Infrastructure to the internal SMTP relay, SMTP with STARTTLS, TCP 587</text>
 <text x="620" y="804.0" font-size="11.5" fill="#222" text-anchor="start">8   SIMF.Infrastructure to the SIEM collector, TCP 6514, and to the controlled egress point, HTTPS 443</text>
 <text x="620" y="817.5" font-size="11.5" fill="#222" text-anchor="start">9   SIMF.Infrastructure to SQL Server, TCP 1433, EF Core with two DbContexts</text>

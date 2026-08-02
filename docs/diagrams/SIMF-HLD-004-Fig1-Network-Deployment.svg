@@ -38,9 +38,9 @@
 <text x="165" y="280" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">WAF + load balancer</text>
 <text x="165" y="302" font-size="11.5" fill="#222" text-anchor="middle">active / standby, TLS terminates</text>
 <rect x="560" y="264" width="280" height="58" fill="#FFF6F6" stroke="#C00000" stroke-width="1.3"/>
-<text x="570" y="282" font-size="11.5" fill="#C00000" font-weight="bold">No load-balancer path to the AI host.</text>
-<text x="570" y="297" font-size="11.5" fill="#C00000" font-weight="bold">SIMF.Api is the only caller of AI,</text>
-<text x="570" y="312" font-size="11.5" fill="#C00000" font-weight="bold">and the AI host has no outbound route.</text>
+<text x="570" y="282" font-size="11.5" fill="#C00000" font-weight="bold">No load-balancer path to the AI endpoint.</text>
+<text x="570" y="297" font-size="11.5" fill="#C00000" font-weight="bold">SIMF.Api is its only caller.</text>
+<text x="570" y="312" font-size="11.5" fill="#C00000" font-weight="bold">No provider is enabled, so AI sends nothing.</text>
 <rect x="900" y="264" width="260" height="58" fill="#FDF3E6" stroke="#B26A00" stroke-width="1.6"/>
 <rect x="900" y="264" width="260" height="22" fill="#B26A00"/>
 <text x="1030" y="280" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Egress point host</text>
@@ -60,11 +60,11 @@
 <text x="715" y="374" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Admin hosts  x 2</text>
 <text x="715" y="396" font-size="11.5" fill="#222" text-anchor="middle">SIMF.ControlPanel, Blazor Server</text>
 <text x="715" y="411" font-size="11.5" fill="#222" text-anchor="middle">session affinity, no DB access</text>
-<rect x="70" y="468" width="230" height="72" fill="#F1EAF8" stroke="#6B2FA0" stroke-width="1.6"/>
+<rect x="70" y="468" width="230" height="72" fill="#F1EAF8" stroke="#6B2FA0" stroke-width="1.6" stroke-dasharray="6,4"/>
 <rect x="70" y="468" width="230" height="22" fill="#6B2FA0"/>
-<text x="185" y="484" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">AI inference host</text>
-<text x="185" y="506" font-size="11.5" fill="#222" text-anchor="middle">on-premises inference service</text>
-<text x="185" y="521" font-size="11.5" fill="#222" text-anchor="middle">no outbound route</text>
+<text x="185" y="484" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">AI endpoint</text>
+<text x="185" y="506" font-size="11.5" fill="#222" text-anchor="middle">configured, not a deployed host</text>
+<text x="185" y="521" font-size="11.5" fill="#222" text-anchor="middle">no provider enabled</text>
 <rect x="330" y="468" width="230" height="72" fill="#FFF8EE" stroke="#B5860B" stroke-width="1.6"/>
 <rect x="330" y="468" width="230" height="22" fill="#B5860B"/>
 <text x="445" y="484" font-size="13" font-weight="bold" fill="#FFF" text-anchor="middle">Worker host  x 1</text>
@@ -167,7 +167,7 @@
 <text x="52" y="810" font-size="11.5" fill="#222" text-anchor="start">1   Attendees and administrators inbound, HTTPS 443, terminated at the WAF and load balancer</text>
 <text x="52" y="825" font-size="11.5" fill="#222" text-anchor="start">2   Load balancer to each application tier, HTTPS 443, re-encrypted to the backend</text>
 <text x="52" y="840" font-size="11.5" fill="#222" text-anchor="start">3   Website and Control Panel reach data only through the API, typed client, HTTPS 443</text>
-<text x="52" y="855" font-size="11.5" fill="#222" text-anchor="start">4   SIMF.Api to the on-premises AI host, HTTPS 443, internal to the SSA zone. This is the only path to AI</text>
+<text x="52" y="855" font-size="11.5" fill="#222" text-anchor="start">4   SIMF.Api to the configured AI endpoint, the only path to AI. No provider enabled in this delivery</text>
 <text x="52" y="870" font-size="11.5" fill="#222" text-anchor="start">5   Worker host to the internal SMTP relay, SMTP with STARTTLS, TCP 587</text>
 <text x="52" y="885" font-size="11.5" fill="#222" text-anchor="start">6   SIMF.Api to the controlled egress point, HTTPS 443. Only that host has an outbound route</text>
 <text x="620" y="810" font-size="11.5" fill="#222" text-anchor="start">7   Egress point to the YouTube caption API through the edge firewall, HTTPS 443, video id only</text>
