@@ -12,6 +12,17 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class SessionModeratorsListTests : CpComponentTestBase
 {
+    public SessionModeratorsListTests()
+    {
+        // D-828 — the assign dialog's Submit is now wrapped in
+        // <AuthorizedAction Permission="SessionModerators.Assign">, so the button
+        // this class clicks renders only for a holder of it. The default test
+        // identity holds no policies; granting the one a real moderator-manager
+        // holds keeps these tests about the assign payload rather than the gate.
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.SessionModerators.Assign));
+    }
+
     private static readonly Guid SessionId = Guid.NewGuid();
     private static readonly Guid ModeratorId = Guid.NewGuid();
 

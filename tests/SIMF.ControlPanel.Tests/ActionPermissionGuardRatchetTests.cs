@@ -68,16 +68,26 @@ public sealed class ActionPermissionGuardRatchetTests
             // already excludes everyone who cannot use its buttons.
             if (permission.Groups["action"].Value != "View") { continue; }
 
-            if (razor.Contains("AuthorizedAction", StringComparison.Ordinal)) { continue; }
-            if (!MutatingButton.IsMatch(razor)) { continue; }
-
             var key = Relative(razorPath);
             if (ReviewedExceptions.ContainsKey(key)) { continue; }
 
-            offenders.Add(
-                $"{key} — gated on {permission.Groups["group"].Value}.View, but "
-                + $"'{MutatingButton.Match(razor).Groups["handler"].Value}...' is not "
-                + "wrapped in <AuthorizedAction>");
+            // PER BUTTON, not per page. The first cut of this test skipped any
+            // page containing the string "AuthorizedAction" anywhere, which meant
+            // one gated button hid every ungated one beside it — and it did:
+            // four more pages (BadgeRequests, SessionModerators, MeetingTables,
+            // DocumentRequests) were waved through on their FIRST run because
+            // they gated something else. A guard that reports clean while the
+            // defect is present is worse than no guard, so containment is
+            // checked for each control individually.
+            foreach (Match button in MutatingButton.Matches(razor))
+            {
+                if (IsInsideAuthorizedAction(razor, button.Index)) { continue; }
+
+                offenders.Add(
+                    $"{key} — gated on {permission.Groups["group"].Value}.View, but "
+                    + $"'{button.Groups["handler"].Value}...' is not wrapped in "
+                    + "<AuthorizedAction>");
+            }
         }
 
         Assert.True(
@@ -103,8 +113,8 @@ public sealed class ActionPermissionGuardRatchetTests
                     return true;   // page renamed or deleted
                 }
                 var razor = File.ReadAllText(path);
-                return razor.Contains("AuthorizedAction", StringComparison.Ordinal)
-                    || !MutatingButton.IsMatch(razor);
+                return MutatingButton.Matches(razor)
+                    .All(button => IsInsideAuthorizedAction(razor, button.Index));
             })
             .ToList();
 
@@ -112,6 +122,22 @@ public sealed class ActionPermissionGuardRatchetTests
             stale.Count == 0,
             "Reviewed exception(s) no longer apply — the page now gates its actions, "
             + "or no longer exists. Delete the entry:\n  " + string.Join("\n  ", stale));
+    }
+
+    /// <summary>
+    /// True when the control at <paramref name="index"/> sits inside an
+    /// <c>&lt;AuthorizedAction&gt;</c> block.
+    ///
+    /// <para>Nearest-tag-wins rather than a parse: if the closest opening tag
+    /// before the control comes after the closest closing tag, the control is
+    /// inside. That is exact for the flat, non-nested way the Control Panel uses
+    /// the component, and the render tests next door check the behaviour rather
+    /// than the markup, so a shape this misreads still cannot ship silently.</para>
+    /// </summary>
+    private static bool IsInsideAuthorizedAction(string razor, int index)
+    {
+        var before = razor.AsSpan(0, index);
+        return before.LastIndexOf("<AuthorizedAction") > before.LastIndexOf("</AuthorizedAction>");
     }
 
     private static string PagesRoot()

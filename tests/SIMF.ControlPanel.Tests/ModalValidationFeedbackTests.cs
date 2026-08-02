@@ -30,7 +30,8 @@ public sealed class ModalValidationFeedbackTests : CpComponentTestBase
             PermissionCatalog.PolicyFor(PermissionCatalog.Faq.Create),
             PermissionCatalog.PolicyFor(PermissionCatalog.Faq.Edit),
             PermissionCatalog.PolicyFor(PermissionCatalog.RatingConfig.Create),
-            PermissionCatalog.PolicyFor(PermissionCatalog.RatingConfig.Edit));
+            PermissionCatalog.PolicyFor(PermissionCatalog.RatingConfig.Edit),
+            PermissionCatalog.PolicyFor(PermissionCatalog.SessionModerators.Assign));
     }
 
     /// <summary>The grid toolbar's Add button. The pass-through localizer means

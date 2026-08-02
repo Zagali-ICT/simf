@@ -224,9 +224,12 @@
             </SimfButton>
             @if (_respondTarget.Status == MeetingRequestStatus.Pending)
             {
-                <SimfButton Type="button" OnClick="ApproveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
-                    @L["Admin.Meetings.Approve"]
-                </SimfButton>
+                @* D-828 (second pass) - page gates on DelegationMeetings.View; responding to a request is .Manage. *@
+            <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
+            <SimfButton Type="button" OnClick="ApproveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                        @L["Admin.Meetings.Approve"]
+                    </SimfButton>
+            </AuthorizedAction>
             }
             <SimfButton Type="button" OnClick="ConfirmAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Meetings.Confirm"]

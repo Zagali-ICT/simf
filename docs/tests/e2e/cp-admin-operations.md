@@ -28,9 +28,10 @@
 > conversion.
 > The page is gated by `PermissionCatalog.Operations.View`; the two **PUT**
 > endpoints require `PermissionCatalog.Operations.Edit` — so a View-only admin
-> can open the page and read both states but cannot save (the BFF forwards the
-> API 403). This split is the page's most important non-obvious behaviour and
-> is exercised in E2E-OPS-005.
+> can open the page and read both states but gets **no Save button at all**
+> (D-828 wrapped both in `<AuthorizedAction>`; before that they rendered and the
+> denial arrived as a 403 toast). This split is the page's most important
+> non-obvious behaviour and is exercised in E2E-OPS-005.
 
 ## Coverage matrix
 
@@ -40,7 +41,7 @@
 | E2E-OPS-002 | Schedule auto-close — set "Auto-close (Saudi time)" → save → field round-trips | happy | P1 | _to author_ |
 | E2E-OPS-003 | Toggle archive visibility — hide → save → public `GET /api/v1/app/archive/visibility` reflects `IsVisible=false` | happy | P0 | _to author_ |
 | E2E-OPS-004 | Auth gate — admin lacking `Operations.View` → `/not-permitted` | auth | P0 | _to author_ |
-| E2E-OPS-005 | Edit gate — View-only admin can load but Save is rejected (403 → fallback toast) | auth | P0 | _to author_ |
+| E2E-OPS-005 | Edit gate — View-only admin sees both sections but NO Save button (D-828); granting Edit restores both | auth | P0 | _to author_ |
 | E2E-OPS-006 | Validation — malformed "Auto-close (Saudi time)" → client bilingual error, no PUT fires | error | P1 | _to author_ |
 | E2E-OPS-007 | Idempotent no-op — Save with no change writes no audit row + still shows success toast | edge | P2 | _to author_ |
 | E2E-OPS-008 | Singleton self-heal — missing seed row → page loads a default (open / visible), no error | edge | P2 | _to author_ |
@@ -182,28 +183,47 @@ Scenario: A signed-in admin lacking Operations.View is denied the page
   And no /account/api/admin/archive/visibility request fires
 ```
 
-### E2E-OPS-005 — Edit gate (View-only admin cannot Save)
+### E2E-OPS-005 — Edit gate (View-only admin gets no Save button)
+
+**Rewritten for D-828.** This scenario used to assert that a View-only admin
+clicks Save and receives a 403. Both Save buttons are now wrapped in
+`<AuthorizedAction Permission="@PermissionCatalog.Operations.Edit">`, so there is
+no button to click — the old wording would now fail on a step that can never
+happen.
 
 ```gherkin
-Scenario: A View-only admin loads both sections but Save is rejected
+Scenario: A View-only admin reads both sections and cannot act on either
   Given a signed-in admin whose role grants Operations.View but NOT Operations.Edit
   When they navigate to /admin/operations
   Then the page renders normally and BOTH sections load their current state
     (GET registration-gate and GET archive/visibility return 200)
-  When they change "Registration is open" and click "Save"
-  Then the BFF forwards PUT /account/api/admin/registration-gate
-  And the API returns HTTP 403 (the PUT endpoint requires Operations.Edit)
-  And the page shows a red SimfAlert with the fallback message
-    "The change could not be saved." / "تعذّر حفظ التغيير."
-    (or the server's bilingual MessageForCurrentCulture() if one is returned)
-  And the persisted gate state is unchanged on reload
+  And the current values are visible and readable:
+    the "Registration is open" checkbox, the "Auto-close (Saudi time)" field
+    and both "Last changed" timestamps
+  But NEITHER section renders a "Save" button
+    (0 matches for .simf-form__actions button.simf-button--primary)
+  And no PUT is ever sent, because there is nothing to press
+
+Scenario: The same admin granted Operations.Edit gets both buttons back
+  Given the same admin's role is granted Operations.Edit
+  When they reload /admin/operations
+  Then exactly TWO "Save" buttons render, one per section
 ```
 
-> **Grounding:** `RegistrationGateEndpoints.cs` / `ArchiveVisibilityEndpoints.cs`
-> gate the GET with `Operations.View` and the PUT with `Operations.Edit`; the
-> integration test `OperationsTogglesTests.Non_admin_caller_cannot_toggle_either_gate`
-> asserts the PUT 403 for a non-admin. The wildcard `superadmin` holds both, so to
-> exercise this row use a purpose-made role with `Operations.View` only.
+> **Grounding:** `OperationsToggles.razor` wraps each `.simf-form__actions` block
+> in `<AuthorizedAction>`; `AuthorizedAction.razor` renders its content only
+> inside `<AuthorizeView Policy="...">`, so an absent permission removes the
+> markup rather than disabling it. The API still gates the PUTs with
+> `Operations.Edit` — the button gate is a UX layer, never the boundary.
+>
+> Pinned at component level by
+> `tests/SIMF.ControlPanel.Tests/ActionPermissionRenderTests.cs`
+> (`Operations_save_is_hidden_from_a_view_only_holder` /
+> `Operations_save_is_shown_to_an_edit_holder`), which stubs both loads so the
+> page reaches its LOADED state — otherwise the button is missing because the
+> load failed, and the assertion proves nothing. The wildcard `superadmin` holds
+> both permissions, so driving this row in a browser needs a purpose-made role
+> with `Operations.View` only.
 
 ### E2E-OPS-006 — Validation (malformed auto-close)
 

@@ -168,9 +168,14 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _tableOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SaveTableAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.MeetingTables.Save"]
-            </SimfButton>
+            @* D-828 (second pass) - the page gates on MeetingTables.View; saving a table is .Edit. The page-level ratchet missed this
+               because the page already used <AuthorizedAction> elsewhere; the
+               guard is now per-button. *@
+            <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
+                <SimfButton Type="button" OnClick="SaveTableAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.MeetingTables.Save"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -285,9 +290,12 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _allocOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
+            @* D-828 (second pass) - page gates on MeetingTables.View; allocating tables is .Edit. *@
+            <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
             <SimfButton Type="button" OnClick="SaveAllocationAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.MeetingTables.Save"]
-            </SimfButton>
+                    @L["Admin.MeetingTables.Save"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }

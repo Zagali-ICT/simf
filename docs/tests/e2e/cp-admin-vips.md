@@ -36,7 +36,7 @@
 | E2E-VIP-003 | Cancel the notify modal without sending | happy | P2 | _to author_ |
 | E2E-VIP-004 | Empty list renders `SimfEmptyState` ("No VIPs match the filter.") | happy | P1 | _to author_ |
 | E2E-VIP-005 | Auth gate: signed-in admin lacking `Vips.View` → `/not-permitted` | auth | P0 | _to author_ |
-| E2E-VIP-006 | Auth gate: holds `Vips.View` but lacks `Vips.Notify` → notify 403 | auth | P1 | _to author_ |
+| E2E-VIP-006 | Auth gate: holds `Vips.View` but lacks `Vips.Notify` → the notify TRIGGER is absent (D-828), so the compose step is unreachable; granting Notify restores it | auth | P1 | _to author_ |
 | E2E-VIP-007 | Validation: blank title/body → 400 `InvitationInvalid`, modal stays open | error | P1 | _to author_ |
 | E2E-VIP-008 | Empty selection guard → 400 `VIP_NOTIFY_EMPTY` | error | P1 | _to author_ |
 | E2E-VIP-009 | Over-batch guard (>500 ids) → 400 `VIP_NOTIFY_TOO_LARGE` | error | P2 | _to author_ |
@@ -149,16 +149,36 @@ Scenario: Signed-in admin without Vips.View is denied the page
 
 ### E2E-VIP-006 — Auth gate (has View, lacks Notify)
 
+**Rewritten for D-828.** This used to assert that the holder reaches the modal,
+composes a message, presses Send and receives a 403. The notify **trigger** is
+now wrapped in `<AuthorizedAction Permission="@PermissionCatalog.Vips.Notify">`,
+so the flow is unreachable rather than merely futile — which was the point of
+gating the trigger and not only the Submit. Asking someone to select recipients
+and write a bilingual message before refusing them is the worst version of this
+defect, and it is the reason VipsList was called out as the worst of the four.
+
 ```gherkin
-Scenario: An admin who can view but not notify is blocked at send
+Scenario: An admin who can view but not notify never reaches the compose step
   Given a signed-in admin granted Vips.View but NOT Vips.Notify
   When they open /admin/vips
   Then the VIP list loads normally (POST /account/api/admin/vips/list returns 200)
-  When they select a row and click "Send" in the notify modal
-  Then POST /account/api/admin/vips/notify returns HTTP 403 (policy Vips.Notify)
-  And a red toast surfaces the bilingual MessageForCurrentCulture()
-  And the modal stays open
+  And the rows, the selection checkboxes and Export are all usable
+  But the "Notify selected (N)" toolbar button is ABSENT
+    (0 matches for button.simf-tbbtn whose text starts "Notify selected")
+  And the notify modal cannot be opened, so no message is ever composed
+  And no POST /account/api/admin/vips/notify is ever sent
+
+Scenario: The same admin granted Vips.Notify gets the trigger back
+  Given the same admin's role is granted Vips.Notify
+  When they reload /admin/vips
+  Then the "Notify selected (0)" toolbar button renders, disabled until a row is selected
 ```
+
+> **The API gate is unchanged and remains the boundary:** `/admin/vips/notify`
+> still requires policy `Vips.Notify` and still answers 403 to a caller without
+> it. What changed is that the Control Panel no longer invites the attempt.
+> Pinned by `ActionPermissionRenderTests.Vip_notify_trigger_is_hidden_from_a_view_only_holder`
+> / `..._is_shown_to_a_notify_holder`, mutation-checked by ungating the trigger.
 
 ### E2E-VIP-007 — Validation failure (blank title / body)
 

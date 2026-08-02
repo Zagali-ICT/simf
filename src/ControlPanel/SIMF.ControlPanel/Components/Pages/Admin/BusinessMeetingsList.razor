@@ -236,9 +236,12 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _scheduleOpen = false)">
                 @L["Admin.BusinessMeetings.Cancel"]
             </SimfButton>
+            @* D-828 (second pass) - page gates on BusinessMeetings.View; scheduling a meeting is .Schedule. *@
+            <AuthorizedAction Permission="@PermissionCatalog.BusinessMeetings.Schedule">
             <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.BusinessMeetings.Schedule.Submit"]
-            </SimfButton>
+                    @L["Admin.BusinessMeetings.Schedule.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
