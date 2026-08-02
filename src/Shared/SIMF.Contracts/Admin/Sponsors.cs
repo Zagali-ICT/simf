@@ -13,7 +13,7 @@ public sealed record AdminSponsorSummary(
     string? Url,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // D-502 — carried so the grid Excel export can round-trip them (not rendered
     // as grid columns). Optional; blank when unset.
     string? Tagline = null,
@@ -35,8 +35,8 @@ public sealed record AdminSponsorDetail(
     string? Url,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // D-432 — optional bilingual tagline (Figma 922:2824).
     string? Tagline = null,
     string? TaglineArabic = null,

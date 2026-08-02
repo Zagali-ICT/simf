@@ -180,7 +180,7 @@ public sealed class MeetingActionTokenTests : IClassFixture<SimfApiFactory>
                 .ToListAsync();
             foreach (var t in tokens)
             {
-                t.Expires = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
+                t.Expires = new DateTime(2020, 1, 1, 0, 0, 0);
             }
             await db.SaveChangesAsync();
         }
@@ -234,7 +234,7 @@ public sealed class MeetingActionTokenTests : IClassFixture<SimfApiFactory>
             Code = "SPK-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Capt. Rashid", NameArabic = "راشد",
             AllowsMeetingRequests = true, IsActive = true, DisplayOrder = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         var hall = new Hall
@@ -243,11 +243,11 @@ public sealed class MeetingActionTokenTests : IClassFixture<SimfApiFactory>
             Code = "MH-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Meeting Hall", NameArabic = "قاعة الاجتماعات",
             Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
 
-        var start = new DateTimeOffset(2031, 6, 1, 10, 0, 0, TimeSpan.Zero);
+        var start = new DateTime(2031, 6, 1, 10, 0, 0);
         var req = new SpeakerMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -256,7 +256,7 @@ public sealed class MeetingActionTokenTests : IClassFixture<SimfApiFactory>
             RequesterName = "Capt. Visitor", Subject = "Naval cooperation",
             HallId = hall.Id, SlotStart = start, SlotEnd = start.AddMinutes(30),
             Status = MeetingRequestStatus.AwaitingSpeaker,
-            CreatedAt = DateTimeOffset.UtcNow, RespondedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now, RespondedAt = SimfClock.Now,
         };
         db.SpeakerMeetingRequests.Add(req);
         await db.SaveChangesAsync();

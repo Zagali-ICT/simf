@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/HallAttendanceTests.cs
+// Tests: SIMF.Api.Tests/HallAttendanceTests.cs
 // Tests: SIMF.Api.Tests/HallArrivalScanTests.cs (P5.1d — D-244 operator QR scan)
 // Tests: SIMF.Api.Tests/GateHallDoorChainTests.cs (Both-mode gate → hall-attendance chain)
 using Microsoft.Data.SqlClient;
@@ -34,7 +34,7 @@ internal sealed class HallAttendanceService(
     INotificationDispatcher notifications,
     TimeProvider timeProvider,
     IOptionsMonitor<WalkInModeOptions> walkInMode,
-    // D-809 — records the walk-in's open-seating hold once they are admitted.
+    // D-819 — records the walk-in's open-seating hold once they are admitted.
     ISeatReservationService seats,
     ILogger<HallAttendanceService> logger) : IHallAttendanceService
 {
@@ -42,13 +42,13 @@ internal sealed class HallAttendanceService(
     // still accepted (early arrivals + a brief post-end tail). Mirrors the CP
     // Hall-Arrivals console's live-session picker filter.
     //
-    // D-809 — was a fixed 15 minutes. It is now read from the walk-in mode so a
+    // D-819 — was a fixed 15 minutes. It is now read from the walk-in mode so a
     // queue that forms well before a keynote can be pre-scanned; with the mode
     // disarmed this still resolves to exactly 15 minutes, so nothing changes
     // until the capability is deliberately armed. Read per call (rather than
     // cached in a field) so arming it takes effect without a restart.
     private TimeSpan ArrivalGrace =>
-        walkInMode.CurrentValue.ResolveArrivalGrace(timeProvider.GetUtcNow());
+        walkInMode.CurrentValue.ResolveArrivalGrace(timeProvider.SimfNow());
 
     public async Task<HallAttendanceStatus> RecordGeofenceArrivalAsync(
         Guid userId, Guid sessionId, double lat, double lon,
@@ -213,7 +213,7 @@ internal sealed class HallAttendanceService(
         Guid attendeeUserId, Guid hallId,
         CancellationToken cancellationToken = default)
     {
-        // D-813 - ask about EVERY session this door is admitting for, not only
+        // D-823 - ask about EVERY session this door is admitting for, not only
         // the single one attendance binds to. A hall runs its sessions back to
         // back, so with the arrival grace an attendee holding a 10:00 booking is
         // legitimately at the door at 09:50 while the 09:00 session is still
@@ -268,7 +268,7 @@ internal sealed class HallAttendanceService(
     /// Ordered best-first - the session actually running, then the nearest by
     /// start, then by id so the order is total.
     ///
-    /// <para>D-813 - a list, not a single winner, because a hall runs its
+    /// <para>D-823 - a list, not a single winner, because a hall runs its
     /// sessions back to back and near a handover this set routinely holds two:
     /// the one running and the one about to start. The entry check reads the
     /// whole set; the attendance write takes the first. Both go through here so
@@ -277,7 +277,7 @@ internal sealed class HallAttendanceService(
     private async Task<List<Guid>> AdmittingSessionIdsAsync(
         Guid hallId, CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var grace = ArrivalGrace;
         // The window bounds are shifted onto the constant `now` (not the
         // DateTimeOffset column) so the filter translates to SQL. A single hall
@@ -293,7 +293,7 @@ internal sealed class HallAttendanceService(
                 .ToListAsync(cancellationToken))
             // The session actually running beats a grace-margin neighbour.
             .OrderBy(s => now >= s.Start && now < s.End ? 0 : 1)
-            // Then the nearest by start - unchanged from D-809.
+            // Then the nearest by start - unchanged from D-819.
             .ThenBy(s => (s.Start - now).Duration())
             // Then make the order total: the underlying read carries no ORDER BY,
             // so two candidates that tie on every key above could come back
@@ -321,13 +321,13 @@ internal sealed class HallAttendanceService(
         bool directionInferred, Guid operatorUserId,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // X-3 (FIX B) — bind the arrival to the session live in this hall right
         // now, using the SAME ±ArrivalGrace window as EnsureSessionLiveNow (the
         // geofence / QR-door / CP picker) so an early or late gate check-in still
-        // binds instead of recording nothing. D-809 moved the query into
+        // binds instead of recording nothing. D-819 moved the query into
         // AdmittingSessionIdsAsync so the step-11.5 entry check and this write
-        // share one definition of what the hall is admitting for. D-813: the
+        // share one definition of what the hall is admitting for. D-823: the
         // check reads the WHOLE admitting set (a 10:00 booking is valid at the
         // door at 09:50), while attendance still binds to the single running
         // session, because occupancy counts who is physically in the room.
@@ -397,7 +397,7 @@ internal sealed class HallAttendanceService(
                 "Hall arrival (hall-door gate) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
                 attendeeUserId, liveSessionId, operatorUserId);
 
-            // D-809 — a walk-in admitted with no booking still occupies a place,
+            // D-819 — a walk-in admitted with no booking still occupies a place,
             // so record an open-seating hold: without it the staff seating desk
             // reports "no seat" for a badge standing in front of it and the seat
             // map under-reports who is in the hall.
@@ -601,7 +601,7 @@ internal sealed class HallAttendanceService(
     private HallAttendance NewArrivalRow(
         Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         return new HallAttendance
         {
             Id = Guid.NewGuid(),
@@ -644,9 +644,9 @@ internal sealed class HallAttendanceService(
     /// <summary>X-3 — throws when now is outside the session's live window
     /// (± <see cref="ArrivalGrace"/>). Keeps arrival bound to a session that is
     /// actually running, so a stale or future sessionId cannot open a row.</summary>
-    private void EnsureSessionLiveNow(DateTimeOffset start, DateTimeOffset end)
+    private void EnsureSessionLiveNow(DateTime start, DateTime end)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         if (now < start - ArrivalGrace || now > end + ArrivalGrace)
         {
             throw new ApiException(ErrorCodes.SessionNotLive, 409,
@@ -677,7 +677,7 @@ internal sealed class HallAttendanceService(
             return new HallAttendanceStatus(false, null, null, null);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         open.Leave = now;
         open.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);

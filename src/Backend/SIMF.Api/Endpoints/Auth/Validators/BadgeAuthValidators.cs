@@ -86,5 +86,33 @@ public sealed class BadgeActivationCompleteRequestValidator : Validator<BadgeAct
             .Bilingual(
                 "The passwords do not match.",
                 "كلمتا المرور غير متطابقتين.");
+
+        // #10 phase 4 — the optional profile capture. Shape only; existence of the
+        // country code / interest ids is checked against the live lookups in
+        // BadgeAuthService (the same split the profile upsert uses). Max lengths
+        // mirror UserProfileConfiguration (Name / NameArabic nvarchar(256)) and the
+        // profile validator's 1-10 interest cap.
+        When(request => !string.IsNullOrWhiteSpace(request.EnglishName), () =>
+        {
+            RuleFor(request => request.EnglishName!).MaximumLength(256);
+        });
+
+        When(request => !string.IsNullOrWhiteSpace(request.ArabicName), () =>
+        {
+            RuleFor(request => request.ArabicName!).MaximumLength(256);
+        });
+
+        When(request => !string.IsNullOrWhiteSpace(request.NationalityCode), () =>
+        {
+            RuleFor(request => request.NationalityCode!)
+                .Matches("^[A-Za-z]{2,3}$").Bilingual(
+                    "The nationality code must be a 2 or 3 letter ISO country code.",
+                    "يجب أن يكون رمز الجنسية رمز دولة ISO من حرفين أو ثلاثة.");
+        });
+
+        RuleFor(request => request.InterestIds)
+            .Must(ids => ids is null || ids.Count <= 10).Bilingual(
+                "Pick no more than 10 interests.",
+                "اختر 10 اهتمامات كحدّ أقصى.");
     }
 }

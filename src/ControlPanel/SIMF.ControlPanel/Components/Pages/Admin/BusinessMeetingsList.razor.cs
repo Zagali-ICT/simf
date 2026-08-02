@@ -1,13 +1,10 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.BusinessMeetings;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Programme;
@@ -255,7 +252,7 @@ public partial class BusinessMeetingsList
             _toast = new Toast("error", L["Admin.BusinessMeetings.Validation.Table"]);
             return;
         }
-        if (!TryParseUtc(_startText, out var start) || !TryParseUtc(_endText, out var end) || end <= start)
+        if (!TryParseSaudiWallClock(_startText, out var start) || !TryParseSaudiWallClock(_endText, out var end) || end <= start)
         {
             _toast = new Toast("error", L["Admin.BusinessMeetings.Validation.Slot"]);
             return;
@@ -357,8 +354,13 @@ public partial class BusinessMeetingsList
         finally { _busy = false; }
     }
 
-    // datetime-local has no timezone; treat the entered wall-clock as UTC.
-    private static bool TryParseUtc(string text, out DateTimeOffset value)
+    // datetime-local carries no timezone, and under D-813 it does not need one:
+    // what the admin types IS what gets stored. AssumeUniversal + AdjustToUniversal
+    // is the parse that leaves a naked "2026-11-23T09:00" at 09:00 regardless of
+    // the server's own timezone; FromSaudiWallClock then only stamps the Kind.
+    // Do not "fix" this into a local-time parse — that would make the stored value
+    // depend on where the Control Panel happens to be running.
+    private static bool TryParseSaudiWallClock(string text, out DateTime value)
     {
         value = default;
         if (DateTime.TryParse(text, CultureInfo.InvariantCulture,

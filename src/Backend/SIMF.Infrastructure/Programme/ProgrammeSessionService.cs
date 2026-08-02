@@ -3,6 +3,7 @@
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 published-recording gate)
 // Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235 recorded Q&A archive)
 // Tests: SIMF.Api.Tests/SessionSummaryTests.cs (P4.1a — D-237 published-summary read)
+// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
@@ -17,7 +18,8 @@ namespace SIMF.Infrastructure.Programme;
 /// D-199 (gap doc G3, Mockup pages 16-17) — public, anonymous reads over
 /// the programme <see cref="SIMF.Domain.Programme.Session"/> surface.
 /// Read-only sibling of <see cref="AdminSessionService"/>: only active
-/// sessions are returned (<c>IsActive</c>), times stay UTC, and the
+/// sessions are returned (<c>IsActive</c>), times are the Saudi wall clock
+/// (D-813 — nothing zoned is stored or served), and the
 /// effective capacity is <c>CapacityOverride ?? Hall.Capacity</c>
 /// (PDF §2.9). Seat availability is a single COUNT over active
 /// (non-released) reservations — no per-seat grid (that is the
@@ -30,22 +32,31 @@ internal sealed class ProgrammeSessionService(
     : IProgrammeSessionService
 {
     public async Task<PublicSessions> ListAsync(
-        DateOnly? day, CancellationToken cancellationToken = default)
+        DateOnly? day, Guid? categoryId = null, CancellationToken cancellationToken = default)
     {
         var rows = dbContext.Sessions
             .AsNoTracking()
             .Where(session => session.IsActive)
             .AsQueryable();
 
+        // OA-D6 — optional server-side track filter on the dynamic SessionCategory
+        // lookup (D-226). A plain equality on the indexed FK; combines with ?day=
+        // (AND). An unknown id simply matches nothing — no 404, because the public
+        // agenda must not become a category-id oracle.
+        if (categoryId is { } category)
+        {
+            rows = rows.Where(session => session.CategoryId == category);
+        }
+
         if (day is { } d)
         {
             // A6c — half-open EVENT-LOCAL (+03:00) day window [dayStart, nextDayStart).
             // The app sends ProgrammeDay.Date (a Riyadh calendar date) as ?day=, and
-            // the day-grouped agenda (ListDaysAsync) buckets by Start.ToOffset(+03:00),
-            // so this filter must use the SAME +03:00 boundary or the flat list would
-            // disagree with the app's day strip at the UTC-midnight edge. Still a plain
+            // the day-grouped agenda (ListDaysAsync) buckets by Start,
+            // so this filter must use the SAME day boundary or the flat list would
+            // disagree with the app's day strip at the midnight edge. Still a plain
             // range on Start (index-friendly; no EF date-component translation).
-            var dayStart = new DateTimeOffset(d.Year, d.Month, d.Day, 0, 0, 0, EventOffset);
+            var dayStart = new DateTime(d.Year, d.Month, d.Day, 0, 0, 0);
             var nextDayStart = dayStart.AddDays(1);
             rows = rows.Where(session =>
                 session.Start >= dayStart && session.Start < nextDayStart);
@@ -195,10 +206,11 @@ internal sealed class ProgrammeSessionService(
         return new PublicSessions(items);
     }
 
-    /// <summary>The event's local-day boundary (KSA, UTC+3). Sessions are stored
-    /// as true UTC; a "programme day" is a Riyadh calendar day, so sessions are
-    /// bucketed by their start in this zone (a 02:00-KSA session belongs to that
-    /// KSA day, not the previous UTC day).</summary>
+    /// <summary>The event's local-day offset (KSA, +03:00, no DST). Since D-813
+    /// sessions are stored as the Saudi wall clock, so bucketing a session into
+    /// its "programme day" is a plain date comparison with no zone shift. The
+    /// constant is retained because the day boundary is still a Riyadh calendar
+    /// day and callers reason in that offset.</summary>
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
     public async Task<PublicProgrammeDays> ListDaysAsync(
@@ -208,9 +220,9 @@ internal sealed class ProgrammeSessionService(
         // whole programme once and bucket sessions by their EVENT-LOCAL date
         // (ProgrammeDay.Date is a Riyadh calendar date), then attach each bucket
         // to its authored day. No per-day query (no N+1).
-        var allSessions = (await ListAsync(null, cancellationToken)).Items;
+        var allSessions = (await ListAsync(null, null, cancellationToken)).Items;
         var byDate = allSessions
-            .GroupBy(s => DateOnly.FromDateTime(s.Start.ToOffset(EventOffset).DateTime))
+            .GroupBy(s => DateOnly.FromDateTime(s.Start))
             .ToDictionary(
                 g => g.Key,
                 g => (IReadOnlyList<PublicSessionListItem>)g.ToList());
@@ -307,10 +319,18 @@ internal sealed class ProgrammeSessionService(
                 session.LiveSignLanguageUrl,
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
+                // FR-702 — the informational live notice shown WITH the feed. Read
+                // only; it takes part in no filter and gates nothing.
+                session.LiveNotice,
+                session.LiveNoticeArabic,
                 session.CategoryId,
                 CategoryName = session.Category != null ? session.Category.Name : null,
                 CategoryNameArabic =
                     session.Category != null ? session.Category.NameArabic : null,
+                // #29 — the session kind. The agenda list has projected this since
+                // D-452; the detail read did not, which is why a type-conditional
+                // render on the detail screen could never fire.
+                session.Type,
                 session.Language,
                 session.LanguageArabic,
                 Themes = session.Themes
@@ -456,8 +476,7 @@ internal sealed class ProgrammeSessionService(
         // is a Riyadh calendar day, and both ListDaysAsync and the ?day= list filter
         // bucket by the +03:00 date). Count the earlier active sessions in the same
         // event-local day; +1 is this session's ordinal.
-        var localDate = row.Start.ToOffset(EventOffset).Date;
-        var dayStart = new DateTimeOffset(localDate, EventOffset);
+        var dayStart = row.Start.Date;
         var nextDayStart = dayStart.AddDays(1);
         var displayOrder = 1 + await dbContext.Sessions
             .AsNoTracking()
@@ -504,7 +523,15 @@ internal sealed class ProgrammeSessionService(
             row.Language,
             row.LanguageArabic,
             // "روابط التحميل" — the session's public downloadable files.
-            downloads);
+            downloads,
+            // #29: the session kind, so the app can reduce a WORKSHOP's detail to
+            // title + time. Without it the client read json['type'] as null on
+            // every session and the branch could never fire.
+            row.Type,
+            // FR-702: the informational live notice (null when the admin set none).
+            // Served alongside the feed above, which stays available to everyone.
+            row.LiveNotice,
+            row.LiveNoticeArabic);
     }
 
     public async Task<SessionRecordingRef?> GetPublishedRecordingAsync(
@@ -607,7 +634,7 @@ internal sealed class ProgrammeSessionService(
         // STARTED (in-progress or finished); it stays hidden before the session
         // begins. Keyed on the CLOCK (now >= Start), never the manual Held flag,
         // because "logically you can't view a summary before the session starts".
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         return await dbContext.SessionSummaries
             .AsNoTracking()
             .Where(summary => summary.SessionId == id

@@ -10,6 +10,7 @@ using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -93,7 +94,7 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
         // MERGE: the speaker scan gained notifications+logger (A29 — tell the requester
         // when a stale AwaitingSpeaker reverts); the delegation scan (B10) is additive
         // beside it. Both run each tick.
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var reverted = await RunExpiryScanAsync(
             db, auditLog, notifications, logger, now, cancellationToken);
         var delegationReverted = await RunDelegationExpiryScanAsync(
@@ -114,7 +115,7 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
     /// </summary>
     internal static async Task<int> RunExpiryScanAsync(
         SimfAppDbContext db, IAuditLog auditLog, INotificationDispatcher notifications,
-        ILogger logger, DateTimeOffset now,
+        ILogger logger, DateTime now,
         CancellationToken cancellationToken)
     {
         var stale = await db.SpeakerMeetingRequests
@@ -205,14 +206,14 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
     /// for direct unit testing; returns the number reverted.
     /// </summary>
     internal static async Task<int> RunDelegationExpiryScanAsync(
-        SimfAppDbContext db, IAuditLog auditLog, DateTimeOffset now,
+        SimfAppDbContext db, IAuditLog auditLog, DateTime now,
         CancellationToken cancellationToken)
     {
         var stale = await db.DelegationMeetingRequests
             .Where(r => r.Status == MeetingRequestStatus.AwaitingSpeaker
                 && !db.DelegationMeetingActionTokens.Any(
                     t => t.DelegationMeetingRequestId == r.Id
-                        && t.UsedAt == null && t.ExpiresUtc > now))
+                        && t.UsedAt == null && t.ExpiresAt > now))
             .ToListAsync(cancellationToken);
         if (stale.Count == 0)
         {

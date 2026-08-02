@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
+// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
@@ -53,7 +53,7 @@ internal sealed class AdminApprovalReadService(
         string qrId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
-        // D-811 review — canonicalise first. A D-810 offline badge arrives as a
+        // D-821 review — canonicalise first. A D-820 offline badge arrives as a
         // ~61-character encrypted blob, not a QrId, so the direct lookup below
         // would miss it and report an unknown badge. A minted serial passes
         // through unchanged.

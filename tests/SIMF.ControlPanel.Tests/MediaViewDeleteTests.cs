@@ -20,7 +20,7 @@ public sealed class MediaViewDeleteTests : CpComponentTestBase
         HasImage: true, HasThumbnail: false,
         Url: kind == MediaKind.Video ? "https://youtu.be/abc" : null,
         DisplayOrder: 3, IsActive: true,
-        CreatedAt: DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        CreatedAt: DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()

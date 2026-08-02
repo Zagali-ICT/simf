@@ -182,11 +182,6 @@ class RouteNames {
   // post-sign-in enrol nudge); a signed-in approved caller. Backend
   // POST /app/auth/device-keys/step-up + the gated register.
   static const String biometricStepUp = 'biometricStepUp';
-
-  // #24 — self-service change of the login email. A pushed route reached from the
-  // More → الإعدادات menu (signed-in only). Backend
-  // POST /app/auth/change-email/send-otp + /confirm (OTP to the new address).
-  static const String changeEmail = 'changeEmail';
 }
 
 /// The go_router path / query parameter KEYS (the names inside a route's `:param`

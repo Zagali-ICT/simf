@@ -120,7 +120,7 @@ var rateLimitOptions =
     builder.Configuration.GetSection(RateLimitOptions.SectionName).Get<RateLimitOptions>()
     ?? new RateLimitOptions();
 
-// D-809 — true when the resolved endpoint declares the operational
+// D-819 — true when the resolved endpoint declares the operational
 // rate-limit policy. Reads the metadata that RequireRateLimiting(...) attaches,
 // so the global-limiter exemption is derived from the endpoints themselves and
 // cannot drift from them. Returns false when routing has not resolved an
@@ -129,7 +129,7 @@ static bool IsOperationalEndpoint(HttpContext httpContext) =>
     httpContext.GetEndpoint()?.Metadata
         .GetMetadata<EnableRateLimitingAttribute>()?.PolicyName
         == RateLimitOptions.OperationalPolicy
-    // D-811 review — the exemption ALSO requires a bearer token on the request.
+    // D-821 review — the exemption ALSO requires a bearer token on the request.
     //
     // UseRateLimiter runs BEFORE UseAuthentication (see the pipeline below), so
     // at this point httpContext.User is empty and the permission gate the
@@ -156,7 +156,7 @@ builder.Services.AddRateLimiter(rateLimiter =>
     rateLimiter.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
         httpContext =>
         {
-            // D-809 — the on-site operational endpoints opt out of the global
+            // D-819 — the on-site operational endpoints opt out of the global
             // per-IP cap as well as the "auth" cap. Exempting them at the
             // policy level alone would not be enough: the Control Panel is a
             // server-side BFF, so every CP desk shares the CP host's IP and
@@ -180,14 +180,14 @@ builder.Services.AddRateLimiter(rateLimiter =>
                 });
         });
 
-    // D-809 — the on-site operational surface: gate scans, hall arrivals,
+    // D-819 — the on-site operational surface: gate scans, hall arrivals,
     // walk-in registration, approve / bulk-approve, staff uploads and the
     // offline batch upload. Deliberately unlimited; see
     // RateLimitOptions.OperationalPolicy for the full rationale. Every one of
     // these endpoints is gated on an authenticated operator's permission, which
     // is the real control here — EXCEPT that the permission check runs after
     // this middleware, which is why IsOperationalEndpoint also requires an
-    // Authorization header before granting the exemption (D-811 review).
+    // Authorization header before granting the exemption (D-821 review).
     rateLimiter.AddPolicy(
         RateLimitOptions.OperationalPolicy,
         _ => RateLimitPartition.GetNoLimiter<string>("operational"));
@@ -513,6 +513,28 @@ if (app.Environment.IsProduction()
         + "SIMF_SuperAdmin__TempPassword before starting in Production.");
 }
 
+// Held-item #2b — refuse to start in Production without a super-admin TOTP seed.
+//
+// The guard above stops a KNOWN-BAD password reaching production. This one stops
+// the bootstrap super-admin being single-factor at all: with no seed configured,
+// IdentitySeeder writes no AuthenticatorKey, SignInService's second-factor
+// selection has nothing to challenge against, and the most privileged account in
+// the system — the one whose permission claim is the wildcard "*" — is protected
+// by a password alone. A password that, on a fresh deploy, was just read out of a
+// configuration file by whoever set the box up.
+//
+// Deliberately a boot failure and not a warning. A warning at startup is read
+// once, by one person, on the day it is installed; this is a control that has to
+// hold for the life of the deployment.
+if (app.Environment.IsProduction()
+    && string.IsNullOrWhiteSpace(superAdminOptions.TotpSecret))
+{
+    throw new InvalidOperationException(
+        "SuperAdmin:TotpSecret is not configured — the bootstrap super-admin "
+        + "would be single-factor. Set SIMF_SuperAdmin__TotpSecret to a base32 "
+        + "seed before starting in Production.");
+}
+
 // M4 (security) — refuse to start in Production when the AI prompt-hash HMAC
 // secret is unconfigured; the dev-fallback key is publicly derivable.
 SIMF.Infrastructure.DependencyInjection.EnsureAiPromptHashSecretConfigured(
@@ -646,7 +668,7 @@ app.UseFastEndpoints(config =>
 {
     config.Endpoints.RoutePrefix = "api/v1";
 
-    // No user-facing UTC on the wire: every DateTimeOffset serializes in Saudi
+    // Nothing zoned on the wire: every DateTime serializes in Saudi
     // local time (+03:00, no DST). The instant is preserved; only its offset
     // representation changes. Reads accept any ISO offset (storage unaffected).
     config.Serializer.Options.Converters.Add(

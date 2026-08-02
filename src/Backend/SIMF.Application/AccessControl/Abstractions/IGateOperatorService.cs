@@ -9,7 +9,7 @@ public interface IGateOperatorService
     Task<IReadOnlyList<OperatorGateAssignment>> ListMyAssignmentsAsync(
         Guid operatorUserId, CancellationToken cancellationToken = default);
 
-    /// <summary>D-810 — the snapshot a scanner caches so it can judge a badge
+    /// <summary>D-820 — the snapshot a scanner caches so it can judge a badge
     /// with no network: this operator's gates, each with the profile-type CODES
     /// it admits, plus the badge key when offline badges are armed. Kept off
     /// <see cref="ListMyAssignmentsAsync"/> deliberately — it carries a secret,

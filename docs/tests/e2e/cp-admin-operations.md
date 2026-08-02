@@ -23,8 +23,9 @@
 > 5. **Archive visibility → "Save"** button → `SaveArchiveAsync` → `PUT /account/api/admin/archive/visibility`.
 >
 > Each section also renders a read-only **"Last changed"** `<dl>`, formatted in
-> **Saudi local time**, 12-hour (`FormatSaudi("dd-MM-yyyy hh:mm tt")`, D-770) —
-> the value is stored UTC and converted for display only.
+> **Saudi local time**, 12-hour (`FormatSaudi("dd-MM-yyyy hh:mm tt")`). Since
+> D-823 the stored column IS the Saudi wall clock, so this is formatting with no
+> conversion.
 > The page is gated by `PermissionCatalog.Operations.View`; the two **PUT**
 > endpoints require `PermissionCatalog.Operations.Edit` — so a View-only admin
 > can open the page and read both states but cannot save (the BFF forwards the
@@ -112,7 +113,7 @@ Scenario: Set a future auto-close moment and confirm it round-trips
     "Auto-close (Saudi time)" (e.g. "2026-12-31T23:59")
   And clicks "Save" in the Registration gate section
   Then the BFF forwards PUT /account/api/admin/registration-gate
-    with body { "isOpen": true, "autoClose": "2026-12-31T23:59:00+03:00" }
+    with body { "isOpen": true, "autoClose": "2026-12-31T23:59:00" }
   And the API returns HTTP 200
   And the green "Registration gate updated." toast appears
 
@@ -122,9 +123,10 @@ Scenario: Set a future auto-close moment and confirm it round-trips
 
   # Past auto-close behaviour (verified at the API layer, see OperationsTogglesTests):
   # an auto-close moment <= now makes the gate behave closed even when IsOpen=true
-  And what the administrator typed is read as SAUDI WALL-CLOCK, not UTC — the
-    datetime-local input carries no zone, so the page converts it with
-    SaudiTime.FromSaudiWallClock(...) before sending (D-770)
+  And what the administrator typed is stored and served UNCHANGED - since
+    D-823 SIMF carries the Saudi wall clock end to end, the wire format is
+    zone-free ISO-8601 (no Z, no offset) and FromSaudiWallClock only normalises
+    the DateTimeKind, so no value is ever shifted
 ```
 
 **Evidence captured:**

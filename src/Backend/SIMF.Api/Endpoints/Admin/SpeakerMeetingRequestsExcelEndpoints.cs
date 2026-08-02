@@ -35,10 +35,17 @@ public sealed class ExportSpeakerMeetingRequestsEndpoint(ISpeakerMeetingRequestS
         new("Requester", row => row.RequesterName),
         new("Subject", row => row.Subject),
         new("Status", row => row.Status.ToString()),
-        new("CreatedAt", row => row.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")),
+        new("CreatedAt", row => row.CreatedAt.ToString("yyyy-MM-dd HH:mm")),
         new("RespondedAt", row => row.RespondedAt is null
             ? string.Empty
-            : row.RespondedAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")),
+            : row.RespondedAt.Value.ToString("yyyy-MM-dd HH:mm")),
+        // OA-D5 — the hall check-in stamps. They were written by the check-in action
+        // (POST /admin/speaker-meeting-requests/{id}/check-in) but appeared in no
+        // report, so "who actually turned up" was unanswerable off-screen.
+        new("CheckedInAt", row => row.CheckedInAt is null
+            ? string.Empty
+            : row.CheckedInAt.Value.ToString("yyyy-MM-dd HH:mm")),
+        new("CheckedInBy", row => row.CheckedInByName ?? string.Empty),
     ];
 
     protected override async Task<IReadOnlyList<AdminSpeakerMeetingRequestRow>> ListAsync(

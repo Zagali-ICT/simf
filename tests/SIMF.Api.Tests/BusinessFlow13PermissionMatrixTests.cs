@@ -49,7 +49,8 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
     /// point and must be a deliberate, reviewed decision — which is what failing
     /// this test forces.
     ///
-    /// <para><b>This list is 17 entries, not 3.</b> CLAUDE.md §4 states the rule
+    /// <para><b>This list is 19 entries, not 3</b> (17 before #2 added the two
+    /// mandatory-enrolment steps on 2026-07-30). CLAUDE.md §4 states the rule
     /// as "No AllowAnonymous except: SignIn / SignUp / ForgotPassword", and the
     /// first draft of this test encoded that literally and failed against 14 more.
     /// None of the 14 is a defect: they are the rest of the pre-authentication
@@ -61,7 +62,7 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
     /// authentication surface, and nothing else"; the literal three-endpoint
     /// wording is stale and is flagged for the owner rather than enforced.</para>
     ///
-    /// <para>The value of the test is unchanged by widening it: an 18th anonymous
+    /// <para>The value of the test is unchanged by widening it: a 20th anonymous
     /// endpoint still breaks the build.</para></summary>
     private static readonly string[] ExpectedAnonymousAuthRoutes =
     [
@@ -82,6 +83,19 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
         "/api/v1/app/auth/verify-totp",
         "/api/v1/app/auth/resend-otp",
         "/api/v1/app/auth/verify-recovery-code",
+
+        // #2 (Q1, 2026-07-30) — MANDATORY second-factor enrolment for a Control
+        // Panel account that just proved its password and has no authenticator
+        // secret. Same position in the flow as the second factor above: it runs
+        // between credentials and token issue, so requiring a bearer token here
+        // would make it unreachable by the only callers that need it and would
+        // lock every unenrolled admin — including the production super-admin —
+        // out of the Control Panel permanently. The credential is the single-use,
+        // 15-minute, attempt-capped enrolment ticket minted at the password step;
+        // it authorises nothing except pairing an authenticator on that one
+        // account, and the completion step spends it.
+        "/api/v1/app/auth/totp/enrolment/start",
+        "/api/v1/app/auth/totp/enrolment/complete",
 
         // Password reset / forced change — the reset code is the credential.
         "/api/v1/app/auth/reset-password",
@@ -231,7 +245,7 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
             ["isActive"] = true,
             // The smuggled pair — neither is on AdminUpdateSpeakerRequest.
             ["id"] = Guid.NewGuid(),
-            ["createdAt"] = DateTimeOffset.UtcNow.AddYears(-5),
+            ["createdAt"] = SimfClock.Now.AddYears(-5),
         };
         var request = new HttpRequestMessage(
             HttpMethod.Put, $"/api/v1/admin/speakers/{speaker.Id}")
@@ -505,16 +519,7 @@ public sealed class BusinessFlow13PermissionMatrixTests : IClassFixture<SimfApiF
 
     private async Task<string> SignInCpAsync(string email)
     {
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

@@ -12,7 +12,7 @@ public sealed class CountryViewDeleteTests : CpComponentTestBase
 {
     private static AdminCountryDetail Detail() => new(
         682, "SA", "Saudi Arabia", "المملكة العربية السعودية", "+966", 1,
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()

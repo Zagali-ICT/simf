@@ -19,8 +19,8 @@ public sealed record AdminRegionDetail(
     string NameArabic,
     int SortOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>Admin create payload.</summary>
 public sealed class CreateRegionRequest

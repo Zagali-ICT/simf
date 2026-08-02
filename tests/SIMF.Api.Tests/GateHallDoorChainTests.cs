@@ -1,4 +1,4 @@
-﻿// X-1 / CHAIN-4 — a hall-door gate (Gate.HallId set) feeds HallAttendance: an
+// X-1 / CHAIN-4 — a hall-door gate (Gate.HallId set) feeds HallAttendance: an
 // allowed CheckIn opens the attendee's attendance row for the session live in
 // that hall (Method=QrScan), a CheckOut closes it, a perimeter gate (HallId null)
 // records only a GateScan, and a scan when no session is live records nothing.
@@ -55,7 +55,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
         var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
-        // D-809 (step 11.5) — a session hall admits only a registered attendee.
+        // D-819 (step 11.5) — a session hall admits only a registered attendee.
         await SeedSeatReservationAsync(sessionId, attendeeUserId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
@@ -98,7 +98,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
         var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
-        // D-809 (step 11.5) — a session hall admits only a registered attendee.
+        // D-819 (step 11.5) — a session hall admits only a registered attendee.
         await SeedSeatReservationAsync(sessionId, attendeeUserId);
 
         var checkIn = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
@@ -164,7 +164,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
         var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
-        // D-809 (step 11.5) — a session hall admits only a registered attendee.
+        // D-819 (step 11.5) — a session hall admits only a registered attendee.
         await SeedSeatReservationAsync(sessionId, attendeeUserId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
@@ -178,7 +178,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Session_hall_denies_an_attendee_who_is_not_registered_for_the_session()
     {
-        // D-809 (gate engine step 11.5) — the third access rule: a MAIN gate
+        // D-819 (gate engine step 11.5) — the third access rule: a MAIN gate
         // requires an approved account, ANY gate requires an allowed profile
         // type, and a SESSION HALL requires the attendee to be registered for
         // the session behind the door.
@@ -209,7 +209,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Admitted_attendee_gets_an_open_seating_hold_so_the_seating_desk_can_see_them()
     {
-        // D-809 — without a hold the staff seating desk reports "no seat" for a
+        // D-819 — without a hold the staff seating desk reports "no seat" for a
         // badge standing in front of it and the seat map under-reports the hall.
         // The hold carries no row/seat: it records THAT they are here, not WHERE,
         // which keeps it clear of the per-seat unique index and out of the
@@ -240,7 +240,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Perimeter_gate_admits_an_attendee_with_no_session_registration()
     {
-        // D-809 — step 11.5 is a SESSION HALL rule. A perimeter gate has no
+        // D-819 — step 11.5 is a SESSION HALL rule. A perimeter gate has no
         // HallId, so venue entry must stay unaffected by session bookings.
         var (token, operatorUserId) = await CreateAdminAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId: null);
@@ -256,7 +256,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Session_hall_never_blocks_someone_already_inside_from_leaving()
     {
-        // D-809 — step 11.5 applies to ENTRIES only. Someone already inside must
+        // D-819 — step 11.5 applies to ENTRIES only. Someone already inside must
         // always be able to leave, whatever their booking state.
         var (token, operatorUserId) = await CreateAdminAsync();
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
@@ -275,7 +275,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             var reservation = await releaseDb.SeatReservations
                 .SingleAsync(r => r.SessionId == sessionId
                     && r.ReservedForUserId == attendeeUserId);
-            reservation.ReleasedAt = DateTimeOffset.UtcNow;
+            reservation.ReleasedAt = SimfClock.Now;
             await releaseDb.SaveChangesAsync();
         }
 
@@ -343,7 +343,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var outGateId = await CreateGateAsync(
             token, operatorUserId, hallId, DirectionMode.Out);
         var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
-        // D-809 (step 11.5) — a session hall admits only a registered attendee.
+        // D-819 (step 11.5) — a session hall admits only a registered attendee.
         await SeedSeatReservationAsync(sessionId, attendeeUserId);
 
         var checkIn = await PostScanAsync(inGateId, qrId, token, ScanDirection.CheckIn);
@@ -399,7 +399,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             startOffsetMin: 10, endOffsetMin: 70);
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
         var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
-        // D-809 (step 11.5) — a session hall admits only a registered attendee.
+        // D-819 (step 11.5) — a session hall admits only a registered attendee.
         await SeedSeatReservationAsync(sessionId, attendeeUserId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
@@ -673,7 +673,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Session_hall_admits_a_booking_for_the_session_about_to_start()
     {
-        // D-813 regression. Halls run back to back. Session A is running and
+        // D-823 regression. Halls run back to back. Session A is running and
         // session B starts in 10 minutes; the attendee holds a booking for B and
         // is at the door now, which is exactly what the arrival grace exists to
         // allow. Step 11.5 used to ask only about the RUNNING session, so every
@@ -725,7 +725,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Session_hall_still_requires_a_booking_in_the_post_end_grace_tail()
     {
-        // D-813 — widening step 11.5 to the whole admitting window must NOT turn
+        // D-823 — widening step 11.5 to the whole admitting window must NOT turn
         // the tail after a session ends into an ungated door. The session is over
         // but still inside the arrival grace, so it is still what this hall is
         // admitting for and an unregistered badge is still refused. Dropping
@@ -761,16 +761,16 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Chain Session", TitleArabic = "جلسة السلسلة",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
-            End = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Start = SimfClock.Now.AddMinutes(startOffsetMin),
+            End = SimfClock.Now.AddMinutes(endOffsetMin),
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
         return (hall.Id, session.Id);
     }
 
-    /// <summary>D-813 — adds a SECOND session to an existing hall, so the
+    /// <summary>D-823 — adds a SECOND session to an existing hall, so the
     /// back-to-back handover the arrival grace has to cope with can be
     /// exercised. A hall runs its programme without gaps; the interesting
     /// moment is the one where two sessions are both inside the window.</summary>
@@ -785,9 +785,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Next Session", TitleArabic = "الجلسة التالية",
             HallId = hallId,
-            Start = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
-            End = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Start = SimfClock.Now.AddMinutes(startOffsetMin),
+            End = SimfClock.Now.AddMinutes(endOffsetMin),
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -795,9 +795,9 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     }
 
     /// <summary>
-    /// D-809 — registers an attendee for a session so a hall-door scan admits
+    /// D-819 — registers an attendee for a session so a hall-door scan admits
     /// them. Step 11.5 makes "registered for this session" a real entry rule at
-    /// a session hall; before D-809 it was a reserved hook with no writer, so
+    /// a session hall; before D-819 it was a reserved hook with no writer, so
     /// any valid badge opened any hall and these chain tests needed no booking.
     /// </summary>
     private async Task SeedSeatReservationAsync(Guid sessionId, Guid attendeeUserId)
@@ -812,7 +812,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Kind = SeatReservationKind.OpenSeating,
             Status = BookingStatus.Approved,
             CreatedByUserId = attendeeUserId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
@@ -833,7 +833,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Chain Hall", NameArabic = "قاعة السلسلة",
-            Capacity = capacity, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = capacity, IsActive = true, CreatedAt = SimfClock.Now,
             GeofenceCenterLat = withGeofence ? CenterLat : null,
             GeofenceCenterLon = withGeofence ? CenterLon : null,
             GeofenceRadiusMeters = withGeofence ? RadiusMeters : null,
@@ -864,7 +864,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Name = "Chain Visitor",
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return (qrId, user.Id);
@@ -893,14 +893,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
             userId = user.Id;
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, userId);
+        return (await AuthFlow.SignInControlPanelAsync(_client, _factory, email), userId);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

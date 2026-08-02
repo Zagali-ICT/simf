@@ -1,18 +1,9 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
 using SIMF.Contracts.Programme;
 using SIMF.Contracts.BusinessMeetings;
 
@@ -92,7 +83,7 @@ public partial class DelegationMeetingsList
 
     // A free hall slot as "2026-07-10 09:00–09:30".
     private static string FormatSlot(HallAvailableSlot slot) =>
-        $"{slot.Start.ToSaudi():dd-MM-yyyy hh:mm tt}–{slot.End.ToSaudi():hh:mm tt}";
+        $"{slot.Start:dd-MM-yyyy hh:mm tt}–{slot.End:hh:mm tt}";
 
     private async Task LoadAsync()
     {

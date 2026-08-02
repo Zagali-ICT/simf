@@ -1,4 +1,4 @@
-// Tests: D-809 — the mapping from a desk's offline badge sequence to the
+// Tests: D-819 — the mapping from a desk's offline badge sequence to the
 // 12-character QR id every server-side reader resolves by.
 using SIMF.Common.Badges;
 using Xunit;

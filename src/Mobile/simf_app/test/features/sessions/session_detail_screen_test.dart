@@ -18,6 +18,8 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../accessibility/_fake_prefs.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/sessions/data/hall_attendance_repository.dart';
 
 SessionDetail _detail({
   String? liveStreamUrl,
@@ -215,6 +217,27 @@ class _FakeDetailRepo implements SessionDetailRepository {
   Future<MySeat?> getMySeat(String sessionId) async => null;
 }
 
+/// Answers the gate check-in strip with "no scan recorded" so these tests never
+/// reach the network. The card is read-only, so both writes throw: a POST from
+/// this screen would be the GPS self-check-in coming back.
+class _FakeAttendance implements HallAttendanceRepository {
+  @override
+  Future<HallAttendanceStatus> getStatus(String sessionId) async =>
+      const HallAttendanceStatus(arrived: false);
+
+  @override
+  Future<HallAttendanceStatus> recordArrival(
+    String sessionId, {
+    required double lat,
+    required double lon,
+  }) async =>
+      throw StateError('the session detail must never post an arrival');
+
+  @override
+  Future<HallAttendanceStatus> recordDeparture(String sessionId) async =>
+      throw StateError('the session detail must never post a departure');
+}
+
 class _FakeSeatRepo implements SeatMapRepository {
   _FakeSeatRepo({this.map, this.releaseFailure});
 
@@ -382,6 +405,12 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
+        // The check-in strip mounts on any session at or past its arrival window,
+        // so without this a widget test would resolve the REAL SimfApiClient and
+        // fire a live GET at test.local. flutter_test's mock HttpClient happens to
+        // short-circuit it today, which made the omission invisible rather than
+        // harmless.
+        hallAttendanceRepositoryProvider.overrideWithValue(_FakeAttendance()),
         sessionDetailRepositoryProvider.overrideWithValue(repo),
         seatMapRepositoryProvider
             .overrideWithValue(seatRepo ?? _FakeSeatRepo(map: seatMap)),
@@ -550,8 +579,8 @@ void main() {
         'live + streaming (owner 2026-07-14 gate)', (tester) async {
       final live = _detail(
         liveStreamUrl: 'https://youtu.be/abcdefghijk',
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: saudiNow().subtract(const Duration(hours: 1)),
+        end: saudiNow().add(const Duration(hours: 1)),
       );
       await _pump(
         tester,
@@ -614,8 +643,8 @@ void main() {
     testWidgets('S-4 — an in-window in-person session (no live URL) SHOWS the '
         'ask card with the neutral live label on the detail', (tester) async {
       final ongoing = _detail(
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: saudiNow().subtract(const Duration(hours: 1)),
+        end: saudiNow().add(const Duration(hours: 1)),
       );
       await _pump(
         tester,
@@ -634,8 +663,8 @@ void main() {
         'card on the detail (asking moves to the live-broadcast screen)',
         (tester) async {
       final broadcasting = _detail(
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: saudiNow().subtract(const Duration(hours: 1)),
+        end: saudiNow().add(const Duration(hours: 1)),
         liveStreamUrl: 'https://live.example.sa/main.m3u8',
       );
       await _pump(
@@ -656,8 +685,8 @@ void main() {
       // After End `_showAsk` returns false regardless of the viewer, so a
       // guest proves it.
       final ended = _detail(
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 3)),
-        end: DateTime.now().toUtc().subtract(const Duration(hours: 2)),
+        start: saudiNow().subtract(const Duration(hours: 3)),
+        end: saudiNow().subtract(const Duration(hours: 2)),
       );
       await _pump(
         tester,

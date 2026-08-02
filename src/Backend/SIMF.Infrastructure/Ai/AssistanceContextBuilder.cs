@@ -24,17 +24,17 @@ internal sealed class AssistanceContextBuilder(
 {
     public async Task<string> BuildAsync(CancellationToken cancellationToken = default)
     {
-        var agenda = await sessions.ListAsync(day: null, cancellationToken);
+        var agenda = await sessions.ListAsync(day: null, categoryId: null, cancellationToken);
         var faqGroups = await faq.GetAsync(cancellationToken);
         var boothList = await booths.ListAsync(cancellationToken);
 
         var builder = new StringBuilder();
 
         AiGroundingText.AppendCappedSection(builder,
-            "## Programme sessions (title EN / AR · start-end UTC · hall)",
+            "## Programme sessions (title EN / AR · start-end · hall)",
             agenda.Items.Select(session =>
                 $"- {session.Title} / {session.TitleArabic} · "
-                + $"{Utc(session.Start)}-{session.End.UtcDateTime.ToString("HH:mm", CultureInfo.InvariantCulture)} · "
+                + $"{Stamp(session.Start)}-{session.End.ToString("HH:mm", CultureInfo.InvariantCulture)} · "
                 + $"{session.HallName} / {session.HallNameArabic}"));
 
         AiGroundingText.AppendCappedSection(builder,
@@ -54,6 +54,6 @@ internal sealed class AssistanceContextBuilder(
         return builder.ToString().TrimEnd();
     }
 
-    private static string Utc(DateTimeOffset value) =>
-        value.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    private static string Stamp(DateTime value) =>
+        value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 }

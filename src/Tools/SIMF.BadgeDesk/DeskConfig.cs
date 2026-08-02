@@ -5,7 +5,7 @@ using SIMF.Common.Badges;
 namespace SIMF.BadgeDesk;
 
 /// <summary>
-/// D-809 — a desk's provisioning, read from <c>appsettings.json</c> beside the
+/// D-819 — a desk's provisioning, read from <c>appsettings.json</c> beside the
 /// executable. Provisioned once before the event by whoever hands out the badge
 /// key; an operator never edits it.
 /// </summary>
@@ -101,7 +101,7 @@ public sealed class DeskConfig
         ?? throw new InvalidDataException($"{path} is empty or not valid JSON.");
 }
 
-/// <summary>D-809 — one badge type the desk can print.</summary>
+/// <summary>D-819 — one badge type the desk can print.</summary>
 public sealed class DeskProfileType
 {
     /// <summary>The number encrypted into the QR (<c>ProfileType.Code</c>).</summary>

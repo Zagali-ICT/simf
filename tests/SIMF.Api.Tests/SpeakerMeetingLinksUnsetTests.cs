@@ -12,6 +12,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
@@ -92,9 +93,22 @@ public sealed class SpeakerMeetingLinksUnsetTests
             // the missing link configuration (the A25 guard is not what fires).
             Email = "links-unset-speaker@simf.test",
             AllowsMeetingRequests = true, IsActive = true, DisplayOrder = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
+        // G3 (owner 2026-07-30) — a submit now REQUIRES the speaker to have a free
+        // slot, so this fixture speaker gets one wide future window. The
+        // no-availability refusal has its own coverage in MeetingNoAvailabilityTests.
+        db.SpeakerAvailabilityWindows.Add(new SpeakerAvailabilityWindow
+        {
+            Id = Guid.NewGuid(),
+            SpeakerId = speaker.Id,
+            Start = new DateTime(2035, 9, 1, 9, 0, 0),
+            End = new DateTime(2035, 9, 1, 13, 0, 0),
+            SlotMinutes = 30,
+            IsActive = true,
+            CreatedAt = SimfClock.Now,
+        });
         await db.SaveChangesAsync();
         return speaker;
     }
@@ -109,7 +123,7 @@ public sealed class SpeakerMeetingLinksUnsetTests
             Code = "MH-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Meeting Hall", NameArabic = "قاعة الاجتماعات",
             Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
@@ -119,7 +133,7 @@ public sealed class SpeakerMeetingLinksUnsetTests
     private async Task<IReadOnlyList<HallAvailableSlot>> CreateHallWindowAndGetSlotsAsync(
         Guid hallId, string admin)
     {
-        var start = new DateTimeOffset(2033, 4, 1, 9, 0, 0, TimeSpan.Zero);
+        var start = new DateTime(2033, 4, 1, 9, 0, 0);
         var create = await PostAuthAsync(
             $"/api/v1/admin/halls/{hallId}/availability-windows",
             new CreateHallAvailabilityWindowRequest
@@ -192,7 +206,7 @@ public sealed class SpeakerMeetingLinksUnsetTests
                 Id = Guid.NewGuid(),
                 Name = "QA Visitor", NameArabic = "زائر", PageColor = "#FFD700",
                 IsForVisitor = true, IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.ProfileTypes.Add(profileType);
         }
@@ -206,7 +220,7 @@ public sealed class SpeakerMeetingLinksUnsetTests
                 ProfileTypeId = profileType.Id,
                 AllowsSpeakerMeeting = true,
                 Name = "QA Requester", NameArabic = "مقدّم الطلب",
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
         }
         else
@@ -238,15 +252,7 @@ public sealed class SpeakerMeetingLinksUnsetTests
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

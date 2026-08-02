@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
+// Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
 //        SIMF.Api.Tests/GateOperatorModelTests.cs (BUG-018 — operator candidates,
 //        operator eligibility validation, gate-form lookups, assignment email)
 using System.Globalization;
@@ -152,7 +152,7 @@ internal sealed class AdminGateService(
                 $"توجد بوابة بالرمز '{code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var gate = new Gate
         {
             Id = Guid.NewGuid(),
@@ -241,11 +241,11 @@ internal sealed class AdminGateService(
         gate.DirectionMode = request.DirectionMode;
         gate.HallId = request.HallId;
         gate.IsActive = request.IsActive;
-        gate.UpdatedAt = timeProvider.GetUtcNow();
+        gate.UpdatedAt = timeProvider.SimfNow();
 
         SyncAllowedProfileTypes(gate, request.AllowedProfileTypeIds);
         SyncAssignments(gate, request.AssignedOperatorUserIds, actorUserId,
-            timeProvider.GetUtcNow());
+            timeProvider.SimfNow());
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -274,7 +274,7 @@ internal sealed class AdminGateService(
         if (!gate.IsActive) { return; }
 
         gate.IsActive = false;
-        gate.UpdatedAt = timeProvider.GetUtcNow();
+        gate.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -497,7 +497,7 @@ internal sealed class AdminGateService(
         // CheckIn" counts a visitor as inside forever. Bound presence to a rolling
         // window: a check-in older than StalePresenceWindow with no later scan is
         // treated as departed (day/session-boundary reconciliation).
-        var presenceCutoff = timeProvider.GetUtcNow() - StalePresenceWindow;
+        var presenceCutoff = timeProvider.SimfNow() - StalePresenceWindow;
 
         // "Latest allowed scan per visitor" expressed as a correlated NOT EXISTS,
         // NOT as a filter over a GroupBy projection. The previous form —
@@ -597,7 +597,7 @@ internal sealed class AdminGateService(
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("Scans");
         sheet.Cell(1, 1).Value = "Scan id";
-        sheet.Cell(1, 2).Value = "Scanned at (UTC)";
+        sheet.Cell(1, 2).Value = "Scanned at";
         sheet.Cell(1, 3).Value = "Gate";
         sheet.Cell(1, 4).Value = "Visitor";
         sheet.Cell(1, 5).Value = "QR";
@@ -611,7 +611,7 @@ internal sealed class AdminGateService(
             var row = rows[rowIndex];
             var rIdx = rowIndex + 2;
             sheet.Cell(rIdx, 1).Value = row.ScanId;
-            sheet.Cell(rIdx, 2).Value = row.ScannedAt.UtcDateTime.ToString("u",
+            sheet.Cell(rIdx, 2).Value = row.ScannedAt.ToString("u",
                 CultureInfo.InvariantCulture);
             sheet.Cell(rIdx, 3).Value = row.GateCode;
             sheet.Cell(rIdx, 4).Value = row.VisitorDisplayName ?? string.Empty;
@@ -755,7 +755,7 @@ internal sealed class AdminGateService(
     }
 
     private static void SyncAssignments(
-        Gate gate, IReadOnlyList<Guid> next, Guid actorUserId, DateTimeOffset now)
+        Gate gate, IReadOnlyList<Guid> next, Guid actorUserId, DateTime now)
     {
         var distinct = next.Distinct().ToHashSet();
         var activeByUser = gate.Assignments

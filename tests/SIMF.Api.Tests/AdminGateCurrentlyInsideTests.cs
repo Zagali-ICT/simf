@@ -102,13 +102,13 @@ public sealed class AdminGateCurrentlyInsideTests : IClassFixture<SimfApiFactory
         var (qr, profileId) = await CreateApprovedVisitorWithQrAsync("Departed Visitor");
 
         await SeedScanAsync(gate.Id, profileId, qr, ScanDirection.CheckIn,
-            DateTimeOffset.UtcNow.AddMinutes(-10));
+            SimfClock.Now.AddMinutes(-10));
         var inside = await GetCurrentlyInsideAsync(token);
         Assert.Contains(inside, r => r.UserProfileId == profileId);
 
         // Five minutes AFTER the check-in, so it is unambiguously the later row.
         await SeedScanAsync(gate.Id, profileId, qr, ScanDirection.CheckOut,
-            DateTimeOffset.UtcNow.AddMinutes(-5));
+            SimfClock.Now.AddMinutes(-5));
 
         var after = await GetCurrentlyInsideAsync(token);
         Assert.DoesNotContain(after, r => r.UserProfileId == profileId);
@@ -127,7 +127,7 @@ public sealed class AdminGateCurrentlyInsideTests : IClassFixture<SimfApiFactory
 
         // 20 hours ago — outside the 16-hour StalePresenceWindow.
         await SeedScanAsync(gate.Id, profileId, qr, ScanDirection.CheckIn,
-            DateTimeOffset.UtcNow.AddHours(-20));
+            SimfClock.Now.AddHours(-20));
 
         var rows = await GetCurrentlyInsideAsync(token);
         Assert.DoesNotContain(rows, r => r.UserProfileId == profileId);
@@ -144,11 +144,11 @@ public sealed class AdminGateCurrentlyInsideTests : IClassFixture<SimfApiFactory
         var gate = await CreateGateAsync(token);
         var (qr, profileId) = await CreateApprovedVisitorWithQrAsync("Repeat Visitor");
 
-        // Two check-ins at the SAME instant — one DateTimeOffset value reused, not
+        // Two check-ins at the SAME instant — one DateTime value reused, not
         // two UtcNow reads, which would differ by milliseconds and not tie at all.
         // Without the Id tiebreak neither row has a strictly-later sibling, so both
         // qualify and the dashboard shows the visitor twice.
-        var sameInstant = DateTimeOffset.UtcNow.AddMinutes(-3);
+        var sameInstant = SimfClock.Now.AddMinutes(-3);
         await SeedScanAsync(gate.Id, profileId, qr, ScanDirection.CheckIn, sameInstant);
         await SeedScanAsync(gate.Id, profileId, qr, ScanDirection.CheckIn, sameInstant);
 
@@ -170,7 +170,7 @@ public sealed class AdminGateCurrentlyInsideTests : IClassFixture<SimfApiFactory
     /// so two rows can be given the identical instant and genuinely tie.</para></summary>
     private async Task SeedScanAsync(
         Guid gateId, Guid profileId, string qr, ScanDirection direction,
-        DateTimeOffset scannedAt)
+        DateTime scannedAt)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -248,7 +248,7 @@ public sealed class AdminGateCurrentlyInsideTests : IClassFixture<SimfApiFactory
             Name = displayName,
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return (qrId, profileId);
@@ -294,16 +294,7 @@ public sealed class AdminGateCurrentlyInsideTests : IClassFixture<SimfApiFactory
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private static Guid GetUserIdFromToken(string token)

@@ -5,7 +5,7 @@ using System.Text;
 namespace SIMF.Common.Badges;
 
 /// <summary>
-/// D-809 — the offline event badge payload: a profile-type number and a
+/// D-819 — the offline event badge payload: a profile-type number and a
 /// sequence number, encrypted so a gate can validate the badge with NO network.
 /// </summary>
 /// <param name="ProfileTypeCode">
@@ -20,7 +20,7 @@ namespace SIMF.Common.Badges;
 public readonly record struct EventBadgePayload(int ProfileTypeCode, long Sequence);
 
 /// <summary>
-/// D-809 — encodes and decodes the offline event badge.
+/// D-819 — encodes and decodes the offline event badge.
 ///
 /// <para>Wire format: <c>{keyVersion}{base32(nonce || ciphertext || tag)}</c>,
 /// where the plaintext is the ASCII string <c>"{profileTypeCode},{sequence}"</c>.
@@ -43,7 +43,7 @@ public readonly record struct EventBadgePayload(int ProfileTypeCode, long Sequen
 /// version character and full reconciliation of every scan after the event. An
 /// asymmetric scheme would remove the risk at the cost of a larger payload.</para>
 ///
-/// <para>Sizes: <see cref="AesGcm"/> requires a 12-byte nonce, and D-810 takes
+/// <para>Sizes: <see cref="AesGcm"/> requires a 12-byte nonce, and D-820 takes
 /// the full 16-byte tag (see <see cref="TagBytes"/>). Overhead is therefore 28
 /// bytes on a 9-byte payload, and a typical badge is about 61 characters — which
 /// is why <c>GateScans.QrIdAtScan</c> is nvarchar(96).</para>
@@ -56,7 +56,7 @@ public static class EventBadgeCodec
     /// <summary>
     /// AES-GCM tag length. The FULL 16 bytes.
     ///
-    /// <para>D-810 corrected this from the 12-byte .NET minimum, which was
+    /// <para>D-820 corrected this from the 12-byte .NET minimum, which was
     /// chosen purely to shrink the printed QR. The Flutter scanner decrypts
     /// badges with <c>pointycastle</c>, whose GCM implementation accepts only a
     /// 128-bit tag — a 12-byte tag is unreadable on the device that has to read

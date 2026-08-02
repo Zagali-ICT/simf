@@ -137,7 +137,7 @@ void main() {
         'eventDate': '2026-01-12T09:00:00Z',
         'createdAt': '2026-01-01T09:00:00Z',
       });
-      expect(item.displayDate, DateTime.utc(2026, 1, 12, 9));
+      expect(item.displayDate, DateTime(2026, 1, 12, 12));
     });
   });
 

@@ -30,7 +30,7 @@ public sealed class RegionSeeder(
                 .ToListAsync(cancellationToken))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var sortOrder = 0;
         var toAdd = new List<Region>();
         foreach (var source in SaudiRegions.All)

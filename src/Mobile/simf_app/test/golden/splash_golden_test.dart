@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/splash/splash_controller.dart';
 import 'package:simf_app/features/splash/splash_screen.dart';
 
@@ -33,6 +34,13 @@ class _StubSplashController extends SplashController {
   SplashState build() => _fixed;
 }
 
+/// No configured edition, so the event line renders the bundled literal the
+/// Figma frame was drawn against (#40-residual keeps that as the fallback).
+class _NoOrgProfile extends OrgProfileController {
+  @override
+  OrgProfile? build() => null;
+}
+
 void main() {
   setUpAll(loadGoldenFonts);
 
@@ -46,6 +54,7 @@ void main() {
         overrides: <Override>[
           splashControllerProvider
               .overrideWith(() => _StubSplashController(const SplashLoading())),
+          orgProfileProvider.overrideWith(_NoOrgProfile.new),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,

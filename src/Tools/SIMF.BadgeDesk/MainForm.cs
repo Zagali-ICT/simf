@@ -1,11 +1,12 @@
 using System.Drawing.Printing;
+using SIMF.Common;
 using SIMF.Common.Badges;
 using SIMF.Contracts.Badges;
 
 namespace SIMF.BadgeDesk;
 
 /// <summary>
-/// D-809 — the badge desk window.
+/// D-819 — the badge desk window.
 ///
 /// <para>Built in code rather than with the designer so the whole layout is
 /// reviewable in one file and no generated <c>.Designer.cs</c> / <c>.resx</c>
@@ -31,7 +32,7 @@ public sealed class MainForm : Form
     private readonly Label _status = new();
     private readonly Label _counters = new();
 
-    /// <summary>D-814 review - the rows the LAST upload refused, newest first.
+    /// <summary>D-824 review - the rows the LAST upload refused, newest first.
     ///
     /// <para>The server returns a reason per row and the console used to render
     /// only the totals, so an operator was told "3 rejected" and had no way to
@@ -223,7 +224,7 @@ public sealed class MainForm : Form
             NameArabic = _nameArabic.Text.Trim() is { Length: > 0 } arabic ? arabic : null,
             SaudiMobile = mobile.StartsWith('0') ? mobile : null,
             InternationalMobile = mobile.StartsWith('+') ? mobile : null,
-            RegisteredAt = DateTimeOffset.Now,
+            RegisteredAt = SimfClock.Now,
         };
         ApplyIdentityDocument(record, identityDocument);
 
@@ -266,7 +267,7 @@ public sealed class MainForm : Form
     }
 
     /// <summary>
-    /// D-814 — corrects a registration the server rejected, without reprinting.
+    /// D-824 — corrects a registration the server rejected, without reprinting.
     ///
     /// <para>This is what makes server-side validation of an uploaded shift SAFE.
     /// Until it existed, rejecting a row for a mistyped ID meant a printed badge
@@ -310,7 +311,7 @@ public sealed class MainForm : Form
             return;
         }
 
-        // D-814 review - a BLANK box means "leave this alone", not "clear it".
+        // D-824 review - a BLANK box means "leave this alone", not "clear it".
         // The form is cleared after every registration and F3 does not repopulate
         // it, so an operator fixing a mistyped ID leaves the mobile and Arabic
         // name empty. Rebuilding the record from the form alone silently wiped
@@ -345,7 +346,7 @@ public sealed class MainForm : Form
             return;
         }
 
-        // D-814 review - the badge prints the NAME as well as the QR. The QR is
+        // D-824 review - the badge prints the NAME as well as the QR. The QR is
         // unaffected by any correction (it carries only the badge type and the
         // sequence), but a corrected NAME makes the printed paper wrong. F2
         // reprints the SAME sequence, so it is the right answer when the name
@@ -365,7 +366,7 @@ public sealed class MainForm : Form
     /// <summary>
     /// Asks which sequence to correct.
     ///
-    /// <para>D-814 review - defaults to the most recently REJECTED row, not the
+    /// <para>D-824 review - defaults to the most recently REJECTED row, not the
     /// most recent pending one. The queue does not stop while an operator reads
     /// a rejection, so rows registered afterwards are also pending and sort
     /// last; a keyboard-only operator pressing Enter on that default would have
@@ -431,7 +432,7 @@ public sealed class MainForm : Form
     }
 
     /// <summary>
-    /// D-813 — reprints the most recent badge.
+    /// D-823 — reprints the most recent badge.
     ///
     /// <para>The status text already told the operator to reprint after a
     /// printer jam, and there was nothing to reprint WITH: no list, no action.

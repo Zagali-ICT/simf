@@ -3,7 +3,7 @@ using SIMF.Common.Badges;
 namespace SIMF.Common.Options;
 
 /// <summary>
-/// D-809 — the standby "walk-in" capability, for an event where a large crowd
+/// D-819 — the standby "walk-in" capability, for an event where a large crowd
 /// arrives who never installed the app, never registered online, hold no badge
 /// and never booked a session.
 ///
@@ -36,7 +36,7 @@ public sealed class WalkInModeOptions
     /// off even if <see cref="Enabled"/> is still true, so a mode left armed
     /// after the event closes itself rather than lingering.
     /// </summary>
-    public DateTimeOffset? ExpiresAtUtc { get; set; }
+    public DateTime? ExpiresAt { get; set; }
 
     /// <summary>Accept the reduced desk field set (one name, profile type, one
     /// mobile, one ID number). The ID number is deliberately still required:
@@ -73,7 +73,7 @@ public sealed class WalkInModeOptions
     /// </summary>
     public int ArrivalGraceMinutes { get; set; } = DefaultArrivalGraceMinutes;
 
-    // D-811 review: AdvisoryHallCapacity was declared here, documented in D-809
+    // D-821 review: AdvisoryHallCapacity was declared here, documented in D-819
     // and shipped in set-env-api.template.ps1 — with NO implementation anywhere.
     // Arming it did nothing, which is worse than not offering it: an operator
     // would have believed capacity was relaxed. Removed rather than implemented,
@@ -121,19 +121,19 @@ public sealed class WalkInModeOptions
     /// switch is on and any expiry has not passed. Every per-rule accessor
     /// below is gated on this, so a single edit disarms everything.
     /// </summary>
-    public bool IsArmed(DateTimeOffset now) =>
-        Enabled && (ExpiresAtUtc is not { } expiry || now < expiry);
+    public bool IsArmed(DateTime now) =>
+        Enabled && (ExpiresAt is not { } expiry || now < expiry);
 
-    public bool QuickRegisterActive(DateTimeOffset now) => IsArmed(now) && QuickRegister;
+    public bool QuickRegisterActive(DateTime now) => IsArmed(now) && QuickRegister;
 
-    public bool AutoApproveActive(DateTimeOffset now) => IsArmed(now) && AutoApprove;
+    public bool AutoApproveActive(DateTime now) => IsArmed(now) && AutoApprove;
 
-    public bool SessionWalkInActive(DateTimeOffset now) => IsArmed(now) && SessionWalkIn;
+    public bool SessionWalkInActive(DateTime now) => IsArmed(now) && SessionWalkIn;
 
-    public bool AcceptOfflineBadgesActive(DateTimeOffset now) =>
+    public bool AcceptOfflineBadgesActive(DateTime now) =>
         IsArmed(now) && AcceptOfflineBadges && ResolveBadgeKey(BadgeKey) is not null;
 
-    public bool OfflineUploadActive(DateTimeOffset now) => IsArmed(now) && OfflineUpload;
+    public bool OfflineUploadActive(DateTime now) => IsArmed(now) && OfflineUpload;
 
     /// <summary>
     /// Badge activation for walk-in accounts. NOT gated on <see cref="IsArmed"/>:
@@ -144,7 +144,7 @@ public sealed class WalkInModeOptions
 
     /// <summary>The effective arrival grace, clamped, falling back to the
     /// historical 15 minutes whenever the mode is not armed.</summary>
-    public TimeSpan ResolveArrivalGrace(DateTimeOffset now) =>
+    public TimeSpan ResolveArrivalGrace(DateTime now) =>
         TimeSpan.FromMinutes(IsArmed(now)
             ? Math.Clamp(ArrivalGraceMinutes, 0, MaxArrivalGraceMinutes)
             : DefaultArrivalGraceMinutes);

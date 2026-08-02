@@ -1,7 +1,7 @@
 namespace SIMF.BadgeDesk;
 
 /// <summary>
-/// D-809 — entry point for the offline badge desk.
+/// D-819 — entry point for the offline badge desk.
 ///
 /// <para>Everything is resolved before the window opens: a desk that is not
 /// correctly provisioned must say so to the person setting it up, not to the
@@ -53,7 +53,7 @@ internal static class Program
             // to start is the right answer: printing badges nothing can record
             // would be worse than not opening the desk.
             //
-            // D-813 — InvalidDataException is the encrypted store reporting that
+            // D-823 — InvalidDataException is the encrypted store reporting that
             // NOTHING in the file decrypts on this machine, which means it came
             // from another desk. Opening anyway would reset the sequence counter
             // and reissue numbers already printed on paper.

@@ -34,7 +34,7 @@ public sealed class ExportRatingsEndpoint(IAdminRatingResponseService service, I
         new("Answers", row => row.AnswerCount),
         new("AverageAnswerStars", row => row.AverageAnswerStars),
         new("IsActive", row => row.IsActive),
-        new("CreatedAt", row => row.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")),
+        new("CreatedAt", row => row.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")),
     ];
 
     protected override async Task<IReadOnlyList<AdminRatingResponseSummary>> ListAsync(

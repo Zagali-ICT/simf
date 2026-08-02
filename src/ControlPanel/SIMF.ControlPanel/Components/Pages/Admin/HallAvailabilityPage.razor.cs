@@ -5,7 +5,6 @@ using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -144,7 +143,7 @@ public partial class HallAvailabilityPage
         finally { _busy = false; }
     }
 
-    private static bool TryParseUtc(string value, out DateTimeOffset result)
+    private static bool TryParseUtc(string value, out DateTime result)
     {
         if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var dt))

@@ -7,6 +7,7 @@ using SIMF.Application.Abstractions;
 using SIMF.Domain.Auditing;
 
 using SIMF.Common.Enums;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Auditing;
 
@@ -116,7 +117,7 @@ internal sealed class RowAuditingSaveChangesInterceptor(
 
     private void CaptureChanges(DbContext context)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var actorUserId = requestContext.ActorUserId;
         // D-157 — snapshot the actor's display name from the JWT claim
         // so each RowAudit row stands alone without a cross-DB JOIN.
@@ -157,7 +158,7 @@ internal sealed class RowAuditingSaveChangesInterceptor(
     }
 
     private static RowAudit BuildAuditRow(
-        EntityEntry entry, DateTimeOffset now, Guid? actorUserId,
+        EntityEntry entry, DateTime now, Guid? actorUserId,
         string? actorDisplayName, string? correlationId)
     {
         var operation = entry.State switch

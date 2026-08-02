@@ -59,6 +59,7 @@
 | E2E-MOB013-025 | **The Home pill really drives the locale (D-772):** tapping it re-renders the greeting header in the other language — greeting `Welcome` ↔ `مرحبًا`, pill `ع` ↔ `EN` — and persists the choice. Asserted in **both** directions (EN→AR and AR→EN) | i18n | P1 | authored ✓ (screen `the Home language toggle flips EN → AR …` + `… flips AR → EN …`) |
 | E2E-MOB013-024 | **Locked guest badge tile announces why (BUG-014):** the guest home's locked "بطاقتي" tile stays intentionally inert but now carries a semantics hint ("Locked — sign in to unlock your smart badge") so a screen-reader user learns it is locked and why | a11y | P2 | authored ✓ (`simf_page_shell_test` — `BUG-014 — a locked tile announces WHY it is locked and stays inert`) |
 | E2E-MOB013-022 | **Hero background video (D-756 / D-761):** when `OrganizationProfile.backgroundVideoUrl` is a **direct MP4/HLS** link the home hero plays it muted + looping + no-controls, cover-fitted as the base layer (edition text overlay + scrim stay on top); a **YouTube** link is NOT played in-app (an Android WebView can't be clipped into the band — D-761) and falls back to the banner-image carousel / discover photo, same as null/unsupported | happy | P2 | authored ✓ (widget — `HeroBackgroundVideo.isSupported` gate + hero base-layer selection) |
+| E2E-MOB013-026 | **Arabic compound given names greet whole (OA-D1):** the greeting renders the FULL trimmed profile name, so "عبد الله" is never amputated to "عبد" and a family-name-first record never greets the wrong token; the line stays `maxLines: 1` + ellipsised so a long name degrades gracefully | i18n | P1 | authored ✓ (widget — `greeting_header_test.dart`, 6 cases) |
 | E2E-MOB013-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB013-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -493,9 +494,52 @@ Scenario: No grants / a failed load
 
 **Evidence:** `test/features/home/moderator_home_test.dart` (5 cases).
 
+### E2E-MOB013-026 — The greeting keeps a compound given name whole (OA-D1)
+
+```gherkin
+Feature: Home greeting
+  As an attendee whose given name is a compound Arabic name
+  I want the greeting to address me by my actual name
+  So that the app does not call me by half of it
+
+Background:
+  Given a signed-in attendee whose profile name is "عبد الله"
+
+Scenario: A compound Arabic given name is greeted whole
+  When the Home screen opens at "/"
+  Then the greeting name line reads "عبد الله 👋"
+  And it does NOT read "عبد 👋"
+
+Scenario: A multi-part Latin name is greeted whole
+  Given the profile name is "Ahmed Al Otaibi"
+  When the Home screen opens at "/"
+  Then the greeting name line reads "Ahmed Al Otaibi 👋"
+
+Scenario: A name-less account shows the wave alone
+  Given the profile name is blank (still loading, or never captured)
+  When the Home screen opens at "/"
+  Then the greeting name line reads "👋" with no leading space
+
+Scenario: A very long name degrades gracefully
+  Given the profile name is "عبد الرحمن بن عبد العزيز بن محمد السالم"
+  When the Home screen opens at "/"
+  Then the name line is a single line, ellipsised at the end
+  And the header height is unchanged
+```
+
+**Evidence:** `test/features/home/widgets/greeting_header_test.dart` — six cases
+covering عبد الله, عبد الرحمن السالم, a Latin multi-part name, whitespace
+trimming, the blank-name wave, and the `maxLines: 1` + `TextOverflow.ellipsis`
+guarantee. The previous behaviour took `name.trim().split(' ').first`, which had
+no way to know where an Arabic compound given name ended; there is no captured
+`GivenName` to split on, so the split was removed rather than patched with
+prefix heuristics (owner decision Q3, 2026-07-30).
+
 ---
 
-_Last reviewed:_ `2026-07-27` by `SIMF Team` — D-772: the owner confirmed the
+_Last reviewed:_ `2026-07-30` by `SIMF Team` — OA-D1: the greeting renders the
+full trimmed name; added E2E-MOB013-026.
+_Prior:_ `2026-07-27` by `SIMF Team` — D-772: the owner confirmed the
 signed-in Home keeps its language toggle, superseding the 2026-07-11 removal;
 added E2E-MOB013-025 for the AR/EN re-render.
 _Last reviewed:_ `2026-07-27` by `SIMF Team` — FR-MOD-001: the Moderator

@@ -11,6 +11,7 @@ import '../../sessions/data/session_models.dart';
 import '../../sessions/widgets/favourite_heart_button.dart';
 import '../../sessions/widgets/session_card_meta.dart';
 import '../../sessions/widgets/session_state_chip.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One rich session-summary card (Figma 1388:8392): heart on the trailing edge,
 /// the title over the clock·time·duration line, the primary speaker + hall, and
@@ -42,7 +43,7 @@ class SessionSummaryCard extends StatelessWidget {
     // all-summarised, so the summary chip is suppressed here (redundant) and the
     // card shows live-now / مسجّل only.
     final stateChips = sessionStateChips(
-      phase: item.phase(DateTime.now().toUtc()),
+      phase: item.phase(saudiNow()),
       hasPublishedSummary: false,
       status: item.status,
     );

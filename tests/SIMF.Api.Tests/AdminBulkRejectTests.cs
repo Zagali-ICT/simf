@@ -156,7 +156,7 @@ public sealed class AdminBulkRejectTests : IClassFixture<SimfApiFactory>
             NameArabic = "زائر تجريبي",
             Name = "Bulk Reject Visitor",
             NationalityId = 682,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         await appDb.SaveChangesAsync();
@@ -187,16 +187,7 @@ public sealed class AdminBulkRejectTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private async Task<HttpResponseMessage> PostAuthAsync<TBody>(

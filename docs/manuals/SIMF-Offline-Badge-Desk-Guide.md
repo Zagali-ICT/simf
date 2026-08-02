@@ -1,6 +1,6 @@
 # Offline badge desk — provisioning and operating guide
 
-**Applies to:** `src/Tools/SIMF.BadgeDesk` (D-809 / D-810 / D-811 / D-813 / D-814)
+**Applies to:** `src/Tools/SIMF.BadgeDesk` (D-819 / D-820 / D-821 / D-823 / D-824)
 **Audience:** whoever sets the desks up, and the operators who run them
 **Last updated:** 2026-08-01
 
@@ -199,7 +199,7 @@ Append-only, one **encrypted** record per line, flushed to disk on every write.
 Until it is uploaded, **this file is the only record that a badge was handed
 out.** Do not delete it, and back it up before wiping a desk machine.
 
-**D-813 — the lines are encrypted with Windows DPAPI (machine scope).** A record
+**D-823 — the lines are encrypted with Windows DPAPI (machine scope).** A record
 carries the holder's name, mobile and identity-document number; the server keeps
 those same columns encrypted at rest, so a plaintext copy here was the softest
 target for them in the whole system. The file therefore reads **only on the desk
@@ -220,7 +220,7 @@ skips it and keeps the rest of the shift.
 
 ---
 
-## What the scanner does with no network (D-811)
+## What the scanner does with no network (D-821)
 
 An operator's scanner caches its rules from `GET /app/gates/offline-config`
 whenever the gate console loads, so a device that boots into a dead network

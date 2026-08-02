@@ -11,7 +11,7 @@
 | **Source** | [`ContentBlocksList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ContentBlocksList.razor), [`ContentBlockAddEdit.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ContentBlockAddEdit.razor), [`ContentBlockViewDelete.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ContentBlockViewDelete.razor), [`CmsEndpoints`](../../../src/Backend/SIMF.Api/Endpoints/Admin/CmsEndpoints.cs), [`ContentBlocksExcelEndpoints`](../../../src/Backend/SIMF.Api/Endpoints/Admin/ContentBlocksExcelEndpoints.cs), [`AdminCmsService`](../../../src/Backend/SIMF.Infrastructure/Cms/AdminCmsService.cs), [`ContentBlock`](../../../src/Backend/SIMF.Domain/Cms/ContentBlock.cs) |
 | **Backed by** | `dbo.ContentBlocks` table (migration `AddCms`, 2026-05-29; D-199 CMS wave). |
 | **Tests** | [`docs/tests/e2e/cp-admin-content-blocks.md`](../../tests/e2e/cp-admin-content-blocks.md) |
-| **Last reviewed** | 2026-06-11 |
+| **Last reviewed** | 2026-07-31 |
 
 ## 1. Purpose
 
@@ -175,6 +175,21 @@ listed rows when present, otherwise the whole filtered grid is exported.
   app's policy screens. Renaming any Key is wire-breaking.
 - **No separate Details fetch.** Details/Edit/Delete all bind the grid row
   directly; there is no read-back round-trip to the API to open a form.
+- **Content is PLAIN TEXT — not markdown, not HTML** (`FR-1203-markdown-render`,
+  2026-07-30). `ContentBlock`'s XML doc used to read "markdown allowed" while no
+  surface rendered markdown: the CP prints the value through Razor's auto-encoder,
+  the Website hydrator writes it with `textContent` (or HTML-escapes it through
+  `esc()` before any `innerHTML`), and the Flutter app decodes it into a `Text`
+  widget. The claim was corrected rather than a renderer built, because **every
+  key in use is a short plain-text field** — an eyebrow, a heading, a one-line
+  paragraph, a counter (`stats.count1`), a button label (see
+  `LandingSectionContentKeys` / `LandingHeroContentKeys`) — because rendering
+  markdown would change how already-seeded production copy looks (a `#` or `*`
+  inside an Arabic paragraph would silently become a heading), and because it
+  would mean injecting HTML built from an **admin-editable** field into a public
+  page that today has no such path at all. An admin typing `**bold**` or
+  `<b>x</b>` will see those characters on the site, verbatim. E2E-CNT-021 +
+  `ContentBlockPlainTextContractTests` pin it.
 
 ## 8. i18n + RTL
 
@@ -204,7 +219,8 @@ empty state, 007 auth gate, 008 short-key 400, 009 over-8000-char 400, 010
 missing/already-removed delete, 011 server 500 on list, 012 RTL, 013
 per-column filter, 014 column sort, 015 presentation toggle persists, 016
 full-page round-trip, 017 delete confirmation gate, 018 Excel export, 019
-Excel import, 020 Excel import rejection.
+Excel import, 020 Excel import rejection, 021 content is plain text on every
+surface (a `<script>` payload round-trips as visible characters).
 
 ## 12. Related docs
 
@@ -227,5 +243,8 @@ Excel import, 020 Excel import rejection.
 | 2026-06-xx | D-255 | Page migrated from a raw `<table>` to the standard `SimfDataGrid` (per-column filters, select-all, sort). |
 | 2026-06-10 | D-353 | Add/Edit/View/Delete split into reusable `ContentBlockAddEdit` + `ContentBlockViewDelete` forms hosted by `CrudShell`; one-click delete replaced by a `SimfConfirm` gate; Page↔Popup presentation toggle persisted in `localStorage` (`simf.cp.prefs.content-blocks`). |
 | 2026-06-10 | D-356 | Excel **export + import** added (toolbar Export/Import → `.xlsx`, sheet "ContentBlocks"; export columns `Key/Content/ContentArabic/IsActive/LastUpdatedAt`; import required headers `Key/Content/ContentArabic`; both capped at 5000 rows; non-`.xlsx` upload rejected 400). New `ContentBlocks.Export` + `ContentBlocks.Import` permissions. E2E catalogue extended with E2E-CNT-015…020. |
+| 2026-07-31 | D-NEXT (`FR-1203-markdown-render`) | Contract correction, no behaviour change: content blocks are **plain text**, not markdown. `ContentBlock`'s "markdown allowed" XML doc was wrong on every surface. New `ContentBlockPlainTextContractTests` prove a `<script>` payload renders as visible text on the CP pane and ratchet the two source invariants behind that (no `(MarkupString)` over admin-editable text; `site-content.js` keeps its `esc()` + `textContent` path + exactly four `innerHTML` sinks). E2E-CNT-021 added. |
 
-_Last reviewed:_ 2026-06-11 by Claude (D-356 — Excel export + import + D-353 toggle, grounded in live source).
+_Last reviewed:_ 2026-07-31 by Claude (`FR-1203-markdown-render` — content is plain
+text on every surface); prior review 2026-06-11 (D-356 — Excel export + import +
+D-353 toggle, grounded in live source).

@@ -37,13 +37,13 @@ public sealed class HallAttendance
     /// <summary>How this arrival was recorded.</summary>
     public AttendanceMethod Method { get; set; }
 
-    /// <summary>When the attendee entered (UTC).</summary>
-    public DateTimeOffset Enter { get; set; }
+    /// <summary>When the attendee entered (Saudi local).</summary>
+    public DateTime Enter { get; set; }
 
     /// <summary>When the attendee left — set on departure or at session end.
     /// Null while the attendee is still considered present (the open row).</summary>
-    public DateTimeOffset? Leave { get; set; }
+    public DateTime? Leave { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

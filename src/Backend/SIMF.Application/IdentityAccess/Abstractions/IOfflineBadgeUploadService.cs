@@ -3,7 +3,7 @@ using SIMF.Contracts.Badges;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// D-809 — reconciles a batch of badges printed at an OFFLINE desk back into the
+/// D-819 — reconciles a batch of badges printed at an OFFLINE desk back into the
 /// system once the desk is on the network again.
 /// </summary>
 public interface IOfflineBadgeUploadService

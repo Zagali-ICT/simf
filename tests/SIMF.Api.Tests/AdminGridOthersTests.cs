@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using ClosedXML.Excel;
@@ -222,7 +222,7 @@ Assert.Equal(UserType.Visitor, copy!.UserType);
             PageColor = "#10B981",
             IsForVisitor = false,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await db.SaveChangesAsync();
@@ -255,16 +255,7 @@ Assert.Equal(UserType.Visitor, copy!.UserType);
             await users.AddToRoleAsync(user, AdministratorRole);
             id = user.Id;
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, id);
+        return (await AuthFlow.SignInControlPanelAsync(_client, _factory, email), id);
     }
 
     private async Task<Guid> CreateOtherAsync(

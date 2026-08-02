@@ -9,6 +9,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Common;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
@@ -263,7 +264,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             new SubmitDelegationMeetingRequestRequest
             {
                 TargetCountryCode = "EG", AttendeeCount = 5, Subject = "Topic",
-                SlotStart = new DateTimeOffset(2030, 2, 1, 9, 0, 0, TimeSpan.Zero),
+                SlotStart = new DateTime(2030, 2, 1, 9, 0, 0),
             },
             delegate1);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -309,7 +310,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
         var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
         var admin = await CreateAdministratorAndSignInAsync();
 
-        var slotStart = new DateTimeOffset(2030, 2, 1, 9, 0, 0, TimeSpan.Zero);
+        var slotStart = new DateTime(2030, 2, 1, 9, 0, 0);
         var requestId = await SubmitWithSlotAsync(delegate1, "EG", slotStart, slotStart.AddHours(1));
 
         var respond = await PostAuthAsync(
@@ -334,7 +335,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
         var admin = await CreateAdministratorAndSignInAsync();
 
         // Submit only checks end>start, so a past-but-well-formed slot persists.
-        var slotStart = new DateTimeOffset(2020, 2, 1, 9, 0, 0, TimeSpan.Zero);
+        var slotStart = new DateTime(2020, 2, 1, 9, 0, 0);
         var requestId = await SubmitWithSlotAsync(delegate1, "EG", slotStart, slotStart.AddHours(1));
 
         var respond = await PostAuthAsync(
@@ -357,7 +358,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
 
         // A: SA -> EG, 09:00-10:00 — accepted. A distinct date from the other
         // slot-bearing M-3 test so the class-shared DB does not cross-contaminate.
-        var slotStart = new DateTimeOffset(2035, 5, 1, 9, 0, 0, TimeSpan.Zero);
+        var slotStart = new DateTime(2035, 5, 1, 9, 0, 0);
         var reqA = await SubmitWithSlotAsync(delegate1, "EG", slotStart, slotStart.AddHours(1));
         var acceptA = await PostAuthAsync(
             $"/api/v1/admin/delegation-meeting-requests/{reqA}/respond",
@@ -393,13 +394,13 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
 
         var requestId = await SubmitWithSlotAsync(
             delegate1, "EG",
-            new DateTimeOffset(2040, 3, 1, 9, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2040, 3, 1, 10, 0, 0, TimeSpan.Zero));
+            new DateTime(2040, 3, 1, 9, 0, 0),
+            new DateTime(2040, 3, 1, 10, 0, 0));
 
         // Simulate a prior Approve + hall-bind: the request is AwaitingSpeaker with a
         // future bound slot (a distinct far-future date so the class-shared DB does not
         // cross-contaminate the overlap guard).
-        var boundStart = new DateTimeOffset(2040, 3, 1, 9, 0, 0, TimeSpan.Zero);
+        var boundStart = new DateTime(2040, 3, 1, 9, 0, 0);
         using (var seed = _factory.Services.CreateScope())
         {
             var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -443,11 +444,11 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
 
         var requestId = await SubmitWithSlotAsync(
             delegate1, "EG",
-            new DateTimeOffset(2041, 4, 1, 9, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2041, 4, 1, 10, 0, 0, TimeSpan.Zero));
+            new DateTime(2041, 4, 1, 9, 0, 0),
+            new DateTime(2041, 4, 1, 10, 0, 0));
 
         // Approved (AwaitingSpeaker) with a slot whose start is already in the PAST.
-        var pastStart = new DateTimeOffset(2020, 4, 1, 9, 0, 0, TimeSpan.Zero);
+        var pastStart = new DateTime(2020, 4, 1, 9, 0, 0);
         using (var seed = _factory.Services.CreateScope())
         {
             var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -494,7 +495,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!.Data!.Id;
 
         // Put it in AwaitingSpeaker (as an Approve would) with a future bound slot.
-        var slotStart = new DateTimeOffset(2042, 5, 1, 9, 0, 0, TimeSpan.Zero);
+        var slotStart = new DateTime(2042, 5, 1, 9, 0, 0);
         using (var seed = _factory.Services.CreateScope())
         {
             var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -517,7 +518,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
     }
 
     private async Task<Guid> SubmitWithSlotAsync(
-        string delegateToken, string targetCode, DateTimeOffset slotStart, DateTimeOffset slotEnd)
+        string delegateToken, string targetCode, DateTime slotStart, DateTime slotEnd)
     {
         var submit = await PostAuthAsync(
             "/api/v1/app/delegation-meeting-requests",
@@ -621,15 +622,41 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             {
                 Id = id,
                 Code = code, Name = code, NameArabic = code,
-                IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+                IsActive = true, CreatedAt = SimfClock.Now,
             };
             appDb.Countries.Add(country);
         }
         country.IsActive = true;
         country.IsInvited = invited;
         await appDb.SaveChangesAsync();
+
+        // G3 (owner 2026-07-30) — a submit now REQUIRES the TARGET delegation to have
+        // a free slot, so every invited fixture delegation gets one wide future
+        // window (added once — this helper is called repeatedly for the same code).
+        // The no-availability refusal has its own coverage in MeetingNoAvailabilityTests.
+        if (invited && !await appDb.DelegationAvailabilityWindows
+                .AnyAsync(w => w.CountryId == country.Id))
+        {
+            appDb.DelegationAvailabilityWindows.Add(new DelegationAvailabilityWindow
+            {
+                Id = Guid.NewGuid(),
+                CountryId = country.Id,
+                Start = FixtureWindowStart,
+                End = FixtureWindowStart.AddHours(12),
+                SlotMinutes = 60,
+                IsActive = true,
+                CreatedAt = SimfClock.Now,
+            });
+            await appDb.SaveChangesAsync();
+        }
         return country.Id;
     }
+
+    /// <summary>G3 — far enough in the future that a past slot can never be why a
+    /// fixture delegation looks unavailable, and long enough (12 one-hour slots) that
+    /// the meetings these tests accept never empty it.</summary>
+    private static readonly DateTime FixtureWindowStart =
+        new(2035, 9, 1, 9, 0, 0);
 
     private async Task<(string Token, Guid UserId)> CreateDelegateAsync(int nationalityId, bool isDelegate)
     {
@@ -657,7 +684,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
                     Id = Guid.NewGuid(),
                     Name = "Visitor — DmrSeed", NameArabic = "زائر",
                     PageColor = "#3B82F6", IsForVisitor = true, IsActive = true,
-                    CreatedAt = DateTimeOffset.UtcNow,
+                    CreatedAt = SimfClock.Now,
                 };
                 appDb.ProfileTypes.Add(type);
                 await appDb.SaveChangesAsync();
@@ -673,7 +700,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
                 // Bi-Meeting rework — the delegation-meeting gate now reads this
                 // per-user flag (was IsDelegate). Map the fixture's intent onto it.
                 AllowsDelegationMeeting = isDelegate,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -706,14 +733,7 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        return (await sign.Content
-            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

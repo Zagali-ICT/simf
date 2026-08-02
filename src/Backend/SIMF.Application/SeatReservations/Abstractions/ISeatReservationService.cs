@@ -105,7 +105,7 @@ public interface ISeatReservationService
     /// the seat for others. Returns the number released. Called once per minute by
     /// <c>ReservationNoShowReleaseWorker</c>.</summary>
     Task<int> ReleaseNoShowsAsync(
-        DateTimeOffset now, CancellationToken cancellationToken = default);
+        DateTime now, CancellationToken cancellationToken = default);
 
     // -- Staff seating desk (D-771 — owner 2026-07-26) --
 
@@ -126,7 +126,7 @@ public interface ISeatReservationService
         Guid sessionId, string qrId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-809 — records that a walk-in admitted to a session hall is occupying a
+    /// D-819 — records that a walk-in admitted to a session hall is occupying a
     /// place, so the seating desk and the occupancy counts can see them.
     ///
     /// <para>ADVISORY, and deliberately unlike every other reservation path

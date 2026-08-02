@@ -11,8 +11,8 @@ public class OperationLogEntry
 {
     public Guid Id { get; set; }
 
-    /// <summary>When the event occurred (UTC).</summary>
-    public DateTimeOffset Timestamp { get; set; }
+    /// <summary>When the event occurred (Saudi local).</summary>
+    public DateTime Timestamp { get; set; }
 
     /// <summary>The stable event-type name (see <c>AuditEvents</c>).</summary>
     public string EventType { get; set; } = string.Empty;

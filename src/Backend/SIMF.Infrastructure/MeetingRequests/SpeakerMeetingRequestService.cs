@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/SpeakerMeetingRequestsTests.cs
 //        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (QA A25/B12/B20)
 //        SIMF.Api.Tests/SpeakerMeetingLinksUnsetTests.cs (QA A24)
+//        SIMF.Api.Tests/MeetingNoAvailabilityTests.cs (G3)
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ namespace SIMF.Infrastructure.MeetingRequests;
 internal sealed class SpeakerMeetingRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
+    ISpeakerAvailabilityService speakerAvailability,
     IHallAvailabilityService hallAvailability,
     IMeetingActionTokenService meetingActionTokens,
     INotificationDispatcher notifications,
@@ -100,18 +102,35 @@ internal sealed class SpeakerMeetingRequestService(
                 "طلب مقابلة المتحدّث غير مُفعَّل لحسابك.");
         }
 
+        // G3 (owner 2026-07-30) — SUPERSEDES the "topic-only request" half of R1 (D-767):
+        // a meeting request may no longer be sent when the speaker has nothing left to
+        // offer. GetAvailableSlotsAsync returns an empty list for BOTH reasons — the
+        // speaker has no active future window at all, and every slot the windows offer is
+        // past or already taken — so this one call covers both. The app disables the send
+        // button on the same signal (the sheet's empty slot list); this is the backstop.
+        var freeSlots = await speakerAvailability.GetAvailableSlotsAsync(
+            speakerId, cancellationToken);
+        if (freeSlots.Count == 0)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingNoAvailability, 409,
+                "This speaker has no available meeting slots.",
+                "لا توجد فترات متاحة لدى هذا المتحدّث.");
+        }
+
         // R8 (D-767) — the one-open-request-per-(requester, speaker) rule is applied as an
         // in-place MOVE of the existing Pending request after the slot is resolved (see
         // below), not a duplicate 409.
 
         // Slot flow (D-474 #11): validate the picked slot pair (both-or-neither, end >
-        // start). R1 (D-767) — the slot is NOT re-checked for availability at submit:
-        // several Pending requests may target the same time; the admin approves only one
-        // (Serializable approve guard), and a reserved slot is already hidden from the
-        // picker (R2), so a requester never sees a same-time error. A null slot is the
-        // legacy topic-only request.
-        DateTimeOffset? slotStart = null;
-        DateTimeOffset? slotEnd = null;
+        // start). R1 (D-767) still holds for the PICKED slot: it is NOT re-checked for
+        // membership at submit — several Pending requests may target the same time; the
+        // admin approves only one (Serializable approve guard), and a reserved slot is
+        // already hidden from the picker (R2), so a requester never sees a same-time
+        // error. What R1 no longer permits (G3, above) is a request against a speaker
+        // with NO free slot at all.
+        DateTime? slotStart = null;
+        DateTime? slotEnd = null;
         Guid? availabilityWindowId = null;
         if (request.SlotStart is { } pickedStart)
         {
@@ -167,7 +186,7 @@ internal sealed class SpeakerMeetingRequestService(
                 openRequest.Id, speakerId, openRequest.Status, openRequest.CreatedAt);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var req = new SpeakerMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -263,8 +282,22 @@ internal sealed class SpeakerMeetingRequestService(
                     r.Id, r.SpeakerId, SpeakerName = s.Name, SpeakerNameArabic = s.NameArabic,
                     r.RequestedByUserId, r.RequesterName, r.Subject,
                     r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt,
+                    // OA-D5 — the hall check-in stamps, so the grid and its export
+                    // report who actually turned up, not only the decision.
+                    r.CheckedInAt, r.CheckedInByUserId,
                 })
             .ToListAsync(cancellationToken);
+
+        // OA-D5 — resolve the check-in operators' display names in ONE Identity-DB
+        // query for the whole page. CheckedInByUserId is a bare logical FK (D-157),
+        // so this is a second query merged in memory — never a cross-database JOIN.
+        // Rows with no check-in contribute no id.
+        var operatorNames = await userDirectory.GetDisplayNamesAsync(
+            pageRows.Where(r => r.CheckedInByUserId.HasValue)
+                .Select(r => r.CheckedInByUserId!.Value)
+                .Distinct()
+                .ToList(),
+            cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -285,7 +318,8 @@ internal sealed class SpeakerMeetingRequestService(
         var items = pageRows.Select(r => new AdminSpeakerMeetingRequestRow(
             r.Id, r.SpeakerId, r.SpeakerName, r.SpeakerNameArabic,
             r.RequestedByUserId, r.RequesterName,
-            r.Subject, r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt))
+            r.Subject, r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt,
+            r.CheckedInAt, ResolveOperatorName(operatorNames, r.CheckedInByUserId)))
             .ToList();
         return GridPage<AdminSpeakerMeetingRequestRow>.Of(items, total,
             skip, top);
@@ -361,7 +395,7 @@ internal sealed class SpeakerMeetingRequestService(
         var bindHall = request.Status == MeetingRequestStatus.Accepted
             && request.HallId is not null;
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // D-717 — stage the speaker Approve/Reject tokens into the SAME unit of work
         // as the AwaitingSpeaker transition (they are durable domain state, not a
@@ -562,7 +596,7 @@ internal sealed class SpeakerMeetingRequestService(
                 "Only a confirmed meeting can be checked in.",
                 "لا يمكن تسجيل الحضور إلا لاجتماع مؤكَّد.");
         }
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         req.Status = MeetingRequestStatus.Done;
         req.CheckedInAt = now;
         req.CheckedInByUserId = actorUserId;
@@ -679,7 +713,7 @@ internal sealed class SpeakerMeetingRequestService(
         // silent no-op this action exists to fix.
         await EnsureSpeakerConfirmationIsDeliverableAsync(req.SpeakerId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // Kill any still-live token so only the fresh pair can decide the request.
         await appDbContext.MeetingActionTokens
             .Where(t => t.SpeakerMeetingRequestId == req.Id && t.UsedAt == null)
@@ -914,7 +948,7 @@ internal sealed class SpeakerMeetingRequestService(
     // accept-with-hall bind so the two never diverge on which states hold a slot.
     private Task<bool> SpeakerHasOverlappingMeetingAsync(
         Guid speakerId, Guid excludeRequestId,
-        DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken) =>
+        DateTime start, DateTime end, CancellationToken cancellationToken) =>
         appDbContext.SpeakerMeetingRequests.AsNoTracking()
             .AnyAsync(r => r.Id != excludeRequestId
                 && r.SpeakerId == speakerId
@@ -928,7 +962,7 @@ internal sealed class SpeakerMeetingRequestService(
     // concurrent meetings with two different speakers. Same half-open overlap rule.
     private Task<bool> RequesterHasOverlappingMeetingAsync(
         Guid requesterUserId, Guid excludeRequestId,
-        DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken) =>
+        DateTime start, DateTime end, CancellationToken cancellationToken) =>
         appDbContext.SpeakerMeetingRequests.AsNoTracking()
             .AnyAsync(r => r.Id != excludeRequestId
                 && r.RequestedByUserId == requesterUserId
@@ -1000,6 +1034,16 @@ internal sealed class SpeakerMeetingRequestService(
 
     // Loads the admin detail (speaker name from the App DB + requester email
     // resolved on read from the Identity DB — no cross-DB JOIN, D-157).
+    /// <summary>OA-D5 — the check-in operator's display name for one row, or null
+    /// when the meeting has not been checked in (or the operator account is gone).
+    /// The map comes from the single per-page Identity-DB lookup above.</summary>
+    private static string? ResolveOperatorName(
+        IReadOnlyDictionary<Guid, string> namesByUserId, Guid? checkedInByUserId)
+    {
+        if (checkedInByUserId is not { } userId) { return null; }
+        return namesByUserId.TryGetValue(userId, out var name) ? name : null;
+    }
+
     private async Task<AdminSpeakerMeetingRequestDetail> LoadDetailAsync(
         Guid id, CancellationToken cancellationToken)
     {

@@ -14,7 +14,7 @@ public sealed class ConfigurationAddEditTests : CpComponentTestBase
     private static AdminSystemSettingDetail Detail() => new(
         Guid.Parse("11111111-1111-1111-1111-111111111111"),
         "registration.open", "true", "Whether registration is open",
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Add_mode_hides_the_Active_checkbox()
@@ -37,7 +37,7 @@ public sealed class ConfigurationAddEditTests : CpComponentTestBase
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         var created = new AdminSystemSettingDetail(
-            Guid.NewGuid(), "new.key", "v1", "desc", true, DateTimeOffset.UnixEpoch, null);
+            Guid.NewGuid(), "new.key", "v1", "desc", true, DateTime.UnixEpoch, null);
         var handler = JSInterop.Setup<ApiResult<AdminSystemSettingDetail>>(
             "simfAccount.postJson", _ => true)
             .SetResult(ApiResult<AdminSystemSettingDetail>.Ok(created));

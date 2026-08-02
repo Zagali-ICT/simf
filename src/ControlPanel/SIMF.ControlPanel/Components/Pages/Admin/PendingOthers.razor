@@ -1,4 +1,4 @@
-@* Control Panel — pending Other-typed approval queue (P7e — D-055).
+﻿@* Control Panel — pending Other-typed approval queue (P7e — D-055).
    Mirrors PendingAdmins (P4b); each row gets Approve + Reject buttons
    wired to the /admin/others/{id}/{approve,reject} API. *@
 @page "/admin/others/pending"
@@ -131,6 +131,17 @@
     </SimfModal>
 }
 
+@* D-809 — bulk approve commits many accounts at once; confirm the count first. *@
+<SimfConfirm Open="@(_bulkApproveSelected is not null)"
+             Title="@L["Admin.Pending.BulkApprove.Confirm.Title"]"
+             Message="@(_bulkApproveSelected is null ? string.Empty
+                        : string.Format(L["Admin.Pending.BulkApprove.Confirm.Message"],
+                                        _bulkApproveSelected.Count))"
+             ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmBulkApproveAsync"
+             OnCancel="CancelBulkApprove" />
+
 @* D-209 — bulk reject: shared-reason modal for the selected pending rows. *@
 @if (_bulkRejectSelected is not null)
 {
@@ -227,7 +238,7 @@
                     {
                         <div class="simf-walkin__id-image">
                             <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
-                            <img src="@($"/account/api/admin/others/{_viewProfile.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+                            <img src="@($"/account/api/admin/others/{_viewProfile.Id}/id-document?v={SimfClock.Now.Ticks}")"
                                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
                         </div>
                     }
@@ -236,7 +247,7 @@
                     @if (_viewProfile.HasAvatar)
                     {
                         <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
-                                                Src="@($"/account/api/admin/others/{_viewProfile.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
+                                                Src="@($"/account/api/admin/others/{_viewProfile.Id}/avatar?v={SimfClock.Now.Ticks}")" />
                     }
                 }
                 else

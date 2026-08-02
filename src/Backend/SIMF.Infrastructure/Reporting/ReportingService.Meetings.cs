@@ -153,10 +153,10 @@ internal sealed partial class ReportingService
         string Requester,
         string Target,
         string Subject,
-        DateTimeOffset? SlotStart,
-        DateTimeOffset? SlotEnd,
+        DateTime? SlotStart,
+        DateTime? SlotEnd,
         MeetingRequestStatus Status,
-        DateTimeOffset CreatedAt,
+        DateTime CreatedAt,
         bool CheckedIn);
 
     private static MeetingsReportRow ToRow(MeetingProjection p) =>

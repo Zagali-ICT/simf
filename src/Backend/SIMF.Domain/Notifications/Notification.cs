@@ -32,9 +32,9 @@ public sealed class Notification
     public NotificationSeverity Severity { get; set; } = NotificationSeverity.Info;
 
     /// <summary>Null until the user marks it read.</summary>
-    public DateTimeOffset? ReadAt { get; set; }
+    public DateTime? ReadAt { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>Optional pointer to the entity that triggered the row —
     /// e.g. "UserProfile" / "Account" / "Interest". Lets a future

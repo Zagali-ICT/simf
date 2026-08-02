@@ -19,7 +19,7 @@ import 'golden_fonts.dart';
 /// Render-lock golden of the Join-a-session hub (D-485 — no Figma frame of its
 /// own; a plain session list into the join flow). Unsuffixed filename =
 /// render-locked, not frame-locked.
-///   flutter test --update-goldens test/golden/join_session_hub_golden_test.dart
+/// flutter test --update-goldens test/golden/join_session_hub_golden_test.dart
 ///
 /// Render expected: the centred beige hint line, then navy SimfCard rows —
 /// title over the "time · hall" line with the direction-aware chevron
@@ -35,7 +35,8 @@ SessionListItem _item(String id, String titleAr, {required int hourLocal}) =>
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة الرئيسية',
       // LOCAL instants: the row renders TimeOfDay.fromDateTime(startLocal) —
-      // a UTC fixture would bake the generating machine's timezone into the
+      // a a zoned value fixture would bake the generating machine's timezone
+      // into the
       // PNG (same trap as the saved-sessions golden, D-599).
       start: DateTime(2026, 11, 23, hourLocal),
       end: DateTime(2026, 11, 23, hourLocal + 1),

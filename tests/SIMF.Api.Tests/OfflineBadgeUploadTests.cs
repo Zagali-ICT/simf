@@ -1,4 +1,4 @@
-// Tests: D-809 — the offline badge desk. A desk with no network prints badges
+// Tests: D-819 — the offline badge desk. A desk with no network prints badges
 // carrying an encrypted (profileTypeCode, sequence) QR; this covers uploading
 // that shift back into the system, and the gate resolving one of those badges.
 using System.Net;
@@ -320,7 +320,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_partner_profile_type_cannot_be_created_through_the_batch()
     {
-        // D-811 review. This endpoint is gated on Visitors.RegisterOnsite, which
+        // D-821 review. This endpoint is gated on Visitors.RegisterOnsite, which
         // the staff mobile app role holds — while Others.RegisterOnsite is
         // deliberately withheld from it (PermissionCatalog). Without the
         // audience-only filter the batch was a way around that boundary: a staff
@@ -349,7 +349,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Upload_says_so_once_when_quick_register_is_not_also_armed()
     {
-        // D-811 review — an offline desk captures a reduced field set by its
+        // D-821 review — an offline desk captures a reduced field set by its
         // nature, so without QuickRegister every row failed the full-desk
         // nationality check. That used to surface as 500 identical per-row
         // rejections, which reads as "the data is bad" rather than "a switch is
@@ -374,7 +374,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_mistyped_identity_document_is_rejected_by_name()
     {
-        // D-814. Before the desk had a correction path this could not be checked
+        // D-824. Before the desk had a correction path this could not be checked
         // at all: rejecting a row meant a printed badge nobody could fix. Now a
         // typo comes back named, the operator presses F3, and the SAME badge
         // uploads - so the rule that makes the duplicate-identity guard mean
@@ -430,7 +430,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
         passport.NationalId = null;
         passport.PassportNumber = "AB123456";
 
-        // D-814 review - the desk classifier files EVERY document that is not a
+        // D-824 review - the desk classifier files EVERY document that is not a
         // 10-digit Saudi-shaped number into PassportNumber, so this field also
         // carries a Kuwaiti Civil ID, a Qatari QID, an Emirates ID and passports
         // with separators. An earlier cut applied [A-Za-z0-9]{6,9} here and would
@@ -461,7 +461,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_retry_of_an_already_uploaded_row_is_not_re_validated()
     {
-        // D-814 review - ordering matters. A shift can be committed and its
+        // D-824 review - ordering matters. A shift can be committed and its
         // response lost, leaving every row pending on the desk. On the retry the
         // idempotency pre-check MUST run before the shape rules: otherwise a row
         // the server already created comes back Rejected instead of
@@ -519,7 +519,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
         using var client = armed.CreateClient();
         var (token, operatorId) = await CreateAdminWithIdAsync(client);
 
-        // D-811 review — this test used to run with NO gate assignment, so
+        // D-821 review — this test used to run with NO gate assignment, so
         // config.Gates was empty and the whole Guid-to-code translation went
         // unexercised: it would have passed with that mapping deleted. Seed a
         // real gate with a real allow-list.
@@ -543,7 +543,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Offline_config_withholds_the_key_from_an_operator_with_no_gates()
     {
-        // D-811 review. Gates.Operate is held by every Staff and Moderator app
+        // D-821 review. Gates.Operate is held by every Staff and Moderator app
         // account, not only the provisioned scanner tablets. Handing the badge
         // key to all of them would put a badge-minting secret in unencrypted
         // preferences across the venue and destroy any count of how many copies
@@ -612,7 +612,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
             Name = "Offline Desk Visitor",
             SaudiMobile = "0512345678",
             NationalId = BuildLuhnNationalId(),
-            RegisteredAt = DateTimeOffset.UtcNow,
+            RegisteredAt = SimfClock.Now,
         };
 
     /// <summary>A live PARTNER ("Other") type — the scope the batch must refuse.
@@ -638,7 +638,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
             Name = "Offline config test gate",
             NameArabic = "بوابة اختبار",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
             AllowedProfileTypes =
             [
                 new SIMF.Domain.AccessControl.GateProfileTypeAllow
@@ -654,7 +654,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
             GateId = gate.Id,
             UserId = operatorId,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return code;
@@ -680,7 +680,7 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
             IsForVisitor = false,
             IsActive = true,
             Code = (short)(highest + 1),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.ProfileTypes.Add(partner);
         await db.SaveChangesAsync();
@@ -786,15 +786,14 @@ public sealed class OfflineBadgeUploadTests : IClassFixture<SimfApiFactory>
             userId = user.Id;
         }
 
-        var sign = await client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, userId);
+        // The Control Panel password step now answers with a TOTP challenge, not
+        // tokens — this fixture used to read `.Tokens` straight off the sign-in
+        // response, which stopped resolving the moment the enrolment gate landed.
+        // AuthFlow enrols the account and answers the challenge with a genuine
+        // code, so these tests exercise the shipping two-factor path like every
+        // other admin fixture in this assembly.
+        var token = await AuthFlow.SignInControlPanelAsync(
+            client, _factory, email, AuthFlow.Password);
+        return (token, userId);
     }
 }

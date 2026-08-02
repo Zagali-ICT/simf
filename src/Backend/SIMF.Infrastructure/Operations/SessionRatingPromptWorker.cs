@@ -7,6 +7,7 @@ using SIMF.Application.Notifications;
 using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -102,7 +103,7 @@ internal sealed class SessionRatingPromptWorker(
         var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
 
         var prompted = await RunRatingPromptScanAsync(
-            db, notifications, timeProvider.GetUtcNow(), BackfillWindow, logger, cancellationToken);
+            db, notifications, timeProvider.SimfNow(), BackfillWindow, logger, cancellationToken);
         if (prompted > 0)
         {
             logger.LogInformation(
@@ -120,7 +121,7 @@ internal sealed class SessionRatingPromptWorker(
     /// </summary>
     internal static async Task<int> RunRatingPromptScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
-        DateTimeOffset now, TimeSpan backfillWindow, ILogger logger,
+        DateTime now, TimeSpan backfillWindow, ILogger logger,
         CancellationToken cancellationToken)
     {
         // Respect the CP: if an admin deactivated the "Session" rating type in

@@ -64,7 +64,11 @@ public static class NotificationKindCatalog
         NotificationKind.SessionReminder or
         // B2 — an admin-cancelled session is a programme event, not a booking
         // outcome: it belongs with the app's Sessions filter chip.
-        NotificationKind.SessionCancelled => Groups.Sessions,
+        NotificationKind.SessionCancelled or
+        // FR-903 (C4) — "the session started and you have not arrived" is about a
+        // session the holder already booked, so it reads under Sessions rather than
+        // Bookings: the booking itself is still valid, only the attendance is missing.
+        NotificationKind.SessionNotAttended => Groups.Sessions,
 
         NotificationKind.MeetingScheduled or
         NotificationKind.MeetingCancelled or
@@ -72,7 +76,11 @@ public static class NotificationKindCatalog
         // Bi-Meeting rework — the other-party request-to-confirm + the 15-min reminder
         // both belong with the app's Meetings filter chip.
         NotificationKind.MeetingRequested or
-        NotificationKind.MeetingReminder => Groups.Meetings,
+        NotificationKind.MeetingReminder or
+        // FR-803 (C5) — a scored match is an invitation to meet someone, so it
+        // belongs with the app's Meetings filter chip alongside the rest of the
+        // bilateral-meeting lifecycle.
+        NotificationKind.MatchRecommended => Groups.Meetings,
 
         NotificationKind.SessionRatingRequest or
         NotificationKind.DayRatingRequest or
@@ -102,6 +110,10 @@ public static class NotificationKindCatalog
         NotificationKind.MeetingCancelled or
         NotificationKind.MeetingRequestConfirmed or
         NotificationKind.MeetingReminder => "/meetings",
+        // FR-803 (C5) — the recommended candidate is the networking surface's
+        // subject, so the tile opens المقابلات/networking rather than the
+        // bilateral-meetings list: no meeting exists yet, only a suggestion.
+        NotificationKind.MatchRecommended => "/meet",
         NotificationKind.SessionRatingRequest when relatedId is { } sessionId =>
             $"/rate?code=Session&targetId={sessionId}",
         NotificationKind.DayRatingRequest when relatedId is { } dayId =>

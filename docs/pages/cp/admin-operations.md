@@ -90,12 +90,13 @@ Both Save buttons carry `Loading="_busy"` / `LoadingLabel="Saving"`, and `_busy`
 is a **single shared field**: while either section is saving, every control on
 the page is disabled.
 
-### 4.3 "Last changed" is Saudi local time, not UTC
+### 4.3 "Last changed" is Saudi local time, and so is the stored value
 
-Rendered `@_gate.LastChangedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")` — Saudi
-wall-clock, 12-hour with AM/PM, per the local-time-everywhere rule (D-770). The
-column is stored UTC; only the display is converted. The same applies to the
-auto-close field, which is labelled "Auto-close (**Saudi time**)".
+Rendered `@_gate.LastChangedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")` — 12-hour with
+AM/PM. **No conversion happens**: since D-823 the column *is* the Saudi wall
+clock (`datetime2`, no zone), the contract is a plain `DateTime`, and
+`FormatSaudi` only formats. The same applies to the auto-close field, which is
+labelled "Auto-close (**Saudi time**)".
 
 ### 4.4 Pager
 
@@ -114,12 +115,17 @@ There is **no FluentValidation validator** on either request
 input that can be malformed is the auto-close string, and it is caught in the
 page before the call.
 
-**Time conversion, both directions** — the input carries no zone, so the page
-supplies one explicitly:
+**Time handling, both directions** — the `datetime-local` input carries no zone,
+and neither does anything downstream of it, so nothing is shifted:
 
-- **Read:** `_gate.AutoClose?.ToSaudi().ToString("yyyy-MM-ddTHH:mm")`
-- **Write:** `SaudiTime.FromSaudiWallClock(parsed)` — what the admin typed is
-  read as **Saudi wall-clock** and converted to the offset the API stores.
+- **Read:** `_gate.AutoClose?.ToString("yyyy-MM-ddTHH:mm")` — straight out of the
+  contract, no conversion.
+- **Write:** `SaudiTime.FromSaudiWallClock(parsed)`, which since D-823 is only a
+  `DateTimeKind` normalisation (`SpecifyKind(..., Unspecified)`) and deliberately
+  does **not** move the value. It is kept as the named save-path seam so nobody
+  reintroduces a conversion here.
+
+The value the admin types is therefore the value stored and the value served.
 
 ## 5. Data flow
 
@@ -219,7 +225,7 @@ actor.
   high-consequence, instantly public action taken with a single click, with no
   `SimfConfirm` gate — unlike the delete flows elsewhere in the Control Panel.
 - **The PUTs are rate-limited (deliberately).** They keep
-  `RequireRateLimiting("auth")` and are **not** part of the D-809 operational
+  `RequireRateLimiting("auth")` and are **not** part of the D-819 operational
   exemption: these are twice-an-event administrative flips, not the on-site
   operational surface (gate scans, hall arrivals, walk-in registration, approve,
   offline batch) whose limits were removed.
@@ -271,7 +277,7 @@ the anonymous archive read, and a non-admin getting 403 on both PUTs.
 
 - Decisions: `docs/decisions/DECISIONS_LOG.md` **D-166** (the page + both
   singletons + the auto-close worker), **D-770** (Saudi local time everywhere),
-  **D-809** (the operational rate-limit exemption — which this page is
+  **D-819** (the operational rate-limit exemption — which this page is
   deliberately outside of).
 - Permissions: `PermissionCatalog.Operations.{View,Edit}` in
   [`PermissionCatalog.cs`](../../../src/Shared/SIMF.Common/PermissionCatalog.cs)
@@ -287,10 +293,10 @@ the anonymous archive read, and a non-admin getting 403 on both PUTs.
 | (gap wave) | D-166 | Original — `/admin/operations` with the registration gate (PDF §2.3) and archive visibility (PDF §2.4) singletons, the admin GET/PUT pairs, the anonymous public archive read, and the auto-close background worker. |
 | (§6.16) | F-U5-007 | Split the per-section state into `_loading` + `_gateError` / `_archiveError` so a **failed** load shows an error and a Retry instead of "Loading…" forever. |
 | 2026-07-25 | D-770 | "Last changed" and the auto-close field moved to Saudi local time (`FormatSaudi` / `ToSaudi` / `SaudiTime.FromSaudiWallClock`); the field label became "Auto-close (Saudi time)". |
-| 2026-08-01 | D-809 | The on-site operational endpoints dropped their rate limits; these two PUTs deliberately **kept** `RequireRateLimiting("auth")`. |
+| 2026-08-01 | D-819 | The on-site operational endpoints dropped their rate limits; these two PUTs deliberately **kept** `RequireRateLimiting("auth")`. |
 
 ---
 
-_Last reviewed:_ 2026-08-02 by Claude — authored from source (D-809 Definition of
+_Last reviewed:_ 2026-08-02 by Claude — authored from source (D-819 Definition of
 Done). **Not re-walked in a browser**: §3 has no screenshots and §9 keyboard /
 contrast are unverified.

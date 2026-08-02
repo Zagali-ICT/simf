@@ -1,4 +1,7 @@
-// Tests: SIMF.Api.Tests/DeviceKeySignInTests.cs
+// Tests: SIMF.Api.Tests/DeviceKeySignInTests.cs,
+//        SIMF.Api.Tests/TokenIssuerParityTests.cs (itokenissuer-extraction — the
+//        device-key session carries the same claim set and D-443 cap as the
+//        password one)
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -20,21 +23,17 @@ namespace SIMF.Infrastructure.IdentityAccess;
 /// <summary>
 /// D-172 (gap doc G10, PDF §2.5) — Face ID / Touch ID sign-in.
 /// Owns the four steps: register a new key, list my keys, issue a
-/// per-key challenge, verify a signed challenge + mint tokens. The
-/// token-mint helper is structurally the same path
-/// <see cref="SIMF.Application.IdentityAccess.SignInService"/>'s
-/// private <c>IssueTokensAsync</c> takes — extracting a shared
-/// <c>ITokenIssuer</c> abstraction would be the right follow-up;
-/// the current path duplicates the ~15 lines and is documented as
-/// such in <see cref="MintTokensAsync"/>.
+/// per-key challenge, verify a signed challenge + mint tokens.
+///
+/// <para>itokenissuer-extraction (2026-07-30) — the token mint is no longer a
+/// local copy of <see cref="SIMF.Application.IdentityAccess.SignInService"/>'s:
+/// both go through <see cref="ITokenIssuer"/>, so the claim set and the D-443
+/// absolute session cap cannot drift between the two ways into the system.</para>
 /// </summary>
 internal sealed class DeviceKeyService(
     SimfIdentityDbContext identityDbContext,
     IUserAccountRepository accounts,
-    IRefreshTokenRepository refreshTokenRepository,
-    IUserProfileService userProfiles,
-    IJwtTokenService jwtTokenService,
-    IPermissionResolver permissionResolver,
+    ITokenIssuer tokenIssuer,
     IAccountCodeRepository accountCodes,
     IEmailQueue emailQueue,
     IEmailTemplateResolver emailTemplates,
@@ -98,7 +97,7 @@ internal sealed class DeviceKeyService(
                 "تعذّر قراءة المفتاح العام كـ ECDSA P-256.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // #7a — emailed-OTP step-up: confirm the user actually intends to enable
         // biometric sign-in before binding a credential, so a borrowed-but-
@@ -159,7 +158,7 @@ internal sealed class DeviceKeyService(
                 "الحساب غير متاح.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Cap how many step-up codes one account may request per window, so a
         // signed-in session can't be used to spam the address with emails.
@@ -252,7 +251,7 @@ internal sealed class DeviceKeyService(
         // 32-byte cryptographic random — ample for a single-use nonce.
         var bytes = RandomNumberGenerator.GetBytes(32);
         var challenge = Convert.ToBase64String(bytes);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         deviceKey.CurrentChallenge = challenge;
         deviceKey.ChallengeExpiresAt = now.Add(ChallengeLifetime);
         await identityDbContext.SaveChangesAsync(cancellationToken);
@@ -272,7 +271,7 @@ internal sealed class DeviceKeyService(
             || deviceKey.RevokedAt is not null
             || deviceKey.CurrentChallenge is null
             || deviceKey.ChallengeExpiresAt is null
-            || deviceKey.ChallengeExpiresAt <= timeProvider.GetUtcNow())
+            || deviceKey.ChallengeExpiresAt <= timeProvider.SimfNow())
         {
             await AuditFailureAsync(request.DeviceKeyId,
                 ErrorCodes.DeviceKeyChallengeInvalid, "expired_or_missing",
@@ -306,15 +305,15 @@ internal sealed class DeviceKeyService(
         // atomic conditional UPDATE (only the row still holding THIS challenge is
         // cleared) is the single-use gate: a concurrent replay within the window
         // clears nothing (affected == 0) and is rejected before any token mint.
-        var consumedAt = timeProvider.GetUtcNow();
+        var consumedAt = timeProvider.SimfNow();
         var challengeConsumed = await identityDbContext.DeviceKeys
             .Where(k => k.Id == deviceKey.Id
                 && k.CurrentChallenge == deviceKey.CurrentChallenge)
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(k => k.CurrentChallenge, (string?)null)
-                    .SetProperty(k => k.ChallengeExpiresAt, (DateTimeOffset?)null)
-                    .SetProperty(k => k.LastUsedAt, (DateTimeOffset?)consumedAt),
+                    .SetProperty(k => k.ChallengeExpiresAt, (DateTime?)null)
+                    .SetProperty(k => k.LastUsedAt, (DateTime?)consumedAt),
                 cancellationToken);
         if (challengeConsumed != 1)
         {
@@ -362,7 +361,7 @@ internal sealed class DeviceKeyService(
             return; // idempotent
         }
 
-        deviceKey.RevokedAt = timeProvider.GetUtcNow();
+        deviceKey.RevokedAt = timeProvider.SimfNow();
         deviceKey.CurrentChallenge = null;
         deviceKey.ChallengeExpiresAt = null;
         await identityDbContext.SaveChangesAsync(cancellationToken);
@@ -405,41 +404,18 @@ internal sealed class DeviceKeyService(
         }
     }
 
-    /// <summary>The token-mint path. Structurally the same shape
-    /// <see cref="SignInService"/>.IssueTokensAsync uses; the follow-up
-    /// is to extract a shared <c>ITokenIssuer</c>. Documented in the
-    /// class XML doc above.</summary>
+    /// <summary>The token-mint path. itokenissuer-extraction — the claim set and
+    /// the D-443 lifetime cap come from the shared <see cref="ITokenIssuer"/>;
+    /// what stays here is the device-key-specific audit row. The <c>amr</c> claim
+    /// is left to its <c>TwoFactorEnabled</c> derivation (null), exactly as this
+    /// path did before: a signed challenge is a possession factor, not one of the
+    /// three the flag describes.</summary>
     private async Task<AuthTokens> MintTokensAsync(
         SimfUser user, CancellationToken cancellationToken)
     {
-        var roles = await accounts.GetRolesAsync(user);
-        var permissions = await permissionResolver.ResolveForRolesAsync(roles, cancellationToken);
-        var mobileAppRole = await userProfiles
-            .ResolveMobileAppRoleAsync(user.Id, cancellationToken);
-        var accessToken = jwtTokenService.CreateAccessToken(user, roles, permissions, mobileAppRole);
+        var tokens = await tokenIssuer.IssueAsync(
+            user, secondFactorCompleted: null, cancellationToken);
 
-        var refreshValue = OpaqueToken.Generate();
-        var now = timeProvider.GetUtcNow();
-        await refreshTokenRepository.AddAsync(
-            new RefreshToken
-            {
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                TokenHash = OpaqueToken.Hash(refreshValue),
-                CreatedAt = now,
-                // D-443 (NCA finding): absolute 24h session cap from sign-in
-                // (Jwt:SessionLifetimeHours); rotation carries it forward.
-                ExpiresAt = now.Add(jwtTokenService.RefreshTokenLifetime),
-            },
-            cancellationToken);
-
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RefreshTokenIssued,
-            Outcome = AuditOutcome.Success,
-            SubjectUserId = user.Id,
-            SubjectEmail = user.Email,
-        }, cancellationToken);
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.SignInWithDeviceKey,
@@ -451,12 +427,7 @@ internal sealed class DeviceKeyService(
         logger.LogInformation(
             "Device-key sign-in completed for {Email}", user.Email);
 
-        return new AuthTokens(
-            accessToken.Value,
-            refreshValue,
-            "Bearer",
-            accessToken.ExpiresInSeconds,
-            new AuthUser(user.Id, user.Email!, user.DisplayName));
+        return tokens;
     }
 
     private async Task AuditFailureAsync(
@@ -483,7 +454,7 @@ internal sealed class DeviceKeyService(
     /// pre-existing property of the whole AccountCode path, low blast radius
     /// since every key binds to the caller's own account and is revocable).</summary>
     private async Task<AccountCode?> ValidateEnrolStepUpAsync(
-        Guid callerUserId, string? suppliedCode, DateTimeOffset now,
+        Guid callerUserId, string? suppliedCode, DateTime now,
         CancellationToken cancellationToken)
     {
         if (!deviceKeyOptions.Value.RequireStepUpForEnrol)

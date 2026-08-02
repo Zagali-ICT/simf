@@ -38,9 +38,9 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         var (token, userId) = await CreateUserAndSignInAsync();
         var otherUserId = await CreateOtherUserAsync();
 
-        await SeedAsync(userId, "First", DateTimeOffset.UtcNow.AddMinutes(-2));
-        await SeedAsync(userId, "Second", DateTimeOffset.UtcNow.AddMinutes(-1));
-        await SeedAsync(otherUserId, "Not mine", DateTimeOffset.UtcNow);
+        await SeedAsync(userId, "First", SimfClock.Now.AddMinutes(-2));
+        await SeedAsync(userId, "Second", SimfClock.Now.AddMinutes(-1));
+        await SeedAsync(otherUserId, "Not mine", SimfClock.Now);
 
         var response = await PostAuthAsync("/api/v1/app/account/notifications/list",
             new GridQuery { Top = 50 }, token);
@@ -58,7 +58,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         // A8 — Filters["kinds"] (comma-separated NotificationKind names) narrows the
         // list server-side, and Total reflects the filter (count-after-filter).
         var (token, userId) = await CreateUserAndSignInAsync();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         await SeedAsync(userId, "welcome", now.AddMinutes(-3),
             kind: NotificationKind.AccountWelcome);
         await SeedAsync(userId, "approved", now.AddMinutes(-2),
@@ -96,7 +96,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         // The numeric case guards the Enum.IsDefined fix: without it "99999" would
         // survive as a phantom kind and wrongly return an EMPTY list, not all kinds.
         var (token, userId) = await CreateUserAndSignInAsync();
-        await SeedAsync(userId, "a", DateTimeOffset.UtcNow, kind: NotificationKind.AccountWelcome);
+        await SeedAsync(userId, "a", SimfClock.Now, kind: NotificationKind.AccountWelcome);
 
         var response = await PostAuthAsync("/api/v1/app/account/notifications/list",
             new GridQuery
@@ -114,8 +114,8 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
     public async Task UnreadCount_only_counts_the_actors_unread_rows()
     {
         var (token, userId) = await CreateUserAndSignInAsync();
-        await SeedAsync(userId, "A", DateTimeOffset.UtcNow);
-        await SeedAsync(userId, "B", DateTimeOffset.UtcNow, readAt: DateTimeOffset.UtcNow);
+        await SeedAsync(userId, "A", SimfClock.Now);
+        await SeedAsync(userId, "B", SimfClock.Now, readAt: SimfClock.Now);
 
         var response = await GetAuthAsync(
             "/api/v1/app/account/notifications/unread-count", token);
@@ -128,7 +128,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
     public async Task MarkRead_flips_the_row_and_is_idempotent()
     {
         var (token, userId) = await CreateUserAndSignInAsync();
-        var id = await SeedAsync(userId, "Z", DateTimeOffset.UtcNow);
+        var id = await SeedAsync(userId, "Z", SimfClock.Now);
 
         var first = await PostAuthAsync(
             $"/api/v1/app/account/notifications/{id}/read", new { }, token);
@@ -149,9 +149,9 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
     public async Task MarkAllRead_clears_every_unread()
     {
         var (token, userId) = await CreateUserAndSignInAsync();
-        await SeedAsync(userId, "A", DateTimeOffset.UtcNow);
-        await SeedAsync(userId, "B", DateTimeOffset.UtcNow);
-        await SeedAsync(userId, "C", DateTimeOffset.UtcNow);
+        await SeedAsync(userId, "A", SimfClock.Now);
+        await SeedAsync(userId, "B", SimfClock.Now);
+        await SeedAsync(userId, "C", SimfClock.Now);
 
         var response = await PostAuthAsync(
             "/api/v1/app/account/notifications/read-all", new { }, token);
@@ -165,7 +165,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
     public async Task Delete_removes_the_row_and_is_idempotent()
     {
         var (token, userId) = await CreateUserAndSignInAsync();
-        var id = await SeedAsync(userId, "Doomed", DateTimeOffset.UtcNow);
+        var id = await SeedAsync(userId, "Doomed", SimfClock.Now);
 
         var first = await DeleteAuthAsync(
             $"/api/v1/app/account/notifications/{id}", token);
@@ -232,8 +232,8 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task<Guid> SeedAsync(
-        Guid userId, string title, DateTimeOffset createdAt,
-        DateTimeOffset? readAt = null,
+        Guid userId, string title, DateTime createdAt,
+        DateTime? readAt = null,
         NotificationKind kind = NotificationKind.AccountProfileSubmitted)
     {
         using var scope = _factory.Services.CreateScope();

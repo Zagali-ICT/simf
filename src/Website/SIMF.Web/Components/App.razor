@@ -27,6 +27,11 @@
         })();
     </script>
     <ResourcePreloader />
+    @* QA-LIVE-001 — the Control Panel got its icon; the Website did not, so every
+       public page load still fell back to /favicon.ico, 404'd, and showed the blank
+       default glyph in the tab. Same emblem as the CP and the app, so the three
+       surfaces share one brand mark. *@
+    <link rel="icon" type="image/png" href="@Assets["favicon.png"]" />
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/theme.tokens.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/simf-components.css"]" />

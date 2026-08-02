@@ -26,5 +26,5 @@ public sealed record AdminAssetSummary(
     long? SizeBytes,
     string? OriginalFileName,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);

@@ -107,7 +107,7 @@ internal sealed class AdminThemeService(
                 $"يوجد محور بالرمز '{code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var theme = new Theme
         {
             Id = Guid.NewGuid(),
@@ -184,7 +184,7 @@ internal sealed class AdminThemeService(
         theme.DisplayOrder = request.DisplayOrder;
         theme.PageColor = pageColor;
         theme.IsActive = request.IsActive;
-        theme.UpdatedAt = timeProvider.GetUtcNow();
+        theme.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -216,7 +216,7 @@ internal sealed class AdminThemeService(
         }
 
         theme.IsActive = false;
-        theme.UpdatedAt = timeProvider.GetUtcNow();
+        theme.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

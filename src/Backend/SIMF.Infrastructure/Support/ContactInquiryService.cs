@@ -33,7 +33,7 @@ internal sealed class ContactInquiryService(
             Message = RequireText(request.Message, MessageMaxLength, "message", "الرسالة"),
             SubmittedByUserId = submittedByUserId,
             IsHandled = false,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         dbContext.ContactInquiries.Add(inquiry);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -95,7 +95,7 @@ internal sealed class ContactInquiryService(
                 "لم يتم العثور على الرسالة.");
         if (inquiry.IsHandled == handled) { return; } // idempotent
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         inquiry.IsHandled = handled;
         inquiry.HandledAt = handled ? now : null;
         inquiry.HandledByUserId = handled ? actorUserId : null;

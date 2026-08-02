@@ -10,10 +10,14 @@ namespace SIMF.Application.Programme.Abstractions;
 public interface IProgrammeSessionService
 {
     /// <summary>Active sessions ordered by start time, optionally
-    /// restricted to a single calendar day (UTC). Used by the agenda
-    /// screen's Day 1/2/3 segmented control.</summary>
+    /// restricted to a single calendar day (Saudi local). Used by the agenda
+    /// screen's Day 1/2/3 segmented control.
+    /// <para>OA-D6 — <paramref name="categoryId"/> optionally narrows the list to
+    /// one <c>SessionCategory</c> (the dynamic D-226 lookup) server-side, so the
+    /// app / website no longer has to pull the whole programme and filter the
+    /// track client-side. Null = every category. The two filters combine (AND).</para></summary>
     Task<PublicSessions> ListAsync(
-        DateOnly? day, CancellationToken cancellationToken = default);
+        DateOnly? day, Guid? categoryId = null, CancellationToken cancellationToken = default);
 
     /// <summary>D-452 (Figma 883:2308 "تفاصيل اليوم") — the day-grouped agenda:
     /// the active programme days (date + bilingual title + has-logo flag), each

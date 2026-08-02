@@ -14,8 +14,8 @@ namespace SIMF.Api.Endpoints.Auth;
 /// pre-authentication auth endpoints; the QR's ~60-bit entropy makes the
 /// found/not-found signal a non-viable enumeration oracle.
 ///
-/// <para>D-811 review — that entropy argument holds ONLY for minted QR ids.
-/// D-810 introduced offline badge ids ('W' + a desk sequence) which are
+/// <para>D-821 review — that entropy argument holds ONLY for minted QR ids.
+/// D-820 introduced offline badge ids ('W' + a desk sequence) which are
 /// consecutive and therefore trivially enumerable, so
 /// <c>BadgeAuthService.ResolveApprovedUserAsync</c> refuses them outright.
 /// Anything added to this anonymous surface must re-check that assumption.</para>

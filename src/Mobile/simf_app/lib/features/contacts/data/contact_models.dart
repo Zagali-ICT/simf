@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Visitor-to-visitor contact sharing (SIMF-FDS-014 §5.4–5.7, D-286). All three
 /// records mirror `SIMF.Contracts.Contacts.*` and decode tolerantly: the wire
@@ -140,7 +141,7 @@ class SavedContactRow {
       jobTitleArabic: json['jobTitleArabic'] as String?,
       organisation: json['organisation'] as String?,
       note: json['note'] as String?,
-      savedAt: DateTime.tryParse(json['savedAt'] as String? ?? '')?.toUtc(),
+      savedAt: parseWireOrNull(json['savedAt'] as String? ?? ''),
     );
   }
 

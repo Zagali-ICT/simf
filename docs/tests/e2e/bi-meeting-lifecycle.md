@@ -35,7 +35,16 @@
 
 - **R1 — no error on multiple requests for the same time.** Two different requesters may reserve the
   same free slot; both sit `Pending`; the admin approves only one. The loser is never shown an error
-  at *submit*; the single-winner is enforced only at *admin approve*.
+  at *submit*; the single-winner is enforced only at *admin approve*. This still holds for the
+  *picked* slot — it is not re-checked for membership at submit.
+- **R1b — a target with NO free slot cannot be requested at all** (owner 2026-07-30, G3 —
+  **supersedes** the "topic-only request" half of R1 / D-767). The old rule let a request through
+  against a target that had no availability windows at all; that is now refused. An empty free-slot
+  list — whether because there is no active future window, or because every slot is already past or
+  taken — is a hard **409** at submit: `SPEAKER_MEETING_NO_AVAILABILITY` on the speaker flow,
+  `DELEGATION_MEETING_NO_AVAILABILITY` on the delegation flow. The app disables the send button on
+  the same signal, and a **failed** slot fetch is shown as a load error + Retry, never as
+  "no availability".
 - **R2 — a reserved (slot-holding: Accepted/AwaitingSpeaker/Done) slot never appears** in the
   app's selectable slot list for that target.
 - **R3 — every action emails BOTH parties** (requester + receiver) to keep them up to date.
@@ -61,7 +70,9 @@
 | E2E-BML-010 | **R4** delegation Approve emails every eligible target member an Approve link; first click confirms | Delegation | rule | P0 |
 | E2E-BML-011 | **R4** speaker Approve emails the speaker Approve/Reject links; Approve confirms | Speaker | rule | P0 |
 | E2E-BML-012 | **R8** re-open pre-selects my slot; changing it moves my request (no duplicate) | Both | rule | P0 |
-| E2E-BML-013 | **R0** submit with no subject / no-slots delegation shows a VISIBLE inline error | Both | rule | P1 |
+| E2E-BML-013 | **R0** submit with no subject shows a VISIBLE inline error (rewritten for G3 — the target now has slots) | Both | rule | P1 |
+| E2E-BML-013b | **R1b (G3)** a target with no free slot — no window, or every slot taken — disables Send and 409s the API | Both | rule | P0 |
+| E2E-BML-013c | **R1b (G3)** a FAILED slot fetch shows a load error + Retry, never the "no availability" notice | Both | error | P1 |
 | E2E-BML-014 | **15-min reminder** fires once for an Accepted meeting to both parties; not for Cancelled | Both | rule | P0 |
 | E2E-BML-015 | Receiver confirm link is single-use + expires (72h); a used/expired link → neutral invalid | Both | error | P1 |
 | E2E-BML-016 | Home → Meeting page lists ALL my requests with status; two top request buttons | Both | ux | P1 |
@@ -208,12 +219,51 @@ Scenario: re-open shows my slot selected; changing it moves the request
 
 ### E2E-BML-013 — R0: visible inline error
 
+> **Superseded 2026-07-30 (G3).** This case used to script a *no-availability* delegation submit as
+> a VALID send that only failed on the empty subject. Under R1b that send is no longer possible at
+> all — the button is disabled — so the inline-error case is now exercised on a delegation that DOES
+> have slots. The no-availability behaviour moved to E2E-BML-013b / E2E-BML-013c.
+
 ```gherkin
-Scenario: no-slots delegation submit with empty subject shows a visible inline error
-  Given a delegation with no availability windows (the sheet shows "no available slots")
+Scenario: a delegation submit with an empty subject shows a visible inline error
+  Given a delegation "Egypt" with a free 10:00 slot
+  And Sara has picked the 10:00 slot in the request sheet
   When Sara taps Send with an empty subject
   Then a VISIBLE inline error appears inside the sheet ("A subject is required") — not an occluded snackbar
   And the sheet stays open so she can correct and retry
+```
+
+### E2E-BML-013b — R1b: a target with no free slot cannot be requested
+
+```gherkin
+Scenario Outline: sending is blocked when the target has no free slot
+  Given a <target> with <availability>
+  When Sara opens the request sheet for that <target>
+  Then the sheet shows the "No meeting slots available right now" notice
+  And the Send button is DISABLED (dimmed) so nothing is submitted
+  When the same request is posted directly to the API (bypassing the app)
+  Then the API returns 409 with ApiResult.Error.Code = "<code>"
+  And no meeting-request row is written
+
+  Examples:
+    | target             | availability                                   | code                              |
+    | speaker "Dr. Noor" | no active availability window at all           | SPEAKER_MEETING_NO_AVAILABILITY    |
+    | speaker "Dr. Noor" | one 30-min window whose only slot is Accepted  | SPEAKER_MEETING_NO_AVAILABILITY    |
+    | delegation "Egypt" | no active availability window at all           | DELEGATION_MEETING_NO_AVAILABILITY |
+    | delegation "Egypt" | one 30-min window whose only slot is Accepted  | DELEGATION_MEETING_NO_AVAILABILITY |
+```
+
+### E2E-BML-013c — R1b: a FAILED slot fetch is not "no availability"
+
+```gherkin
+Scenario: a network failure loading the slots offers a retry, not a false no-availability notice
+  Given the available-slots call for the target fails (network / 500)
+  When Sara opens the request sheet for that target
+  Then the sheet shows a load-error line ("Could not load the list.") and a Retry action
+  And it does NOT show the "No meeting slots available right now" notice
+  And the Send button stays disabled
+  When the call recovers and Sara taps Retry
+  Then the day cards and time chips appear and Send becomes enabled
 ```
 
 ### E2E-BML-014 — 15-minute reminder

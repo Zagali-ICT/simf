@@ -306,13 +306,15 @@ public sealed class UpsertUserProfileRequestValidator
                 "أدخل رقم لوحة صحيح: حروف لوحات سعودية و/أو أرقام.");
     }
 
-    // D-197 — the registrant must be at least 18. Uses UtcNow date-only;
-    // min-age is not timing-sensitive to the second. Returns true for null
+    // D-197 — the registrant must be at least 18. "Today" is the SAUDI day: this
+    // read DateTime.UtcNow until 2026-08-01, and that clock is still on the previous
+    // date until 03:00 Riyadh, so anyone registering in those first three hours
+    // of their 18th birthday was told they were too young. Returns true for null
     // (the NotNull rule owns the required-message).
     private static bool BeAtLeastEighteen(DateOnly? dateOfBirth)
     {
         if (dateOfBirth is null) { return true; }
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(SimfClock.Now);
         return dateOfBirth.Value <= today.AddYears(-18);
     }
 
@@ -321,7 +323,7 @@ public sealed class UpsertUserProfileRequestValidator
     // the real check on top of the prefix/length regex. Public so the walk-in
     // validator reuses the same check (D-459).
     //
-    // D-814 — the implementation moved to SIMF.Common.IdentityDocument so the
+    // D-824 — the implementation moved to SIMF.Common.IdentityDocument so the
     // offline badge upload can apply it too: that path runs in
     // SIMF.Infrastructure, which cannot reference SIMF.Api, and it calls the
     // registration service directly so no validator ever executes on it. This

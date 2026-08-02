@@ -119,7 +119,7 @@ public sealed class PublicPresentationsTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var fileService = scope.ServiceProvider.GetRequiredService<IFileService>();
-        var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow();
+        var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().SimfNow();
 
         var hall = new Hall
         {
@@ -187,7 +187,7 @@ public sealed class PublicPresentationsTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow();
+        var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().SimfNow();
 
         var hall = new Hall
         {

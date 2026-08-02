@@ -24,7 +24,7 @@ internal static class CultureEndpoint
                 CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)),
                 new CookieOptions
                 {
-                    Expires = DateTimeOffset.UtcNow.AddYears(1),
+                    Expires = DateTimeOffset.Now.AddYears(1),
                     IsEssential = true,
                 });
 

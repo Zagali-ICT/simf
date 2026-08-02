@@ -238,7 +238,9 @@ public sealed class GateScansXlsxEndpoint(IAdminGateService service)
     {
         var bytes = await service.ExportScansXlsxAsync(req, ct);
         HttpContext.Response.Headers.ContentDisposition =
-            $"attachment; filename=\"gate-scans-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx\"";
+            // Saudi clock, like every other export filename. UtcNow stamped a
+            // download made at 01:00 Riyadh with the previous day's date.
+            $"attachment; filename=\"gate-scans-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";
         await Send.BytesAsync(bytes,
             contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             cancellation: ct);

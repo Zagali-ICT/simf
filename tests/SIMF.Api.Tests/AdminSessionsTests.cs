@@ -48,8 +48,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 TitleArabic = "كلمة افتتاحية",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -78,8 +78,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 TitleArabic = "حلقة الأمن السيبراني",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(3),
-                End = DateTimeOffset.UtcNow.AddHours(4),
+                Start = SimfClock.Now.AddHours(3),
+                End = SimfClock.Now.AddHours(4),
                 CapacityOverride = 200,
             },
             token);
@@ -101,8 +101,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(),
                 Title = "X", TitleArabic = "س",
                 HallId = Guid.NewGuid(),
-                Start = DateTimeOffset.UtcNow,
-                End = DateTimeOffset.UtcNow.AddHours(1),
+                Start = SimfClock.Now,
+                End = SimfClock.Now.AddHours(1),
             },
             token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -116,7 +116,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hall = await SeedHallAsync(capacity: 10);
 
-        var start = DateTimeOffset.UtcNow.AddHours(5);
+        var start = SimfClock.Now.AddHours(5);
         var response = await PostAuthAsync(
             "/api/v1/admin/sessions",
             new AdminCreateSessionRequest
@@ -146,8 +146,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = code, Title = "A", TitleArabic = "أ",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
@@ -159,8 +159,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = code, Title = "B", TitleArabic = "ب",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(3),
-                End = DateTimeOffset.UtcNow.AddHours(4),
+                Start = SimfClock.Now.AddHours(3),
+                End = SimfClock.Now.AddHours(4),
             },
             token);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
@@ -184,8 +184,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = "Joint panel", TitleArabic = "حلقة مشتركة",
                 Type = SessionType.Session,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {
                     // B9 — D-225: speaker 0 is a plain speaker, speaker 1 is the host.
@@ -225,8 +225,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Linked", TitleArabic = "مرتبطة",
                 Type = SessionType.Session,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {
                     new(speaker.Id, speaker.Name, speaker.NameArabic, 0),
@@ -244,8 +244,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Other", TitleArabic = "أخرى",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(3),
-                End = DateTimeOffset.UtcNow.AddHours(4),
+                Start = SimfClock.Now.AddHours(3),
+                End = SimfClock.Now.AddHours(4),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, other.StatusCode);
@@ -278,8 +278,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Dx", TitleArabic = "د",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
             },
             token);
         var detail = (await create.Content
@@ -307,8 +307,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "F", TitleArabic = "ف",
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
             },
             tokens.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -328,8 +328,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Live", TitleArabic = "مباشر",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 LiveStreamUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 LiveSignLanguageUrl = "https://youtu.be/abc123XYZ_-",
                 // P5 — D-439: AI live-caption text round-trips on create too.
@@ -366,8 +366,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Edit me", TitleArabic = "عدّلني",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
@@ -420,8 +420,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "Override me", TitleArabic = "تجاوزني",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 SeatSelectionModeOverride = SeatSelectionMode.OpenSeating,
             },
             token);
@@ -468,8 +468,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Typed", TitleArabic = "مصنّف",
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 Type = SessionType.Workshop,
                 // #4 — a Workshop is not an Event, so it needs a speaker.
                 Speakers = new List<AdminSessionSpeakerEntry>
@@ -521,8 +521,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(), Title = "HLS", TitleArabic = "بث",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 LiveStreamUrl = "https://live.example.sa/stream.m3u8",
             },
             token);
@@ -541,8 +541,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Bad", TitleArabic = "خطأ",
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 LiveStreamUrl = "https://vimeo.com/12345",
             },
             token);
@@ -564,8 +564,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "NoId", TitleArabic = "بدون",
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 LiveStreamUrl = "https://www.youtube.com/@SIMFchannel",
             },
             token);
@@ -587,8 +587,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Cleartext", TitleArabic = "غير آمن",
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 LiveStreamUrl = "http://live.example.sa/stream.m3u8",
             },
             token);
@@ -802,8 +802,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Title = "Expanded room", TitleArabic = "قاعة موسّعة",
                 Type = SessionType.Event,
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 CapacityOverride = 20,
             },
             token);
@@ -855,8 +855,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 Code = NewCode(),
                 Title = "Over-length abstract", TitleArabic = "ملخّص طويل",
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 Description = new string('x', 2049),
             },
             token);
@@ -872,7 +872,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var hall = await SeedHallAsync(capacity: 50);
-        var start = DateTimeOffset.UtcNow.AddHours(24);
+        var start = SimfClock.Now.AddHours(24);
 
         var first = await CreateAtAsync(token, hall.Id, start, start.AddHours(1));
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
@@ -889,7 +889,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var hall = await SeedHallAsync(capacity: 50);
-        var start = DateTimeOffset.UtcNow.AddHours(24);
+        var start = SimfClock.Now.AddHours(24);
 
         var first = await CreateAtAsync(token, hall.Id, start, start.AddHours(1));
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
@@ -905,7 +905,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallA = await SeedHallAsync(capacity: 50);
         var hallB = await SeedHallAsync(capacity: 50);
-        var start = DateTimeOffset.UtcNow.AddHours(24);
+        var start = SimfClock.Now.AddHours(24);
 
         var first = await CreateAtAsync(token, hallA.Id, start, start.AddHours(1));
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
@@ -921,7 +921,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallA = await SeedHallAsync(capacity: 50);
         var hallB = await SeedHallAsync(capacity: 50);
-        var start = DateTimeOffset.UtcNow.AddHours(24);
+        var start = SimfClock.Now.AddHours(24);
 
         var occupant = await CreateAtAsync(token, hallA.Id, start, start.AddHours(1));
         Assert.Equal(HttpStatusCode.OK, occupant.StatusCode);
@@ -958,7 +958,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var hall = await SeedHallAsync(capacity: 50);
-        var start = DateTimeOffset.UtcNow.AddHours(24);
+        var start = SimfClock.Now.AddHours(24);
 
         var first = (await (await CreateAtAsync(token, hall.Id, start, start.AddHours(1))).Content
             .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
@@ -979,7 +979,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var hall = await SeedHallAsync(capacity: 50);
-        var start = DateTimeOffset.UtcNow.AddHours(24);
+        var start = SimfClock.Now.AddHours(24);
         // Seed two overlapping active sessions directly (bypassing the create guard
         // to simulate legacy data that predates S-2).
         var legacy = await SeedOverlappingPairAsync(hall.Id, start);
@@ -1015,8 +1015,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "No type", TitleArabic = "بدون نوع",
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 // Type omitted → null; the speaker rules out the #4 error so this
                 // isolates the #3 (required type) failure.
                 Speakers = new List<AdminSessionSpeakerEntry>
@@ -1042,8 +1042,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Speakerless", TitleArabic = "بلا متحدّث",
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 Type = SessionType.Session, // not an Event → needs a speaker
             },
             token);
@@ -1064,8 +1064,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Opening", TitleArabic = "افتتاح",
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 Type = SessionType.Event, // an Event may have no speaker
             },
             token);
@@ -1145,8 +1145,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             {
                 Code = NewCode(), Title = "Has a speaker", TitleArabic = "لها متحدّث",
                 HallId = hall.Id,
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
                 Type = SessionType.Session,
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {
@@ -1195,7 +1195,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             NameArabic = "القاعة الرئيسية",
             Capacity = capacity,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
@@ -1214,7 +1214,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             NameArabic = "متحدّث " + Guid.NewGuid().ToString("N")[..4],
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         await db.SaveChangesAsync();
@@ -1234,7 +1234,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             DisplayOrder = 0,
             PageColor = "#1E3A8A",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Themes.Add(theme);
         await db.SaveChangesAsync();
@@ -1242,7 +1242,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     private Task<HttpResponseMessage> CreateAtAsync(
-        string token, Guid hallId, DateTimeOffset start, DateTimeOffset end) =>
+        string token, Guid hallId, DateTime start, DateTime end) =>
         PostAuthAsync(
             "/api/v1/admin/sessions",
             new AdminCreateSessionRequest
@@ -1262,7 +1262,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
     private async Task<AdminSessionDetail> CreateSimpleSessionAsync(string token, Guid hallId)
     {
         var response = await CreateAtAsync(token, hallId,
-            DateTimeOffset.UtcNow.AddHours(1), DateTimeOffset.UtcNow.AddHours(2));
+            SimfClock.Now.AddHours(1), SimfClock.Now.AddHours(2));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content
             .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
@@ -1272,8 +1272,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         AdminSessionDetail created,
         Guid? hallId = null,
         string? title = null,
-        DateTimeOffset? start = null,
-        DateTimeOffset? end = null,
+        DateTime? start = null,
+        DateTime? end = null,
         int? capacityOverride = null,
         bool? isActive = null) =>
         new()
@@ -1323,7 +1323,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 : SeatReservationKind.UserBooking,
             ReservedForUserId = reservedForUserId,
             CreatedByUserId = reservedForUserId ?? Guid.NewGuid(),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
             Status = status,
         };
         db.SeatReservations.Add(reservation);
@@ -1331,7 +1331,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         return reservation.Id;
     }
 
-    private async Task<Session> SeedOverlappingPairAsync(Guid hallId, DateTimeOffset start)
+    private async Task<Session> SeedOverlappingPairAsync(Guid hallId, DateTime start)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -1342,7 +1342,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             Title = "Legacy A", TitleArabic = "قديمة أ",
             HallId = hallId,
             Start = start, End = start.AddHours(1),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         var second = new Session
         {
@@ -1351,7 +1351,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             Title = "Legacy B", TitleArabic = "قديمة ب",
             HallId = hallId,
             Start = start.AddMinutes(30), End = start.AddMinutes(90),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.AddRange(first, second);
         await db.SaveChangesAsync();
@@ -1370,10 +1370,10 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             Code = NewCode(),
             Title = "Legacy", TitleArabic = "قديمة",
             HallId = hallId,
-            Start = DateTimeOffset.UtcNow.AddHours(1),
-            End = DateTimeOffset.UtcNow.AddHours(2),
+            Start = SimfClock.Now.AddHours(1),
+            End = SimfClock.Now.AddHours(2),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -1404,16 +1404,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

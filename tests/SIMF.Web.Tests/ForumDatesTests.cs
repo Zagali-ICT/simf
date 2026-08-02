@@ -24,8 +24,8 @@ public sealed class ForumDatesTests
     public async Task Formats_the_configured_dates_in_English_and_Arabic()
     {
         var handler = new StubHandler(Envelope(
-            new DateTimeOffset(2026, 11, 23, 0, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 11, 25, 0, 0, 0, TimeSpan.Zero)));
+            new DateTime(2026, 11, 23, 0, 0, 0),
+            new DateTime(2026, 11, 25, 0, 0, 0)));
         var dates = NewForumDates(handler);
 
         Assert.Equal("23-25 November 2026", await dates.GetRangeDisplayAsync(arabic: false));
@@ -36,8 +36,8 @@ public sealed class ForumDatesTests
     public async Task Caches_the_profile_read_across_calls()
     {
         var handler = new StubHandler(Envelope(
-            new DateTimeOffset(2026, 11, 23, 0, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 11, 25, 0, 0, 0, TimeSpan.Zero)));
+            new DateTime(2026, 11, 23, 0, 0, 0),
+            new DateTime(2026, 11, 25, 0, 0, 0)));
         var dates = NewForumDates(handler);
 
         await dates.GetRangeDisplayAsync(arabic: false);
@@ -77,7 +77,7 @@ public sealed class ForumDatesTests
     // A canned OrganizationProfile envelope carrying just the two dates the
     // formatter reads (the rest of the profile is irrelevant here).
     private static Func<HttpRequestMessage, HttpResponseMessage> Envelope(
-        DateTimeOffset? start, DateTimeOffset? end)
+        DateTime? start, DateTime? end)
     {
         var result = ApiResult<OrganizationProfileResponse>.Ok(new OrganizationProfileResponse(
             Name: "SIMF", NameArabic: "الملتقى", Title: "SIMF", TitleArabic: "الملتقى",

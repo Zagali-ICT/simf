@@ -1,4 +1,4 @@
-﻿using FastEndpoints;
+using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Account.Validators;
 using SIMF.Api.Endpoints.Auth.Validators;
@@ -12,12 +12,12 @@ namespace SIMF.Api.Endpoints.Admin.Validators;
 /// (the desk frequently registers walk-ins without one); the matching
 /// service synthesizes a placeholder.
 ///
-/// <para>D-809 — this validator now owns the SHAPE rules only (lengths, the
+/// <para>D-819 — this validator now owns the SHAPE rules only (lengths, the
 /// national-id / Iqama patterns and their Luhn checksum, the Saudi and E.164
 /// mobile formats, the plate format, the enum range), each applied when the
 /// field is supplied. The PRESENCE rules — which of those fields are mandatory
 /// — moved to <c>AdminAccountService.EnsureFullDeskFields</c>, because whether
-/// they are mandatory depends on whether the D-809 quick-register mode is
+/// they are mandatory depends on whether the D-819 quick-register mode is
 /// armed, and that cannot be read here: FluentValidation is synchronous and
 /// FastEndpoints validators are singletons, so a constructor read would freeze
 /// the answer at startup. Putting the choice in the service also keeps it

@@ -140,7 +140,7 @@ internal sealed class MyRequestsService(
         Guid userId, AppRequestKind kind, Guid id,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // D1 — set when this withdraw killed a delegation meeting the TARGET delegation had
         // already been asked to confirm, so their live prompt is retracted once the cancel
         // is durable (see the dispatch after the audit write).

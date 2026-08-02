@@ -1,4 +1,4 @@
-﻿using SIMF.Common.Enums;
+using SIMF.Common.Enums;
 
 namespace SIMF.Common;
 
@@ -272,6 +272,15 @@ public static class PermissionCatalog
         public const string Import = "Halls.Import";
     }
 
+    // Q6 (2026-07-30) reserved HallGeofence.View / .Manage for a dedicated
+    // geofence page. That page was not built and must not be: HallsAddEdit.razor
+    // already edits GeofenceCenterLat / Lon / RadiusMeters under Halls.Create /
+    // Halls.Edit. Unused permission codes are not free — they seed rows, appear
+    // in the role editor, and imply a surface that does not exist — so they were
+    // withdrawn rather than left declared. Reinstate them only alongside a real
+    // page, if a boundary change is ever judged to need a gate separate from
+    // editing the hall.
+
     /// <summary>Hall seat-layout editor.</summary>
     public static class SeatLayouts
     {
@@ -365,6 +374,14 @@ public static class PermissionCatalog
     {
         public const string View = "DelegationMeetings.View";
         public const string Manage = "DelegationMeetings.Manage";
+
+        /// <summary>OA-D5 — XLSX export of the delegation meeting-request grid,
+        /// including the hall check-in stamps. Split from <see cref="View"/> for
+        /// the same reason as every other export gate (and to mirror
+        /// <see cref="SpeakerMeetingRequests.Export"/>): taking a spreadsheet of
+        /// meetings off the premises is a bigger act than reading a page of them
+        /// on screen.</summary>
+        public const string Export = "DelegationMeetings.Export";
     }
 
     /// <summary>D-500 (Wave 5, الطلبات) — participation-document requests desk
@@ -942,6 +959,9 @@ public static class PermissionCatalog
         new(Halls.Export, "Halls", "Export", "Export halls", AdminOnly),
         new(Halls.Import, "Halls", "Import", "Import halls", AdminOnly),
 
+        // Q6 — the two HallGeofence codes were withdrawn with their unbuilt page;
+        // the boundary is edited on the hall itself under Halls.Create / Halls.Edit.
+
         new(SeatLayouts.View, "SeatLayouts", "View", "View hall seat layouts", AdminOnly),
         new(SeatLayouts.Edit, "SeatLayouts", "Edit", "Edit hall seat layouts", AdminOnly),
         new(SeatLayouts.Delete, "SeatLayouts", "Delete", "Delete hall seat layouts", AdminOnly),
@@ -977,6 +997,8 @@ public static class PermissionCatalog
 
         new(DelegationMeetings.View, "DelegationMeetings", "View", "View delegation meeting requests", AdminOnly),
         new(DelegationMeetings.Manage, "DelegationMeetings", "Manage", "Manage delegation meeting requests", AdminOnly),
+        // OA-D5 — export the delegation meeting-request grid (with the check-in stamps).
+        new(DelegationMeetings.Export, "DelegationMeetings", "Export", "Export delegation meeting requests", AdminOnly),
 
         new(ParticipationDocumentRequests.View, "ParticipationDocumentRequests", "View", "View participation document requests", AdminOnly),
         new(ParticipationDocumentRequests.Manage, "ParticipationDocumentRequests", "Manage", "Manage participation document requests", AdminOnly),
@@ -1223,7 +1245,7 @@ public static class PermissionCatalog
         Gates.ViewOwnReports,    // /app/gates visitor list + my reports
         Visitors.RegisterOnsite, // /app/staff/visitors/register-onsite
         Seating.Assist,          // D-771 — /app/staff/sessions/{id}/seating/*
-        // D-809 — /admin/sessions/{id}/arrivals + /departures. Missing until
+        // D-819 — /admin/sessions/{id}/arrivals + /departures. Missing until
         // now, so a staff tablet could scan a badge at a perimeter gate but
         // could not record a hall arrival at all.
         HallArrivals.Record,
@@ -1236,7 +1258,7 @@ public static class PermissionCatalog
         Gates.ViewOwnReports,
         Visitors.RegisterOnsite,
         Seating.Assist,          // D-771 — the seating desk (Moderator = Staff + …)
-        HallArrivals.Record,     // D-809 — hall arrivals from a staff tablet
+        HallArrivals.Record,     // D-819 — hall arrivals from a staff tablet
         Questions.View,
         Questions.Moderate,
         SessionModeration.Moderate,

@@ -1,6 +1,8 @@
-// Tests: SIMF.Api.Tests/AdminSessionsTests.cs (+ D-349 live-URL validation)
+// Tests: SIMF.Api.Tests/AdminSessionsTests.cs (+ D-349 live-URL validation),
+//        SIMF.Api.Tests/GridDateSortKeyTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording)
+// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -83,8 +85,16 @@ internal sealed class AdminSessionService(
             ("code", false) => rows.OrderBy(session => session.Code),
             ("title", true) => rows.OrderByDescending(session => session.Title),
             ("title", false) => rows.OrderBy(session => session.Title),
-            ("endutc", true) => rows.OrderByDescending(session => session.End),
-            ("endutc", false) => rows.OrderBy(session => session.End),
+            // "start" / "end" match the grid column Keys in SessionsList.razor. They
+            // read the old persisted key until 2026-08-01, left behind when D-770
+            // renamed those columns, and no caller ever sent it. The effect was worse than
+            // a dead sort: BOTH date columns fell through to the catch-all, so Start
+            // could only ever sort ascending and clicking End sorted the grid by
+            // START. Add a column here and you must add its key here too.
+            ("start", true) => rows.OrderByDescending(session => session.Start),
+            ("start", false) => rows.OrderBy(session => session.Start),
+            ("end", true) => rows.OrderByDescending(session => session.End),
+            ("end", false) => rows.OrderBy(session => session.End),
             _ => rows.OrderBy(session => session.Start),
         };
 
@@ -115,7 +125,12 @@ internal sealed class AdminSessionService(
                 session.LiveSignLanguageUrl,
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
-                session.SeatSelectionModeOverride))
+                session.SeatSelectionModeOverride,
+                // FR-702 — same reason: the Excel lane is the only bulk authoring
+                // path, so a notice absent here is a notice destroyed by a
+                // round-trip through it.
+                session.LiveNotice,
+                session.LiveNoticeArabic))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSessionSummary>.Of(page, total,
@@ -179,7 +194,8 @@ internal sealed class AdminSessionService(
         ValidateTextLengths(
             request.Description, request.DescriptionArabic,
             request.LiveCaptions, request.LiveCaptionsArabic,
-            request.LiveStreamUrl, request.LiveSignLanguageUrl);
+            request.LiveStreamUrl, request.LiveSignLanguageUrl,
+            request.LiveNotice, request.LiveNoticeArabic);
         ValidateSessionDetailFields(
             request.Language, request.LanguageArabic, request.Outcomes);
 
@@ -220,7 +236,7 @@ internal sealed class AdminSessionService(
                 $"توجد جلسة بالرمز '{code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var session = new Session
         {
             Id = Guid.NewGuid(),
@@ -247,6 +263,10 @@ internal sealed class AdminSessionService(
             // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
             LiveCaptions = NullIfBlank(request.LiveCaptions),
             LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic),
+            // FR-702 — the informational live notice (bilingual). Blank = no notice;
+            // it never gates the feed.
+            LiveNotice = NullIfBlank(request.LiveNotice),
+            LiveNoticeArabic = NullIfBlank(request.LiveNoticeArabic),
             IsActive = true,
             CreatedAt = now,
         };
@@ -327,7 +347,8 @@ internal sealed class AdminSessionService(
         ValidateTextLengths(
             request.Description, request.DescriptionArabic,
             request.LiveCaptions, request.LiveCaptionsArabic,
-            request.LiveStreamUrl, request.LiveSignLanguageUrl);
+            request.LiveStreamUrl, request.LiveSignLanguageUrl,
+            request.LiveNotice, request.LiveNoticeArabic);
         ValidateSessionDetailFields(
             request.Language, request.LanguageArabic, request.Outcomes);
 
@@ -477,8 +498,12 @@ internal sealed class AdminSessionService(
         // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
         session.LiveCaptions = NullIfBlank(request.LiveCaptions);
         session.LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic);
+        // FR-702 — the informational live notice (bilingual). Clearing the CP input
+        // stores null again, which simply removes the banner.
+        session.LiveNotice = NullIfBlank(request.LiveNotice);
+        session.LiveNoticeArabic = NullIfBlank(request.LiveNoticeArabic);
         session.IsActive = request.IsActive;
-        session.UpdatedAt = timeProvider.GetUtcNow();
+        session.UpdatedAt = timeProvider.SimfNow();
 
         ReplaceSpeakerLinks(session, request.Speakers);
         ReplaceThemeLinks(session, request.ThemeIds);
@@ -598,7 +623,7 @@ internal sealed class AdminSessionService(
         var audience = await ResolveCancellationAudienceAsync(id, cancellationToken);
 
         session.IsActive = false;
-        session.UpdatedAt = timeProvider.GetUtcNow();
+        session.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await AnnounceSessionCancelledAsync(actorUserId, session, audience, cancellationToken);
@@ -661,7 +686,7 @@ internal sealed class AdminSessionService(
 
     /// <summary>B2 — the "this session was cancelled" notice: an in-app row AND an
     /// email (a visitor who never opens the app would otherwise turn up to a cancelled
-    /// session). Bilingual; the time is the Saudi wall clock, never UTC. Best-effort —
+    /// session). Bilingual; the time is the Saudi wall clock, never a zoned stamp. Best-effort —
     /// one failed recipient never aborts the rest, and the session is already
     /// cancelled either way.</summary>
     private async Task TryNotifySessionCancelledAsync(
@@ -733,7 +758,7 @@ internal sealed class AdminSessionService(
                 $"لا يمكن نقل الجلسة من {from} إلى {status}.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // S-7 — adjacency alone is not enough: a session cannot be marked Held
         // before it has started, nor Recorded/Published without an attached
         // recording. Default guard (no admin override in this increment).
@@ -786,7 +811,7 @@ internal sealed class AdminSessionService(
             FileService.SessionRecording, session.Id, content, fileName, contentType,
             System.IO.Path.GetExtension(fileName), actorUserId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         session.RecordingStoredFileName = result.Id.ToString();
         session.RecordingFileName = fileName;
         session.RecordingContentType = contentType;
@@ -834,7 +859,7 @@ internal sealed class AdminSessionService(
         session.RecordingSizeBytes = null;
         session.RecordingUploadedAt = null;
         session.RecordingUploadedByUserId = null;
-        session.UpdatedAt = timeProvider.GetUtcNow();
+        session.UpdatedAt = timeProvider.SimfNow();
         // Clear the metadata first, then drop the file: if the file delete
         // fails the app already sees "no recording" and only an orphan file
         // is left behind (harmless), never a row pointing at a missing file.
@@ -922,7 +947,7 @@ internal sealed class AdminSessionService(
     // guard. No admin override flag in this increment — an admin who must publish
     // pre-recorded content adjusts the session's start time / uploads a recording.
     private static void ValidateStatusGuards(
-        Session session, SessionStatus target, DateTimeOffset now)
+        Session session, SessionStatus target, DateTime now)
     {
         if (target == SessionStatus.Held && now < session.Start)
         {
@@ -941,7 +966,7 @@ internal sealed class AdminSessionService(
         }
     }
 
-    private static void ValidateTimeWindow(DateTimeOffset start, DateTimeOffset end)
+    private static void ValidateTimeWindow(DateTime start, DateTime end)
     {
         if (end <= start)
         {
@@ -988,14 +1013,16 @@ internal sealed class AdminSessionService(
     // §7 (validation triple-lock) — the free-text + live-feed fields carry EF
     // column caps (SessionConfiguration: Description / DescriptionArabic /
     // LiveCaptions / LiveCaptionsArabic = nvarchar(2048); LiveStreamUrl /
-    // LiveSignLanguageUrl = nvarchar(1024)). Enforce those caps here so
+    // LiveSignLanguageUrl = nvarchar(1024); LiveNotice / LiveNoticeArabic =
+    // nvarchar(512)). Enforce those caps here so
     // over-length input returns a clean 400 instead of a SaveChanges
     // "string or binary data would be truncated" 500 (#19). Measured on the
     // trimmed value actually persisted by NullIfBlank, mirroring AdminHallService.
     private static void ValidateTextLengths(
         string? description, string? descriptionArabic,
         string? liveCaptions, string? liveCaptionsArabic,
-        string? liveStreamUrl, string? liveSignLanguageUrl)
+        string? liveStreamUrl, string? liveSignLanguageUrl,
+        string? liveNotice, string? liveNoticeArabic)
     {
         EnsureMaxLength(description, 2048,
             "The session description must be 2048 characters or fewer.",
@@ -1015,6 +1042,13 @@ internal sealed class AdminSessionService(
         EnsureMaxLength(liveSignLanguageUrl, 1024,
             "The sign-language stream URL must be 1024 characters or fewer.",
             "يجب أن يكون رابط بث لغة الإشارة 1024 حرفاً أو أقل.");
+        // FR-702 — the informational live notice is a one-line banner (512).
+        EnsureMaxLength(liveNotice, 512,
+            "The live notice must be 512 characters or fewer.",
+            "يجب أن يكون إشعار البث المباشر 512 حرفاً أو أقل.");
+        EnsureMaxLength(liveNoticeArabic, 512,
+            "The Arabic live notice must be 512 characters or fewer.",
+            "يجب أن يكون الإشعار العربي للبث المباشر 512 حرفاً أو أقل.");
     }
 
     private static void EnsureMaxLength(
@@ -1031,7 +1065,7 @@ internal sealed class AdminSessionService(
     // times. Half-open overlap: existing.Start < newEnd AND newStart < existing.End.
     // Excludes the session being updated (excludeSessionId) and soft-deleted rows.
     private async Task EnsureNoHallTimeOverlapAsync(
-        Guid hallId, DateTimeOffset start, DateTimeOffset end,
+        Guid hallId, DateTime start, DateTime end,
         Guid excludeSessionId, CancellationToken cancellationToken)
     {
         var overlaps = await dbContext.Sessions
@@ -1327,6 +1361,11 @@ internal sealed class AdminSessionService(
             // Website Session-detail — language label + outcome bullets.
             session.Language,
             session.LanguageArabic,
-            outcomes);
+            outcomes,
+            // FR-702 — the informational live notice. Named so the four seat-holding
+            // counts keep their defaults (GetAsync/UpdateAsync stamp those with a
+            // `with` once the counts are known).
+            LiveNotice: session.LiveNotice,
+            LiveNoticeArabic: session.LiveNoticeArabic);
     }
 }

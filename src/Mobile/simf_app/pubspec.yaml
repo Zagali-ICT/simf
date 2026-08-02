@@ -82,7 +82,7 @@ dependencies:
   # D-736 — semver parse/compare for the server version-policy check (never
   # string-compare versions: "1.10.0" < "1.9.0" lexically). Pure Dart.
   pub_semver: ^2.1.4
-  # D-810 - AES-256-GCM + Crockford base32 for the offline badge decoder, so a
+  # D-820 - AES-256-GCM + Crockford base32 for the offline badge decoder, so a
   # scanner can verify a badge printed by an offline desk with no network. Pure
   # Dart (no native config, which matters here because android/ios are
   # generated); already present transitively, now direct because we use it.

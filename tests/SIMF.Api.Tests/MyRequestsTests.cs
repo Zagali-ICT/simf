@@ -254,7 +254,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
     {
         var (token, userId) = await SignInApprovedVisitorAsync();
         await SeedSpeakerMeetingWithStatusAsync(
-            userId, MeetingRequestStatus.AwaitingSpeaker, DateTimeOffset.UtcNow.AddDays(2));
+            userId, MeetingRequestStatus.AwaitingSpeaker, SimfClock.Now.AddDays(2));
 
         var items = await GetMyRequestsAsync(token);
 
@@ -269,7 +269,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
     {
         var (token, userId) = await SignInApprovedVisitorAsync();
         var requestId = await SeedSpeakerMeetingWithStatusAsync(
-            userId, MeetingRequestStatus.AwaitingSpeaker, DateTimeOffset.UtcNow.AddDays(2));
+            userId, MeetingRequestStatus.AwaitingSpeaker, SimfClock.Now.AddDays(2));
 
         var cancel = await CancelAsync(token, AppRequestKind.SpeakerMeeting, requestId);
         Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
@@ -290,7 +290,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
         // is the arbiter; here the terminal Accepted state exercises the same guard).
         var (token, userId) = await SignInApprovedVisitorAsync();
         var requestId = await SeedSpeakerMeetingWithStatusAsync(
-            userId, MeetingRequestStatus.Accepted, DateTimeOffset.UtcNow.AddDays(2));
+            userId, MeetingRequestStatus.Accepted, SimfClock.Now.AddDays(2));
 
         var cancel = await CancelAsync(token, AppRequestKind.SpeakerMeeting, requestId);
         Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
@@ -336,7 +336,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
     // -- helpers --------------------------------------------------------------
 
     private async Task<Guid> SeedSpeakerMeetingWithStatusAsync(
-        Guid userId, MeetingRequestStatus status, DateTimeOffset? slotStart)
+        Guid userId, MeetingRequestStatus status, DateTime? slotStart)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -346,7 +346,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "SPK" + suffix,
             Name = "Speaker", NameArabic = "متحدّث",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         var req = new SpeakerMeetingRequest
@@ -358,7 +358,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Status = status,
             SlotStart = slotStart,
             SlotEnd = slotStart?.AddMinutes(30),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.SpeakerMeetingRequests.Add(req);
         await db.SaveChangesAsync();
@@ -384,7 +384,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Code = "MR" + suffix,
             Name = "Meeting Hall", NameArabic = "قاعة",
             Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var table = new MeetingTable
@@ -393,11 +393,11 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             Code = "MRT" + suffix,
             Capacity = 4, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.MeetingTables.Add(table);
 
-        var slotStart = DateTimeOffset.UtcNow.AddDays(4);
+        var slotStart = SimfClock.Now.AddDays(4);
         var req = new DelegationMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -411,7 +411,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             MeetingTableId = table.Id,
             SlotStart = slotStart,
             SlotEnd = slotStart.AddMinutes(30),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.DelegationMeetingRequests.Add(req);
         await db.SaveChangesAsync();
@@ -427,7 +427,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             country = new SIMF.Domain.Common.Country
             {
                 Id = id, Code = code, Name = code, NameArabic = code,
-                IsActive = true, IsInvited = true, CreatedAt = DateTimeOffset.UtcNow,
+                IsActive = true, IsInvited = true, CreatedAt = SimfClock.Now,
             };
             db.Countries.Add(country);
             await db.SaveChangesAsync();
@@ -447,8 +447,8 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             DocumentType = ParticipationDocumentType.ParticipationLetter,
             Status = status,
             ResponseNote = responseNote,
-            RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            RespondedAt = status == MeetingRequestStatus.Pending ? null : SimfClock.Now,
+            CreatedAt = SimfClock.Now,
         };
         db.ParticipationDocumentRequests.Add(req);
         await db.SaveChangesAsync();
@@ -467,8 +467,8 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             RequestedJobTitle = "Director of Operations",
             Status = status,
             ResponseNote = responseNote,
-            RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            RespondedAt = status == MeetingRequestStatus.Pending ? null : SimfClock.Now,
+            CreatedAt = SimfClock.Now,
         };
         db.BadgeUpdateRequests.Add(req);
         await db.SaveChangesAsync();
@@ -509,7 +509,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             NameArabic = "د. ابراهيم الحامد",
             Rank = rank,
             CountryId = countryId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         db.SpeakerMeetingRequests.Add(new SpeakerMeetingRequest
@@ -520,7 +520,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             RequesterName = "Test Requester",
             Subject = "Cooperation on marine research",
             Status = MeetingRequestStatus.Accepted,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return speaker.Id;
@@ -538,7 +538,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Name = "Main Hall",
             NameArabic = "القاعة الرئيسية",
             Capacity = 100,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -548,9 +548,9 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Title = "Vision 2030 session",
             TitleArabic = "جلسة رؤية 2030",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddDays(1),
-            End = DateTimeOffset.UtcNow.AddDays(1).AddHours(1),
-            CreatedAt = DateTimeOffset.UtcNow,
+            Start = SimfClock.Now.AddDays(1),
+            End = SimfClock.Now.AddDays(1).AddHours(1),
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         db.SeatReservations.Add(new SeatReservation
@@ -561,7 +561,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             ReservedForUserId = userId,
             CreatedByUserId = userId,
             Status = status,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }

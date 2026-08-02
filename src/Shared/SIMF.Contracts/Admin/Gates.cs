@@ -12,7 +12,7 @@ public sealed record AdminGateSummary(
     int AllowedProfileTypeCount,
     int AssignedOperatorCount,
     bool IsActive,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // D-506 — carried so the grid Excel export can round-trip the bilingual
     // description (not rendered as grid columns). Optional; blank when unset.
     string? Description = null,
@@ -31,8 +31,8 @@ public sealed record AdminGateDetail(
     bool IsActive,
     IReadOnlyList<Guid> AllowedProfileTypeIds,
     IReadOnlyList<Guid> AssignedOperatorUserIds,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // X-1 — the hall this gate is a door for (null = perimeter gate). Appended
     // with a default so the CP-only contract stays append-only.
     Guid? HallId = null);
@@ -97,7 +97,7 @@ public sealed record AdminGateAssignmentRow(
     Guid AssignmentId,
     Guid UserId,
     string UserDisplayName,
-    DateTimeOffset AssignedAt,
+    DateTime AssignedAt,
     Guid AssignedByUserId,
     // BUG-018 (18-6) — the gate detail view lists WHO is assigned, not just a
     // count, so an assignment can be audited from the CP. Appended with a default
@@ -108,8 +108,8 @@ public sealed record AdminGateAssignmentRow(
 /// (SIMF-API-GATES-001 §6.8).</summary>
 public sealed class AdminGateScanReportFilter
 {
-    public DateTimeOffset? FromUtc { get; set; }
-    public DateTimeOffset? ToUtc { get; set; }
+    public DateTime? FromUtc { get; set; }
+    public DateTime? ToUtc { get; set; }
     public Guid? GateId { get; set; }
     public ScanOutcome? Outcome { get; set; }
     public int Skip { get; set; }
@@ -127,7 +127,7 @@ public sealed record AdminGateScanRow(
     ScanDirection Direction,
     ScanOutcome Outcome,
     DenialReasonCode? DenialReasonCode,
-    DateTimeOffset ScannedAt,
+    DateTime ScannedAt,
     Guid ScannedByUserId,
     ScanSource Source);
 
@@ -140,6 +140,6 @@ public sealed record AdminCurrentlyInsideRow(
     Guid? ProfileTypeId,
     string? ProfileTypeName,
     string? ProfileTypePageColor,
-    DateTimeOffset LastCheckInAt,
+    DateTime LastCheckInAt,
     Guid LastCheckInGateId,
     string LastCheckInGateCode);

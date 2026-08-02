@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     /// <summary>
-    /// D-809 — the offline event badge.
+    /// D-819 — the offline event badge.
     ///
     /// <para>Two changes, both required before a gate can validate a badge with
     /// no network:</para>

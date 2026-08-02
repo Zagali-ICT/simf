@@ -21,8 +21,8 @@ public sealed class RecordArrivalEndpoint(IHallAttendanceService service)
     {
         Post("/app/sessions/{sessionId:guid}/arrival");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
-        // D-811 review: deliberately NOT on the operational (unlimited) policy.
-        // D-809 lifted the limits off the STAFF-operated surface, where an
+        // D-821 review: deliberately NOT on the operational (unlimited) policy.
+        // D-819 lifted the limits off the STAFF-operated surface, where an
         // operator holding a named permission is the control. This is attendee
         // SELF-SERVICE — any approved account can call it, and it does a session
         // read plus a Haversine plus attendance writes. Exempting it removed the
@@ -50,8 +50,8 @@ public sealed class RecordDepartureEndpoint(IHallAttendanceService service)
     {
         Post("/app/sessions/{sessionId:guid}/departure");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
-        // D-811 review: deliberately NOT on the operational (unlimited) policy.
-        // D-809 lifted the limits off the STAFF-operated surface, where an
+        // D-821 review: deliberately NOT on the operational (unlimited) policy.
+        // D-819 lifted the limits off the STAFF-operated surface, where an
         // operator holding a named permission is the control. This is attendee
         // SELF-SERVICE — any approved account can call it, and it does a session
         // read plus a Haversine plus attendance writes. Exempting it removed the

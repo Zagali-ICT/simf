@@ -39,10 +39,10 @@ class _FakeGates implements GatesRepository {
 
   List<OperatorGate> gates;
 
-  /// D-811 — what `judgeOffline` returns while [offline] is set.
+  /// D-821 — what `judgeOffline` returns while [offline] is set.
   final OfflineGateVerdict? offlineVerdict;
 
-  /// D-811 — how many times the console refreshed its offline rules.
+  /// D-821 — how many times the console refreshed its offline rules.
   int offlineConfigRefreshes = 0;
 
   final int listStatus;
@@ -133,9 +133,9 @@ class _FakeGates implements GatesRepository {
   @override
   int pendingCount() => _pendingKeys.length;
 
-  // D-811 — the on-device verdict the console shows when the server is
+  // D-821 — the on-device verdict the console shows when the server is
   // unreachable. Null (the default) is "the device could not decide", which is
-  // the pre-D-811 behaviour. The verdict LOGIC has its own suite
+  // the pre-D-821 behaviour. The verdict LOGIC has its own suite
   // (gate_offline_verdict_test.dart); these tests cover what the operator sees.
   @override
   Future<GateOfflineConfig?> refreshOfflineConfig() async {
@@ -362,7 +362,7 @@ void main() {
       expect(repo.pendingCount(), 1);
     });
 
-    testWidgets('D-811: an offline ALLOWED verdict is shown as provisional, '
+    testWidgets('D-821: an offline ALLOWED verdict is shown as provisional, '
         'never as a final answer', (tester) async {
       final repo = _FakeGates(
         gates: <OperatorGate>[_gate()],
@@ -386,7 +386,7 @@ void main() {
       expect(repo.pendingCount(), 1);
     });
 
-    testWidgets('D-811: an offline DENIED verdict names the reason and still '
+    testWidgets('D-821: an offline DENIED verdict names the reason and still '
         'says the scan was saved', (tester) async {
       final repo = _FakeGates(
         gates: <OperatorGate>[_gate()],
@@ -410,7 +410,7 @@ void main() {
       expect(find.textContaining('the scan was saved'), findsOneWidget);
     });
 
-    testWidgets('D-811: opening the console refreshes the offline rules',
+    testWidgets('D-821: opening the console refreshes the offline rules',
         (tester) async {
       // Without this the device would fall back on rules from whenever it last
       // happened to sync, or on nothing at all.

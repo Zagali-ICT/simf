@@ -178,7 +178,7 @@ internal sealed class AdminBoothService(
                 $"يوجد جناح بالرمز '{v.Code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var booth = new Booth
         {
             Id = Guid.NewGuid(),
@@ -300,7 +300,7 @@ internal sealed class AdminBoothService(
         booth.MapX = request.MapX;
         booth.MapY = request.MapY;
         booth.IsActive = request.IsActive;
-        booth.UpdatedAt = timeProvider.GetUtcNow();
+        booth.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -349,7 +349,7 @@ internal sealed class AdminBoothService(
         }
 
         booth.Deactivate();
-        booth.UpdatedAt = timeProvider.GetUtcNow();
+        booth.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

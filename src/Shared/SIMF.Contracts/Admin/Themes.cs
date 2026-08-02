@@ -10,7 +10,7 @@ public sealed record AdminThemeSummary(
     int DisplayOrder,
     string PageColor,
     bool IsActive,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // D-506 — carry the bilingual descriptions so the Excel export can surface
     // them (optional/defaulted so existing positional callers are unaffected).
     string? Description = null,
@@ -28,8 +28,8 @@ public sealed record AdminThemeDetail(
     int DisplayOrder,
     string PageColor,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>POST body for <c>/admin/themes</c>.</summary>
 public sealed class AdminCreateThemeRequest

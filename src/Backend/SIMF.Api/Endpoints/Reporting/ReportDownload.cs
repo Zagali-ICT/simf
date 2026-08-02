@@ -20,7 +20,7 @@ internal static class ReportDownload
     /// there is nothing here to sanitise.
     /// </summary>
     public static string FileName(string slug) =>
-        $"simf-{slug}-{DateTimeOffset.UtcNow.FormatSaudi("yyyyMMdd-HHmmss")}.xlsx";
+        $"simf-{slug}-{SimfClock.Now.FormatSaudi("yyyyMMdd-HHmmss")}.xlsx";
 
     /// <summary>Sets the attachment header for a report download.</summary>
     public static void SetAttachmentHeader(HttpContext http, string slug) =>

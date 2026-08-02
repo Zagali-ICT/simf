@@ -4,10 +4,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using SIMF.ApiClient;
-using SIMF.ControlPanel;
 
 using SIMF.Common;
-using SIMF.Common.Enums;
 
 namespace SIMF.ControlPanel.Endpoints;
 
@@ -195,7 +193,7 @@ internal static class AuthEndpoints
             // hook (SimfCookieRefreshHandler) knows when to rotate without
             // round-tripping the API on every request.
             var properties = new AuthenticationProperties { IsPersistent = true };
-            SimfCookieRefreshHandler.StoreTokens(properties, tokens, DateTimeOffset.UtcNow);
+            SimfCookieRefreshHandler.StoreTokens(properties, tokens, SimfClock.Now);
 
             await http.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);

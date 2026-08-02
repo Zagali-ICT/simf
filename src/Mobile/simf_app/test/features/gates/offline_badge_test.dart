@@ -1,4 +1,4 @@
-// D-810 — the Dart badge decoder must agree byte for byte with the C# encoder
+// D-820 — the Dart badge decoder must agree byte for byte with the C# encoder
 // (SIMF.Common.Badges.EventBadgeCodec). The fixtures below were produced by
 // that encoder; if this file goes red after a codec change, the shipped app
 // stopped being able to read badges the desks are printing.
@@ -114,7 +114,7 @@ void main() {
     });
 
     test('a real badge stays inside the QR-id audit column', () {
-      // GateScans.QrIdAtScan is nvarchar(96) after the D-810 widening, and the
+      // GateScans.QrIdAtScan is nvarchar(96) after the D-820 widening, and the
       // server stores the whole blob so it can decrypt independently. A typical
       // badge is 61 characters; the 10-digit-sequence extreme is 67.
       for (final encoded in fixtures.keys) {

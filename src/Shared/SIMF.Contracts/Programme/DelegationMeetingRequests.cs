@@ -15,15 +15,19 @@ public sealed class SubmitDelegationMeetingRequestRequest
     public string Subject { get; set; } = string.Empty;
 
     /// <summary>The proposed slot (optional; the team confirms it on accept).</summary>
-    public DateTimeOffset? SlotStart { get; set; }
-    public DateTimeOffset? SlotEnd { get; set; }
+    public DateTime? SlotStart { get; set; }
+    public DateTime? SlotEnd { get; set; }
 }
 
 /// <summary>D-478 — the receipt after a successful submit.</summary>
 public sealed record DelegationMeetingRequestSubmitted(
-    Guid Id, MeetingRequestStatus Status, DateTimeOffset CreatedAt);
+    Guid Id, MeetingRequestStatus Status, DateTime CreatedAt);
 
-/// <summary>D-478 — one row on the admin delegation-meeting desk.</summary>
+/// <summary>D-478 — one row on the admin delegation-meeting desk.
+/// <para>OA-D5 appends the hall check-in stamps, mirroring
+/// <c>AdminSpeakerMeetingRequestRow</c>, so the desk's new XLSX export can report
+/// who actually turned up. Appended with defaults, so the shipped wire contract
+/// stays append-only (D-219).</para></summary>
 public sealed record AdminDelegationMeetingRequestRow(
     Guid Id,
     int RequestingCountryId,
@@ -34,10 +38,15 @@ public sealed record AdminDelegationMeetingRequestRow(
     int AttendeeCount,
     string Subject,
     MeetingRequestStatus Status,
-    DateTimeOffset? SlotStart,
+    DateTime? SlotStart,
     string? ResponseNote,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTime CreatedAt,
+    DateTime? RespondedAt,
+    // OA-D5 — when an operator checked the meeting in at the hall, and who. The
+    // operator name is resolved from the Identity DB on read (a bare-Guid logical
+    // FK, D-157); both stay null until the meeting is checked in.
+    DateTime? CheckedInAt = null,
+    string? CheckedInByName = null);
 
 /// <summary>D-478 — the admin detail (adds the requester email, resolved on read).</summary>
 public sealed record AdminDelegationMeetingRequestDetail(
@@ -49,11 +58,11 @@ public sealed record AdminDelegationMeetingRequestDetail(
     int AttendeeCount,
     string Subject,
     MeetingRequestStatus Status,
-    DateTimeOffset? SlotStart,
-    DateTimeOffset? SlotEnd,
+    DateTime? SlotStart,
+    DateTime? SlotEnd,
     string? ResponseNote,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTime CreatedAt,
+    DateTime? RespondedAt);
 
 /// <summary>D-478 + Bi-Meeting rework — the team's respond action, unified with the
 /// speaker flow. <c>Status = Rejected</c> is <b>Cancel</b> (with a justification note).
@@ -72,8 +81,8 @@ public class RespondToDelegationMeetingRequestRequest : RespondToRequest
 
     /// <summary>The picked hall slot start/end — required when <see cref="HallId"/> is
     /// set, must match a currently-free slot for that hall.</summary>
-    public DateTimeOffset? SlotStart { get; set; }
-    public DateTimeOffset? SlotEnd { get; set; }
+    public DateTime? SlotStart { get; set; }
+    public DateTime? SlotEnd { get; set; }
 
     /// <summary>Bi-Meeting rework — Approve (false) vs Confirm (true). See the class
     /// summary. Append-only field (defaults false = Approve).</summary>

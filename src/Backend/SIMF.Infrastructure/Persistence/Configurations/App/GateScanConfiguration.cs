@@ -24,7 +24,7 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
         builder.HasKey(scan => scan.Id);
         builder.Property(scan => scan.Id).ValueGeneratedOnAdd();
 
-        // D-809 — widened 32 -> 64. The offline event badge is an ENCRYPTED
+        // D-819 — widened 32 -> 64. The offline event badge is an ENCRYPTED
         // payload (~54 chars), not a bare 12-character serial, and the scanner
         // sends the whole blob so the SERVER decrypts it independently rather
         // than trusting the device's result. That keeps this audit column

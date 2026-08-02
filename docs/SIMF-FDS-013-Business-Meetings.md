@@ -465,11 +465,26 @@ add a display label only. No new entity unless the owner names a distinct workfl
   `MeetingRequestSheet` to call the built `getAvailableSlots()`
   (`GET /app/speakers/{id}/available-slots`) and present the **real** derived slots
   instead of the D-703 free 7-day/hourly picker; submit the chosen real slot. When a
-  speaker has **no** availability windows, show a clear empty state ("no slots — the
-  team will schedule"), not a fabricated grid. This is an **app-only** change
-  (backend + repo method already exist) and reverts D-703. Delegation requests keep
-  their own slot model (they target a hall, not a speaker) — **OI-E:** confirm
-  delegation requests pick from **hall** slots (GAP-1) the same way.
+  speaker has **no** availability windows, show a clear empty state ("no slots"), not
+  a fabricated grid. This is an **app-only** change (backend + repo method already
+  exist) and reverts D-703. Delegation requests keep their own slot model (they target
+  a hall, not a speaker) — **OI-E:** confirm delegation requests pick from **hall**
+  slots (GAP-1) the same way.
+- **GAP-4b (G3, owner 2026-07-30) — a target with NO free slot cannot be requested.**
+  This **supersedes** the "no slots ⇒ send the request subject-only, the team will
+  schedule" rule (D-767 R1). A meeting request is now **refused at submit** when the
+  target has no free slot, on **both** flows. "No free slot" is exactly what
+  `GetAvailableSlotsAsync` reports as an empty list, which covers both causes in one
+  check: no active future availability window at all, and windows whose every slot is
+  already past or taken by a live (slot-holding) meeting. Server response:
+  **409 `SPEAKER_MEETING_NO_AVAILABILITY`** (`SpeakerMeetingRequestService.SubmitAsync`,
+  after the eligibility gate) and **409 `DELEGATION_MEETING_NO_AVAILABILITY`**
+  (`DelegationMeetingRequestService.SubmitAsync`, after the target-country checks). The
+  app mirrors it: both request sheets **disable the Send button** while the free-slot
+  list is empty, and a **failed** slot fetch is rendered as a load error + Retry so a
+  transient network error is never shown as "this target has no availability". R1 is
+  otherwise unchanged — the *picked* slot is still not re-checked for membership at
+  submit, so two requesters may still hold Pending requests for the same time.
 
 ## 15.5 Proposed workflow (speaker / VIP path)
 

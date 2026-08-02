@@ -15,7 +15,7 @@ public sealed class ContentBlockAddEditTests : CpComponentTestBase
     private static AdminContentBlockSummary Summary() => new(
         Guid.Parse("11111111-1111-1111-1111-111111111111"),
         "home.welcome.title", "Welcome", "Ø£Ù‡Ù„Ø§Ù‹",
-        IsActive: true, DateTimeOffset.UnixEpoch, Guid.Empty);
+        IsActive: true, DateTime.UnixEpoch, Guid.Empty);
 
     [Fact]
     public void Add_mode_leaves_the_key_field_editable()

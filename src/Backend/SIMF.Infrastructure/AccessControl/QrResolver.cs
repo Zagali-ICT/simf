@@ -5,6 +5,7 @@ using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Common.Badges;
 using SIMF.Common.Options;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.AccessControl;
 
@@ -25,9 +26,9 @@ internal sealed class QrResolver(
     {
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
         var normalised = QrId.Normalise(qrId);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
-        // D-809 — an encrypted offline badge is not a QR id, so translate it to
+        // D-819 — an encrypted offline badge is not a QR id, so translate it to
         // one before the lookup. Branching on LENGTH rather than trying the
         // database first keeps the online path at exactly one query and byte
         // identical to before: every id the system mints is QrIdLength, and a
@@ -86,13 +87,13 @@ internal sealed class QrResolver(
     {
         var normalised = QrId.Normalise(scanned ?? string.Empty);
         if (normalised.Length == OfflineBadgeId.QrIdLength) { return normalised; }
-        return TryTranslateEventBadge(normalised, timeProvider.GetUtcNow(), out var translated)
+        return TryTranslateEventBadge(normalised, timeProvider.SimfNow(), out var translated)
             ? translated
             : normalised;
     }
 
     /// <summary>
-    /// D-809 — decrypts an offline badge and returns the QR id it stands for.
+    /// D-819 — decrypts an offline badge and returns the QR id it stands for.
     /// False for anything that is not a badge this server can open, which the
     /// caller turns into the same <c>QR_UNKNOWN</c> denial an unrecognised code
     /// has always produced: a scan is never an oracle for which keys are loaded.
@@ -104,7 +105,7 @@ internal sealed class QrResolver(
     /// widen access.</para>
     /// </summary>
     private bool TryTranslateEventBadge(
-        string encoded, DateTimeOffset now, out string qrId)
+        string encoded, DateTime now, out string qrId)
     {
         qrId = string.Empty;
         var options = walkInMode.CurrentValue;

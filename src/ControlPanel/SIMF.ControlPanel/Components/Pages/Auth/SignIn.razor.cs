@@ -1,18 +1,10 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Localization;
-using Microsoft.JSInterop;
 using SIMF.ApiClient;
 using SIMF.Common;
-using SIMF.Components.Forms;
 using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Notifications;
 
 namespace SIMF.ControlPanel.Components.Pages.Auth;
 
@@ -108,6 +100,18 @@ public partial class SignIn
                 _passwordChangeToken = result.Data.PasswordChangeToken;
                 _changeError = null;
                 _mustChangePassword = true;
+                return;
+            }
+
+            // #2 (Q1, 2026-07-30): the account proved its password but carries no
+            // authenticator secret, so the API withheld the session and issued a
+            // mandatory-enrolment ticket instead. Route to the enrolment page —
+            // it pairs an authenticator and the completion issues the session.
+            if (result.Data.TwoFactorEnrolmentToken is not null)
+            {
+                Session.PendingEmail = _model.Email;
+                Session.PendingEnrolmentToken = result.Data.TwoFactorEnrolmentToken;
+                Nav.NavigateTo("/login/enrol-2fa");
                 return;
             }
 

@@ -28,8 +28,8 @@ public sealed class ContactInquiry : BaseAuditEntity
     /// <summary>Set once an admin has actioned the inquiry.</summary>
     public bool IsHandled { get; set; }
 
-    /// <summary>When it was marked handled (UTC), else null.</summary>
-    public DateTimeOffset? HandledAt { get; set; }
+    /// <summary>When it was marked handled (Saudi local), else null.</summary>
+    public DateTime? HandledAt { get; set; }
 
     /// <summary>The admin who marked it handled (JWT <c>sub</c>), else null.</summary>
     public Guid? HandledByUserId { get; set; }

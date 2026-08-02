@@ -29,7 +29,7 @@ public sealed class HallSeatLayoutEditorTests : CpComponentTestBase
 
     private static AdminHallSummary Hall(int capacity) =>
         new(HallId, "H-1", "Main Hall", "القاعة الرئيسية", capacity, "G",
-            IsActive: true, DateTimeOffset.UtcNow);
+            IsActive: true, SimfClock.Now);
 
     // Stubs the halls list + the layout read-back, and grants the three seat-layout
     // permissions the AuthorizedAction blocks gate on.

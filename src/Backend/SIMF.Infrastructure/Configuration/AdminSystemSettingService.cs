@@ -102,7 +102,7 @@ internal sealed class AdminSystemSettingService(
                 $"يوجد إعداد بالمفتاح '{key}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var setting = new SystemSetting
         {
             Id = Guid.NewGuid(),
@@ -140,7 +140,7 @@ internal sealed class AdminSystemSettingService(
         setting.Value = ValidateValue(request.Value);
         setting.Description = NormaliseDescription(request.Description);
         setting.IsActive = request.IsActive;
-        setting.UpdatedAt = timeProvider.GetUtcNow();
+        setting.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -166,7 +166,7 @@ internal sealed class AdminSystemSettingService(
         }
 
         setting.Deactivate();
-        setting.UpdatedAt = timeProvider.GetUtcNow();
+        setting.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -233,7 +233,7 @@ internal sealed class AdminSystemSettingService(
 
         if (!changed) { return; }
 
-        profile.UpdatedAt = timeProvider.GetUtcNow();
+        profile.UpdatedAt = timeProvider.SimfNow();
         profile.UpdatedBy = actorUserId;
         await db.SaveChangesAsync(cancellationToken);
         organizationProfileCache.Invalidate();

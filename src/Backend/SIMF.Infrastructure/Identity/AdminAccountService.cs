@@ -1,5 +1,7 @@
-﻿// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
-//        SIMF.Api.Tests/AdminCreateUserTests.cs
+// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
+//        SIMF.Api.Tests/AdminCreateUserTests.cs,
+//        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs (#2d — a created
+//        admin is TwoFactorEnabled AND can still complete a first sign-in)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -58,10 +60,13 @@ internal sealed partial class AdminAccountService(
     IPiiEncryptor pii,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
-    // D-809 — the standby walk-in capability (auto-approve + quick register).
+    // D-819 — the standby walk-in capability (auto-approve + quick register).
     // IOptionsMonitor so arming it in appsettings / set-env-* takes effect
     // without a restart.
     IOptionsMonitor<WalkInModeOptions> walkInMode,
+    // #2d — read to decide whether forcing TwoFactorEnabled at creation is safe;
+    // see CreateAccountAsync.
+    IOptions<IdentityLifecycleOptions> lifecycleOptions,
     ILogger<AdminAccountService> logger)
     : IAdminTwoFactorService,
       IAdminUserApprovalService,
@@ -69,7 +74,7 @@ internal sealed partial class AdminAccountService(
       IAdminUserBulkService
 {
     /// <summary>
-    /// D-809 — the desk's ORIGINAL presence rules, moved out of
+    /// D-819 — the desk's ORIGINAL presence rules, moved out of
     /// <c>AdminWalkInRegistrationRequestValidator</c> so they can be skipped when
     /// the quick-register mode is armed. Messages are the validator's word for
     /// word, so with the mode disarmed a caller sees exactly what it saw before.
@@ -78,7 +83,7 @@ internal sealed partial class AdminAccountService(
     /// </summary>
     private static void EnsureFullDeskFields(AdminWalkInRegistrationRequest request)
     {
-        // D-811 review: this one was DROPPED when the presence rules moved out of
+        // D-821 review: this one was DROPPED when the presence rules moved out of
         // the validator, so a blank or one-character display name started
         // returning 200 with the mode disarmed. The badge prints this name.
         RequireDeskField(
@@ -122,7 +127,7 @@ internal sealed partial class AdminAccountService(
     }
 
     /// <summary>
-    /// D-809 — the quick-register floor. Everything else the full desk demands is
+    /// D-819 — the quick-register floor. Everything else the full desk demands is
     /// optional, but two things are not:
     ///
     /// <para>A NAME, because a badge with no name on it is unusable at a gate.
@@ -219,7 +224,7 @@ internal sealed partial class AdminAccountService(
                 + "يتم إعادة ربط سرّ المسؤول الأعلى عبر الإعدادات.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // The wipe — mirrors TotpEnrollmentService.DisableAsync but skips the
         // "you must prove a current code" gate, by design.
@@ -419,7 +424,7 @@ internal sealed partial class AdminAccountService(
                 "بعض الاهتمامات المختارة غير معروفة أو لم تعد مفعّلة.");
         }
 
-        // D-809 — quick register. The desk validator's PRESENCE checks moved here
+        // D-819 — quick register. The desk validator's PRESENCE checks moved here
         // so the reduced field set can be allowed only when the mode is armed:
         // FluentValidation is synchronous and FastEndpoints validators are
         // singletons, so the mode cannot be read inside the validator, and a
@@ -430,7 +435,7 @@ internal sealed partial class AdminAccountService(
         // original checks with their exact bilingual messages, so behaviour is
         // byte-identical to before.
         var quickRegister = walkInMode.CurrentValue
-            .QuickRegisterActive(timeProvider.GetUtcNow());
+            .QuickRegisterActive(timeProvider.SimfNow());
         if (quickRegister)
         {
             EnsureQuickDeskFloor(
@@ -446,7 +451,7 @@ internal sealed partial class AdminAccountService(
         // Rejected here (400) before any Identity row is created so we
         // never leak a dangling SimfUser for a stranger nationality.
         //
-        // D-809 — in quick mode the code may be omitted, in which case
+        // D-819 — in quick mode the code may be omitted, in which case
         // NationalityId falls back to 0. That is the documented "no nationality
         // chosen" value (UserProfileConfiguration) and is what bulk-badge
         // placeholders already write. A code that IS supplied is still resolved
@@ -485,7 +490,7 @@ internal sealed partial class AdminAccountService(
 
         // B3 — D-221 (الجهة): confirm the id resolves to an active Organisation
         // before creating any Identity row, so a bad id surfaces as a clean 400
-        // instead of a later FK violation. D-809 — optional in quick mode; the
+        // instead of a later FK violation. D-819 — optional in quick mode; the
         // column and its FK are nullable, and profile stubs already leave it null.
         Guid? organisationId = null;
         if (request.OrganisationId is { } requestedOrganisationId
@@ -537,7 +542,7 @@ internal sealed partial class AdminAccountService(
             throw ApiException.DuplicateIdentity();
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var user = new SimfUser
         {
             UserName = email,
@@ -571,7 +576,7 @@ internal sealed partial class AdminAccountService(
                 "تعذّر إنشاء الحساب.");
         }
 
-        // D-809 — UserProfile.Name and .NameArabic are both NOT NULL, but quick
+        // D-819 — UserProfile.Name and .NameArabic are both NOT NULL, but quick
         // register accepts a name in ONE script. Mirror whichever was captured
         // into the other column (falling back to the display name) so the row is
         // valid and a gate operator always has something to read off the badge.
@@ -648,7 +653,7 @@ internal sealed partial class AdminAccountService(
                 profile.Interests.Add(interest);
             }
         }
-        // D-809 — the offline badge upload path. The desk printed this badge
+        // D-819 — the offline badge upload path. The desk printed this badge
         // without a network, so its QR id is DERIVED from the sequence already
         // encrypted into the paper rather than minted here. Set before the
         // insert: the minter on the approval path is mint-if-missing, so it
@@ -683,7 +688,7 @@ internal sealed partial class AdminAccountService(
                 ErrorCodes.DuplicateIdentity, cancellationToken);
             throw ApiException.DuplicateIdentity();
         }
-        // D-809 — two desks uploading the same batch at once. The pre-check in
+        // D-819 — two desks uploading the same batch at once. The pre-check in
         // the upload service is a non-atomic read-then-insert, so the loser lands
         // here; translate it into the same "already uploaded" answer the
         // pre-check gives rather than a 500, and the retry stays idempotent.
@@ -701,7 +706,7 @@ internal sealed partial class AdminAccountService(
         }
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // D-809 — record WHICH fields a quick registration omitted, so the
+        // D-819 — record WHICH fields a quick registration omitted, so the
         // incomplete profiles can be chased and completed after the event. The
         // CP visitor edit page and the attendee's own profile save already fill
         // them in; this is the list of who to chase.
@@ -733,7 +738,7 @@ internal sealed partial class AdminAccountService(
             }, cancellationToken);
         }
 
-        // D-809 — walk-in auto-approval. Approval is what MINTS THE QR, so
+        // D-819 — walk-in auto-approval. Approval is what MINTS THE QR, so
         // without this a walk-in leaves the desk with no badge and the main gate
         // correctly refuses them. This is the switch that makes the offline desk
         // and session walk-in usable.
@@ -750,7 +755,7 @@ internal sealed partial class AdminAccountService(
         // staff powers with nobody reviewing. Same rule bulk badge generation
         // already enforces.
         if (expectedIsVisitor == true
-            && walkInMode.CurrentValue.AutoApproveActive(timeProvider.GetUtcNow()))
+            && walkInMode.CurrentValue.AutoApproveActive(timeProvider.SimfNow()))
         {
             try
             {
@@ -784,7 +789,7 @@ internal sealed partial class AdminAccountService(
                 // rush, so this degrades to today's behaviour: the desk falls
                 // back to a paper slip while an admin approves from the queue.
                 //
-                // D-811 review — the QR is cleared from the RESPONSE explicitly.
+                // D-821 review — the QR is cleared from the RESPONSE explicitly.
                 // ApproveAsync saves the App DB (minting the QR onto this same
                 // tracked profile instance) before it flips Identity, so a
                 // failure in the second half leaves a real, persisted QrId on an
@@ -917,7 +922,7 @@ internal sealed partial class AdminAccountService(
             }
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var user = new SimfUser
         {
             UserName = email,
@@ -946,6 +951,25 @@ internal sealed partial class AdminAccountService(
                 ErrorCodes.InternalError, 500,
                 "The account could not be created.",
                 "تعذّر إنشاء الحساب.");
+        }
+
+        // #2d (2026-07-30) — a CP-provisioned admin must never end up
+        // permanently single-factor, so the flag is set at creation rather than
+        // left to the admin's own choice on /account/profile.
+        //
+        // The condition is the dependency on #2, expressed in code rather than
+        // left as a note in a plan. A new admin has a role and no authenticator
+        // key, and the factor selector in SignInService picks
+        // `key != "" || roles.Count > 0 ? Totp : EmailOtp` — so setting this flag
+        // on its own challenges every new admin for a TOTP code against a secret
+        // that does not exist and locks them out at creation. #2's
+        // enrolment-first branch is what hands them a way in, and it runs under
+        // exactly this setting: when the enrolment path is switched off, forcing
+        // the flag would be a lockout, so we do not force it.
+        if (userType == UserType.Admin
+            && lifecycleOptions.Value.RequireControlPanelTwoFactorEnrolment)
+        {
+            await accounts.SetTwoFactorEnabledAsync(user, true).EnsureSuccessAsync();
         }
 
         // P7c — RBAC roles are valid only for Admin-typed users.

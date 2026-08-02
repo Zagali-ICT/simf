@@ -34,7 +34,7 @@ internal sealed class SessionFavouriteService(
             Id = Guid.NewGuid(),
             UserId = userId,
             SessionId = sessionId,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         });
         await dbContext.SaveChangesAsync(cancellationToken);
     }

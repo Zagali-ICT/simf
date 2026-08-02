@@ -92,7 +92,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       // Opening the console is a good moment to drain any backlog left by a
       // prior offline session (G-4).
       unawaited(_flushPending());
-      // D-811 — and to refresh the rules this device falls back on when the
+      // D-821 — and to refresh the rules this device falls back on when the
       // link drops. Fire-and-forget: it keeps its previous cache on failure,
       // and the console must open either way.
       unawaited(ref.read(gatesRepositoryProvider).refreshOfflineConfig());
@@ -161,9 +161,9 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         // key and retried automatically, so the admitted person is not lost
         // (G-4).
         setState(() => _pending = repo.pendingCount());
-        // D-811 — give the operator an answer instead of only "saved". The
+        // D-821 — give the operator an answer instead of only "saved". The
         // device decrypts the badge and checks it against this gate's cached
-        // rules; null means it could not decide, which is the pre-D-811
+        // rules; null means it could not decide, which is the pre-D-821
         // behaviour and still the honest answer.
         final verdict = repo.judgeOffline(gateId: gate.gateId, qr: trimmed);
         messenger.showSnackBar(
@@ -199,7 +199,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     }
   }
 
-  /// D-811 — what to tell the operator about a scan the server never saw.
+  /// D-821 — what to tell the operator about a scan the server never saw.
   ///
   /// Every branch also says the scan was saved: whatever the device concluded,
   /// the authoritative decision is the server's when the queue drains, and an
@@ -207,7 +207,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   static String _offlineText(AppL10n l10n, OfflineGateVerdict? verdict) {
     if (verdict == null) {
       // The device could not decide — no cached rules, no key, or a hall door
-      // whose booking check needs live data. Unchanged from before D-811.
+      // whose booking check needs live data. Unchanged from before D-821.
       return l10n.gateSavedOffline;
     }
     if (verdict.isAllowed) {

@@ -1,20 +1,10 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
-using SIMF.Contracts.Faq;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -73,8 +63,8 @@ public partial class HallsViewDelete
         finally { _scheduleLoading = false; }
     }
 
-    // Saudi local time, 12-hour — never a raw UTC stamp (D-219).
-    private static string Local(DateTimeOffset value) =>
+    // Saudi local time, 12-hour — never a raw zoned stamp (D-219).
+    private static string Local(DateTime value) =>
         value.FormatSaudi("dd-MM-yyyy hh:mm tt");
 
     private static string SessionTitle(AdminSessionSummary session) =>

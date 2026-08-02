@@ -105,6 +105,36 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.RejectionReason).HasMaxLength(500);
         builder.Property(profile => profile.RejectionReasonArabic).HasMaxLength(500);
 
+        // `accessibility-server-sync` — the five per-account accessibility
+        // choices behind GET / PUT /app/account/preferences. Additive columns.
+        // TextSize is a STRING holding the app's stable enum name, never an int
+        // index, so reordering the client enum can never re-interpret a stored
+        // row; 16 chars covers the longest name ("extraLarge") with headroom.
+        // The store defaults mirror the wire defaults (captions ON, the rest
+        // off), so every pre-existing row reads back as "never chosen".
+        // HasSentinel pins what EF treats as "not set" on INSERT: without it,
+        // a first save that turns captions OFF would be omitted from the INSERT
+        // and silently come back ON from the DEFAULT.
+        builder.Property(profile => profile.AccessibilityTextSize)
+            .HasMaxLength(16)
+            .IsRequired()
+            .HasDefaultValue(UserProfile.DefaultAccessibilityTextSize)
+            .HasSentinel(UserProfile.DefaultAccessibilityTextSize);
+        builder.Property(profile => profile.AccessibilityHighContrast)
+            .HasDefaultValue(false);
+        builder.Property(profile => profile.AccessibilityReduceMotion)
+            .HasDefaultValue(false);
+        builder.Property(profile => profile.AccessibilityScreenReaderAssist)
+            .HasDefaultValue(false);
+        builder.Property(profile => profile.AccessibilityCaptions)
+            .HasDefaultValue(true)
+            .HasSentinel(true);
+        // Nullable ON PURPOSE and with NO default — null is the load-bearing value.
+        // It is the only thing separating "the user chose the defaults" from "nobody
+        // has chosen anything", and the app relies on that difference to avoid
+        // overwriting accessibility settings a user had already made on the device.
+        builder.Property(profile => profile.AccessibilityConfiguredAt);
+
         // P8 — ProfileType lookup; Restrict so a profile-type cannot
         // be deleted while any user is assigned to it.
         builder.HasIndex(profile => profile.ProfileTypeId);

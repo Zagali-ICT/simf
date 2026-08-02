@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -1237,6 +1237,10 @@
   <data name="Admin.Pending.BulkApproved.Toast" xml:space="preserve"><value>Approved {0} user(s). Skipped {1}.</value></data>
   <data name="Admin.Pending.Action.BulkReject" xml:space="preserve"><value>Reject selected</value></data>
   <data name="Admin.Pending.BulkReject.Title" xml:space="preserve"><value>Reject selected accounts</value></data>
+  <data name="Admin.Pending.Approve.Confirm.Title" xml:space="preserve"><value>Approve administrator account</value></data>
+  <data name="Admin.Pending.Approve.Confirm.Message" xml:space="preserve"><value>You are about to approve {0} ({1}). Approving grants Control Panel access and mints the QR badge.</value></data>
+  <data name="Admin.Pending.BulkApprove.Confirm.Title" xml:space="preserve"><value>Approve selected accounts</value></data>
+  <data name="Admin.Pending.BulkApprove.Confirm.Message" xml:space="preserve"><value>You are about to approve {0} pending account(s). Each approved account can sign in and receives a QR badge.</value></data>
   <data name="Admin.Pending.BulkReject.Confirm" xml:space="preserve"><value>You are about to reject {0} pending account(s). The reason below is recorded and shown to each user.</value></data>
   <data name="Admin.Pending.BulkReject.Submit" xml:space="preserve"><value>Reject selected</value></data>
   <data name="Admin.Pending.BulkRejected.Toast" xml:space="preserve"><value>Rejected {0} user(s). Skipped {1}.</value></data>
@@ -1569,6 +1573,19 @@
   <data name="Auth.Totp.SignedInAs" xml:space="preserve"><value>Signed in as {0}.</value></data>
   <data name="Auth.Totp.BackToSignIn" xml:space="preserve"><value>Back to sign in</value></data>
 
+  <data name="Auth.Enrol2fa.PageTitle" xml:space="preserve"><value>Set up two-factor authentication</value></data>
+  <data name="Auth.Enrol2fa.Title" xml:space="preserve"><value>Set up two-factor authentication</value></data>
+  <data name="Auth.Enrol2fa.Supporting" xml:space="preserve"><value>The Control Panel requires an authenticator app. Set it up now to finish signing in.</value></data>
+  <data name="Auth.Enrol2fa.Instruction" xml:space="preserve"><value>Scan this QR code with your authenticator app, then enter the six-digit code it shows.</value></data>
+  <data name="Auth.Enrol2fa.SecretHint" xml:space="preserve"><value>Cannot scan? Enter this key in the app instead.</value></data>
+  <data name="Auth.Enrol2fa.Code" xml:space="preserve"><value>Verification code</value></data>
+  <data name="Auth.Enrol2fa.Submit" xml:space="preserve"><value>Confirm and sign in</value></data>
+  <data name="Auth.Enrol2fa.Submitting" xml:space="preserve"><value>Confirming</value></data>
+  <data name="Auth.Enrol2fa.Loading" xml:space="preserve"><value>Preparing your authenticator setup.</value></data>
+  <data name="Auth.Enrol2fa.Fallback" xml:space="preserve"><value>Two-factor setup could not be completed. Sign in again to start over.</value></data>
+  <data name="Auth.Enrol2fa.RecoveryShowOnce" xml:space="preserve"><value>Save these recovery codes now — they are shown only once, and each one works once if you lose your authenticator.</value></data>
+  <data name="Auth.Enrol2fa.Continue" xml:space="preserve"><value>I have saved them — continue</value></data>
+
   <data name="Auth.Forgot.Title" xml:space="preserve"><value>Forgot password</value></data>
   <data name="Auth.Forgot.Supporting" xml:space="preserve"><value>Enter your email; we will send a reset code if the account exists.</value></data>
   <data name="Auth.Forgot.Submit" xml:space="preserve"><value>Send reset code</value></data>
@@ -1711,6 +1728,10 @@
   <data name="Account.Notifications.Column.Severity" xml:space="preserve"><value>Type</value></data>
   <data name="Account.Notifications.Column.CreatedAt" xml:space="preserve"><value>Received</value></data>
   <data name="Account.Notifications.Column.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Account.Notifications.Dismiss.Confirm.Title" xml:space="preserve"><value>Dismiss notification</value></data>
+  <data name="Account.Notifications.Dismiss.Confirm.Message" xml:space="preserve"><value>Dismiss "{0}"? It is removed from your inbox and cannot be restored.</value></data>
+  <data name="Account.Notifications.BulkDismiss.Confirm.Title" xml:space="preserve"><value>Dismiss selected notifications</value></data>
+  <data name="Account.Notifications.BulkDismiss.Confirm.Message" xml:space="preserve"><value>Dismiss {0} selected notification(s)? They are removed from your inbox and cannot be restored.</value></data>
   <data name="Account.Notifications.Action.Delete" xml:space="preserve"><value>Delete</value></data>
   <data name="Account.Notifications.FilterColumn" xml:space="preserve"><value>Filter column</value></data>
   <data name="Account.Notifications.FilterPlaceholder" xml:space="preserve"><value>Search</value></data>
@@ -2007,6 +2028,9 @@
   <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>Paste a YouTube link (youtube.com / youtu.be) or a direct https HLS/MP4 stream URL.</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrlHint" xml:space="preserve"><value>Optional. Same formats — a YouTube link or an HLS/MP4 stream URL.</value></data>
   <data name="Admin.Sessions.Field.LiveUrlInvalid" xml:space="preserve"><value>Enter a valid YouTube link or an HLS/MP4 stream URL (https).</value></data>
+  <data name="Admin.Sessions.Field.LiveNotice" xml:space="preserve"><value>Live notice — shown with the stream (English)</value></data>
+  <data name="Admin.Sessions.Field.LiveNoticeArabic" xml:space="preserve"><value>Live notice — shown with the stream (Arabic)</value></data>
+  <data name="Admin.Sessions.Field.LiveNoticeHint" xml:space="preserve"><value>Optional note displayed beside the live stream, in the viewer's language. It is information only — it blocks nobody and the stream stays available to everyone, wherever they are. Leave both languages blank to show no notice.</value></data>
   <data name="Admin.Sessions.Field.LiveCaptions" xml:space="preserve"><value>AI live captions (English)</value></data>
   <data name="Admin.Sessions.Field.LiveCaptionsArabic" xml:space="preserve"><value>AI live captions (Arabic)</value></data>
   <data name="Admin.Sessions.Field.LiveCaptionsHint" xml:space="preserve"><value>Optional caption / running-transcript text shown under the live player. Leave blank to fall back to the player's own captions.</value></data>
@@ -3702,4 +3726,12 @@
   <data name="Admin.Delegates.Bulk.Remove" xml:space="preserve"><value>Remove {0}</value></data>
   <data name="Admin.Delegates.Bulk.PickType" xml:space="preserve"><value>Choose a profile type and a count above zero.</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>VIP welcome export</value></data>
+  <data name="Profile.Avatar.Remove.Confirm.Title" xml:space="preserve"><value>Remove profile photo</value></data>
+  <data name="Profile.Avatar.Remove.Confirm.Message" xml:space="preserve"><value>Remove your profile photo? The stored image is deleted and cannot be restored.</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove.Confirm.Title" xml:space="preserve"><value>Remove hero video</value></data>
+  <data name="Admin.OrganizationProfile.HeroVideoRemove.Confirm.Message" xml:space="preserve"><value>Remove the hero video? The public site and the mobile app stop showing it immediately.</value></data>
+  <data name="Admin.ChangeType.Confirm.Title" xml:space="preserve"><value>Change account type</value></data>
+  <data name="Admin.ChangeType.Confirm.Message" xml:space="preserve"><value>Change this account to "{0}"? It moves to the other desk and its available actions change.</value></data>
+  <data name="Admin.MediaLibrary.Deactivate.Confirm.Title" xml:space="preserve"><value>Deactivate asset</value></data>
+  <data name="Admin.MediaLibrary.Deactivate.Confirm.Message" xml:space="preserve"><value>Deactivate the asset for "{0}"? It stops appearing on the public site until it is restored.</value></data>
 </root>

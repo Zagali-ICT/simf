@@ -153,7 +153,7 @@ public interface IAdminUserProvisioningService
     /// A mismatch rejects with <c>AdminProfileTypeInvalid</c> instead of
     /// silently routing the account to the wrong queue. Null leaves the
     /// guard off (legacy callers).</summary>
-    /// <summary>D-809: <paramref name="presetQrId"/> is the OFFLINE badge upload
+    /// <summary>D-819: <paramref name="presetQrId"/> is the OFFLINE badge upload
     /// path. A desk that registered without a network already printed the badge,
     /// so the account must be stored under the QR id that badge encodes rather
     /// than a freshly minted one. Supplied only by the offline batch upload;

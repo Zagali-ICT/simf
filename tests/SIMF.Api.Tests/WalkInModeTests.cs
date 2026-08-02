@@ -1,4 +1,4 @@
-﻿// Tests: D-809 walk-in mode — the standby capability for an event where a large
+// Tests: D-819 walk-in mode — the standby capability for an event where a large
 // crowd arrives who never registered online.
 using System.Net;
 using System.Net.Http.Headers;
@@ -17,7 +17,7 @@ using Xunit;
 namespace SIMF.Api.Tests;
 
 /// <summary>
-/// D-809 — the walk-in mode ships DISARMED. These tests pin the default: with
+/// D-819 — the walk-in mode ships DISARMED. These tests pin the default: with
 /// no configuration the desk behaves exactly as it did before, so nothing about
 /// the approval workflow changes until the capability is deliberately armed in
 /// appsettings / set-env-*.
@@ -69,7 +69,7 @@ public sealed class WalkInModeTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Walk_in_badge_activation_is_refused_while_the_account_has_no_real_email()
     {
-        // D-809 security item. The activation start step lets a QR holder
+        // D-819 security item. The activation start step lets a QR holder
         // nominate the address the code is sent to when the account carries a
         // synthesized placeholder email. With walk-in badges in circulation that
         // is an account-takeover primitive: photograph a badge, claim the
@@ -292,7 +292,7 @@ public sealed class WalkInModeTests : IClassFixture<SimfApiFactory>
             Name = "Walk-In Test Org",
             NameArabic = "جهة اختبار",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Organisations.Add(organisation);
         await db.SaveChangesAsync();
@@ -379,15 +379,13 @@ public sealed class WalkInModeTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, administratorRole);
         }
 
-        var sign = await client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        // The Control Panel password step now answers with a TOTP challenge, not
+        // tokens — this fixture used to read `.Tokens` straight off the sign-in
+        // response, which stopped resolving the moment the enrolment gate landed.
+        // AuthFlow enrols the account and answers the challenge with a genuine
+        // code, so these tests exercise the shipping two-factor path like every
+        // other admin fixture in this assembly.
+        return await AuthFlow.SignInControlPanelAsync(
+            client, _factory, email, AuthFlow.Password);
     }
 }

@@ -39,5 +39,5 @@ public sealed class AiInvocation
     /// Admin, Moderator.</summary>
     public string CallerKind { get; set; } = string.Empty;
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

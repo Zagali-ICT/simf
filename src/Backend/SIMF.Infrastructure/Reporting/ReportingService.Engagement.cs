@@ -102,7 +102,7 @@ internal sealed partial class ReportingService
         QuestionStatus Status,
         QuestionPhase Phase,
         bool IsHidden,
-        DateTimeOffset CreatedAt);
+        DateTime CreatedAt);
 
     private static EngagementReportRow ToRow(QuestionProjection p) =>
         new(
@@ -155,6 +155,15 @@ internal sealed partial class ReportingService
             "status" => descending
                 ? questions.OrderByDescending(q => q.Status).ThenBy(q => q.Id)
                 : questions.OrderBy(q => q.Status).ThenBy(q => q.Id),
+            // "asked" is the date column's own Key (EngagementReport.razor:71).
+            // Without this arm a click fell through to the default below, which
+            // reads `descending` INVERTED so the no-sort case comes back
+            // newest-first — leaving the ascending arrow (and
+            // aria-sort="ascending") sitting over newest-first rows.
+            "asked" => descending
+                ? questions.OrderByDescending(q => q.CreatedAt).ThenBy(q => q.Id)
+                : questions.OrderBy(q => q.CreatedAt).ThenBy(q => q.Id),
+            // Newest first by default: the queue is read from the live end.
             _ => descending
                 ? questions.OrderBy(q => q.CreatedAt).ThenBy(q => q.Id)
                 : questions.OrderByDescending(q => q.CreatedAt).ThenBy(q => q.Id),

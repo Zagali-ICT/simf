@@ -7,8 +7,9 @@ import '../../../core/utils/weekday_names.dart';
 import '../data/session_models.dart';
 
 /// The session header card (frame 889:2716): a navy box holding the title +
-/// gold index badge, the clock/calendar meta line, and the رابط الجلسة /
-/// ملخص الجلسة action buttons — all right-aligned for RTL.
+/// gold index badge, the category tag pill (PAR-D3, when the session carries a
+/// category), the clock/calendar meta line, and the رابط الجلسة / ملخص الجلسة
+/// action buttons — all right-aligned for RTL.
 class SessionHeaderCard extends StatelessWidget {
   const SessionHeaderCard({
     required this.detail,
@@ -18,6 +19,7 @@ class SessionHeaderCard extends StatelessWidget {
     required this.onSessionSummary,
     required this.summaryEnabled,
     required this.liveEnabled,
+    this.titleAndTimeOnly = false,
     super.key,
   });
 
@@ -39,6 +41,11 @@ class SessionHeaderCard extends StatelessWidget {
   /// is live AND carries an online feed; otherwise it shows greyed/inactive.
   final bool liveEnabled;
 
+  /// #29 (owner Q10, 2026-07-30) — a **workshop** shows its title + time ONLY,
+  /// so the card drops the category pill and the ملخص الجلسة / رابط الجلسة
+  /// action row. The rest of the detail is suppressed by [SessionDetailBody].
+  final bool titleAndTimeOnly;
+
   @override
   Widget build(BuildContext context) {
     // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
@@ -47,6 +54,12 @@ class SessionHeaderCard extends StatelessWidget {
     final badgeText = detail.displayOrder > 0
         ? detail.displayOrder.toString().padLeft(2, '0')
         : detail.code;
+    // PAR-D3 — the category tag pill under the title. Shown only when the
+    // session actually carries a category (the lookup ships empty pending the
+    // client's list, OI-2 / D-226), and never on the #29 workshop reduction.
+    final category = titleAndTimeOnly
+        ? null
+        : detail.localizedCategory(isArabic)?.trim();
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: BoxDecoration(
@@ -76,38 +89,84 @@ class SessionHeaderCard extends StatelessWidget {
             ],
           ),
 
+          if (category != null && category.isNotEmpty) ...<Widget>[
+            const SizedBox(height: SimfTokens.space2),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: _CategoryPill(label: category),
+            ),
+          ],
+
           const SizedBox(height: SimfTokens.space4),
           _MetaRow(detail: detail, isArabic: isArabic),
-          const SizedBox(height: SimfTokens.space4),
           // Frame 889:2715 — both action buttons keep their slots (layout
           // unchanged), but each is GATED on the session's state (owner
           // 2026-07-14, superseding the 2026-06-30 "always both active"):
           // ملخص الجلسة (gold hairline) is active only once a summary exists;
           // رابط الجلسة (beige hairline) only while the session streams live.
           // A gated-off button greys out and stops tapping (inactive, not
-          // hidden — the frame's two-chip row is preserved).
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _HeaderActionButton(
-                  label: l10n.sessionSummary,
-                  accented: true,
-                  enabled: summaryEnabled,
-                  onTap: onSessionSummary,
+          // hidden — the frame's two-chip row is preserved). #29: a workshop
+          // has neither a summary nor a feed, so the row drops entirely.
+          if (!titleAndTimeOnly) ...<Widget>[
+            const SizedBox(height: SimfTokens.space4),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: _HeaderActionButton(
+                    label: l10n.sessionSummary,
+                    accented: true,
+                    enabled: summaryEnabled,
+                    onTap: onSessionSummary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: _HeaderActionButton(
-                  label: l10n.sessionLink,
-                  accented: false,
-                  enabled: liveEnabled,
-                  onTap: onSessionLink,
+                const SizedBox(width: SimfTokens.space2),
+                Expanded(
+                  child: _HeaderActionButton(
+                    label: l10n.sessionLink,
+                    accented: false,
+                    enabled: liveEnabled,
+                    onTap: onSessionLink,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// PAR-D3 — the session's category tag pill, sitting under the title inside the
+/// header card: a small gold-hairline pill on the 4px radius carrying the
+/// localized category name in gold 12px SemiBold. Rendered only when the session
+/// carries a category, so an uncategorised session keeps the pre-PAR-D3 layout.
+class _CategoryPill extends StatelessWidget {
+  const _CategoryPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space2,
+        vertical: SimfTokens.space1,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        border: Border.all(
+          // The gold hairline is the BOLD one, as on the accented ملخص الجلسة
+          // chip below it (the 0.2 hairline is the beige variant).
+          color: SimfTokens.accent,
+          width: SimfTokens.hairlineBold,
+        ),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: SimfTokens.labelGoldSemiboldSm,
       ),
     );
   }

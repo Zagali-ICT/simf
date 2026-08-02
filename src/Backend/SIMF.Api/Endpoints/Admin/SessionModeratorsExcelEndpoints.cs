@@ -34,7 +34,7 @@ public sealed class ExportSessionModeratorsEndpoint(IAdminSessionModeratorServic
         new("Moderator", row => row.ModeratorDisplayName),
         new("Email", row => row.ModeratorEmail),
         new("AssignedBy", row => row.AssignedByDisplayName),
-        new("AssignedAt", row => row.AssignedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)),
+        new("AssignedAt", row => row.AssignedAt.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)),
     ];
 
     protected override async Task<IReadOnlyList<AdminSessionModeratorRow>> ListAsync(

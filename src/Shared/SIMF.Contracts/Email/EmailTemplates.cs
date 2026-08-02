@@ -11,7 +11,7 @@ public sealed record AdminEmailTemplateSummary(
     string Subject,
     bool IsOverride,
     int Version,
-    DateTimeOffset? UpdatedAt);
+    DateTime? UpdatedAt);
 
 /// <summary>D-735 — one editable placeholder a template exposes (used as
 /// <c>{Name}</c>), with bilingual labels for the CP token chips and a sample
@@ -36,7 +36,7 @@ public sealed record AdminEmailTemplateDetail(
     string DefaultBodyEn,
     string DefaultBodyAr,
     IReadOnlyList<EmailTemplateTokenDto> Tokens,
-    DateTimeOffset? UpdatedAt);
+    DateTime? UpdatedAt);
 
 /// <summary>D-735 — save the admin's edited copy for a template type. When
 /// <see cref="IsActive"/> is false the override is kept but the resolver falls

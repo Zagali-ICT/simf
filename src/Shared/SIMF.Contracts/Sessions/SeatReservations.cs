@@ -225,7 +225,7 @@ public sealed record MySeatReservation(
     string? RowLabel,
     int? SeatNumber,
     SeatReservationKind Kind,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     BookingStatus Status = BookingStatus.Pending);
 
 /// <summary>#6/#17 (owner 2026-07-20) — one row in the Control Panel booking
@@ -239,14 +239,14 @@ public sealed record ActiveBookingRow(
     Guid SessionId,
     string SessionTitle,
     string SessionTitleArabic,
-    DateTimeOffset SessionStart,
+    DateTime SessionStart,
     // D-485: null for an OpenSeating join — the CP renders it as "general admission".
     string? RowLabel,
     int? SeatNumber,
     SeatReservationKind Kind,
     Guid? AttendeeUserId,
     string AttendeeName,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>D-771 (owner 2026-07-26) — the staff seating desk's badge lookup:
 /// resolve a scanned/typed badge QR id to where that guest is seated in this

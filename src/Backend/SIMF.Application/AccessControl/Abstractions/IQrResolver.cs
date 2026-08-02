@@ -16,11 +16,11 @@ public interface IQrResolver
     Task<QrResolution?> ResolveAsync(string qrId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-811 — canonicalises a SCANNED code to the <c>UserProfile.QrId</c> the
+    /// D-821 — canonicalises a SCANNED code to the <c>UserProfile.QrId</c> the
     /// database actually stores.
     ///
     /// <para>A minted serial is returned normalised and unchanged. An encrypted
-    /// offline badge (D-810) is decrypted and mapped to its derived <c>W</c> id.
+    /// offline badge (D-820) is decrypted and mapped to its derived <c>W</c> id.
     /// Anything that cannot be translated comes back normalised, so the caller's
     /// existing lookup misses and produces its usual not-found.</para>
     ///

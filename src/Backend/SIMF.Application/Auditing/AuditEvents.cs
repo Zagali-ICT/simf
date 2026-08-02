@@ -38,6 +38,12 @@ public static class AuditEvents
     // single-use password-change ticket (in place of the 403). The completion is
     // audited as PasswordChanged, like any other password change.
     public const string SignInPasswordChangeTicketIssued = "SignIn.PasswordChangeTicketIssued";
+    // #2 (Q1, 2026-07-30): a Control Panel sign-in proved its password but the
+    // account carries no authenticator secret, so NO token was issued — the
+    // caller was handed a single-use mandatory-enrolment ticket instead. The
+    // completion is audited as TotpEnrolmentConfirmed + SignInSucceeded, like
+    // any other enrolment and sign-in.
+    public const string SignInTwoFactorEnrolmentRequired = "SignIn.TwoFactorEnrolmentRequired";
     public const string SignInWrongSurface = "SignIn.WrongSurface";
     public const string SignInSecondFactorIssued = "SignIn.SecondFactorIssued";
     public const string SignInSecondFactorFailed = "SignIn.SecondFactorFailed";
@@ -72,12 +78,6 @@ public static class AuditEvents
     public const string PasswordResetAccountNotFound = "PasswordReset.AccountNotFound";
     public const string PasswordChanged = "PasswordChange.Succeeded";
     public const string PasswordChangeFailed = "PasswordChange.Failed";
-    // #24 — self-service change-email: a code was emailed to the new address; the
-    // change completed (login email moved, security stamp rolled, sessions
-    // revoked); or a confirm attempt failed (wrong / expired code).
-    public const string EmailChangeOtpRequested = "EmailChange.OtpRequested";
-    public const string EmailChanged = "EmailChange.Succeeded";
-    public const string EmailChangeFailed = "EmailChange.Failed";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
     // A1-19 (NCA) — the daily sweep disabled an account for inactivity beyond the
     // configured threshold. A system action (no actor).
@@ -152,24 +152,24 @@ public static class AuditEvents
     public const string AdminWalkInRegistered = "Admin.WalkInRegistered";
     public const string AdminWalkInRegisterFailed = "Admin.WalkInRegisterFailed";
 
-    /// <summary>D-809 — a walk-in that skipped the approval queue because the
+    /// <summary>D-819 — a walk-in that skipped the approval queue because the
     /// walk-in mode was armed. Written IN ADDITION TO
     /// <see cref="AdminWalkInRegistered"/>, never instead of it, so an auditor
     /// can diff "all walk-ins" against "walk-ins that skipped review" from one
     /// table. This is the post-event review list.</summary>
     public const string AdminVisitorAutoApproved = "Admin.VisitorAutoApproved";
 
-    /// <summary>D-809 — auto-approval failed, so the account stayed
+    /// <summary>D-819 — auto-approval failed, so the account stayed
     /// PendingApproval. The registration itself survived; the desk falls back to
     /// a paper slip and an admin approves from the normal queue.</summary>
     public const string AdminVisitorAutoApproveFailed = "Admin.VisitorAutoApproveFailed";
 
-    /// <summary>D-809 — a walk-in registered with the reduced quick field set.
+    /// <summary>D-819 — a walk-in registered with the reduced quick field set.
     /// Detail names the fields that were omitted so they can be chased and
     /// completed after the event.</summary>
     public const string AdminQuickRegistered = "Admin.QuickRegistered";
 
-    /// <summary>D-809 — one reconciliation upload from an offline badge desk.
+    /// <summary>D-819 — one reconciliation upload from an offline badge desk.
     /// Detail carries the per-batch tallies (submitted / created / pending /
     /// already-uploaded / rejected), which is the reconciliation report: an
     /// auditor can add these up and compare against the badges printed.</summary>

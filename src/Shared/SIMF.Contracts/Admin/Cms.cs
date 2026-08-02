@@ -7,7 +7,7 @@ public sealed record AdminContentBlockSummary(
     string Content,
     string ContentArabic,
     bool IsActive,
-    DateTimeOffset LastUpdatedAt,
+    DateTime LastUpdatedAt,
     Guid LastUpdatedByUserId);
 
 /// <summary>D-173 — upsert request. <see cref="Key"/> identifies the
@@ -25,11 +25,11 @@ public sealed record AdminBannerSummary(
     Guid Id,
     string Title,
     string TitleArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
+    DateTime CreatedAt,
     // D-506 — carried so the grid Excel export can round-trip them (not rendered
     // as grid columns). Body/BodyArabic are required for create; ImageUrl/LinkUrl
     // are optional. Default to empty/null when unset.
@@ -46,12 +46,12 @@ public sealed record AdminBannerDetail(
     string BodyArabic,
     string? ImageUrl,
     string? LinkUrl,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 public sealed class CreateBannerRequest
 {
@@ -61,8 +61,8 @@ public sealed class CreateBannerRequest
     public string BodyArabic { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public string? LinkUrl { get; set; }
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
     public int DisplayOrder { get; set; }
 }
 
@@ -76,8 +76,8 @@ public class UpdateBannerRequest
     public string BodyArabic { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public string? LinkUrl { get; set; }
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
 }

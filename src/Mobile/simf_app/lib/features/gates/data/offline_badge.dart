@@ -5,7 +5,7 @@ import 'package:pointycastle/block/aes.dart';
 import 'package:pointycastle/block/modes/gcm.dart';
 import 'package:pointycastle/api.dart';
 
-/// D-810 — decodes the encrypted badge a desk printed with no network.
+/// D-820 — decodes the encrypted badge a desk printed with no network.
 ///
 /// The Dart twin of `SIMF.Common.Badges.EventBadgeCodec` +
 /// `OfflineBadgeId`. **Both sides must agree byte for byte**: the plaintext is
@@ -36,7 +36,7 @@ class OfflineBadge {
   static const int _nonceBytes = 12;
 
   /// The FULL 16-byte tag. `pointycastle`'s GCM accepts nothing else, which is
-  /// what forced the server codec off the 12-byte .NET minimum (D-810).
+  /// what forced the server codec off the 12-byte .NET minimum (D-820).
   static const int _tagBytes = 16;
 
   static const int _keyBytes = 32;

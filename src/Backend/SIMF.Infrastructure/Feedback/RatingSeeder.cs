@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SIMF.Common.Enums;
 using SIMF.Domain.Feedback;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Feedback;
 
@@ -35,7 +36,7 @@ public sealed class RatingSeeder(
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var added = 0;
 
         added += await EnsureTypeAsync(new RatingType
@@ -141,7 +142,7 @@ public sealed class RatingSeeder(
     }
 
     private async Task<int> EnsureQuestionAsync(
-        Guid id, string text, string textArabic, int order, DateTimeOffset now, CancellationToken cancellationToken)
+        Guid id, string text, string textArabic, int order, DateTime now, CancellationToken cancellationToken)
     {
         if (await appDbContext.RatingQuestions.AnyAsync(q => q.Id == id, cancellationToken))
         {

@@ -32,7 +32,7 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
         _client = factory.CreateClient();
     }
 
-    private static CreateNewsRequest SampleCreate(string titleEn, DateTimeOffset? publishedAt = null) => new()
+    private static CreateNewsRequest SampleCreate(string titleEn, DateTime? publishedAt = null) => new()
     {
         Title = titleEn,
         TitleArabic = "خبر",
@@ -43,7 +43,7 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
         Category = "NAVAL",
         CategoryArabic = "بحرية",
         ImageRelativePath = "news/feature.jpg",
-        PublishedAt = publishedAt ?? DateTimeOffset.UtcNow.AddMinutes(-5),
+        PublishedAt = publishedAt ?? SimfClock.Now.AddMinutes(-5),
         DisplayOrder = 1,
     };
 
@@ -120,7 +120,7 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var create = await PostAuthAsync("/api/v1/admin/news",
-            SampleCreate("Embargoed announcement", DateTimeOffset.UtcNow.AddDays(7)), token);
+            SampleCreate("Embargoed announcement", SimfClock.Now.AddDays(7)), token);
         var created = await create.Content.ReadFromJsonAsync<ApiResult<AdminNewsDetail>>();
 
         var list = await _client.GetAsync("/api/v1/app/news");
@@ -178,15 +178,7 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

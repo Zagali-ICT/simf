@@ -34,8 +34,8 @@ public sealed class BadgeBatchesPageTests : CpComponentTestBase
                 GridPage<AdminBadgeBatchSummary>.Of(
                     new List<AdminBadgeBatchSummary>
                     {
-                        new(ActiveId, "VIP × 3", 3, false, "org@simf.test", DateTimeOffset.UtcNow, true),
-                        new(RevokedId, "Normal × 2", 2, true, null, DateTimeOffset.UtcNow, false),
+                        new(ActiveId, "VIP × 3", 3, false, "org@simf.test", SimfClock.Now, true),
+                        new(RevokedId, "Normal × 2", 2, true, null, SimfClock.Now, false),
                     },
                     total: 2, skip: 0, top: 20)));
         return RenderComponent<BadgeBatchesPage>();

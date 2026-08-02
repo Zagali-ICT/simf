@@ -6,25 +6,25 @@ namespace SIMF.Contracts.Programme;
 public sealed record AdminSpeakerAvailabilityWindow(
     Guid Id,
     Guid SpeakerId,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     int SlotMinutes,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>D-474 — create a speaker availability window.</summary>
 public sealed class CreateSpeakerAvailabilityWindowRequest
 {
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
     public int SlotMinutes { get; set; } = 30;
 }
 
 /// <summary>D-474 — one bookable slot derived from a speaker's windows: a
 /// fixed-length time range that is not yet taken by an accepted meeting.</summary>
 public sealed record SpeakerAvailableSlot(
-    DateTimeOffset Start,
-    DateTimeOffset End);
+    DateTime Start,
+    DateTime End);
 
 /// <summary>D-753 — the forum's day boundary (MIN/MAX over the active
 /// <c>ProgrammeDay.Date</c> rows) used by the CP to bound meeting-scheduling date

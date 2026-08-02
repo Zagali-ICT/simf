@@ -1,4 +1,4 @@
-# E2E — Gate access rules and Walk-In Mode (D-809)
+# E2E — Gate access rules and Walk-In Mode (D-819)
 
 **Namespace:** `E2E-WIM`
 **Surfaces:** the three gate access rules, and the standby walk-in capability
@@ -105,7 +105,7 @@ Then the response is HTTP 200 with outcome "Denied"
 And the denial reason is "BookingRequiredMissing"
 And no hall-attendance row is opened for that session
 ```
-> Before D-809 this scenario **admitted** the visitor: the denial reason existed
+> Before D-819 this scenario **admitted** the visitor: the denial reason existed
 > in the enum but nothing ever wrote it, so any valid badge opened every hall.
 
 ### E2E-WIM-004 — a session hall admits a registered attendee
@@ -253,7 +253,7 @@ And the scan carries no advisory notice
 
 ---
 
-## Scenarios — the offline badge desk (D-810)
+## Scenarios — the offline badge desk (D-820)
 
 The desk is `SIMF.BadgeDesk`, a Windows application. It prints badges with no
 network at all, then uploads the shift through
@@ -347,7 +347,7 @@ And the operation log carries one Admin.OfflineBadgeBatchUploaded row
 
 ---
 
-## Scenarios — offline scanning (D-811)
+## Scenarios — offline scanning (D-821)
 
 A scanner caches its rules from `GET /app/gates/offline-config` while online,
 then judges badges on-device when the link drops. **Its verdict is advisory** —
@@ -401,7 +401,7 @@ And it does NOT show a denial
 
 ---
 
-## Scenarios — correcting a rejected row (D-814)
+## Scenarios — correcting a rejected row (D-824)
 
 ### E2E-WIM-029 — a mistyped identity document is rejected by name
 ```gherkin
@@ -461,7 +461,7 @@ And each can be reviewed and either kept Approved or set to Disabled
 - **Arming is not a UI action.** Set the environment variables on the API host.
   There is deliberately no Control Panel switch.
 - **Disarm after every armed scenario**, or later runs inherit the state.
-- The gate scan endpoints carry **no rate limit** (D-809), so a burst of
+- The gate scan endpoints carry **no rate limit** (D-819), so a burst of
   scenarios will not trip a 429. If one appears, the `operational` policy has
   been mis-applied.
 - Denials are **HTTP 200 with a Denied outcome**, not an error envelope. Assert

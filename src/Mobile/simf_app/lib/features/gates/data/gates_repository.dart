@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'gate_models.dart';
@@ -30,7 +31,7 @@ class GatesRepository {
   }
 
   /// `GET /app/gates/offline-config` → caches this operator's offline rules so
-  /// the console keeps judging badges when the link drops (D-810). Failure is
+  /// the console keeps judging badges when the link drops (D-820). Failure is
   /// swallowed: the console must still open on a dead network, and the previous
   /// cache is better than none.
   Future<GateOfflineConfig?> refreshOfflineConfig() async {
@@ -110,19 +111,19 @@ class GatesRepository {
           qr: qr,
           idempotencyKey: idempotencyKey,
           direction: direction,
-          queuedAtIso: DateTime.now().toUtc().toIso8601String(),
+          queuedAtIso: formatWire(DateTime.now()),
         ),
       );
       return null;
     }
   }
 
-  /// D-810 — judges a scan on-device when the server is unreachable.
+  /// D-820 — judges a scan on-device when the server is unreachable.
   ///
   /// Returns null when this device cannot decide at all — no cached rules, no
   /// badge key, an unknown gate, or a code that is not a badge this key opens.
   /// The caller shows the operator "queued, no verdict", which is what happened
-  /// before D-810.
+  /// before D-820.
   ///
   /// **The verdict is ADVISORY.** The queued scan is still uploaded and the
   /// server re-decides it against live data, so this can admit someone a live
@@ -146,7 +147,7 @@ class GatesRepository {
       return const OfflineGateVerdict.denied(OfflineDenialReason.gateInactive);
     }
 
-    // D-811 review — abstain on anything the length says is an ordinary minted
+    // D-821 review — abstain on anything the length says is an ordinary minted
     // serial, mirroring QrResolver's guard on the server. Without this a normal
     // 12-character badge whose first character's Crockford index happens to
     // equal the loaded key version is fed to the decoder, fails the GCM tag, and
@@ -228,7 +229,7 @@ class GatesRepository {
       failure.httpStatus == null;
 }
 
-/// D-810 — a verdict this device reached with no network. Advisory; the server
+/// D-820 — a verdict this device reached with no network. Advisory; the server
 /// re-decides the queued scan.
 class OfflineGateVerdict {
   const OfflineGateVerdict.allowed(OfflineBadge this.badge)
@@ -247,7 +248,7 @@ class OfflineGateVerdict {
   final OfflineBadge? badge;
 }
 
-/// D-810 — why an offline scan was refused on-device. Deliberately a short
+/// D-820 — why an offline scan was refused on-device. Deliberately a short
 /// list: these are the only rules a device can check without the server.
 enum OfflineDenialReason {
   /// The badge did not decrypt under a key this device holds — forged, damaged

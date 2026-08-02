@@ -23,4 +23,4 @@ public sealed record ScanIdempotencyRecord(
     string RequestHash,
     string ResponseHash,
     long? ScanId,
-    DateTimeOffset StoredAt);
+    DateTime StoredAt);

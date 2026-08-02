@@ -41,7 +41,7 @@ internal sealed class ClosedXmlAttendeeExcelService : IAttendeeExcelService
             sheet.Cell(row, 5).Value = ClosedXmlUserExcelService.SanitiseForExcel(attendee.ProfileTypeNameArabic);
             sheet.Cell(row, 6).Value = ClosedXmlUserExcelService.SanitiseForExcel(attendee.AccountState);
             sheet.Cell(row, 7).Value = ClosedXmlUserExcelService.SanitiseForExcel(attendee.QrId);
-            sheet.Cell(row, 8).Value = attendee.CreatedAt.UtcDateTime.ToString("O");
+            sheet.Cell(row, 8).Value = attendee.CreatedAt.ToString("O");
             row++;
         }
         sheet.Columns(1, 8).AdjustToContents();

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'speaker_models.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Data layer for the speakers list (Page_019) + profile (Page_020). The two
 /// reads are **public** (`AllowAnonymous`, D-199); the meeting request is
@@ -63,9 +64,9 @@ class SpeakersRepository {
         'requesterName': requesterName,
         'subject': subject,
         if (slotStart != null)
-          'slotStart': slotStart.toUtc().toIso8601String(),
+          'slotStart': formatWire(slotStart),
         if (slotEnd != null)
-          'slotEnd': slotEnd.toUtc().toIso8601String(),
+          'slotEnd': formatWire(slotEnd),
       },
       decodeData: (_) => true,
     );
@@ -77,8 +78,8 @@ class SpeakerSlot {
   const SpeakerSlot({required this.start, required this.end});
 
   factory SpeakerSlot.fromJson(Map<String, dynamic> json) => SpeakerSlot(
-        start: DateTime.parse(json['start'] as String).toUtc(),
-        end: DateTime.parse(json['end'] as String).toUtc(),
+        start: DateTime.parse(json['start'] as String),
+        end: DateTime.parse(json['end'] as String),
       );
 
   final DateTime start;

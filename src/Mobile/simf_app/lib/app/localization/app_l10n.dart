@@ -1029,7 +1029,7 @@ class AppL10n {
         '$count scan(s) waiting to sync',
       );
 
-  // D-811 — the verdict the device reached with no network. Deliberately worded
+  // D-821 — the verdict the device reached with no network. Deliberately worded
   // as provisional: the scan is queued and the server re-decides it on upload,
   // so the operator must not read these as the final answer.
   String get gateOfflineAllowed => _t(
@@ -1995,34 +1995,6 @@ class AppL10n {
       _t('إعادة تعيين كلمة المرور', 'Reset password');
   String get moreMediaPartners => _t('الشركاء الإعلاميون', 'Media partners');
 
-  // #24 — self-service change-email flow (More → الإعدادات; no bound Figma node,
-  // reuses the navy auth chrome).
-  String get moreChangeEmail =>
-      _t('تغيير البريد الإلكتروني', 'Change email');
-  String get changeEmailTitle =>
-      _t('تغيير البريد الإلكتروني', 'Change email');
-  String get changeEmailHeading => _t(
-        'أدخل بريدك الإلكتروني الجديد. سنرسل رمز تحقق إليه لتأكيده.',
-        'Enter your new email address. We\'ll send a verification code to it to confirm.',
-      );
-  String get changeEmailCurrentLabel =>
-      _t('البريد الإلكتروني الحالي', 'Current email');
-  String get changeEmailNewLabel =>
-      _t('البريد الإلكتروني الجديد', 'New email');
-  String get changeEmailSameAsCurrent => _t(
-        'هذا هو بريدك الإلكتروني الحالي بالفعل.',
-        'This is already your email address.',
-      );
-  String get changeEmailSendButton => _t('إرسال الرمز', 'Send code');
-  String get changeEmailVerifyHeading =>
-      _t('تأكيد البريد الجديد', 'Confirm new email');
-  String get changeEmailPasswordLabel =>
-      _t('كلمة المرور الحالية', 'Current password');
-  String get changeEmailSuccessToast => _t(
-        'تم تغيير بريدك الإلكتروني. يرجى تسجيل الدخول مرة أخرى.',
-        'Your email was changed. Please sign in again.',
-      );
-
   // Section headers (Figma 1129:17224).
   String get moreSectionForumInfo => _t('معلومات الملتقى', 'Forum information');
   String get moreSectionSettings => _t('الإعدادات', 'Settings');
@@ -2652,6 +2624,42 @@ class AppL10n {
   String get contactUnavailable =>
       _t('هذه الجهة لم تعد متاحة', 'This contact is no longer available');
   String get contactNoteLabel => _t('ملاحظة', 'Note');
+
+  // ---------------------------------------------------------------------
+  // Track D-b — strings added by the 2026-07-30 fix-all round.
+  // ---------------------------------------------------------------------
+
+  /// The splash edition line (#40-residual). Split out of [splashEventLine] so
+  /// the date/location half can come from the CP-configured organization
+  /// profile while the edition ordinal stays a bundled literal (the profile
+  /// carries no edition ordinal).
+  String get splashEditionLine => _t('النسخة الرابعة', '4th Edition');
+
+  /// Session detail — what the hall door recorded. The five strings that drove
+  /// the old GPS self check-in (the "أنا هنا / I'm here" button, the
+  /// outside-the-boundary, no-boundary-configured and permission-denied
+  /// outcomes, and the "Check out" toggle) went with it on 2026-07-31: arrival
+  /// is established by the gate scan, so the app neither claims an arrival nor
+  /// asks for a location permission.
+  String get sessionArrivalCheckedIn =>
+      _t('تم تسجيل حضورك في القاعة', 'Your hall arrival is recorded');
+  String get sessionArrivalDeparted =>
+      _t('تم تسجيل مغادرتك', 'Your departure is recorded');
+
+  /// Session detail — the read-only hall check-in STATUS (owner 2026-07-31:
+  /// arrival is established by the gate scan at the hall door, not by GPS). The
+  /// "not yet" line is an instruction, not an error; the error line is only for
+  /// a failed read of the status itself.
+  String get sessionArrivalNotYet => _t(
+        'لم يُسجَّل حضورك في القاعة بعد. أبرز بطاقتك عند باب القاعة لتسجيل '
+            'الحضور.',
+        'You are not checked in yet. Show your badge at the hall door to be '
+            'checked in.',
+      );
+  String get sessionArrivalStatusError => _t(
+        'تعذّر تحميل حالة حضورك في القاعة.',
+        'Could not load your hall check-in status.',
+      );
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

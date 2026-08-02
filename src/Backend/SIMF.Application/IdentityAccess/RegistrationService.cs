@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/RegistrationEndpointsTests.cs (sign-up: new account,
+// Tests: SIMF.Api.Tests/RegistrationEndpointsTests.cs (sign-up: new account,
 //        unverified restart, existing-verified deflect; verify-email; resend-code)
 using System.Security.Cryptography;
 using System.Text;
@@ -64,7 +64,7 @@ public sealed class RegistrationService(
                 "التسجيل مغلق حالياً. يرجى المحاولة لاحقاً.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var existing = await accounts.FindByEmailAsync(request.Email);
 
         // D-198 — enumeration-resistant sign-up. A brand-new email, a
@@ -151,7 +151,7 @@ public sealed class RegistrationService(
                 "تم التحقق من بريد هذا الحساب مسبقًا.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var code = await accountCodeRepository.GetLatestUnconsumedAsync(
             user.Id, AccountCodePurpose.EmailVerification, cancellationToken);
 
@@ -273,7 +273,7 @@ public sealed class RegistrationService(
                 "تم التحقق من بريد هذا الحساب مسبقًا.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Cap how often a code may be re-issued for one account, independent of
         // the per-IP rate limiter (resend abuse is keyed on the email).
@@ -317,7 +317,7 @@ public sealed class RegistrationService(
     /// intentionally uncapped — the account did not exist a moment earlier.
     /// </summary>
     private async Task EnsureVerificationCodeCapNotReachedAsync(
-        SimfUser user, DateTimeOffset now, CancellationToken cancellationToken)
+        SimfUser user, DateTime now, CancellationToken cancellationToken)
     {
         var recentCodes = await accountCodeRepository.CountCreatedSinceAsync(
             user.Id, AccountCodePurpose.EmailVerification, now - ResendWindow, cancellationToken);
@@ -337,7 +337,7 @@ public sealed class RegistrationService(
     private async Task<SignUpResponse> RestartUnverifiedAccountAsync(
         SimfUser user,
         string newPassword,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         // D-198 — the account was never verified, so no one owns it yet:
@@ -462,7 +462,7 @@ public sealed class RegistrationService(
 
     private async Task<string> IssueVerificationCodeAsync(
         SimfUser user,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         // Invalidate any outstanding code — only the newest one is valid.

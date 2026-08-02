@@ -944,4 +944,12 @@ class SimfTokens {
     fontWeight: FontWeight.w500,
     height: 1.3,
   );
+  // #16 sweep (2026-07-30) — the shared app/widgets layer. The navigation
+  // drawer's heading was the last inline TextStyle there; this token is its
+  // exact value (surface / 20 / w600), so the render is unchanged.
+  static const TextStyle labelWhiteSemiboldXl = TextStyle(
+    color: surface,
+    fontSize: textXl,
+    fontWeight: FontWeight.w600,
+  );
 }

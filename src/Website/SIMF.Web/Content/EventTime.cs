@@ -14,18 +14,21 @@ public static class EventTime
     public static readonly TimeSpan Offset = TimeSpan.FromHours(3);
 
     // The instant expressed in event-local time - used for day grouping + labels.
-    public static DateTimeOffset Local(DateTimeOffset instant) => instant.ToOffset(Offset);
+    // Stored values are already Saudi wall-clock (owner decision 2026-07-31),
+    // so this is now the identity. Kept as the named seam so call sites read
+    // unchanged and nobody reintroduces a shift here.
+    public static DateTime Local(DateTime instant) => instant;
 
     // 12-hour AM/PM clock time in event-local time, in the current culture.
-    public static string Time(DateTimeOffset instant) =>
+    public static string Time(DateTime instant) =>
         Local(instant).ToString("hh:mm tt", CultureInfo.CurrentUICulture);
 
     // "hh:mm tt – hh:mm tt" time window in event-local time, current culture.
-    public static string Window(DateTimeOffset start, DateTimeOffset end) =>
+    public static string Window(DateTime start, DateTime end) =>
         $"{Time(start)} – {Time(end)}";
 
     // "dd-MM-yyyy hh:mm tt" date + 12-hour time in event-local time (e.g. a
     // notification timestamp), in the current culture.
-    public static string DateTimeText(DateTimeOffset instant) =>
+    public static string DateTimeText(DateTime instant) =>
         Local(instant).ToString("dd-MM-yyyy hh:mm tt", CultureInfo.CurrentUICulture);
 }

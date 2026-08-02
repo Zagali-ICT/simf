@@ -129,7 +129,7 @@ internal sealed class AdminProgrammeDayService(
             ValidateAndNormalise(request.Title, request.TitleArabic);
         await EnsureUniqueDateAsync(request.Date, null, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var day = new ProgrammeDay
         {
             Id = Guid.NewGuid(),
@@ -177,7 +177,7 @@ internal sealed class AdminProgrammeDayService(
         day.TitleArabic = titleArabic;
         day.DisplayOrder = request.DisplayOrder;
         day.IsActive = request.IsActive;
-        day.UpdatedAt = timeProvider.GetUtcNow();
+        day.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -207,7 +207,7 @@ internal sealed class AdminProgrammeDayService(
         }
 
         day.Deactivate();
-        day.UpdatedAt = timeProvider.GetUtcNow();
+        day.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

@@ -60,7 +60,7 @@ class _FakeGates implements GatesRepository {
   @override
   int pendingCount() => 0;
 
-  // D-811 — the setup stage renders before any scan, so the offline path is
+  // D-821 — the setup stage renders before any scan, so the offline path is
   // inert here. The refresh must still be answerable: the console fires it on
   // load, and an unimplemented call would fail the golden with a stack trace
   // instead of a pixel diff.

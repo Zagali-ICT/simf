@@ -46,7 +46,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | Page | File | Scenarios |
 |------|------|-----------|
 | `/admin/admins` | [`cp-admin-admins.md`](cp-admin-admins.md) | E2E-USR-001..024 |
-| `/admin/admins/pending` | [`cp-admin-admins-pending.md`](cp-admin-admins-pending.md) | E2E-APN-001..015 |
+| `/admin/admins/pending` | [`cp-admin-admins-pending.md`](cp-admin-admins-pending.md) | E2E-APN-001..017 |
 | `/admin/others` | [`cp-admin-others.md`](cp-admin-others.md) | E2E-OTH-001..024 |
 | `/admin/others/pending` | [`cp-admin-others-pending.md`](cp-admin-others-pending.md) | E2E-OPN-001..016 |
 | `/admin/visitors` | [`cp-admin-visitors.md`](cp-admin-visitors.md) | E2E-VIS-001..033 |
@@ -79,7 +79,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/halls/seat-layouts` | [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md) | E2E-HSL-001..030 |
 | `/admin/speakers` | [`cp-admin-speakers.md`](cp-admin-speakers.md) | E2E-SPK-001..022 |
 | `/admin/speaker-presentations` | [`cp-admin-speaker-presentations.md`](cp-admin-speaker-presentations.md) | E2E-SPP-001..017 |
-| `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..030 |
+| `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..056 |
 | `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..019 |
 | `/admin/session-categories` | [`cp-admin-session-categories.md`](cp-admin-session-categories.md) | E2E-SCT-001..021 |
 | `/admin/programme-days` | [`cp-admin-programme-days.md`](cp-admin-programme-days.md) | E2E-PGD-001..018 |
@@ -93,7 +93,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
 | `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..019 |
 | `/admin/delegation-availability` | [`cp-admin-delegation-availability.md`](cp-admin-delegation-availability.md) | E2E-DAV-001..007 |
-| _(cross-surface bi-meeting lifecycle)_ | [`bi-meeting-lifecycle.md`](bi-meeting-lifecycle.md) | E2E-BML-001..016 |
+| _(cross-surface bi-meeting lifecycle)_ | [`bi-meeting-lifecycle.md`](bi-meeting-lifecycle.md) | E2E-BML-001..016 (+ 013b / 013c — G3 no-availability, D-812) |
 | `/admin/document-requests` | [`cp-document-requests.md`](cp-document-requests.md) | E2E-CPDR-001..008 |
 | `/admin/badge-requests` | [`cp-badge-requests.md`](cp-badge-requests.md) | E2E-CPBR-001..008 |
 | `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..013 |
@@ -179,7 +179,24 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/account/profile` | [`cp-account-profile.md`](cp-account-profile.md) | E2E-PRF-001..016 |
 | `/account/notifications` | [`cp-account-notifications.md`](cp-account-notifications.md) | E2E-NTF-001..012 |
 | `/account/totp-pairing` | [`cp-account-totp-pairing.md`](cp-account-totp-pairing.md) | E2E-TPP-001..010 |
+| `/login/enrol-2fa` — mandatory first-sign-in TOTP enrolment (`#2`, enrolment-first) | [`cp-2fa-enrolment.md`](cp-2fa-enrolment.md) | E2E-TFE-001..013 |
 | `/not-permitted` + `/not-found` + `/Error` | [`cp-framework-pages.md`](cp-framework-pages.md) | E2E-FRM-001..010 |
+
+### API-only surfaces (no page — endpoint or background worker)
+
+These carry no `@page` / screen of their own, so they are catalogued against the
+endpoint or the hosted worker that owns the behaviour.
+
+| Surface | File | Scenarios |
+|---------|------|-----------|
+| `POST /app/auth/badge-activation/complete` — badge self-claim captures the claimer's profile | [`api-badge-self-claim-profile.md`](api-badge-self-claim-profile.md) | E2E-BSC-001..009 |
+| `GET /app/programme/sessions?categoryId=` — server-side theme/category filter | [`api-programme-category-filter.md`](api-programme-category-filter.md) | E2E-PCF-001..007 |
+| Meeting check-in export (speaker + delegation grids) | [`api-meeting-checkin-export.md`](api-meeting-checkin-export.md) | E2E-MCX-001..008 |
+| `SessionNotAttendedReminderWorker` — FR-903 | [`api-session-not-attended-reminder.md`](api-session-not-attended-reminder.md) | E2E-SNA-001..008 |
+| Recommendation match push (≥80% threshold) — FR-803 | [`api-match-recommendation-push.md`](api-match-recommendation-push.md) | E2E-MRP-001..009 |
+| `INotificationChannel` delivery seam — FR/EIR-02 | [`api-notification-channels.md`](api-notification-channels.md) | E2E-NCH-001..006 |
+| Device-position pings, dwell aggregation + route projection — FR-1103 | [`api-movement-tracking.md`](api-movement-tracking.md) | E2E-MOV-001..011 |
+| `GET`/`PUT /app/account/preferences` — the account's five accessibility choices (`accessibility-server-sync`); the app half is [`mobile-accessibility.md`](mobile-accessibility.md) | [`api-account-preferences.md`](api-account-preferences.md) | E2E-ACP-001..013 |
 
 ### Website
 
@@ -189,7 +206,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/` (old static landing — retired 2026-07-14) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
 | `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..014 |
 | `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
-| `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..013 |
+| `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..016 |
 | `/about` | [`web-about.md`](web-about.md) | E2E-WABT-001..011 |
 | `/about/objectives` | [`web-objectives.md`](web-objectives.md) | E2E-WOBJ-001..007 |
 | `/about/themes` | [`web-themes.md`](web-themes.md) | E2E-WTHM-001..009 |
@@ -253,7 +270,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #118 `staffSeating` — **guest seating desk** (`POST /app/staff/sessions/{id}/seating/by-badge` · `GET …/seating/seat` · `GET …/seating/occupant/{userId}/photo`) | [`mobile-staff-seating.md`](mobile-staff-seating.md) | E2E-MOBSEATDESK-001..008 |
 | #15 `venueMap` (`GET /app/venue-map` + `/app/booths` + `/{id}`) | [`mobile-venue-map.md`](mobile-venue-map.md) | E2E-MOB015-001..008 |
 | #16 `sessions` (`GET /app/programme/sessions`) | [`mobile-agenda.md`](mobile-agenda.md) | E2E-MOB016-001..019 |
-| #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..011 |
+| #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats` + `…/sessions/{id}/attendance` — the read-only gate-scan hall check-in status) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..040 |
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/**move**/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..019 |
 | `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random` / **`move`** — B1 change seat) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..016 |
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..019 |
@@ -265,7 +282,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #22 `booths` (`GET /app/booths` + `/{id}`) — #9: country name + أرشدني→map | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..013 |
 | `boothMap` (`/booths/:id/map` → venue map focused on the booth) — #9 | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-013 |
 | #23 `sponsors` (`GET /app/sponsors`) | [`mobile-sponsors.md`](mobile-sponsors.md) | E2E-MOB023-001..004 |
-| #21 `delegations` (`GET /app/delegations`) — Wave 4, Figma `1426:10771` (restored from D-277); bi-meeting rework: cards tappable → delegation request sheet for an entitled account | [`mobile-delegations.md`](mobile-delegations.md) | E2E-DEL-001..011 |
+| #21 `delegations` (`GET /app/delegations`) — Wave 4, Figma `1426:10771` (restored from D-277); bi-meeting rework: cards tappable → delegation request sheet for an entitled account; G2 (D-811) the list is per-viewer — a signed-in caller's OWN country is excluded server-side, a guest sees all | [`mobile-delegations.md`](mobile-delegations.md) | E2E-DEL-001..013 |
 | #220 `exhibitorDetail` (`GET /app/booths/{id}`) — Wave 3, Figma `1439:11881` | [`mobile-exhibitor-detail.md`](mobile-exhibitor-detail.md) | E2E-MOB220-001..007 |
 | #221 `sponsorDetail` (`GET /app/sponsors/{id}`) — Wave 3, Figma `1439:11826` | [`mobile-sponsor-detail.md`](mobile-sponsor-detail.md) | E2E-MOB221-001..007 |
 | `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list; DEF-EXH-004 read-path subject eligibility (D-780: any ACTIVE subject lists, only a deactivated one drops out); DEF-EXH-006 current-booth-membership gate | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..009 |
@@ -283,15 +300,15 @@ API endpoints land (D-249). The per-screen design docs live under
 | #12 `guestMode` (no API) | [`mobile-guest-mode.md`](mobile-guest-mode.md) | E2E-MOB012-001..004 |
 | #33 `notifications` (`POST /app/account/notifications/list` · `/{id}/read` · `/read-all`) | [`mobile-notifications.md`](mobile-notifications.md) | E2E-MOB033-001..009 |
 | #35 `meetPeople` (`GET /app/networking/partner-directory`) - Build #13 partner directory | [`mobile-meet-people.md`](mobile-meet-people.md) | E2E-MOB035-001..012 |
-| #38 `accessibility` (no API) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..004 |
+| #38 `accessibility` (`GET`/`PUT /app/account/preferences` — `accessibility-server-sync`; the server half is [`api-account-preferences.md`](api-account-preferences.md)) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..012 |
 | #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..009 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..010 |
 | #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
 | #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..015 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..007 |
-| #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..007 |
+| #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..028 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..005 |
-| #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..025 |
+| #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..028 |
 | #36 `chatbot` (AI assistant → `/app/ai/assistance`) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..007 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..014 |
@@ -302,7 +319,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #117 `meetingConfirm` (`/meeting-confirm?requestId=…` → `POST /app/delegation-meeting-requests/{id}/confirm` + `…/decline`) — bi-meeting rework: delegation other-party confirm-on-tap, reached from a `MeetingRequested` notification | [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) | E2E-MOBMC-001..010 |
 | `myMeetings` (`GET /app/my-requests`, filtered to meetings) — المقابلات (D-587), Figma `1701:9406`; speaker + delegation meetings over status chips; reached from the My-Area "مقابلات" counter | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MOBMTG-001..007 |
 | `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..015 |
-| `Change email` self-service (`POST /app/auth/change-email/send-otp` + `/confirm`) - Build #24 signed-in login-email change; code emailed to the NEW address, confirm rolls the stamp + forces a fresh sign-in; reached from More → Settings | [`mobile-change-email.md`](mobile-change-email.md) | E2E-MCE-001..011 |
+| ~~`Change email` self-service (`POST /app/auth/change-email/send-otp` + `/confirm`) - Build #24~~ — **REMOVED 2026-07-30 (G1, owner decision).** Screen + both endpoints deleted; email changes are administrator-only on the CP account-edit form, covered by `cp-admin-visitors.md` (E2E-VIS-001) and `cp-admin-others.md` (E2E-OTH-005) | _(withdrawn)_ | ~~E2E-MCE-001..011~~ (**retired**, do not reuse the MCE namespace) |
 | `Badge activation` + **badge sign-in** (`resolve-badge` · `badge-sign-in` · `badge-activation/{start,complete}`) — Part B passwordless activation **+ D-738 password step + D-737 unified scanner** | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-001..013 |
 | `Badge password` step (`POST /app/auth/badge-sign-in`) — D-738 returning has-password holder; doc [`mobile/badge-password/`](../../pages/mobile/badge-password/README.md) | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-008..013 |
 | #200 `forumGuide` (no API — static guide) — built from ComingSoon, Figma `1388:7493` | [`mobile-forum-guide.md`](mobile-forum-guide.md) | E2E-MOB200-001..005 |
@@ -327,7 +344,7 @@ API endpoints land (D-249). The per-screen design docs live under
 6. Cross-link from `docs/pages/PAGE-INDEX.md` (route → doc + test) and the
    per-page reference doc under `docs/pages/{cp|web}/{slug}.md`.
 
-## Coverage status snapshot — 2026-07-28
+## Coverage status snapshot — 2026-07-31
 
 These two counts are **machine-checked** by
 `tests/SIMF.ControlPanel.Tests/E2eCatalogueIntegrityTests.cs`
@@ -336,13 +353,13 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 185 (95 Control Panel + 70 mobile + 19 Website + 1
-  system-wide). One of the 185 — `cp-admin-companies.md` — is **retired**: its
-  route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 2925 Coverage-matrix rows, every id distinct. That
-  includes the **362** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
+- **Pages catalogued:** 193 (96 Control Panel + 69 mobile + 19 Website + 8
+  API-only surfaces + 1 system-wide). One of the 193 — `cp-admin-companies.md` —
+  is **retired**: its route was renamed away and it now carries no live scenarios.
+- **Total scenarios:** 3031 Coverage-matrix rows, every id distinct. That
+  includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2547.
+  functional total is 2671.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass
@@ -419,12 +436,19 @@ now fails the build on either shape.
 
 ### Update - 2026-07-22 (Build #24 - self-service change-email + CP edit tighten)
 
+> **SUPERSEDED 2026-07-30 by G1 (owner decision).** The self-service change-email
+> screen and both endpoints were removed; `mobile-change-email.md`,
+> `docs/pages/mobile/change-email.md` and the whole **MCE** namespace are
+> withdrawn. The CP-edit half of this entry (the second bullet) still stands - it
+> is now the ONLY email-change path. See the 2026-07-30 update below. The
+> paragraph is kept verbatim as history.
+
 - **New mobile catalogue:** `Change email` (`mobile-change-email.md`,
   E2E-MCE-001..011) - the signed-in self-service login-email change. Two phases in
   one screen (enter the new address → a 6-digit code is emailed TO it → confirm);
   the confirm rolls the security stamp + revokes sessions, so the app forces a fresh
-  sign-in. New per-page doc [`docs/pages/mobile/change-email.md`](../../pages/mobile/change-email.md).
-  Fresh namespace **MCE**.
+  sign-in. New per-page doc `docs/pages/mobile/change-email.md`.
+  Fresh namespace **MCE**. _(Withdrawn 2026-07-30 - both files deleted.)_
 - **CP note (no new scenario):** the existing account-edit path now sets
   `EmailConfirmed=false` when it changes an email. A short note was added to the Edit
   scenarios of `cp-admin-visitors.md` (E2E-VIS-001) and `cp-admin-others.md`
@@ -518,3 +542,131 @@ now fails the build on either shape.
   and -025 (plus the programme half of -014, -016 and -021) are **RED until the
   passthrough and the client method land**; they are authored as the target spec.
   E2E-DSH-015 and -022 pass as written today.
+
+### Update - 2026-07-30 (G1 - the self-service change-email feature is REMOVED)
+
+- **Owner decision (2026-07-30):** a user may no longer change their own login
+  email. The Flutter `changeEmail` screen, the `More -> Settings` row that reached
+  it, **and both API endpoints** (`POST /app/auth/change-email/send-otp` +
+  `/confirm`) are deleted, together with `EmailChangeService` and the `EmailChange`
+  contracts. Deleting only the screen would have hidden the feature while leaving
+  it callable: neither endpoint declared a `PermissionCatalog` policy, only
+  `RequireApprovedAccount`, so **any** approved bearer token could drive it.
+- **Retired catalogue:** `mobile-change-email.md` and the **MCE** namespace
+  (E2E-MCE-001..011) are withdrawn along with
+  `docs/pages/mobile/change-email.md`. Do not reuse the MCE prefix.
+- **The remaining path is administrator-only.** An email is changed on the CP
+  account-edit form, gated on `Visitors.Edit` / `Others.Edit` (both
+  `BaselineRoles = AdminOnly`). No new permission code was added. That path keeps
+  its re-verify behaviour (`EmailConfirmed=false`, security-stamp roll, refresh
+  tokens revoked) and is already covered by `cp-admin-visitors.md` **E2E-VIS-001**
+  and `cp-admin-others.md` **E2E-OTH-005** - those scenarios are unchanged and now
+  carry the whole feature.
+- **Backing xUnit:** `tests/SIMF.Api.Tests/ChangeEmailRemovedTests.cs` replaces the
+  deleted `ChangeEmailTests.cs`. It asserts both routes return **404 Not Found**
+  (unmapped) for an approved bearer token AND anonymously - a 200/401/403 would
+  mean the endpoints had been reinstated - and that no
+  `AccountCodePurpose.EmailChangeVerification` code is ever issued.
+- **Deliberately NOT removed:** `AccountCodePurpose.EmailChangeVerification` and
+  `EmailTemplateType.EmailChangeVerification` / `EmailChangedNotice` stay (D-110
+  frozen, persisted BY NAME - removing them is a data migration, not a code
+  deletion), and their two `EmailTemplateCatalog` entries stay dormant so existing
+  admin-edited template rows are not orphaned.
+
+### Update - 2026-07-31 (gate-scan hall check-in + the accessibility-preferences endpoint)
+
+Two register items closed, one new catalogue file, +19 scenarios (2973 -> 2992),
++1 page (191 -> 192). No scenario was renumbered and no namespace retired.
+
+- **`geofence-self-checkin` - owner decision: the GATE SCAN establishes a session
+  arrival, not GPS.** The chain already existed end to end
+  (`GateOperatorService.RecordGateDoorScanAsync` opens and closes the
+  `HallAttendance` row for the session live in that hall; the CP reports it on
+  `/admin/hall-arrivals` and `/admin/gates/operator`), so the app only has to read
+  it back. `SessionArrivalAction` is now a **read-only** status card fed by
+  `GET /app/sessions/{id}/attendance`, composed into `session_detail_screen.dart`
+  above the body - the previous round built the widget and never rendered it. The
+  "أنا هنا / I'm here" button and its `POST …/arrival` device-position payload are
+  gone, and with them the location plugin and the `ACCESS_FINE_LOCATION` /
+  `NSLocationWhenInUseUsageDescription` permissions it would have needed, which
+  were the store-review and NCA-disclosure surface the previous round declined to
+  take on its own authority.
+  - `mobile-session-detail.md` E2E-MOB017-001..035 -> **001..040**.
+    **E2E-MOB017-035 was rewritten in place** off the GPS behaviour (same widget,
+    same slot, new contract); +036 the departure line under the arrival, +037 the
+    calm "not checked in yet" instruction, +038 the failed-read/retry state kept
+    distinct from it, +039 where the strip is offered (attendee roles only, never
+    a `Workshop`, never an `upcoming` session) plus pull-to-refresh, +040 RTL.
+  - Backing Flutter: `session_arrival_action_test.dart` - 6 widget cases + 3 wire
+    -decode cases. Its fake repository **throws** from `recordArrival` /
+    `recordDeparture`, so a regression that gives the card a write path fails the
+    suite rather than shipping quietly.
+  - The geofence endpoints and error codes are **retained, not deleted** (the
+    deferred FR-1103 movement work, still blocked on G-OI-2); no app screen calls
+    them.
+- **`accessibility-server-sync` - the server half shipped.**
+  `GET`/`PUT /api/v1/app/account/preferences` stores the five accessibility
+  choices (`textSize`, `highContrast`, `reduceMotion`, `screenReaderAssist`,
+  `captions`) on five **additive** `UserProfile` columns, gated on
+  `RequireApprovedAccount` and the caller's own `sub` - an app-user surface, so no
+  `PermissionCatalog` code. The app half landed on 2026-07-30 with nothing to
+  call, which is why every sync scenario passed: both directions swallow their
+  failures by contract.
+  - **New catalogue + new namespace ACP:** `api-account-preferences.md`,
+    E2E-ACP-001..013 (round trip, defaults-not-404, idempotent replace, the stub
+    profile that stays incomplete, the bilingual `VALIDATION_FAILED` on an unknown
+    `textSize`, 401 + 403 on both verbs, the frozen camelCase wire shape, the
+    legacy blank-text-size degrade, cross-device replay, a 5xx the app absorbs,
+    RTL, and the `auth` rate limit on the write path).
+  - `mobile-accessibility.md` E2E-MOB038-001..011 -> **001..012** (+012, the live
+    round trip that could not previously be asserted) and its stale "until it
+    exists" contract note corrected.
+  - Backing xUnit: `tests/SIMF.Api.Tests/AccountPreferencesTests.cs` (8 facts),
+    including the direct `SimfAppDbContext` read proving `textSize` is stored as
+    the **name** and the `HasSentinel` case where a first save turning captions
+    **off** would otherwise come back on from the column default.
+- **New API-only reference doc:** `docs/pages/api/account-preferences.md`, and
+  `docs/pages/PAGE-INDEX.md` gained an **API-only surfaces** section - the six
+  `docs/pages/api/*` docs claimed to be "indexed from PAGE-INDEX exactly like a
+  page" and none of them actually were.
+
+### Update - 2026-07-31 (owner decision D-815 - FR-702 is a NOTICE, not a restriction)
+
+- **What the owner decided.** SIMF-FDS-007 §5.1 specified FR-702 as a geographic
+  restriction - "the live stream is available only within the Riyadh region", and
+  an attendee outside it "sees the restriction notice **instead of** the stream".
+  The owner reversed that verbatim: *"No restriction, this is only notification and
+  be added to session."* **Nothing is gated.** There is no geo-detection, no IP
+  lookup, no `Region` check and no player gate anywhere; the feed plays for every
+  caller exactly as it did before. The session simply carries optional free
+  bilingual text - `Session.LiveNotice` / `LiveNoticeArabic`, `nvarchar(512)`,
+  wire `liveNotice` / `liveNoticeArabic` - authored per session in the Control
+  Panel and displayed **with** the stream.
+- **Nine scenarios across the three touched surfaces, no new namespace:**
+  `cp-admin-sessions.md` E2E-SES-001..053 -> **001..056** (+054 author the pair on
+  create and read it back, +055 clearing both boxes stores null so the banner comes
+  down everywhere, +056 the `MaxLength="512"` / EF / service length triple-lock with
+  the bilingual 400 `SESSION_INVALID` and the 512 boundary);
+  `mobile-live.md` E2E-MOB025-001..025 -> **001..028** (+026 the banner renders
+  above the player **and the player still mounts**, +027 Arabic + one-sided
+  fallback, +028 blank / cleared renders no banner and no reserved space);
+  `web-session-detail.md` E2E-WSDT-001..013 -> **001..016** (+014 the
+  `.ln-glance__notice` row with the Live row still reading Yes, +015 no element at
+  all when blank, +016 the bilingual `PickOrNull` fallback in RTL).
+- **The index rows for `/admin/sessions` and `#25 liveBroadcast` were also stale**
+  independently of this change - SES already ran to 053 while the index still said
+  030, and the duplicated `#25` row still said 007. Both are now correct. _(The
+  duplicate `#25` and `#32` rows themselves are a pre-existing index defect, left
+  in place; only their ranges were corrected.)_
+- **Every scenario asserts the stream is still served.** That is deliberate: the
+  reversed requirement is exactly the failure mode to guard against, so a run that
+  shows the notice while the player or the stream URL is missing is a **failure**,
+  not a pass.
+- **Backing tests:** `tests/SIMF.Api.Tests/SessionLiveNoticeTests.cs` (9 facts -
+  admin round trip, clear-to-null, both over-length 400s, the 512 boundary, the
+  public read, the omit-when-unauthored read, and
+  `A_live_notice_does_not_withhold_the_live_stream`);
+  `tests/SIMF.Web.Tests/SessionDetailPageTests.cs` (+2);
+  `live_broadcast_screen_test.dart` (+3, each also asserting `LivePlayerSurface` is
+  mounted), `live_repository_test.dart` and `session_detail_models_test.dart` decode
+  + fallback cases.

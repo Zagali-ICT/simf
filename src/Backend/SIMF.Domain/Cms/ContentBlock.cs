@@ -21,12 +21,19 @@ public sealed class ContentBlock
     /// breaking change. Up to 128 chars, unique across the table.</summary>
     public string Key { get; set; } = string.Empty;
 
-    /// <summary>English content (markdown allowed). Up to 8000 chars
+    /// <summary>English content, rendered as PLAIN TEXT. Up to 8000 chars
     /// so a long body / article body fits without a separate
-    /// "long-form" table.</summary>
+    /// "long-form" table.
+    ///
+    /// <para>FR-1203 (2026-07-30) — this previously read "markdown allowed",
+    /// which no renderer ever honoured: every consumer emits the value as text
+    /// through Razor's auto-encoding. The claim was corrected rather than a
+    /// renderer added, because the field is admin-editable and rendering it as
+    /// markup would mean rendering admin-supplied HTML. Any future renderer MUST
+    /// sanitise before emitting.</para></summary>
     public string Content { get; set; } = string.Empty;
 
-    /// <summary>Arabic content (markdown allowed). Same shape as
+    /// <summary>Arabic content, rendered as PLAIN TEXT. Same shape as
     /// <see cref="Content"/>.</summary>
     public string ContentArabic { get; set; } = string.Empty;
 
@@ -38,7 +45,7 @@ public sealed class ContentBlock
     /// <c>SimfUser.Id</c> on the Identity DB.</summary>
     public Guid LastUpdatedByUserId { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public DateTimeOffset LastUpdatedAt { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
 }

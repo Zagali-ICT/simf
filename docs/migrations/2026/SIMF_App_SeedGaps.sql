@@ -246,11 +246,21 @@ VALUES
     (N'Delegation Attache',  N'ملحق الوفد');
 
 -- Head of each delegation (JobTitle set => marks the row as the head).
+-- AllowsDelegationMeeting / AllowsSpeakerMeeting are listed EXPLICITLY. They are
+-- NOT NULL and, until the migrations were consolidated on 2026-07-31, carried a
+-- DEFAULT of 0 left behind by AddUserProfileMeetingFlags' one-time backfill. The
+-- consolidated InitialCreate builds the table from the model, which declares no
+-- default, so omitting them here failed the whole seed with "Cannot insert the
+-- value NULL into column 'AllowsDelegationMeeting'" and took the API down at boot
+-- on any fresh database. 0 reproduces exactly what the old default produced.
 INSERT INTO dbo.UserProfiles (Id, Name, NameArabic, JobTitle, NationalityId,
     PlaceOfBirth, Gender, IsDelegate, IsSaudi, IsActive, UserId,
+    AllowsDelegationMeeting, AllowsSpeakerMeeting,
     CreatedAt, CreatedBy)
 SELECT NEWID(), h.Nm, h.NmAr, h.Title, h.CountryId, h.Pob,
-    0, 1, 0, 1, NEWID(), @now, @sys
+    0, 1, 0, 1, NEWID(),
+    0, 0,
+    @now, @sys
   FROM @heads h
  WHERE NOT EXISTS (
        SELECT 1 FROM dbo.UserProfiles p
@@ -261,9 +271,12 @@ SELECT NEWID(), h.Nm, h.NmAr, h.Title, h.CountryId, h.Pob,
 -- Two members per delegation (JobTitle NULL). Guarded per country by Name.
 INSERT INTO dbo.UserProfiles (Id, Name, NameArabic, JobTitle, NationalityId,
     PlaceOfBirth, Gender, IsDelegate, IsSaudi, IsActive, UserId,
+    AllowsDelegationMeeting, AllowsSpeakerMeeting,
     CreatedAt, CreatedBy)
 SELECT NEWID(), m.Nm, m.NmAr, NULL, h.CountryId, N'-',
-    0, 1, 0, 1, NEWID(), @now, @sys
+    0, 1, 0, 1, NEWID(),
+    0, 0,
+    @now, @sys
   FROM @heads h
  CROSS JOIN @members m
  WHERE NOT EXISTS (

@@ -80,7 +80,7 @@ internal sealed class SessionQuestionService(
                 "الجلسة غير مفعّلة.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // #7 (owner) — a FUTURE session (before start) accepts questions from any
         // approved user (asking ahead of time); questions only CLOSE once the
         // session is over. No lower bound — the whole pre-start slice is open.

@@ -1,4 +1,4 @@
-// D-810 — the on-device verdict a scanner reaches with no network.
+// D-820 — the on-device verdict a scanner reaches with no network.
 //
 // The rule under test is which decisions a device is ALLOWED to make. It may
 // refuse a forged badge and a disallowed profile type, because both are
@@ -160,7 +160,7 @@ void main() {
 
       test('on an ordinary minted serial, even when its first character '
           'collides with the loaded key version', () {
-        // D-811 review regression. 'K' is Crockford index 19. Run the device at
+        // D-821 review regression. 'K' is Crockford index 19. Run the device at
         // key version 19 and the old code found a key, failed the GCM tag, and
         // hard-denied a LEGITIMATE badge as forged. Every version from 2 to 31
         // collides with some minter character, so the first key rotation would

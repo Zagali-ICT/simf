@@ -112,7 +112,7 @@ internal sealed partial class ReportingService
         string Code,
         string Title,
         string HallName,
-        DateTimeOffset Start,
+        DateTime Start,
         List<string> Speakers,
         int Attendees,
         int Questions,

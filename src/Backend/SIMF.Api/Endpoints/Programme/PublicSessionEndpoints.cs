@@ -15,13 +15,22 @@ namespace SIMF.Api.Endpoints.Programme;
 /// anonymous list of active programme sessions, ordered by start time.
 /// Optional <c>?day=yyyy-MM-dd</c> restricts to one event-local (+03:00)
 /// calendar day (A6c — matches the day-grouped agenda) for the agenda's
-/// Day 1/2/3 segmented control. Mirrors the
+/// Day 1/2/3 segmented control. Optional <c>?categoryId=</c> (OA-D6) restricts
+/// to one <c>SessionCategory</c> track. Mirrors the
 /// <c>ListPublicDelegationsEndpoint</c> public-read shape.</summary>
 public sealed class ListProgrammeSessionsRequest
 {
     /// <summary>Optional event-local (+03:00) calendar day filter,
     /// <c>yyyy-MM-dd</c>. Omitted = the whole programme.</summary>
     public string? Day { get; set; }
+
+    /// <summary>OA-D6 — optional server-side track filter: the id of a
+    /// <c>SessionCategory</c> (the dynamic D-226 lookup, exposed publicly by
+    /// <c>GET /app/programme/categories</c>). Omitted = every category.
+    /// Combines with <see cref="Day"/> (AND). An unknown id returns an empty
+    /// list rather than a 404, so the anonymous agenda is not a category-id
+    /// oracle.</summary>
+    public Guid? CategoryId { get; set; }
 }
 
 public sealed class ListProgrammeSessionsEndpoint(IProgrammeSessionService service)
@@ -32,8 +41,8 @@ public sealed class ListProgrammeSessionsEndpoint(IProgrammeSessionService servi
         Get("/app/programme/sessions");
         AllowAnonymous();
         Tags("Public");
-        // A6d — 45s output cache; varies by all query keys so each ?day= keeps a
-        // distinct entry (no-op under Testing).
+        // A6d — 45s output cache; varies by all query keys so each ?day= (and, per
+        // OA-D6, each ?categoryId=) keeps a distinct entry (no-op under Testing).
         Options(b => b.CacheOutput("PublicRead"));
     }
 
@@ -57,7 +66,7 @@ public sealed class ListProgrammeSessionsEndpoint(IProgrammeSessionService servi
         }
 
         await Send.OkAsync(ApiResult<PublicSessions>.Ok(
-            await service.ListAsync(day, ct)), ct);
+            await service.ListAsync(day, req.CategoryId, ct)), ct);
     }
 }
 

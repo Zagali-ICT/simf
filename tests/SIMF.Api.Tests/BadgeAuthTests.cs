@@ -253,7 +253,7 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        // D-809 — the synthesized placeholder here is the BULK-BADGE prefix
+        // D-819 — the synthesized placeholder here is the BULK-BADGE prefix
         // ("badge-"), not the walk-in one. Both are @simf.local placeholder
         // accounts and this activation chain is unchanged for bulk badges, which
         // are handed out deliberately from a controlled batch.
@@ -285,7 +285,7 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
             Name = "Badge Holder",
             NameArabic = "حامل الشارة",
             QrId = qrId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return (user.Id, qrId);

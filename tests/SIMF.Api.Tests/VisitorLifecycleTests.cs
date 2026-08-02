@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -227,7 +227,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "اهتمام دورة الحياة",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
@@ -246,7 +246,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "جهة دورة الحياة",
             Name = $"Lifecycle Org {Guid.NewGuid():N}",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(org);
         await appDb.SaveChangesAsync();
@@ -274,13 +274,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var signIn = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = adminEmail, Password = Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await signIn.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, adminEmail, Password);
     }
 
     private async Task<HttpResponseMessage> PostAuthAsync<TBody>(

@@ -28,7 +28,7 @@ internal sealed class AccountCodeRepository(SimfIdentityDbContext dbContext) : I
     public Task<int> CountCreatedSinceAsync(
         Guid userId,
         AccountCodePurpose purpose,
-        DateTimeOffset since,
+        DateTime since,
         CancellationToken cancellationToken = default) =>
         dbContext.AccountCodes.CountAsync(
             code => code.UserId == userId
@@ -43,7 +43,7 @@ internal sealed class AccountCodeRepository(SimfIdentityDbContext dbContext) : I
     }
 
     public async Task<bool> TryConsumeAsync(
-        Guid codeId, DateTimeOffset now, CancellationToken cancellationToken = default)
+        Guid codeId, DateTime now, CancellationToken cancellationToken = default)
     {
         var affected = await dbContext.AccountCodes
             .Where(code => code.Id == codeId && code.ConsumedAt == null)

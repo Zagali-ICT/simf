@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
+// Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -138,7 +138,7 @@ internal sealed class AdminProfileTypeCommandService(
 
         var mobileAppRole = ParseMobileAppRole(request.MobileAppRole);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var profileType = new UserProfileType
         {
             Id = Guid.NewGuid(),
@@ -156,7 +156,7 @@ internal sealed class AdminProfileTypeCommandService(
             ShowInPartnerDirectory = request.ShowInPartnerDirectory,
             IsActive = request.IsActive,
             CreatedAt = now,
-            // D-809 — the small number the printed badge carries. Allocated, not
+            // D-819 — the small number the printed badge carries. Allocated, not
             // entered: it is a wire detail of the QR, not something an
             // administrator should have to pick or keep unique.
             Code = await ProfileTypeCodeAllocator.NextAsync(dbContext, cancellationToken),
@@ -166,7 +166,7 @@ internal sealed class AdminProfileTypeCommandService(
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        // D-813 - ProfileTypeCodeAllocator reads MAX(Code) and adds one, which is
+        // D-823 - ProfileTypeCodeAllocator reads MAX(Code) and adds one, which is
         // a read-then-insert: two admins creating a type at the same instant both
         // compute the same number and the filtered unique index refuses the
         // loser. The index is doing its job - a reused code would make a retired
@@ -250,7 +250,7 @@ internal sealed class AdminProfileTypeCommandService(
         profileType.IsAppRegisterable = request.IsAppRegisterable;
         // D-760: Meet-People networking visibility.
         profileType.ShowInPartnerDirectory = request.ShowInPartnerDirectory;
-        profileType.UpdatedAt = timeProvider.GetUtcNow();
+        profileType.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var isVisitorChanged = oldIsVisitor != profileType.IsForVisitor;
@@ -313,7 +313,7 @@ internal sealed class AdminProfileTypeCommandService(
         }
 
         profileType.IsActive = false;
-        profileType.UpdatedAt = timeProvider.GetUtcNow();
+        profileType.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

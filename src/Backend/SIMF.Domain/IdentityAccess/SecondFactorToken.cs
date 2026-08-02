@@ -21,14 +21,14 @@ public class SecondFactorToken
     /// <summary>Which second factor this ticket expects.</summary>
     public SecondFactorKind Kind { get; set; }
 
-    /// <summary>When the ticket was created (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    /// <summary>When the ticket was created (Saudi local).</summary>
+    public DateTime CreatedAt { get; set; }
 
-    /// <summary>When the ticket expires (UTC).</summary>
-    public DateTimeOffset ExpiresAt { get; set; }
+    /// <summary>When the ticket expires (Saudi local).</summary>
+    public DateTime ExpiresAt { get; set; }
 
-    /// <summary>When the ticket was consumed (UTC); null while it is unused.</summary>
-    public DateTimeOffset? ConsumedAt { get; set; }
+    /// <summary>When the ticket was consumed (Saudi local); null while it is unused.</summary>
+    public DateTime? ConsumedAt { get; set; }
 
     /// <summary>How many incorrect second-factor codes have been submitted against it.</summary>
     public int AttemptCount { get; set; }

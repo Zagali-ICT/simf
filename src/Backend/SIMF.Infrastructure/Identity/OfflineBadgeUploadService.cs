@@ -15,7 +15,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-809 — the offline badge desk's reconciliation upload.
+/// D-819 — the offline badge desk's reconciliation upload.
 ///
 /// <para>Deliberately a THIN layer over <see cref="IAdminUserProvisioningService
 /// .RegisterOnSiteAsync"/> rather than its own write path. The desk registration
@@ -34,7 +34,7 @@ internal sealed class OfflineBadgeUploadService(
     ILogger<OfflineBadgeUploadService> logger) : IOfflineBadgeUploadService
 {
     /// <summary>
-    /// D-813 - the storage cap that actually bites on this path.
+    /// D-823 - the storage cap that actually bites on this path.
     /// <c>UserProfile.Name</c> and <c>.NameArabic</c> are both NVARCHAR(50), and
     /// this path mirrors the desk's ONE captured name into both. The desk's name
     /// box has no length limit, so a longer name used to reach SQL Server, raise
@@ -56,7 +56,7 @@ internal sealed class OfflineBadgeUploadService(
         OfflineBadgeBatchRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!walkInMode.CurrentValue.OfflineUploadActive(timeProvider.GetUtcNow()))
+        if (!walkInMode.CurrentValue.OfflineUploadActive(timeProvider.SimfNow()))
         {
             throw new ApiException(
                 ErrorCodes.OfflineUploadDisabled, 403,
@@ -80,12 +80,12 @@ internal sealed class OfflineBadgeUploadService(
                 $"الحد الأقصى للدفعة الواحدة {MaxBatchSize} تسجيل.");
         }
 
-        // D-811 review — the desk captures a reduced field set by its nature (one
+        // D-821 review — the desk captures a reduced field set by its nature (one
         // name, one identity document), which is exactly what QuickRegister
         // permits. Without it every row fails the full-desk nationality check, so
         // the whole batch is rejected one row at a time. Say so once, up front,
         // instead of returning 500 identical per-row rejections.
-        if (!walkInMode.CurrentValue.QuickRegisterActive(timeProvider.GetUtcNow()))
+        if (!walkInMode.CurrentValue.QuickRegisterActive(timeProvider.SimfNow()))
         {
             throw new ApiException(
                 ErrorCodes.OfflineUploadDisabled, 403,
@@ -97,7 +97,7 @@ internal sealed class OfflineBadgeUploadService(
         // Profile types are a small, stable lookup — read once rather than once
         // per item, so a 500-badge batch stays at one query for the whole set.
         //
-        // D-811 review — AUDIENCE TYPES ONLY. This endpoint is gated on
+        // D-821 review — AUDIENCE TYPES ONLY. This endpoint is gated on
         // Visitors.RegisterOnsite, which PermissionCatalog grants to the staff
         // mobile app role while deliberately withholding Others.RegisterOnsite.
         // Without this filter a staff token could create partner-tier accounts
@@ -175,7 +175,7 @@ internal sealed class OfflineBadgeUploadService(
                 "The badge carries no name.");
         }
 
-        // D-814 review - the pre-check comes FIRST, ahead of every shape rule.
+        // D-824 review - the pre-check comes FIRST, ahead of every shape rule.
         // A shift can be committed by the server and have its response lost, in
         // which case the desk still holds every row as pending and retries. If a
         // shape rule ran first, a row the server had ALREADY created would come
@@ -199,7 +199,7 @@ internal sealed class OfflineBadgeUploadService(
         // Shape rules, only for rows this server has not already accepted.
         //
         // These reject values that used to be written, which is safe ONLY
-        // because the desk can now correct a row and keep its sequence (D-814):
+        // because the desk can now correct a row and keep its sequence (D-824):
         // the badge in the visitor's hand stays valid and the same row uploads
         // again. Without that path this would strand printed badges.
         if (item.Name.Trim().Length > NameMaxLength
@@ -293,7 +293,7 @@ internal sealed class OfflineBadgeUploadService(
         }
         catch (Exception ex)
         {
-            // D-811 review — isolation has to be per item for EVERY failure, not
+            // D-821 review — isolation has to be per item for EVERY failure, not
             // just the expected ones. A deadlock victim, a command timeout or a
             // column truncation used to escape this loop and take the whole
             // response with it, leaving the desk unable to tell which sequences
@@ -308,13 +308,13 @@ internal sealed class OfflineBadgeUploadService(
     }
 
     /// <summary>
-    /// D-814 - the identity-document shape rules, applied per item.
+    /// D-824 - the identity-document shape rules, applied per item.
     ///
     /// <para>They could not be applied before. The batch calls
     /// <c>RegisterOnSiteAsync</c> directly, so no FastEndpoints validator runs on
     /// it, and rejecting a row meant a printed badge in a visitor's hand that
     /// nothing backed and nobody could fix - the desk store was append-only with
-    /// no edit path. D-814 gave the desk a correction action (F3), which is what
+    /// no edit path. D-824 gave the desk a correction action (F3), which is what
     /// makes rejecting SAFE: the row comes back named, the operator fixes the
     /// number, the same badge uploads. The paper never changes.</para>
     ///

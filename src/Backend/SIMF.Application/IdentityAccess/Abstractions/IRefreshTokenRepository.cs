@@ -20,7 +20,7 @@ public interface IRefreshTokenRepository
     /// </summary>
     Task RevokeAllForUserAsync(
         Guid userId,
-        DateTimeOffset revokedAt,
+        DateTime revokedAt,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -30,6 +30,6 @@ public interface IRefreshTokenRepository
     /// </summary>
     Task<int> RevokeIfActiveAsync(
         Guid tokenId,
-        DateTimeOffset revokedAt,
+        DateTime revokedAt,
         CancellationToken cancellationToken = default);
 }

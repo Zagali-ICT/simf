@@ -1,4 +1,4 @@
-// D-813 — the offline badge desk's local record.
+// D-823 — the offline badge desk's local record.
 //
 // This file is the ONLY record that a badge was handed out until the shift is
 // uploaded, so the properties under test are not conveniences: losing it, or
@@ -7,6 +7,7 @@
 using System.Text;
 using FluentAssertions;
 using SIMF.BadgeDesk;
+using SIMF.Common;
 using Xunit;
 
 namespace SIMF.BadgeDesk.Tests;
@@ -41,7 +42,7 @@ public sealed class DeskStoreTests : IDisposable
         Name = "Test Visitor",
         NationalId = "1098765432",
         SaudiMobile = "0512345678",
-        RegisteredAt = DateTimeOffset.Now,
+        RegisteredAt = SimfClock.Now,
     };
 
     [Fact]
@@ -139,7 +140,7 @@ public sealed class DeskStoreTests : IDisposable
     [Fact]
     public void A_correction_supersedes_the_row_and_keeps_its_sequence()
     {
-        // D-814 - the property that makes server-side validation safe. The badge
+        // D-824 - the property that makes server-side validation safe. The badge
         // is already printed; only the captured data changes, so the paper in the
         // visitor's hand stays valid and the upload can be retried.
         var store = new DeskStore(_path);
@@ -163,7 +164,7 @@ public sealed class DeskStoreTests : IDisposable
     [Fact]
     public void A_correction_keeps_the_contact_details_it_was_not_given()
     {
-        // D-814 review - the desk form is cleared after each registration, so an
+        // D-824 review - the desk form is cleared after each registration, so an
         // operator fixing a mistyped ID leaves the mobile box empty. A blank box
         // means "leave it alone", never "clear it": the corrected line supersedes
         // the original, so a dropped mobile is unrecoverable - and it is the only

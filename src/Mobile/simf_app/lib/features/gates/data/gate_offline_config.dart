@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// D-810 — the rules a scanner caches so it can judge a badge with no network.
+/// D-820 — the rules a scanner caches so it can judge a badge with no network.
 ///
 /// Mirrors `SIMF.Contracts.Gates.GateOfflineConfig`. Fetched from
 /// `GET /app/gates/offline-config` whenever the console loads and stored in
@@ -52,7 +52,7 @@ class GateOfflineConfig {
 
   /// True when this device can verify a badge at all. False means the
   /// capability is not armed and every offline scan is queued without a
-  /// verdict, exactly as before D-810.
+  /// verdict, exactly as before D-820.
   bool get canVerifyOffline => keyFor(badgeKeyVersion) != null;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -102,7 +102,7 @@ class GateOfflineConfig {
   }
 }
 
-/// D-810 — the offline rule for one gate.
+/// D-820 — the offline rule for one gate.
 class GateOfflineRule {
   const GateOfflineRule({
     required this.gateId,
@@ -149,7 +149,7 @@ class GateOfflineRule {
       };
 }
 
-/// D-810 — the cached copy, in the non-sensitive prefs store alongside the scan
+/// D-820 — the cached copy, in the non-sensitive prefs store alongside the scan
 /// queue.
 ///
 /// The badge key IS a secret and this store is not encrypted. That is the

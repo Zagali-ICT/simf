@@ -1,0 +1,93 @@
+@* #2 (Q1, 2026-07-30) — Control Panel MANDATORY two-factor enrolment.
+
+   Reached only from the sign-in step, when the password was correct but the
+   account carries no authenticator secret: the API withholds the session and
+   returns a single-use enrolment ticket instead. This page pairs an
+   authenticator against that ticket and the completion issues the session, so
+   the Control Panel never mints a token on the password alone — and no admin,
+   including the seeded super-admin, is ever locked out reaching that state.
+
+   Distinct from /account/totp-pairing (D-096), which only RE-RENDERS an
+   already-active secret for a signed-in admin and cannot create one. *@
+@page "/login/enrol-2fa"
+@attribute [AllowAnonymous]
+
+<PageTitle>@L["Auth.Enrol2fa.PageTitle"]</PageTitle>
+
+@if (Session.PendingEnrolmentToken is not null)
+{
+    <SimfAuthLayout>
+        <Brand>
+            <SimfBrandPanel AltText="@L["Brand.LogoAlt"]" Subtitle="@L["Brand.Subtitle"]" Caption="@L["Brand.Caption"]" />
+        </Brand>
+        <ChildContent>
+            <SimfAuthCard Title="@L["Auth.Enrol2fa.Title"]" SupportingText="@L["Auth.Enrol2fa.Supporting"]">
+                <TopControls>
+                    <SimfLanguageSwitch Label="@L["Auth.LanguageSwitch"]" />
+                    <SimfThemeToggle LightLabel='@L["Shell.ThemeLight"]' DarkLabel='@L["Shell.ThemeDark"]' AriaLabel='@L["Shell.ThemeSwitch"]' />
+                </TopControls>
+                <ChildContent>
+                    @if (_recoveryCodes is not null)
+                    {
+                        @* Stage 2 — enrolment succeeded and the session is in hand.
+                           The recovery codes are shown exactly once (D-040), so the
+                           user must acknowledge before we hand off to the shell. *@
+                        <SimfAlert Variant="success">@L["Auth.Enrol2fa.RecoveryShowOnce"]</SimfAlert>
+                        <ol class="simf-recovery-codes">
+                            @foreach (var recoveryCode in _recoveryCodes)
+                            {
+                                <li><code>@recoveryCode</code></li>
+                            }
+                        </ol>
+                        <div class="simf-form__actions">
+                            <SimfButton Type="button" Block="true" OnClick="ContinueToControlPanel">
+                                @L["Auth.Enrol2fa.Continue"]
+                            </SimfButton>
+                        </div>
+                    }
+                    else if (_loadingSetup)
+                    {
+                        <p>@L["Auth.Enrol2fa.Loading"]</p>
+                    }
+                    else if (_setup is null)
+                    {
+                        <SimfAlert Variant="error">@(_error ?? L["Auth.Enrol2fa.Fallback"].Value)</SimfAlert>
+                        <div class="simf-form__secondary">
+                            <SimfLink Href="/login">@L["Auth.Totp.BackToSignIn"]</SimfLink>
+                        </div>
+                    }
+                    else
+                    {
+                        @* Stage 1 — scan the QR, then confirm with a first code. *@
+                        <p>@L["Auth.Enrol2fa.Instruction"]</p>
+                        <div class="simf-qr">
+                            @((MarkupString)_setup.QrCodeSvg)
+                        </div>
+                        <p class="simf-form__helper">@L["Auth.Enrol2fa.SecretHint"]</p>
+                        <code class="simf-totp-secret">@_setup.Secret</code>
+
+                        <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+                            @if (_error is not null)
+                            {
+                                <SimfAlert Variant="error">@_error</SimfAlert>
+                            }
+                            <div class="simf-form__fields">
+                                <SimfCodeField Label="@L["Auth.Enrol2fa.Code"]" @bind-Value="_model.Code"
+                                               Helper="@L["Auth.Totp.CodeFormat"]" Disabled="_submitting" />
+                            </div>
+                            <div class="simf-form__actions">
+                                <SimfButton Block="true" Loading="_submitting" LoadingLabel="@L["Auth.Enrol2fa.Submitting"]">
+                                    @L["Auth.Enrol2fa.Submit"]
+                                </SimfButton>
+                            </div>
+                            <div class="simf-form__secondary">
+                                <SimfLink Href="/login">@L["Auth.Totp.BackToSignIn"]</SimfLink>
+                            </div>
+                        </EditForm>
+                    }
+                </ChildContent>
+                <Footer>@L["Auth.Footer"]</Footer>
+            </SimfAuthCard>
+        </ChildContent>
+    </SimfAuthLayout>
+}

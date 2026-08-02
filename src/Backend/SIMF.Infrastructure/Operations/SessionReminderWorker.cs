@@ -7,6 +7,7 @@ using SIMF.Application.Notifications;
 using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -98,7 +99,7 @@ internal sealed class SessionReminderWorker(
         var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
 
         var reminded = await RunReminderScanAsync(
-            db, notifications, timeProvider.GetUtcNow(), ReminderLeadTime, logger,
+            db, notifications, timeProvider.SimfNow(), ReminderLeadTime, logger,
             cancellationToken);
         if (reminded > 0)
         {
@@ -117,7 +118,7 @@ internal sealed class SessionReminderWorker(
     /// </summary>
     internal static async Task<int> RunReminderScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
-        DateTimeOffset now, TimeSpan leadTime, ILogger logger,
+        DateTime now, TimeSpan leadTime, ILogger logger,
         CancellationToken cancellationToken)
     {
         var windowEnd = now + leadTime;

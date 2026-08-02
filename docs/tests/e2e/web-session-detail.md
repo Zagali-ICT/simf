@@ -8,7 +8,7 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | **None — the page is anonymous.** `SessionDetail.razor` calls `SimfPublicClient` (no bearer); `GET /api/v1/app/programme/sessions/{id}` + the agenda list are `AllowAnonymous()`. Seeding a session (with themes / speakers / language / outcomes / presentation files) uses the Control Panel admin — `superadmin@zagali-ict.com` + TOTP via `Get-Totp` — over the admin API, then the page is driven anonymously. |
 | **Figma** | KSA Maritime Forum — Session Detail (Desktop AR), node `5991-85840` |
-| **Last reviewed** | 2026-07-15 |
+| **Last reviewed** | 2026-07-31 (FR-702 live notice on the at-a-glance card — informational, gates nothing; D-815) |
 
 > **What this page is.** `/sessions/{id}` (`SessionDetail.razor` + `.razor.cs`) is
 > the Website's public, anonymous **session detail** (Figma `5991-85840`) on the
@@ -72,6 +72,9 @@
 | E2E-WSDT-011 | Auth: anonymous-by-design — page + downloads load with no Authorization header, no `/login` redirect; a signed-in session changes nothing | auth | P0 | _to author_ |
 | E2E-WSDT-012 | RTL / Arabic render — all sections render Arabic (Arabic-preferred), the page mirrors right-to-left, hero + card icons render in their token colour (never invisible) | i18n | P1 | _to author_ |
 | E2E-WSDT-013 | Responsive — themes/related grids step 3→2→1 (1100/860), the overview + downloads/outcomes two-column layouts stack (900), no horizontal overflow at 1440/1024/768/390 in both languages | responsive | P1 | _to author_ |
+| E2E-WSDT-014 | **FR-702 live notice (owner 2026-07-31 / D-815)** — a session carrying `liveNotice` renders one `.ln-glance__notice` under the at-a-glance card with the organiser's text, and the Live row still reads Yes; nothing on the page withholds, gates or geo-checks the stream | happy | P0 | authored ✓ (`SessionDetailPageTests.Renders_the_live_notice_when_the_session_carries_one`) |
+| E2E-WSDT-015 | **FR-702 no notice / cleared notice** — a session with no notice, or one an admin emptied so both languages are null/whitespace, renders no `.ln-glance__notice` element at all (not an empty one); the rest of the card is unchanged | edge | P0 | authored ✓ (`SessionDetailPageTests.Omits_the_live_notice_when_only_blank_text_is_authored` + `.Omits_the_data_sections_that_are_empty`) |
+| E2E-WSDT-016 | **FR-702 bilingual** — the notice follows the page culture through the same `PickOrNull` fallback as Language/role (Arabic under `ar`, English under `en`, the authored side when only one is written) and sits on the reading-start side in RTL | i18n | P1 | _to author_ |
 | E2E-WSDT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-WSDT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -167,13 +170,73 @@ Scenario: The layout reflows with no horizontal overflow
   And at every width in {1440, 1024, 768, 390} document.scrollWidth == document.clientWidth (no horizontal overflow), in BOTH languages
 ```
 
+### E2E-WSDT-014 / 015 / 016 — FR-702: the session's live notice (D-815)
+
+```gherkin
+Feature: Website session detail — the live notice (FR-702)
+  As a visitor reading a session page
+  I want the organisers' note about this broadcast
+  So that I am informed — the page never withholds anything from me
+
+Scenario: A session with a notice shows it under the at-a-glance card
+  Given the Control Panel authored session "S-02" with a live stream URL
+  And its Live notice (English) reads "This broadcast is provided by the forum organisers."
+  When the browser opens /sessions/{id} anonymously under the English UI culture
+  Then exactly one .ln-glance__notice element appears under the at-a-glance rows
+  And it reads "This broadcast is provided by the forum organisers."
+  And it carries role="note" and the pale-gold informational fill (not the alert register)
+  And the at-a-glance Live row still reads "Yes"
+  And the page is served with no Authorization header and no /login redirect
+
+Scenario: No notice authored renders no element
+  Given session "S-02" has "   " as its English notice and "" as its Arabic notice
+  When the browser opens /sessions/{id}
+  Then there is no .ln-glance__notice element in the DOM at all
+  And the at-a-glance card renders its normal rows unchanged
+
+Scenario: The notice follows the page culture
+  Given session "S-02" has the English notice "This broadcast is provided by the forum organisers."
+  And the Arabic notice "يقدَّم هذا البث من منظمي الملتقى."
+  When the browser opens /sessions/{id} under the Arabic UI culture (<html dir="rtl" lang="ar">)
+  Then the notice reads "يقدَّم هذا البث من منظمي الملتقى."
+  And it is aligned to the reading start and does not overflow the card
+  When only the Arabic side is authored and the culture is English
+  Then the notice still reads the Arabic text (the shared PickOrNull fallback)
+```
+
+> **A notice, never a gate.** The FDS-007 §5.1 wording this replaces said an
+> attendee outside the Riyadh region "sees the restriction notice **instead of**
+> the stream". The owner reversed it (2026-07-31, D-815). Scenario WSDT-014
+> therefore asserts the Live row **still reads Yes** while the notice is on the
+> page: the notice never changes what the session offers, and nothing on this
+> page reads the visitor's location.
+
+**Evidence:** `PublicSessionDetail.LiveNotice` / `.LiveNoticeArabic` (appended,
+append-only D-219) → `SessionDetail.razor` renders
+`PickOrNull(s.LiveNotice, s.LiveNoticeArabic)` as `.ln-glance__notice` inside the
+`ln-glance` aside, omitted entirely when the pick is null; `landing.css`
+`.landing .ln-glance__notice` uses the `--gold-light` informational fill (no raw
+hex, logical `text-align: start`). bUnit:
+`SessionDetailPageTests.Renders_the_live_notice_when_the_session_carries_one` and
+`.Omits_the_live_notice_when_only_blank_text_is_authored`. API round-trip:
+`tests/SIMF.Api.Tests/SessionLiveNoticeTests.cs`
+(`Public_detail_exposes_the_live_notice`,
+`Public_detail_omits_the_live_notice_when_none_is_authored`,
+`A_live_notice_does_not_withhold_the_live_stream`).
+
 ---
 
 ## Implementation notes
 
 - **Read-only, anonymous.** No CRUD, no form, no toggle. The matrix is exhaustive
   for the page's behaviour: load → render (or not-found), the best-effort related
-  strip, and the seven data-driven sections that each omit when empty.
+  strip, the seven data-driven sections that each omit when empty, and the
+  optional FR-702 live notice on the at-a-glance card.
+- **The live notice restricts nothing (FR-702, owner 2026-07-31, D-815).** It is
+  free bilingual text an admin writes on the session at `/admin/sessions`; the
+  page shows it and changes nothing else. There is no region check, no location
+  lookup and no gated content on this page — a run that finds content withheld
+  from an anonymous visitor is a defect, not the specified behaviour.
 - **Public downloads are a deliberate policy (owner, 2026-07-15).** The website
   download route is `AllowAnonymous()`; the session-scope check
   (`presentation.SessionId == sessionId`) replaces the signed-in gate the app's
@@ -182,7 +245,9 @@ Scenario: The layout reflows with no horizontal overflow
   - Component (bUnit): `tests/SIMF.Web.Tests/SessionDetailPageTests.cs` —
     `Renders_all_sections_when_the_session_loads` (all 7 sections + the download
     proxy URL), `Renders_the_not_found_state_for_an_unknown_id`,
-    `Omits_the_data_sections_that_are_empty`.
+    `Omits_the_data_sections_that_are_empty`,
+    `Renders_the_live_notice_when_the_session_carries_one`,
+    `Omits_the_live_notice_when_only_blank_text_is_authored`.
   - API integration: `tests/SIMF.Api.Tests/PublicSessionDetailTests.cs` /
     `ProgrammeSessionsTests.cs` cover the anonymous detail read; the new
     session-scoped download route is exercised at the API layer (belongs-to-session
@@ -193,4 +258,6 @@ Scenario: The layout reflows with no horizontal overflow
 
 ---
 
-_Last reviewed:_ 2026-07-15 by Claude (Session Detail — `ln-` Bootstrap SSR, Figma 5991-85840).
+_Last reviewed:_ 2026-07-31 by Claude (FR-702 — the session's live notice renders on the at-a-glance card as information shown WITH the stream, never a restriction on it: WSDT-014..016; owner decision D-815).
+
+_Prior:_ 2026-07-15 by Claude (Session Detail — `ln-` Bootstrap SSR, Figma 5991-85840).

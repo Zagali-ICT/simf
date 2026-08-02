@@ -7,7 +7,7 @@
 | **Surface** | Mobile (Flutter) |
 | **Audience** | Any signed-in account (opened from My-Area) |
 | **Status** | ✅ Real (owner 2026-07-26) |
-| **Figma** | No dedicated node — reuses the shared navy account chrome (`AccountSubHeader` + `SimfAuthSweep` + `AuthSubmitButton`), like change-email and the My-interests edit surface |
+| **Figma** | No dedicated node — reuses the shared navy account chrome (`AccountSubHeader` + `SimfAuthSweep` + `AuthSubmitButton`), like the biometric step-up and the My-interests edit surface |
 | **Source** | [`my_mobile_screen.dart`](../../../../src/Mobile/simf_app/lib/features/myarea/my_mobile_screen.dart) · entry row in [`my_area_dashboard_body.dart`](../../../../src/Mobile/simf_app/lib/features/myarea/widgets/my_area_dashboard_body.dart) |
 | **E2E** | [`mobile-my-mobile.md`](../../../tests/e2e/mobile-my-mobile.md) (E2E-MYMOB-001..008) |
 | **Last reviewed** | 2026-07-26 |

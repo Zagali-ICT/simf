@@ -119,10 +119,10 @@ public sealed class ImportNewsEndpoint(IAdminNewsService service, IGridExcelImpo
                 "التصنيف بالعربية مطلوب.");
         }
 
-        var publishedAt = DateTimeOffset.TryParse(
+        var publishedAt = DateTime.TryParse(
             row.Cells.GetValueOrDefault("PublishedAt", string.Empty), out var parsed)
             ? parsed
-            : DateTimeOffset.UtcNow;
+            : SimfClock.Now;
 
         await service.CreateAsync(actorId, new CreateNewsRequest
         {

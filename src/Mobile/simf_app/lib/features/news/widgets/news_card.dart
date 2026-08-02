@@ -58,7 +58,8 @@ class NewsCard extends StatelessWidget {
                     ],
                     Text(
                       _formatDate(item.publishedAt),
-                      // Keep DD-MM-YYYY left-to-right so the Arabic/RTL paragraph
+                      // Keep DD-MM-YYYY left-to-right so the Arabic/RTL
+                      // paragraph
                       // direction does not reorder the date segments.
                       textDirection: TextDirection.ltr,
                       style: SimfTokens.labelGoldSemibold,
@@ -85,8 +86,9 @@ class NewsCard extends StatelessWidget {
     );
   }
 
-  /// Frame date format `DD-MM-YYYY` with Western digits (the frame shows Western
-  /// digits even in the Arabic UI). Formatted from the UTC value so it is
+  /// Frame date format `DD-MM-YYYY` with Western digits (the frame shows
+  /// Western
+  /// digits even in the Arabic UI). Formatted from the stored value so it is
   /// timezone-stable.
   static String _formatDate(DateTime publishedAt) {
     final dd = publishedAt.day.toString().padLeft(2, '0');
@@ -96,9 +98,11 @@ class NewsCard extends StatelessWidget {
 }
 
 /// The news thumbnail (frame node 958:2202): the article's `NewsImage` asset
-/// (fetched from the public anonymous D-357 route) under a navy bottom-gradient,
+/// (fetched from the public anonymous D-357 route) under a navy
+/// bottom-gradient,
 /// with the gold category chip overlaid at the inline-start top corner. A
-/// spinner shows while it loads; a navy article-icon box is the no-image / fetch
+/// spinner shows while it loads; a navy article-icon box is the no-image /
+/// fetch
 /// -failure fall-back. 155 wide, stretched to the card height.
 class _NewsThumbnail extends StatelessWidget {
   const _NewsThumbnail({required this.imageUrl, required this.category});

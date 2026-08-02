@@ -107,7 +107,7 @@ internal sealed class AdminCountryService(
             request.DelegationArrivalDate, request.DelegationDepartureDate);
         await ValidateHeadAsync(id, headId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var country = new Country
         {
             Id = id,
@@ -180,7 +180,7 @@ internal sealed class AdminCountryService(
         country.DelegationArrivalDate = arrival;
         country.DelegationDepartureDate = departure;
         country.HeadOfDelegationUserProfileId = headId;
-        country.UpdatedAt = timeProvider.GetUtcNow();
+        country.UpdatedAt = timeProvider.SimfNow();
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -206,7 +206,7 @@ internal sealed class AdminCountryService(
         if (!country.IsActive) { return; }
 
         country.IsActive = false;
-        country.UpdatedAt = timeProvider.GetUtcNow();
+        country.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

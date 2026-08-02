@@ -270,7 +270,7 @@ public sealed class SeatChangeTests : IClassFixture<SimfApiFactory>
             Capacity = rows.Length * seatsPerRow,
             SeatSelectionMode = SeatSelectionMode.AssignedSeat,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         db.HallSeatLayouts.Add(new HallSeatLayout
@@ -280,11 +280,11 @@ public sealed class SeatChangeTests : IClassFixture<SimfApiFactory>
             RowLabels = string.Join(',', rows),
             SeatsPerRow = seatsPerRow,
             SeatTiers = string.Join(',', tiers.Select(t => (int)t)),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         // "Already started" is seeded as a LIVE session (started, not yet ended) so
         // the booking itself still succeeds and only the move hits the start gate.
-        var now = _factory.Time.GetUtcNow();
+        var now = _factory.Time.SimfNow();
         var session = new Session
         {
             Id = Guid.NewGuid(),
@@ -295,7 +295,7 @@ public sealed class SeatChangeTests : IClassFixture<SimfApiFactory>
             Start = alreadyStarted ? now.AddMinutes(-10) : now.AddHours(1),
             End = alreadyStarted ? now.AddMinutes(50) : now.AddHours(2),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -379,7 +379,7 @@ public sealed class SeatChangeTests : IClassFixture<SimfApiFactory>
             MobileAppRole = MobileAppRole.None,
             AllowsVipMeetingSlots = allowsVip,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.ProfileTypes.Add(type);
 
@@ -390,7 +390,7 @@ public sealed class SeatChangeTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.UserProfiles.Add(profile);
         }

@@ -53,8 +53,8 @@ public sealed record MyAreaCounters(
 /// </summary>
 public sealed record MyAreaScheduleItem(
     string Kind,
-    DateTimeOffset Start,
-    DateTimeOffset? End,
+    DateTime Start,
+    DateTime? End,
     string TitleEn,
     string TitleAr,
     string? HallNameEn,
@@ -72,8 +72,8 @@ public sealed record MyAreaScheduleItem(
 /// </summary>
 public sealed record MyAreaCalendarEvent(
     Guid Uid,
-    DateTimeOffset Start,
-    DateTimeOffset? End,
+    DateTime Start,
+    DateTime? End,
     string Summary,
     string? Location);
 
@@ -104,8 +104,8 @@ public sealed record MyAreaSessionItem(
     Guid Id,
     string Title,
     string TitleArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     string? HallNameEn,
     string? HallNameAr,
     string? CategoryNameEn,

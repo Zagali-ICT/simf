@@ -13,12 +13,15 @@ import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_info_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/saudi_time.dart';
 import '../moderation/data/moderation_repository.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'data/session_calendar.dart';
 import 'data/session_detail_repository.dart';
+import 'data/session_lifecycle.dart';
 import 'data/session_models.dart';
+import 'widgets/session_arrival_action.dart';
 import 'widgets/session_detail_body.dart';
 import 'widgets/session_detail_header.dart';
 
@@ -35,14 +38,26 @@ import 'widgets/session_detail_header.dart';
 /// deferred to the notifications platform pass (D-300).
 ///
 /// Frame mapping (RTL-primary): a navy session **header card** (gold index
-/// badge + ordinal · clock/calendar meta · title · hall + category tag pills),
-/// the وصف الجلسة description card, the المتحدثون speaker cards (a gold-tinted
-/// anchor box for a speaker / star box for the host, name + rank), the gold
+/// badge + ordinal · title · the category tag pill when the session carries a
+/// category (PAR-D3) · clock/calendar meta · the ملخص الجلسة / رابط الجلسة
+/// actions), the وصف الجلسة description card, the المتحدثون speaker cards
+/// (name + rank, the host marked with the gold star + المضيف — PAR-P4a), the gold
 /// مقعدي my-seat card (row · seat + badge hint + a forward chevron), and the
 /// تذكير (outlined) + أضف إلى تقويمي (gold) CTA row. The section widgets live
 /// in `widgets/` (session_detail_body/header, session_header_card,
 /// session_text_sections, session_speaker_card, ask_host_card,
 /// session_reservation_card, session_booking_actions).
+///
+/// **Hall check-in (owner 2026-07-31):** an attendee's arrival at a session is
+/// established by the **gate scan** at the hall door, never by device GPS, so
+/// the detail carries a read-only [SessionArrivalAction] status strip above the
+/// body — it reports what the door recorded (or that nothing was recorded yet)
+/// and posts nothing. It replaced the old "أنا هنا" self check-in button.
+///
+/// **#29 (owner Q10, 2026-07-30) — a WORKSHOP is the exception:** when the
+/// detail's `type` is `SessionType.workshop` the body renders the title + time
+/// block ONLY (no description, speakers, ask card, seat/join section or
+/// live/summary actions). The CP half reuses the existing session admin.
 ///
 /// **Rating (owner 2026-07-22):** this screen no longer opens the rate form when
 /// you leave an ended session — merely viewing a session is not attending it. The
@@ -86,6 +101,14 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       _notFound = false;
       _seatMapError = false;
     });
+    // NOTE: do NOT invalidate hallAttendanceStatusProvider here. `_load()` runs
+    // from initState(), and ref.invalidate reaches for the ProviderScope through
+    // dependOnInheritedWidgetOfExactType, which Flutter forbids before initState
+    // completes — it threw on every mount of this screen. It is also unnecessary:
+    // the setState above puts the page into its loading state, which unmounts the
+    // check-in strip, and the provider is an autoDispose.family, so it disposes
+    // and re-fetches when the strip remounts. Pull-to-refresh therefore refreshes
+    // the strip already.
     try {
       final repo = ref.read(sessionDetailRepositoryProvider);
       final detail = await repo.getDetail(widget.sessionId);
@@ -145,6 +168,33 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     return role == AppRole.guest ||
         routeAllowsRole(RouteNames.sendQuestion, role);
   }
+
+  /// Whether the hall check-in strip is offered. Three gates, each for its own
+  /// reason:
+  ///
+  /// * It reads the CALLER's own attendance from a bearer-gated endpoint, so it
+  ///   follows the same attendee gate as the seat map (D-576/D-577; D-666
+  ///   presents a not-yet-approved account as a guest): a guest has no
+  ///   attendance to report and would only ever see the failed-read state.
+  /// * A session too far in the future has nothing to report yet. But the cut-off
+  ///   is NOT "has it started": `HallAttendanceService.RecordGateDoorScanAsync`
+  ///   binds a door scan with `s.Start - ArrivalGrace <= now`, where ArrivalGrace
+  ///   is 15 minutes, so an attendee scanned in during the queue BEFORE the doors
+  ///   nominally open already has a real attendance row. Gating on
+  ///   `phase != upcoming` hid the strip for exactly that window — the one where
+  ///   people are most likely to have just been scanned. The client mirrors the
+  ///   server's grace so the two agree.
+  /// * #29 — a workshop's detail is the title + time block only, so it carries
+  ///   no attendance section either.
+  bool _showArrivalStatus(SessionDetail detail) =>
+      _canJoin &&
+      detail.type != SessionType.workshop &&
+      !saudiNow().isBefore(detail.start.subtract(_arrivalGrace));
+
+  /// Mirrors `HallAttendanceService.ArrivalGrace` (15 minutes). If that server
+  /// constant changes, change this with it — they describe the same window from
+  /// two sides.
+  static const Duration _arrivalGrace = Duration(minutes: 15);
 
   Future<SessionSeatMap?> _safeSeatMap() async {
     try {
@@ -417,30 +467,47 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     final baseUrl = ref.read(simfDataConfigProvider).baseUrl;
     return SimfPullToRefresh(
       onRefresh: _load,
-      child: SessionDetailBody(
-        detail: _detail!,
-        seatMap: _seatMap,
-        busy: _busy,
-        l10n: l10n,
-        baseUrl: baseUrl,
-        canAsk: _canAsk,
-        onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
-        onRemind: () => _remind(l10n),
-        onSessionLink: _openLive,
-        onSessionSummary: _openSummary,
-        onAskHost: _askHost,
-        onJoin: () => unawaited(_join(l10n)),
-        seatMapError: _seatMapError,
-        onRetrySeatMap: () => unawaited(_load()),
-        onCancelReservation: () => unawaited(_cancelReservation(l10n)),
-        onViewSeat: () => context.pushNamed(
-          RouteNames.mySeat,
-          pathParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
-        ),
-        onSpeaker: (speaker) => context.pushNamed(
-          RouteNames.speakerProfile,
-          pathParameters: <String, String>{RouteParams.speakerId: speaker.id},
-        ),
+      child: _detailBody(l10n, baseUrl),
+    );
+  }
+
+  /// The scrolling detail itself. The check-in strip goes in as the body's
+  /// `header` — the list's FIRST CHILD — rather than being stacked above it:
+  /// attendance is about this moment, so it must be readable without scrolling
+  /// past the description and speakers, but a widget outside the scrollable
+  /// swallows the pull gesture and would break pull-to-refresh at the top of the
+  /// page (the standing owner rule that every data page pulls to refresh).
+  Widget _detailBody(AppL10n l10n, String baseUrl) {
+    return SessionDetailBody(
+      detail: _detail!,
+      header: _showArrivalStatus(_detail!)
+          ? SessionArrivalAction(
+              sessionId: widget.sessionId,
+              hasEnded: _detail!.phase(saudiNow()) == SessionPhase.ended,
+              l10n: l10n,
+            )
+          : null,
+      seatMap: _seatMap,
+      busy: _busy,
+      l10n: l10n,
+      baseUrl: baseUrl,
+      canAsk: _canAsk,
+      onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
+      onRemind: () => _remind(l10n),
+      onSessionLink: _openLive,
+      onSessionSummary: _openSummary,
+      onAskHost: _askHost,
+      onJoin: () => unawaited(_join(l10n)),
+      seatMapError: _seatMapError,
+      onRetrySeatMap: () => unawaited(_load()),
+      onCancelReservation: () => unawaited(_cancelReservation(l10n)),
+      onViewSeat: () => context.pushNamed(
+        RouteNames.mySeat,
+        pathParameters: <String, String>{RouteParams.sessionId: widget.sessionId},
+      ),
+      onSpeaker: (speaker) => context.pushNamed(
+        RouteNames.speakerProfile,
+        pathParameters: <String, String>{RouteParams.speakerId: speaker.id},
       ),
     );
   }

@@ -68,7 +68,7 @@ public sealed record AdminBroadcastSummary(
     int Dispatched,
     int EmailsEnqueued,
     int Skipped,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? StartedAt,
-    DateTimeOffset? CompletedAt,
+    DateTime CreatedAt,
+    DateTime? StartedAt,
+    DateTime? CompletedAt,
     string? Error);

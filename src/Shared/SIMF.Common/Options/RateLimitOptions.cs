@@ -19,7 +19,7 @@ public sealed class RateLimitOptions
     public const string SectionName = "RateLimit";
 
     /// <summary>
-    /// D-809 — the policy name for the on-site OPERATIONAL endpoints: gate
+    /// D-819 — the policy name for the on-site OPERATIONAL endpoints: gate
     /// scans, hall arrivals/departures, walk-in registration, approve /
     /// bulk-approve, staff uploads and the offline batch upload. The policy is
     /// deliberately UNLIMITED, and requests carrying it are also exempted from

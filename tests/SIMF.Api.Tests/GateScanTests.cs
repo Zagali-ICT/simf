@@ -1,4 +1,4 @@
-﻿// Tests cover the 13-step constraint engine in GateOperatorService:
+// Tests cover the 13-step constraint engine in GateOperatorService:
 // step 2 (operator not assigned → 403); step 3 (QR_UNKNOWN); step 6
 // (HOLDER_NOT_APPROVED); step 11 (PROFILE_TYPE_NOT_ALLOWED + L-15 empty-
 // filtered-list denies all); step 12 (5-second duplicate absorption + Both-
@@ -266,7 +266,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
                 RequestHash = "stale-request-hash",
                 ResponseHash = "stale-response-hash",
                 ScanId = null,
-                StoredAt = _factory.Time.GetUtcNow() - TimeSpan.FromHours(25),
+                StoredAt = _factory.Time.SimfNow() - TimeSpan.FromHours(25),
             });
             await appDb.SaveChangesAsync();
         }
@@ -437,7 +437,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             var operatorId = (await users.FindByEmailAsync(email))!.Id;
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             // Seed at the service's clock so the scans fall inside today's window.
-            var now = _factory.Time.GetUtcNow();
+            var now = _factory.Time.SimfNow();
 
             GateScan Scan(ScanOutcome outcome, DenialReasonCode? reason) => new()
             {
@@ -611,7 +611,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             Name = "Test Visitor",
             NationalityId = 682, // ISO 3166-1 numeric — SA
             PlaceOfBirth = "Riyadh",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return qrId;
@@ -629,7 +629,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             NameArabic = name,
             PageColor = "#244A77",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return id;
@@ -659,16 +659,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, email);
+        return (await AuthFlow.SignInControlPanelAsync(_client, _factory, email), email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

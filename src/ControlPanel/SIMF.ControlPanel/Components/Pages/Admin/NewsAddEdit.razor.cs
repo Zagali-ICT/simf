@@ -1,17 +1,8 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
 using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -27,7 +18,7 @@ public partial class NewsAddEdit
 
     // The <input type="date"> value mirror — kept as the yyyy-MM-dd text the
     // browser exchanges so the field round-trips cleanly against the
-    // DateTimeOffset on the form model.
+    // DateTime on the form model.
     private string _publishedAtText = string.Empty;
 
     protected override void OnInitialized()
@@ -71,60 +62,44 @@ public partial class NewsAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminNewsDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/news",
-                    new CreateNewsRequest
-                    {
-                        Title = _model.Title,
-                        TitleArabic = _model.TitleArabic,
-                        Excerpt = NullIfBlank(_model.Excerpt),
-                        ExcerptArabic = NullIfBlank(_model.ExcerptArabic),
-                        Body = _model.Body,
-                        BodyArabic = _model.BodyArabic,
-                        Category = _model.Category,
-                        CategoryArabic = _model.CategoryArabic,
-                        ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
-                        PublishedAt = _model.PublishedAt,
-                        DisplayOrder = _model.DisplayOrder,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/news/{Initial!.Id}",
-                    new UpdateNewsRequest
-                    {
-                        Title = _model.Title,
-                        TitleArabic = _model.TitleArabic,
-                        Excerpt = NullIfBlank(_model.Excerpt),
-                        ExcerptArabic = NullIfBlank(_model.ExcerptArabic),
-                        Body = _model.Body,
-                        BodyArabic = _model.BodyArabic,
-                        Category = _model.Category,
-                        CategoryArabic = _model.CategoryArabic,
-                        ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
-                        PublishedAt = _model.PublishedAt,
-                        DisplayOrder = _model.DisplayOrder,
-                        IsActive = _model.IsActive,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/news",
+                $"/account/api/admin/news/{Initial?.Id}",
+                new CreateNewsRequest
+                {
+                    Title = _model.Title,
+                    TitleArabic = _model.TitleArabic,
+                    Excerpt = NullIfBlank(_model.Excerpt),
+                    ExcerptArabic = NullIfBlank(_model.ExcerptArabic),
+                    Body = _model.Body,
+                    BodyArabic = _model.BodyArabic,
+                    Category = _model.Category,
+                    CategoryArabic = _model.CategoryArabic,
+                    ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
+                    PublishedAt = _model.PublishedAt,
+                    DisplayOrder = _model.DisplayOrder,
+                },
+                new UpdateNewsRequest
+                {
+                    Title = _model.Title,
+                    TitleArabic = _model.TitleArabic,
+                    Excerpt = NullIfBlank(_model.Excerpt),
+                    ExcerptArabic = NullIfBlank(_model.ExcerptArabic),
+                    Body = _model.Body,
+                    BodyArabic = _model.BodyArabic,
+                    Category = _model.Category,
+                    CategoryArabic = _model.CategoryArabic,
+                    ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
+                    PublishedAt = _model.PublishedAt,
+                    DisplayOrder = _model.DisplayOrder,
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.News.LoadFailed"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.News.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.News.LoadFailed"];
         }
         finally { _busy = false; }
     }
@@ -132,8 +107,13 @@ public partial class NewsAddEdit
     private void OnPublishedAtChanged(ChangeEventArgs e)
     {
         var raw = e.Value?.ToString();
+        // The date input carries no timezone and does not need one: what the
+        // admin picks IS what gets stored. This flag pair is what keeps a naked
+        // "2026-11-23" on that date whatever timezone the Control Panel runs in —
+        // it is not a zone conversion, and a plain local-time parse here would make
+        // the stored value depend on the server's location.
         if (string.IsNullOrWhiteSpace(raw)
-            || !DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture,
+            || !DateTime.TryParse(raw, CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
                 out var parsed))
         {
@@ -162,7 +142,7 @@ public partial class NewsAddEdit
         public string Category { get; set; } = string.Empty;
         public string CategoryArabic { get; set; } = string.Empty;
         public string ImageRelativePath { get; set; } = string.Empty;
-        public DateTimeOffset PublishedAt { get; set; } = DateTimeOffset.UtcNow;
+        public DateTime PublishedAt { get; set; } = SimfClock.Now;
         public int DisplayOrder { get; set; }
         public bool IsActive { get; set; } = true;
     }

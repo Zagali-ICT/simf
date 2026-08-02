@@ -50,11 +50,11 @@ public class SimfUser : IdentityUser<Guid>
     /// </summary>
     public bool PasswordChangeRequired { get; set; }
 
-    /// <summary>When the account was created (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    /// <summary>When the account was created (Saudi local).</summary>
+    public DateTime CreatedAt { get; set; }
 
-    /// <summary>When the account was last updated (UTC); null if never.</summary>
-    public DateTimeOffset? UpdatedAt { get; set; }
+    /// <summary>When the account was last updated (Saudi local); null if never.</summary>
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>
     /// The most recent TOTP time-step accepted for this account. A code at or
@@ -72,13 +72,13 @@ public class SimfUser : IdentityUser<Guid>
     public string? AvatarRelativePath { get; set; }
 
     /// <summary>
-    /// When the <see cref="AccountState"/> last changed (UTC) — P10 —
+    /// When the <see cref="AccountState"/> last changed (Saudi local) — P10 —
     /// D-051. Set on every transition through Approve / Reject / Disable
     /// / unblock, and back-filled to <see cref="CreatedAt"/> by the P10
     /// migration for existing rows. Lets admins answer "when was this
     /// rejected?" without joining the audit log.
     /// </summary>
-    public DateTimeOffset? StateChangedAt { get; set; }
+    public DateTime? StateChangedAt { get; set; }
 
     /// <summary>
     /// The admin who last changed the <see cref="AccountState"/> (P10 —
@@ -88,19 +88,19 @@ public class SimfUser : IdentityUser<Guid>
     public Guid? StateChangedByUserId { get; set; }
 
     /// <summary>
-    /// A7-13 (NCA) — when the password was last set (UTC). Set on every
+    /// A7-13 (NCA) — when the password was last set (Saudi local). Set on every
     /// change / reset (see <c>PasswordService</c>). Null for accounts whose
     /// password was never changed since this column was added; the expiry check
     /// falls back to <see cref="CreatedAt"/> as the baseline. Lets sign-in
     /// enforce an admin-configured maximum password age.
     /// </summary>
-    public DateTimeOffset? PasswordChangedAtUtc { get; set; }
+    public DateTime? PasswordChangedAt { get; set; }
 
     /// <summary>
-    /// A7-31 / A1-19 (NCA) — when the account last completed a sign-in (UTC). Set
+    /// A7-31 / A1-19 (NCA) — when the account last completed a sign-in (Saudi local). Set
     /// when tokens are issued. Surfaced to the client as the "previous sign-in"
     /// notice (A7-31) and used as the activity signal for dormant-account
     /// auto-disable (A1-19). Null until the first sign-in after this column shipped.
     /// </summary>
-    public DateTimeOffset? LastSuccessfulSignInAtUtc { get; set; }
+    public DateTime? LastSuccessfulSignInAt { get; set; }
 }

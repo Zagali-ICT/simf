@@ -133,7 +133,7 @@ public sealed class SimfCookieRefreshHandlerTests
             new AuthenticationToken
             {
                 Name = SimfCookieRefreshHandler.ExpiresAtTokenName,
-                Value = DateTimeOffset.UtcNow.Add(expiresIn ?? TimeSpan.FromSeconds(30))
+                Value = SimfClock.Now.Add(expiresIn ?? TimeSpan.FromSeconds(30))
                     .ToString("O", CultureInfo.InvariantCulture),
             },
         ]);

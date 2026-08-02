@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -39,9 +40,9 @@ internal sealed class RetentionPurgeService(
     public async Task<RetentionPurgeResult> PurgeExpiredAsync(
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
-        // Precompute each cutoff as a plain DateTimeOffset so the query is an
-        // unambiguous `column < @cutoff` (no in-query DateTimeOffset arithmetic).
+        var now = timeProvider.SimfNow();
+        // Precompute each cutoff as a plain DateTime so the query is an
+        // unambiguous `column < @cutoff` (no in-query DateTime arithmetic).
         var refreshCutoff = now - RefreshTokenRetention;
         var secondFactorCutoff = now - SecondFactorTokenRetention;
         var accountCodeCutoff = now - AccountCodeRetention;

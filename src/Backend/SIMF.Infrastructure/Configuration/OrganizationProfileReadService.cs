@@ -50,7 +50,7 @@ internal sealed class OrganizationProfileReadService(
             // answer 200 with an empty profile rather than fail the public read.
             var empty = OrganizationProfileMapper.ToResponse(
                 new OrganizationProfile(), [], [], null);
-            return new OrganizationProfileSnapshot(empty, DateTimeOffset.UnixEpoch);
+            return new OrganizationProfileSnapshot(empty, DateTime.UnixEpoch);
         }
 
         var about = await db.OrganizationAboutItems.AsNoTracking()

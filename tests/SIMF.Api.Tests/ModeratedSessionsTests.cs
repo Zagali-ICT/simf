@@ -43,11 +43,11 @@ public sealed class ModeratedSessionsTests : IClassFixture<SimfApiFactory>
         var colleagueId = UserIdFromToken(colleague.AccessToken);
 
         var later = await SeedSessionAsync(
-            "Closing Panel", "الجلسة الختامية", DateTimeOffset.UtcNow.AddDays(2));
+            "Closing Panel", "الجلسة الختامية", SimfClock.Now.AddDays(2));
         var sooner = await SeedSessionAsync(
-            "Opening Panel", "الجلسة الافتتاحية", DateTimeOffset.UtcNow.AddDays(1));
+            "Opening Panel", "الجلسة الافتتاحية", SimfClock.Now.AddDays(1));
         var somebodyElses = await SeedSessionAsync(
-            "Not Mine", "ليست لي", DateTimeOffset.UtcNow.AddHours(6));
+            "Not Mine", "ليست لي", SimfClock.Now.AddHours(6));
 
         await GrantAsync(later.Id, moderatorId);
         await GrantAsync(sooner.Id, moderatorId);
@@ -78,9 +78,9 @@ public sealed class ModeratedSessionsTests : IClassFixture<SimfApiFactory>
         var moderatorId = UserIdFromToken(moderator.AccessToken);
 
         var live = await SeedSessionAsync(
-            "Still Running", "ما زالت قائمة", DateTimeOffset.UtcNow.AddDays(1));
+            "Still Running", "ما زالت قائمة", SimfClock.Now.AddDays(1));
         var retired = await SeedSessionAsync(
-            "Cancelled", "ملغاة", DateTimeOffset.UtcNow.AddDays(1));
+            "Cancelled", "ملغاة", SimfClock.Now.AddDays(1));
         await GrantAsync(live.Id, moderatorId);
         await GrantAsync(retired.Id, moderatorId);
         await DeactivateSessionAsync(retired.Id);
@@ -122,7 +122,7 @@ public sealed class ModeratedSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task<Session> SeedSessionAsync(
-        string title, string titleArabic, DateTimeOffset start)
+        string title, string titleArabic, DateTime start)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -132,7 +132,7 @@ public sealed class ModeratedSessionsTests : IClassFixture<SimfApiFactory>
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Moderated Hall", NameArabic = "قاعة المحاورين",
             Capacity = 80, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -143,7 +143,7 @@ public sealed class ModeratedSessionsTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             Start = start, End = start.AddHours(1),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -159,7 +159,7 @@ public sealed class ModeratedSessionsTests : IClassFixture<SimfApiFactory>
             SessionId = sessionId,
             UserId = userId,
             AssignedByUserId = userId,
-            AssignedAt = DateTimeOffset.UtcNow,
+            AssignedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }

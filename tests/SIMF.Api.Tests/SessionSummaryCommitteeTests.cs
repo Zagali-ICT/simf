@@ -314,7 +314,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     {
         var admin = await CreateAdministratorAndSignInAsync();
         // A future session — it has not started yet.
-        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddDays(1));
+        var sessionId = await SeedSessionAsync(start: SimfClock.Now.AddDays(1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
 
         var response = await PutAuthAsync(
@@ -329,7 +329,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     {
         var admin = await CreateAdministratorAndSignInAsync();
         // A started session (past start).
-        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: SimfClock.Now.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
         await SubmitForReviewAndApproveAsync(sessionId, admin);
 
@@ -350,7 +350,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdministratorAndSignInAsync();
         // A started session (the S-6 clock gate passes); the summary is saved but
         // never submitted for review or approved.
-        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: SimfClock.Now.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
 
         var response = await PutAuthAsync(
@@ -370,7 +370,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     public async Task Editing_a_published_summary_takes_it_offline_until_reapproved()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: SimfClock.Now.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
         await SubmitForReviewAndApproveAsync(sessionId, admin);
         await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
@@ -483,7 +483,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     public async Task A18_ApproveAsync_WithLegacyEchoPrefixedDraft_ReturnsBadRequest()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: SimfClock.Now.AddHours(-1));
         // Exactly what Generate stored before this guard shipped: the stub's own
         // "[echo:echo] " prefix followed by the echoed prompt.
         await SaveAsync(sessionId, new SaveSessionSummaryRequest
@@ -504,7 +504,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     public async Task A18_PublishAsync_WithLegacyEchoPrefixedDraftAlreadyApproved_ReturnsBadRequest()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: SimfClock.Now.AddHours(-1));
         // The pre-existing case: a stub draft that was approved BEFORE the guard
         // shipped, sitting one Publish click away from every visitor.
         await SaveAsync(sessionId, new SaveSessionSummaryRequest
@@ -530,7 +530,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         // The legacy sweep is LEADING-prefix only, so genuine minutes that happen
         // to quote the token are not collateral damage.
         var admin = await CreateAdministratorAndSignInAsync();
-        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: SimfClock.Now.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest
         {
             FullTextArabic = "ناقش المتحدثون تقنية [echo] للسونار في المياه الضحلة.",
@@ -553,7 +553,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     public async Task A19_saving_a_published_summary_unchanged_keeps_it_published()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: SimfClock.Now.AddHours(-1));
         var request = new SaveSessionSummaryRequest
         {
             KeyPoints = "Point one",
@@ -579,7 +579,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     public async Task A19_regenerating_the_same_draft_keeps_the_summary_published()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: SimfClock.Now.AddHours(-1));
         var generated = await GenerateAsync(sessionId, admin);
         // Stamp it approved + published directly (the A18 gate deliberately blocks
         // approving stub text through the API; this test is about A19's reset rule,
@@ -609,13 +609,13 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         // Unpublish only retracts, so it is allowed regardless of the clock — even
         // after the session is rescheduled back into the future.
         var admin = await CreateAdministratorAndSignInAsync();
-        var sessionId = await SeedSessionAsync(start: DateTimeOffset.UtcNow.AddHours(-1));
+        var sessionId = await SeedSessionAsync(start: SimfClock.Now.AddHours(-1));
         await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
         await SubmitForReviewAndApproveAsync(sessionId, admin);
         await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
 
         // Reschedule the session into the future (it "hasn't started" again).
-        await SetSessionStartDirectAsync(sessionId, DateTimeOffset.UtcNow.AddDays(1));
+        await SetSessionStartDirectAsync(sessionId, SimfClock.Now.AddDays(1));
 
         var response = await PutAuthAsync(
             $"/api/v1/admin/session-summaries/{sessionId}/unpublish", new { }, admin);
@@ -824,7 +824,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             SessionId = sessionId,
             UserId = userId,
             AssignedByUserId = Guid.NewGuid(),
-            AssignedAt = DateTimeOffset.UtcNow,
+            AssignedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
@@ -839,7 +839,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             UserId = userId,
             Name = "Host User",
             NameArabic = "المحاور",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.UserProfiles.Add(profile);
         var speaker = new Speaker
@@ -850,7 +850,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             NameArabic = "المحاور",
             UserProfileId = profile.Id,
             IsActive = speakerActive,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         db.SessionSpeakers.Add(new SessionSpeaker
@@ -903,7 +903,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
 
     private async Task<Guid> SeedSessionAsync(
         string? liveCaptions = null, string? liveCaptionsArabic = null,
-        DateTimeOffset? start = null)
+        DateTime? start = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -912,12 +912,12 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Summary Hall", NameArabic = "قاعة الملخص",
-            Capacity = 100, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = 100, IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         // S-6 — the publish gate is clock-based: default to a STARTED session (past
         // start) so publish is allowed; the "before start" tests pass a future start.
-        var startValue = start ?? DateTimeOffset.UtcNow.AddMinutes(-90);
+        var startValue = start ?? SimfClock.Now.AddMinutes(-90);
         var session = new Session
         {
             Id = Guid.NewGuid(),
@@ -928,14 +928,14 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             End = startValue.AddHours(1),
             LiveCaptions = liveCaptions,
             LiveCaptionsArabic = liveCaptionsArabic,
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
         return session.Id;
     }
 
-    private async Task SetSessionStartDirectAsync(Guid sessionId, DateTimeOffset start)
+    private async Task SetSessionStartDirectAsync(Guid sessionId, DateTime start)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -954,7 +954,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var summary = await db.SessionSummaries
             .SingleAsync(s => s.SessionId == sessionId && s.IsActive);
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var actor = Guid.NewGuid();
         summary.ReviewSubmittedAt = now;
         summary.ReviewSubmittedByUserId = actor;
@@ -975,7 +975,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var summary = await db.SessionSummaries
             .SingleAsync(s => s.SessionId == sessionId && s.IsActive);
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var actor = Guid.NewGuid();
         summary.ReviewSubmittedAt = now;
         summary.ReviewSubmittedByUserId = actor;
@@ -1040,14 +1040,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

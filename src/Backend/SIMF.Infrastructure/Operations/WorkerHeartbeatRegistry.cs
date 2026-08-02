@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using SIMF.Application.Operations;
 using SIMF.Contracts.Ops;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -22,7 +23,7 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
     public void Register(string workerName, string description, TimeSpan expectedInterval) =>
         _beats.AddOrUpdate(
             workerName,
-            _ => new Beat(description, expectedInterval, timeProvider.GetUtcNow()),
+            _ => new Beat(description, expectedInterval, timeProvider.SimfNow()),
             (_, existing) => existing with
             {
                 Description = description,
@@ -31,7 +32,7 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
 
     public void RecordSuccess(string workerName)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         _beats.AddOrUpdate(
             workerName,
             _ => new Beat(workerName, TimeSpan.Zero, now)
@@ -54,7 +55,7 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
 
     public void RecordFailure(string workerName, string error)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         _beats.AddOrUpdate(
             workerName,
             _ => new Beat(workerName, TimeSpan.Zero, now)
@@ -77,7 +78,7 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
 
     public WorkerStatusListResponse Snapshot()
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var workers = _beats
             .Select(kvp => ToStatus(kvp.Key, kvp.Value, now))
             .OrderBy(s => s.Name, StringComparer.Ordinal)
@@ -93,7 +94,7 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
         };
     }
 
-    private static WorkerStatus ToStatus(string name, Beat b, DateTimeOffset now) =>
+    private static WorkerStatus ToStatus(string name, Beat b, DateTime now) =>
         new()
         {
             Name = name,
@@ -108,7 +109,7 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
             ExpectedIntervalSeconds = (int)Math.Round(b.ExpectedInterval.TotalSeconds),
         };
 
-    private static WorkerState DeriveState(Beat b, DateTimeOffset now)
+    private static WorkerState DeriveState(Beat b, DateTime now)
     {
         // Most recent outcome was a failure: surface it until a later success clears it.
         if (b.LastFailure is { } failedAt
@@ -138,11 +139,11 @@ internal sealed class WorkerHeartbeatRegistry(TimeProvider timeProvider) : IWork
             : WorkerState.Stale;
     }
 
-    private sealed record Beat(string Description, TimeSpan ExpectedInterval, DateTimeOffset RegisteredUtc)
+    private sealed record Beat(string Description, TimeSpan ExpectedInterval, DateTime RegisteredUtc)
     {
-        public DateTimeOffset? LastRun { get; init; }
-        public DateTimeOffset? LastSuccess { get; init; }
-        public DateTimeOffset? LastFailure { get; init; }
+        public DateTime? LastRun { get; init; }
+        public DateTime? LastSuccess { get; init; }
+        public DateTime? LastFailure { get; init; }
         public string? LastError { get; init; }
         public long RunCount { get; init; }
         public long FailureCount { get; init; }

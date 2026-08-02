@@ -177,8 +177,8 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
                 {
                     new(speakerId, "", "", 0),
                 },
-                Start = DateTimeOffset.UtcNow.AddHours(1),
-                End = DateTimeOffset.UtcNow.AddHours(2),
+                Start = SimfClock.Now.AddHours(1),
+                End = SimfClock.Now.AddHours(2),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
@@ -204,10 +204,10 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
         var day = (await dayCreate.Content
             .ReadFromJsonAsync<ApiResult<AdminProgrammeDayDetail>>())!.Data!;
 
-        // 08:00 UTC on the date → 11:00 KSA (+3), still the same calendar day,
+        // 08:00 a zoned value on the date → 11:00 KSA (+3), still the same calendar day,
         // so the session buckets onto the authored day.
         var speakerId = await SeedSpeakerAsync();
-        var start = new DateTimeOffset(date.Year, date.Month, date.Day, 8, 0, 0, TimeSpan.Zero);
+        var start = new DateTime(date.Year, date.Month, date.Day, 8, 0, 0);
         var sessionCreate = await PostAuthAsync(
             "/api/v1/admin/sessions",
             new AdminCreateSessionRequest
@@ -251,7 +251,7 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
             Name = "Hall PD", NameArabic = "قاعة",
             Capacity = 100,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
@@ -270,7 +270,7 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
             Name = "PD Speaker", NameArabic = "متحدّث",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         await db.SaveChangesAsync();
@@ -301,16 +301,7 @@ public sealed class ProgrammeDaysTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

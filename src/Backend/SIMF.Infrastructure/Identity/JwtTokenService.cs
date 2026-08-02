@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording-stream token)
+// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording-stream token)
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -23,10 +23,10 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
 
     public AccessToken CreateAccessToken(
         SimfUser user, IEnumerable<string> roles, IEnumerable<string> permissions,
-        MobileAppRole mobileAppRole)
+        MobileAppRole mobileAppRole, bool? secondFactorCompleted = null)
     {
         var settings = options.Value;
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var expires = now.AddMinutes(settings.AccessTokenMinutes);
 
         var claims = new List<Claim>
@@ -48,6 +48,14 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             // D-161 — the resolved mobile-app role the Flutter app uses to
             // route screens / show or hide gate-operator surfaces.
             new("mobile_app_role", mobileAppRole.ToString()),
+            // Held-item #2c — RFC 8176 `amr`. "mfa" means this token cleared a
+            // second factor (TOTP, recovery code or emailed OTP); "pwd" means it
+            // was minted on the password alone, which SignInService only does for
+            // an account with 2FA turned off. Before this claim existed the two
+            // were indistinguishable downstream, so no policy could require the
+            // stronger one. Derived from TwoFactorEnabled when the caller does not
+            // state it — see IJwtTokenService for why that derivation is sound.
+            new("amr", (secondFactorCompleted ?? user.TwoFactorEnabled) ? "mfa" : "pwd"),
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
@@ -71,8 +79,8 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             issuer: settings.Issuer,
             audience: settings.Audience,
             claims: claims,
-            notBefore: now.UtcDateTime,
-            expires: expires.UtcDateTime,
+            notBefore: now,
+            expires: expires,
             signingCredentials: credentials);
 
         return new AccessToken(
@@ -83,7 +91,7 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
     public AccessToken CreateRecordingStreamToken(Guid sessionId, Guid userId)
     {
         var settings = options.Value;
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var expires = now.AddMinutes(settings.StreamTokenMinutes);
 
         // Deliberately minimal: NO roles, NO perm claims, NO security_stamp —
@@ -106,8 +114,8 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             issuer: settings.Issuer,
             audience: settings.StreamAudience,
             claims: claims,
-            notBefore: now.UtcDateTime,
-            expires: expires.UtcDateTime,
+            notBefore: now,
+            expires: expires,
             signingCredentials: credentials);
 
         return new AccessToken(

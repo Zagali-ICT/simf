@@ -19,4 +19,14 @@ public interface IRecommendationService
         Guid callerUserId,
         int take,
         CancellationToken cancellationToken = default);
+
+    /// <summary>FR-803 — only the candidates whose normalised match score reaches
+    /// the stated <b>80%</b> threshold. The ordinary
+    /// <see cref="MeetPeopleLikeYouAsync"/> browse read is unchanged (it still
+    /// returns the best N regardless of strength, which is right for a browse
+    /// surface); this is the stricter set the auto-recommendation push is allowed
+    /// to interrupt someone with. Empty when nothing reaches the bar.</summary>
+    Task<RecommendationsResponse> StrongMatchesAsync(
+        Guid callerUserId,
+        CancellationToken cancellationToken = default);
 }

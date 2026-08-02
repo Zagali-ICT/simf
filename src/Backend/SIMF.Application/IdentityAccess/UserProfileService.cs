@@ -192,7 +192,7 @@ internal sealed class UserProfileService(
                 "بعض الاهتمامات المختارة غير معروفة أو لم تعد مفعّلة.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var profile = await profiles.GetWithInterestsAsync(actorUserId, tracked: true, cancellationToken);
 
         var isNew = profile is null;
@@ -654,7 +654,7 @@ internal sealed class UserProfileService(
             profile = new UserProfile
             {
                 UserId = actorUserId,
-                CreatedAt = timeProvider.GetUtcNow(),
+                CreatedAt = timeProvider.SimfNow(),
             };
             profiles.Add(profile);
         }
@@ -665,7 +665,7 @@ internal sealed class UserProfileService(
                 FileService.IdDocument, actorUserId, content, null, contentType, actorUserId, FailClosed: false),
             cancellationToken);
         profile.IdImageRelativePath = result.Id.ToString();
-        profile.UpdatedAt = timeProvider.GetUtcNow();
+        profile.UpdatedAt = timeProvider.SimfNow();
         // D-167: UserProfile is on the App DB now.
         await profiles.SaveAppChangesAsync(cancellationToken);
 
@@ -727,7 +727,7 @@ internal sealed class UserProfileService(
             profile = new UserProfile
             {
                 UserId = subjectUserId,
-                CreatedAt = timeProvider.GetUtcNow(),
+                CreatedAt = timeProvider.SimfNow(),
             };
             profiles.Add(profile);
         }
@@ -743,7 +743,7 @@ internal sealed class UserProfileService(
                 FileService.IdDocument, subjectUserId, content, null, contentType, actorUserId, FailClosed: false),
             cancellationToken);
         profile.IdImageRelativePath = result.Id.ToString();
-        profile.UpdatedAt = timeProvider.GetUtcNow();
+        profile.UpdatedAt = timeProvider.SimfNow();
         // D-167: UserProfile is on the App DB now.
         await profiles.SaveAppChangesAsync(cancellationToken);
 
@@ -826,7 +826,7 @@ internal sealed class UserProfileService(
             profile = new UserProfile
             {
                 UserId = subjectUserId,
-                CreatedAt = timeProvider.GetUtcNow(),
+                CreatedAt = timeProvider.SimfNow(),
             };
             profiles.Add(profile);
         }
@@ -842,7 +842,7 @@ internal sealed class UserProfileService(
                 FileService.VipPhoto, subjectUserId, content, null, contentType, actorUserId, FailClosed: false),
             cancellationToken);
         profile.VipPhotoRelativePath = result.Id.ToString();
-        profile.UpdatedAt = timeProvider.GetUtcNow();
+        profile.UpdatedAt = timeProvider.SimfNow();
         // D-167: UserProfile is on the App DB now.
         await profiles.SaveAppChangesAsync(cancellationToken);
 

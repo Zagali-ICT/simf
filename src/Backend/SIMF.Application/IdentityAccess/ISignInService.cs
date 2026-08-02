@@ -35,4 +35,23 @@ public interface ISignInService
     Task<AuthTokens> VerifyRecoveryCodeAsync(
         VerifyRecoveryCodeRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// #2 (Q1, 2026-07-30) — step one of MANDATORY enrolment. Exchanges the
+    /// enrolment ticket the password step issued for a fresh authenticator
+    /// secret + QR. The ticket is NOT consumed here, so the caller can re-render
+    /// the QR (and stage a new secret) until the code is confirmed.
+    /// </summary>
+    Task<TotpSetupResponse> StartTwoFactorEnrolmentAsync(
+        StartTwoFactorEnrolmentRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// #2 — step two of MANDATORY enrolment. Verifies the first authenticator
+    /// code, activates the secret, and issues the session the password step
+    /// withheld. Consumes the ticket, so one ticket yields exactly one session.
+    /// </summary>
+    Task<CompleteTwoFactorEnrolmentResponse> CompleteTwoFactorEnrolmentAsync(
+        CompleteTwoFactorEnrolmentRequest request,
+        CancellationToken cancellationToken = default);
 }

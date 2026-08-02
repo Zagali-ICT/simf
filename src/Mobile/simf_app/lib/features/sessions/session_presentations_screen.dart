@@ -12,6 +12,7 @@ import 'data/presentation_repository.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
 import 'widgets/session_filter_tabs.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// **Sessions** — App "الجلسات" (Figma 1388:7621, Approved account), reached
 /// from the Home "الجلسات" tile. Sessions grouped by event day, each card a file
@@ -130,7 +131,7 @@ class _Body extends StatelessWidget {
     }
 
     final isArabic = l10n.isArabic;
-    final nowUtc = DateTime.now().toUtc();
+    final nowUtc = saudiNow();
     final days = distinctLocalDays(items, (p) => p.sessionStartLocal);
     final tabLabels = <String>[
       l10n.sessionsTabAll,

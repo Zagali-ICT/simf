@@ -29,7 +29,7 @@ public class GateAssignment : BaseEntity
     /// <summary>The admin who revoked this assignment, when applicable.
     /// Logical FK to <c>SimfUser</c>.</summary>
     public Guid? RevokedByUserId { get; set; }
-    public DateTimeOffset? RevokedAt { get; set; }
+    public DateTime? RevokedAt { get; set; }
 
     
 }

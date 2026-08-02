@@ -27,7 +27,7 @@ internal sealed class RatingFormService(
     private const int MaxStars = 5;
     private const int CommentMaxLength = 2000;
 
-    /// <summary>Event-local offset (UTC+3) — the codebase convention for bucketing
+    /// <summary>Event-local offset (+03:00) — the codebase convention for bucketing
     /// sessions / scans into calendar days (mirrors <c>ProgrammeSessionService</c>,
     /// <c>MyAreaService</c> and <c>ProgrammeRatingPromptWorker</c>).</summary>
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
@@ -78,7 +78,7 @@ internal sealed class RatingFormService(
         // "watched at {session} · {date}" header. Session scope only; a one-row
         // projection (Global/Day carry no header).
         string? targetName = null, targetNameArabic = null;
-        DateTimeOffset? targetStart = null;
+        DateTime? targetStart = null;
         if (type.Scope == RatingScope.PerSession && targetId != Guid.Empty)
         {
             var session = await dbContext.Sessions.AsNoTracking()
@@ -130,7 +130,7 @@ internal sealed class RatingFormService(
                 $"يجب ألا يتجاوز التعليق {CommentMaxLength} حرفاً.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var existing = await dbContext.RatingResponses
             .Include(r => r.Answers)
@@ -311,7 +311,7 @@ internal sealed class RatingFormService(
         {
             return false; // target already validated by ResolveTargetAsync; stay defensive
         }
-        var dayStart = new DateTimeOffset(day.ToDateTime(TimeOnly.MinValue), EventOffset);
+        var dayStart = day.ToDateTime(TimeOnly.MinValue);
         var dayEnd = dayStart.AddDays(1);
 
         var inHall = await dbContext.HallAttendances.AnyAsync(

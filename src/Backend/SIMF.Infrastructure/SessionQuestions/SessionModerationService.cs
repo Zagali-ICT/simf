@@ -276,7 +276,7 @@ internal sealed class SessionModerationService(
             return await ToRowAsync(question, cancellationToken); // idempotent
         }
         question.IsPushed = true;
-        question.PushedAt = timeProvider.GetUtcNow();
+        question.PushedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

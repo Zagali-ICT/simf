@@ -643,7 +643,7 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             UserId = userId,
             ContactName = contactName,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }
@@ -677,7 +677,7 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             NationalityId = countryId,
             PlaceOfBirth = string.Empty,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }
@@ -695,7 +695,7 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             VisitorUserId = visitorUserId,
             Note = "captured under the old rule",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }
@@ -711,7 +711,7 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             Name = name ?? $"Booth {Guid.NewGuid():N}"[..16],
             NameArabic = nameArabic ?? "جناح",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();
@@ -848,15 +848,7 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, administratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        return (await sign.Content
-            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private async Task DeactivateProfileAsync(Guid userId)

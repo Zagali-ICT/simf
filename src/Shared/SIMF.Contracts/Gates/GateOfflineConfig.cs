@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.Gates;
 
 /// <summary>
-/// D-811 — everything a scanner needs to judge a badge with **no network**,
+/// D-821 — everything a scanner needs to judge a badge with **no network**,
 /// fetched while online and cached on the device.
 ///
 /// <para>Without this a scanner that loses the link can only queue scans and
@@ -36,10 +36,10 @@ public sealed record GateOfflineConfig(
     string? PreviousBadgeKey,
     int PreviousBadgeKeyVersion,
     bool SessionWalkIn,
-    DateTimeOffset IssuedAt,
+    DateTime IssuedAt,
     IReadOnlyList<GateOfflineRule> Gates);
 
-/// <summary>D-811 — the offline rule for one gate.</summary>
+/// <summary>D-821 — the offline rule for one gate.</summary>
 /// <param name="GateId">The gate this rule applies to.</param>
 /// <param name="Code">The gate's short code, for the operator's display.</param>
 /// <param name="AllowedProfileTypeCodes">Profile-type CODES (the small number

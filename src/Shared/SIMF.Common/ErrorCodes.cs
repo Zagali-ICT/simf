@@ -46,9 +46,6 @@ public static class ErrorCodes
     public const string AuthResetCodeInvalid = "AUTH_RESET_CODE_INVALID";
     public const string AuthResetCodeExpired = "AUTH_RESET_CODE_EXPIRED";
     public const string AuthPasswordChangeRequired = "AUTH_PASSWORD_CHANGE_REQUIRED";
-    // #24 — self-service change-email: the new address is the account's current
-    // one, so there is nothing to change (no code is sent).
-    public const string AuthEmailUnchanged = "AUTH_EMAIL_UNCHANGED";
     // Part B — badge-QR activation: the resolved account already has a password,
     // so it must use the normal sign-in rather than the set-password flow.
     public const string BadgeAlreadyActivated = "BADGE_ALREADY_ACTIVATED";
@@ -63,6 +60,13 @@ public static class ErrorCodes
     public const string TotpEnrolmentCodeInvalid = "TOTP_ENROLMENT_CODE_INVALID";
     public const string TotpNotEnabled = "TOTP_NOT_ENABLED";
     public const string AuthRecoveryCodeInvalid = "AUTH_RECOVERY_CODE_INVALID";
+    /// <summary>#2 (Q1, 2026-07-30) — the password was correct but the account signing
+    /// in on the <c>Cp</c> audience carries no second factor yet, so no access token is
+    /// issued: the caller must complete TOTP enrolment first. Distinct from
+    /// <see cref="TotpNotEnabled"/> (a TOTP action attempted on an account that never
+    /// enrolled) because this one is raised on the sign-in path itself and is the
+    /// signal the CP uses to route to its enrolment page rather than to the CP shell.</summary>
+    public const string AuthTwoFactorEnrolmentRequired = "AUTH_TWO_FACTOR_ENROLMENT_REQUIRED";
 
     // Admin-driven 2FA reset (D-041)
     public const string AdminCannotResetSelf = "ADMIN_CANNOT_RESET_SELF";
@@ -100,7 +104,7 @@ public static class ErrorCodes
     public const string ProfileTypeNotFound = "PROFILE_TYPE_NOT_FOUND";
     public const string ProfileTypeInUse = "PROFILE_TYPE_IN_USE";
 
-    /// <summary>D-813 - two profile types were created at the same instant and
+    /// <summary>D-823 - two profile types were created at the same instant and
     /// both allocated the same badge code. The filtered unique index refused the
     /// loser; retrying succeeds. Translated so a genuine race is a typed 409 the
     /// caller can act on rather than an unhandled 500.</summary>
@@ -274,6 +278,15 @@ public static class ErrorCodes
     public const string DelegationMeetingRequestNotFound = "DELEGATION_MEETING_REQUEST_NOT_FOUND";
     public const string SpeakerMeetingRequestsNotAllowed = "SPEAKER_MEETING_REQUESTS_NOT_ALLOWED";
     public const string SpeakerMeetingRequestStatusInvalid = "SPEAKER_MEETING_REQUEST_STATUS_INVALID";
+    /// <summary>G3 (owner 2026-07-30 — SUPERSEDES D-767 R1) — the speaker has no free
+    /// meeting slot left, so the request cannot be sent. Covers BOTH reasons at once:
+    /// the speaker has no active future availability window at all, and every slot the
+    /// windows offer is already past or taken.</summary>
+    public const string SpeakerMeetingNoAvailability = "SPEAKER_MEETING_NO_AVAILABILITY";
+    /// <summary>G3 (owner 2026-07-30 — SUPERSEDES D-767 R1) — the target delegation has
+    /// no free meeting slot left (no active future window, or every slot is past or
+    /// taken), so the request cannot be sent.</summary>
+    public const string DelegationMeetingNoAvailability = "DELEGATION_MEETING_NO_AVAILABILITY";
     /// <summary>D-717 (item 7, FDS-013 §15.7 GAP-3) — a speaker action-link token
     /// is unusable: not found, expired, already used, or its request is no longer
     /// awaiting the speaker. Deliberately NEUTRAL — the same code for every reason
@@ -394,6 +407,11 @@ public static class ErrorCodes
     public const string ContentBlockInvalid = "CONTENT_BLOCK_INVALID";
     public const string ContentBlockNotFound = "CONTENT_BLOCK_NOT_FOUND";
     public const string ContentBlockKeyDuplicate = "CONTENT_BLOCK_KEY_DUPLICATE";
+    /// <summary>FR-1203 — a content block's markdown could not be rendered safely:
+    /// the sanitizing pipeline stripped or rejected the submitted markup. Raised on
+    /// the admin write path so an admin-editable field can never reach the public
+    /// surface as unsanitised HTML.</summary>
+    public const string ContentMarkdownUnsafe = "CONTENT_MARKDOWN_UNSAFE";
     public const string BannerInvalid = "BANNER_INVALID";
     public const string BannerNotFound = "BANNER_NOT_FOUND";
     public const string BannerInvalidTimeWindow = "BANNER_INVALID_TIME_WINDOW";
@@ -483,7 +501,7 @@ public static class ErrorCodes
     public const string IdempotencyKeyConflict = "IDEMPOTENCY_KEY_CONFLICT";
     public const string GateFailureCircuitOpen = "GATE_FAILURE_CIRCUIT_OPEN";
 
-    // Offline badge desk (D-809).
+    // Offline badge desk (D-819).
     /// <summary>The offline upload is not armed. Per-request, not a permission
     /// failure: the caller holds the desk permission but the capability is off.</summary>
     public const string OfflineUploadDisabled = "OFFLINE_UPLOAD_DISABLED";

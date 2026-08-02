@@ -66,9 +66,9 @@ public sealed class ExhibitorLeadEmailTests : IClassFixture<ExhibitorLeadEmailAp
         Assert.Contains("Booth A3 follow-up", message.HtmlBody, StringComparison.Ordinal);
         // Bilingual: the EN block, the rule, then the RTL AR block.
         Assert.Contains("dir=\"rtl\"", message.HtmlBody, StringComparison.Ordinal);
-        // D-219 — the scan time is the Saudi wall clock (12-hour AM/PM), never UTC.
+        // D-219 — the scan time is the Saudi wall clock (12-hour AM/PM), never a zoned stamp.
         Assert.Contains(
-            _factory.Time.GetUtcNow().FormatSaudi(), message.HtmlBody, StringComparison.Ordinal);
+            _factory.Time.SimfNow().FormatSaudi(), message.HtmlBody, StringComparison.Ordinal);
         // The raw badge QR id is never in the message.
         Assert.DoesNotContain(qrId, message.HtmlBody, StringComparison.OrdinalIgnoreCase);
 
@@ -125,7 +125,7 @@ public sealed class ExhibitorLeadEmailTests : IClassFixture<ExhibitorLeadEmailAp
             NationalityId = countryId,
             PlaceOfBirth = string.Empty,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
 
         // MERGE (BUG-024 + DEF-EXH-006): these tests were authored against the older
@@ -140,7 +140,7 @@ public sealed class ExhibitorLeadEmailTests : IClassFixture<ExhibitorLeadEmailAp
             Name = name,
             NameArabic = nameArabic,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Exhibitors.Add(exhibitor);
         appDb.ExhibitorMemberships.Add(new ExhibitorMembership
@@ -150,7 +150,7 @@ public sealed class ExhibitorLeadEmailTests : IClassFixture<ExhibitorLeadEmailAp
             UserId = userId,
             ContactName = name,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }
@@ -169,7 +169,7 @@ public sealed class ExhibitorLeadEmailTests : IClassFixture<ExhibitorLeadEmailAp
             Name = organisation,
             NameArabic = organisationArabic,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(org);
         appDb.UserProfiles.Add(new UserProfile
@@ -185,7 +185,7 @@ public sealed class ExhibitorLeadEmailTests : IClassFixture<ExhibitorLeadEmailAp
             NationalityId = countryId,
             PlaceOfBirth = string.Empty,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }

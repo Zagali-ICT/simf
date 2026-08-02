@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Time.Testing;
 using SIMF.Application.Email;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -35,7 +36,7 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     // Started near real time so a test-issued JWT — whose lifetime the bearer
     // middleware validates against the real system clock — is not seen as
     // expired. Tests advance this clock explicitly when they need to.
-    public FakeTimeProvider Time { get; } = new(DateTimeOffset.UtcNow);
+    public FakeTimeProvider Time { get; } = new(SimfClock.Now);
 
     /// <summary>
     /// Per-test-run temp directory the FilesystemAvatarStorage writes into,
@@ -128,6 +129,19 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // A1-19 — dormant-account auto-disable OFF by default (reset the process-wide
         // var so a prior DormantAccountApiFactory cannot leak its threshold).
         Environment.SetEnvironmentVariable("IdentityLifecycle__DormantAccountDisableDays", "0");
+        // #2 (Q1, 2026-07-31) — mandatory Control-Panel 2FA enrolment ON, which is
+        // the production default (IdentityLifecycleOptions initialises it true and
+        // appsettings.json states it). This used to be pinned OFF, because the ~150
+        // admin fixtures in this assembly created their user straight through
+        // UserManager and then read `Tokens.AccessToken` off a Cp-audience password
+        // sign-in — a flow the gate correctly answers with an enrolment challenge
+        // and no token — which meant those tests all exercised the pre-fix path.
+        // They now go through AuthFlow.SignInControlPanelAsync, which enrols the
+        // fixture admin and completes a real TOTP step, so the whole suite runs the
+        // shipping posture. Pinned explicitly (a process-wide var) so a future
+        // opt-out factory cannot leak "false" into a later test class.
+        Environment.SetEnvironmentVariable(
+            "IdentityLifecycle__RequireControlPanelTwoFactorEnrolment", "true");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
         Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);

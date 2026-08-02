@@ -150,16 +150,16 @@ $vars = [ordered]@{
     "SIMF_RateLimit__PermitLimit"               = ""   # default 20
     "SIMF_RateLimit__WindowSeconds"             = ""   # default 60
 
-    # --- Walk-in mode (D-809) -------------------------------------------------
+    # --- Walk-in mode (D-819) -------------------------------------------------
     # STANDBY capability for an event day where a large crowd arrives who never
     # registered online. Everything below defaults to OFF and fails closed: with
     # these blank the system behaves exactly as it does today. Arm only when
     # needed, and disarm afterwards.
     #
     # Enabled is the master switch - every switch under it is inert without it.
-    # ExpiresAtUtc is evaluated on read, so a mode left armed closes itself.
+    # ExpiresAt is evaluated on read, so a mode left armed closes itself.
     "SIMF_WalkInMode__Enabled"                  = ""   # default false (master)
-    "SIMF_WalkInMode__ExpiresAtUtc"             = ""   # ISO-8601 UTC; blank = no expiry
+    "SIMF_WalkInMode__ExpiresAt"                = ""   # Saudi local ISO-8601; blank = no expiry
     "SIMF_WalkInMode__QuickRegister"            = ""   # default false - reduced desk field set
     # Keep this TRUE: the id number is what makes duplicate detection possible,
     # and the encrypted columns cannot be reconstructed after the event.

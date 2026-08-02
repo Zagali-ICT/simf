@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// The slice of the public session detail the Live broadcast screen needs
 /// (Page_025). The session-detail repository (`features/sessions`) does NOT
@@ -22,6 +23,8 @@ class LiveSession {
     this.speakers = const <LiveSpeaker>[],
     this.liveCaptions,
     this.liveCaptionsArabic,
+    this.liveNotice,
+    this.liveNoticeArabic,
   });
 
   factory LiveSession.fromJson(Map<String, dynamic> json) {
@@ -36,8 +39,8 @@ class LiveSession {
       // PublicSessionDetail wire (the live slice just had not decoded them).
       hallName: _trimToNull(json['hallName'] as String?),
       hallNameArabic: _trimToNull(json['hallNameArabic'] as String?),
-      start: DateTime.tryParse((json['start'] as String?) ?? '')?.toUtc(),
-      end: DateTime.tryParse((json['end'] as String?) ?? '')?.toUtc(),
+      start: parseWireOrNull((json['start'] as String?) ?? ''),
+      end: parseWireOrNull((json['end'] as String?) ?? ''),
       speakers: (json['speakers'] as List? ?? const <dynamic>[])
           .whereType<Map<dynamic, dynamic>>()
           .map((e) => LiveSpeaker.fromJson(e.cast<String, dynamic>()))
@@ -45,6 +48,9 @@ class LiveSession {
       // P5 — D-439: the AI live-caption text (null when none set).
       liveCaptions: _trimToNull(json['liveCaptions'] as String?),
       liveCaptionsArabic: _trimToNull(json['liveCaptionsArabic'] as String?),
+      // FR-702 — the organiser's informational notice for this broadcast.
+      liveNotice: _trimToNull(json['liveNotice'] as String?),
+      liveNoticeArabic: _trimToNull(json['liveNoticeArabic'] as String?),
     );
   }
 
@@ -67,7 +73,7 @@ class LiveSession {
   final String? hallNameArabic;
   final DateTime? start;
 
-  /// S-3 — the session's scheduled end (UTC on the wire, decoded from the
+  /// S-3 — the session's scheduled end (zone-free on the wire, decoded from the
   /// existing PublicSessionDetail.End). With [start] it defines the LIVE
   /// window: "live" = now within [start, end], not merely "a feed URL exists".
   /// Null when the wire omits it (the global main-live synthetic).
@@ -79,6 +85,14 @@ class LiveSession {
   // strip then shows the placeholder hint and YouTube CC supplies captions).
   final String? liveCaptions;
   final String? liveCaptionsArabic;
+
+  // FR-702 (owner 2026-07-31): the free-text notice the Control Panel authors
+  // per session, shown as an informational banner ABOVE the player. It is a
+  // NOTIFICATION, not a restriction — the owner reversed the earlier "Riyadh
+  // region only" reading, so nothing here inspects the viewer's location and
+  // nothing withholds the feed. Bilingual; null when the CP left it blank.
+  final String? liveNotice;
+  final String? liveNoticeArabic;
 
   String localizedTitle(bool isArabic) {
     if (isArabic) {
@@ -100,6 +114,16 @@ class LiveSession {
   String? localizedCaption(bool isArabic) {
     final ar = (liveCaptionsArabic ?? '').trim();
     final en = (liveCaptions ?? '').trim();
+    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    return value.isEmpty ? null : value;
+  }
+
+  /// FR-702 — the live notice in the active locale, falling back to the other
+  /// language when one side is blank. Null when neither is set, and the banner
+  /// is then not rendered at all.
+  String? localizedNotice(bool isArabic) {
+    final ar = (liveNoticeArabic ?? '').trim();
+    final en = (liveNotice ?? '').trim();
     final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
   }
@@ -134,7 +158,8 @@ class LiveSpeaker {
   }
 }
 
-/// One upcoming session card (frame 934:3621/3630 "الجلسات القادمة") — the slice
+/// One upcoming session card (frame 934:3621/3630 "الجلسات القادمة") — the
+/// slice
 /// of `PublicSessionListItem` the live screen needs to show the next sessions.
 class UpcomingSession {
   const UpcomingSession({
@@ -149,7 +174,7 @@ class UpcomingSession {
         title: (json['title'] as String?) ?? '',
         titleArabic: (json['titleArabic'] as String?) ?? '',
         start:
-            DateTime.tryParse((json['start'] as String?) ?? '')?.toUtc(),
+            parseWireOrNull((json['start'] as String?) ?? ''),
       );
 
   final String id;
@@ -206,7 +231,7 @@ class LiveRepository {
       decodeData: (data) {
         final items = (data is Map ? data['items'] : null) as List? ??
             const <dynamic>[];
-        final now = DateTime.now().toUtc();
+        final now = saudiNow();
         final upcoming = items
             .whereType<Map<dynamic, dynamic>>()
             .map((e) => UpcomingSession.fromJson(e.cast<String, dynamic>()))

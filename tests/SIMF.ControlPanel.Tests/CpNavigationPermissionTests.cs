@@ -81,6 +81,57 @@ public sealed class CpNavigationPermissionTests
             + "page will honour — " + string.Join("; ", mismatches));
     }
 
+    [Fact]
+    public void Every_stub_nav_item_is_permission_gated()
+    {
+        // cp-stub-modules (Q4) — an IsStub item used to carry
+        // RequiredPermission: null, which the two facts above deliberately skip.
+        // The "Soon" pill is a label, not a gate: with a null permission the
+        // shell showed the item to EVERY signed-in admin, and the placeholder it
+        // links to was reachable by all of them. A stub is a module that is
+        // coming, not a module that is public — it is gated on the permission
+        // the finished console will need.
+        var ungatedStubs = CpNavigation.Groups
+            .SelectMany(group => group.Items)
+            .Where(item => item.IsStub && item.RequiredPermission is null)
+            .Select(item => item.Href)
+            .ToList();
+
+        Assert.True(ungatedStubs.Count == 0,
+            "cp-stub-modules: these stub nav items carry no permission, so every "
+            + "signed-in admin sees them regardless of role: "
+            + string.Join(", ", ungatedStubs));
+    }
+
+    [Fact]
+    public void Every_stub_nav_gate_matches_the_gate_on_the_placeholder_that_serves_it()
+    {
+        // The stub routes are served by a PARAMETERISED page (/m/{Module}), which
+        // the literal-route lookup used by the fact above cannot find — which is
+        // why stubs were skipped there, and why the nav could be gated while the
+        // page stayed open. Gating one half only moves the hole: the item leaves
+        // the menu but the URL still opens for anyone who types it.
+        var codeForExpression = PermissionExpressionMap();
+        var mismatches = new List<string>();
+
+        foreach (var item in CpNavigation.Groups.SelectMany(group => group.Items))
+        {
+            if (!item.IsStub) continue;
+
+            var pageGate = TemplatePageGateFor(item.Href, codeForExpression);
+            if (!string.Equals(pageGate, item.RequiredPermission, StringComparison.Ordinal))
+            {
+                mismatches.Add(
+                    $"{item.Href}: nav={item.RequiredPermission ?? "(none)"} "
+                    + $"page={pageGate ?? "(none)"}");
+            }
+        }
+
+        Assert.True(mismatches.Count == 0,
+            "cp-stub-modules: the page serving a stub route must demand exactly the "
+            + "permission its menu item promises — " + string.Join("; ", mismatches));
+    }
+
     /// <summary>"PermissionCatalog.Sessions.Edit" → "Sessions.Edit", built by
     /// reflecting the catalogue's nested classes so the map cannot drift.</summary>
     private static Dictionary<string, string> PermissionExpressionMap()
@@ -120,6 +171,65 @@ public sealed class CpNavigationPermissionTests
                 : null;
         }
         return null;
+    }
+
+    /// <summary>The permission code on the .razor whose route TEMPLATE serves this
+    /// href (e.g. <c>/m/{Module}</c> serves <c>/m/live-sessions</c>), or null when
+    /// no page matches or the matching page carries no
+    /// <c>[RequirePermission]</c>.</summary>
+    private static string? TemplatePageGateFor(string href, Dictionary<string, string> codes)
+    {
+        var root = FindRepoRoot();
+        var pagesDir = Path.Combine(
+            root, "src/ControlPanel/SIMF.ControlPanel/Components".Replace('/', Path.DirectorySeparatorChar));
+
+        foreach (var file in Directory.EnumerateFiles(pagesDir, "*.razor", SearchOption.AllDirectories))
+        {
+            var source = File.ReadAllText(file);
+            var serves = false;
+            foreach (Match route in Regex.Matches(source, @"^@page\s+""([^""]+)""", RegexOptions.Multiline))
+            {
+                if (RouteTemplateServes(route.Groups[1].Value, href))
+                {
+                    serves = true;
+                    break;
+                }
+            }
+            if (!serves) continue;
+
+            var gate = Regex.Match(source,
+                @"@attribute\s*\[RequirePermission\(\s*(PermissionCatalog\.\w+\.\w+)\s*\)\]");
+            return gate.Success && codes.TryGetValue(gate.Groups[1].Value, out var code)
+                ? code
+                : null;
+        }
+        return null;
+    }
+
+    /// <summary>True when a route template answers a concrete href — same segment
+    /// count, and each template segment is either a parameter or the identical
+    /// literal.</summary>
+    private static bool RouteTemplateServes(string template, string href)
+    {
+        var templateSegments = template.Trim('/').Split('/');
+        var hrefSegments = href.Trim('/').Split('/');
+        if (templateSegments.Length != hrefSegments.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < templateSegments.Length; i++)
+        {
+            if (templateSegments[i].StartsWith('{'))
+            {
+                continue;
+            }
+            if (!string.Equals(templateSegments[i], hrefSegments[i], StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static string FindRepoRoot()

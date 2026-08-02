@@ -21,8 +21,8 @@ public sealed class SubmitSpeakerMeetingRequestRoute
 
     /// <summary>D-474 (#11) — the picked availability slot (VIP slot flow); null for
     /// a legacy topic-only request.</summary>
-    public DateTimeOffset? SlotStart { get; set; }
-    public DateTimeOffset? SlotEnd { get; set; }
+    public DateTime? SlotStart { get; set; }
+    public DateTime? SlotEnd { get; set; }
 }
 
 public sealed class SubmitSpeakerMeetingRequestEndpoint(ISpeakerMeetingRequestService service)

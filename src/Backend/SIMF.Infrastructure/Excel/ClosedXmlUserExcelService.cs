@@ -61,7 +61,7 @@ internal sealed class ClosedXmlUserExcelService : IUserExcelService
             sheet.Cell(row, 3).Value = SanitiseForExcel(user.AccountState);
             sheet.Cell(row, 4).Value = user.IsAdministrator ? "Administrator" : "User";
             sheet.Cell(row, 5).Value = user.TwoFactorEnabled ? "On" : "Off";
-            sheet.Cell(row, 6).Value = user.CreatedAt.UtcDateTime.ToString("O");
+            sheet.Cell(row, 6).Value = user.CreatedAt.ToString("O");
             row++;
         }
         sheet.Columns(1, 6).AdjustToContents();

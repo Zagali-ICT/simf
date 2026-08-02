@@ -67,7 +67,7 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(true)
             .IsRequired();
 
-        // D-809 — the small stable number the offline event badge carries in
+        // D-819 — the small stable number the offline event badge carries in
         // place of the Guid id. Default 0 = unassigned, which no badge can
         // carry. Unique among ACTIVE rows only, mirroring the Name index below,
         // so a soft-deleted type does not permanently reserve its code — but

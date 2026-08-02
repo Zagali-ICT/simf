@@ -76,7 +76,7 @@
 | E2E-BNR-013 | Server 500 on `/list` → bilingual fallback "The banners could not be loaded." | resilience | P2 | _to author_ |
 | E2E-BNR-014 | RTL / Arabic render: page + modal mirror, Arabic title column shown | i18n | P1 | _to author_ |
 | E2E-BNR-015 | Per-column filter: typing in the Title filter narrows the grid (`Filters["title"]`, Skip→0) | happy | P1 | _to author_ |
-| E2E-BNR-016 | Column sort: clicking the Title / Start headers toggles `Sort` + `SortDescending` | happy | P2 | _to author_ |
+| E2E-BNR-016 | Column sort: clicking the Title / Start headers toggles `Sort` + `SortDescending`. **Both directions must differ** — identical order in both means the switch fell through to its DisplayOrder default | happy | P2 | authored ✓ (`GridDateSortKeyTests.Banners_sort_on_start_honours_the_descending_direction`) |
 | E2E-BNR-017 | Presentation toggle: switch to full-page + persists across reload (localStorage `simf.cp.prefs.banners`) (D-353) | happy | P1 | _to author_ |
 | E2E-BNR-018 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid, no backdrop (D-353) | happy | P1 | _to author_ |
 | E2E-BNR-019 | Delete confirmation gate: Delete opens BannersViewDelete → SimfConfirm gates the DELETE (D-353) | error | P0 | _to author_ |

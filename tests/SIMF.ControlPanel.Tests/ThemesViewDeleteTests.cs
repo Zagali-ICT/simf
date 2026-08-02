@@ -13,7 +13,7 @@ public sealed class ThemesViewDeleteTests : CpComponentTestBase
     private static AdminThemeDetail Detail() => new(
         Guid.Parse("11111111-1111-1111-1111-111111111111"),
         "DEF", "Defence", "Ø§Ù„Ø¯ÙØ§Ø¹", "Defence theme", "Ù…Ø­ÙˆØ± Ø§Ù„Ø¯ÙØ§Ø¹",
-        1, "#244A77", IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        1, "#244A77", IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()

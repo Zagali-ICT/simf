@@ -65,6 +65,96 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Export_writes_the_saudi_wall_clock_with_no_UTC_marker()
+    {
+        // The regression this exists for. Until 2026-08-01 the Start/End columns
+        // were formatted "yyyy-MM-ddTHH:mm:ss'Z'", appending a literal Z. Since
+        // D-813 the stored value IS the Saudi wall clock, so the Z was a false
+        // claim: a 09:00 Riyadh session exported as "09:00Z" and read as 06:00 by
+        // anything that honours it. SIMF's own import round-tripped it correctly,
+        // which is precisely why nothing caught it — the only test on this path
+        // asserted the bytes were a ZIP and never opened a cell.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var hallCode = await CreateHallAsync(adminToken);
+        var code = UniqueCode();
+        await CreateSessionAsync(adminToken, code, hallCode);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 200 } },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var start = await ReadStartCellAsync(response, code);
+
+        Assert.False(
+            start.EndsWith("Z", StringComparison.Ordinal),
+            $"The Start cell read '{start}'. A trailing Z declares the value UTC, "
+            + "but it is the Saudi wall clock — the workbook would understate every "
+            + "session by three hours for any reader outside SIMF.");
+        Assert.Equal("2026-01-30T09:00:00", start);
+    }
+
+    [Fact]
+    public async Task Import_still_accepts_a_legacy_workbook_that_carries_a_Z()
+    {
+        // Workbooks exported before the fix are already in circulation. They must
+        // import to the SAME wall clock, not three hours earlier, or the fix would
+        // quietly corrupt every file an admin already has on disk.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var hallCode = await CreateHallAsync(adminToken);
+        var code = UniqueCode();
+        var workbook = BuildSessionsWorkbook("Sessions",
+            (code, "Legacy Z", "قديم", hallCode,
+                "2026-02-14T09:00:00Z", "2026-02-14T10:30:00Z"));
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/sessions/import", workbook, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var export = await PostAuthAsync(
+            "/api/v1/admin/sessions/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 200 } },
+            adminToken);
+        var start = await ReadStartCellAsync(export, code);
+
+        Assert.Equal("2026-02-14T09:00:00", start);
+    }
+
+    /// <summary>The Start cell of the row whose Code column matches, read out of
+    /// the returned workbook. Column positions come from the header row rather
+    /// than being hard-coded, so adding a column ahead of Start cannot make this
+    /// silently assert on the wrong cell.</summary>
+    private static async Task<string> ReadStartCellAsync(
+        HttpResponseMessage response, string code)
+    {
+        using var stream = new MemoryStream(await response.Content.ReadAsByteArrayAsync());
+        using var book = new ClosedXML.Excel.XLWorkbook(stream);
+        var sheet = book.Worksheets.First();
+
+        var header = sheet.Row(1);
+        int Column(string name)
+        {
+            for (var i = 1; i <= header.LastCellUsed()!.Address.ColumnNumber; i++)
+            {
+                if (string.Equals(header.Cell(i).GetString(), name, StringComparison.Ordinal))
+                {
+                    return i;
+                }
+            }
+            throw new InvalidOperationException($"No '{name}' column in the export.");
+        }
+
+        var codeColumn = Column("Code");
+        var startColumn = Column("Start");
+        var row = sheet.RowsUsed()
+            .FirstOrDefault(r => string.Equals(
+                r.Cell(codeColumn).GetString(), code, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"Session {code} is not in the export.");
+        return row.Cell(startColumn).GetString();
+    }
+
+    [Fact]
     public async Task Import_creates_each_row_and_reports_the_outcome()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
@@ -158,9 +248,9 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
                 Title = $"Export Fields {code}",
                 TitleArabic = $"تصدير {code}",
                 HallId = hallId,
-                Start = DateTimeOffset.Parse(
+                Start = DateTime.Parse(
                     "2026-01-30T09:00:00Z", CultureInfo.InvariantCulture),
-                End = DateTimeOffset.Parse(
+                End = DateTime.Parse(
                     "2026-01-30T10:00:00Z", CultureInfo.InvariantCulture),
                 Description = "An opening keynote.",
                 DescriptionArabic = "كلمة افتتاحية.",
@@ -461,7 +551,7 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
             NameArabic = $"متحدّث {code}",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         await db.SaveChangesAsync();
@@ -512,11 +602,18 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
                 HallId = hallId,
                 // #3 — an Event stays valid under the required-type rule with no speaker.
                 Type = SessionType.Event,
-                Start = DateTimeOffset.Parse(
-                    "2026-01-30T09:00:00Z", CultureInfo.InvariantCulture)
+                // Zone-free literals. These read "...T09:00:00Z" until 2026-08-01,
+                // and DateTime.Parse with default styles converts a Z-suffixed
+                // string to the MACHINE's local time — so the fixture seeded 09:00
+                // on a differently-zoned runner and 12:00 on a Riyadh workstation. Nothing
+                // asserted on the time, so it never failed; it just meant the
+                // fixture's data depended on where it ran. Under D-813 a test
+                // timestamp is a plain wall clock, like every other one in SIMF.
+                Start = DateTime.Parse(
+                    "2026-01-30T09:00:00", CultureInfo.InvariantCulture)
                     .AddHours(startHourOffset),
-                End = DateTimeOffset.Parse(
-                    "2026-01-30T10:00:00Z", CultureInfo.InvariantCulture)
+                End = DateTime.Parse(
+                    "2026-01-30T10:00:00", CultureInfo.InvariantCulture)
                     .AddHours(startHourOffset),
             },
             token);
@@ -547,16 +644,7 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

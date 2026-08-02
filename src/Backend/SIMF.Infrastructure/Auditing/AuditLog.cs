@@ -3,6 +3,7 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Domain.Auditing;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Auditing;
 
@@ -27,7 +28,7 @@ internal sealed class AuditLog(
         var record = new OperationLogEntry
         {
             Id = Guid.NewGuid(),
-            Timestamp = timeProvider.GetUtcNow(),
+            Timestamp = timeProvider.SimfNow(),
             EventType = Clip(entry.EventType, 80) ?? string.Empty,
             Outcome = entry.Outcome,
             SubjectEmail = Clip(entry.SubjectEmail, 256),

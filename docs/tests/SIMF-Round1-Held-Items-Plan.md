@@ -159,3 +159,62 @@ certified tip `3fbb57a3` so the 23-fix PR stays clean:
 
 **Verification:** build 0/0; affected classes 67/67; **full-suite regression cert vs the 48
 pre-existing failures = 48/48 shared, 0 new regressions**. Branch pushed, **not merged**.
+
+> **The 48-failure baseline is spent (measured 2026-08-01).** A full run on
+> `qa/programme-ws0` is **2,884 passed / 0 failed** — Api 2,227, ControlPanel 423,
+> Web 117, Application 63, ApiClient 41, E2E 8 (+227 skipped, browser-gated),
+> Domain 5 — plus `flutter test` 1,312/1,312 and `flutter analyze` at 0 errors and
+> 0 warnings. The 48 were real when this line was written; they are not a standing
+> allowance, and quoting them now would licence 48 regressions. **Any red is a new
+> regression.** The register tracked the discrepancy as `48-pre-existing-failures`
+> under *Cannot verify from source*; this measurement closes it.
+
+---
+
+## Status update — held item #2 IMPLEMENTED (2026-07-30, Track A of the fix-all round)
+
+Owner decision **Q1 (2026-07-30): enrolment-first** — "nobody may ever be locked out, including
+the existing production super-admin, which is recorded as 2FA-off". That unblocked the option **C**
+recommendation above, which had been deferred purely on the lockout risk.
+
+- **#2 DONE** (option C, enrolment-first) — `SignInService` now branches on the audience BEFORE the
+  `!TwoFactorEnabled` fast path: a `Cp`-audience sign-in whose account has **no authenticator secret
+  paired** is answered with a single-use mandatory-enrolment ticket and **no token**. The holder
+  enrols at the new anonymous pre-token pair
+  `POST /app/auth/totp/enrolment/start` + `/complete` (both added to the reviewed allow-list in
+  `BusinessFlow13PermissionMatrixTests` with a justification), and the completion issues the session
+  stamped `amr=mfa`. The Control Panel consumes it at the new page `/login/enrol-2fa`
+  (`Components/Pages/Auth/TwoFactorEnrolment.razor`) — `/account/totp-pairing` (D-096) could not
+  serve this, as it only re-renders an already-active secret. The App and Web audiences are
+  unchanged. Behind `IdentityLifecycle:RequireControlPanelTwoFactorEnrolment`, default **true**.
+- **#2d DONE** — `AdminAccountService.CreateAccountAsync` sets `TwoFactorEnabled` for
+  `UserType.Admin`, **conditioned on the same setting** so the documented dependency on #2 is
+  enforced in code rather than only in this plan: with the enrolment path off, forcing the flag
+  would brick every new admin at creation (role + no key selects a TOTP challenge against a secret
+  that does not exist).
+- **#2b** was already closed before this round (production boot guard on `SuperAdmin:TotpSecret`).
+- **#2c** was already closed before this round (`amr` claim on the JWT).
+
+**Tests** — `tests/SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs` (9 scenarios: challenge
+not tokens; App audience unaffected; enrol-then-complete mints `amr=mfa`; that session reaches the
+admin surface; an already-enrolled admin still gets the ordinary TOTP challenge; a wrong code issues
+nothing; the ticket is single-use; an unknown ticket is refused; a created admin is
+`TwoFactorEnabled` **and** can still complete a first sign-in).
+E2E: `docs/tests/e2e/cp-2fa-enrolment.md`.
+
+**Charter exit criterion `exit-gate-no-open-high`** — the two findings this plan holds against it are
+now closed: **#1** was verified fixed in code on 2026-07-30 (`IdentitySeeder.cs` gates
+`EnsureDemoAccountsAsync` behind `IsDevelopment() || Seed:EnableDemoAccounts`), and **#2** is
+implemented above. **No held item in this document remains open at high severity.**
+
+**Honest caveats, not asserted away:**
+- The consolidated build + full suite for this round is run once by the orchestrator at the end;
+  the results above are the tests written, not a pasted green run from this session.
+- The general integration suite pins `RequireControlPanelTwoFactorEnrolment` **off**
+  (`SimfApiFactory`), because roughly 150 pre-existing admin fixtures read `Tokens.AccessToken`
+  straight off a `Cp` password sign-in. The production posture (setting on) is proved by
+  `ControlPanelTwoFactorApiFactory` + the test class above, in the same way
+  `FaceDetection:Enabled` and `DeviceKey:RequireStepUpForEnrol` are already handled.
+- The `48 pre-existing failures` figure quoted above conflicts with a 2026-07-30 run reported as
+  2076 passed / 0 failed. That reconciliation is tracked separately (`48-pre-existing-failures`) and
+  is **not** closed by this update.

@@ -96,7 +96,7 @@ public sealed class UserProfileType : BaseAuditEntity
     public bool ShowInPartnerDirectory { get; set; } = true;
 
     /// <summary>
-    /// D-809 — a small stable number identifying this profile type inside the
+    /// D-819 — a small stable number identifying this profile type inside the
     /// offline event badge. <see cref="BaseAuditEntity.Id"/> is a Guid and will
     /// not fit in a QR that has to stay readable when a badge is creased, so the
     /// badge carries this code instead.

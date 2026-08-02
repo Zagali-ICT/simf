@@ -17,7 +17,6 @@ using SIMF.Contracts.Email;
 using SIMF.Contracts.Faq;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Organisations;
-using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.Programme;
 using SIMF.Contracts.Requests;
@@ -738,7 +737,7 @@ internal static class AccountEndpoints
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"simf-staff-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+                $"simf-staff-{SimfClock.Now:yyyyMMddHHmmss}.xlsx");
         });
 
         // Multipart upload — same SameSite=Lax CSRF stance as /avatar (D-029).
@@ -850,7 +849,7 @@ internal static class AccountEndpoints
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"simf-visitors-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+                $"simf-visitors-{SimfClock.Now:yyyyMMddHHmmss}.xlsx");
         });
 
         group.MapPost("/admin/others/export",
@@ -865,7 +864,7 @@ internal static class AccountEndpoints
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"simf-others-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+                $"simf-others-{SimfClock.Now:yyyyMMddHHmmss}.xlsx");
         });
 
         group.MapPost("/admin/visitors/import",
@@ -1181,7 +1180,7 @@ internal static class AccountEndpoints
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"simf-operation-log-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+                $"simf-operation-log-{SimfClock.Now:yyyyMMddHHmmss}.xlsx");
         });
 
         // D-134 Sprint A — Attendees roster proxy (read-only join over
@@ -1207,7 +1206,7 @@ internal static class AccountEndpoints
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"simf-attendees-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+                $"simf-attendees-{SimfClock.Now:yyyyMMddHHmmss}.xlsx");
         });
 
         // D-134 Sprint B — Themes CRUD proxy (D-135 freeze-lift).
@@ -3772,7 +3771,7 @@ internal static class AccountEndpoints
     /// Forwards one report export: pulls the caller's access token, calls the
     /// API, and streams the workbook back as a download. Shared by every report
     /// so the content type and the file-name convention live in one place.
-    /// The stamp is Saudi local (D-770), not UTC.
+    /// The stamp is Saudi local (D-770), not a zoned stamp.
     /// </summary>
     private static async Task<IResult> ForwardReportExportAsync(
         HttpContext http,
@@ -3790,7 +3789,7 @@ internal static class AccountEndpoints
 
         return Results.File(bytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"simf-{slug}-{DateTimeOffset.UtcNow.FormatSaudi("yyyyMMdd-HHmmss")}.xlsx");
+            $"simf-{slug}-{SimfClock.Now.FormatSaudi("yyyyMMdd-HHmmss")}.xlsx");
     }
 
     private static void MapGridExport(IEndpointRouteBuilder group, string slug)
@@ -3807,7 +3806,7 @@ internal static class AccountEndpoints
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"simf-{slug}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+                $"simf-{slug}-{SimfClock.Now:yyyyMMddHHmmss}.xlsx");
         });
     }
 

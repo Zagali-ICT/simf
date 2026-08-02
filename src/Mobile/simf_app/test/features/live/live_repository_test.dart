@@ -11,8 +11,8 @@ void main() {
         'start': '2026-11-23T06:00:00Z',
         'end': '2026-11-23T07:00:00Z',
       });
-      expect(session.start, DateTime.utc(2026, 11, 23, 6));
-      expect(session.end, DateTime.utc(2026, 11, 23, 7));
+      expect(session.start, DateTime(2026, 11, 23, 9));
+      expect(session.end, DateTime(2026, 11, 23, 10));
     });
 
     test('end is null when the wire omits it (global main-live synthetic)',
@@ -23,6 +23,38 @@ void main() {
         'status': 1,
       });
       expect(session.end, isNull);
+    });
+  });
+
+  // FR-702 (owner 2026-07-31) — the CP-authored notice rides the same
+  // PublicSessionDetail wire the live slice already reads.
+  group('LiveSession.fromJson liveNotice (FR-702)', () {
+    LiveSession decode(Object? notice, Object? noticeArabic) =>
+        LiveSession.fromJson(<String, dynamic>{
+          'title': 'Opening',
+          'titleArabic': 'الافتتاح',
+          'status': 1,
+          'liveNotice': notice,
+          'liveNoticeArabic': noticeArabic,
+        });
+
+    test('decodes the pair and localizes with the shared fallback', () {
+      final session = decode('English notice.', 'إشعار عربي.');
+      expect(session.liveNotice, 'English notice.');
+      expect(session.liveNoticeArabic, 'إشعار عربي.');
+      expect(session.localizedNotice(true), 'إشعار عربي.');
+      expect(session.localizedNotice(false), 'English notice.');
+      // One side only → both locales read the authored side.
+      expect(
+        decode('English notice.', null).localizedNotice(true),
+        'English notice.',
+      );
+    });
+
+    test('a missing / blank notice is null (the banner is not rendered)', () {
+      expect(decode(null, null).localizedNotice(false), isNull);
+      expect(decode('   ', '').localizedNotice(false), isNull);
+      expect(decode('   ', '').localizedNotice(true), isNull);
     });
   });
 }

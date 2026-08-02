@@ -55,7 +55,7 @@ class _StubGates extends GatesRepository {
 }
 
 _StubGates _build() {
-  // One prefs instance for both stores: the queue and the D-810 offline-config
+  // One prefs instance for both stores: the queue and the D-820 offline-config
   // cache live side by side on a real device too.
   final prefs = FakePrefs();
   return _StubGates(

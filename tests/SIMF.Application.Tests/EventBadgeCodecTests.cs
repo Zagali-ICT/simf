@@ -6,7 +6,7 @@ using SIMF.Common.Options;
 namespace SIMF.Application.Tests;
 
 /// <summary>
-/// D-809 — the offline event badge codec. These tests are the contract the
+/// D-819 — the offline event badge codec. These tests are the contract the
 /// Windows desk generator and the mobile scanner both have to satisfy: a badge
 /// minted at a disconnected desk must validate at a disconnected gate, and
 /// anything that is not a genuine badge must be refused rather than throwing.
@@ -42,7 +42,7 @@ public class EventBadgeCodecTests
         var encoded = EventBadgeCodec.Encode(
             new EventBadgePayload(3, 3_000_042L), NewKey(), keyVersion: 0);
 
-        // The GateScan.QrIdAtScan column is nvarchar(96) after D-810; a badge
+        // The GateScan.QrIdAtScan column is nvarchar(96) after D-820; a badge
         // that does not fit would be truncated on insert.
         encoded.Length.Should().BeLessThan(96);
     }
@@ -148,14 +148,16 @@ public class EventBadgeCodecTests
 }
 
 /// <summary>
-/// D-809 — the arming semantics. The whole point of the walk-in mode is that it
+/// D-819 — the arming semantics. The whole point of the walk-in mode is that it
 /// is inert until deliberately switched on, so "off by default" and
 /// "fail-closed" are the behaviours worth pinning.
 /// </summary>
 public class WalkInModeOptionsTests
 {
-    private static readonly DateTimeOffset Now =
-        new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
+    // Saudi wall-clock, per the owner's 2026-07-31 no-zoned-time decision:
+    // the arming window and the clock it is compared against are now the
+    // same kind, so the comparison cannot drift by the +03:00 offset.
+    private static readonly DateTime Now = new(2026, 8, 1, 9, 0, 0);
 
     [Fact]
     public void IsDisarmedByDefault()
@@ -194,7 +196,7 @@ public class WalkInModeOptionsTests
         {
             Enabled = true,
             AutoApprove = true,
-            ExpiresAtUtc = Now.AddMinutes(-1),
+            ExpiresAt = Now.AddMinutes(-1),
         };
 
         options.IsArmed(Now).Should().BeFalse();
@@ -208,7 +210,7 @@ public class WalkInModeOptionsTests
         {
             Enabled = true,
             AutoApprove = true,
-            ExpiresAtUtc = Now.AddHours(1),
+            ExpiresAt = Now.AddHours(1),
         };
 
         options.IsArmed(Now).Should().BeTrue();
@@ -279,7 +281,7 @@ public class WalkInModeOptionsTests
 }
 
 /// <summary>
-/// D-810 — the cross-language contract with the Flutter scanner.
+/// D-820 — the cross-language contract with the Flutter scanner.
 ///
 /// <para>These five strings were produced by <see cref="EventBadgeCodec.Encode"/>
 /// and are pinned IDENTICALLY in
@@ -328,7 +330,7 @@ public sealed class EventBadgeCrossLanguageFixtureTests
     [InlineData("1ZMYK8EM39BX9SSHK6KEHYNH6EAVK0M914SAY5A8G364DM3K307XK9CEE6A029D7QB0")]
     public void A_real_badge_fits_the_widened_audit_column(string encoded)
     {
-        // GateScans.QrIdAtScan is nvarchar(96) after the D-810 widening, and the
+        // GateScans.QrIdAtScan is nvarchar(96) after the D-820 widening, and the
         // gate stores the whole blob so the server can decrypt it independently.
         // A typical badge is 61 characters; the 10-digit-sequence extreme is 67.
         encoded.Length.Should().BeLessThanOrEqualTo(96);

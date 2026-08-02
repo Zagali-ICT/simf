@@ -25,5 +25,5 @@ public class ScanIdempotency
     /// and allowed scans both populate this).</summary>
     public long? ScanId { get; set; }
 
-    public DateTimeOffset StoredAt { get; set; }
+    public DateTime StoredAt { get; set; }
 }

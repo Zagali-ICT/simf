@@ -70,9 +70,9 @@ internal sealed class ClosedXmlGridExcelExporter : IGridExcelExporter
             case bool b:
                 cell.Value = b ? "Yes" : "No";
                 break;
-            case DateTimeOffset dto:
-                cell.Value = dto.UtcDateTime.ToString("O");
-                break;
+            // One arm, not two: DateTimeOffset and DateTime used to be distinct
+            // cases and are now the same type (owner decision 2026-07-31 — every
+            // instant is a plain Saudi-local DateTime).
             case DateTime dt:
                 cell.Value = dt.ToString("O");
                 break;

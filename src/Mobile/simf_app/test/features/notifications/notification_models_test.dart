@@ -23,7 +23,10 @@ void main() {
       expect(item.isRead, isFalse);
       expect(item.readAt, isNull);
       expect(item.createdAt, isNotNull);
-      expect(item.createdAt!.isUtc, isTrue);
+      // Saudi wall-clock carries no zone, so a decoded value must NOT be
+      // left untagged: tagging it would let a later toLocal() shift it by the
+      // device offset (owner decision 2026-07-31).
+      expect(item.createdAt!.isUtc, isFalse);
       expect(item.localizedTitle(false), 'Session starts soon');
       expect(item.localizedTitle(true), 'تبدأ الجلسة قريباً');
       expect(item.localizedBody(false), 'Hall A in 15 minutes.');

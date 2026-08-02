@@ -25,8 +25,8 @@ public sealed record AdminVenueMapNodeDetail(
     Guid? HallId,
     Guid? BoothId,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>P2.5 — create a venue-map node.</summary>
 public sealed class AdminCreateVenueMapNodeRequest

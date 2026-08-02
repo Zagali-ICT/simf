@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/DelegationMeetingRequestsTests.cs
 // Tests: SIMF.Api.Tests/DelegationMeetingQaFixesTests.cs
+// Tests: SIMF.Api.Tests/MeetingNoAvailabilityTests.cs (G3)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -24,6 +25,7 @@ internal sealed class DelegationMeetingRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
     INotificationDispatcher notifications,
+    IDelegationAvailabilityService delegationAvailability,
     IHallAvailabilityService hallAvailability,
     IMeetingActionTokenService meetingActionTokens,
     IEmailQueue emailQueue,
@@ -57,8 +59,8 @@ internal sealed class DelegationMeetingRequestService(
         // A1 — validate the optional slot pair (mirror the speaker flow): if either
         // end is supplied, require both and end > start, so an invalid pair cannot
         // be persisted silently.
-        DateTimeOffset? slotStart = null;
-        DateTimeOffset? slotEnd = null;
+        DateTime? slotStart = null;
+        DateTime? slotEnd = null;
         if (request.SlotStart is not null || request.SlotEnd is not null)
         {
             if (request.SlotStart is not { } pickedStart
@@ -120,6 +122,21 @@ internal sealed class DelegationMeetingRequestService(
                 "لا يمكن للوفد طلب اجتماع مع نفسه.");
         }
 
+        // G3 (owner 2026-07-30) — SUPERSEDES the "topic-only request" half of R1 (D-767):
+        // a meeting request may no longer be sent when the target delegation has nothing
+        // left to offer. GetAvailableSlotsAsync returns an empty list for BOTH reasons —
+        // the delegation has no active future window at all, and every slot the windows
+        // offer is past or already taken — so this one call covers both. The app disables
+        // the send button on the same signal; this is the server-side backstop.
+        var freeSlots = await delegationAvailability.GetAvailableSlotsAsync(
+            targetCountry.Id, cancellationToken);
+        if (freeSlots.Count == 0)
+        {
+            throw new ApiException(ErrorCodes.DelegationMeetingNoAvailability, 409,
+                "This delegation has no available meeting slots.",
+                "لا توجد فترات متاحة لدى هذا الوفد.");
+        }
+
         // R8 (bi-meeting rules, D-767) — a requester keeps ONE open request per target
         // delegation, but a repeat submission is NOT an error: MOVE the existing Pending
         // request (new slot / subject / attendee count) instead of a duplicate row or a
@@ -148,7 +165,7 @@ internal sealed class DelegationMeetingRequestService(
                 openRequest.Id, openRequest.Status, openRequest.CreatedAt);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var req = new DelegationMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -195,13 +212,14 @@ internal sealed class DelegationMeetingRequestService(
         rows = rows.OrderByDescending(r => r.CreatedAt);
 
         var total = await rows.CountAsync(cancellationToken);
-        var page = await rows.Skip(skip).Take(top)
-            .Select(r => new AdminDelegationMeetingRequestRow(
+        var pageRows = await rows.Skip(skip).Take(top)
+            .Select(r => new
+            {
                 r.Id,
                 r.RequestingCountryId,
-                r.RequestingCountry!.Name,
+                RequestingCountry = r.RequestingCountry!.Name,
                 r.TargetCountryId,
-                r.TargetCountry!.Name,
+                TargetCountry = r.TargetCountry!.Name,
                 r.RequestedByUserId,
                 r.AttendeeCount,
                 r.Subject,
@@ -209,8 +227,41 @@ internal sealed class DelegationMeetingRequestService(
                 r.SlotStart,
                 r.ResponseNote,
                 r.CreatedAt,
-                r.RespondedAt))
+                r.RespondedAt,
+                // OA-D5 — the hall check-in stamps, so the desk and its new export
+                // report who actually turned up, not only the decision.
+                r.CheckedInAt,
+                r.CheckedInByUserId,
+            })
             .ToListAsync(cancellationToken);
+
+        // OA-D5 — resolve the check-in operators' display names in ONE Identity-DB
+        // query for the whole page. CheckedInByUserId is a bare logical FK (D-157),
+        // so this is a second query merged in memory — never a cross-database JOIN.
+        var operatorNames = await userDirectory.GetDisplayNamesAsync(
+            pageRows.Where(r => r.CheckedInByUserId.HasValue)
+                .Select(r => r.CheckedInByUserId!.Value)
+                .Distinct()
+                .ToList(),
+            cancellationToken);
+
+        var page = pageRows.Select(r => new AdminDelegationMeetingRequestRow(
+            r.Id,
+            r.RequestingCountryId,
+            r.RequestingCountry,
+            r.TargetCountryId,
+            r.TargetCountry,
+            r.RequestedByUserId,
+            r.AttendeeCount,
+            r.Subject,
+            r.Status,
+            r.SlotStart,
+            r.ResponseNote,
+            r.CreatedAt,
+            r.RespondedAt,
+            r.CheckedInAt,
+            ResolveOperatorName(operatorNames, r.CheckedInByUserId)))
+            .ToList();
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -254,7 +305,7 @@ internal sealed class DelegationMeetingRequestService(
                 "Delegation meeting request not found.",
                 "لم يتم العثور على طلب اجتماع الوفد.");
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Bi-Meeting rework — unified 3-button model. Status=Rejected is CANCEL (with a
         // justification note). Status=Accepted with a bound HallId is APPROVE
@@ -477,7 +528,7 @@ internal sealed class DelegationMeetingRequestService(
     {
         var req = await LoadAwaitingForOtherPartyAsync(callerUserId, id, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Race-safe conditional flip AwaitingSpeaker → Accepted (any one eligible member's
         // tap confirms; a concurrent second confirm matches 0 rows and 409s cleanly).
@@ -537,7 +588,7 @@ internal sealed class DelegationMeetingRequestService(
     {
         var req = await LoadAwaitingForOtherPartyAsync(callerUserId, id, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Race-safe conditional flip AwaitingSpeaker → Rejected (a concurrent confirm or a
         // second decline matches 0 rows and 409s cleanly). Rejected is not a slot-holding
@@ -674,7 +725,7 @@ internal sealed class DelegationMeetingRequestService(
                 "Only a confirmed meeting can be checked in.",
                 "لا يمكن تسجيل الحضور إلا لاجتماع مؤكَّد.");
         }
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         req.Status = MeetingRequestStatus.Done;
         req.CheckedInAt = now;
         req.CheckedInByUserId = actorUserId;
@@ -779,7 +830,7 @@ internal sealed class DelegationMeetingRequestService(
     private async Task BindDelegationHallSlotAsync(
         DelegationMeetingRequest req,
         RespondToDelegationMeetingRequestRequest request,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         var hallId = request.HallId!.Value;
@@ -848,7 +899,7 @@ internal sealed class DelegationMeetingRequestService(
     // double-book guard. Read-then-write, acceptable for this admin-brokered,
     // low-concurrency G2G table (the DB hall index is the equal-start backstop).
     private async Task GuardDelegationOverlapAsync(
-        DelegationMeetingRequest req, DateTimeOffset start, DateTimeOffset end,
+        DelegationMeetingRequest req, DateTime start, DateTime end,
         CancellationToken cancellationToken)
     {
         var reqId = req.Id;
@@ -871,7 +922,7 @@ internal sealed class DelegationMeetingRequestService(
 
     // A33 — the shared outcome-email body for the REQUESTER (confirmed / approved /
     // declined). Same markup vocabulary as EmailMemberConfirmLinkAsync so the two
-    // delegation emails read as one template family. Saudi local time only (no UTC).
+    // delegation emails read as one template family. Saudi local time only.
     private static string BuildOutcomeEmailHtml(
         string body, AdminDelegationMeetingRequestDetail detail, DelegationMeetingRequest req)
     {
@@ -885,6 +936,16 @@ internal sealed class DelegationMeetingRequestService(
                 : $"<p>Note: {HtmlEnc(req.ResponseNote!)}</p>")
             + "<p style=\"color:#666\">You can follow this request in the SIMF app under"
             + " &quot;My requests&quot;.</p>";
+    }
+
+    /// <summary>OA-D5 — the check-in operator's display name for one row, or null
+    /// when the meeting has not been checked in (or the operator account is gone).
+    /// The map comes from the single per-page Identity-DB lookup above.</summary>
+    private static string? ResolveOperatorName(
+        IReadOnlyDictionary<Guid, string> namesByUserId, Guid? checkedInByUserId)
+    {
+        if (checkedInByUserId is not { } userId) { return null; }
+        return namesByUserId.TryGetValue(userId, out var name) ? name : null;
     }
 
     private async Task<AdminDelegationMeetingRequestDetail> LoadDetailAsync(

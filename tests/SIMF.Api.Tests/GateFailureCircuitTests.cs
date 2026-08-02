@@ -9,6 +9,7 @@ using SIMF.Application.Auditing;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.AccessControl;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -17,7 +18,7 @@ public sealed class GateFailureCircuitTests
     [Fact]
     public async Task Circuit_opens_after_ten_denials_in_window()
     {
-        var time = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var time = new FakeTimeProvider(SimfClock.Now);
         var scopeFactory = new NoOpScopeFactory();
         var circuit = new GateFailureCircuit(scopeFactory, time, NullLogger<GateFailureCircuit>.Instance);
         var gateId = Guid.NewGuid();
@@ -35,7 +36,7 @@ public sealed class GateFailureCircuitTests
     [Fact]
     public async Task Circuit_stays_closed_when_denials_drain_out_of_window()
     {
-        var time = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var time = new FakeTimeProvider(SimfClock.Now);
         var circuit = new GateFailureCircuit(new NoOpScopeFactory(), time,
             NullLogger<GateFailureCircuit>.Instance);
         var gateId = Guid.NewGuid();
@@ -56,7 +57,7 @@ public sealed class GateFailureCircuitTests
     [Fact]
     public async Task Allowed_scan_clears_the_window_and_closes_an_open_circuit()
     {
-        var time = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var time = new FakeTimeProvider(SimfClock.Now);
         var circuit = new GateFailureCircuit(new NoOpScopeFactory(), time,
             NullLogger<GateFailureCircuit>.Instance);
         var gateId = Guid.NewGuid();
@@ -74,7 +75,7 @@ public sealed class GateFailureCircuitTests
     [Fact]
     public async Task Circuit_state_is_per_gate()
     {
-        var time = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var time = new FakeTimeProvider(SimfClock.Now);
         var circuit = new GateFailureCircuit(new NoOpScopeFactory(), time,
             NullLogger<GateFailureCircuit>.Instance);
         var gateA = Guid.NewGuid();

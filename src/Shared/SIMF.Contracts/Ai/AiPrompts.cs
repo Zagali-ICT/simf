@@ -15,8 +15,8 @@ public sealed record AdminAiPromptSummary(
     int MaxOutputTokens,
     bool IsActive,
     int Version,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>D-176 — full detail row (read).</summary>
 public sealed record AdminAiPromptDetail(
@@ -35,8 +35,8 @@ public sealed record AdminAiPromptDetail(
     int MaxOutputTokens,
     bool IsActive,
     int Version,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>D-188 — one historical snapshot of an
 /// <see cref="AdminAiPromptDetail"/> (captured BEFORE the live row
@@ -59,13 +59,13 @@ public sealed record AdminAiPromptHistoryEntry(
     string ContentHash,
     /// <summary>The live row's <c>UpdatedAt</c> from the version
     /// this snapshot captures (or <c>CreatedAt</c> for v1).</summary>
-    DateTimeOffset CapturedFromUpdatedAt,
+    DateTime CapturedFromUpdatedAt,
     /// <summary>The admin who authored the version this snapshot
     /// captures. Null on v1 (the original CreateAsync path).</summary>
     Guid? UpdatedByUserId,
     /// <summary>When the snapshot row was written (i.e. when the
     /// successor version replaced this one).</summary>
-    DateTimeOffset CapturedAt);
+    DateTime CapturedAt);
 
 /// <summary>D-176 — create admin request. Open for inheritance per
 /// D-168 / D-174 / D-175 pattern.</summary>
@@ -144,7 +144,7 @@ public sealed record AdminAiInvocationRow(
     int? TokensOutput,
     int LatencyMs,
     string? ErrorCode,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>D-179 (gap doc G12 hardening) — full invocation payload
 /// for SOC threat-hunting. The grid row (<see cref="AdminAiInvocationRow"/>)
@@ -167,7 +167,7 @@ public sealed record AdminAiInvocationDetail(
     string? ErrorCode,
     string InputJson,
     string? OutputText,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>CP Phase-1 — the AI Control Center dashboard: rolled-up invocation
 /// health over a recent window (default 24h) plus a per-service breakdown, and

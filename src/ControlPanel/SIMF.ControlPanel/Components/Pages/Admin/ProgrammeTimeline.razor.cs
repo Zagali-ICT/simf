@@ -1,19 +1,9 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -61,15 +51,15 @@ public partial class ProgrammeTimeline
     }
 
     // Group by the Saudi calendar day of the start time, days ascending,
-    // sessions within a day ascending by start time. Start is a
-    // DateTimeOffset in UTC; .ToSaudi() projects it onto the Saudi (AST)
-    // wall clock so the run-of-show reads in local event time.
+    // sessions within a day ascending by start time. Start is already the
+    // Saudi wall clock (D-813), so the run-of-show renders it verbatim — there
+    // is no projection and adding one would shift every row by three hours.
     private void BuildDays(IReadOnlyList<AdminSessionSummary> items)
     {
         _total = items.Count;
         _days = items
             .OrderBy(s => s.Start)
-            .GroupBy(s => s.Start.ToSaudi().Date)
+            .GroupBy(s => s.Start.Date)
             .OrderBy(g => g.Key)
             .Select(g => new DayGroup(
                 g.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
@@ -87,7 +77,7 @@ public partial class ProgrammeTimeline
         _selectedDayKey = e.Value?.ToString() ?? string.Empty;
 
     private static string TimeWindow(AdminSessionSummary s) =>
-        $"{s.Start.ToSaudi():hh:mm tt} – {s.End.ToSaudi():hh:mm tt}";
+        $"{s.Start:hh:mm tt} – {s.End:hh:mm tt}";
 
     private static string SessionTitle(AdminSessionSummary s) =>
         IsArabic ? s.TitleArabic : s.Title;

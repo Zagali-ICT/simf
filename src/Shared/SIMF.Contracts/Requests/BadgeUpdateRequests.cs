@@ -17,7 +17,7 @@ public sealed class SubmitBadgeUpdateRequestBody
 public sealed record BadgeUpdateRequestSubmitted(
     Guid Id,
     MeetingRequestStatus Status,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>D-500 — one row in the admin badge-update-requests grid. The
 /// requester display name is resolved from the App-DB profile; the email moves
@@ -30,8 +30,8 @@ public sealed record AdminBadgeUpdateRequestRow(
     string? CurrentJobTitle,
     MeetingRequestStatus Status,
     string? ResponseNote,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTime CreatedAt,
+    DateTime? RespondedAt);
 
 /// <summary>D-500 — single-record detail for the admin respond modal. Includes
 /// <c>RequesterEmail</c> (resolved on read from the Identity DB); fetched on
@@ -46,8 +46,8 @@ public sealed record AdminBadgeUpdateRequestDetail(
     string? Note,
     MeetingRequestStatus Status,
     string? ResponseNote,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTime CreatedAt,
+    DateTime? RespondedAt);
 
 /// <summary>D-500 — admin moves the row off Pending. Status must be Accepted or
 /// Rejected. On Accept the service applies the requested title to the

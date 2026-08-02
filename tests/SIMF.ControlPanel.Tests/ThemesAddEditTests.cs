@@ -13,7 +13,7 @@ public sealed class ThemesAddEditTests : CpComponentTestBase
     private static AdminThemeDetail Detail() => new(
         Guid.Parse("11111111-1111-1111-1111-111111111111"),
         "DEF", "Defence", "Ø§Ù„Ø¯ÙØ§Ø¹", "Defence theme", "Ù…Ø­ÙˆØ± Ø§Ù„Ø¯ÙØ§Ø¹",
-        1, "#244A77", IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        1, "#244A77", IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Add_mode_hides_the_Active_checkbox()
@@ -37,7 +37,7 @@ public sealed class ThemesAddEditTests : CpComponentTestBase
         JSInterop.Mode = JSRuntimeMode.Loose;
         var created = new AdminThemeDetail(
             Guid.NewGuid(), "TECH", "Technology", "Ø§Ù„ØªÙ‚Ù†ÙŠØ©", null, null,
-            0, "#244A77", true, DateTimeOffset.UnixEpoch, null);
+            0, "#244A77", true, DateTime.UnixEpoch, null);
         var handler = JSInterop.Setup<ApiResult<AdminThemeDetail>>(
             "simfAccount.postJson", _ => true)
             .SetResult(ApiResult<AdminThemeDetail>.Ok(created));

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/simf_logo.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/core/startup/app_update_checker.dart';
 import 'package:simf_app/features/splash/splash_controller.dart';
 import 'package:simf_app/features/splash/splash_screen.dart';
@@ -21,6 +22,38 @@ class _StubSplashController extends SplashController {
   @override
   SplashState build() => _fixed;
 }
+
+/// Serves a fixed organization profile (or none) without touching prefs / HTTP.
+class _StubOrgProfile extends OrgProfileController {
+  _StubOrgProfile(this._fixed);
+
+  final OrgProfile? _fixed;
+
+  @override
+  OrgProfile? build() => _fixed;
+}
+
+OrgProfile _edition({
+  DateTime? start,
+  DateTime? end,
+  String location = 'Jeddah',
+  String locationArabic = 'جدة',
+}) =>
+    OrgProfile(
+      name: 'Saudi International Maritime Forum',
+      nameArabic: 'الملتقى البحري السعودي الدولي',
+      title: '',
+      titleArabic: '',
+      currentYear: 2027,
+      status: 'Open',
+      locationText: location,
+      locationTextArabic: locationArabic,
+      eventStartDate: start,
+      eventEndDate: end,
+      social: const OrgSocial(),
+      aboutItems: const <OrgAboutItem>[],
+      details: const <OrgDetail>[],
+    );
 
 /// Records the D-736 seam calls the soft-update dialog glue must make.
 class _RecordingUpdateChecker implements AppUpdateChecker {
@@ -41,6 +74,8 @@ Future<void> _pump(
   WidgetTester tester,
   SplashState state, {
   AppUpdateChecker? checker,
+  OrgProfile? profile,
+  Locale locale = const Locale('en'),
 }) async {
   final router = GoRouter(
     initialLocation: '/splash',
@@ -69,12 +104,13 @@ Future<void> _pump(
         splashControllerProvider.overrideWith(
           () => _StubSplashController(state),
         ),
+        orgProfileProvider.overrideWith(() => _StubOrgProfile(profile)),
         if (checker != null)
           appUpdateCheckerProvider.overrideWithValue(checker),
       ],
       child: MaterialApp.router(
         routerConfig: router,
-        locale: const Locale('en'),
+        locale: locale,
         supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
@@ -96,6 +132,68 @@ void main() {
       expect(find.byType(SimfLogo), findsOneWidget);
       expect(find.text('SAUDI · MOD · RSNF'), findsOneWidget);
       expect(find.text('Saudi International Maritime Forum'), findsOneWidget);
+      expect(find.text('4th Edition\n23–25 Nov 2026 · Riyadh'), findsOneWidget);
+    });
+
+    testWidgets(
+        'the event line comes from the configured edition dates, not the '
+        'bundled literal (#40-residual)', (tester) async {
+      await _pump(
+        tester,
+        const SplashLoading(),
+        profile: _edition(
+          start: DateTime(2027, 3, 8),
+          end: DateTime(2027, 3, 10),
+        ),
+      );
+
+      expect(find.text('4th Edition\n8-10 March 2027 · Jeddah'), findsOneWidget);
+      // The hardcoded 2026 date must NOT survive a re-configured edition.
+      expect(
+        find.textContaining('23–25 Nov 2026'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the configured event line renders in Arabic too',
+        (tester) async {
+      await _pump(
+        tester,
+        const SplashLoading(),
+        locale: const Locale('ar'),
+        profile: _edition(
+          start: DateTime(2027, 3, 8),
+          end: DateTime(2027, 3, 10),
+        ),
+      );
+
+      expect(
+        find.text('النسخة الرابعة\n8-10 مارس 2027 · جدة'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an edition with dates but no location omits the separator',
+        (tester) async {
+      await _pump(
+        tester,
+        const SplashLoading(),
+        profile: _edition(
+          start: DateTime(2027, 3, 8),
+          end: DateTime(2027, 3, 10),
+          location: '',
+          locationArabic: '',
+        ),
+      );
+
+      expect(find.text('4th Edition\n8-10 March 2027'), findsOneWidget);
+    });
+
+    testWidgets(
+        'an edition with no dates falls back to the bundled literal '
+        '(first run / offline)', (tester) async {
+      await _pump(tester, const SplashLoading(), profile: _edition());
+
       expect(find.text('4th Edition\n23–25 Nov 2026 · Riyadh'), findsOneWidget);
     });
 

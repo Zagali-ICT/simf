@@ -39,9 +39,21 @@ Wired: search filter, card → exhibitor detail, أرشدني → booth map, pul
 retry. **Flagged (feature call):** officer contact boxes show mail/call glyphs but
 wire no `mailto:`/`tel:` launch. No missing API.
 
+## Card header — the company name is never printed twice (PAR-B4, 2026-07-30)
+
+`BoothCompanyHeader` renders the exhibitor (full) name under the gold short name.
+The shipped seed sets `Name` and `ExhibitorName` to the **same** string on every
+booth (`docs/migrations/2026/SIMF_App_SeedGaps.sql`), so every seeded card showed
+the company name twice. The header now skips the beige full-name line when it
+trims to the same value as the short name above it; a genuinely distinct trading
+vs legal name still renders both. Fixing the seed instead would leave the card
+unprotected against the next duplicate row, so the guard lives in the widget.
+
 ## Tests
 
-`test/features/booths/booths_screen_test.dart` (12) + `test/golden/booths_golden_test.dart`.
+`test/features/booths/booths_screen_test.dart` (12) +
+`test/features/booths/booth_company_header_test.dart` (4, PAR-B4) +
+`test/golden/booths_golden_test.dart`.
 E2E: `docs/tests/e2e/mobile-booths.md`.
 
 ## Logo / photo boxes (owner 2026-07-26)

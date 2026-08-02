@@ -271,4 +271,52 @@ public class UserProfile : BaseAuditEntity
     /// image has been uploaded. The bytes are AES-GCM encrypted with the
     /// per-installation key — see <c>EncryptedUserIdDocumentStorage</c>.</summary>
     public string? IdImageRelativePath { get; set; }
+
+    // -- `accessibility-server-sync`: the five accessibility choices the app
+    //    used to keep in device prefs ONLY, so they never followed the user to a
+    //    second device and did not survive a reinstall. They are per-account
+    //    settings, so they live on the profile row (which already carries the
+    //    bare UserId — D-157, no cross-DB FK). Served by
+    //    GET / PUT /app/account/preferences.
+    //    Tests: SIMF.Api.Tests/AccountPreferencesTests.cs
+
+    /// <summary>The default text-size name — the value a profile row carries
+    /// until the user picks another. Must stay equal to
+    /// <c>SIMF.Contracts.Account.AccountPreferences.DefaultTextSize</c>; the
+    /// Domain project does not reference Contracts, so the two constants are
+    /// pinned together by a test rather than by the compiler.</summary>
+    public const string DefaultAccessibilityTextSize = "normal";
+
+    /// <summary>The chosen text size, stored as the app's <b>stable enum name</b>
+    /// (<c>small</c> / <c>normal</c> / <c>large</c> / <c>extraLarge</c>) and NOT
+    /// as an index, so reordering the client enum can never re-interpret stored
+    /// rows. Case-sensitive: the app matches the name byte for byte.</summary>
+    public string AccessibilityTextSize { get; set; } = DefaultAccessibilityTextSize;
+
+    /// <summary>High-contrast rendering (تباين عالٍ). Off by default.</summary>
+    public bool AccessibilityHighContrast { get; set; }
+
+    /// <summary>Suppress non-essential animation (تقليل الحركة). Off by default.</summary>
+    public bool AccessibilityReduceMotion { get; set; }
+
+    /// <summary>Announce each screen through the platform accessibility channel
+    /// (قارئ الشاشة). Off by default.</summary>
+    public bool AccessibilityScreenReaderAssist { get; set; }
+
+    /// <summary>Show the live / session caption strip (الترجمة النصية). <b>On</b>
+    /// by default — the one accessibility choice that starts enabled.</summary>
+    public bool AccessibilityCaptions { get; set; } = true;
+
+    /// <summary>When the account last SAVED its accessibility choices, or null if
+    /// it never has. Saudi wall clock, like every timestamp here.
+    ///
+    /// <para>This exists because the five columns above cannot distinguish "the
+    /// user chose the defaults" from "nobody has chosen anything" — they hold the
+    /// default either way. The app applies whatever the GET returns over its local
+    /// cache at sign-in, so without this marker a low-vision user who had already
+    /// set extraLarge + high contrast on the device would be silently RESET to
+    /// normal the first time they signed in after the endpoint shipped. A null
+    /// here answers the GET with <c>configured: false</c>, and the app then keeps
+    /// its local choices and uploads them instead of overwriting them.</para></summary>
+    public DateTime? AccessibilityConfiguredAt { get; set; }
 }

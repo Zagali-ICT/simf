@@ -37,8 +37,8 @@ public sealed class DelegationMeetingRequest
     public string Subject { get; set; } = string.Empty;
 
     /// <summary>The proposed slot (the team confirms it on accept). Optional.</summary>
-    public DateTimeOffset? SlotStart { get; set; }
-    public DateTimeOffset? SlotEnd { get; set; }
+    public DateTime? SlotStart { get; set; }
+    public DateTime? SlotEnd { get; set; }
 
     /// <summary>Lifecycle state (unified machine — Bi-Meeting rework): Pending on
     /// create; AwaitingSpeaker = admin Approved + bound a hall slot, awaiting the other
@@ -68,7 +68,7 @@ public sealed class DelegationMeetingRequest
 
     /// <summary>Bi-Meeting rework — when the meeting became Confirmed (admin-verbal or
     /// the other party's link/tap). Null until confirmed.</summary>
-    public DateTimeOffset? ConfirmedAt { get; set; }
+    public DateTime? ConfirmedAt { get; set; }
 
     /// <summary>Bi-Meeting rework — the actor who confirmed (admin id for a verbal
     /// confirm; null when confirmed by the other party's token/app-tap). Logical FK
@@ -77,18 +77,18 @@ public sealed class DelegationMeetingRequest
 
     /// <summary>Bi-Meeting rework — once-only dedup stamp for the 15-minute reminder
     /// worker (mirrors <c>Session.ReminderSent</c>). Null until the reminder fires.</summary>
-    public DateTimeOffset? ReminderSent { get; set; }
+    public DateTime? ReminderSent { get; set; }
 
     /// <summary>Bi-Meeting rework — when an operator checked the meeting in at the hall
     /// (flips it to <see cref="MeetingRequestStatus.Done"/>). Null until checked in.</summary>
-    public DateTimeOffset? CheckedInAt { get; set; }
+    public DateTime? CheckedInAt { get; set; }
 
     /// <summary>Bi-Meeting rework — the operator who checked it in. Logical FK
     /// (Identity); no cross-DB relation (D-157).</summary>
     public Guid? CheckedInByUserId { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? RespondedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? RespondedAt { get; set; }
 
     /// <summary>The admin who responded. Logical FK (Identity); null while Pending.</summary>
     public Guid? RespondedByUserId { get; set; }

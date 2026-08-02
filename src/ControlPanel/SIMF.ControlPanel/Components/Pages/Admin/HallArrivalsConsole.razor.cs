@@ -1,20 +1,9 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
-using SIMF.Contracts.Faq;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -58,7 +47,7 @@ public partial class HallArrivalsConsole
                 // filtered out (no attendance row can exist for those yet). An
                 // arrival attempted on an ended session still gets the server's
                 // bilingual SESSION_NOT_LIVE message in the error toast.
-                var now = DateTimeOffset.UtcNow;
+                var now = SimfClock.Now;
                 _sessions = envelope.Data.Items
                     .Where(s => s.IsActive && now >= s.Start - ArrivalGrace)
                     // Live sessions first (the common check-in case), then the most

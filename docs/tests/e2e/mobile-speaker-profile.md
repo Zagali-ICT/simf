@@ -37,7 +37,7 @@
 | E2E-MOB020-009 | Tap a speaker session → Session detail (17) | happy | P1 | authored ✓ (screen) |
 | E2E-MOB020-010 | RTL render; hero, back chevron and tabs right-to-left | i18n | P1 | authored ✓ (screen) |
 | E2E-MOB020-011 | 125px gold-ringed avatar renders the speaker initials | happy | P1 | _to author_ |
-| E2E-MOB020-012 | **VIP slot picker (D-474/D-477; real slots restored by D-709):** when the speaker has availability windows, the meeting sheet shows the real free slots (from `GET …/available-slots`); picking one sends it. VIP-only is server-enforced (403 → "VIP guests only"); **no slots** = the no-slots notice + a subject-only request (the team arranges a time) | happy | P0 | authored ✓ (`meeting_request_sheet_test` real-slot submit + no-slots subject-only + API `SpeakerMeetingVipSlotTests`) |
+| E2E-MOB020-012 | **VIP slot picker (D-474/D-477; real slots restored by D-709):** when the speaker has availability windows, the meeting sheet shows the real free slots (from `GET …/available-slots`); picking one sends it. VIP-only is server-enforced (403 → "VIP guests only"). **G3 (owner 2026-07-30, supersedes D-767 R1):** **no free slot** = the no-slots notice **and a DISABLED Send button** — a subject-only request is no longer possible and the API 409s `SPEAKER_MEETING_NO_AVAILABILITY`. A **failed** slot fetch is a separate state: a load error + Retry, never the no-availability notice | happy | P0 | authored ✓ (`meeting_request_sheet_test` real-slot submit + G3 disabled-send + G3 slot-fetch-error, API `SpeakerMeetingVipSlotTests` + `MeetingNoAvailabilityTests`) |
 | E2E-MOB020-023 | Tapping a CV tab pill swaps the navy bio card content | happy | P0 | _to author_ |
 | E2E-MOB020-013 | Active tab pill is gold-filled; the rest are navy with a beige hairline | happy | P1 | _to author_ |
 | E2E-MOB020-014 | Only CV sections with content render a pill (1–4 pills) | edge | P1 | _to author_ |
@@ -383,6 +383,10 @@ day's slots as time chips (from `GET …/available-slots`), the chosen slot's ex
 start/end sent; **no windows → a clear "no slots" notice + a subject-only request**
 (the team then arranges a time). App-only; API contract unchanged. This restores
 the D-589 slot-sourced behaviour this catalogue already described.
+**Superseded on the no-windows half by G3 (2026-07-30):** with no free slot the
+request can no longer be sent at all — the Send button is disabled and the API
+409s `SPEAKER_MEETING_NO_AVAILABILITY`. A failed slot fetch is now its own state
+(load error + Retry) so it is never shown as "no availability".
 
 _Prior:_ `2026-07-02` — D-589: the meeting-request sheet redesigned to the light
 "طلب مقابلة" form (subject + day cards + time-slot chips, Figma 1776:4958/5036),

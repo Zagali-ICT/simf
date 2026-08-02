@@ -32,6 +32,15 @@ public sealed class SimfAuthSession
     /// <summary>The visitor OTP ticket awaiting an emailed code.</summary>
     public string? PendingOtpToken { get; set; }
 
+    /// <summary>
+    /// #2 (Q1, 2026-07-30) — the mandatory-enrolment ticket a Control Panel
+    /// sign-in returns when the account carries no authenticator secret. Held
+    /// for the enrolment page at <c>/login/enrol-2fa</c>, which exchanges it for
+    /// the QR and then for the session. It is not a session: it authorises
+    /// nothing but pairing an authenticator on that one account.
+    /// </summary>
+    public string? PendingEnrolmentToken { get; set; }
+
     /// <summary>Records a completed sign-in and clears any pending second-factor state.</summary>
     public void Complete(AuthTokens tokens)
     {
@@ -51,6 +60,7 @@ public sealed class SimfAuthSession
         PendingEmail = null;
         PendingMfaToken = null;
         PendingOtpToken = null;
+        PendingEnrolmentToken = null;
     }
 
     /// <summary>

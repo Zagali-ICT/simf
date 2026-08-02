@@ -21,7 +21,7 @@ public sealed record AdminSessionModeratorRow(
     string? ModeratorEmail,
     Guid AssignedByUserId,
     string AssignedByDisplayName,
-    DateTimeOffset AssignedAt);
+    DateTime AssignedAt);
 
 /// <summary>DEF-MOD-005 — the two pickers behind the "assign a moderator"
 /// dialog. The page used to take the session id and the user id as free-text

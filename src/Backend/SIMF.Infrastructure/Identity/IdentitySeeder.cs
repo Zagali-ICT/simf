@@ -2,7 +2,10 @@
 //        idempotency, D-377 baseline lookups + core content,
 //        D-390 2FA-disable-persists-across-reseed, D-585 demo-account matrix);
 //        SIMF.Api.Tests/DemoAccountSeedGateTests.cs (Round-1 #1 — demo seed is
-//        a no-op outside Development / with Seed:EnableDemoAccounts off)
+//        a no-op outside Development / with Seed:EnableDemoAccounts off);
+//        SIMF.Api.Tests/SuperAdminSeedFailureTests.cs (OP-SUPERADMIN-SEED — a
+//        policy-violating temp password throws in Production, logs-and-skips
+//        in Development)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -53,10 +56,10 @@ public sealed class IdentitySeeder(
     // same dates via the shared EventDateRange formatter (no hardcoded literal).
     private static readonly DateOnly EventStartDate = new(2026, 11, 23);
     private static readonly DateOnly EventEndDate = new(2026, 11, 25);
-    private static readonly DateTimeOffset StalePlaceholderStart =
-        new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
-    private static readonly DateTimeOffset StalePlaceholderEnd =
-        new(2026, 4, 30, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime StalePlaceholderStart =
+        new(2026, 1, 1, 0, 0, 0);
+    private static readonly DateTime StalePlaceholderEnd =
+        new(2026, 4, 30, 0, 0, 0);
 
     private const string AdministratorRole = AppRoles.Administrator;
 
@@ -518,7 +521,7 @@ public sealed class IdentitySeeder(
         {
             legacy.NameArabic = newNameArabic;
         }
-        legacy.UpdatedAt = timeProvider.GetUtcNow();
+        legacy.UpdatedAt = timeProvider.SimfNow();
         // D-167: ProfileType lives on App DB.
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -561,8 +564,8 @@ public sealed class IdentitySeeder(
             // migration data step so a fresh-seeded DB matches a migrated one.
             IsAppRegisterable = mobileAppRole is not (MobileAppRole.Staff or MobileAppRole.Moderator),
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
-            // D-809 — mirrors the migration's backfill so a fresh-seeded database
+            CreatedAt = timeProvider.SimfNow(),
+            // D-819 — mirrors the migration's backfill so a fresh-seeded database
             // carries badge codes exactly as a migrated one does.
             Code = await ProfileTypeCodeAllocator.NextAsync(appDbContext, cancellationToken),
         });
@@ -574,7 +577,7 @@ public sealed class IdentitySeeder(
         SuperAdminOptions settings,
         CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var admin = new SimfUser
         {
             UserName = settings.Email,
@@ -598,9 +601,29 @@ public sealed class IdentitySeeder(
         var result = await accounts.CreateAsync(admin, settings.TempPassword);
         if (!result.Succeeded)
         {
-            logger.LogError(
-                "Super-admin seed failed: {Errors}",
-                string.Join("; ", result.Errors.Select(error => error.Description)));
+            var reasons = string.Join("; ", result.Errors.Select(error => error.Description));
+            logger.LogError("Super-admin seed failed: {Errors}", reasons);
+
+            // OP-SUPERADMIN-SEED (2026-07-30) — this used to log and return null,
+            // and the caller returned too, so the API booted normally with NO
+            // super-admin and a Control Panel nobody could sign into — discovered
+            // only when someone tried. Program.cs does fail fast in Production, but
+            // only for the exact committed DEFAULT temp password; a CUSTOM password
+            // that merely violates the policy sails past that guard into this path.
+            //
+            // In Production a bootstrap account that cannot be created is a failed
+            // deployment, so fail the boot and name the policy rule that broke, so
+            // the operator can correct the configured value instead of guessing.
+            // Outside Production the log-and-skip stands: a developer on a
+            // half-configured box should still be able to start the app.
+            if (hostEnvironment.IsProduction())
+            {
+                throw new InvalidOperationException(
+                    "The super-administrator account could not be seeded, so the "
+                    + "Control Panel would have no way in. The configured "
+                    + "SuperAdmin:TempPassword was rejected: " + reasons
+                    + ". Set a compliant value and restart.");
+            }
             return null;
         }
 
@@ -645,7 +668,7 @@ public sealed class IdentitySeeder(
             return;
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         foreach (var demo in DemoAccounts)
         {
             if (await accounts.FindByEmailAsync(demo.Email) is not null)
@@ -779,7 +802,7 @@ public sealed class IdentitySeeder(
              "مرجعية: الهيئة الوطنية للأمن السيبراني · ECC – 1:2018 · CSCC – 1:2019 · OWASP ASVS"),
         };
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var existingKeys = await appDbContext.ContentBlocks
             .Where(b => seed.Select(s => s.Item1).Contains(b.Key))
             .Select(b => b.Key)
@@ -830,16 +853,19 @@ public sealed class IdentitySeeder(
             return;
         }
 
-        profile.EventStartDate = ToUtcMidnight(EventStartDate);
-        profile.EventEndDate = ToUtcMidnight(EventEndDate);
+        profile.EventStartDate = ToLocalMidnight(EventStartDate);
+        profile.EventEndDate = ToLocalMidnight(EventEndDate);
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
             "D-755: OrganizationProfile forum dates set to the real edition ({Start}..{End}).",
             EventStartDate, EventEndDate);
     }
 
-    private static DateTimeOffset ToUtcMidnight(DateOnly date) =>
-        new(date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+    /// <summary>Midnight on the given Saudi calendar date. Was ToUtcMidnight and
+    /// attached a +00:00 offset; stored values are Saudi-local now, so the name
+    /// would have been a lie and the offset a three-hour shift.</summary>
+    private static DateTime ToLocalMidnight(DateOnly date) =>
+        date.ToDateTime(TimeOnly.MinValue);
 
     /// <summary>Seed the public marketing landing's hero CMS text blocks
     /// (read by the Website's <c>/content/site</c> proxy and editable from the
@@ -880,7 +906,7 @@ public sealed class IdentitySeeder(
              "تصفّح البرنامج"),
         };
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var existingKeys = await appDbContext.ContentBlocks
             .Where(b => seed.Select(s => s.Item1).Contains(b.Key))
             .Select(b => b.Key)
@@ -1007,7 +1033,7 @@ public sealed class IdentitySeeder(
              "تعزيز موقع المملكة قطبًا عالميًّا في الأمن البحري والاقتصاد الأزرق."),
         };
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var existingKeys = await appDbContext.ContentBlocks
             .Where(b => seed.Select(s => s.Item1).Contains(b.Key))
             .Select(b => b.Key)
@@ -1057,7 +1083,7 @@ public sealed class IdentitySeeder(
             ("Research & Innovation", "البحث والابتكار", 10),
         };
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         foreach (var (name, nameArabic, order) in seed)
         {
             appDbContext.Interests.Add(new UserInterest
@@ -1100,7 +1126,7 @@ public sealed class IdentitySeeder(
             ("أخرى — غير مدرجة", "Other — not listed", null),
         };
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         foreach (var (nameArabic, name, sector) in seed)
         {
             appDbContext.Organisations.Add(new SIMF.Domain.Organisations.Organisation
@@ -1164,7 +1190,7 @@ public sealed class IdentitySeeder(
             ("about", aboutEn, aboutAr),
         };
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var existingKeys = await appDbContext.ContentBlocks
             .Where(b => seed.Select(s => s.Item1).Contains(b.Key))
             .Select(b => b.Key)
@@ -1246,7 +1272,7 @@ public sealed class IdentitySeeder(
         var existing = await appDbContext.AiPrompts.AsNoTracking()
             .Select(p => p.Key).ToListAsync(cancellationToken);
         var existingSet = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var toSeed = 0;
         foreach (var (key, feature, en, ar, system, user) in seed)
         {
@@ -1388,7 +1414,7 @@ public sealed class IdentitySeeder(
                         "demo-id-document.png", "image/png", user.Id, FailClosed: false),
                     cancellationToken);
                 profile.IdImageRelativePath = idDocument.Id.ToString();
-                profile.UpdatedAt = timeProvider.GetUtcNow();
+                profile.UpdatedAt = timeProvider.SimfNow();
                 await appDbContext.SaveChangesAsync(cancellationToken);
                 seeded++;
             }

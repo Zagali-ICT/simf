@@ -421,7 +421,7 @@ public sealed class SpeakerMeetingQaTests : IClassFixture<SpeakerMeetingQaApiFac
     [Fact]
     public async Task A29_The_expiry_revert_notifies_the_requester()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         // A REAL requester account — the notification row is written to the Identity
         // DB against this user, so a synthetic Guid would be silently dropped.
         var (_, requesterId) = await SignInEligibleVisitorWithIdAsync();
@@ -471,7 +471,7 @@ public sealed class SpeakerMeetingQaTests : IClassFixture<SpeakerMeetingQaApiFac
     }
 
     private async Task<Guid> SeedExpiredAwaitingRequestAsync(
-        DateTimeOffset now, Guid requesterId)
+        DateTime now, Guid requesterId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -532,12 +532,31 @@ public sealed class SpeakerMeetingQaTests : IClassFixture<SpeakerMeetingQaApiFac
             AllowsMeetingRequests = true,
             IsActive = true,
             DisplayOrder = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
+        // G3 (owner 2026-07-30) — a submit now REQUIRES the speaker to have a free
+        // slot, so every QA fixture speaker gets one wide future window. The
+        // no-availability refusal has its own coverage in MeetingNoAvailabilityTests.
+        db.SpeakerAvailabilityWindows.Add(new SpeakerAvailabilityWindow
+        {
+            Id = Guid.NewGuid(),
+            SpeakerId = speaker.Id,
+            Start = FixtureWindowStart,
+            End = FixtureWindowStart.AddHours(4),
+            SlotMinutes = 30,
+            IsActive = true,
+            CreatedAt = SimfClock.Now,
+        });
         await db.SaveChangesAsync();
         return speaker;
     }
+
+    /// <summary>G3 — far enough in the future that a past slot can never be why a
+    /// fixture speaker looks unavailable, and clear of the hall windows this class
+    /// books, so an accepted meeting never empties the window.</summary>
+    private static readonly DateTime FixtureWindowStart =
+        new(2035, 9, 1, 9, 0, 0);
 
     private async Task<Guid> SeedMeetingHallAsync()
     {
@@ -549,15 +568,15 @@ public sealed class SpeakerMeetingQaTests : IClassFixture<SpeakerMeetingQaApiFac
             Code = "MH-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Meeting Hall", NameArabic = "قاعة الاجتماعات",
             Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
         return hall.Id;
     }
 
-    private static DateTimeOffset _hallWindowCursor =
-        new(2032, 3, 1, 9, 0, 0, TimeSpan.Zero);
+    private static DateTime _hallWindowCursor =
+        new(2032, 3, 1, 9, 0, 0);
 
     private async Task<IReadOnlyList<HallAvailableSlot>> CreateHallWindowAndGetSlotsAsync(
         Guid hallId, string admin)
@@ -648,7 +667,7 @@ public sealed class SpeakerMeetingQaTests : IClassFixture<SpeakerMeetingQaApiFac
                 Id = Guid.NewGuid(),
                 Name = "QA Visitor", NameArabic = "زائر", PageColor = "#FFD700",
                 IsForVisitor = true, IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.ProfileTypes.Add(profileType);
         }
@@ -662,7 +681,7 @@ public sealed class SpeakerMeetingQaTests : IClassFixture<SpeakerMeetingQaApiFac
                 ProfileTypeId = profileType.Id,
                 AllowsSpeakerMeeting = true,
                 Name = "QA Requester", NameArabic = "مقدّم الطلب",
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
         }
         else
@@ -703,15 +722,7 @@ public sealed class SpeakerMeetingQaTests : IClassFixture<SpeakerMeetingQaApiFac
             await users.AddToRoleAsync(user, AdministratorRole);
             userId = user.Id;
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, userId);
+        return (await AuthFlow.SignInControlPanelAsync(_client, _factory, email), userId);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

@@ -4,8 +4,8 @@ namespace SIMF.Contracts.Admin;
 /// registration gate, returned by GET + admin endpoints.</summary>
 public sealed record RegistrationGateState(
     bool IsOpen,
-    DateTimeOffset? AutoClose,
-    DateTimeOffset LastChangedAt,
+    DateTime? AutoClose,
+    DateTime LastChangedAt,
     Guid? LastChangedByUserId);
 
 /// <summary>D-166 — admin PUT body: toggle <c>IsOpen</c> and optionally
@@ -13,14 +13,14 @@ public sealed record RegistrationGateState(
 public sealed class UpdateRegistrationGateRequest
 {
     public bool IsOpen { get; set; }
-    public DateTimeOffset? AutoClose { get; set; }
+    public DateTime? AutoClose { get; set; }
 }
 
 /// <summary>D-166 (gap doc G4, PDF §2.4) — current state of the archive
 /// visibility switch.</summary>
 public sealed record ArchiveVisibilityState(
     bool IsVisible,
-    DateTimeOffset LastChangedAt,
+    DateTime LastChangedAt,
     Guid? LastChangedByUserId);
 
 /// <summary>D-166 — admin PUT body for the archive visibility toggle.</summary>

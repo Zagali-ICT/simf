@@ -21,14 +21,14 @@ public class AccountCode
     /// <summary>The code value.</summary>
     public string Code { get; set; } = string.Empty;
 
-    /// <summary>When the code expires (UTC).</summary>
-    public DateTimeOffset ExpiresAt { get; set; }
+    /// <summary>When the code expires (Saudi local).</summary>
+    public DateTime ExpiresAt { get; set; }
 
-    /// <summary>When the code was created (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    /// <summary>When the code was created (Saudi local).</summary>
+    public DateTime CreatedAt { get; set; }
 
-    /// <summary>When the code was consumed (UTC); null while it is unused.</summary>
-    public DateTimeOffset? ConsumedAt { get; set; }
+    /// <summary>When the code was consumed (Saudi local); null while it is unused.</summary>
+    public DateTime? ConsumedAt { get; set; }
 
     /// <summary>
     /// How many incorrect values have been submitted against this code. The

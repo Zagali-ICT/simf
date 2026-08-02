@@ -5,6 +5,7 @@ using SIMF.Application.MyArea;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Account;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.MyArea;
 
@@ -24,8 +25,8 @@ internal sealed class MyAreaService(
     private const string KindSession = "Session";
     private const string KindMeeting = "Meeting";
 
-    /// <summary>The event runs in Riyadh — Arabia Standard Time (UTC+3, no DST)
-    /// — so "today" on the dashboard is the AST calendar day, not the UTC day
+    /// <summary>The event runs in Riyadh — Arabia Standard Time (+03:00, no DST)
+    /// — so "today" on the dashboard is the AST calendar day, not the calendar day elsewhere
     /// (otherwise an evening session would slip to the next day's card).</summary>
     private static readonly TimeSpan EventTimeZoneOffset = TimeSpan.FromHours(3);
 
@@ -261,14 +262,13 @@ internal sealed class MyAreaService(
         return items;
     }
 
-    /// <summary>Today's window in the event timezone (AST, UTC+3), as a
-    /// half-open UTC interval. Deterministic via the injected
+    /// <summary>Today's window in the event timezone (AST, +03:00), as a
+    /// half-open Saudi-local interval. Deterministic via the injected
     /// <see cref="TimeProvider"/>.</summary>
-    private (DateTimeOffset Start, DateTimeOffset End) TodayWindow()
+    private (DateTime Start, DateTime End) TodayWindow()
     {
-        var nowLocal = timeProvider.GetUtcNow().ToOffset(EventTimeZoneOffset);
-        var startLocal = new DateTimeOffset(
-            nowLocal.Year, nowLocal.Month, nowLocal.Day, 0, 0, 0, EventTimeZoneOffset);
+        var nowLocal = timeProvider.SimfNow();
+        var startLocal = new DateTime(nowLocal.Year, nowLocal.Month, nowLocal.Day, 0, 0, 0);
         return (startLocal, startLocal.AddDays(1));
     }
 }

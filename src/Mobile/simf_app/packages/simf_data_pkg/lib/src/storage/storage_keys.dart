@@ -59,7 +59,7 @@ class StorageKeys {
   /// PendingGateScan.
   static const String pendingGateScans = 'simf.prefs.pending_gate_scans';
 
-  /// D-810 — the cached offline scanning rules for this operator's gates
+  /// D-820 — the cached offline scanning rules for this operator's gates
   /// (allowed profile-type codes + the badge key), so a scanner that boots into
   /// a dead network still has the last known rules rather than nothing. Value is
   /// a JSON GateOfflineConfig.

@@ -1,4 +1,4 @@
-# Pending admins — `/admin/admins/pending`
+﻿# Pending admins — `/admin/admins/pending`
 
 | | |
 |--|--|
@@ -8,7 +8,7 @@
 | **Status** | ✅ Real |
 | **Backend** | `POST /account/api/admin/admins/pending/list`, `POST /admin/admins/{id}/approve`, `POST /admin/admins/{id}/reject` |
 | **Source** | [`PendingStaff.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PendingStaff.razor) |
-| **Last reviewed** | 2026-05-28 |
+| **Last reviewed** | 2026-07-30 |
 
 ## 1. Purpose
 
@@ -16,15 +16,16 @@ Approval queue for self-registered admin candidates in `PendingApproval`.
 
 ## Notable difference from Pending Visitors / Others
 
-PendingStaff does **not** yet have the D-128 review-before-approve modal.
-The Approve button is a one-click action — no profile preview, no Confirm
-modal. This is a parity gap flagged in the D-132 audit and listed on the
-backlog as a separate item (would require lifting the same `OpenViewAsync`
-+ `ConfirmApproveFromReviewAsync` pattern from PendingVisitors/Others).
+This queue confirms rather than reviews. `PendingVisitors` / `PendingOthers`
+open the D-128 profile-review modal before approving, because those accounts
+carry a profile worth reading (tier, ID images). An administrator candidate
+has no such profile, so **D-809** gives this queue a `SimfConfirm` naming the
+candidate instead — closing the D-132 parity gap without inventing a review
+surface with nothing to show.
 
-For now, **always click View on a peer admin's pending row before approving
-manually** (no View button exists; either reach out to the candidate offline
-or check `/admin/admins` after approving).
+Approving grants Control Panel access and mints the QR badge, so it cannot
+commit on a single click. Bulk approve confirms the count on all three
+queues (the guard lives in `PendingApprovalPageBase`).
 
 ## Reject flow
 
@@ -34,13 +35,15 @@ Identical to the visitors pending queue: reason modal, 10–500 chars, audited.
 
 | Scenario | ID |
 |----------|----|
-| Approve → row vanishes, Administrator role granted | E2E-APN-001 |
+| Approve → confirm → row vanishes, Administrator role granted | E2E-APN-001 |
 | Reject with reason → audited | E2E-APN-002 |
 | Reason < 10 chars → Submit disabled | E2E-APN-003 |
+| Approve → Cancel on the confirm → nothing is posted | E2E-APN-016 |
+| Bulk approve → confirm names the count → Cancel → nothing posted | E2E-APN-017 |
 
 ## Cross-references
 
-Parity gap with `PendingVisitors` / `PendingOthers` review-before-approve
-flow is logged. Lifting D-128 here is straightforward; tracked separately.
+The D-132 parity gap with `PendingVisitors` / `PendingOthers` is **closed** by
+D-809 — as a confirmation rather than a review modal, for the reason above.
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 3).
+_Last reviewed:_ 2026-07-30 by Claude (D-809 destructive-action safety).

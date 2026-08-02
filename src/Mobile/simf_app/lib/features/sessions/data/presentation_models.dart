@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/utils/saudi_time.dart';
 
-/// One downloadable session presentation — App "عروض الجلسات" (Figma 1388:7621),
+/// One downloadable session presentation — App "عروض الجلسات" (Figma
+/// 1388:7621),
 /// mirroring `SIMF.Contracts.Programme.PublicPresentationItem`. Each card shows
 /// the session it belongs to (title bilingual + start, for the day tabs), the
 /// presenting speaker (bilingual), and the file metadata; the bytes are fetched
@@ -33,7 +34,8 @@ class PresentationItem {
   final String contentType;
   final int sizeBytes;
 
-  /// The session's start on the Saudi event-local wall clock (wire value UTC).
+  /// The session's start on the Saudi event-local wall clock (zone-free on the
+  /// wire).
   DateTime get sessionStartLocal => saudiOf(sessionStart);
 
   String localizedSessionTitle(bool isArabic) =>
@@ -48,7 +50,7 @@ class PresentationItem {
         sessionId: json['sessionId'] as String? ?? '',
         sessionTitle: json['sessionTitle'] as String? ?? '',
         sessionTitleArabic: json['sessionTitleArabic'] as String? ?? '',
-        sessionStart: parseWireUtc(json['sessionStart'], 'sessionStart'),
+        sessionStart: parseWireDateTime(json['sessionStart'], 'sessionStart'),
         speakerName: json['speakerName'] as String? ?? '',
         speakerNameArabic: json['speakerNameArabic'] as String? ?? '',
         fileName: json['fileName'] as String? ?? '',

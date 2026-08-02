@@ -21,6 +21,7 @@
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): SignalR group fan-out and comment batching, the backplane as a deferred decision, graceful degradation. |
 | 1.2-DRAFT | 2026-07-08 | Engineering & Architecture Team | **DRAFT amendment (D0-2, Amendment B) — pending owner sign-off.** Folds the already-built 3-stage Q&A pipeline (AI→Scientific Committee→per-session Moderator; Pre/Live phases — completion-programme D-212/D-233/D-236/D-271/D-519) into this spec and defines the owner's item 12 ("ask a speaker — two ways") against it. **Finding: item 12 is built end-to-end;** only small deltas remain (real-AI wiring vs stub; a distinct pre-session ask entry; reproduce the "not working" report). Open items in §B.5 — **owner-resolved 2026-07-08** (wire real AI; add pre-session entry). |
 | 1.3-DRAFT | 2026-07-08 | Engineering & Architecture Team | **DRAFT amendment (D0-3, Amendment C) — pending owner sign-off.** The multi-trigger ratings home (owner item 8). Records the built ratings system (completion-programme D-677/D-678/D-679/D-680/D-690) and maps the owner's 4 time-triggers onto it. **Finding: 2 of 4 triggers built** (daily-if-checked-in + end-of-programme, D-679); **2 gaps** — rate-on-gate-checkout (GAP-A) + rate-on-live-close (GAP-B) — plus a "watched at time/date" display. Open items in §C.5. |
+| 1.4 | 2026-07-31 | Engineering & Architecture Team | **Owner decision — FR-702 is re-scoped from a geographic restriction to an informational notice.** §2, §3, §4, §5.1, §9, §10 (criterion 3), §11 (T-03) and §12 (OI-2) are rewritten: the live stream is **not** restricted by region, and nothing anywhere reads a viewer's location. The session instead carries an optional bilingual free-text **live notice** displayed *with* the stream. **This supersedes the 1.0 restriction wording in full** — see the dated note in §5.1 and DECISIONS_LOG **D-815**. |
 
 ---
 
@@ -37,7 +38,7 @@ The feature covers:
 
 - the live broadcast of a session, with AI translation or captions and a
   language choice,
-- the geographic restriction on the live stream,
+- the optional informational **notice** shown with the live stream,
 - session questions — composing a question, the recipient, and the rule that
   gates when questions are open,
 - the moderator's handling of questions for the sessions assigned to them,
@@ -58,7 +59,7 @@ interview-request feature is dropped (SIMF-CON-001 section 14).
 | From SIMF-SRS-001 | From SIMF-UCS-001 |
 |-------------------|-------------------|
 | FR-701 live broadcast, AI translation, language | UC-13 Watch a live session |
-| FR-702 the Riyadh-region restriction | UC-13 |
+| FR-702 the live-stream notice (informational; re-scoped from a restriction by the owner on 2026-07-31 — see §5.1) | UC-13 |
 | FR-703 ask a question, recipient | UC-14 Ask a question in a session |
 | FR-704 questions gated by hall arrival, closed at session end | UC-14 |
 | FR-705 the moderator handles questions | UC-36 Manage the questions of an assigned session |
@@ -72,7 +73,7 @@ Decision **D5** governs the question timing and the comment moderation.
 Session marked live (FDS-004)
         │
         ▼
-  Live broadcast ── AI translation/captions ── Riyadh-region restriction
+  Live broadcast ── AI translation/captions ── live notice (informational)
         │
         ├─▶ Questions  ─▶ gated by hall arrival ─▶ Moderator handles
         │
@@ -97,9 +98,39 @@ Real-time updates — the question stream, the comment feed, the moderation queu
   over the video, with a **language picker** so the attendee chooses the caption
   language. The translation is produced through the cognitive-AI abstraction
   (SIMF-SAD-001 section 9.2); the provider is deferred (decision D7).
-- **Geographic restriction.** The live stream is available only within the
-  Riyadh region (FR-702). An attendee outside the region sees the restriction
-  notice instead of the stream.
+- **Live notice (FR-702).** A session may carry an optional **notice** — free
+  bilingual text the admin writes on that session in the Control Panel — which is
+  shown **with** the stream as a calm informational banner. It is a notification
+  and nothing more: it does not gate, delay, replace or shorten the broadcast, and
+  no part of the system reads the viewer's location. The stream plays for every
+  viewer, wherever they are.
+  - **Where it comes from.** `Session.LiveNotice` / `Session.LiveNoticeArabic`
+    (both `nvarchar(512)`, nullable), authored on the session form at
+    `/admin/sessions`.
+  - **What the viewer sees.** The notice in their own language, falling back to
+    the other language when only one side is written — the same fallback every
+    other bilingual field on a session already uses. **Both blank (or whitespace)
+    means no notice is shown anywhere** — no banner, no empty space, no
+    placeholder.
+  - **Where it appears.** The app's live broadcast screen (#25, above the player)
+    and the Website session-detail page (`/sessions/{id}`, under the at-a-glance
+    card). Both read it from the same public session-detail payload
+    (`liveNotice` / `liveNoticeArabic`).
+
+  > **Superseded wording — dated 2026-07-31.** Version 1.0 of this section
+  > specified FR-702 as a **geographic restriction**: *"The live stream is
+  > available only within the Riyadh region (FR-702). An attendee outside the
+  > region sees the restriction notice instead of the stream."* **That wording no
+  > longer applies and must not be built.** The owner reversed it on 2026-07-31,
+  > verbatim: *"No restriction, this is only notification and be added to
+  > session."* The change is recorded here rather than silently rewritten because
+  > the restriction reading is quoted by SIMF-SRS-001 FR-702, SIMF-UCS-001 UC-13
+  > and the older gap reports, and a reader arriving from any of those needs to
+  > see which statement wins. **Why it was re-scoped rather than implemented:**
+  > the broadcast is carried on **public YouTube** (D-349), so a server-side
+  > region gate could only withhold the URL SIMF itself serves — the feed stays
+  > reachable directly, which makes the control unenforceable and misleading
+  > rather than protective. See DECISIONS_LOG **D-815**.
 - The video stream itself is embedded from the live-broadcast platform; the
   platform is deferred and reached through an abstraction (decision D7).
 
@@ -181,8 +212,12 @@ showing stale data.
 
 ## 9. Security and privacy considerations
 
-- The live stream enforces the Riyadh-region restriction server-side; the
-  client does not decide eligibility.
+- The live stream is **not** access-restricted by region, and no location of any
+  kind (device GPS, IP lookup, resolved `Region`) is read, stored or evaluated on
+  any live path (FR-702, owner decision 2026-07-31). The live notice is display
+  text only, so it carries no eligibility decision for the client or the server to
+  make. Notice text is authored by an admin holding `Sessions.Edit` and is capped
+  at 512 characters per language at the API, the EF column and the CP input alike.
 - Question and comment submission is tied to the signed-in, Approved attendee.
 - A question is gated on a real hall-arrival record; the client cannot bypass
   the gate.
@@ -200,8 +235,9 @@ showing stale data.
    broadcast permission; the attendee sees the stream.
 2. Captions are shown with a language picker; the attendee can change the
    caption language.
-3. An attendee outside the Riyadh region sees the restriction notice, not the
-   stream.
+3. A session carrying a live notice shows it in the attendee's language beside
+   the stream, and the stream still plays; a session with no notice shows none.
+   No attendee is ever refused the stream on account of where they are.
 4. The question composer is offered only after the attendee has a hall-arrival
    record for the session, and not after the session ends.
 5. A submitted question is `Pending` and the attendee is told it will be
@@ -223,7 +259,9 @@ showing stale data.
 |---|----------|----------|
 | T-01 | Start a live broadcast | `LiveSessionState` broadcasting; attendees see the stream |
 | T-02 | Change the caption language | captions switch language |
-| T-03 | Open the live stream from outside the Riyadh region | restriction notice shown; no stream |
+| T-03 | Open a live session that carries a notice | the notice is shown with the player, in the viewer's language; the stream plays unchanged |
+| T-03a | Open a live session whose notice is blank in both languages | no banner is rendered at all; the stream plays unchanged |
+| T-03b | Clear a session's notice in the Control Panel and reload the live screen | the banner disappears everywhere; nothing else about the session changes |
 | T-04 | Ask a question with a hall-arrival record | question recorded `Pending` |
 | T-05 | Try to ask a question without a hall-arrival record | the composer is not offered |
 | T-06 | Try to ask a question after the session ended | questions closed |
@@ -241,7 +279,7 @@ showing stale data.
 | ID | Item | Affects |
 |----|------|---------|
 | OI-1 | Confirm the live-broadcast platform and the AI translation provider as decision D7 closes | Section 5.1 |
-| OI-2 | Confirm how the Riyadh-region restriction is determined — device location, IP region, or both | Section 5.1 |
+| ~~OI-2~~ | ~~Confirm how the Riyadh-region restriction is determined — device location, IP region, or both~~ **CLOSED 2026-07-31 — the question dissolved.** The owner re-scoped FR-702 to an informational notice, so there is no restriction to determine and no location to read. See §5.1 and DECISIONS_LOG D-815. | Section 5.1 |
 | OI-3 | Confirm the AI comment-filter rules — what it screens for — with the client | Section 5.4 |
 | OI-4 | Confirm whether a moderator may also act from the Control Panel, or only the app | Section 5.3 |
 | OI-5 | Confirm document classification with the owner | Control block |

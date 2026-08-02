@@ -27,7 +27,7 @@ internal sealed class DelegationAvailabilityService(
     private const int MinSlotMinutes = 5;
     private const int MaxSlotMinutes = 480;
 
-    /// <summary>The event's local-day boundary (KSA, UTC+3) — same convention as the
+    /// <summary>The event's local-day boundary (KSA, +03:00) — same convention as the
     /// speaker/hall availability services for the forum-day bound check.</summary>
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
@@ -65,8 +65,8 @@ internal sealed class DelegationAvailabilityService(
         var forum = await forumWindow.GetForumDaysAsync(cancellationToken);
         if (forum is { } bounds)
         {
-            var startDate = DateOnly.FromDateTime(request.Start.ToOffset(EventOffset).DateTime);
-            var endDate = DateOnly.FromDateTime(request.End.ToOffset(EventOffset).DateTime);
+            var startDate = DateOnly.FromDateTime(request.Start);
+            var endDate = DateOnly.FromDateTime(request.End);
             if (startDate < bounds.MinDate || endDate > bounds.MaxDate)
             {
                 throw new ApiException(ErrorCodes.ValidationFailed, 400,
@@ -77,7 +77,7 @@ internal sealed class DelegationAvailabilityService(
             }
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var window = new DelegationAvailabilityWindow
         {
             Id = Guid.NewGuid(),
@@ -124,7 +124,7 @@ internal sealed class DelegationAvailabilityService(
             ?? throw new ApiException(ErrorCodes.DelegationAvailabilityWindowNotFound, 404,
                 "The availability window was not found.", "لم يتم العثور على فترة التوفّر.");
         window.IsActive = false;
-        window.UpdatedAt = timeProvider.GetUtcNow();
+        window.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -139,7 +139,7 @@ internal sealed class DelegationAvailabilityService(
     public async Task<IReadOnlyList<DelegationAvailableSlot>> GetAvailableSlotsAsync(
         int countryId, CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var windows = await appDbContext.DelegationAvailabilityWindows.AsNoTracking()
             .Where(w => w.CountryId == countryId && w.IsActive && w.End > now)
             .OrderBy(w => w.Start)

@@ -340,7 +340,7 @@ public sealed class GateOperatorModelTests : IClassFixture<SimfApiFactory>
             IsForVisitor = isForVisitor,
             MobileAppRole = role,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(profileType);
         await appDb.SaveChangesAsync();
@@ -367,7 +367,7 @@ public sealed class GateOperatorModelTests : IClassFixture<SimfApiFactory>
             Gender = gender,
             PlaceOfBirth = "Riyadh",
             NationalityId = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
 
@@ -424,7 +424,7 @@ public sealed class GateOperatorModelTests : IClassFixture<SimfApiFactory>
                 Name = $"Gate Ops Organisation {Guid.NewGuid():N}",
                 NameArabic = $"جهة اختبار {Guid.NewGuid():N}",
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.Organisations.Add(organisation);
             await appDb.SaveChangesAsync();
@@ -532,7 +532,7 @@ public sealed class GateOperatorModelTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task<string> SignInCpAsync(string email) =>
-        await SignInAsync(email, SignInAudience.Cp);
+        await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
 
     private async Task<string> SignInAppAsync(string email) =>
         await SignInAsync(email, SignInAudience.App);

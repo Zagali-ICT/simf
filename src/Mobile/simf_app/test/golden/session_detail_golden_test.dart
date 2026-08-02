@@ -14,6 +14,7 @@ import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/data/session_calendar.dart';
 import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/hall_attendance_repository.dart';
 import 'package:simf_app/features/sessions/session_detail_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -21,18 +22,23 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the Session-detail screen against Figma frame **889:2450**
-/// (تفاصيل الجلسة, Approved account with a held reservation). Compare to the frame:
+/// (تفاصيل الجلسة, Approved account with a held reservation). Compare to the
+/// frame:
 ///   flutter test --update-goldens test/golden/session_detail_golden_test.dart
 ///
-/// Richest representative state — signed-in + a held assigned-seat reservation +
+/// Richest representative state — signed-in + a held assigned-seat reservation
+/// +
 /// a live feed — so the frame shows: the header card (title + gold code badge +
 /// meta), the two header action buttons (ملخص الجلسة + رابط الجلسة), the
-/// description card, the speaker card, the ask-the-host card (enabled because the
+/// description card, the speaker card, the ask-the-host card (enabled because
+/// the
 /// caller has joined), the booking card (مقعدي · الصف B · مقعد 12 · بانتظار
 /// الموافقة · إلغاء الحجز) and the أضف إلى تقويمي / تذكير CTAs. RTL throughout.
 ///
-/// Owner 2026-07-14 — the two header actions are now STATE-GATED (superseding the
-/// 2026-06-30 "always both active"). This fixture is an UPCOMING session, so BOTH
+/// Owner 2026-07-14 — the two header actions are now STATE-GATED (superseding
+/// the
+/// 2026-06-30 "always both active"). This fixture is an UPCOMING session, so
+/// BOTH
 /// render greyed/inactive: ملخص الجلسة (no summary before the session ends) and
 /// رابط الجلسة (the feed is not live yet). The active styling is covered by the
 /// widget test (session_detail_body_test.dart), which drives an ended session
@@ -42,7 +48,7 @@ import 'golden_fonts.dart';
 /// (test/features/sessions/session_detail_screen_test.dart). Rendered values
 /// derive from fixed data; the meta clock/day come from `start.toLocal()`, so
 /// they are fixed per host timezone — regenerate on the same host as the other
-/// goldens (the maintainer's UTC+3 box), as with every golden here.
+/// goldens (the maintainer's +03:00 box), as with every golden here.
 ///
 /// D-714 (item 12, GAP-2) — the one time-derived value on the display path: the
 /// ask card reads the pre-session label ("اطرح سؤالاً قبل الجلسة") while the
@@ -50,7 +56,8 @@ import 'golden_fonts.dart';
 /// and reverts to "اسأل المحاور" once it has started. This golden therefore
 /// captures the pre-session state; regenerate it before the event date.
 ///
-/// Known golden-env artifacts (NOT layout/production defects): the speaker photo
+/// Known golden-env artifacts (NOT layout/production defects): the speaker
+/// photo
 /// is Image.network → placeholder in tests (no HTTP); the country flag is an
 /// emoji glyph → tofu (no colour-emoji font loaded); and the two bottom CTA
 /// labels (أضف إلى تقويمي / تذكير) render as tofu because Material
@@ -142,6 +149,26 @@ class _FakeDetailRepo implements SessionDetailRepository {
 
 /// Returns the populated seat map; the mutating methods are never invoked in a
 /// static render (no taps).
+/// Answers the gate check-in strip with "no scan recorded" so the golden never
+/// reaches the network.
+class _FakeAttendance implements HallAttendanceRepository {
+  @override
+  Future<HallAttendanceStatus> getStatus(String sessionId) async =>
+      const HallAttendanceStatus(arrived: false);
+
+  @override
+  Future<HallAttendanceStatus> recordArrival(
+    String sessionId, {
+    required double lat,
+    required double lon,
+  }) async =>
+      throw StateError('the session detail must never post an arrival');
+
+  @override
+  Future<HallAttendanceStatus> recordDeparture(String sessionId) async =>
+      throw StateError('the session detail must never post a departure');
+}
+
 class _FakeSeatRepo implements SeatMapRepository {
   @override
   Future<SessionSeatMap> getSeatMap(String sessionId) async => _seatMap();
@@ -243,6 +270,15 @@ void main() {
       ProviderScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
+          // Keeps the golden off the network. The fixture session is upcoming,
+          // so
+          // the check-in strip is gated out and the image is unchanged — but
+          // that
+          // is a property of the fixture date, not of the wiring, and an
+          // un-overridden provider would reach for the real client the moment
+          // the
+          // fixture (or the clock) moved.
+          hallAttendanceRepositoryProvider.overrideWithValue(_FakeAttendance()),
           sessionDetailRepositoryProvider
               .overrideWithValue(_FakeDetailRepo()),
           seatMapRepositoryProvider.overrideWithValue(_FakeSeatRepo()),

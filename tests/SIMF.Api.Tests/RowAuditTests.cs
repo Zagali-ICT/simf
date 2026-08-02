@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
@@ -7,6 +7,7 @@ using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 using SIMF.Common.Enums;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -41,7 +42,7 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
             NameArabic = "تدقيق إدخال",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         await appDb.SaveChangesAsync();
@@ -74,7 +75,7 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
             NameArabic = "أصلي",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
@@ -113,7 +114,7 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
             NameArabic = "حماية من التكرار",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         await appDb.SaveChangesAsync();

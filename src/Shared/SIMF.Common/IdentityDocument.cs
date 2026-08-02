@@ -3,13 +3,13 @@ using System.Text.RegularExpressions;
 namespace SIMF.Common;
 
 /// <summary>
-/// D-814 — the one place that answers "is this a well-formed identity document
+/// D-824 — the one place that answers "is this a well-formed identity document
 /// number".
 ///
 /// <para>The rule used to live only in <c>UpsertUserProfileRequestValidator</c>,
 /// with the walk-in desk validator calling into it (D-459). Both sit in
 /// <c>SIMF.Api</c>, which <c>SIMF.Infrastructure</c> cannot reference — and the
-/// D-810 offline badge batch runs in Infrastructure and calls
+/// D-820 offline badge batch runs in Infrastructure and calls
 /// <c>RegisterOnSiteAsync</c> directly, so no FastEndpoints validator ever
 /// executes on it. Without a shared home the only way to check an uploaded badge
 /// row would have been a third copy of the rule. Same reason
@@ -39,7 +39,7 @@ public static class IdentityDocument
     /// matching <c>AdminWalkInRegistrationRequestValidator</c> exactly.
     ///
     /// <para>A LENGTH CAP AND NOTHING ELSE, deliberately. An earlier cut of
-    /// D-814 used the self-service form's <c>[A-Za-z0-9]{6,9}</c> here and it
+    /// D-824 used the self-service form's <c>[A-Za-z0-9]{6,9}</c> here and it
     /// was wrong twice over. The desk classifier files ANY document that is not
     /// a 10-digit Saudi-shaped number into the passport field, so that shape
     /// also had to cover a Kuwaiti Civil ID (12 digits), a Qatari QID (11), an

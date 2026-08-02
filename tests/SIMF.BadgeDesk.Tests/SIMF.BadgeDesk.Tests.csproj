@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    D-813 — the offline badge desk's test project.
+    D-823 — the offline badge desk's test project.
 
     Windows-only, like the tool it tests (WinForms + DPAPI + native printing),
     and DELIBERATELY OUTSIDE SIMF.slnx for the same reason SIMF.BadgeDesk is:

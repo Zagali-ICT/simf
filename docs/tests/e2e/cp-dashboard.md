@@ -104,6 +104,7 @@ Derived values the assertions depend on:
 | E2E-DSH-023 | The visually-hidden data table exposes the same numbers to screen readers | a11y | P0 | _to author_ |
 | E2E-DSH-024 | Day cards - three gauges on one shared scale, and sessions as a number rather than a fourth bar | happy | P1 | authored ✓ (`ChartGeometryTests.GaugeFraction_clamps_between_zero_and_one`, `GaugeFraction_never_returns_NaN`) |
 | E2E-DSH-025 | Empty state - no programme days configured, the chart shows `Dashboard.Programme.None` and no day cards render | happy | P1 | authored ✓ (`ChartGeometryTests.No_groups_produces_no_bars`, `NiceMax_falls_back_to_one_for_unusable_input`) |
+| E2E-DSH-026 | Shell head - the tab carries the SIMF icon and no CP page requests `/favicon.ico` | element | P1 | authored ✓ (`CpHeadAssetsTests.The_shell_head_declares_a_favicon`, `Every_local_asset_the_shell_head_references_exists_on_disk`) |
 | E2E-DSH-ELS-001 | Element inventory - every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-DSH-ELS-002 | Element health - no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -747,6 +748,46 @@ string; if plural handling is added later this assertion changes with it.
 
 ---
 
+### E2E-DSH-026 - Shell head: the tab carries the SIMF icon, nothing 404s
+
+```gherkin
+Feature: The shell head is rendered on every CP page
+  Components/App.razor is the single document every Control Panel route is
+  served inside, so one wrong href there is a 404 on every page load - not on
+  one page. QA-LIVE-001 was exactly that: no <link rel="icon"> was declared, so
+  the browser fell back to requesting /favicon.ico, which nothing served.
+
+Background:
+  Given the administrator is signed in
+
+Scenario: the declared icon is served, and the fallback is never requested
+  When the administrator loads "/"
+  Then the document head contains a <link rel="icon"> whose href resolves
+  And the network panel records a 200 for that icon
+  And the network panel records NO request for "/favicon.ico"
+  And the browser tab shows the SIMF mark rather than the blank default glyph
+
+Scenario Outline: the same holds on every other CP route
+  When the administrator loads "<route>"
+  Then no request in the network panel returns 404
+  And the browser console reports zero errors
+
+  Examples:
+    | route                  |
+    | /admin/sessions        |
+    | /admin/content-blocks  |
+    | /account/profile       |
+    | /not-permitted         |
+```
+
+> **Why this lives on the Dashboard file rather than its own.** The head belongs
+> to the shell, not to a page; the Dashboard file already owns the shell chrome
+> (see the page summary above). The second scenario is deliberately a sweep, so a
+> future head edit that breaks one route class is caught here rather than on
+> whichever page someone happened to open.
+
+---
+
 ## Implementation notes
 
 - **Two halves, two gates.** The route is ungated (`[Authorize]` only, nav item
@@ -808,4 +849,5 @@ string; if plural handling is added later this assertion changes with it.
 
 ---
 
-_Last reviewed:_ 2026-07-29 by Claude (Wave A programme dashboard, E2E-DSH-014..025).
+_Last reviewed:_ 2026-07-31 by Claude (`QA-LIVE-001` shell-head favicon, E2E-DSH-026);
+prior review 2026-07-29 (Wave A programme dashboard, E2E-DSH-014..025).

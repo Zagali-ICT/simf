@@ -83,7 +83,7 @@ public interface IHallAttendanceService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-809 (gate engine step 11.5) — may this attendee ENTER the session
+    /// D-819 (gate engine step 11.5) — may this attendee ENTER the session
     /// running in this hall right now?
     ///
     /// <para>This is the third of the three gate rules: a main gate requires an
@@ -97,7 +97,7 @@ public interface IHallAttendanceService
     /// live in this hall" window stays defined in exactly one place, shared with
     /// <see cref="RecordGateDoorScanAsync"/>.</para>
     ///
-    /// <para>D-813 — the check reads EVERY session the hall is admitting for,
+    /// <para>D-823 — the check reads EVERY session the hall is admitting for,
     /// not only the one attendance will bind to. Halls run sessions back to
     /// back, so within the arrival grace an attendee holding a 10:00 booking is
     /// legitimately at the door at 09:50 while the 09:00 session is still
@@ -113,7 +113,7 @@ public interface IHallAttendanceService
 }
 
 /// <summary>
-/// D-809 — the outcome of the session-hall entry check (gate engine step 11.5).
+/// D-819 — the outcome of the session-hall entry check (gate engine step 11.5).
 /// </summary>
 public enum HallEntryEligibility
 {

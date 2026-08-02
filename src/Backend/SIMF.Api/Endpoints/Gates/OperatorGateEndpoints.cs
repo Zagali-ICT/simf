@@ -33,7 +33,7 @@ public sealed class MyAssignmentsEndpoint(IGateOperatorService service)
 }
 
 /// <summary>
-/// D-810 — <c>GET /app/gates/offline-config</c>. The snapshot a scanner caches
+/// D-820 — <c>GET /app/gates/offline-config</c>. The snapshot a scanner caches
 /// so it can judge a badge with no network.
 ///
 /// <para>Its own endpoint rather than a field on <c>my-assignments</c> because
@@ -51,7 +51,7 @@ public sealed class GateOfflineConfigEndpoint(IGateOperatorService service)
         Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Gates");
         Summary(summary => summary.Summary =
-            "Offline scanning rules + badge key for this operator's gates (D-810).");
+            "Offline scanning rules + badge key for this operator's gates (D-820).");
     }
 
     public override async Task HandleAsync(CancellationToken ct)
@@ -70,7 +70,7 @@ public sealed class PostScanRequest
 {
     public Guid GateId { get; set; }
     public string Qr { get; set; } = string.Empty;
-    public DateTimeOffset? ClientScannedAt { get; set; }
+    public DateTime? ClientScannedAt { get; set; }
     public string? IdempotencyKey { get; set; }
     public SIMF.Common.Enums.ScanSource Source { get; set; }
         = SIMF.Common.Enums.ScanSource.MobileApp;
@@ -169,8 +169,8 @@ public sealed class PostGateVisitorsListRequest
     public int PageSize { get; set; }
     public SIMF.Common.Enums.ScanDirection? Direction { get; set; }
     public SIMF.Common.Enums.ScanOutcome? Outcome { get; set; }
-    public DateTimeOffset? Since { get; set; }
-    public DateTimeOffset? Until { get; set; }
+    public DateTime? Since { get; set; }
+    public DateTime? Until { get; set; }
 }
 
 public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)

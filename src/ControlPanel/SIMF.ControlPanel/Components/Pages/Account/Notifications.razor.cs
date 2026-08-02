@@ -1,18 +1,8 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
 using SIMF.Contracts.Notifications;
 
 namespace SIMF.ControlPanel.Components.Pages.Account;
@@ -33,6 +23,10 @@ public partial class Notifications
     private bool _loading;
     private Toast? _toast;
     private NotificationDto? _detailsTarget;
+
+    // D-809 — the grid's trash icon and bulk-dismiss button both used to delete on
+    // the first click. One dialog serves both, so it carries the action to run.
+    private (string Title, string Message, Func<Task> Run)? _pendingDismiss;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -77,7 +71,7 @@ public partial class Notifications
                 "simfAccount.postJson", $"/account/api/notifications/{row.Id}/read", null);
             if (env is { Success: true })
             {
-                var updated = row with { ReadAt = DateTimeOffset.UtcNow, IsRead = true };
+                var updated = row with { ReadAt = SimfClock.Now, IsRead = true };
                 _page = new GridPage<NotificationDto>
                 {
                     Items = _page.Items.Select(n => n.Id == row.Id ? updated : n).ToList(),
@@ -95,6 +89,22 @@ public partial class Notifications
             }
         }
         _detailsTarget = row;
+    }
+
+    private void AskDismiss(string title, string message, Func<Task> run)
+    {
+        _pendingDismiss = (title, message, run);
+        _toast = null;
+    }
+
+    private void CancelDismiss() => _pendingDismiss = null;
+
+    /// <summary>Closes the dialog before running so the resulting toast is visible.</summary>
+    private async Task ConfirmDismissAsync()
+    {
+        var pending = _pendingDismiss;
+        _pendingDismiss = null;
+        if (pending is not null) await pending.Value.Run();
     }
 
     private async Task OnDeleteAsync(NotificationDto row)
