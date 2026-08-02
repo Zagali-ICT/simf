@@ -122,7 +122,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/site-settings` | ✅ Real (D-464; Build #13 partner-directory toggle) | Administrator | [cp/site-settings.md](cp/site-settings.md) | [e2e/cp-site-settings.md](../tests/e2e/cp-site-settings.md) |
 | `/admin/organization-profile` | ✅ Real (D-495; hero-video upload D-768) | Administrator | [cp/organization-profile.md](cp/organization-profile.md) | [e2e/cp-organization-profile.md](../tests/e2e/cp-organization-profile.md) |
 | `/admin/contact-inquiries` | ✅ Real (D-464; BFF wired D-649) | Administrator | — | [e2e/cp-contact-inquiries.md](../tests/e2e/cp-contact-inquiries.md) |
-| `/admin/operations` | ✅ Real (D-166) | Administrator | — | [e2e/cp-admin-operations.md](../tests/e2e/cp-admin-operations.md) |
+| `/admin/operations` | ✅ Real (D-166) | Operations.View (Edit to save) | [cp/admin-operations.md](cp/admin-operations.md) | [e2e/cp-admin-operations.md](../tests/e2e/cp-admin-operations.md) |
 | `/admin/reports` | ✅ Real | Reports.View | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
 | `/admin/reports/attendance` | ✅ Real | Reports.Attendance | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
 | `/admin/reports/registrations` | ✅ Real | Reports.Registrations | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
