@@ -269,9 +269,12 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _cancelOpen = false)">
                 @L["Admin.BusinessMeetings.Cancel.Keep"]
             </SimfButton>
+            @* D-831 - the commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.BusinessMeetings.Cancel">
             <SimfButton Type="button" OnClick="ConfirmCancelAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.BusinessMeetings.Cancel.Confirm"]
-            </SimfButton>
+                    @L["Admin.BusinessMeetings.Cancel.Confirm"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }

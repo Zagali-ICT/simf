@@ -208,4 +208,5 @@
              ConfirmLabel="@L["Admin.OrganizationProfile.HeroVideoRemove"]"
              CancelLabel="@L["Common.Cancel"]"
              OnConfirm="ConfirmRemoveHeroVideoAsync"
-             OnCancel="@(() => _confirmingHeroVideoRemove = false)" />
+             OnCancel="@(() => _confirmingHeroVideoRemove = false)" 
+             Permission="@PermissionCatalog.OrganizationProfile.Manage"/>

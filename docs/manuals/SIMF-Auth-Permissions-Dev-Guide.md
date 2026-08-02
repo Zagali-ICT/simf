@@ -632,11 +632,34 @@ right.** The two are often not the same word, and every one of these is real:
   `Gates.Manage`, but its Import needs `Gates.Import` and its Export
   `Gates.Export`.
 
+**7c — the confirm dialog behind the button (D-831).** `SimfConfirm` renders its
+own Confirm button from `OnConfirm`, for the same reason and with the same fix:
+
+```razor
+<SimfConfirm Open="_confirmOpen" OnConfirm="ConfirmDeleteAsync" OnCancel="Cancel"
+             Permission="@PermissionCatalog.Awards.Delete" />
+```
+
+Cancel is deliberately never gated: a holder who may not commit must still be
+able to close a dialog that opened on them, and `SimfConfirm` sets
+`RequireExplicitClose`. Set the code the **confirmed action** calls, which is not
+always what the dialog is about — `SessionSummariesList`'s "saving will unpublish
+this" confirm only calls the plain save endpoint, so it is `.Edit`, not
+`.Publish`.
+
+> **Never put a Razor comment inside a component tag.** `<SimfConfirm @* why *@
+> Open="...">` compiles and then throws at render time, because Razor reads the
+> comment as an attribute name. D-830 shipped exactly that into a page with no
+> render test, and it reached production-bound `main`. Put the comment on the
+> line above the tag; a ratchet fact now scans for it.
+
 `tests/SIMF.ControlPanel.Tests/ActionPermissionGuardRatchetTests.cs` fails the
 build on **any** permission-gated page that wires a grid action with no matching
 code (not just View-gated ones — that filter is what let `/admin/gates` through),
 on a code that is merely the page's own `View` (which gates nothing), on a NEW
-grid callback nobody has classified, and on a new grid parameter no rule requires.
+grid callback nobody has classified, on a new grid parameter no rule requires, on
+a gated page opening a confirm dialog with no `Permission`, and on a Razor comment
+hidden among a component's attributes.
 
 This is UX only ("don't show what you can't do") — the API gate from Step 4 is
 still the enforcement.

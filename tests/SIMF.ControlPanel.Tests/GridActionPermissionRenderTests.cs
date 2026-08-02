@@ -281,6 +281,59 @@ public sealed class GridActionPermissionRenderTests : CpComponentTestBase
         Assert.Empty(cut.FindAll("button.simf-tbbtn[title='Admin.Users.Action.Edit']"));
     }
 
+    // D-831 — SimfConfirm renders its own Confirm button, the same structural gap.
+
+    private IRenderedComponent<SimfConfirm> RenderConfirm(string? permission)
+    {
+        // SimfConfirm wraps SimfModal, which binds a focus trap through JS on render.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        return RenderComponent<SimfConfirm>(parameters => parameters
+            .Add(p => p.Open, true)
+            .Add(p => p.Title, "confirm-title")
+            .Add(p => p.Message, "confirm-message")
+            .Add(p => p.ConfirmLabel, "act-commit")
+            .Add(p => p.CancelLabel, "act-cancel")
+            .Add(p => p.Permission, permission)
+            .Add(p => p.OnConfirm, EventCallback.Factory.Create(this, () => { })));
+    }
+
+    [Fact]
+    public void A_confirm_dialog_with_no_permission_renders_its_commit_button()
+    {
+        // Back-compat: 30 dialogs live inside form components reached only through a
+        // trigger that is already gated, and they set nothing. They must be unchanged.
+        Grant();
+
+        var cut = RenderConfirm(permission: null);
+
+        Assert.Contains("act-commit", cut.Markup);
+    }
+
+    [Fact]
+    public void A_confirm_dialog_hides_its_commit_button_but_never_its_cancel()
+    {
+        // The half that matters as much as hiding Confirm: a holder who may not commit
+        // must still be able to close a dialog that opened on them. Gating Cancel would
+        // trap them in a modal with RequireExplicitClose.
+        Grant(PermissionCatalog.Faq.View);
+
+        var cut = RenderConfirm(PermissionCatalog.Faq.Delete);
+
+        Assert.DoesNotContain("act-commit", cut.Markup);
+        Assert.Contains("act-cancel", cut.Markup);
+        Assert.Contains("confirm-message", cut.Markup);
+    }
+
+    [Fact]
+    public void A_confirm_dialog_shows_its_commit_button_to_a_holder()
+    {
+        Grant(PermissionCatalog.Faq.View, PermissionCatalog.Faq.Delete);
+
+        var cut = RenderConfirm(PermissionCatalog.Faq.Delete);
+
+        Assert.Contains("act-commit", cut.Markup);
+    }
+
     [Fact]
     public void Gates_import_is_gated_separately_from_the_pages_own_Manage_code()
     {

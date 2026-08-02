@@ -99,6 +99,9 @@
             </SimfDataGrid>
 
             <h3>@L["Admin.MeetingTables.Allocations.Heading"]</h3>
+            @* The allocation grid acts on a DIFFERENT resource from the
+            tables grid above it: both buttons call hall-allocation
+            endpoints, which the API gates on HallAllocations.Edit. *@
             <SimfDataGrid TItem="HallAllocationRow"
                           Query="_allocQuery" Page="_allocPage" Loading="_allocLoading"
                           OnQueryChanged="OnAllocQueryChangedAsync"
@@ -113,9 +116,6 @@
                           AddLabel="@L["Admin.MeetingTables.AddAllocation"]"
                           DeleteLabel="@L["Admin.MeetingTables.Release"]"
                           SummaryFormatter="@FormatSummary"
-                          @* The allocation grid acts on a DIFFERENT resource from the
-                             tables grid above it: both buttons call hall-allocation
-                             endpoints, which the API gates on HallAllocations.Edit. *@
                           AddPermission="@PermissionCatalog.HallAllocations.Edit"
                           DeletePermission="@PermissionCatalog.HallAllocations.Edit">
                 <Columns>

@@ -169,12 +169,15 @@
                         OnClick="@(() => _deleteTarget = null)">
                 @L["Admin.ProfileTypes.Delete.Cancel"]
             </SimfButton>
+            @* D-831 - the commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.ProfileTypes.Delete">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        OnClick="ConfirmDeleteAsync"
-                        LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.ProfileTypes.Delete.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            OnClick="ConfirmDeleteAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.ProfileTypes.Delete.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }

@@ -135,13 +135,16 @@
                         OnClick="@(() => _rejectTarget = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
+            @* D-831 - the commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_rejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmRejectAsync"
-                        LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.Pending.Reject.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_rejectReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmRejectAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Pending.Reject.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -155,7 +158,8 @@
              ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
              CancelLabel="@L["Common.Cancel"]"
              OnConfirm="ConfirmBulkApproveAsync"
-             OnCancel="CancelBulkApprove" />
+             OnCancel="CancelBulkApprove" 
+             Permission="@PermissionCatalog.Others.Approve"/>
 
 @* D-209 — bulk reject: shared-reason modal for the selected pending rows. *@
 @if (_bulkRejectSelected is not null)
@@ -178,13 +182,16 @@
                         OnClick="@(() => _bulkRejectSelected = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
+            @* D-831 - the commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Others.Reject">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmBulkRejectAsync"
-                        LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.Pending.BulkReject.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmBulkRejectAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Pending.BulkReject.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -276,13 +283,16 @@
                 <SimfButton Type="button" Variant="secondary" OnClick="CloseView">
                     @L["Admin.Pending.ApproveReview.Cancel"]
                 </SimfButton>
+                @* D-831 - the commit button of the modal this action opened. *@
+                <AuthorizedAction Permission="@PermissionCatalog.Admins.Approve">
                 <SimfButton Type="button" Variant="primary"
-                            Loading="_busy"
-                            Disabled="@(_viewLoading || _viewProfile is null)"
-                            OnClick="ConfirmApproveFromReviewAsync"
-                            LoadingLabel="@L["Grid.Working"]">
-                    @L["Admin.Pending.ApproveReview.Confirm"]
-                </SimfButton>
+                                Loading="_busy"
+                                Disabled="@(_viewLoading || _viewProfile is null)"
+                                OnClick="ConfirmApproveFromReviewAsync"
+                                LoadingLabel="@L["Grid.Working"]">
+                        @L["Admin.Pending.ApproveReview.Confirm"]
+                    </SimfButton>
+                </AuthorizedAction>
             }
             else
             {

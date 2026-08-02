@@ -147,13 +147,16 @@
                         OnClick="@(() => _bulkDeleteOpen = false)">
                 @L["Admin.Users.BulkDelete.Cancel"]
             </SimfButton>
+            @* D-831 - the commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Others.Delete">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_bulkDeleteReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmBulkDeleteAsync"
-                        LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.Users.BulkDelete.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_bulkDeleteReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmBulkDeleteAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Users.BulkDelete.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -175,13 +178,16 @@
                         OnClick="@(() => _duplicateOpen = false)">
                 @L["Admin.Users.Duplicate.Cancel"]
             </SimfButton>
+            @* D-831 - the commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Others.Create">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(!IsLikelyEmail(_duplicateEmail))"
-                        OnClick="ConfirmDuplicateAsync"
-                        LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.Users.Duplicate.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(!IsLikelyEmail(_duplicateEmail))"
+                            OnClick="ConfirmDuplicateAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Users.Duplicate.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }

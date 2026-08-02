@@ -37,9 +37,14 @@ public sealed class ActionPermissionGuardRatchetTests
         @"RequirePermission\(PermissionCatalog\.(?<group>[A-Za-z0-9_]+)\.(?<action>[A-Za-z0-9_]+)\)",
         RegexOptions.Compiled);
 
-    /// <summary>A button that commits something rather than navigating or closing.</summary>
+    /// <summary>A button that commits something rather than navigating or closing.
+    ///
+    /// <para>D-831 added <c>Confirm</c>. Its absence was a real hole rather than an
+    /// oversight in taste: the commit button of a confirm modal is named
+    /// <c>ConfirmXxxAsync</c> by convention here, so the one control that actually
+    /// posts was the one verb the guard could not see, on 11 pages.</para></summary>
     private static readonly Regex MutatingButton = new(
-        @"OnClick=""@?(?<handler>Save|Delete|Approve|Reject|Submit|Remove|Toggle|OnNotify)[A-Za-z]*""",
+        @"OnClick=""@?(?<handler>Save|Delete|Approve|Reject|Submit|Remove|Toggle|OnNotify|Confirm)[A-Za-z]*""",
         RegexOptions.Compiled);
 
     /// <summary>
@@ -205,6 +210,96 @@ public sealed class ActionPermissionGuardRatchetTests
             + "permission that gates the ENDPOINT the button calls (not the page's own "
             + "gate, which everyone reaching the page already holds):\n  "
             + string.Join("\n  ", offenders));
+    }
+
+    [Fact]
+    public void No_page_opens_a_confirm_dialog_without_its_permission()
+    {
+        // D-831 — the third shared component that renders a committing button the page
+        // cannot wrap. SimfConfirm draws its own Confirm from OnConfirm, exactly as the
+        // grid draws its Add from OnAdd, so it takes a Permission for the same reason.
+        // Cancel is never gated: a holder who may not commit must still be able to
+        // close the dialog.
+        var offenders = new List<string>();
+
+        foreach (var (file, group, action) in GatedPages())
+        {
+            foreach (var tag in CpRazor.OpeningTags([file], "SimfConfirm"))
+            {
+                if (!CpRazor.HasAttribute(tag.Text, "OnConfirm")) { continue; }
+                if (CpRazor.HasAttribute(tag.Text, "Permission")) { continue; }
+
+                offenders.Add(
+                    $"{file.Relative}:{tag.Line} — page gated on {group}.{action}, "
+                    + "confirm dialog has no Permission");
+            }
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            "SimfConfirm renders its Confirm button itself, so the page cannot wrap it. "
+            + "Set Permission to the code that gates the endpoint the confirmed action "
+            + "calls:\n  " + string.Join("\n  ", offenders));
+    }
+
+    [Fact]
+    public void No_component_tag_hides_a_razor_comment_among_its_attributes()
+    {
+        // Not a permission rule - a rule about how these permission comments get
+        // written, added the moment it bit. A @* ... *@ inside a component tag's
+        // ATTRIBUTE LIST compiles cleanly and then throws at render:
+        //
+        //   InvalidOperationException: Object of type 'SimfConfirm' does not have a
+        //   property matching the name '@* ... *@'
+        //
+        // Razor treats it as an attribute name, not a comment. D-831 shipped one into
+        // MeetingTablesList by explaining a permission choice in the tidiest-looking
+        // place, and no bUnit test renders that page, so the whole suite stayed green
+        // while /admin/meeting-tables threw on load. Put the comment ABOVE the tag.
+        var offenders = new List<string>();
+
+        foreach (var file in CpRazor.Components)
+        {
+            foreach (Match open in Regex.Matches(file.Text, @"<[A-Z][A-Za-z0-9_]*\b"))
+            {
+                var inQuote = false;
+                for (var i = open.Index; i < file.Text.Length; i++)
+                {
+                    if (file.Text[i] == '"') { inQuote = !inQuote; }
+                    else if (file.Text[i] == '>' && !inQuote)
+                    {
+                        if (file.Text[open.Index..i].Contains("@*", StringComparison.Ordinal))
+                        {
+                            offenders.Add(
+                                $"{file.Relative}:{file.Text.Take(open.Index).Count(c => c == '\n') + 1}"
+                                + $" — {open.Value} carries a Razor comment among its attributes");
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            "A Razor comment inside a component tag is read as an attribute NAME and "
+            + "throws at render time, which no compile and no untested page will catch. "
+            + "Move it above the tag:\n  " + string.Join("\n  ", offenders));
+    }
+
+    [Fact]
+    public void The_shared_components_that_render_committing_buttons_still_take_a_permission()
+    {
+        // Both gates are one nullable parameter each, and either could be deleted by a
+        // well-meaning cleanup without breaking a compile: every call site would simply
+        // stop gating. Pin their existence.
+        var grid = File.ReadAllText(CpRazor.DataGridPath);
+        var confirm = File.ReadAllText(Path.Combine(
+            CpRazor.Root, "src", "Shared", "SIMF.Components", "Forms", "SimfConfirm.razor"));
+
+        Assert.Contains("[Parameter] public string? Permission { get; set; }", confirm);
+        Assert.Contains("<SimfActionGate Permission=\"@Permission\">", confirm);
+        Assert.Contains("<SimfActionGate Permission=\"@AddPermission\">", grid);
     }
 
     [Fact]
