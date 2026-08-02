@@ -167,9 +167,14 @@
                         OnClick="@(() => _respondOpen = false)">
                 @L["Admin.BadgeRequests.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SendResponseAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.BadgeRequests.Respond.Submit"]
-            </SimfButton>
+            @* D-828 (second pass) - the page gates on BadgeUpdateRequests.View; responding is .Manage. The page-level ratchet missed this
+               because the page already used <AuthorizedAction> elsewhere; the
+               guard is now per-button. *@
+            <AuthorizedAction Permission="@PermissionCatalog.BadgeUpdateRequests.Manage">
+                <SimfButton Type="button" OnClick="SendResponseAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.BadgeRequests.Respond.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }

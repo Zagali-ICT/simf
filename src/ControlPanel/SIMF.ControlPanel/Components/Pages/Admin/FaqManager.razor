@@ -190,7 +190,16 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.Faq.Save"]</SimfButton>
+            @* D-828 — the page gates on Faq.View; saving needs Create or Edit.
+               Keyed off the modal's own mode so a holder of only one of the two
+               keeps the half they are entitled to, rather than being gated on
+               whichever is stricter. Cancel stays ungated: closing a modal is
+               not a privilege. *@
+            <AuthorizedAction Permission="@(_groupEditId is null
+                                            ? PermissionCatalog.Faq.Create
+                                            : PermissionCatalog.Faq.Edit)">
+                <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.Faq.Save"]</SimfButton>
+            </AuthorizedAction>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseGroupModal" Disabled="_busy">
                 @L["Admin.Faq.Cancel"]
             </SimfButton>
@@ -235,7 +244,11 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveEntryAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.Faq.Save"]</SimfButton>
+            <AuthorizedAction Permission="@(_entryEditId is null
+                                            ? PermissionCatalog.Faq.Create
+                                            : PermissionCatalog.Faq.Edit)">
+                <SimfButton Type="button" OnClick="SaveEntryAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.Faq.Save"]</SimfButton>
+            </AuthorizedAction>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseEntryModal" Disabled="_busy">
                 @L["Admin.Faq.Cancel"]
             </SimfButton>

@@ -238,9 +238,12 @@
                         OnClick="AcceptWithoutHallAsync">
                 @L["Admin.Meetings.AcceptNoHall"]
             </SimfButton>
+            @* D-828 (second pass) - page gates on SpeakerMeetingRequests.View; responding to a request is .Manage. *@
+            <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
             <SimfButton Type="button" OnClick="ApproveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.Meetings.Approve"]
-            </SimfButton>
+                    @L["Admin.Meetings.Approve"]
+                </SimfButton>
+            </AuthorizedAction>
             <SimfButton Type="button" OnClick="ConfirmAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Meetings.Confirm"]
             </SimfButton>

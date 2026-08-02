@@ -239,11 +239,14 @@ this branch's two — leaving `GateScans.QrIdAtScan` at `nvarchar(96)` and
   the database and the display still shows the box ticked.
 - **Saving an unchanged value is a confirmed no-op.** Success toast, HTTP 200, but
   no `SaveChanges`, no audit row, and "Last changed" does not advance.
-- **The Save buttons are not permission-aware.** There is no
-  `<AuthorizedAction Permission="…">` wrapper on this page, so a `View`-only
-  admin sees enabled Save buttons and learns of the denial only from the 403
-  toast. Not a security hole — the API is gated — but it is inconsistent with
-  every other admin page and with the project's own action-gating rule.
+- **The Save buttons are permission-aware (fixed, D-828).** Both are wrapped in
+  `<AuthorizedAction Permission="@PermissionCatalog.Operations.Edit">`, so a
+  `View`-only admin sees the two sections and their current state but no Save
+  button at all. Previously they were enabled for everyone and the denial
+  arrived as a 403 toast — never a security hole, since the API gates the PUTs,
+  but the difference between being told what you may do and finding out by
+  failing. Pinned by `ActionPermissionRenderTests`, which renders the page under
+  both identities.
 - **One toast for two sections.** `_toast` is a single field rendered at the top
   of the surface. Saving the **Archive** section — the lower one — puts the
   confirmation above the fold, potentially out of view, and clears any toast the

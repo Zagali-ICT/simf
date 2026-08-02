@@ -132,9 +132,14 @@
             <SimfButton Type="button" Variant="secondary" OnClick="@(() => _addOpen = false)">
                 @L["Admin.SessionModerators.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SubmitAssignAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.SessionModerators.Submit"]
-            </SimfButton>
+            @* D-828 (second pass) - the page gates on SessionModerators.View; assigning is .Assign. The page-level ratchet missed this
+               because the page already used <AuthorizedAction> elsewhere; the
+               guard is now per-button. *@
+            <AuthorizedAction Permission="@PermissionCatalog.SessionModerators.Assign">
+                <SimfButton Type="button" OnClick="SubmitAssignAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.SessionModerators.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
