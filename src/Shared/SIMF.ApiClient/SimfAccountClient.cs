@@ -292,8 +292,11 @@ public sealed class SimfAccountClient(HttpClient http)
         try
         {
             using var response = await http.SendAsync(message, cancellationToken);
-            var body = await response.Content.ReadFromJsonAsync<ApiResult<T>>(
-                JsonOptions, cancellationToken);
+            // ApiEnvelope, not ReadFromJsonAsync: an error body carries
+            // "data": null, which cannot bind to a value-typed T, and four
+            // methods here return ApiCallResult<bool>. See ApiEnvelope.
+            var body = await ApiEnvelope.ReadAsync<T>(
+                response.Content, JsonOptions, cancellationToken);
             return new ApiCallResult<T>(
                 (int)response.StatusCode,
                 body ?? TransportFailure<T>(
