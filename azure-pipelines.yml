@@ -4,8 +4,9 @@
 #   * SimfCP  -> src/ControlPanel/SIMF.ControlPanel (Blazor Server, Web SDK)
 #   * SimfWeb -> src/Website/SIMF.Web            (Blazor SSR, Web SDK)
 #
-# A fourth, NON-deploying stage checks the Flutter app:
+# Two further, NON-deploying stages check the artefacts that are not web apps:
 #   * MobileApp -> src/Mobile/simf_app           (Flutter; analyze + test only)
+#   * BadgeDesk -> src/Tools/SIMF.BadgeDesk      (WinForms; build + store tests)
 #
 # Mirrors the V10 ERP pipeline, adapted for SIMF:
 #   * three web apps instead of two (API + Control Panel + Website);
@@ -372,6 +373,48 @@ stages:
         }
         if ($failed.Count -gt 0) { throw "flutter test failed in: $($failed -join ', ')." }
       displayName: 'flutter test (app + local packages)'
+
+- stage: BadgeDesk
+  displayName: 'Offline badge desk (build & test)'
+  # D-813 - SIMF.BadgeDesk is deliberately outside SIMF.slnx because it is
+  # Windows-only (WinForms + DPAPI + native printing) and the solution has to
+  # keep building on any host. The cost of that was NO build signal at all: the
+  # desk references SIMF.Common and SIMF.Contracts, both of which change
+  # constantly, so a rename of EventBadgeCodec, OfflineBadgeId or
+  # OfflineBadgeRegistration silently broke the ONLY tool that mints badges and
+  # nothing would have said so until a desk failed to open at the venue.
+  #
+  # dependsOn: [] so it runs alongside Build and is NOT a dependency of Deploy -
+  # the pipeline deploys the three WEB apps, and a desk-tool problem must never
+  # keep production down. A failure here still turns the run red, which is the
+  # gate we want. The Build stage already uses `- powershell:` steps, so this
+  # pool is Windows and net10.0-windows builds on it.
+  dependsOn: []
+  jobs:
+  - job: BadgeDeskJob
+    displayName: 'Build SIMF.BadgeDesk and run its store tests'
+    steps:
+    - checkout: self
+      clean: true
+
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '10.0.x'
+      displayName: 'Use .NET 10 SDK'
+
+    # Build and test in one step so a broken reference and a broken behaviour
+    # both surface here. The test project carries the real DeskStore cases
+    # (encryption at rest, sequence resumption, damaged-line tolerance); a
+    # project with no test files exits 0 with "No test is available", which
+    # would be a green stage that tests nothing.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        dotnet build src/Tools/SIMF.BadgeDesk/SIMF.BadgeDesk.csproj -c Release --nologo
+        if ($LASTEXITCODE -ne 0) { throw "BadgeDesk build failed (exit $LASTEXITCODE)." }
+        dotnet test tests/SIMF.BadgeDesk.Tests/SIMF.BadgeDesk.Tests.csproj -c Release --nologo
+        if ($LASTEXITCODE -ne 0) { throw "BadgeDesk tests failed (exit $LASTEXITCODE)." }
+      displayName: 'dotnet build + test (src/Tools/SIMF.BadgeDesk)'
 
 - stage: Deploy
   displayName: 'Deploy to IIS'

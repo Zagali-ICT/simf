@@ -1,6 +1,6 @@
 # Offline badge desk — provisioning and operating guide
 
-**Applies to:** `src/Tools/SIMF.BadgeDesk` (D-809 / D-810 / D-811)
+**Applies to:** `src/Tools/SIMF.BadgeDesk` (D-809 / D-810 / D-811 / D-813)
 **Audience:** whoever sets the desks up, and the operators who run them
 **Last updated:** 2026-08-01
 
@@ -107,6 +107,7 @@ Keyboard only. An operator facing a queue never touches the mouse.
 |---|---|
 | **Enter** | Next field; from the last field, register and print |
 | **Esc** | Clear the form |
+| **F2** | Reprint the last badge |
 | **F5** | Upload everything not yet uploaded |
 
 Fields: name, Arabic name (optional), badge type, **ID / Iqama / passport**,
@@ -120,7 +121,11 @@ event — those columns are encrypted with a random nonce.
 
 The visitor is still registered. The registration is written to disk **before**
 anything is printed, precisely so a paper badge can never exist that no record
-knows about. Reprint and carry on.
+knows about. Press **F2** to reprint and carry on.
+
+F2 reprints from the stored record, so the reissued badge carries the **same
+sequence** as the one that jammed. Printing a new number would put two badge ids
+on one visitor and break the reconciliation the upload depends on.
 
 ### If the app is closed and reopened
 
@@ -165,9 +170,24 @@ automatically.
 %ProgramData%\SIMF\BadgeDesk\registrations.jsonl
 ```
 
-Append-only, one JSON object per line, flushed to disk on every write. Until it
-is uploaded, **this file is the only record that a badge was handed out.** Do
-not delete it, and back it up before wiping a desk machine.
+Append-only, one **encrypted** record per line, flushed to disk on every write.
+Until it is uploaded, **this file is the only record that a badge was handed
+out.** Do not delete it, and back it up before wiping a desk machine.
+
+**D-813 — the lines are encrypted with Windows DPAPI (machine scope).** A record
+carries the holder's name, mobile and identity-document number; the server keeps
+those same columns encrypted at rest, so a plaintext copy here was the softest
+target for them in the whole system. The file therefore reads **only on the desk
+that wrote it** — a copy taken on a USB stick, or the disk read outside Windows,
+yields nothing.
+
+Two consequences worth knowing before the event:
+
+- **Do not move the file between desks.** It will not decrypt, and the desk
+  refuses to open rather than start empty and reissue numbers already on paper.
+- **This is not a substitute for disk encryption** on the desk machine. It
+  removes the file-copy exposure, which is the risk a folding table in a public
+  hall actually creates.
 
 The format is append-only because the realistic failure at a venue is losing
 power mid-shift: a truncated final line is the only damage possible, and the app

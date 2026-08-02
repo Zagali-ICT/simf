@@ -97,6 +97,13 @@ public interface IHallAttendanceService
     /// live in this hall" window stays defined in exactly one place, shared with
     /// <see cref="RecordGateDoorScanAsync"/>.</para>
     ///
+    /// <para>D-813 — the check reads EVERY session the hall is admitting for,
+    /// not only the one attendance will bind to. Halls run sessions back to
+    /// back, so within the arrival grace an attendee holding a 10:00 booking is
+    /// legitimately at the door at 09:50 while the 09:00 session is still
+    /// running; testing only the running session denied them, and widening the
+    /// grace — the documented lever for exactly that queue — made it worse.</para>
+    ///
     /// <para>Callers must apply this only to an ENTRY. A departure is never
     /// blocked: someone already inside must always be able to leave.</para>
     /// </summary>

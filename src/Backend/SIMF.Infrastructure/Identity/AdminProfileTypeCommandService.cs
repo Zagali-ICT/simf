@@ -162,7 +162,26 @@ internal sealed class AdminProfileTypeCommandService(
             Code = await ProfileTypeCodeAllocator.NextAsync(dbContext, cancellationToken),
         };
         dbContext.ProfileTypes.Add(profileType);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        // D-813 - ProfileTypeCodeAllocator reads MAX(Code) and adds one, which is
+        // a read-then-insert: two admins creating a type at the same instant both
+        // compute the same number and the filtered unique index refuses the
+        // loser. The index is doing its job - a reused code would make a retired
+        // badge read as a different type on a scanner that is offline and cannot
+        // check the database - but an unhandled DbUpdateException surfaced as a
+        // 500. Translated to a typed 409, mirroring how the same changeset
+        // already handles the QrId race (AdminAccountService). Every other
+        // DbUpdateException still rethrows byte-identically.
+        catch (DbUpdateException ex) when (ex.ViolatesAnyIndex("IX_ProfileTypes_Code"))
+        {
+            throw new ApiException(
+                ErrorCodes.ProfileTypeCodeRace, 409,
+                "Another profile type was created at the same moment. Try again.",
+                "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0646\u0648\u0639 \u0645\u0644\u0641 \u0622\u062e\u0631 \u0641\u064a \u0646\u0641\u0633 \u0627\u0644\u0644\u062d\u0638\u0629. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.");
+        }
 
         await auditLog.WriteAsync(new AuditEntry
         {

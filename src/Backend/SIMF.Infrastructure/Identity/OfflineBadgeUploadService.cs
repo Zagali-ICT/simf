@@ -33,6 +33,19 @@ internal sealed class OfflineBadgeUploadService(
     TimeProvider timeProvider,
     ILogger<OfflineBadgeUploadService> logger) : IOfflineBadgeUploadService
 {
+    /// <summary>
+    /// D-813 - the storage cap that actually bites on this path.
+    /// <c>UserProfile.Name</c> and <c>.NameArabic</c> are both NVARCHAR(50), and
+    /// this path mirrors the desk's ONE captured name into both. The desk's name
+    /// box has no length limit, so a longer name used to reach SQL Server, raise
+    /// a truncation error, and come back as INTERNAL_ERROR "Retry it" - advice
+    /// that can never succeed. The desk then keeps the row pending and
+    /// re-uploads it for the rest of the event, so reconciliation never reaches
+    /// zero. Named as its own rejection instead, which is both true and
+    /// actionable.
+    /// </summary>
+    private const int NameMaxLength = 50;
+
     /// <summary>Cap on one upload. Large enough for a full desk shift, small
     /// enough that a request stays inside a normal timeout — the desk splits a
     /// longer backlog across calls, and each is independently idempotent.</summary>
@@ -160,6 +173,18 @@ internal sealed class OfflineBadgeUploadService(
             return Rejected(
                 item.Sequence, qrId, ErrorCodes.ValidationFailed,
                 "The badge carries no name.");
+        }
+        // D-813 - checked here rather than left to SQL Server, so the desk is
+        // told what is wrong instead of being told to retry something that
+        // cannot succeed. Deliberately NOT truncated: a badge is already printed
+        // with the full name on it, and silently storing a different one would
+        // make the paper and the record disagree.
+        if (item.Name.Trim().Length > NameMaxLength
+            || (item.NameArabic?.Trim().Length ?? 0) > NameMaxLength)
+        {
+            return Rejected(
+                item.Sequence, qrId, ErrorCodes.ValidationFailed,
+                $"The name is longer than {NameMaxLength} characters.");
         }
 
         // Cheap pre-check so a retried upload answers without attempting a write.

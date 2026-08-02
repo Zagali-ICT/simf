@@ -213,11 +213,19 @@ internal sealed class HallAttendanceService(
         Guid attendeeUserId, Guid hallId,
         CancellationToken cancellationToken = default)
     {
-        var liveSessionId = await ResolveLiveSessionIdAsync(hallId, cancellationToken);
-        if (liveSessionId is not { } sessionId)
+        // D-813 - ask about EVERY session this door is admitting for, not only
+        // the single one attendance binds to. A hall runs its sessions back to
+        // back, so with the arrival grace an attendee holding a 10:00 booking is
+        // legitimately at the door at 09:50 while the 09:00 session is still
+        // running. Asking only about the winner (the running session) denied
+        // every one of them BookingRequiredMissing - and widening
+        // ArrivalGraceMinutes, the documented lever for exactly that queue,
+        // widened the denial rather than the admission.
+        var admittingSessionIds = await AdmittingSessionIdsAsync(hallId, cancellationToken);
+        if (admittingSessionIds.Count == 0)
         {
-            // Nothing running in this hall right now, so there is no
-            // registration to check. The gate's other rules still apply.
+            // Nothing this hall is admitting for, so there is no registration to
+            // check. The gate's other rules still apply.
             return HallEntryEligibility.NoLiveSession;
         }
 
@@ -225,7 +233,14 @@ internal sealed class HallAttendanceService(
         // someone out of a hall they are standing in. Checked BEFORE the
         // reservation so a walk-in admitted while the mode was armed is not
         // denied re-entry the moment it is disarmed.
-        if (await OpenRowAsync(attendeeUserId, sessionId, cancellationToken) is not null)
+        var alreadyInside = await appDbContext.HallAttendances
+            .AsNoTracking()
+            .AnyAsync(
+                a => admittingSessionIds.Contains(a.SessionId)
+                    && a.UserId == attendeeUserId
+                    && a.Leave == null,
+                cancellationToken);
+        if (alreadyInside)
         {
             return HallEntryEligibility.AlreadyInside;
         }
@@ -237,7 +252,7 @@ internal sealed class HallAttendanceService(
         var registered = await appDbContext.SeatReservations
             .AsNoTracking()
             .AnyAsync(
-                r => r.SessionId == sessionId
+                r => admittingSessionIds.Contains(r.SessionId)
                     && r.ReservedForUserId == attendeeUserId
                     && r.ReleasedAt == null,
                 cancellationToken);
@@ -248,11 +263,18 @@ internal sealed class HallAttendanceService(
     }
 
     /// <summary>
-    /// The session running in this hall right now, within ±<see cref="ArrivalGrace"/>.
-    /// Extracted so the gate-door scan and the D-809 entry check cannot drift
-    /// apart on which session a badge binds to.
+    /// Every session this hall is ADMITTING for at this instant: active, and
+    /// inside [Start, End] widened by <see cref="ArrivalGrace"/> at both ends.
+    /// Ordered best-first - the session actually running, then the nearest by
+    /// start, then by id so the order is total.
+    ///
+    /// <para>D-813 - a list, not a single winner, because a hall runs its
+    /// sessions back to back and near a handover this set routinely holds two:
+    /// the one running and the one about to start. The entry check reads the
+    /// whole set; the attendance write takes the first. Both go through here so
+    /// they cannot drift apart on what "admitting right now" means.</para>
     /// </summary>
-    private async Task<Guid?> ResolveLiveSessionIdAsync(
+    private async Task<List<Guid>> AdmittingSessionIdsAsync(
         Guid hallId, CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
@@ -260,9 +282,7 @@ internal sealed class HallAttendanceService(
         // The window bounds are shifted onto the constant `now` (not the
         // DateTimeOffset column) so the filter translates to SQL. A single hall
         // runs one session at a time (BookingOverlap prevents overlapping hall
-        // bookings), so this candidate set is tiny; the in-memory ordering
-        // prefers the currently-running session over a grace-margin neighbour,
-        // then the nearest start (a defensive tie-break).
+        // bookings), so this candidate set is tiny.
         var latestStart = now + grace;   // s.Start - grace <= now
         var earliestEnd = now - grace;   // now < s.End + grace
         return (await appDbContext.Sessions
@@ -271,10 +291,29 @@ internal sealed class HallAttendanceService(
                     && s.Start <= latestStart && earliestEnd < s.End)
                 .Select(s => new { s.Id, s.Start, s.End })
                 .ToListAsync(cancellationToken))
+            // The session actually running beats a grace-margin neighbour.
             .OrderBy(s => now >= s.Start && now < s.End ? 0 : 1)
+            // Then the nearest by start - unchanged from D-809.
             .ThenBy(s => (s.Start - now).Duration())
-            .Select(s => (Guid?)s.Id)
-            .FirstOrDefault();
+            // Then make the order total: the underlying read carries no ORDER BY,
+            // so two candidates that tie on every key above could come back
+            // either way round. The id is arbitrary but stable, which is all a
+            // tie-break needs; it is not a preference.
+            .ThenBy(s => s.Id)
+            .Select(s => s.Id)
+            .ToList();
+    }
+
+    /// <summary>The one session a door scan binds ATTENDANCE to. Deliberately a
+    /// single winner, and deliberately the session actually running rather than
+    /// the one the holder booked: live occupancy has to count the people
+    /// physically in the room, so someone who walks in during session A is
+    /// attending A even when their booking is for B.</summary>
+    private async Task<Guid?> ResolveLiveSessionIdAsync(
+        Guid hallId, CancellationToken cancellationToken)
+    {
+        var admitting = await AdmittingSessionIdsAsync(hallId, cancellationToken);
+        return admitting.Count == 0 ? null : admitting[0];
     }
 
     public async Task<bool> RecordGateDoorScanAsync(
@@ -287,8 +326,11 @@ internal sealed class HallAttendanceService(
         // now, using the SAME ±ArrivalGrace window as EnsureSessionLiveNow (the
         // geofence / QR-door / CP picker) so an early or late gate check-in still
         // binds instead of recording nothing. D-809 moved the query into
-        // ResolveLiveSessionIdAsync so the step-11.5 entry check binds to exactly
-        // the same session this scan will record against.
+        // AdmittingSessionIdsAsync so the step-11.5 entry check and this write
+        // share one definition of what the hall is admitting for. D-813: the
+        // check reads the WHOLE admitting set (a 10:00 booking is valid at the
+        // door at 09:50), while attendance still binds to the single running
+        // session, because occupancy counts who is physically in the room.
         var sessionId = await ResolveLiveSessionIdAsync(hallId, cancellationToken);
         if (sessionId is not { } liveSessionId)
         {

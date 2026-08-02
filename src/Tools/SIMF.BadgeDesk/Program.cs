@@ -46,11 +46,17 @@ internal static class Program
         {
             store = new DeskStore(StorePath);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                      or InvalidDataException)
         {
             // The local file is the only record a badge was handed out. Refusing
             // to start is the right answer: printing badges nothing can record
             // would be worse than not opening the desk.
+            //
+            // D-813 — InvalidDataException is the encrypted store reporting that
+            // NOTHING in the file decrypts on this machine, which means it came
+            // from another desk. Opening anyway would reset the sequence counter
+            // and reissue numbers already printed on paper.
             Fail($"Could not open the local record at {StorePath}.\r\n\r\n{ex.Message}");
             return;
         }

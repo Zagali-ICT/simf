@@ -125,7 +125,8 @@ public sealed class MainForm : Form
     {
         Dock = DockStyle.Bottom,
         AutoSize = true,
-        Text = "Enter = next field, print from the last  •  Esc = clear  •  F5 = upload",
+        Text = "Enter = next field, print from the last  •  Esc = clear  •  "
+        + "F2 = reprint the last badge  •  F5 = upload",
     };
 
     private void OnFieldKeyDown(object? sender, KeyEventArgs args)
@@ -148,6 +149,10 @@ public sealed class MainForm : Form
         {
             case Keys.Escape:
                 ClearForm();
+                args.Handled = true;
+                break;
+            case Keys.F2:
+                ReprintLast();
                 args.Handled = true;
                 break;
             case Keys.F5:
@@ -235,12 +240,57 @@ public sealed class MainForm : Form
         {
             ShowStatus(
                 $"Registered as {sequence} but printing failed: {ex.Message}. "
-                + "Reprint from the list — the visitor is recorded.",
+                + "Press F2 to reprint — the visitor is recorded.",
                 isError: true);
         }
 
         ClearForm();
         RefreshCounters();
+    }
+
+    /// <summary>
+    /// D-813 — reprints the most recent badge.
+    ///
+    /// <para>The status text already told the operator to reprint after a
+    /// printer jam, and there was nothing to reprint WITH: no list, no action.
+    /// A jam at a live desk left them with a registered visitor, no badge, and
+    /// on-screen guidance pointing at a feature that did not exist.</para>
+    ///
+    /// <para>Reprints from the stored record rather than re-reading the form,
+    /// so the reissued badge carries the same sequence as the one that jammed.
+    /// Printing a NEW sequence would put two numbers on one visitor and break
+    /// the reconciliation the whole upload depends on.</para>
+    /// </summary>
+    private void ReprintLast()
+    {
+        if (_store.Records.Count == 0)
+        {
+            ShowStatus("Nothing to reprint yet.", isError: false);
+            return;
+        }
+        var record = _store.Records[^1];
+        var type = _config.ProfileTypes
+            .FirstOrDefault(candidate => candidate.Code == record.ProfileTypeCode);
+
+        var payload = EventBadgeCodec.Encode(
+            new EventBadgePayload(record.ProfileTypeCode, record.Sequence),
+            _config.BadgeKeyBytes!,
+            _config.BadgeKeyVersion);
+
+        _preview.Image?.Dispose();
+        _preview.Image = BadgePrinter.RenderQr(payload);
+
+        try
+        {
+            BadgePrinter.Print(
+                _printerSettings, payload, record.Name,
+                type?.Name ?? string.Empty, record.Sequence);
+            ShowStatus($"Reprinted badge {record.Sequence}.", isError: false);
+        }
+        catch (Exception ex) when (ex is InvalidPrinterException or SystemException)
+        {
+            ShowStatus($"Reprint failed: {ex.Message}", isError: true);
+        }
     }
 
     /// <summary>

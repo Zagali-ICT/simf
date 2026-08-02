@@ -670,6 +670,83 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         return detail.Id;
     }
 
+    [Fact]
+    public async Task Session_hall_admits_a_booking_for_the_session_about_to_start()
+    {
+        // D-813 regression. Halls run back to back. Session A is running and
+        // session B starts in 10 minutes; the attendee holds a booking for B and
+        // is at the door now, which is exactly what the arrival grace exists to
+        // allow. Step 11.5 used to ask only about the RUNNING session, so every
+        // early arrival for B was denied BookingRequiredMissing — and widening
+        // ArrivalGraceMinutes, the documented lever for a queue forming before a
+        // keynote, widened the denial instead of the admission.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, _) = await SeedHallWithLiveSessionAsync(
+            startOffsetMin: -50, endOffsetMin: 10);
+        var nextSessionId = await SeedSessionInHallAsync(
+            hallId, startOffsetMin: 10, endOffsetMin: 70);
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        // Booked for the NEXT session, not the one currently running.
+        await SeedSeatReservationAsync(nextSessionId, attendeeUserId);
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+    }
+
+    [Fact]
+    public async Task Session_hall_still_refuses_a_booking_outside_the_admitting_window()
+    {
+        // The widening has a bound. A booking for a session three hours out is
+        // not a ticket through the door now — otherwise "registered for that
+        // session" would degrade into "holds any booking in this hall, ever".
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, _) = await SeedHallWithLiveSessionAsync(
+            startOffsetMin: -15, endOffsetMin: 45);
+        var farSessionId = await SeedSessionInHallAsync(
+            hallId, startOffsetMin: 180, endOffsetMin: 240);
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        await SeedSeatReservationAsync(farSessionId, attendeeUserId);
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Denied, body.Outcome);
+        Assert.Equal(DenialReasonCode.BookingRequiredMissing, body.DenialReasonCode);
+    }
+
+    [Fact]
+    public async Task Session_hall_still_requires_a_booking_in_the_post_end_grace_tail()
+    {
+        // D-813 — widening step 11.5 to the whole admitting window must NOT turn
+        // the tail after a session ends into an ungated door. The session is over
+        // but still inside the arrival grace, so it is still what this hall is
+        // admitting for and an unregistered badge is still refused. Dropping
+        // ended sessions from the set would return NoLiveSession here, which the
+        // gate does not deny on — every valid badge would walk in.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, _) = await SeedHallWithLiveSessionAsync(
+            startOffsetMin: -60, endOffsetMin: -5);
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        // Deliberately NO seat reservation.
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Denied, body.Outcome);
+        Assert.Equal(DenialReasonCode.BookingRequiredMissing, body.DenialReasonCode);
+    }
+
     private async Task<(Guid HallId, Guid SessionId)> SeedHallWithLiveSessionAsync(
         int capacity = 100, bool withGeofence = false,
         int startOffsetMin = -15, int endOffsetMin = 45)
@@ -691,6 +768,30 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
         return (hall.Id, session.Id);
+    }
+
+    /// <summary>D-813 — adds a SECOND session to an existing hall, so the
+    /// back-to-back handover the arrival grace has to cope with can be
+    /// exercised. A hall runs its programme without gaps; the interesting
+    /// moment is the one where two sessions are both inside the window.</summary>
+    private async Task<Guid> SeedSessionInHallAsync(
+        Guid hallId, int startOffsetMin, int endOffsetMin)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Next Session", TitleArabic = "الجلسة التالية",
+            HallId = hallId,
+            Start = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
+            End = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
+            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+        return session.Id;
     }
 
     /// <summary>

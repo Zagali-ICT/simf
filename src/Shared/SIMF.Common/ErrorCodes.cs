@@ -99,6 +99,12 @@ public static class ErrorCodes
     // D-115 — ProfileTypes CRUD (admin lookup management)
     public const string ProfileTypeNotFound = "PROFILE_TYPE_NOT_FOUND";
     public const string ProfileTypeInUse = "PROFILE_TYPE_IN_USE";
+
+    /// <summary>D-813 - two profile types were created at the same instant and
+    /// both allocated the same badge code. The filtered unique index refused the
+    /// loser; retrying succeeds. Translated so a genuine race is a typed 409 the
+    /// caller can act on rather than an unhandled 500.</summary>
+    public const string ProfileTypeCodeRace = "PROFILE_TYPE_CODE_RACE";
     public const string ProfileTypeInvalidUserType = "PROFILE_TYPE_INVALID_USER_TYPE";
     public const string ProfileTypeNameTaken = "PROFILE_TYPE_NAME_TAKEN";
 
