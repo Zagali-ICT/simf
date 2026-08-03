@@ -285,6 +285,58 @@ public sealed class ActionPermissionRenderTests : CpComponentTestBase
         });
     }
 
+    [Fact]
+    public void A_denied_holder_gets_no_toolbar_bar_rather_than_an_empty_one()
+    {
+        // D-837. SimfDataGrid decided whether to draw the toolbar from the
+        // CALLBACKS a page wires, which it knows synchronously, not from the
+        // PERMISSIONS, which it did not - so a holder denied every action still
+        // got the bar, empty. SessionSummariesList is the clearest case: its only
+        // toolbar control is Export, so with SessionSummaries.Export withheld
+        // there is nothing left to put in it.
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.SessionSummaries.View));
+        StubSessionSummaryRow();
+
+        var cut = RenderComponent<SessionSummariesList>();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(cut.FindAll(".simf-grid__toolbar"));
+            // The grid itself still renders - this is about the empty container,
+            // not about hiding the page from someone allowed to read it.
+            Assert.NotEmpty(cut.FindAll("table"));
+        });
+    }
+
+    [Fact]
+    public void The_toolbar_returns_as_soon_as_one_action_is_permitted()
+    {
+        // The other direction, so the fix cannot be "never draw the toolbar".
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.SessionSummaries.View),
+            PermissionCatalog.PolicyFor(PermissionCatalog.SessionSummaries.Export));
+        StubSessionSummaryRow();
+
+        var cut = RenderComponent<SessionSummariesList>();
+
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".simf-grid__toolbar")));
+    }
+
+    private void StubSessionSummaryRow()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = new AdminSessionSummaryRow(
+            Guid.NewGuid(), "SES-001", "Opening session", "الجلسة الافتتاحية",
+            SimfClock.Now,
+            HasSummary: true, GeneratedByAi: false, IsPublished: false,
+            PublishedAt: null, UpdatedAt: SimfClock.Now, IsInReview: false,
+            IsApproved: false, ApprovedAt: null);
+        JSInterop.Setup<ApiResult<IReadOnlyList<AdminSessionSummaryRow>>>(
+                "simfAccount.getJson", "/account/api/admin/session-summaries")
+            .SetResult(ApiResult<IReadOnlyList<AdminSessionSummaryRow>>.Ok(new[] { row }));
+    }
+
     private static IReadOnlyList<AngleSharp.Dom.IElement> ButtonsLabelled(
         IRenderedFragment cut, string label) =>
         cut.FindAll("button").Where(button => button.TextContent.Trim() == label).ToList();

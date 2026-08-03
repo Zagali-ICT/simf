@@ -33,6 +33,7 @@
      </SimfDataGrid>
 *@
 @namespace SIMF.Components.Forms
+@using Microsoft.AspNetCore.Authorization
 @typeparam TItem
 @inject IJSRuntime JS
 @implements IDisposable
@@ -658,21 +659,92 @@
 
     // -- Derived flags ---------------------------------------------------------
 
+    // D-837 — whether the holder may use each gated action, resolved ONCE per
+    // parameter set instead of once per rendered button.
+    //
+    // Two things depend on it. The containers below decided from the CALLBACKS a
+    // page wires, which the grid knows synchronously, and not from the
+    // PERMISSIONS, which it did not - so a fully denied holder got an empty
+    // toolbar bar, an empty actions column and a right-click menu that opened
+    // with nothing in it but a backdrop that swallowed a click (D-830 measured
+    // six such containers; D-835's ungated Details filled five of them). And the
+    // per-row Edit/Delete gates re-evaluated their policy once per row per
+    // render, so a 100-row page ran ~200 authorization checks on every sort,
+    // filter, page change and checkbox tick - the part D-832's policy
+    // memoisation could not reach, because building the policy was never the
+    // cost; evaluating it was.
+    //
+    // Defaults are true so the un-opted caller is unchanged: a null permission
+    // means ungated, and a host with no authorization cascade (the Website never
+    // renders this grid, and a bUnit test may not register one) keeps exactly the
+    // pre-D-837 behaviour rather than silently hiding every action.
+    private bool _mayAdd = true;
+    private bool _mayEdit = true;
+    private bool _mayDelete = true;
+    private bool _mayImport = true;
+    private bool _mayExport = true;
+    private bool _mayApprove = true;
+    private bool _mayReject = true;
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    [Inject] private IServiceProvider Services { get; set; } = default!;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _mayAdd = await MayUseAsync(AddPermission);
+        _mayEdit = await MayUseAsync(EditPermission);
+        _mayDelete = await MayUseAsync(DeletePermission);
+        _mayImport = await MayUseAsync(ImportPermission);
+        _mayExport = await MayUseAsync(ExportPermission);
+        _mayApprove = await MayUseAsync(ApprovePermission);
+        _mayReject = await MayUseAsync(RejectPermission);
+    }
+
+    /// <summary>Resolves one permission for the current holder. Mirrors
+    /// <see cref="SimfActionGate"/> exactly: null is ungated, anything else is
+    /// checked against its permission policy.</summary>
+    private async Task<bool> MayUseAsync(string? permission)
+    {
+        if (permission is null) { return true; }
+        if (AuthenticationStateTask is null) { return true; }
+
+        var authorization = Services.GetService(typeof(IAuthorizationService)) as IAuthorizationService;
+        if (authorization is null) { return true; }
+
+        var user = (await AuthenticationStateTask).User;
+        var result = await authorization.AuthorizeAsync(
+            user, PermissionCatalog.PolicyFor(permission));
+        return result.Succeeded;
+    }
+
     private bool HasToolbar =>
         Multiselect
-        || OnAdd.HasDelegate || OnEditOne.HasDelegate || OnDeleteSelected.HasDelegate
-        || OnCopySelected.HasDelegate || OnPaste.HasDelegate || OnDuplicateOne.HasDelegate
-        || OnImport.HasDelegate || OnExport.HasDelegate || CustomToolbar is not null;
+        || (OnAdd.HasDelegate && _mayAdd)
+        || (OnEditOne.HasDelegate && _mayEdit)
+        || (OnDeleteSelected.HasDelegate && _mayDelete)
+        || OnCopySelected.HasDelegate
+        || (OnPaste.HasDelegate && _mayAdd)
+        || (OnDuplicateOne.HasDelegate && _mayAdd)
+        || (OnImport.HasDelegate && _mayImport)
+        || (OnExport.HasDelegate && _mayExport)
+        || (OnApproveSelected.HasDelegate && _mayApprove)
+        || (OnRejectSelected.HasDelegate && _mayReject)
+        || CustomToolbar is not null;
 
     private bool HasRowEndCell =>
         RowActions is not null
         || OnDetailsOne.HasDelegate
-        || OnEditOne.HasDelegate || OnCopyOne.HasDelegate || OnDeleteOne.HasDelegate;
+        || (OnEditOne.HasDelegate && _mayEdit)
+        || OnCopyOne.HasDelegate
+        || (OnDeleteOne.HasDelegate && _mayDelete);
 
     private bool AnyContextHandlerWired =>
         OnDetailsOne.HasDelegate
-        || OnEditOne.HasDelegate || OnCopyOne.HasDelegate
-        || OnDeleteOne.HasDelegate || OnDuplicateOne.HasDelegate;
+        || (OnEditOne.HasDelegate && _mayEdit)
+        || OnCopyOne.HasDelegate
+        || (OnDeleteOne.HasDelegate && _mayDelete)
+        || (OnDuplicateOne.HasDelegate && _mayAdd);
 
     /// <summary>Back-compat alias retained because the Razor markup binds to
     /// this name on conditional <c>@oncontextmenu</c> attributes (D-045 H1).</summary>
