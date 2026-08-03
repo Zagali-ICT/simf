@@ -10,6 +10,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class ThemesViewDeleteTests : CpComponentTestBase
 {
+    public ThemesViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Themes.Delete);
+    }
+
     private static AdminThemeDetail Detail() => new(
         Guid.Parse("11111111-1111-1111-1111-111111111111"),
         "DEF", "Defence", "Ø§Ù„Ø¯ÙØ§Ø¹", "Defence theme", "Ù…Ø­ÙˆØ± Ø§Ù„Ø¯ÙØ§Ø¹",

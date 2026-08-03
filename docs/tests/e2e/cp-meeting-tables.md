@@ -40,6 +40,7 @@
 | E2E-MHT-011 | Overlapping hall allocation is rejected | error | P0 | authored |
 | E2E-MHT-012 | Auth gate (non-admin → /not-permitted) | auth | P0 | authored |
 | E2E-MHT-013 | Excel export: tables grid Export → POST /export (.xlsx of the hall's tables; whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
+| E2E-MHT-014 | Details on both grids for a read-only admin: table active flag, allocation units / row-column spec / notes (D-835) | auth | P0 | _to author_ |
 | E2E-MHT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MHT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -190,6 +191,31 @@ Scenario: Export caps at 5000 rows
   Given the hall's filtered table set would exceed 5000 rows
   When the admin exports the whole grid
   Then the API caps the workbook at 5000 rows
+```
+
+### E2E-MHT-014 — Details on both grids without a mutating permission (D-835)
+
+```gherkin
+Scenario: A read-only admin reads one meeting table
+  Given a signed-in admin holding MeetingTables.View but not MeetingTables.Edit
+  And hall "Majlis A" is selected and holds table "T-01" with capacity 8
+  When they click "Details" on the "T-01" row
+  Then a read-only dialog opens titled "T-01"
+  And it shows Code, Row, Column, Capacity and the active/inactive pill
+  And the active flag is visible here and in no grid column
+  And NO request fires - the dialog renders from the row the grid already holds
+  # Before D-835 this admin saw an empty actions column and could not open a table.
+
+Scenario: A read-only admin reads one hall allocation, including its notes
+  Given a signed-in admin holding MeetingTables.View but not HallAllocations.Edit
+  And hall "Majlis A" holds an allocation with Purpose = Meeting, Mode = RandomByCount,
+        UnitCount = 4 and Notes = "Reserved for the delegation lunch"
+  When they click "Details" on that allocation row
+  Then a read-only dialog opens showing Purpose, Mode, Tables reserved,
+        Rows / columns, Start, End and Notes
+  And the Notes text is visible here and in no grid column
+  And Start and End render in Saudi local time, 12-hour, as dd-MM-yyyy hh:mm tt
+  And there is no Release or any other committing control in the dialog
 ```
 
 ---

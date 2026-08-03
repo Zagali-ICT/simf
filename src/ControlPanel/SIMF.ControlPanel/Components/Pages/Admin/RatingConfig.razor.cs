@@ -49,6 +49,20 @@ public partial class RatingConfig
     private string _typeOrder = "0";
     private bool _typeActive = true;
 
+    /// <summary>D-835 - the records being read. Both grids already hold the whole
+    /// summary, so Details opens straight from the row: no second fetch, and no
+    /// permission of its own, because reading the row is what RatingConfig.View
+    /// already bought.</summary>
+    private AdminRatingTypeSummary? _typeDetails;
+    private AdminRatingQuestionGroupSummary? _groupDetails;
+    private AdminRatingQuestionSummary? _questionDetails;
+
+    private void OpenTypeDetails(AdminRatingTypeSummary type) => _typeDetails = type;
+
+    private void OpenGroupDetails(AdminRatingQuestionGroupSummary group) => _groupDetails = group;
+
+    private void OpenQuestionDetails(AdminRatingQuestionSummary question) => _questionDetails = question;
+
     // Group modal state.
     private bool _groupModalOpen;
     private Guid? _groupEditId;

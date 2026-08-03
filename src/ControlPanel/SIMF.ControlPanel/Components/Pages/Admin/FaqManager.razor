@@ -114,6 +114,7 @@
                           Caption="@L["Admin.Faq.Entries.Heading"]"
                           OnAdd="OpenAddEntry"
                           OnEditOne="OpenEditEntry"
+                          OnDetailsOne="OpenEntryDetails"
                           OnDeleteOne="@(e => AskDelete(L["Admin.Faq.Entries.Delete.Confirm.Title"], string.Format(L["Admin.Faq.Entries.Delete.Confirm.Message"], e.Question), () => DeactivateEntryAsync(e)))"
                           PrevLabel="@L["Grid.Prev"]"
                           NextLabel="@L["Grid.Next"]"
@@ -127,6 +128,7 @@
                           SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.Faq.Action.AddEntry"]"
                           EditLabel="@L["Grid.Edit"]"
+                          DetailsLabel="@L["Admin.Faq.Action.Details"]"
                           DeleteLabel="@L["Grid.Delete"]"
                           SummaryFormatter="@FormatSummary"
                           AddPermission="@PermissionCatalog.Faq.Create"
@@ -166,6 +168,28 @@
         }
     </div>
 </div>
+
+@* D-835 - the read affordance. The grid shows the question, order and status; the
+   ANSWER is carried on the same summary and shown nowhere else, so before this an
+   admin without Faq.Edit could not read the answer they are responsible for. *@
+<SimfDetails Open="@(_entryDetails is not null)"
+             Title="@(_entryDetails?.Question ?? string.Empty)"
+             CloseLabel="@L["Grid.Close"]"
+             OnClose="@(() => _entryDetails = null)">
+    @if (_entryDetails is not null)
+    {
+        <SimfDetailRow Label="@L["Admin.Faq.Col.Question"]" Value="@_entryDetails.Question" />
+        <SimfDetailRow Label="@L["Admin.Faq.Col.NameAr"]" Value="@_entryDetails.QuestionArabic" />
+        <SimfDetailRow Label="@L["Admin.Faq.Col.Answer"]" Value="@_entryDetails.Answer" />
+        <SimfDetailRow Label="@L["Admin.Faq.Col.AnswerAr"]" Value="@_entryDetails.AnswerArabic" />
+        <SimfDetailRow Label="@L["Admin.Faq.Col.Order"]" Value="@_entryDetails.DisplayOrder.ToString()" />
+        <SimfDetailRow Label="@L["Admin.Faq.Col.Active"]">
+            <SimfPill Variant="@(_entryDetails.IsActive ? "on" : "off")">
+                @(_entryDetails.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])
+            </SimfPill>
+        </SimfDetailRow>
+    }
+</SimfDetails>
 
 @if (_groupModalOpen)
 {

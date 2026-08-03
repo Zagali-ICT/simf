@@ -10,6 +10,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class OrganisationViewDeleteTests : CpComponentTestBase
 {
+    public OrganisationViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Organisations.Delete);
+    }
+
     private static AdminOrganisationDetail Detail() => new(
         Guid.Parse("11111111-1111-1111-1111-111111111111"),
         "Ø´Ø±ÙƒØ© Ø§Ù„Ø§Ø®ØªØ¨Ø§Ø±",

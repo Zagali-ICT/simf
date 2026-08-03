@@ -1,4 +1,4 @@
-﻿// D-728 (owner item 9) — bUnit tests for the shared ChangeAccountTypeBlock used
+// D-728 (owner item 9) — bUnit tests for the shared ChangeAccountTypeBlock used
 // to flip an account between the audience (Visitor) and partner (Other) scope
 // from the Others / Visitors detail views. Verifies the target list is filtered
 // to the OPPOSITE scope's active types, and that a change POSTs the flip.
@@ -13,6 +13,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class ChangeAccountTypeBlockTests : CpComponentTestBase
 {
+    public ChangeAccountTypeBlockTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Accounts.ChangeType);
+    }
+
     private static AdminProfileTypeSummary Type(
         string name, bool isVisitor, bool isActive) =>
         new(Guid.NewGuid(), name, name, "#244A77", "Visitor", "None",

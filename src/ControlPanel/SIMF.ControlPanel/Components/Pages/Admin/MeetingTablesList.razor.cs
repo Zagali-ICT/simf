@@ -38,6 +38,16 @@ public partial class MeetingTablesList
     private bool _busy;
     private Toast? _toast;
 
+    /// <summary>D-835 - the records being read. Both grids already hold the whole
+    /// row, so Details opens with no second fetch and no permission of its own:
+    /// seeing the row is what MeetingTables.View already bought.</summary>
+    private MeetingTableRow? _tableDetails;
+    private HallAllocationRow? _allocationDetails;
+
+    private void OnTableDetails(MeetingTableRow table) => _tableDetails = table;
+
+    private void OnAllocationDetails(HallAllocationRow allocation) => _allocationDetails = allocation;
+
     private bool _tableOpen;
     private bool _isEditTable;
     private Guid _editingTableId;

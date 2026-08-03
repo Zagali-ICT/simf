@@ -1,0 +1,40 @@
+@namespace SIMF.Components.Forms
+
+@* D-835 - one label/value pair inside a SimfDetails view.
+
+   Value covers the common case; ChildContent takes over when the value needs
+   markup (a pill, a thumbnail, a formatted date). A blank value renders
+   EmptyText rather than an empty cell, so a reader can tell "not set" apart
+   from a rendering fault. *@
+
+<dt>@Label</dt>
+<dd>
+    @if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+    else if (string.IsNullOrWhiteSpace(Value))
+    {
+        @EmptyText
+    }
+    else
+    {
+        @Value
+    }
+</dd>
+
+@code {
+    /// <summary>The field name.</summary>
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    /// <summary>The field value, when plain text is enough.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Shown when <see cref="Value"/> is null, empty or whitespace. The em
+    /// dash matches what the grid columns beside these views already render for an
+    /// unset value, so one record does not show two different "not set" glyphs.</summary>
+    [Parameter] public string EmptyText { get; set; } = "—";
+
+    /// <summary>Markup value; takes precedence over <see cref="Value"/>.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

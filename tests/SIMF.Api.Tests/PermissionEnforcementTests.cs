@@ -190,6 +190,135 @@ public sealed class PermissionEnforcementTests : IClassFixture<SimfApiFactory>
             Environment.NewLine + string.Join(Environment.NewLine, ungated));
     }
 
+    /// <summary>
+    /// D-834 — an approval route must be gated on the permission for the TIER IT
+    /// ACTS ON.
+    ///
+    /// <para>The test above proves every admin endpoint carries <i>a</i> permission
+    /// gate. It cannot see whether that gate is the RIGHT one, which is how this bug
+    /// survived: <c>ApproveOtherEndpoint</c> and <c>RejectOtherEndpoint</c> were
+    /// copy-pasted from the admin pair above them in the same file and kept the
+    /// admin policy line, so approving a PARTNER account demanded
+    /// <c>Admins.Approve</c> — the code that exists to approve ADMINS. An admin
+    /// granted only the partner queue could not approve a partner one at a time
+    /// (only in bulk), and an admin granted only the admin queue could.</para>
+    ///
+    /// <para>The expectation is DERIVED from the route rather than listed, so a
+    /// fourth tier, or a new bulk variant, is covered the day it is mapped. The
+    /// three tiers are symmetric by construction: 3 tiers x approve/reject x
+    /// single/bulk = the 12 routes asserted here.</para>
+    /// </summary>
+    [Fact]
+    public void An_approval_route_is_gated_on_the_permission_for_the_tier_it_acts_on()
+    {
+        // Every approval route on the admin surface is classified into exactly one
+        // of these two sets, and an unclassified one FAILS. The first version of
+        // this test filtered to the tier map before counting, so a new approval
+        // route on an unrecognised segment — /admin/accounts/{id}/approve, say, and
+        // /admin/accounts/ is already a live segment — was dropped silently while
+        // the count stayed at 12 and the test stayed green. Classify, then count.
+        var accountTiers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["admins"] = "Admins",
+            ["others"] = "Others",
+            ["visitors"] = "Visitors",
+        };
+
+        // Approval routes that do NOT act on an account queue, so the tier rule does
+        // not apply. Each entry needs a reason, and a new one has to be argued for
+        // here rather than slipping through unnoticed.
+        var notAnAccountTier = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["questions"] =
+                "PUT /admin/questions/{id}/approve moderates a QUESTION, not an account "
+                + "(Questions.Moderate).",
+            ["session-summaries"] =
+                "PUT /admin/session-summaries/{id}/approve publishes a session SUMMARY, "
+                + "not an account (SessionSummaries.Approve).",
+        };
+
+        var approvalRoutes = _factory.Services
+            .GetServices<EndpointDataSource>()
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Distinct()
+            .Select(endpoint => (endpoint, path: AdminPath(endpoint)))
+            .Where(candidate => candidate.path is not null
+                && ApprovalVerb(candidate.path!) is not null)
+            .ToList();
+
+        var unclassified = approvalRoutes
+            .Select(route => (route.path, tier: TierSegment(route.path!)))
+            .Where(route => !accountTiers.ContainsKey(route.tier)
+                && !notAnAccountTier.ContainsKey(route.tier))
+            .ToList();
+
+        Assert.True(unclassified.Count == 0,
+            "These approval routes are neither an account tier nor a reviewed "
+            + "exception, so nothing checks which permission gates them. Add the "
+            + "segment to accountTiers (if it is an account queue) or to "
+            + "notAnAccountTier with a reason:" + Environment.NewLine
+            + string.Join(Environment.NewLine,
+                unclassified.Select(route => $"{route.path} — segment '{route.tier}'")));
+
+        var tierRoutes = approvalRoutes
+            .Where(route => accountTiers.ContainsKey(TierSegment(route.path!)))
+            .ToList();
+
+        // 3 tiers x {approve, reject} x {single, bulk}. A rename that silently
+        // stops matching would otherwise leave this test vacuously green.
+        Assert.True(tierRoutes.Count == 12,
+            $"Expected the 12 account-tier approval routes but matched {tierRoutes.Count}. "
+            + "If a tier or a variant was added or renamed, update the count "
+            + "deliberately — do not let the sweep match nothing:"
+            + Environment.NewLine
+            + string.Join(Environment.NewLine, tierRoutes.Select(r => r.path)));
+
+        var wrongTier = new List<string>();
+        foreach (var (endpoint, path) in tierRoutes)
+        {
+            var expected = $"{accountTiers[TierSegment(path!)]}.{ApprovalVerb(path!)}";
+            var codes = endpoint.Metadata
+                .GetOrderedMetadata<IAuthorizeData>()
+                .Select(data => data.Policy)
+                .Where(policy => !string.IsNullOrEmpty(policy)
+                    && PermissionCatalog.IsPermissionPolicy(policy!))
+                .Select(policy => PermissionCatalog.CodeFromPolicy(policy!))
+                .ToList();
+
+            if (!codes.Contains(expected, StringComparer.Ordinal))
+            {
+                wrongTier.Add($"POST {path} acts on the {TierSegment(path!)} tier so it must gate on "
+                    + $"{expected}, but gates on [{string.Join(", ", codes)}].");
+            }
+        }
+
+        Assert.True(wrongTier.Count == 0,
+            "These approval routes gate on another tier's permission, so the wrong "
+            + "admins can act on the queue:" + Environment.NewLine
+            + string.Join(Environment.NewLine, wrongTier));
+    }
+
+    /// <summary>"Approve" / "Reject" for an approval route (single or bulk), else null.</summary>
+    private static string? ApprovalVerb(string path)
+    {
+        var last = path.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? string.Empty;
+        if (last.EndsWith("approve", StringComparison.OrdinalIgnoreCase)) { return "Approve"; }
+        if (last.EndsWith("reject", StringComparison.OrdinalIgnoreCase)) { return "Reject"; }
+        return null;
+    }
+
+    /// <summary>The segment straight after "/admin/" — the tier the route acts on.</summary>
+    private static string TierSegment(string path)
+    {
+        var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var adminIndex = Array.FindIndex(segments,
+            segment => segment.Equals("admin", StringComparison.OrdinalIgnoreCase));
+        return adminIndex >= 0 && adminIndex + 1 < segments.Length
+            ? segments[adminIndex + 1]
+            : string.Empty;
+    }
+
     // The normalised "/admin/…" path for an admin-surface endpoint, or null when
     // the route is not under the admin surface (e.g. an /app/* picker that lives
     // in the Endpoints/Admin folder).

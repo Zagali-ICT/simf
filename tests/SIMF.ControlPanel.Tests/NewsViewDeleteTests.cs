@@ -10,6 +10,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class NewsViewDeleteTests : CpComponentTestBase
 {
+    public NewsViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.News.Delete);
+    }
+
     private static AdminNewsDetail Detail() => new(
         Guid.NewGuid(),
         "Forum opens", "افتتاح المنتدى",

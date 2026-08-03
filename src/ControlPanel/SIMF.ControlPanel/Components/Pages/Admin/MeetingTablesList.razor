@@ -60,6 +60,7 @@
                           Multiselect="true" RowKey="@(r => r.Id.ToString())" RowLabel="@(r => r.Code)"
                           Caption="@L["Admin.MeetingTables.Tables.Heading"]"
                           OnAdd="OnAddTable" OnEditOne="OnEditTable" OnDeleteOne="OnDeleteTableAsync"
+                          OnDetailsOne="OnTableDetails"
                           OnExport="OnExportTablesAsync"
                           PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
@@ -68,6 +69,7 @@
                           SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.MeetingTables.AddTable"]"
                           EditLabel="@L["Grid.Edit"]" DeleteLabel="@L["Grid.Delete"]"
+                          DetailsLabel="@L["Admin.MeetingTables.Action.Details"]"
                           ExportLabel="@L["Grid.Export"]"
                           SummaryFormatter="@FormatSummary"
                           AddPermission="@PermissionCatalog.MeetingTables.Edit"
@@ -108,6 +110,7 @@
                           Multiselect="true" RowKey="@(r => r.Id.ToString())" RowLabel="@(r => r.Purpose.ToString())"
                           Caption="@L["Admin.MeetingTables.Allocations.Heading"]"
                           OnAdd="OnAddAllocation" OnDeleteOne="OnReleaseAllocationAsync"
+                          OnDetailsOne="OnAllocationDetails"
                           PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
                           PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
@@ -115,6 +118,7 @@
                           SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.MeetingTables.AddAllocation"]"
                           DeleteLabel="@L["Admin.MeetingTables.Release"]"
+                          DetailsLabel="@L["Admin.MeetingTables.Action.Details"]"
                           SummaryFormatter="@FormatSummary"
                           AddPermission="@PermissionCatalog.HallAllocations.Edit"
                           DeletePermission="@PermissionCatalog.HallAllocations.Edit">
@@ -141,6 +145,49 @@
         }
     </div>
 </div>
+
+@* D-835 - the read affordance for both grids. The tables grid never shows
+   IsActive, and the allocations grid never shows the notes, so Edit and Release
+   were the only ways to see either. Both open from the row the grid already holds. *@
+<SimfDetails Open="@(_tableDetails is not null)"
+             Title="@(_tableDetails?.Code ?? string.Empty)"
+             CloseLabel="@L["Grid.Close"]"
+             OnClose="@(() => _tableDetails = null)">
+    @if (_tableDetails is not null)
+    {
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Code"]" Value="@_tableDetails.Code" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Row"]" Value="@_tableDetails.RowLabel" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Column"]" Value="@_tableDetails.ColumnNumber?.ToString()" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Capacity"]" Value="@_tableDetails.Capacity.ToString()" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Active"]">
+            <SimfPill Variant="@(_tableDetails.IsActive ? "on" : "off")">
+                @(_tableDetails.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])
+            </SimfPill>
+        </SimfDetailRow>
+    }
+</SimfDetails>
+
+<SimfDetails Open="@(_allocationDetails is not null)"
+             Title="@(_allocationDetails is null ? string.Empty : L[PurposeKey(_allocationDetails.Purpose)].Value)"
+             CloseLabel="@L["Grid.Close"]"
+             OnClose="@(() => _allocationDetails = null)">
+    @if (_allocationDetails is not null)
+    {
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Purpose"]"
+                       Value="@(L[PurposeKey(_allocationDetails.Purpose)].Value)" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Mode"]"
+                       Value="@(L[ModeKey(_allocationDetails.Mode)].Value)" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Units"]"
+                       Value="@_allocationDetails.UnitCount?.ToString()" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.RowColumnSpec"]"
+                       Value="@_allocationDetails.RowColumnSpec" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Start"]"
+                       Value="@_allocationDetails.Start.FormatSaudi("dd-MM-yyyy hh:mm tt")" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.End"]"
+                       Value="@_allocationDetails.End.FormatSaudi("dd-MM-yyyy hh:mm tt")" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Notes"]" Value="@_allocationDetails.Notes" />
+    }
+</SimfDetails>
 
 @if (_tableOpen)
 {

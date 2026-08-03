@@ -38,6 +38,13 @@ public partial class FaqManager
     private string _groupOrder = "0";
     private bool _groupActive = true;
 
+    /// <summary>D-835 - the entry being read. The grid already holds the whole
+    /// summary, including the answer text it has no column for, so Details opens
+    /// straight from the row with no second fetch and no permission of its own.</summary>
+    private AdminFaqEntrySummary? _entryDetails;
+
+    private void OpenEntryDetails(AdminFaqEntrySummary entry) => _entryDetails = entry;
+
     // Entry modal state.
     private bool _entryModalOpen;
     private Guid? _entryEditId;

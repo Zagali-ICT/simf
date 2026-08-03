@@ -35,6 +35,8 @@
                       Caption="@L["Admin.RatingConfig.Types.Heading"]"
                       OnAdd="OpenAddType"
                       OnEditOne="OpenEditType"
+                      OnDetailsOne="OpenTypeDetails"
+                      DetailsLabel="@L["Admin.RatingConfig.Action.Details"]"
                       OnDeleteOne="@(t => AskDelete(L["Admin.RatingConfig.Types.Delete.Confirm.Title"], string.Format(L["Admin.RatingConfig.Types.Delete.Confirm.Message"], t.Name), () => DeactivateTypeAsync(t)))"
                       PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
                       FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
@@ -131,6 +133,8 @@
                           LoadingLabel="@L["Grid.Loading"]" ActionsHeader="@L["Grid.Actions"]"
                           SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.RatingConfig.Action.AddGroup"]" EditLabel="@L["Grid.Edit"]"
+                          OnDetailsOne="OpenGroupDetails"
+                          DetailsLabel="@L["Admin.RatingConfig.Action.Details"]"
                           DeleteLabel="@L["Grid.Delete"]" SummaryFormatter="@FormatSummary"
                           AddPermission="@PermissionCatalog.RatingConfig.Create"
                           EditPermission="@PermissionCatalog.RatingConfig.Edit"
@@ -193,6 +197,8 @@
                           LoadingLabel="@L["Grid.Loading"]" ActionsHeader="@L["Grid.Actions"]"
                           SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.RatingConfig.Action.AddQuestion"]" EditLabel="@L["Grid.Edit"]"
+                          OnDetailsOne="OpenQuestionDetails"
+                          DetailsLabel="@L["Admin.RatingConfig.Action.Details"]"
                           DeleteLabel="@L["Grid.Delete"]" SummaryFormatter="@FormatSummary"
                           AddPermission="@PermissionCatalog.RatingConfig.Create"
                           EditPermission="@PermissionCatalog.RatingConfig.Edit"
@@ -248,6 +254,83 @@
         }
     </div>
 </div>
+
+@* D-835 - the read affordance for all three grids. The types grid has an ungated
+   "Manage" row action, so the ROW could always be opened - but opening is not
+   reading: seven fields on AdminRatingTypeSummary have no column at all (Arabic
+   name, overall-stars and comment settings with both comment labels, display
+   order, created). The review pass caught that the drill-in was being counted as
+   a read path when it reveals none of them. *@
+<SimfDetails Open="@(_typeDetails is not null)"
+             Title="@(_typeDetails?.Name ?? string.Empty)"
+             CloseLabel="@L["Grid.Close"]"
+             OnClose="@(() => _typeDetails = null)">
+    @if (_typeDetails is not null)
+    {
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Code"]" Value="@_typeDetails.Code" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Name"]" Value="@_typeDetails.Name" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.NameAr"]" Value="@_typeDetails.NameArabic" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Scope"]" Value="@_typeDetails.Scope.ToString()" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.OverallStars"]"
+                       Value="@(_typeDetails.HasOverallStars ? L["Grid.Yes"] : L["Grid.No"])" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.AllowComment"]"
+                       Value="@(_typeDetails.AllowComment ? L["Grid.Yes"] : L["Grid.No"])" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.CommentLabel"]" Value="@_typeDetails.CommentLabel" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.CommentLabelAr"]" Value="@_typeDetails.CommentLabelArabic" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Order"]" Value="@_typeDetails.DisplayOrder.ToString()" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Groups"]" Value="@_typeDetails.GroupCount.ToString()" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Questions"]" Value="@_typeDetails.QuestionCount.ToString()" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Responses"]" Value="@_typeDetails.ResponseCount.ToString()" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Created"]"
+                       Value="@_typeDetails.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Active"]">
+            <SimfPill Variant="@(_typeDetails.IsActive ? "on" : "off")">
+                @(_typeDetails.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])
+            </SimfPill>
+        </SimfDetailRow>
+    }
+</SimfDetails>
+
+<SimfDetails Open="@(_groupDetails is not null)"
+             Title="@(_groupDetails?.Name ?? string.Empty)"
+             CloseLabel="@L["Grid.Close"]"
+             OnClose="@(() => _groupDetails = null)">
+    @if (_groupDetails is not null)
+    {
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Name"]" Value="@_groupDetails.Name" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.NameAr"]" Value="@_groupDetails.NameArabic" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Order"]" Value="@_groupDetails.DisplayOrder.ToString()" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Questions"]" Value="@_groupDetails.QuestionCount.ToString()" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Created"]"
+                       Value="@_groupDetails.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Active"]">
+            <SimfPill Variant="@(_groupDetails.IsActive ? "on" : "off")">
+                @(_groupDetails.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])
+            </SimfPill>
+        </SimfDetailRow>
+    }
+</SimfDetails>
+
+<SimfDetails Open="@(_questionDetails is not null)"
+             Title="@(_questionDetails?.Text ?? string.Empty)"
+             CloseLabel="@L["Grid.Close"]"
+             OnClose="@(() => _questionDetails = null)">
+    @if (_questionDetails is not null)
+    {
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Text"]" Value="@_questionDetails.Text" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.TextAr"]" Value="@_questionDetails.TextArabic" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Order"]" Value="@_questionDetails.DisplayOrder.ToString()" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Required"]"
+                       Value="@(_questionDetails.IsRequired ? L["Grid.Yes"] : L["Grid.No"])" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Created"]"
+                       Value="@_questionDetails.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")" />
+        <SimfDetailRow Label="@L["Admin.RatingConfig.Col.Active"]">
+            <SimfPill Variant="@(_questionDetails.IsActive ? "on" : "off")">
+                @(_questionDetails.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])
+            </SimfPill>
+        </SimfDetailRow>
+    }
+</SimfDetails>
 
 @if (_typeModalOpen)
 {

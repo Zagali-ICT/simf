@@ -11,6 +11,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class ContentBlockViewDeleteTests : CpComponentTestBase
 {
+    public ContentBlockViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.ContentBlocks.Delete);
+    }
+
     private static AdminContentBlockSummary Summary() => new(
         Guid.Parse("11111111-1111-1111-1111-111111111111"),
         "home.welcome.title", "Welcome", "Ø£Ù‡Ù„Ø§Ù‹",

@@ -10,6 +10,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class RolesViewDeleteTests : CpComponentTestBase
 {
+    public RolesViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Roles.Delete);
+    }
+
     private static AdminRoleSummary Role() =>
         new(Guid.NewGuid(), "Reviewers", IsBaseline: false, UserCount: 3, PermissionCount: 5);
 

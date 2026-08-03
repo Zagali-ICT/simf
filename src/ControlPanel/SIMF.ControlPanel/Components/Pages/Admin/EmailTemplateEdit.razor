@@ -156,5 +156,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmResetAsync"
-                 OnCancel="@(() => _confirmingReset = false)" />
+                 OnCancel="@(() => _confirmingReset = false)" 
+                 Permission="@PermissionCatalog.EmailTemplates.Edit"/>
 }

@@ -10,6 +10,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class HallsViewDeleteTests : CpComponentTestBase
 {
+    public HallsViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Halls.Delete);
+    }
+
     private static AdminHallDetail Detail() => new(
         Guid.NewGuid(), "HALL-A", "Main Hall", "Ø§Ù„Ù‚Ø§Ø¹Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©", 250, "Ground",
         EquipmentNotes: "Projector + PA", IsActive: true,

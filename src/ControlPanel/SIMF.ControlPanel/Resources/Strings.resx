@@ -253,6 +253,9 @@
   <data name="Admin.Faq.Col.Active" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.Faq.Col.Actions" xml:space="preserve"><value>Actions</value></data>
   <data name="Admin.Faq.Col.Question" xml:space="preserve"><value>Question (EN)</value></data>
+  <data name="Admin.Faq.Col.Answer" xml:space="preserve"><value>Answer (EN)</value></data>
+  <data name="Admin.Faq.Col.AnswerAr" xml:space="preserve"><value>Answer (AR)</value></data>
+  <data name="Admin.Faq.Action.Details" xml:space="preserve"><value>Details</value></data>
   <data name="Admin.Faq.Active.Yes" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.Faq.Active.No" xml:space="preserve"><value>Hidden</value></data>
   <data name="Admin.Faq.Action.ManageEntries" xml:space="preserve"><value>Manage entries</value></data>
@@ -2134,6 +2137,9 @@
   <data name="Admin.Vips.NotifySelected" xml:space="preserve"><value>Notify selected ({0})</value></data>
   <data name="Admin.Vips.Col.Name" xml:space="preserve"><value>Name</value></data>
   <data name="Admin.Vips.Col.JobTitle" xml:space="preserve"><value>Job title</value></data>
+  <data name="Admin.Vips.Col.NameAr" xml:space="preserve"><value>Name (AR)</value></data>
+  <data name="Admin.Vips.Col.JobTitleAr" xml:space="preserve"><value>Job title (AR)</value></data>
+  <data name="Admin.Vips.Action.Details" xml:space="preserve"><value>Details</value></data>
   <data name="Admin.Vips.Col.ProfileType" xml:space="preserve"><value>Profile type</value></data>
   <data name="Admin.Vips.Col.Email" xml:space="preserve"><value>Email</value></data>
   <data name="Admin.Vips.Action.AddVip" xml:space="preserve"><value>New VIP</value></data>
@@ -3040,6 +3046,13 @@
   <data name="Admin.RatingConfig.Col.Questions" xml:space="preserve"><value>Questions</value></data>
   <data name="Admin.RatingConfig.Col.Responses" xml:space="preserve"><value>Responses</value></data>
   <data name="Admin.RatingConfig.Col.Text" xml:space="preserve"><value>Question</value></data>
+  <data name="Admin.RatingConfig.Col.TextAr" xml:space="preserve"><value>Question (AR)</value></data>
+  <data name="Admin.RatingConfig.Col.OverallStars" xml:space="preserve"><value>Overall star rating</value></data>
+  <data name="Admin.RatingConfig.Col.AllowComment" xml:space="preserve"><value>Comment allowed</value></data>
+  <data name="Admin.RatingConfig.Col.CommentLabel" xml:space="preserve"><value>Comment label</value></data>
+  <data name="Admin.RatingConfig.Col.CommentLabelAr" xml:space="preserve"><value>Comment label (AR)</value></data>
+  <data name="Admin.RatingConfig.Col.Created" xml:space="preserve"><value>Created</value></data>
+  <data name="Admin.RatingConfig.Action.Details" xml:space="preserve"><value>Details</value></data>
   <data name="Admin.RatingConfig.Col.Group" xml:space="preserve"><value>Group</value></data>
   <data name="Admin.RatingConfig.Col.Required" xml:space="preserve"><value>Required</value></data>
   <data name="Admin.RatingConfig.Scope.Global" xml:space="preserve"><value>Global (once per user)</value></data>
@@ -3420,6 +3433,11 @@
   <data name="Admin.MeetingTables.AddAllocation" xml:space="preserve"><value>Reserve hall</value></data>
   <data name="Admin.MeetingTables.Release" xml:space="preserve"><value>Release</value></data>
   <data name="Admin.MeetingTables.Col.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.MeetingTables.Col.Units" xml:space="preserve"><value>Tables reserved</value></data>
+  <data name="Admin.MeetingTables.Col.RowColumnSpec" xml:space="preserve"><value>Rows / columns</value></data>
+  <data name="Admin.MeetingTables.Col.Notes" xml:space="preserve"><value>Notes</value></data>
+  <data name="Admin.MeetingTables.Col.Active" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.MeetingTables.Action.Details" xml:space="preserve"><value>Details</value></data>
   <data name="Admin.MeetingTables.Col.Row" xml:space="preserve"><value>Row</value></data>
   <data name="Admin.MeetingTables.Col.Column" xml:space="preserve"><value>Column</value></data>
   <data name="Admin.MeetingTables.Col.Capacity" xml:space="preserve"><value>Capacity</value></data>

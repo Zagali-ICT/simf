@@ -230,16 +230,15 @@ public sealed class ActionPermissionRenderTests : CpComponentTestBase
     }
 
     [Fact]
-    public void Pending_others_splits_the_bulk_and_row_codes_the_way_the_API_does()
+    public void Pending_others_drives_both_the_bulk_and_the_row_actions_from_the_Others_codes()
     {
-        // The mapping a reviewer caught and a naming convention would have got wrong.
-        // On /admin/others/pending the two halves of the same action use DIFFERENT
-        // codes, because the API does: bulk approve/reject POST to
-        // /admin/others/bulk-approve|bulk-reject (Others.Approve / Others.Reject),
-        // while the per-row buttons POST to /admin/others/{id}/approve|reject, which
-        // ApproveStaffEndpoint and RejectStaffEndpoint gate on Admins.Approve /
-        // Admins.Reject. A holder of only the Others pair gets the toolbar and not the
-        // rows, which is exactly what the API would allow them to do.
+        // D-834. Every button on /admin/others/pending acts on a PARTNER account, so
+        // every one of them answers to Others.*. D-830 shipped the row pair on
+        // Admins.* because that is what the API asked for, and the owner ruled that
+        // split a bug: the permission catalogue had always mapped Others.Approve to
+        // both /admin/others/{id}/approve and /admin/others/bulk-approve, and
+        // ApproveOtherEndpoint / RejectOtherEndpoint had simply kept the policy line
+        // they were copy-pasted with. The endpoints were corrected; this pins the CP.
         Authorization.SetPolicies(
             PermissionCatalog.PolicyFor(PermissionCatalog.Others.View),
             PermissionCatalog.PolicyFor(PermissionCatalog.Others.Approve),
@@ -254,8 +253,35 @@ public sealed class ActionPermissionRenderTests : CpComponentTestBase
         {
             Assert.NotEmpty(ButtonsLabelled(cut, "Admin.Pending.Action.BulkApprove"));
             Assert.NotEmpty(ButtonsLabelled(cut, "Admin.Pending.Action.BulkReject"));
+            Assert.NotEmpty(ButtonsLabelled(cut, "Admin.Pending.Action.Approve"));
+            Assert.NotEmpty(ButtonsLabelled(cut, "Admin.Pending.Action.Reject"));
+        });
+    }
+
+    [Fact]
+    public void Pending_others_offers_nothing_to_a_holder_of_only_the_Admins_pair()
+    {
+        // The other half of D-834, and the reason it was a bug and not a quirk: while
+        // the per-row routes gated on Admins.*, an admin whose job is approving
+        // ADMINS could also approve PARTNER accounts one at a time — a tier they were
+        // never granted. Others.View is granted here so the page itself renders;
+        // without an Others action code no approve or reject button may appear.
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.Others.View),
+            PermissionCatalog.PolicyFor(PermissionCatalog.Admins.Approve),
+            PermissionCatalog.PolicyFor(PermissionCatalog.Admins.Reject));
+        StubPendingOtherRow();
+
+        var cut = RenderComponent<PendingOthers>();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(ButtonsLabelled(cut, "Admin.Pending.Action.BulkApprove"));
+            Assert.Empty(ButtonsLabelled(cut, "Admin.Pending.Action.BulkReject"));
             Assert.Empty(ButtonsLabelled(cut, "Admin.Pending.Action.Approve"));
             Assert.Empty(ButtonsLabelled(cut, "Admin.Pending.Action.Reject"));
+            // The read-only View survives: that is what Others.View bought.
+            Assert.NotEmpty(ButtonsLabelled(cut, "Admin.Pending.Action.View"));
         });
     }
 
