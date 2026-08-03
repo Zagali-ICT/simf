@@ -98,8 +98,13 @@ and its failure handling.
 - **Rules:**
   - The email is a valid email address.
   - The email is not already attached to an account.
-  - The password meets the policy: at least 8 characters, at least one letter
-    and one digit, and not equal to the email (SIMF-API-001 section 12.5).
+  - The password meets the policy: 8 to 128 characters with at least one
+    upper-case letter, one lower-case letter, one digit and one special
+    character; no three identical characters in a row; no three-character
+    sequential run; not a common or leet-spelled dictionary password; and not
+    equal to the email address or its local part (SIMF-API-001 section 12.5,
+    hardened to NCA A7-10 / A7-28 / A7-29). The single source of truth is
+    `SIMF.Common.PasswordPolicy`.
   - The confirmation equals the password.
 - **Processing:**
   1. Validate the input against the rules above.
@@ -278,7 +283,7 @@ All text is localised (Arabic and English); no string is hardcoded.
 | Field | Rule |
 |-------|------|
 | Email | Required; valid email format; unique at sign-up |
-| Password | Required; ≥ 8 characters; ≥ 1 letter and ≥ 1 digit; not equal to the email |
+| Password | Required; 8–128 characters; ≥ 1 upper-case, ≥ 1 lower-case, ≥ 1 digit, ≥ 1 special character; no 3 identical characters in a row; no 3-character sequential run; not a common/leet dictionary password; not equal to the email or its local part (`SIMF.Common.PasswordPolicy`) |
 | Confirm password | Required; equals the password |
 | Verification code | Required; exactly 6 digits; matches the issued code; unexpired |
 | TOTP code | Required; exactly 6 digits; valid for the current time window |

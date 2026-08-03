@@ -523,7 +523,8 @@ Defined in `SIMF.Common.AuthorizationPolicies`:
 |--------|----------------|
 | `AdministratorOnly` | `User.IsInRole("Administrator")` |
 | `RequireApprovedAccount` | `AccountState` claim == `Approved` |
-| `RequireRateLimiting("auth")` | fixed-window 5 req / 5 min / IP (FastEndpoints attribute, not a policy) |
+| `RequireRateLimiting("auth")` | fixed-window **20 req / 60 s per IP** (FastEndpoints attribute, not a policy) — `RateLimitOptions.PermitLimit` / `WindowSeconds` |
+| `RequireRateLimiting("auth-email")` | fixed-window **5 req / 60 s per email address**, across all IPs — `RateLimitOptions.EmailPermitLimit` / `EmailWindowSeconds`. Chained *with* `"auth"` on the credential endpoints (sign-in, forgot-password, reset-password, change-email, badge auth), so both partitions must pass. |
 
 Default for new admin endpoints: `Policies(AdministratorOnly, RequireApprovedAccount) + RequireRateLimiting("auth")`. Anonymous endpoints (sign-in, sign-up,
 forgot-password, reset-password) are explicit `AllowAnonymous()` in `Configure()`.

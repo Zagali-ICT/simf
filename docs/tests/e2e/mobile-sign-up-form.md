@@ -106,8 +106,15 @@ Scenario: A password failing the policy is rejected locally
   And no request is sent
 ```
 
-> The client mirror is length ≥ 8 + a letter + a digit (SIMF-MOB-API-001); the
-> server re-validates and is the authority.
+> The client mirror is the **five structural rules** in
+> `core/validation/password_validation.dart` — 8–128 characters with an
+> upper-case letter, a lower-case letter, a digit and a special character —
+> surfaced as a live per-rule unmet list. The server enforces **four more**
+> (no three-in-a-row repeat, no three-character sequential run, not a
+> common/leet dictionary password, not the user's own identifier) and is the
+> authority. A password can therefore clear every on-screen check and still be
+> refused; the server's reason is surfaced to the user via the field-error
+> details. Corrected 2026-08-03 (was "length ≥ 8 + a letter + a digit").
 
 **Evidence:** `sign_up_form_screen_test` — "a weak password blocks submit".
 

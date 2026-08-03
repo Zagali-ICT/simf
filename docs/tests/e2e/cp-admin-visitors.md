@@ -563,6 +563,7 @@ filter + POST wiring). Live browser drive pending the E2E-VIS authoring pass.
 | Id | Scenario | Category | Priority | Status |
 |----|----------|----------|----------|--------|
 | E2E-VIS-027 | Walk-in with an already-registered National ID / Iqama / passport → `DUPLICATE_IDENTITY` (409) | conflict | P0 | _to author_ |
+| E2E-VIS-028 | Tier isolation on the ID document and the VIP photo (D-836): a `Visitors.*`-only admin cannot read or overwrite a **partner's** ID image through the visitors route, and the VIP-photo routes are audience-tier only — 404, never 403. Cross-referenced from [cp-admin-others.md](cp-admin-others.md) E2E-OTH-028 | auth | P0 | _to author_ |
 | E2E-VIS-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-VIS-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 

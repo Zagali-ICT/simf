@@ -38,7 +38,7 @@
 | E2E-MOB003-003 | 2FA account → email-OTP screen → `verify-otp` → Home | happy | P0 | authored ✓ (widget + controller tests) |
 | E2E-MOB003-004 | Privilege comes from `/app/users/me` hydration, not the token payload | resilience | P0 | authored ✓ (controller test) |
 | E2E-MOB003-005 | Email pre-filled from the last successful sign-in | happy | P1 | authored ✓ (widget test) |
-| E2E-MOB003-006 | Client caps email≤50 / password≤32 (UI only; server stays 256/128) | edge | P1 | authored (maxLength) |
+| E2E-MOB003-006 | Client caps email≤50 / **password≤128** (UI only; server email stays 256). The password cap **matches `PasswordPolicy.MaxLength = 128`** so a valid long passphrase can still be typed — the old 32 cap locked those users out. Corrected 2026-08-03; the field is `AccountPasswordField(maxLength: 128)`. | edge | P1 | authored (maxLength) |
 | E2E-MOB003-007 | Forgot password → emails an OTP → reset screen (enumeration-resistant) | happy | P0 | authored (screen) |
 | E2E-MOB003-008 | Reset password (OTP + new password, passwords-match) → back to sign-in | happy | P0 | authored (screen) |
 | E2E-MOB003-009 | Pending/rejected account → routed by registration status (Page 11) | edge | P1 | authored (status drives routing) |

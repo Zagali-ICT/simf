@@ -624,6 +624,19 @@ right.** The two are often not the same word, and every one of these is real:
 - **A page can host two grids over two resources.** `MeetingTablesList`'s second
   grid is hall allocations, so its Add/Delete are `HallAllocations.Edit`, not the
   `MeetingTables.Edit` of the grid above it.
+- **Gating the ROUTE is only half of it — check the SUBJECT too (D-836).** A
+  correct permission on the endpoint still lets a caller hand it an id from the
+  other tier. Any `/admin/{visitors|others}/{id}/…` endpoint must call
+  `IAdminUserProvisioningService.IsSubjectInFamilyAsync(id, ExpectedKind,
+  ExpectedIsVisitor)` and answer **404** when it fails — never 403, which would
+  confirm the subject exists to an admin outside its tier. `UserType` alone is
+  **not** a tier check: D-186 made every non-admin account `UserType.Visitor`,
+  so the visitors and the others route pass the same value and a UserType-only
+  guard separates Admin from everyone else and nothing more. That is exactly how
+  the ID-document routes leaked national-ID images across the two desks. Note
+  the deliberate exception: `POST /admin/admins/reset-two-factor` acts on ANY
+  user by design (D-041, help-desk recovery) despite its route and its
+  `Admins.*` code.
 - **An action is gated by the tier it acts on, not by the file it lives in
   (D-834).** Every button on `/admin/others/pending` is `Others.*`, bulk and
   per-row alike, because every one of them acts on a partner account. This bullet

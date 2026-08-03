@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -134,7 +135,12 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
         // this pins the invariant that a future refactor cannot silently drop
         // the gate from one desk.
         var adminToken = await CreateAdministratorAndSignInAsync();
-        var subjectId = await CreatePendingVisitorAsync();
+        // D-836 — a PARTNER subject, not an audience visitor. This used to pass a
+        // CreatePendingVisitorAsync() id to the OTHERS desk and pass anyway,
+        // because nothing checked that the subject belonged to the route's tier.
+        // The face-gate invariant this test exists for is unchanged; it is now
+        // asserted against a subject the endpoint will actually accept.
+        var subjectId = await CreatePendingOtherAsync();
 
         var png = ValidFacelessPng();
         using var form = new MultipartFormDataContent();
@@ -231,6 +237,54 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
         return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
+    }
+
+    /// <summary>D-836 — a partner-side (Other) subject: Visitor-typed like every
+    /// non-admin account since D-186, but with a UserProfile linked to a
+    /// ProfileType whose <c>IsForVisitor</c> is false, which is what marks the
+    /// partner tier for the endpoints' family guard.</summary>
+    private async Task<Guid> CreatePendingOtherAsync()
+    {
+        var email = $"other-face-{Guid.NewGuid():N}@simf.test";
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = new SimfUser
+        {
+            UserName = email, Email = email, EmailConfirmed = true,
+            DisplayName = "Pending Other",
+            AccountState = AccountState.PendingApproval,
+            UserType = UserType.Visitor,
+        };
+        await users.CreateAsync(user, AuthFlow.Password);
+
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var partnerType = await appDb.ProfileTypes
+            .FirstOrDefaultAsync(p => !p.IsForVisitor && p.IsActive);
+        if (partnerType is null)
+        {
+            partnerType = new SIMF.Domain.Profiles.UserProfileType
+            {
+                Id = Guid.NewGuid(),
+                Name = "Other — FaceGateSeed",
+                NameArabic = "أخرى — اختبار",
+                PageColor = "#10B981",
+                IsForVisitor = false,
+                IsActive = true,
+                CreatedAt = SimfClock.Now,
+            };
+            appDb.ProfileTypes.Add(partnerType);
+            await appDb.SaveChangesAsync();
+        }
+
+        appDb.UserProfiles.Add(new SIMF.Domain.Profiles.UserProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            ProfileTypeId = partnerType.Id,
+            CreatedAt = SimfClock.Now,
+        });
+        await appDb.SaveChangesAsync();
+        return user.Id;
     }
 
     private async Task<Guid> CreatePendingVisitorAsync()

@@ -48,6 +48,7 @@
 | E2E-OTH-023 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
 | E2E-OTH-024 | Full-page mode: Add (walk-in) / Edit / Details take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
 | E2E-OTH-027 | Edit-email guard on the shared EditAccountForm (Scope=others, D-214 + #24) — duplicate → 409 `ADMIN_EMAIL_ALREADY_REGISTERED` inline SimfAlert (form stays open); a successful change rolls stamp + revokes sessions + marks unverified; bad format → 400 (golden Other email edit is E2E-OTH-005) | error | P1 | _to author_ |
+| E2E-OTH-028 | Tier isolation on the ID document (D-836): an `Others.*`-only admin cannot read or overwrite an **audience visitor's** ID image through the others route, and a `Visitors.*`-only admin cannot reach a partner's through the visitors route — 404, never 403 | auth | P0 | _to author_ |
 | E2E-OTH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-OTH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -574,6 +575,39 @@ shared Email rules. Live browser drive pending the E2E-OTH authoring pass (all
 E2E-OTH rows are `_to author_`).
 
 ---
+
+### E2E-OTH-028 — Tier isolation on the ID document (D-836)
+
+```gherkin
+Scenario: The partner desk cannot reach an audience visitor's ID image
+  Given an audience visitor "Sara Al-Harbi" whose profile type has IsForVisitor = true
+  And she has an ID-document image on file
+  And a signed-in admin whose role grants Others.View and Others.Edit
+        but neither Visitors.View nor Visitors.Edit
+  When they request GET /api/v1/admin/others/{saraId}/id-document
+  Then the API returns 404 Not Found
+  And NOT 403 — a 403 would confirm to an admin outside her tier that she exists
+  And no PII-disclosure audit row is written, because no bytes were decrypted
+
+  When they POST a replacement image to /api/v1/admin/others/{saraId}/id-document
+  Then the API returns 404 and her stored ID image is unchanged
+
+Scenario: The visitor desk cannot reach a partner's ID image
+  Given a partner account "Gulf Marine Co." whose profile type has IsForVisitor = false
+  And a signed-in admin whose role grants Visitors.View and Visitors.Edit only
+  When they request GET /api/v1/admin/visitors/{partnerId}/id-document
+  Then the API returns 404 Not Found
+  # Before D-836 both crossings succeeded: the only guard compared UserType, and
+  # since D-186 every non-admin account is UserType.Visitor, so the two routes
+  # were indistinguishable to it. The national ID / Iqama / passport image is the
+  # most sensitive PII in the system.
+
+Scenario: Each desk still reaches its own tier
+  Given the same two admins
+  When each requests the ID document of a subject in their OWN tier
+  Then the request is served normally and the PII-disclosure audit row is written
+  # The guard must not be provable by denial alone - this is the positive control.
+```
 
 ## Implementation notes
 

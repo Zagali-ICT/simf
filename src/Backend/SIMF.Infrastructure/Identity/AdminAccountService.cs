@@ -195,6 +195,16 @@ internal sealed partial class AdminAccountService(
                 "لم يتم العثور على حساب بهذا البريد الإلكتروني.");
         }
 
+        // D-836 — deliberately NOT tier-scoped, and that is a decision rather than
+        // an oversight. The route sits under /admin/admins/ and is gated on
+        // Admins.ResetTwoFactor, so it reads like an admins-only action; D-041
+        // specifies "an Administrator resets another USER's 2FA", and
+        // AdminResetTwoFactorTests enrols a VISITOR in TOTP and resets it here. A
+        // tier guard was written, broke both of those tests, and was reverted: the
+        // help-desk reset has to reach whoever actually lost their authenticator.
+        // The route name and the Admins.* code are the misleading part, not the
+        // behaviour. Flagged for the owner rather than changed.
+
         // The user must use the self-service Disable on /account/profile —
         // that requires a current TOTP code as a sanity check, which the
         // admin reset is the very fallback FOR.
