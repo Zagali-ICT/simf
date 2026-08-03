@@ -72,8 +72,8 @@ Administrator can grant any code to any custom role at runtime.
 | `Admins.View` | Admins · View | — | `/admin/admins`, `/admin/admins/pending`; `POST /admin/admins/list`, `…/pending/list` |
 | `Admins.Create` | Admins · Create | — | `/admin/admins/new`; `POST /admin/admins`, `…/duplicate` |
 | `Admins.Delete` | Admins · Delete | — | `POST /admin/admins/bulk-delete` |
-| `Admins.Approve` | Admins · Approve | — | `POST /admin/admins/{id}/approve` |
-| `Admins.Reject` | Admins · Reject | — | `POST /admin/admins/{id}/reject` |
+| `Admins.Approve` | Admins · Approve | — | `POST /admin/admins/{id}/approve`, `…/bulk-approve` |
+| `Admins.Reject` | Admins · Reject | — | `POST /admin/admins/{id}/reject`, `…/bulk-reject` |
 | `Admins.Export` | Admins · Export | — | `POST /admin/admins/export` |
 | `Admins.Import` | Admins · Import | — | `POST /admin/admins/import` |
 | `Admins.ResetTwoFactor` | Admins · ResetTwoFactor | — | `/admin/reset-2fa`; `POST /admin/admins/reset-two-factor` |
@@ -83,7 +83,7 @@ Administrator can grant any code to any custom role at runtime.
 | `Others.Edit` | Others · Edit | — | id-document upload |
 | `Others.Delete` | Others · Delete | — | `POST /admin/others/bulk-delete` |
 | `Others.Approve` | Others · Approve | — | `…/{id}/approve`, `…/bulk-approve` |
-| `Others.Reject` | Others · Reject | — | `…/{id}/reject` |
+| `Others.Reject` | Others · Reject | — | `…/{id}/reject`, `…/bulk-reject` |
 | `Others.Export` | Others · Export | — | `POST /admin/others/export` |
 | `Others.Import` | Others · Import | — | `POST /admin/others/import` |
 | `Others.RegisterOnsite` | Others · RegisterOnsite | — | `POST /admin/others/register-onsite` |

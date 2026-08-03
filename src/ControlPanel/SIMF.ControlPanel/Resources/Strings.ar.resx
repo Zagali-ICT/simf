@@ -253,6 +253,9 @@
   <data name="Admin.Faq.Col.Active" xml:space="preserve"><value>نشط</value></data>
   <data name="Admin.Faq.Col.Actions" xml:space="preserve"><value>إجراءات</value></data>
   <data name="Admin.Faq.Col.Question" xml:space="preserve"><value>السؤال (إنجليزي)</value></data>
+  <data name="Admin.Faq.Col.Answer" xml:space="preserve"><value>الإجابة (إنجليزي)</value></data>
+  <data name="Admin.Faq.Col.AnswerAr" xml:space="preserve"><value>الإجابة (عربي)</value></data>
+  <data name="Admin.Faq.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
   <data name="Admin.Faq.Active.Yes" xml:space="preserve"><value>ظاهر</value></data>
   <data name="Admin.Faq.Active.No" xml:space="preserve"><value>مخفي</value></data>
   <data name="Admin.Faq.Action.ManageEntries" xml:space="preserve"><value>إدارة الأسئلة</value></data>
@@ -2127,6 +2130,9 @@
   <data name="Admin.Vips.NotifySelected" xml:space="preserve"><value>إشعار المحدّدين ({0})</value></data>
   <data name="Admin.Vips.Col.Name" xml:space="preserve"><value>الاسم</value></data>
   <data name="Admin.Vips.Col.JobTitle" xml:space="preserve"><value>المسمّى الوظيفي</value></data>
+  <data name="Admin.Vips.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Vips.Col.JobTitleAr" xml:space="preserve"><value>المسمّى الوظيفي (عربي)</value></data>
+  <data name="Admin.Vips.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
   <data name="Admin.Vips.Col.ProfileType" xml:space="preserve"><value>نوع الملف</value></data>
   <data name="Admin.Vips.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
   <data name="Admin.Vips.Action.AddVip" xml:space="preserve"><value>إضافة شخصية بارزة</value></data>
@@ -3030,6 +3036,13 @@
   <data name="Admin.RatingConfig.Col.Questions" xml:space="preserve"><value>الأسئلة</value></data>
   <data name="Admin.RatingConfig.Col.Responses" xml:space="preserve"><value>الردود</value></data>
   <data name="Admin.RatingConfig.Col.Text" xml:space="preserve"><value>السؤال</value></data>
+  <data name="Admin.RatingConfig.Col.TextAr" xml:space="preserve"><value>السؤال (عربي)</value></data>
+  <data name="Admin.RatingConfig.Col.OverallStars" xml:space="preserve"><value>تقييم عام بالنجوم</value></data>
+  <data name="Admin.RatingConfig.Col.AllowComment" xml:space="preserve"><value>السماح بالتعليق</value></data>
+  <data name="Admin.RatingConfig.Col.CommentLabel" xml:space="preserve"><value>عنوان التعليق</value></data>
+  <data name="Admin.RatingConfig.Col.CommentLabelAr" xml:space="preserve"><value>عنوان التعليق (عربي)</value></data>
+  <data name="Admin.RatingConfig.Col.Created" xml:space="preserve"><value>تاريخ الإنشاء</value></data>
+  <data name="Admin.RatingConfig.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
   <data name="Admin.RatingConfig.Col.Group" xml:space="preserve"><value>المجموعة</value></data>
   <data name="Admin.RatingConfig.Col.Required" xml:space="preserve"><value>مطلوب</value></data>
   <data name="Admin.RatingConfig.Scope.Global" xml:space="preserve"><value>عام (مرة واحدة لكل مستخدم)</value></data>
@@ -3410,6 +3423,11 @@
   <data name="Admin.MeetingTables.AddAllocation" xml:space="preserve"><value>حجز القاعة</value></data>
   <data name="Admin.MeetingTables.Release" xml:space="preserve"><value>تحرير</value></data>
   <data name="Admin.MeetingTables.Col.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.MeetingTables.Col.Units" xml:space="preserve"><value>عدد الطاولات المحجوزة</value></data>
+  <data name="Admin.MeetingTables.Col.RowColumnSpec" xml:space="preserve"><value>الصفوف / الأعمدة</value></data>
+  <data name="Admin.MeetingTables.Col.Notes" xml:space="preserve"><value>ملاحظات</value></data>
+  <data name="Admin.MeetingTables.Col.Active" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.MeetingTables.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
   <data name="Admin.MeetingTables.Col.Row" xml:space="preserve"><value>الصف</value></data>
   <data name="Admin.MeetingTables.Col.Column" xml:space="preserve"><value>العمود</value></data>
   <data name="Admin.MeetingTables.Col.Capacity" xml:space="preserve"><value>السعة</value></data>

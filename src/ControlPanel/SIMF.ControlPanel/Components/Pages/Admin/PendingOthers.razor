@@ -72,25 +72,25 @@
                profile View stays ungated: it is what Others.View already bought,
                and it is the same drawer, opened without approveMode.
 
-               The row codes are Admins.*, not Others.*, and that is not a typo: the
-               API gates POST /admin/others/{id}/approve|reject on Admins.Approve /
-               Admins.Reject (ApproveStaffEndpoint / RejectStaffEndpoint serve both
-               routes), while the BULK endpoints on the toolbar above are gated on
-               Others.Approve / Others.Reject. Mirror the API as it is. *@
+               D-834 — every code on this page is Others.*, because every button on
+               it acts on a PARTNER account. D-830 mirrored an API that gated the
+               per-row routes on Admins.* while gating the bulk routes on Others.*;
+               the owner ruled that split a bug, the permission catalogue had always
+               specified Others.* for both, and the endpoints were corrected. *@
             <RowActions Context="user">
                 <SimfButton Type="button" Variant="secondary"
                             Disabled="_busy"
                             OnClick="@(() => OpenViewAsync(user, approveMode: false))">
                     @L["Admin.Pending.Action.View"]
                 </SimfButton>
-                <AuthorizedAction Permission="@PermissionCatalog.Admins.Approve">
+                <AuthorizedAction Permission="@PermissionCatalog.Others.Approve">
                     <SimfButton Type="button" Variant="primary"
                                 Disabled="_busy"
                                 OnClick="@(() => OpenViewAsync(user, approveMode: true))">
                         @L["Admin.Pending.Action.Approve"]
                     </SimfButton>
                 </AuthorizedAction>
-                <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
+                <AuthorizedAction Permission="@PermissionCatalog.Others.Reject">
                     <SimfButton Type="button" Variant="secondary"
                                 Disabled="_busy"
                                 OnClick="@(() => OpenReject(user))">
@@ -136,7 +136,7 @@
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
             @* D-831 - the commit button of the modal this action opened. *@
-            <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
+            <AuthorizedAction Permission="@PermissionCatalog.Others.Reject">
             <SimfButton Type="button" Variant="primary"
                             Loading="_busy"
                             Disabled="@(_rejectReason.Length is < 10 or > 500)"
@@ -284,7 +284,7 @@
                     @L["Admin.Pending.ApproveReview.Cancel"]
                 </SimfButton>
                 @* D-831 - the commit button of the modal this action opened. *@
-                <AuthorizedAction Permission="@PermissionCatalog.Admins.Approve">
+                <AuthorizedAction Permission="@PermissionCatalog.Others.Approve">
                 <SimfButton Type="button" Variant="primary"
                                 Loading="_busy"
                                 Disabled="@(_viewLoading || _viewProfile is null)"

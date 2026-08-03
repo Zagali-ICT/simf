@@ -43,6 +43,7 @@
 | E2E-FAQ-014 | Idempotent deactivate — re-deactivate an already-hidden group is a no-op success | resilience | P2 | _to author_ |
 | E2E-FAQ-015 | RTL / Arabic render — page + both modals mirror | i18n | P1 | _to author_ |
 | E2E-FAQ-016 | Client validation — empty submit on either dialog → bilingual error **inside the dialog**, no POST (BUG-004) | error | P1 | _to author_ |
+| E2E-FAQ-017 | Details reveals the answer text to a `Faq.View`-only admin; groups grid keeps its ungated "Manage entries" drill-in (D-835) | auth | P0 | _to author_ |
 | E2E-FAQ-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-FAQ-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -394,6 +395,34 @@ Scenario: Saving the Add-entry dialog empty reports, and creates nothing
 ```
 
 ---
+
+### E2E-FAQ-017 — Details reveals the answer without Faq.Edit (D-835)
+
+```gherkin
+Scenario: A read-only admin reads one FAQ entry in full
+  Given a signed-in admin holding Faq.View but neither Faq.Edit nor Faq.Delete
+  And the group "Registration" holds the entry
+        "How do I collect my badge?" / "كيف أستلم بطاقتي؟"
+        answered "Collect it at the main desk from 08:00." / "استلمها من المكتب الرئيسي."
+  When they open /admin/faq, click "Manage entries" on "Registration",
+        then click "Details" on that entry
+  Then a read-only dialog opens titled with the question
+  And it shows Question (EN), Question (AR), Answer (EN), Answer (AR),
+        Display order and the active/inactive pill
+  And the ANSWER text is visible here and in no grid column
+  And NO request fires - the dialog renders from the row the grid already holds
+  And there is no Save or Delete control in the dialog
+  # Before D-835 the answer was reachable only through the edit form, so this
+  # admin could not read the answer they are responsible for, and the entries
+  # grid rendered an empty actions column.
+
+Scenario: The groups grid keeps its own ungated read path
+  Given the same read-only admin on /admin/faq
+  Then the groups grid shows no Add, Edit or Delete
+  And it still shows the "Manage entries" row action, which is never gated
+  # That drill-in is why the groups grid needs no Details of its own; it is the
+  # reviewed entry in ActionPermissionGuardRatchetTests.ReviewedReadPaths.
+```
 
 ## Implementation notes
 

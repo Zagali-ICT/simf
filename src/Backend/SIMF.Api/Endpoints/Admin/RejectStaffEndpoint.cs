@@ -41,7 +41,10 @@ public sealed class RejectAdminEndpoint(IAdminUserApprovalService adminAccountSe
 /// <summary>
 /// <c>POST /api/v1/admin/others/{id:guid}/reject</c> — set a pending
 /// Other to Rejected with a mandatory 10–500 char reason (P7c — new).
-/// Administrator-only.
+/// <para>D-834 — gated on <c>Others.Reject</c>, matching
+/// <see cref="ApproveOtherEndpoint"/> and the bulk endpoint. Same
+/// copy-paste as the approve half: the admin policy line survived from
+/// <see cref="RejectAdminEndpoint"/> above.</para>
 /// </summary>
 public sealed class RejectOtherEndpoint(IAdminUserApprovalService adminAccountService)
     : Endpoint<RejectRouteRequest, ApiResult<bool>>
@@ -49,7 +52,7 @@ public sealed class RejectOtherEndpoint(IAdminUserApprovalService adminAccountSe
     public override void Configure()
     {
         Post("/admin/others/{id:guid}/reject");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.Reject), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.Reject), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Reject a pending Other. Requires Administrator role.");

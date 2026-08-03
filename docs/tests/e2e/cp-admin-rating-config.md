@@ -40,6 +40,7 @@
 | E2E-RCFG-014 | Server 500 on `/types/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-RCFG-015 | RTL / Arabic render — page + three modals mirror | i18n | P1 | _to author_ |
 | E2E-RCFG-016 | Client validation — empty submit on any of the three dialogs → bilingual error **inside the dialog**, no POST (BUG-004) | error | P1 | _to author_ |
+| E2E-RCFG-017 | Details on all three grids for a `RatingConfig.View`-only admin — type (Arabic name + comment settings), group and question (D-835) | auth | P0 | _to author_ |
 | E2E-RCFG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-RCFG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -217,6 +218,44 @@ Scenario: Saving the Add-question dialog empty reports, and creates nothing
 ```
 
 ---
+
+### E2E-RCFG-017 — Details on the group and question grids (D-835)
+
+```gherkin
+Scenario: A read-only admin reads one question group and one question
+  Given a signed-in admin holding RatingConfig.View but not RatingConfig.Edit
+  And the rating type "Session feedback" is selected
+  And it holds the group "Delivery" / "الإلقاء" at display order 2 with 3 questions
+  When they click "Details" on the "Delivery" row
+  Then a read-only dialog opens titled "Delivery"
+  And it shows Name, Name (AR), Display order, Questions, Created
+        and the active/inactive pill
+  And the Created date is visible here and in no grid column
+  And it renders in Saudi local time, 12-hour, as dd-MM-yyyy hh:mm tt
+
+  When they close it and click "Details" on the question
+        "Was the session clear?" / "هل كانت الجلسة واضحة؟"
+  Then a read-only dialog opens showing Question, Question (AR), Display order,
+        Required (Yes/No), Created and the active/inactive pill
+  And NO request fires for either dialog - both render from the rows the grids hold
+  And neither dialog offers a Save or Delete control
+  # Before D-835 both inner grids rendered an empty actions column for this admin.
+
+Scenario: Details on the rating type itself reveals what no column shows
+  Given the same read-only admin on /admin/rating-config
+  And the rating type "Session feedback" allows a comment labelled
+        "Anything else?" / "هل من شيء آخر؟" and shows overall stars
+  Then the types grid shows no Add, Edit or Delete
+  And it still shows the ungated "Manage" row action
+  When they click "Details" on the "Session feedback" row
+  Then a read-only dialog shows Code, Name, Name (AR), Scope,
+        Overall star rating, Comment allowed, Comment label, Comment label (AR),
+        Display order, Groups, Questions, Responses, Created and the status pill
+  And the Arabic name and both comment labels are visible here and in no column
+  # The types grid was first treated as needing no Details, on the grounds that
+  # "Manage" already opens the row. The review pass rejected that: opening is not
+  # reading - seven fields on AdminRatingTypeSummary have no column at all.
+```
 
 ## Implementation notes
 

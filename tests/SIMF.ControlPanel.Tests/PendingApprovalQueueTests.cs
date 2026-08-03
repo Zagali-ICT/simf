@@ -13,8 +13,12 @@ namespace SIMF.ControlPanel.Tests;
 
 // D-830 — the approve and reject affordances (bulk toolbar AND per row) are gated on
 // the queue's own Approve / Reject codes, so a test that wants to SEE them has to hold
-// them; Grant() comes from CpComponentTestBase. The others queue needs four codes, not
-// two, because the API splits the bulk and per-row routes across Others.* and Admins.*.
+// them; Grant() comes from CpComponentTestBase.
+//
+// D-834 — each queue now needs exactly its own tier's pair. The others queue used to
+// need four codes because the API gated its per-row routes on Admins.* and its bulk
+// routes on Others.*; that split was ruled a bug and the endpoints were corrected, so
+// granting the Admins pair here would only mask a regression.
 public sealed class PendingApprovalQueueTests : CpComponentTestBase
 {
     private static readonly AdminPendingUserSummary Row =
@@ -54,12 +58,11 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
     [Fact]
     public void Others_queue_renders_view_approve_reject_actions()
     {
-        // Four codes, not two, and that is the page rather than the test: the API gates
-        // the BULK others approve/reject on Others.* and the PER-ROW ones on Admins.*
-        // (ApproveStaffEndpoint / RejectStaffEndpoint serve /admin/others/{id}/approve
-        // and /reject). The CP mirrors the API, so seeing every action needs both pairs.
-        Grant(PermissionCatalog.Others.Approve, PermissionCatalog.Others.Reject,
-              PermissionCatalog.Admins.Approve, PermissionCatalog.Admins.Reject);
+        // D-834 — the Others pair alone, deliberately. Every button on this page acts
+        // on a partner account, so every one of them answers to Others.*; if a row
+        // action ever reverts to an Admins.* code this test goes red rather than
+        // quietly passing on an over-broad grant.
+        Grant(PermissionCatalog.Others.Approve, PermissionCatalog.Others.Reject);
         StubPendingList();
 
         var cut = RenderComponent<PendingOthers>();

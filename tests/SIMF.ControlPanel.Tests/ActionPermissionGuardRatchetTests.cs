@@ -212,6 +212,177 @@ public sealed class ActionPermissionGuardRatchetTests
             + string.Join("\n  ", offenders));
     }
 
+    /// <summary>D-835 - grids that gate every row-opener and offer their own read path
+    /// instead of <c>OnDetailsOne</c>, with what that path is. An entry has to name a
+    /// real, UNGATED control the page renders for the row.
+    ///
+    /// <para>Keyed per GRID, not per file: both of these pages host a second grid that
+    /// does wire <c>OnDetailsOne</c>, and a file-level key would let a future change
+    /// strip that one and hide behind this entry. TItem is unique per grid on both.</para></summary>
+    private static readonly Dictionary<string, string> ReviewedReadPaths = new(StringComparer.Ordinal)
+    {
+        ["src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/FaqManager.razor|AdminFaqGroupSummary"] =
+            "RowActions renders an ungated 'Manage entries' button that selects the "
+            + "group and opens its entries grid. It is a real READ path and not just a "
+            + "way in: the grid already columns every field on AdminFaqGroupSummary "
+            + "except CreatedAt, so opening the row reveals nothing the reader cannot "
+            + "already see. RatingConfig's types grid looked like the same case and was "
+            + "NOT - seven of its fields have no column - so it got Details instead.",
+    };
+
+    [Fact]
+    public void A_grid_that_gates_its_row_openers_still_offers_a_way_to_read_one_row()
+    {
+        // D-835. D-830 gated Edit and Delete, which on many grids were the only two
+        // ways to open a row at all. That silently turned "cannot change this record"
+        // into "cannot READ this record", and left the actions column rendering as an
+        // empty box, because the grid decides whether to draw that column from the
+        // CALLBACKS it can see synchronously, not from the permissions it cannot.
+        //
+        // The rule: if a grid gates Edit or Delete, it must also wire OnDetailsOne, or
+        // name the ungated row control it offers instead. Reading a row is what the
+        // page's own View gate already bought.
+        var offenders = new List<string>();
+
+        // Components, not Pages: the sibling confirm rule already learned this one.
+        // A grid moved into a shared component under Components/ but outside
+        // Components/Pages/ would silently leave a Pages-scoped sweep.
+        foreach (var file in CpRazor.Components)
+        {
+            foreach (var tag in CpRazor.OpeningTags([file], "SimfDataGrid"))
+            {
+                // Two ways a page gates a row-opener, and the rule has to see both.
+                // The grid-side one is an *Permission parameter. The page-side one is
+                // a conditional callback - `_canEdit ? EventCallback.Factory... :
+                // default` - which VipRegistration uses, and which is STRICTER: the
+                // grid gets no delegate at all, so it draws no button and no actions
+                // column. Matching only the first left the page D-830 named as its
+                // starkest case outside the rule entirely.
+                // Only grids that actually HAVE a row-opener can lose one. A grid
+                // carrying DeletePermission for a bulk-only OnDeleteSelected never
+                // had a per-row way in, so demanding Details of it would be noise.
+                var hasRowOpener =
+                    CpRazor.HasAttribute(tag.Text, "OnEditOne")
+                    || CpRazor.HasAttribute(tag.Text, "OnDeleteOne");
+                if (!hasRowOpener) { continue; }
+
+                var gatesAnOpener =
+                    CpRazor.HasAttribute(tag.Text, "EditPermission")
+                    || CpRazor.HasAttribute(tag.Text, "DeletePermission")
+                    || WiredConditionally(tag.Text, "OnEditOne")
+                    || WiredConditionally(tag.Text, "OnDeleteOne");
+                if (!gatesAnOpener) { continue; }
+                if (CpRazor.HasAttribute(tag.Text, "OnDetailsOne")) { continue; }
+
+                var key = $"{file.Relative}|{CpRazor.AttributeValue(tag.Text, "TItem")}";
+                if (ReviewedReadPaths.ContainsKey(key)) { continue; }
+
+                offenders.Add($"{file.Relative}:{tag.Line} (key {key})");
+            }
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            "These grids gate Edit and/or Delete without leaving any way to open one "
+            + "row, so a holder of the page's View code can no longer read a single "
+            + "record and the actions column renders empty. Wire OnDetailsOne (plus a "
+            + "SimfDetails block), or add the file to ReviewedReadPaths naming the "
+            + "ungated row control it offers instead:\n  "
+            + string.Join("\n  ", offenders));
+    }
+
+    /// <summary>The text of the first <c>&lt;RowActions&gt;</c> block, or null.</summary>
+    private static string? RowActionsBlock(string source)
+    {
+        var start = source.IndexOf("<RowActions", StringComparison.Ordinal);
+        if (start < 0) { return null; }
+        var end = source.IndexOf("</RowActions>", start, StringComparison.Ordinal);
+        return end < 0 ? null : source[start..end];
+    }
+
+    /// <summary>True when the callback is wired behind a permission check that can
+    /// hand the grid no delegate at all (<c>_canEdit ? … : default</c>).</summary>
+    private static bool WiredConditionally(string tag, string callback)
+    {
+        var value = CpRazor.AttributeValue(tag, callback);
+        if (value is null) { return false; }
+
+        // The two ways to hand the grid "no delegate": `: default` and
+        // `: EventCallback<T>.Empty`. Matched on the ternary arm rather than the
+        // bare word, so a handler merely NAMED OnEditDefaultAsync is not misread.
+        return value.Contains(": default", StringComparison.Ordinal)
+            || value.Contains(":default", StringComparison.Ordinal)
+            || value.Contains(".Empty", StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_reviewed_read_path_list_has_no_stale_entries()
+    {
+        // An entry that no longer names a real grid is a false record of a reviewed
+        // decision, and worse, it would keep excusing a grid that had since been
+        // given a different item type. Check the file AND the grid inside it.
+        var stale = new List<string>();
+
+        foreach (var key in ReviewedReadPaths.Keys)
+        {
+            var parts = key.Split('|');
+            var page = CpRazor.Components.FirstOrDefault(candidate => candidate.Relative == parts[0]);
+            if (page is null)
+            {
+                stale.Add($"{key} — the page no longer exists");
+                continue;
+            }
+
+            var grids = CpRazor.OpeningTags([page], "SimfDataGrid")
+                .Where(tag => CpRazor.AttributeValue(tag.Text, "TItem") == parts[1])
+                .ToList();
+
+            // Exactly one. The key is file+TItem, so a page that grew a SECOND grid
+            // over the same item type (an active list beside an archived one, say)
+            // would have one entry silently excusing both. That is a latent
+            // ambiguity in the key scheme, so it fails the build the day it appears
+            // rather than the day someone notices.
+            if (grids.Count != 1)
+            {
+                stale.Add($"{key} — the page has {grids.Count} grids with TItem={parts[1]}, expected exactly 1");
+                continue;
+            }
+
+            // And the entry must still be NEEDED. If the grid has since dropped its
+            // permissions or gained OnDetailsOne, the entry is a false record of a
+            // defect - the same rule the page-written exception list already applies.
+            var tag = grids[0];
+            var stillGated =
+                CpRazor.HasAttribute(tag.Text, "EditPermission")
+                || CpRazor.HasAttribute(tag.Text, "DeletePermission")
+                || WiredConditionally(tag.Text, "OnEditOne")
+                || WiredConditionally(tag.Text, "OnDeleteOne");
+            if (!stillGated || CpRazor.HasAttribute(tag.Text, "OnDetailsOne"))
+            {
+                stale.Add($"{key} — the grid no longer needs an exception "
+                    + "(it gates nothing, or it now wires OnDetailsOne)");
+                continue;
+            }
+
+            // The whole justification is an UNGATED row control. If a later change
+            // wraps it in an action gate - a very plausible "tighten the gates"
+            // follow-up - the read path vanishes and every other test still passes.
+            var rowActions = RowActionsBlock(page.Text);
+            var hasUngatedRowControl = rowActions is not null
+                && rowActions.Contains("SimfToolbarButton", StringComparison.Ordinal)
+                && !rowActions.Contains("<AuthorizedAction", StringComparison.Ordinal)
+                && !rowActions.Contains("<SimfActionGate", StringComparison.Ordinal);
+            if (!hasUngatedRowControl)
+            {
+                stale.Add($"{key} — its RowActions no longer renders an UNGATED control, "
+                    + "so the read path this entry claims does not exist");
+            }
+        }
+
+        Assert.True(stale.Count == 0,
+            "Reviewed read-path entries no longer hold:\n  " + string.Join("\n  ", stale));
+    }
+
     /// <summary>The only confirm dialogs with no permission, and why. Both act on the
     /// signed-in admin's OWN record - their notification, their avatar - through an
     /// account endpoint that takes the caller's identity and no admin code. There is

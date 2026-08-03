@@ -39,6 +39,13 @@ public partial class VipRegistration
     private bool _canRegister;
     private bool _canEdit;
 
+    /// <summary>D-835 - the VIP being read. Unconditional, unlike Add and Edit
+    /// above: the page gate already decided who may read this list, and the row
+    /// the grid holds carries the Arabic name and job title no column shows.</summary>
+    private AdminVipSummary? _vipDetails;
+
+    private void OnVipDetails(AdminVipSummary vip) => _vipDetails = vip;
+
     private bool _addOpen;
     private bool _editOpen;
     private Guid _editUserId;

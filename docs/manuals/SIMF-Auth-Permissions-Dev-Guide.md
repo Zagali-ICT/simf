@@ -624,13 +624,48 @@ right.** The two are often not the same word, and every one of these is real:
 - **A page can host two grids over two resources.** `MeetingTablesList`'s second
   grid is hall allocations, so its Add/Delete are `HallAllocations.Edit`, not the
   `MeetingTables.Edit` of the grid above it.
-- **The same action can split by scope.** On `/admin/others/pending` the bulk
-  Approve/Reject are `Others.Approve` / `Others.Reject` while the per-row ones are
-  `Admins.Approve` / `Admins.Reject`, because `ApproveStaffEndpoint` serves both
-  the admins and the others single-row routes.
+- **An action is gated by the tier it acts on, not by the file it lives in
+  (D-834).** Every button on `/admin/others/pending` is `Others.*`, bulk and
+  per-row alike, because every one of them acts on a partner account. This bullet
+  used to say the opposite - that the per-row pair was `Admins.Approve` /
+  `Admins.Reject` "because `ApproveStaffEndpoint` serves both routes". That was
+  wrong twice over: `ApproveStaffEndpoint.cs` is a FILE holding two separate
+  endpoint classes, and `ApproveOtherEndpoint` had simply kept the policy line it
+  was copy-pasted with. The permission catalogue had specified `Others.*` for both
+  routes all along. `PermissionEnforcementTests`
+  `.An_approval_route_is_gated_on_the_permission_for_the_tier_it_acts_on` now
+  derives the required code from the route, so the next copy-paste fails the build
+  instead of shipping.
 - **The page's own gate is not a shortcut.** `/admin/gates` is gated on
   `Gates.Manage`, but its Import needs `Gates.Import` and its Export
   `Gates.Export`.
+
+**7b-bis — leave a way to READ the row (D-835).** Gating a grid's Edit and Delete
+often removes the only two ways to open a row, turning "cannot change this
+record" into "cannot read it" - and the actions column then renders as an empty
+box, because the grid decides whether to draw that column from the callbacks it
+sees synchronously, not from the permissions it does not. So a grid that gates
+Edit or Delete must also wire `OnDetailsOne` and render a `SimfDetails` block:
+
+```razor
+<SimfDataGrid ... OnDetailsOne="OpenEntryDetails"
+                  DetailsLabel="@L["Admin.Faq.Action.Details"]"
+                  EditPermission="@PermissionCatalog.Faq.Edit" />
+
+<SimfDetails Open="@(_entryDetails is not null)" Title="@(_entryDetails?.Question ?? "")"
+             CloseLabel="@L["Grid.Close"]" OnClose="@(() => _entryDetails = null)">
+    <SimfDetailRow Label="@L["Admin.Faq.Col.Answer"]" Value="@_entryDetails.Answer" />
+</SimfDetails>
+```
+
+Details takes **no permission** - reading the row is what the page's own View
+gate already bought - and it opens from the row the grid already holds, so it
+needs no second fetch. The alternative is an ungated control in `RowActions`
+that opens the record; if you take that route, add the grid to
+`ReviewedReadPaths` in `ActionPermissionGuardRatchetTests` naming the control.
+The ratchet enforces this for both gating idioms: the `*Permission` parameters
+**and** a conditional callback (`_canEdit ? … : default`), which is stricter
+because the grid then gets no delegate at all.
 
 **7c — the confirm dialog behind the button (D-831).** `SimfConfirm` renders its
 own Confirm button from `OnConfirm`, for the same reason and with the same fix:
