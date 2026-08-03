@@ -10,6 +10,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class BannersViewDeleteTests : CpComponentTestBase
 {
+    public BannersViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Banners.Delete);
+    }
+
     private static AdminBannerDetail Detail() => new(
         Guid.NewGuid(), "Welcome", "Ø£Ù‡Ù„Ø§Ù‹", "Body", "Ø§Ù„Ù†Øµ",
         "https://cdn.simf.test/banner.png", "https://simf.test/news",

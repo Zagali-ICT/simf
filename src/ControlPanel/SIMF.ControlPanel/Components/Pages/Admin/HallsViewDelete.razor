@@ -108,5 +108,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
-                 OnCancel="@(() => _confirming = false)" />
+                 OnCancel="@(() => _confirming = false)" 
+                 Permission="@PermissionCatalog.Halls.Delete"/>
 }

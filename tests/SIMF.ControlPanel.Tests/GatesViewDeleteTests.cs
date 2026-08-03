@@ -12,6 +12,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class GatesViewDeleteTests : CpComponentTestBase
 {
+    public GatesViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Gates.Manage);
+    }
+
     private static AdminGateDetail Detail() => new(
         Guid.NewGuid(), "GATE-1", "North Gate", "Ø§Ù„Ø¨ÙˆØ§Ø¨Ø© Ø§Ù„Ø´Ù…Ø§Ù„ÙŠØ©",
         Description: "Main entrance", DescriptionArabic: "Ø§Ù„Ù…Ø¯Ø®Ù„ Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠ",

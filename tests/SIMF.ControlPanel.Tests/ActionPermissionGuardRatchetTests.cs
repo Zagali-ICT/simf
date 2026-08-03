@@ -212,6 +212,18 @@ public sealed class ActionPermissionGuardRatchetTests
             + string.Join("\n  ", offenders));
     }
 
+    /// <summary>The only confirm dialogs with no permission, and why. Both act on the
+    /// signed-in admin's OWN record - their notification, their avatar - through an
+    /// account endpoint that takes the caller's identity and no admin code. There is
+    /// nothing to gate; requiring a permission here would deny a user their own data.</summary>
+    private static readonly Dictionary<string, string> SelfServiceConfirms = new(StringComparer.Ordinal)
+    {
+        ["src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/Notifications.razor"] =
+            "dismisses the signed-in admin's own notification",
+        ["src/ControlPanel/SIMF.ControlPanel/Components/Pages/Account/Profile.razor"] =
+            "removes the signed-in admin's own avatar",
+    };
+
     [Fact]
     public void No_page_opens_a_confirm_dialog_without_its_permission()
     {
@@ -220,18 +232,22 @@ public sealed class ActionPermissionGuardRatchetTests
         // grid draws its Add from OnAdd, so it takes a Permission for the same reason.
         // Cancel is never gated: a holder who may not commit must still be able to
         // close the dialog.
+        // EVERY component, not only the routable gated pages. Most confirm dialogs in
+        // this codebase live in a form component (XxxViewDelete) that carries no page
+        // gate of its own and is hosted by a page that does — so a page-scoped rule
+        // would have covered 16 of the 46 and called the job done.
         var offenders = new List<string>();
 
-        foreach (var (file, group, action) in GatedPages())
+        foreach (var file in CpRazor.Components)
         {
+            if (SelfServiceConfirms.ContainsKey(file.Relative)) { continue; }
+
             foreach (var tag in CpRazor.OpeningTags([file], "SimfConfirm"))
             {
                 if (!CpRazor.HasAttribute(tag.Text, "OnConfirm")) { continue; }
                 if (CpRazor.HasAttribute(tag.Text, "Permission")) { continue; }
 
-                offenders.Add(
-                    $"{file.Relative}:{tag.Line} — page gated on {group}.{action}, "
-                    + "confirm dialog has no Permission");
+                offenders.Add($"{file.Relative}:{tag.Line} — confirm dialog has no Permission");
             }
         }
 

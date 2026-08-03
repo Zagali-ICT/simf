@@ -10,6 +10,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class SessionCategoriesViewDeleteTests : CpComponentTestBase
 {
+    public SessionCategoriesViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.SessionCategories.Delete);
+    }
+
     private static AdminSessionCategoryDetail Detail() => new(
         Guid.NewGuid(), "Keynotes", "ÙƒÙ„Ù…Ø§Øª Ø±Ø¦ÙŠØ³ÙŠØ©", 1,
         IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);

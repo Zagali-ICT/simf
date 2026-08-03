@@ -11,6 +11,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class AiPromptsViewDeleteTests : CpComponentTestBase
 {
+    public AiPromptsViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.AiPrompts.Delete);
+    }
+
     private static AdminAiPromptDetail Detail() => new(
         Guid.NewGuid(),
         "question-filter",

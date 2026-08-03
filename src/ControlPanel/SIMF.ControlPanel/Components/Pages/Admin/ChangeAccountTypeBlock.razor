@@ -60,4 +60,5 @@
              ConfirmLabel="@L["Admin.ChangeType.Action"]"
              CancelLabel="@L["Common.Cancel"]"
              OnConfirm="ConfirmChangeAsync"
-             OnCancel="@(() => _confirming = false)" />
+             OnCancel="@(() => _confirming = false)" 
+             Permission="@PermissionCatalog.Accounts.ChangeType"/>

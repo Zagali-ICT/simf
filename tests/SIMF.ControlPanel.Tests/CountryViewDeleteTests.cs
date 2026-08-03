@@ -10,6 +10,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class CountryViewDeleteTests : CpComponentTestBase
 {
+    public CountryViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Countries.Delete);
+    }
+
     private static AdminCountryDetail Detail() => new(
         682, "SA", "Saudi Arabia", "المملكة العربية السعودية", "+966", 1,
         IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
