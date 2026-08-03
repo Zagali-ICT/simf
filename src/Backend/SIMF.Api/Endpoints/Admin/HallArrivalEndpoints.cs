@@ -1,8 +1,10 @@
 // Tests: SIMF.Api.Tests/HallArrivalScanTests.cs
+// Tests: SIMF.Api.Tests/OperationalRateLimitExemptionTests.cs
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -20,7 +22,9 @@ public sealed class RecordQrArrivalEndpoint(IHallAttendanceService service)
         Post("/admin/sessions/{sessionId:guid}/arrivals");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallArrivals.Record),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        // D-838 — one call per person through a hall door, so it belongs to the
+        // operational surface D-819 named. See RateLimitOptions.OperationalPolicy.
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Admin");
     }
 
@@ -50,7 +54,8 @@ public sealed class RecordQrDepartureEndpoint(IHallAttendanceService service)
         Post("/admin/sessions/{sessionId:guid}/departures");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallArrivals.Record),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        // D-838 — the exit side of the same door, emptying a hall in one burst.
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Admin");
     }
 

@@ -72,6 +72,11 @@ public sealed class OperationalRateLimitExemptionTests : IClassFixture<SimfApiFa
         ["/api/v1/admin/visitors/bulk-reject"] = "Visitors.Approve — bulk queue.",
         ["/api/v1/admin/others/bulk-reject"] = "Others.Approve — bulk queue.",
 
+        // The hall doors. One call per person entering or leaving a session, and
+        // the pair D-819 itself named while leaving them capped (D-838).
+        ["/api/v1/admin/sessions/{sessionId:guid}/arrivals"] = "HallArrivals.Record — the hall door, inbound.",
+        ["/api/v1/admin/sessions/{sessionId:guid}/departures"] = "HallArrivals.Record — the hall door, outbound.",
+
         // Reconciling an offline desk's shift, which is one call per badge issued.
         ["/api/v1/admin/offline/batch"] = "D-820 — offline badge upload.",
     };
