@@ -55,7 +55,18 @@ Gated by `Visitors.RegisterOnsite` — the VIP page is on-site visitor
 registration, so it reuses the walk-in capability rather than inventing a
 permission that maps to no distinct API action. The `…/vip-photo` endpoints are
 gated `Visitors.Edit` (upload) / `Visitors.View` (read), mirroring the avatar +
-ID-document admin endpoints.
+ID-document admin endpoints. Both `…/vip-photo` routes also verify the subject is
+an **audience-tier** account (D-836) and answer 404 otherwise, so the visitor
+desk cannot reach a partner's photo by id.
+
+The grid's **New VIP** and per-row **Edit** are resolved through
+`IAuthorizationService` and wired as `default` when denied, which is stricter
+than hiding a button — the grid receives no delegate at all. Because that left a
+holder of neither with no way to open a row, and no actions column, the grid also
+wires an ungated read-only **Details** view (D-835); it is the one place the
+Arabic name and Arabic job title are visible, neither having a column. Since
+D-837 the grid resolves those permissions once per parameter set, so a denied
+holder gets no empty toolbar or actions column.
 
 ## 3. Data
 
