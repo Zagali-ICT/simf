@@ -12,6 +12,11 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.7" />
+    <!-- D-830: AuthorizeView for SimfActionGate — SimfDataGrid renders its own
+         mutating buttons, so the permission gate has to live inside the grid.
+         Same 10.0.7 pin as its sibling; resolves to the shared framework at
+         runtime in both hosts. -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.7" />
   </ItemGroup>
 
   <ItemGroup>

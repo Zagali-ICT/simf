@@ -65,7 +65,12 @@
                           DeleteLabel="@L["Admin.Sessions.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Sessions.Create"
+                          EditPermission="@PermissionCatalog.Sessions.Edit"
+                          DeletePermission="@PermissionCatalog.Sessions.Delete"
+                          ImportPermission="@PermissionCatalog.Sessions.Import"
+                          ExportPermission="@PermissionCatalog.Sessions.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

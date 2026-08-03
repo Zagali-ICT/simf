@@ -64,7 +64,24 @@ Panel page or a new admin endpoint/action you MUST:
 3. Gate the API endpoint(s): `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.X.Y), nameof(AuthorizationPolicies.RequireApprovedAccount))`.
 4. Gate the CP page: `@attribute [RequirePermission(PermissionCatalog.X.Y)]`.
 5. Set the `CpNavigation` item's `RequiredPermission` (`null` only for the dashboard / `IsStub` placeholders).
-6. Wrap action buttons in `<AuthorizedAction Permission="PermissionCatalog.X.Y">`.
+6. Gate every action control. Buttons the **page** writes (including inside
+   `<RowActions>` and modals) get wrapped in
+   `<AuthorizedAction Permission="PermissionCatalog.X.Y">`. Buttons
+   **a shared component renders itself** cannot be wrapped from the page, so name
+   the code on that component instead — on `SimfDataGrid`: `AddPermission` (which
+   also covers Duplicate and Paste) / `EditPermission` / `DeletePermission` /
+   `ImportPermission` / `ExportPermission` / `ApprovePermission` /
+   `RejectPermission` (D-830); on `SimfConfirm`: `Permission`, which gates the
+   Confirm button and never Cancel (D-831). In every case use the permission that
+   gates the **endpoint the button calls**, which is often not the page's own code
+   and not a name you can guess: on a page hosting two grids over two resources
+   they differ; on `/admin/others/pending` the bulk and per-row Approve use
+   different codes because the API does; and a dialog named "this will unpublish"
+   may still only call the plain save endpoint.
+
+   Never put a Razor comment `@* … *@` **inside a component tag's attribute list**.
+   It compiles and then throws at render time, because Razor reads it as an
+   attribute name (D-831). Put it on the line above the tag.
 
 `tests/SIMF.ControlPanel.Tests/CpNavigationPermissionTests.cs` and
 `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` fail the build if a gate is

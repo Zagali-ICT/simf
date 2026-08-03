@@ -57,7 +57,11 @@
                           DetailsLabel="@L["Grid.Details"]"
                           DeleteLabel="@L["Admin.Invitations.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Invitations.Manage"
+                          EditPermission="@PermissionCatalog.Invitations.Manage"
+                          DeletePermission="@PermissionCatalog.Invitations.Manage"
+                          ExportPermission="@PermissionCatalog.Invitations.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

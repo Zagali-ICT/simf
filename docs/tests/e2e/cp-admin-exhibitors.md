@@ -10,11 +10,15 @@
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5) |
 
 > **Page permission:** the page is gated by `@attribute [RequirePermission(PermissionCatalog.Exhibitors.View)]`.
-> The grid CRUD action buttons (Add / Edit / Details / Delete) are surfaced by `SimfDataGrid`
-> itself and are **not** individually wrapped in `<AuthorizedAction>`, so any admin who can
-> open the page sees them — but the API enforces the finer-grained `Exhibitors.Create` /
-> `Exhibitors.Edit` / `Exhibitors.Delete` policies on the underlying endpoints (`POST
-> /admin/exhibitors`, `PUT /admin/exhibitors/{id}`, `DELETE /admin/exhibitors/{id}`). The
+> The grid CRUD action buttons (Add / Edit / Delete / Import / Export) are surfaced by
+> `SimfDataGrid` itself, so they cannot be wrapped in `<AuthorizedAction>` from the page.
+> **Since D-830 the grid gates them itself**: the page sets `AddPermission` /
+> `EditPermission` / `DeletePermission` / `ImportPermission` / `ExportPermission`, so a
+> holder of only `Exhibitors.View` sees the list, the read-only Details and nothing else.
+> The API still enforces the same `Exhibitors.Create` / `Exhibitors.Edit` /
+> `Exhibitors.Delete` policies on the underlying endpoints (`POST /admin/exhibitors`,
+> `PUT /admin/exhibitors/{id}`, `DELETE /admin/exhibitors/{id}`) — the CP gate is the
+> usability half, never the security boundary. The
 > individually `<AuthorizedAction>`-gated affordances are the per-row "Accounts"
 > (account-provisioning) icon, wrapped in `<AuthorizedAction Permission="Exhibitors.Edit">`,
 > and — inside that modal — the "Link an existing account" block, wrapped in
@@ -238,14 +242,22 @@ Scenario: Admin lacking Exhibitors.View is denied the page
 ### E2E-EXH-009 — Auth gate (action level)
 
 ```gherkin
-Scenario: Admin with View but without Create cannot create
+Scenario: Admin with View but without Create never reaches the Add form
+  # REWRITTEN for D-830. Until then this scenario had the admin fill the whole form
+  # and discover the refusal from a 403 on Save. The Add button is now rendered by
+  # SimfDataGrid behind AddPermission="Exhibitors.Create", so there is no form to
+  # fill. The API gate is unchanged and is still the security boundary, so the
+  # second half asserts it directly rather than through a UI that no longer offers
+  # the path.
   Given a signed-in admin whose role includes Exhibitors.View but NOT Exhibitors.Create
-  And they have opened /admin/exhibitors (the page renders, "Add" is visible
-      because the toolbar action is not individually gated in the CP UI)
-  When they fill the Add form and click "Save"
-  Then the BFF forwards POST /admin/exhibitors
-  And the API rejects it with HTTP 403 (the Exhibitors.Create policy is not satisfied)
-  And the form stays open with the bilingual error surfaced from the envelope
+  When they open /admin/exhibitors
+  Then the grid and its rows render, and the read-only Details action is offered
+  And NO "Add" button is present in the toolbar
+  And NO per-row Edit or Delete action is present (Exhibitors.Edit / .Delete)
+  And NO Import or Export button is present (Exhibitors.Import / .Export)
+  And right-clicking a row offers no Edit, Duplicate or Delete entry
+  When the same account POSTs /api/v1/admin/exhibitors directly with a valid body
+  Then the API rejects it with HTTP 403 (the Exhibitors.Create policy is not satisfied)
   And note: the integration test Non_admin_caller_is_forbidden_from_export
       (ExhibitorsExcelTests) covers the same per-action gate on the export endpoint
 ```
@@ -753,9 +765,11 @@ gate itself is swept by
   Excel **export + import** through `CrudGridExcel` (`Resource="exhibitors"`): export
   `POST /admin/exhibitors/export`, import `POST /admin/exhibitors/import` (insert-only, 5 MB +
   ZIP-magic gate, 5000-row cap) — see E2E-EXH-021..023. The per-row **Accounts** provisioning
-  icon is the only `<AuthorizedAction>`-gated UI affordance (`Exhibitors.Edit`) and opens its
-  own `SimfModal`, independent of the CrudShell (E2E-EXH-020); the CRUD action buttons are not
-  individually gated in the CP — per-action enforcement is API-side only (E2E-EXH-009).
+  icon is `<AuthorizedAction>`-gated (`Exhibitors.Edit`) and opens its own `SimfModal`,
+  independent of the CrudShell (E2E-EXH-020). Since D-830 the CRUD, Import and Export
+  buttons are gated too, through the grid's own `AddPermission` / `EditPermission` /
+  `DeletePermission` / `ImportPermission` / `ExportPermission`; per-action enforcement
+  remains API-side as well (E2E-EXH-009).
 
 ### E2E-EXH-029 — Provision an already-registered email
 

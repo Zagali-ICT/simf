@@ -46,7 +46,9 @@
                       AddLabel="@L["Grid.Add"]"
                       EditLabel="@L["Grid.Edit"]"
                       DeleteLabel="@L["Grid.Delete"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      AddPermission="@PermissionCatalog.SessionModerators.Assign"
+                      ExportPermission="@PermissionCatalog.SessionModerators.Export">
             <Columns>
                 <SimfDataGridColumn TItem="AdminSessionModeratorRow" Key="session"
                                     Header="@L["Admin.SessionModerators.Col.Session"]"
@@ -153,4 +155,5 @@
              ConfirmLabel="@L["Admin.SessionModerators.Revoke"]"
              CancelLabel="@L["Common.Cancel"]"
              OnConfirm="ConfirmRevokeAsync"
-             OnCancel="CancelRevoke" />
+             OnCancel="CancelRevoke" 
+             Permission="@PermissionCatalog.SessionModerators.Revoke"/>

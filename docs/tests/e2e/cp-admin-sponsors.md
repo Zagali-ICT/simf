@@ -10,10 +10,13 @@
 | **Last reviewed** | 2026-07-11 (D-740 — logo thumbnail identity cell + URL link) |
 
 > **Page permission:** the page is gated by `@attribute [RequirePermission(PermissionCatalog.Sponsors.View)]`.
-> The action buttons (Add / Edit / Delete) are **not** wrapped in `<AuthorizedAction>` on
-> this page, so any admin who can open it sees all three buttons — but the BFF/API enforce
-> the finer-grained `Sponsors.Create` / `Sponsors.Edit` / `Sponsors.Delete` policies on the
-> underlying endpoints (`POST /admin/sponsors`, `PUT /admin/sponsors/{id}`, `DELETE
+> The action buttons (Add / Edit / Delete / Import / Export) are rendered by `SimfDataGrid`
+> itself, so they cannot be wrapped in `<AuthorizedAction>` from the page. **Since D-830 the
+> grid gates them itself**: the page sets `AddPermission` / `EditPermission` /
+> `DeletePermission` / `ImportPermission` / `ExportPermission`, so an admin holding only
+> `Sponsors.View` sees the list and none of the five. The BFF/API still enforce the same
+> `Sponsors.Create` / `Sponsors.Edit` / `Sponsors.Delete` policies on the underlying
+> endpoints (`POST /admin/sponsors`, `PUT /admin/sponsors/{id}`, `DELETE
 > /admin/sponsors/{id}`). E2E-SPN-009 covers the per-action API gate.
 
 ## Coverage matrix
@@ -248,14 +251,18 @@ Scenario: Admin lacking Sponsors.View is denied the page
 ### E2E-SPN-009 — Auth gate (action level)
 
 ```gherkin
-Scenario: Admin with View but without Create cannot create
+Scenario: Admin with View but without Create never reaches the Add modal
+  # REWRITTEN for D-830. The Add button is rendered by SimfDataGrid behind
+  # AddPermission="Sponsors.Create", so a View-only holder has no modal to fill.
+  # The API gate is unchanged and is still the security boundary.
   Given a signed-in admin whose role includes Sponsors.View but NOT Sponsors.Create
-  And they have opened /admin/sponsors (the page renders, "Add sponsor" is visible
-      because the button is not individually gated in the CP UI)
-  When they fill the Add modal and click "Save"
-  Then the BFF forwards POST /admin/sponsors
-  And the API rejects it with HTTP 403 (the Sponsors.Create policy is not satisfied)
-  And the modal stays open with the bilingual error toast surfaced from the envelope
+  When they open /admin/sponsors
+  Then the grid and its rows render, and the read-only Details action is offered
+  And NO "Add sponsor" button is present in the toolbar
+  And NO per-row Edit or Delete action is present (Sponsors.Edit / .Delete)
+  And NO Import or Export button is present (Sponsors.Import / .Export)
+  When the same account POSTs /api/v1/admin/sponsors directly with a valid body
+  Then the API rejects it with HTTP 403 (the Sponsors.Create policy is not satisfied)
 ```
 
 ### E2E-SPN-010 — Client-side name validation
@@ -588,9 +595,10 @@ Scenario: A bad / wrong-sheet upload is rejected and nothing is created
   with `IsDelete=false`. D-356 added Excel **export + import** through `CrudGridExcel`
   (`Resource="sponsors"`): export `POST /admin/sponsors/export`, import
   `POST /admin/sponsors/import` (insert-only, 5 MB + ZIP-magic gate, 5000-row cap) —
-  see E2E-SPN-021..023. Action buttons are not individually `<AuthorizedAction>`-gated;
-  per-action enforcement is API-side only (see E2E-SPN-009), and Export/Import are
-  gated by the `Sponsors.Export` / `Sponsors.Import` policies on the API.
+  see E2E-SPN-021..023. D-830: the action buttons are gated in the CP too, through the
+  grid's own `AddPermission` / `EditPermission` / `DeletePermission` / `ImportPermission` /
+  `ExportPermission` parameters; per-action enforcement remains API-side as well (see
+  E2E-SPN-009), on the `Sponsors.Export` / `Sponsors.Import` policies among others.
 
 ### E2E-SPN-024 — Logo via the unified media-asset pipeline (D-357)
 

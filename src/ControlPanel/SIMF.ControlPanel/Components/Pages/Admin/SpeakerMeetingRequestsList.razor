@@ -46,7 +46,8 @@
                       ActionsHeader="@L["Grid.Actions"]"
                       SelectAllLabel="@L["Grid.SelectAll"]"
                       SelectRowLabel="@L["Grid.SelectRow"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ExportPermission="@PermissionCatalog.SpeakerMeetingRequests.Export">
             <Columns>
                 <SimfDataGridColumn TItem="AdminSpeakerMeetingRequestRow" Key="speaker"
                                     Header="@L["Admin.SpeakerMeetingRequests.Col.Speaker"]">
@@ -244,9 +245,12 @@
                     @L["Admin.Meetings.Approve"]
                 </SimfButton>
             </AuthorizedAction>
+            @* D-831 - the commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
             <SimfButton Type="button" OnClick="ConfirmAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.Meetings.Confirm"]
-            </SimfButton>
+                    @L["Admin.Meetings.Confirm"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -254,4 +258,5 @@
 @* R10 (D-767) — must-decide guard for the one-click Check-in / Resend row actions. *@
 <SimfConfirm Open="_confirmOpen" Title="@_confirmTitle" Message="@_confirmMessage"
              ConfirmLabel="@_confirmLabel" CancelLabel="@L["Admin.Meetings.Close"]"
-             Busy="_busy" OnConfirm="RunConfirmAsync" OnCancel="CancelConfirm" />
+             Busy="_busy" OnConfirm="RunConfirmAsync" OnCancel="CancelConfirm" 
+             Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage"/>

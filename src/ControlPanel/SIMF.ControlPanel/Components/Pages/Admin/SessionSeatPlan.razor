@@ -223,7 +223,8 @@
              Danger="true"
              Busy="_busy"
              OnConfirm="ConfirmReleaseAsync"
-             OnCancel="CancelRelease">
+             OnCancel="CancelRelease"
+             Permission="@PermissionCatalog.SeatPlans.Edit">
     <ChildContent>
         @if (_releasing is { } target)
         {

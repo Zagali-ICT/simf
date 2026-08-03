@@ -235,8 +235,10 @@ Scenario: Admin with Faq.View only sees no Create/Edit/Delete buttons
   Given a signed-in admin granted Faq.View but not Faq.Create / Faq.Edit / Faq.Delete
   When they open /admin/faq
   Then the groups table renders and rows are listed
-  And the "Add group" button is hidden (wrapped in AuthorizedAction Faq.Create)
+  And the "Add group" button is hidden (SimfDataGrid AddPermission=Faq.Create, D-830)
   And on each group row the "Edit" and "Deactivate" buttons are hidden
+      (EditPermission=Faq.Edit / DeletePermission=Faq.Delete — the same codes also
+       remove the entries from the row's right-click menu)
   And the "Manage entries" button is still shown (it is not permission-gated)
   When they click "Manage entries"
   Then the entries table renders read-only with no "Add entry"/"Edit"/"Deactivate" buttons

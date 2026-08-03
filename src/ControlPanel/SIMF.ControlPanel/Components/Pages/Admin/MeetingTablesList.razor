@@ -69,7 +69,11 @@
                           AddLabel="@L["Admin.MeetingTables.AddTable"]"
                           EditLabel="@L["Grid.Edit"]" DeleteLabel="@L["Grid.Delete"]"
                           ExportLabel="@L["Grid.Export"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.MeetingTables.Edit"
+                          EditPermission="@PermissionCatalog.MeetingTables.Edit"
+                          DeletePermission="@PermissionCatalog.MeetingTables.Edit"
+                          ExportPermission="@PermissionCatalog.MeetingTables.Export">
                 <Columns>
                     <SimfDataGridColumn TItem="MeetingTableRow" Key="code" Header="@L["Admin.MeetingTables.Col.Code"]">
                         <CellTemplate>@context.Code</CellTemplate>
@@ -95,6 +99,9 @@
             </SimfDataGrid>
 
             <h3>@L["Admin.MeetingTables.Allocations.Heading"]</h3>
+            @* The allocation grid acts on a DIFFERENT resource from the
+            tables grid above it: both buttons call hall-allocation
+            endpoints, which the API gates on HallAllocations.Edit. *@
             <SimfDataGrid TItem="HallAllocationRow"
                           Query="_allocQuery" Page="_allocPage" Loading="_allocLoading"
                           OnQueryChanged="OnAllocQueryChangedAsync"
@@ -108,7 +115,9 @@
                           SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.MeetingTables.AddAllocation"]"
                           DeleteLabel="@L["Admin.MeetingTables.Release"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.HallAllocations.Edit"
+                          DeletePermission="@PermissionCatalog.HallAllocations.Edit">
                 <Columns>
                     <SimfDataGridColumn TItem="HallAllocationRow" Key="purpose" Header="@L["Admin.MeetingTables.Col.Purpose"]">
                         @* R10 (D-767) — render the localized purpose, not the raw enum name. *@
@@ -291,7 +300,7 @@
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
             @* D-828 (second pass) - page gates on MeetingTables.View; allocating tables is .Edit. *@
-            <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
+            <AuthorizedAction Permission="@PermissionCatalog.HallAllocations.Edit">
             <SimfButton Type="button" OnClick="SaveAllocationAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.MeetingTables.Save"]
                 </SimfButton>

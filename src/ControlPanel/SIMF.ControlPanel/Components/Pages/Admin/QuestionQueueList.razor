@@ -48,7 +48,8 @@
                       ActionsHeader="@L["Grid.Actions"]"
                       SelectAllLabel="@L["Grid.SelectAll"]"
                       SelectRowLabel="@L["Grid.SelectRow"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ExportPermission="@PermissionCatalog.Questions.Export">
             <Columns>
                 <SimfDataGridColumn TItem="SessionQuestionQueueRow" Key="session"
                                     Header="@L["Admin.QuestionQueue.Col.Session"]"

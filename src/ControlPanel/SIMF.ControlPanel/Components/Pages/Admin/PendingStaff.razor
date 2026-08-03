@@ -48,7 +48,9 @@
                       LoadingLabel="@L["Admin.Users.Loading"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ApprovePermission="@PermissionCatalog.Admins.Approve"
+                      RejectPermission="@PermissionCatalog.Admins.Reject">
             <Columns>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="email"
                                     Header="@L["Admin.Users.Column.Email"]"
@@ -65,17 +67,24 @@
                     <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
+            @* D-830 — the row pair matches the bulk pair above it. Gating only the
+               toolbar would have left the same two actions one row lower, which is
+               a half-gated screen rather than a fix. *@
             <RowActions Context="user">
-                <SimfButton Type="button" Variant="primary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenApprove(user))">
-                    @L["Admin.Pending.Action.Approve"]
-                </SimfButton>
-                <SimfButton Type="button" Variant="secondary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenReject(user))">
-                    @L["Admin.Pending.Action.Reject"]
-                </SimfButton>
+                <AuthorizedAction Permission="@PermissionCatalog.Admins.Approve">
+                    <SimfButton Type="button" Variant="primary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenApprove(user))">
+                        @L["Admin.Pending.Action.Approve"]
+                    </SimfButton>
+                </AuthorizedAction>
+                <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
+                    <SimfButton Type="button" Variant="secondary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenReject(user))">
+                        @L["Admin.Pending.Action.Reject"]
+                    </SimfButton>
+                </AuthorizedAction>
             </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.Pending.None"]" />
@@ -94,7 +103,8 @@
              ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
              CancelLabel="@L["Common.Cancel"]"
              OnConfirm="ConfirmApproveAsync"
-             OnCancel="CancelApprove" />
+             OnCancel="CancelApprove" 
+             Permission="@PermissionCatalog.Admins.Approve"/>
 
 <SimfConfirm Open="@(_bulkApproveSelected is not null)"
              Title="@L["Admin.Pending.BulkApprove.Confirm.Title"]"
@@ -104,7 +114,8 @@
              ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
              CancelLabel="@L["Common.Cancel"]"
              OnConfirm="ConfirmBulkApproveAsync"
-             OnCancel="CancelBulkApprove" />
+             OnCancel="CancelBulkApprove" 
+             Permission="@PermissionCatalog.Admins.Approve"/>
 
 @if (_rejectTarget is not null)
 {
@@ -126,13 +137,16 @@
                         OnClick="@(() => _rejectTarget = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
+            @* D-831 - the commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_rejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmRejectAsync"
-                        LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.Pending.Reject.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_rejectReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmRejectAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Pending.Reject.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -158,13 +172,16 @@
                         OnClick="@(() => _bulkRejectSelected = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
+            @* D-831 - the commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmBulkRejectAsync"
-                        LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.Pending.BulkReject.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmBulkRejectAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Pending.BulkReject.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }

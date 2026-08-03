@@ -54,7 +54,10 @@
                           EditLabel="@L["Grid.Edit"]"
                           DetailsLabel="@L["Grid.Details"]"
                           DeleteLabel="@L["Grid.Delete"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.ProgrammeDays.Create"
+                          EditPermission="@PermissionCatalog.ProgrammeDays.Edit"
+                          DeletePermission="@PermissionCatalog.ProgrammeDays.Delete">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

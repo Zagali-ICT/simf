@@ -55,7 +55,12 @@
                           DeleteLabel="@L["Admin.Speakers.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Speakers.Create"
+                          EditPermission="@PermissionCatalog.Speakers.Edit"
+                          DeletePermission="@PermissionCatalog.Speakers.Delete"
+                          ImportPermission="@PermissionCatalog.Speakers.Import"
+                          ExportPermission="@PermissionCatalog.Speakers.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

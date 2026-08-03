@@ -11,6 +11,10 @@ using Xunit;
 
 namespace SIMF.ControlPanel.Tests;
 
+// D-830 — the approve and reject affordances (bulk toolbar AND per row) are gated on
+// the queue's own Approve / Reject codes, so a test that wants to SEE them has to hold
+// them; Grant() comes from CpComponentTestBase. The others queue needs four codes, not
+// two, because the API splits the bulk and per-row routes across Others.* and Admins.*.
 public sealed class PendingApprovalQueueTests : CpComponentTestBase
 {
     private static readonly AdminPendingUserSummary Row =
@@ -30,6 +34,7 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
     [Fact]
     public void Staff_queue_renders_rows_with_direct_approve_and_reject_only()
     {
+        Grant(PermissionCatalog.Admins.Approve, PermissionCatalog.Admins.Reject);
         StubPendingList();
 
         var cut = RenderComponent<PendingStaff>();
@@ -49,6 +54,12 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
     [Fact]
     public void Others_queue_renders_view_approve_reject_actions()
     {
+        // Four codes, not two, and that is the page rather than the test: the API gates
+        // the BULK others approve/reject on Others.* and the PER-ROW ones on Admins.*
+        // (ApproveStaffEndpoint / RejectStaffEndpoint serve /admin/others/{id}/approve
+        // and /reject). The CP mirrors the API, so seeing every action needs both pairs.
+        Grant(PermissionCatalog.Others.Approve, PermissionCatalog.Others.Reject,
+              PermissionCatalog.Admins.Approve, PermissionCatalog.Admins.Reject);
         StubPendingList();
 
         var cut = RenderComponent<PendingOthers>();
@@ -65,6 +76,7 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
     [Fact]
     public void Visitors_queue_renders_view_approve_reject_actions()
     {
+        Grant(PermissionCatalog.Visitors.Approve, PermissionCatalog.Visitors.Reject);
         StubPendingList();
 
         var cut = RenderComponent<PendingVisitors>();
@@ -81,6 +93,7 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
     [Fact]
     public void Reject_row_action_opens_the_inherited_shared_reject_modal()
     {
+        Grant(PermissionCatalog.Admins.Approve, PermissionCatalog.Admins.Reject);
         StubPendingList();
         var cut = RenderComponent<PendingStaff>();
         cut.WaitForAssertion(() => Assert.Contains("Admin.Pending.Action.Reject", cut.Markup));
@@ -107,6 +120,7 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
     [Fact]
     public void Staff_row_approve_confirms_before_posting()
     {
+        Grant(PermissionCatalog.Admins.Approve, PermissionCatalog.Admins.Reject);
         StubPendingList();
         var cut = RenderComponent<PendingStaff>();
         cut.WaitForAssertion(() => Assert.Contains("Admin.Pending.Action.Approve", cut.Markup));
@@ -126,8 +140,15 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
     }
 
     // Bulk approve confirms on every queue — the guard lives in the shared base.
-    private void AssertBulkApproveConfirms<TQueue>() where TQueue : Microsoft.AspNetCore.Components.IComponent
+    //
+    // D-830: the bulk-approve button is a SimfDataGrid built-in, now gated on the
+    // queue's own Approve permission, so the test identity has to hold it. Granting
+    // it is the point rather than a workaround: without it the button is absent and
+    // the test would fail on Find, which is exactly the new behaviour.
+    private void AssertBulkApproveConfirms<TQueue>(string approvePermission)
+        where TQueue : Microsoft.AspNetCore.Components.IComponent
     {
+        Grant(approvePermission);
         StubPendingList();
         var cut = RenderComponent<TQueue>();
         cut.WaitForAssertion(() =>
@@ -154,13 +175,13 @@ public sealed class PendingApprovalQueueTests : CpComponentTestBase
 
     [Fact]
     public void Staff_bulk_approve_confirms_before_posting() =>
-        AssertBulkApproveConfirms<PendingStaff>();
+        AssertBulkApproveConfirms<PendingStaff>(PermissionCatalog.Admins.Approve);
 
     [Fact]
     public void Others_bulk_approve_confirms_before_posting() =>
-        AssertBulkApproveConfirms<PendingOthers>();
+        AssertBulkApproveConfirms<PendingOthers>(PermissionCatalog.Others.Approve);
 
     [Fact]
     public void Visitors_bulk_approve_confirms_before_posting() =>
-        AssertBulkApproveConfirms<PendingVisitors>();
+        AssertBulkApproveConfirms<PendingVisitors>(PermissionCatalog.Visitors.Approve);
 }

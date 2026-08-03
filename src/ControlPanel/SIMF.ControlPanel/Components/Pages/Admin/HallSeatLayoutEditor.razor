@@ -201,7 +201,8 @@
                          ConfirmLabel="@L["Admin.HallSeatLayouts.Delete"]"
                          CancelLabel="@L["Admin.HallSeatLayouts.Delete.Cancel"]"
                          Danger="true" Busy="_busy"
-                         OnConfirm="DeleteAsync" OnCancel="CancelDeleteConfirm" />
+                         OnConfirm="DeleteAsync" OnCancel="CancelDeleteConfirm" 
+                         Permission="@PermissionCatalog.SeatLayouts.Delete"/>
         }
     </div>
 </div>

@@ -57,7 +57,12 @@
                           DeleteLabel="@L["Admin.Interests.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Interests.Create"
+                          EditPermission="@PermissionCatalog.Interests.Edit"
+                          DeletePermission="@PermissionCatalog.Interests.Delete"
+                          ImportPermission="@PermissionCatalog.Interests.Import"
+                          ExportPermission="@PermissionCatalog.Interests.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

@@ -31,6 +31,7 @@ using Bunit.TestDoubles;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using SIMF.Common;
 using SIMF.ControlPanel;
 
 namespace SIMF.ControlPanel.Tests;
@@ -44,6 +45,17 @@ public abstract class CpComponentTestBase : TestContext
     /// <c>SetRoles(...)</c> per-test when they need a different
     /// identity.</summary>
     protected TestAuthorizationContext Authorization { get; }
+
+    /// <summary>Sign the test identity in holding exactly these permission codes.
+    ///
+    /// <para>D-830 — the code-to-policy step (<c>PermissionCatalog.PolicyFor</c>) was
+    /// being spelled out at every call site, so a change to how a permission becomes a
+    /// policy would have been a 20-file edit. It belongs here, next to the identity it
+    /// configures. Note this REPLACES the granted set rather than adding to it, which
+    /// is what makes a deny-path test mean something.</para></summary>
+    protected void Grant(params string[] permissionCodes) =>
+        Authorization.SetPolicies(
+            permissionCodes.Select(PermissionCatalog.PolicyFor).ToArray());
 
     protected CpComponentTestBase()
     {

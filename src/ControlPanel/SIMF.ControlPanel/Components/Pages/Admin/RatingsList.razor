@@ -67,7 +67,8 @@
                       PageSizeLabel="@L["Grid.PageSize"]"
                       LoadingLabel="@L["Admin.Ratings.Loading"]"
                       PageFormatter="@FormatPage"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ExportPermission="@PermissionCatalog.Ratings.Export">
             <Columns>
                 <SimfDataGridColumn TItem="AdminRatingResponseSummary" Key="type"
                                     Header="@L["Admin.Ratings.Col.Type"]">

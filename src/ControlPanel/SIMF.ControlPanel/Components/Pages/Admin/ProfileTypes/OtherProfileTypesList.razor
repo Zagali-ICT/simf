@@ -39,7 +39,10 @@
                       EditLabel="@L["Admin.ProfileTypes.Edit.Title"]"
                       DetailsLabel="@L["Admin.Users.Action.Details"]"
                       DeleteLabel="@L["Admin.ProfileTypes.Delete.Title"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      AddPermission="@PermissionCatalog.ProfileTypes.Create"
+                      EditPermission="@PermissionCatalog.ProfileTypes.Edit"
+                      DeletePermission="@PermissionCatalog.ProfileTypes.Delete">
             <Columns>
                 <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="userType"
                                     Header="@L["Admin.ProfileTypes.Column.UserType"]">
@@ -166,12 +169,15 @@
                         OnClick="@(() => _deleteTarget = null)">
                 @L["Admin.ProfileTypes.Delete.Cancel"]
             </SimfButton>
+            @* D-831 - the commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.ProfileTypes.Delete">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        OnClick="ConfirmDeleteAsync"
-                        LoadingLabel="@L["Grid.Working"]">
-                @L["Admin.ProfileTypes.Delete.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            OnClick="ConfirmDeleteAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.ProfileTypes.Delete.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
