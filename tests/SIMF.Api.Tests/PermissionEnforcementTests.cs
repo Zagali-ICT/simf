@@ -15,6 +15,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -350,6 +351,159 @@ public sealed class PermissionEnforcementTests : IClassFixture<SimfApiFactory>
     // grants are `grantedCodes`, then signs in on the CP audience and returns
     // the access token. The seeder does not run under the Testing host, so the
     // Permission rows for the granted codes are inserted here.
+    /// <summary>
+    /// D-836 — a tier permission must not reach across into the other tier's
+    /// subjects. The national ID / Iqama / passport image is the most sensitive
+    /// PII in the system, and the ID-document routes guarded the subject on
+    /// <c>UserType</c> alone. D-186 folded Other into <c>UserType.Visitor</c>, so
+    /// BOTH <c>/admin/visitors/{id}/id-document</c> and
+    /// <c>/admin/others/{id}/id-document</c> passed <c>UserType.Visitor</c> and the
+    /// guard separated Admin from everyone else and nothing else.
+    ///
+    /// <para>The upload path is what makes this provable without a face-gated
+    /// image: the family check runs BEFORE the file check, so posting no file at
+    /// all returns 400 (missing file) when the subject is in the caller's family
+    /// and 404 when it is not. Before the fix both returned 400.</para>
+    /// </summary>
+    [Theory]
+    [InlineData("visitors", PermissionCatalog.Visitors.Edit)]
+    [InlineData("others", PermissionCatalog.Others.Edit)]
+    public async Task An_id_document_upload_refuses_a_subject_from_the_other_tier(
+        string routeTier, string grantedCode)
+    {
+        var token = await CreateAdminWithCustomRoleAsync(grantedCodes: [grantedCode]);
+        var (audienceId, partnerId) = await CreateOneSubjectPerTierAsync();
+        var ownTier = routeTier == "visitors" ? audienceId : partnerId;
+        var otherTier = routeTier == "visitors" ? partnerId : audienceId;
+
+        // Own tier: the guard passes and the request reaches the file check.
+        var own = await PostDummyFileAsync(
+            $"/api/v1/admin/{routeTier}/{ownTier}/id-document", token);
+        Assert.Equal(HttpStatusCode.BadRequest, own.StatusCode);
+
+        // Other tier: refused before any file handling, and 404 rather than 403 so
+        // the response does not confirm that the subject exists.
+        var crossing = await PostDummyFileAsync(
+            $"/api/v1/admin/{routeTier}/{otherTier}/id-document", token);
+        Assert.Equal(HttpStatusCode.NotFound, crossing.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("visitors", PermissionCatalog.Visitors.View)]
+    [InlineData("others", PermissionCatalog.Others.View)]
+    public async Task An_id_document_read_refuses_a_subject_from_the_other_tier(
+        string routeTier, string grantedCode)
+    {
+        // The disclosure half. Neither subject has an image on file, so both
+        // answer 404 and this alone cannot tell the guard from "no image" - what
+        // it pins is that the cross-tier read is never a 200, and it fails loudly
+        // if the route is ever changed to answer 403 (which would confirm the
+        // subject exists to an admin outside its tier).
+        var token = await CreateAdminWithCustomRoleAsync(grantedCodes: [grantedCode]);
+        var (audienceId, partnerId) = await CreateOneSubjectPerTierAsync();
+        var otherTier = routeTier == "visitors" ? partnerId : audienceId;
+
+        var crossing = await GetAuthAsync(
+            $"/api/v1/admin/{routeTier}/{otherTier}/id-document", token);
+
+        Assert.Equal(HttpStatusCode.NotFound, crossing.StatusCode);
+    }
+
+    /// <summary>One audience-tier and one partner-tier subject, each with the
+    /// linked ProfileType that <c>IsSubjectInFamilyAsync</c> reads to tell them
+    /// apart (partner = a UserProfile whose ProfileType has IsForVisitor=false).</summary>
+    private async Task<(Guid AudienceId, Guid PartnerId)> CreateOneSubjectPerTierAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        var audienceType = await EnsureProfileTypeAsync(appDb, forVisitor: true);
+        var partnerType = await EnsureProfileTypeAsync(appDb, forVisitor: false);
+
+        var audienceId = await CreateSubjectAsync(users, appDb, audienceType);
+        var partnerId = await CreateSubjectAsync(users, appDb, partnerType);
+        return (audienceId, partnerId);
+    }
+
+    private static async Task<Guid> EnsureProfileTypeAsync(SimfAppDbContext appDb, bool forVisitor)
+    {
+        var existing = await appDb.ProfileTypes
+            .FirstOrDefaultAsync(p => p.IsForVisitor == forVisitor && p.IsActive);
+        if (existing is not null) { return existing.Id; }
+
+        var fresh = new UserProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = forVisitor ? "Visitor — D836Seed" : "Other — D836Seed",
+            NameArabic = forVisitor ? "زائر — اختبار" : "أخرى — اختبار",
+            PageColor = forVisitor ? "#3B82F6" : "#10B981",
+            IsForVisitor = forVisitor,
+            IsActive = true,
+            CreatedAt = SimfClock.Now,
+        };
+        appDb.ProfileTypes.Add(fresh);
+        await appDb.SaveChangesAsync();
+        return fresh.Id;
+    }
+
+    private static async Task<Guid> CreateSubjectAsync(
+        UserManager<SimfUser> users, SimfAppDbContext appDb, Guid profileTypeId)
+    {
+        var email = $"d836-{Guid.NewGuid():N}@simf.test";
+        var user = new SimfUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            UserType = UserType.Visitor,
+            AccountState = AccountState.Approved,
+            DisplayName = "D836 Subject",
+        };
+        // A fixed password, not a GUID-derived one: SIMF's Identity policy rejects
+        // three sequential characters, which a random hex string hits often enough
+        // to make the seed flaky (it did, on the first run of these tests).
+        var created = await users.CreateAsync(user, "Zx9#Qm4$Vk7!");
+        Assert.True(created.Succeeded,
+            "Could not seed the D-836 subject: "
+            + string.Join("; ", created.Errors.Select(e => e.Description)));
+
+        appDb.UserProfiles.Add(new UserProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            ProfileTypeId = profileTypeId,
+            CreatedAt = SimfClock.Now,
+        });
+        await appDb.SaveChangesAsync();
+        return user.Id;
+    }
+
+    /// <summary>A multipart body carrying a deliberately non-image "file" part.
+    /// It gets past FastEndpoints' form binding (a body with no parts at all
+    /// faults the pipeline) and is then rejected by the MIME/magic-byte gate with
+    /// a 400 - which is precisely the "the family guard let me through" signal
+    /// these tests need, without a face-gated real photograph.</summary>
+    private async Task<HttpResponseMessage> PostDummyFileAsync(string url, string token)
+    {
+        using var content = new MultipartFormDataContent();
+        var bytes = new ByteArrayContent("not-an-image"u8.ToArray());
+        bytes.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        content.Add(bytes, "file", "not-an-image.bin");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await _client.SendAsync(request);
+    }
+
+    private async Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await _client.SendAsync(request);
+    }
+
     private async Task<string> CreateAdminWithCustomRoleAsync(string[] grantedCodes)
     {
         var email = $"perm-{Guid.NewGuid():N}@simf.test";

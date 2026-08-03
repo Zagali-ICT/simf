@@ -3,6 +3,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 
@@ -17,7 +18,8 @@ namespace SIMF.Api.Endpoints.Admin;
 /// </summary>
 public abstract class AdminIdDocumentUploadEndpointBase(
     IUserProfileService service,
-    IFaceDetectionService faceDetection)
+    IFaceDetectionService faceDetection,
+    IAdminUserProvisioningService provisioning)
     : Endpoint<EmptyRequest, ApiResult<bool>>
 {
     /// <summary>5 MB cap — same as the self-service upload.</summary>
@@ -26,11 +28,29 @@ public abstract class AdminIdDocumentUploadEndpointBase(
     public abstract Guid SubjectId { get; }
     public abstract UserType ExpectedKind { get; }
 
+    /// <summary>D-836 — audience (<c>true</c>) vs partner/Other (<c>false</c>)
+    /// for the Visitor family; <c>null</c> for the Admin family. Mirrors the
+    /// avatar endpoints.</summary>
+    public abstract bool? ExpectedIsVisitor { get; }
+
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
         if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
         {
             await Send.UnauthorizedAsync(ct);
+            return;
+        }
+
+        // D-836 — confine this Edit permission to its own family. The service's
+        // guard only compares UserType, and D-186 made BOTH the visitors and the
+        // others route pass UserType.Visitor, so without this an admin holding
+        // only Visitors.Edit could overwrite a PARTNER's national-ID image
+        // through the visitors route (and vice versa). 404, not 403: a subject
+        // outside your family should not be confirmed to exist.
+        if (!await provisioning.IsSubjectInFamilyAsync(
+                SubjectId, ExpectedKind, ExpectedIsVisitor, ct))
+        {
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -83,11 +103,13 @@ public abstract class AdminIdDocumentUploadEndpointBase(
 
 /// <summary><c>POST /api/v1/admin/visitors/{id}/id-document</c>.</summary>
 public sealed class UploadVisitorIdDocumentEndpoint(
-    IUserProfileService service, IFaceDetectionService faceDetection)
-    : AdminIdDocumentUploadEndpointBase(service, faceDetection)
+    IUserProfileService service, IFaceDetectionService faceDetection,
+    IAdminUserProvisioningService provisioning)
+    : AdminIdDocumentUploadEndpointBase(service, faceDetection, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
     public override UserType ExpectedKind => UserType.Visitor;
+    public override bool? ExpectedIsVisitor => true;
 
     public override void Configure()
     {
@@ -103,15 +125,19 @@ public sealed class UploadVisitorIdDocumentEndpoint(
 
 /// <summary><c>POST /api/v1/admin/others/{id}/id-document</c>.</summary>
 public sealed class UploadOtherIdDocumentEndpoint(
-    IUserProfileService service, IFaceDetectionService faceDetection)
-    : AdminIdDocumentUploadEndpointBase(service, faceDetection)
+    IUserProfileService service, IFaceDetectionService faceDetection,
+    IAdminUserProvisioningService provisioning)
+    : AdminIdDocumentUploadEndpointBase(service, faceDetection, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
     // D-186: Other accounts are Visitor-typed under the hood; the
     // partner-vs-audience distinction lives on the linked ProfileType.
-    // The ID-document path's UserType-match guard prevents uploading
-    // to an Admin row, which is what matters here.
+    // D-836 — that is exactly why UserType alone is NOT enough here. This
+    // comment used to say the UserType guard was "what matters", which was
+    // true only for the upload-to-an-Admin-row concern it was written for;
+    // ExpectedIsVisitor is what keeps the two Visitor-family tiers apart.
     public override UserType ExpectedKind => UserType.Visitor;
+    public override bool? ExpectedIsVisitor => false;
 
     public override void Configure()
     {
@@ -127,11 +153,16 @@ public sealed class UploadOtherIdDocumentEndpoint(
 
 /// <summary><c>GET /api/v1/admin/visitors/{id}/id-document</c> — streams the
 /// decrypted image bytes back so the CP can render it inline.</summary>
-public abstract class AdminIdDocumentFetchEndpointBase(IUserProfileService service)
+public abstract class AdminIdDocumentFetchEndpointBase(
+    IUserProfileService service, IAdminUserProvisioningService provisioning)
     : EndpointWithoutRequest
 {
     public abstract Guid SubjectId { get; }
     public abstract UserType ExpectedKind { get; }
+
+    /// <summary>D-836 — audience (<c>true</c>) vs partner/Other (<c>false</c>)
+    /// for the Visitor family; <c>null</c> for the Admin family.</summary>
+    public abstract bool? ExpectedIsVisitor { get; }
 
     public override async Task HandleAsync(CancellationToken ct)
     {
@@ -143,6 +174,21 @@ public abstract class AdminIdDocumentFetchEndpointBase(IUserProfileService servi
             await Send.UnauthorizedAsync(ct);
             return;
         }
+
+        // D-836 — confine this View permission to its own family, mirroring the
+        // avatar endpoints. The national ID / Iqama / passport image is the most
+        // sensitive PII in the system, and UserType alone does not separate the
+        // audience tier from the partner tier (D-186 made both Visitor-typed), so
+        // without this a Visitors.View holder could read a PARTNER's ID image.
+        // Checked BEFORE the read so no bytes are decrypted and no PII-disclosure
+        // audit row is written for a subject outside the caller's family.
+        if (!await provisioning.IsSubjectInFamilyAsync(
+                SubjectId, ExpectedKind, ExpectedIsVisitor, ct))
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+
         var image = await service.ReadIdImageForSubjectAsync(actorId, SubjectId, ExpectedKind, ct);
         if (image is null)
         {
@@ -157,11 +203,13 @@ public abstract class AdminIdDocumentFetchEndpointBase(IUserProfileService servi
 }
 
 /// <summary><c>GET /api/v1/admin/visitors/{id}/id-document</c>.</summary>
-public sealed class FetchVisitorIdDocumentEndpoint(IUserProfileService service)
-    : AdminIdDocumentFetchEndpointBase(service)
+public sealed class FetchVisitorIdDocumentEndpoint(
+    IUserProfileService service, IAdminUserProvisioningService provisioning)
+    : AdminIdDocumentFetchEndpointBase(service, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
     public override UserType ExpectedKind => UserType.Visitor;
+    public override bool? ExpectedIsVisitor => true;
 
     public override void Configure()
     {
@@ -174,15 +222,16 @@ public sealed class FetchVisitorIdDocumentEndpoint(IUserProfileService service)
 }
 
 /// <summary><c>GET /api/v1/admin/others/{id}/id-document</c>.</summary>
-public sealed class FetchOtherIdDocumentEndpoint(IUserProfileService service)
-    : AdminIdDocumentFetchEndpointBase(service)
+public sealed class FetchOtherIdDocumentEndpoint(
+    IUserProfileService service, IAdminUserProvisioningService provisioning)
+    : AdminIdDocumentFetchEndpointBase(service, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
     // D-186: Other accounts are Visitor-typed under the hood; the
-    // partner-vs-audience distinction lives on the linked ProfileType.
-    // The ID-document path's UserType-match guard prevents uploading
-    // to an Admin row, which is what matters here.
+    // partner-vs-audience distinction lives on the linked ProfileType,
+    // which is exactly why ExpectedIsVisitor is required here (D-836).
     public override UserType ExpectedKind => UserType.Visitor;
+    public override bool? ExpectedIsVisitor => false;
 
     public override void Configure()
     {
