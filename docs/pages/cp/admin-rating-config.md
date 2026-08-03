@@ -24,6 +24,14 @@ Three-level master-detail (`SimfDataGrid`s, mirrors `FaqManager`):
 
 CRUD runs through three `SimfModal`s. Soft-delete (Deactivate → `IsActive=false`).
 
+All three grids also offer a read-only **Details** view (D-835), which carries no
+permission of its own — reading a row is what `RatingConfig.View` already bought.
+It matters most on the **types** grid, where seven fields have no column at all:
+the Arabic name, the overall-stars and comment settings with both comment labels,
+the display order and the creation date. Before it, a holder without
+`RatingConfig.Edit` could open a type through **Manage** and still not read any
+of them.
+
 ## Rules
 
 - **System types** (`App`, `Session`) are seeded by `RatingSeeder`, **cannot be

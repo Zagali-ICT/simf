@@ -653,6 +653,15 @@ right.** The two are often not the same word, and every one of these is real:
   `Gates.Manage`, but its Import needs `Gates.Import` and its Export
   `Gates.Export`.
 
+**7b-ter — you do not have to hide the container yourself (D-837).**
+`SimfDataGrid` resolves its seven action permissions once per parameter set and
+decides the toolbar bar, the actions column and the right-click menu from the
+result, so a holder denied every action on a grid sees none of those containers
+rather than an empty one. Do not add page-level `@if` guards around a grid to
+work around that — set the permission parameters and let the grid decide. The
+booleans default to permitted, so a grid with no permission parameters, or a
+host with no authorization cascade, renders exactly as before.
+
 **7b-bis — leave a way to READ the row (D-835).** Gating a grid's Edit and Delete
 often removes the only two ways to open a row, turning "cannot change this
 record" into "cannot read it" - and the actions column then renders as an empty

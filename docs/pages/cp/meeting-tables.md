@@ -60,5 +60,7 @@ modal, and delete/release use the native confirm prompt).
 | Date | Decision | Change |
 |------|----------|--------|
 | 2026-06-10 | D-356 / D-353 | Tables grid gained an Excel **Export** action (export-only; no import). The D-353 Page↔Popup presentation toggle was **not** added to this page. |
+| 2026-08-03 | D-835 | Both grids gained a read-only **Details** view, carrying no permission of its own. It exists because D-830 gated Edit and Delete, which were the only two ways to open a row here — so a holder without `MeetingTables.Edit` / `HallAllocations.Edit` could no longer read one. It also surfaces fields no column shows: a table's active flag, and an allocation's unit count, row/column spec and **notes**. |
+| 2026-08-03 | D-837 | The two grids' permissions are resolved once per parameter set, so a holder denied every action gets no toolbar bar, actions column or right-click menu instead of an empty one. Page markup unchanged. |
 
-_Last reviewed:_ 2026-06-10 (D-356 Phase 5 — Excel export).
+_Last reviewed:_ 2026-08-03 (D-835 Details drill-in + D-837 container gating). Earlier: 2026-06-10 (D-356 Phase 5 — Excel export).

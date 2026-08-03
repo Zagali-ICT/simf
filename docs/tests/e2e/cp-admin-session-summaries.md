@@ -92,6 +92,7 @@
 | E2E-SUM-032 | **A18 — a legacy `[echo:…]` draft cannot be approved.** A summary whose Arabic full-text still opens with the stub's pre-sentinel prefix (`[echo:echo] …` — the shape every draft generated before 2026-07-26 has on QA / production) is submitted for review, then Approve → 400 `SESSION_SUMMARY_INVALID` (bilingual "still contains placeholder text…") | error | P0 | authored ✓ (`SessionSummaryCommitteeTests.A18_ApproveAsync_WithLegacyEchoPrefixedDraft_ReturnsBadRequest`) |
 | E2E-SUM-033 | **A18 — a legacy `[echo]` draft that was already approved cannot be published.** A summary carrying the pre-sentinel prefix whose `ApprovedAt` was stamped before this guard existed (so the approve gate never saw it) → Publish returns 400 `SESSION_SUMMARY_INVALID` and the public read stays 404. Unpublish of an already-live one is still allowed, so an operator can retract | error | P0 | authored ✓ (`SessionSummaryCommitteeTests.A18_PublishAsync_WithLegacyEchoPrefixedDraftAlreadyApproved_ReturnsBadRequest`) |
 | E2E-SUM-034 | **A18 — real minutes that merely mention `[echo]` still publish.** The legacy sweep is LEADING-prefix only: minutes reading "ناقش المتحدثون تقنية [echo] للسونار…" approve and publish normally and the app serves them (no false positive) | happy | P1 | authored ✓ (`SessionSummaryCommitteeTests.A18_real_minutes_that_merely_mention_echo_still_publish`) |
+| E2E-SUM-035 | **D-837 — a denied holder gets no empty toolbar.** With `SessionSummaries.View` but not `.Export` (Export is this grid's only toolbar control) the toolbar bar is absent entirely, not rendered empty; granting `.Export` brings it back | auth | P1 | authored ✓ (`ActionPermissionRenderTests.A_denied_holder_gets_no_toolbar_bar_rather_than_an_empty_one`) |
 | E2E-SUM-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-SUM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -524,6 +525,36 @@ Scenario: Clearing the summary video URL removes the second player
 - API integration: `SessionSummaryCommitteeTests` `Save_round_trips_the_summary_video_url`, `An_invalid_summary_video_url_is_rejected_400`, `A_null_summary_video_url_is_allowed`; public projection in `SessionSummaryTests` `Published_summary_surfaces_the_recording_and_summary_video_urls` (all green).
 
 ---
+
+### E2E-SUM-035 — A denied holder gets no empty toolbar (D-837)
+
+```gherkin
+Scenario: The toolbar is absent, not empty, for an admin who cannot export
+  Given a signed-in admin whose role grants SessionSummaries.View
+        but NOT SessionSummaries.Export
+  And Export is the only control this grid puts in its toolbar
+  When they open /admin/session-summaries
+  Then the grid renders with its rows
+  And NO .simf-grid__toolbar element is present in the DOM
+  # Not "present but empty": SimfDataGrid used to decide whether to draw the bar
+  # from the callbacks the page wires, which it knows synchronously, rather than
+  # the permissions, which it did not — so a denied holder got an empty bar.
+
+Scenario: The toolbar returns as soon as one action is permitted
+  Given the same admin, now also granted SessionSummaries.Export
+  When they open /admin/session-summaries
+  Then the .simf-grid__toolbar element is present
+  And it contains the Export control
+  # The positive control — the fix must not degrade into "never draw the toolbar".
+
+Scenario: The right-click menu does not open empty on a fully denied row
+  Given a signed-in admin who holds only SessionSummaries.View
+  When they right-click a row
+  Then no context menu opens
+  And no backdrop is placed over the page
+  # Previously the menu opened with nothing in it, behind a backdrop that
+  # swallowed the next click.
+```
 
 ## Implementation notes
 
