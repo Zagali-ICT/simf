@@ -106,7 +106,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/banners` | ✅ Real | Administrator  | [cp/admin-banners.md](cp/admin-banners.md) | [e2e/cp-admin-banners.md](../tests/e2e/cp-admin-banners.md) |
 | `/admin/content-blocks` | ✅ Real | Administrator  | [cp/admin-content-blocks.md](cp/admin-content-blocks.md) | [e2e/cp-admin-content-blocks.md](../tests/e2e/cp-admin-content-blocks.md) |
 | **Knowledge & AI** | | | | |
-| `/admin/faq` | ✅ Real (D-218) | Administrator | — | [e2e/cp-admin-faq.md](../tests/e2e/cp-admin-faq.md) |
+| `/admin/faq` | ✅ Real (D-218) | Administrator | [cp/admin-faq.md](cp/admin-faq.md) | [e2e/cp-admin-faq.md](../tests/e2e/cp-admin-faq.md) |
 | `/admin/ai` | ✅ Real (CP Phase-1) | Administrator | [cp/admin-ai-dashboard.md](cp/admin-ai-dashboard.md) | [e2e/cp-admin-ai-dashboard.md](../tests/e2e/cp-admin-ai-dashboard.md) |
 | `/admin/ai/services` | ✅ Real (CP Phase-1) | Administrator | [cp/admin-ai-services.md](cp/admin-ai-services.md) | [e2e/cp-admin-ai-services.md](../tests/e2e/cp-admin-ai-services.md) |
 | `/admin/ai/services/{feature}` | ✅ Real (CP Phase-2) | Administrator | [cp/admin-ai-service-detail.md](cp/admin-ai-service-detail.md) | [e2e/cp-admin-ai-service-detail.md](../tests/e2e/cp-admin-ai-service-detail.md) |
