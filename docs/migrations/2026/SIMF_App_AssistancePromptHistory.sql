@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    SIMF_App — assistance AI-prompt conversation-memory update
              ->  POST /app/ai/assistance  (the app AI assistant, Page 036)
 

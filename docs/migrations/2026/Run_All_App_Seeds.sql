@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    SIMF_App — 2026 content-seed MASTER RUNNER  (SSMS · SQLCMD Mode)
 
    Runs every content-seed file in this folder, in the required order, in
@@ -7,7 +7,27 @@
    the FIRST failure stops the run (no partial data, later seeds do not run).
    Safe to re-run.
 
-   ── HOW TO RUN ───────────────────────────────────────────────────────────
+   ── PREFER THE POWERSHELL RUNNER ─────────────────────────────────────────
+   D-845: this file only works INSIDE SSMS with SQLCMD Mode on. From a terminal
+   or a deploy script use the sibling instead — no SSMS, no :setvar editing:
+
+       .\Run-AppSeeds.ps1                                   (local dev, SIMF_App)
+       .\Run-AppSeeds.ps1 -Server "PROD\SQL01" -Database SIMF_Data
+
+   ── ENCODING (why a naive `sqlcmd -i` corrupts every Arabic string) ───────
+   sqlcmd reads an input file in the system ANSI codepage unless the file has a
+   BOM or -f is passed. These seeds are UTF-8 and full of Arabic, so without one
+   of those, each Arabic character arrives as 2-3 Latin-1 characters and the
+   string overflows its column:
+
+       Msg 2628 ... String or binary data would be truncated in column 'NmAr'.
+       Truncated value: 'Ø¯ÙˆØ± Ø§Ù„Ø°ÙƒØ§Ø¡ ...'
+
+   Every seed here now carries a UTF-8 BOM (D-845), which fixes this for SSMS,
+   sqlcmd and any other tool. If you hand-run one file anyway, pass -f 65001.
+   Do NOT re-save these files without the BOM.
+
+   ── HOW TO RUN (SSMS) ────────────────────────────────────────────────────
    1) Open this file in SSMS.
    2) Turn ON SQLCMD Mode:  Query menu -> "SQLCMD Mode"   (REQUIRED — without it
       the :setvar / :r / :on lines below fail with "Incorrect syntax near ':'").

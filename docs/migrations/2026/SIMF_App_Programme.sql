@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    SIMF_App - programme seed  (Hall . Themes . Programme days . Sessions)
                               -> GET /app/halls . /app/programme . /app/sessions
 

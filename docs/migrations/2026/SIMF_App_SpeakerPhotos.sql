@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    SIMF_App — SPEAKER PHOTOS (centralized StoredFile store)
 
    Companion to SIMF_App_Speakers.sql (same folder). Seeds one StoredFile row per
