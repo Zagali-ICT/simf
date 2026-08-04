@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Common.Options;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -11,9 +12,16 @@ internal sealed class HallConfiguration : IEntityTypeConfiguration<Hall>
     public void Configure(EntityTypeBuilder<Hall> builder)
     {
         // D-611 (Wave B) — geofence columns are all-null together, or all-set with a positive radius.
-        builder.ToTable("Halls", table => table.HasCheckConstraint(
-            "CK_Halls_Geofence",
-            "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceRadiusMeters] > 0)"));
+        // D-839 — the arrival grace is null (inherit) or within the one shared bound.
+        builder.ToTable("Halls", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_Halls_Geofence",
+                "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceRadiusMeters] > 0)");
+            table.HasCheckConstraint(
+                "CK_Halls_ArrivalGrace",
+                $"[ArrivalGraceMinutes] IS NULL OR ([ArrivalGraceMinutes] >= 0 AND [ArrivalGraceMinutes] <= {WalkInModeOptions.MaxArrivalGraceMinutes})");
+        });
         builder.HasKey(hall => hall.Id);
 
         builder.Property(hall => hall.Code).HasMaxLength(16).IsRequired();

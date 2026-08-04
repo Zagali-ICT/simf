@@ -65,4 +65,18 @@ public class Hall : BaseAuditEntity
     /// whose reported GPS point is within this radius of the centre is treated as
     /// arrived at the hall (<c>Method = Geofence</c>).</summary>
     public double? GeofenceRadiusMeters { get; set; }
+
+    /// <summary>D-839 — how far outside a session's [Start, End] window this hall
+    /// still accepts an ARRIVAL, in minutes (0..240). Null means "inherit the
+    /// global <c>WalkInMode.ArrivalGraceMinutes</c>", which is the state every
+    /// pre-existing hall is in, so behaviour is unchanged until a hall is given
+    /// its own value.
+    ///
+    /// <para>A hall that fills slowly — a keynote auditorium where the queue forms
+    /// long before the doors nominally open — can widen its own window without
+    /// arming the global walk-in capability, which is a server-access-only switch
+    /// that also relaxes an approval gate. Sits beside the geofence triple as the
+    /// hall's other arrival knob; a single session may override it via
+    /// <c>Session.ArrivalGraceMinutesOverride</c>.</para></summary>
+    public int? ArrivalGraceMinutes { get; set; }
 }

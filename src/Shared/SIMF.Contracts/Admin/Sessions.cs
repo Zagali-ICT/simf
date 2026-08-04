@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 
 namespace SIMF.Contracts.Admin;
 
@@ -39,7 +40,17 @@ public sealed record AdminSessionSummary(
     // exports the grid to bulk-edit start times and re-imports, silently loses
     // every notice. The Excel lane is the only bulk authoring path there is.
     string? LiveNotice = null,
-    string? LiveNoticeArabic = null);
+    string? LiveNoticeArabic = null,
+    // D-839 — the session's own arrival-grace override in minutes; null = inherit
+    // the hall. Carried for the same D-506 Excel round-trip reason as the fields
+    // above.
+    int? ArrivalGraceMinutesOverride = null,
+    // D-839 — what the server will ACTUALLY use for this session, already
+    // resolved (override -> hall -> global -> 15). The Hall-Arrivals console
+    // reads this instead of its own hard-coded 15, which could see neither of the
+    // two layers above and so disagreed with the server about which sessions are
+    // open for arrivals.
+    int EffectiveArrivalGraceMinutes = WalkInModeOptions.DefaultArrivalGraceMinutes);
 
 /// <summary>D-165 — full session detail (Details + Edit modals).
 /// Includes the speaker and theme join sets so the editor can
@@ -112,7 +123,15 @@ public sealed record AdminSessionDetail(
     // stored value back into its inputs. Appended (defaulted) — wire stays
     // append-only.
     string? LiveNotice = null,
-    string? LiveNoticeArabic = null);
+    string? LiveNoticeArabic = null,
+    // D-839 — the per-session arrival-grace override (null = inherit the hall),
+    // and the number clearing that override would fall back to: the hall's grace,
+    // else the global value. Deliberately NOT the resolved-including-override
+    // value — the edit form offers this as "leave blank to get this", and the
+    // resolved one would tell an admin who HAS an override that clearing it
+    // changes nothing.
+    int? ArrivalGraceMinutesOverride = null,
+    int InheritedArrivalGraceMinutes = WalkInModeOptions.DefaultArrivalGraceMinutes);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>
@@ -164,6 +183,10 @@ public sealed class AdminCreateSessionRequest
     public SessionType? Type { get; set; }
     // D-485 — optional per-session override of the hall's seat-selection mode.
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
+    // D-839 — optional per-session override of the hall's arrival grace, in
+    // minutes (0..240). Null = inherit the hall (which may itself inherit the
+    // global value).
+    public int? ArrivalGraceMinutesOverride { get; set; }
     // Website Session-detail (Figma 5991-85840): bilingual "at a glance" language
     // label + the "أبرز المخرجات" key-outcome bullets.
     public string? Language { get; set; }
@@ -204,6 +227,10 @@ public sealed class AdminUpdateSessionRequest
     public SessionType? Type { get; set; }
     // D-485 — optional per-session override of the hall's seat-selection mode.
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
+    // D-839 — optional per-session override of the hall's arrival grace, in
+    // minutes (0..240). Null = inherit the hall (which may itself inherit the
+    // global value).
+    public int? ArrivalGraceMinutesOverride { get; set; }
     // Website Session-detail (Figma 5991-85840): bilingual "at a glance" language
     // label + the "أبرز المخرجات" key-outcome bullets.
     public string? Language { get; set; }

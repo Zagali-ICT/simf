@@ -69,6 +69,15 @@
                        ValueChanged="@(v => _geoRadiusInput = v)"
                        ValueExpression="@(() => _geoRadiusInput)"
                        Disabled="_busy" />
+        @* D-839 — the hall's other arrival knob, beside the geofence it belongs with. *@
+        <SimfTextField Label="@L["Admin.Halls.Field.ArrivalGrace"]"
+                       Helper="@L["Admin.Halls.Field.ArrivalGraceHint"]"
+                       Type="number"
+                       Min="0" Max="@ArrivalGraceMax"
+                       Value="@_arrivalGraceInput"
+                       ValueChanged="@(v => _arrivalGraceInput = v)"
+                       ValueExpression="@(() => _arrivalGraceInput)"
+                       Disabled="_busy" />
         @if (IsEdit)
         {
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">

@@ -1208,3 +1208,88 @@ _Last reviewed:_ 2026-07-26 by Claude (session-lifecycle QA package — A1/A6 se
 _Last reviewed:_ 2026-07-27 by Claude (B2 completed on the second cancellation path — clearing the Active checkbox on the edit form now runs the same announce step as Deactivate: SES-053).
 
 _Last reviewed:_ 2026-07-31 by Claude (FR-702 re-scoped by the owner from a Riyadh-region restriction to an informational per-session live notice — bilingual free text ≤512, authored on the broadcast block, shown WITH the stream and gating nothing: SES-054..056; covered by `tests/SIMF.Api.Tests/SessionLiveNoticeTests.cs`; decision D-815).
+
+## D-839 — per-session arrival-grace override
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-SES-057 | A session's **Arrival grace (minutes)** override opens a session its hall would refuse; blank inherits the hall | happy | P0 | authored ✓ (`ArrivalGraceResolutionTests.A_session_override_opens_a_session_its_hall_would_refuse`) |
+| E2E-SES-058 | A session override of **0** overrules a wide hall grace — a deliberate zero is not read as "inherit" | validation | P0 | authored ✓ (`ArrivalGraceResolutionTests.A_session_override_of_zero_beats_a_wide_hall_grace`) |
+| E2E-SES-059 | The admin session row reports the **resolved** grace the door will use, so the Hall-Arrivals picker and the server agree | happy | P0 | authored ✓ (`ArrivalGraceResolutionTests.The_admin_session_row_reports_the_grace_the_door_will_use`) |
+
+### E2E-SES-057 — one keynote opens early, the hall is untouched
+
+```gherkin
+Feature: A session widens its own arrival window
+  As an Administrator
+  I want one session to open its doors earlier than the rest of its hall's day
+  So that a keynote can pre-scan a queue without changing every other session
+
+  Background:
+    Given I am signed in to the Control Panel as an Administrator
+    And a hall "GR-MAIN" has no arrival grace of its own (it inherits the global 15)
+    And a session "GRS-KEYNOTE" in that hall starts in 40 minutes
+
+  Scenario: the override admits what the hall would refuse
+    When an operator scans an approved visitor at the hall door
+    Then the API responds 409 with error code SESSION_NOT_LIVE
+
+    When I open /admin/sessions, edit "GRS-KEYNOTE"
+    And I set "Arrival grace (minutes)" to 60
+    And I save
+    Then the session is saved
+
+    When the operator scans the same badge again
+    Then the API responds 200 and the attendee is marked arrived
+
+  Scenario: blank inherits, and the form says what it is inheriting
+    Given the hall "GR-MAIN" has "Arrival grace (minutes)" set to 45
+    When I open the edit form for a session in that hall with a blank override
+    Then the helper under the field reads
+         "Leave blank to inherit the hall, which is currently 45 minutes. ..."
+         / "اتركه فارغاً لتوريث قيمة القاعة، وهي حالياً 45 دقيقة. ..."
+    # Read off AdminSessionDetail.EffectiveArrivalGraceMinutes, so the admin sees
+    # which layer is actually in force instead of guessing.
+```
+
+### E2E-SES-058 — a session zero beats a wide hall
+
+```gherkin
+Feature: A per-session zero overrules its hall
+  As an Administrator running one strict session in a permissive hall
+  I want 0 on the session to win
+  So that "this one closes on time" is expressible
+
+  Scenario: the session's 0 refuses what the hall's 60 would admit
+    Given a hall has "Arrival grace (minutes)" set to 60
+    And a session in that hall has its override set to 0
+    And that session starts in 40 minutes
+    When an operator scans an approved visitor at the hall door
+    Then the API responds 409 with error code SESSION_NOT_LIVE
+    # This is the case that catches the natural mistake: reading the override
+    # with a truthiness or "> 0" test treats a deliberate 0 as "inherit".
+```
+
+### E2E-SES-059 — the console and the door agree
+
+```gherkin
+Feature: The admin session row reports the grace the door will actually use
+  As an operator on the Hall-Arrivals console
+  I want the session picker to list exactly what the server will admit
+  So that I am not refused a session the server would have accepted
+
+  Scenario: the resolved value rides the session list
+    Given a hall has "Arrival grace (minutes)" set to 60
+    And session A in that hall has no override
+    And session B in that hall has its override set to 5
+    When the Control Panel loads POST /admin/sessions/list
+    Then session A reports effectiveArrivalGraceMinutes = 60
+    And session A reports arrivalGraceMinutesOverride = null
+    And session B reports effectiveArrivalGraceMinutes = 5
+    And session B reports arrivalGraceMinutesOverride = 5
+    # The raw override round-trips for the Excel lane; the resolved value is
+    # deliberately NOT exported, because a round-trip would pin what a session
+    # merely inherits onto it as an override.
+```
+
+_Last reviewed:_ 2026-08-04 by Claude (D-839 — per-session arrival-grace override; E2E-SES-057..059).

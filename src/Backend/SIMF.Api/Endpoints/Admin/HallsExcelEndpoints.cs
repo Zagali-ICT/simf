@@ -5,6 +5,7 @@ using SIMF.Application.Excel;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -42,6 +43,9 @@ public sealed class ExportHallsEndpoint(IAdminHallService service, IGridExcelExp
         new("GeofenceCenterLon", row => row.GeofenceCenterLon),
         new("GeofenceRadiusMeters", row => row.GeofenceRadiusMeters),
         new("SeatSelectionMode", row => ((SeatSelectionMode)row.SeatSelectionMode).ToString()),
+        // D-839 — blank means "inherit the system default", so an empty cell is a
+        // real value here, not a missing one.
+        new("ArrivalGraceMinutes", row => row.ArrivalGraceMinutes),
     ];
 
     protected override async Task<IReadOnlyList<AdminHallSummary>> ListAsync(
@@ -116,6 +120,8 @@ public sealed class ImportHallsEndpoint(IAdminHallService service, IGridExcelImp
             GeofenceRadiusMeters = ParseGeo(row.Cells.GetValueOrDefault("GeofenceRadiusMeters", string.Empty)),
             SeatSelectionMode = ParseSeatSelectionMode(
                 row.Cells.GetValueOrDefault("SeatSelectionMode", string.Empty)),
+            ArrivalGraceMinutes = ParseArrivalGrace(
+                row.Cells.GetValueOrDefault("ArrivalGraceMinutes", string.Empty)),
         }, ct);
         return GridRowApplyKind.Created;
     }
@@ -137,6 +143,21 @@ public sealed class ImportHallsEndpoint(IAdminHallService service, IGridExcelImp
         throw new DataValidationException(
             "The geofence latitude, longitude and radius must be numbers.",
             "يجب أن تكون قيم خط العرض وخط الطول ونصف القطر للسياج أرقاماً.");
+    }
+
+    // D-839 — parses the optional arrival grace. Blank stays null, which is the
+    // real "inherit the system default" value. A non-blank, out-of-range or
+    // non-numeric cell is a per-row error rather than a silent 0, which would
+    // otherwise slam the hall's doors shut the moment a session ends.
+    private static int? ParseArrivalGrace(string value)
+    {
+        if (WalkInModeOptions.TryParseArrivalGrace(value, out var minutes))
+        {
+            return minutes;
+        }
+        throw new DataValidationException(
+            $"Arrival grace must be a whole number of minutes between 0 and {WalkInModeOptions.MaxArrivalGraceMinutes}, or blank.",
+            $"يجب أن تكون مهلة الوصول عدداً صحيحاً من الدقائق بين 0 و{WalkInModeOptions.MaxArrivalGraceMinutes}، أو فارغة.");
     }
 
     // Maps a SeatSelectionMode cell to its int value. Accepts the display name

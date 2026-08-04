@@ -856,6 +856,9 @@
   <data name="Admin.Halls.Field.GeofenceRadius" xml:space="preserve"><value>نصف قطر السياج (بالأمتار)</value></data>
   <data name="Admin.Halls.Field.GeofenceHint" xml:space="preserve"><value>اختياري. اضبط خط العرض والطول ونصف القطر معاً لتفعيل الوصول عبر GPS، أو اترك الثلاثة فارغة للاكتفاء بمسح QR.</value></data>
   <data name="Admin.Halls.Field.GeofenceRadiusHint" xml:space="preserve"><value>أكبر من 0، وحتى 100000 متر.</value></data>
+  <data name="Admin.Halls.Field.ArrivalGrace" xml:space="preserve"><value>مهلة الوصول (دقائق)</value></data>
+  <data name="Admin.Halls.Field.ArrivalGraceHint" xml:space="preserve"><value>المدة قبل بدء الجلسة وبعد انتهائها التي تظل فيها القاعة تقبل تسجيل الوصول. اتركه فارغاً لاستخدام القيمة الافتراضية للنظام. من 0 إلى 240.</value></data>
+  <data name="Admin.Halls.Field.ArrivalGraceInvalid" xml:space="preserve"><value>يجب أن تكون مهلة الوصول عدداً صحيحاً من الدقائق بين 0 و240، أو فارغة لاستخدام القيمة الافتراضية للنظام.</value></data>
   <data name="Admin.Halls.Field.GeofenceInvalid" xml:space="preserve"><value>يحتاج السياج إلى خط عرض صحيح (−90..90) وخط طول (−180..180) ونصف قطر (أكبر من 0 وحتى 100000 م) — اضبط الثلاثة معاً أو اتركها فارغة.</value></data>
   <data name="Admin.Halls.Field.IsActive" xml:space="preserve"><value>نشط — متاح لتعيين الجلسات</value></data>
   <data name="Admin.Halls.Add.Title" xml:space="preserve"><value>إضافة قاعة</value></data>
@@ -2049,6 +2052,10 @@
   <data name="Admin.Sessions.Field.TimeWindowInvalid" xml:space="preserve"><value>يجب أن يكون وقت الانتهاء بعد وقت البدء.</value></data>
   <data name="Admin.Sessions.Field.CapacityOverride" xml:space="preserve"><value>السعة المخصصة</value></data>
   <data name="Admin.Sessions.Field.CapacityHint" xml:space="preserve"><value>اتركه فارغاً لاستخدام سعة القاعة الافتراضية. عيِّن قيمة فقط إذا أُعيد ضبط القاعة لهذه الجلسة.</value></data>
+  <data name="Admin.Sessions.Field.ArrivalGraceOverride" xml:space="preserve"><value>مهلة الوصول (دقائق)</value></data>
+  <data name="Admin.Sessions.Field.ArrivalGraceHint" xml:space="preserve"><value>اتركه فارغاً لتوريث قيمة القاعة. عيِّن قيمة فقط إذا كانت هذه الجلسة تفتح أبوابها قبل بقية برنامج القاعة أو بعده. من 0 إلى 240.</value></data>
+  <data name="Admin.Sessions.Field.ArrivalGraceInheritHint" xml:space="preserve"><value>اتركه فارغاً لتوريث قيمة القاعة، وهي حالياً {0} دقيقة. عيِّن قيمة فقط إذا كانت هذه الجلسة تفتح أبوابها قبل ذلك أو بعده. من 0 إلى 240.</value></data>
+  <data name="Admin.Sessions.Field.ArrivalGraceInvalid" xml:space="preserve"><value>يجب أن تكون مهلة الوصول عدداً صحيحاً من الدقائق بين 0 و240، أو فارغة لتوريث قيمة القاعة.</value></data>
   <data name="Admin.Sessions.Field.CapacityInvalid" xml:space="preserve"><value>يجب أن تكون السعة صفراً أو عدداً موجباً.</value></data>
   <data name="Admin.Sessions.Field.CapacityInherits" xml:space="preserve"><value>تُورَّث من القاعة</value></data>
   <data name="Admin.Sessions.Field.EffectiveCapacity" xml:space="preserve"><value>السعة الفعلية</value></data>

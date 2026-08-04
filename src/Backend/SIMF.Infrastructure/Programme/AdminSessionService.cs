@@ -9,8 +9,10 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Application.Programme.Abstractions;
+using Microsoft.Extensions.Options;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
 using SIMF.Domain.SeatReservations;
@@ -31,8 +33,14 @@ internal sealed class AdminSessionService(
     TimeProvider timeProvider,
     IFileService fileService,
     INotificationDispatcher notifications,
+    IOptionsMonitor<WalkInModeOptions> walkInMode,   // D-839 — the grace fallback
     ILogger<AdminSessionService> logger) : IAdminSessionService
 {
+    /// <summary>D-839 — the grace a session inherits when neither it nor its hall
+    /// sets one. Read per call so arming the walk-in mode needs no restart.</summary>
+    private int GlobalArrivalGraceMinutes =>
+        walkInMode.CurrentValue.ResolveArrivalGraceMinutes(timeProvider.SimfNow());
+
     // A5 — the page that can actually release a held seat. The old copy sent the
     // admin to the Bookings desk, which is an explicitly read-only monitor with no
     // row actions, so the instruction could not be carried out. Named once here so
@@ -99,6 +107,9 @@ internal sealed class AdminSessionService(
         };
 
         var total = await rows.CountAsync(cancellationToken);
+        // Hoisted to a local so it rides the query as a parameter (the option
+        // monitor cannot be translated to SQL).
+        var globalGraceMinutes = GlobalArrivalGraceMinutes;
         var page = await rows
             .Skip(skip)
             .Take(top)
@@ -130,7 +141,17 @@ internal sealed class AdminSessionService(
                 // path, so a notice absent here is a notice destroyed by a
                 // round-trip through it.
                 session.LiveNotice,
-                session.LiveNoticeArabic))
+                session.LiveNoticeArabic,
+                // D-839 — the raw override for the Excel round-trip, then the
+                // resolved value the Hall-Arrivals console filters its session
+                // picker by. The SAME shared rule the hall door applies, so the
+                // picker and the door cannot disagree about which sessions are
+                // open; evaluated client-side in this top-level projection.
+                session.ArrivalGraceMinutesOverride,
+                WalkInModeOptions.ResolveArrivalGraceMinutes(
+                    session.ArrivalGraceMinutesOverride,
+                    session.Hall!.ArrivalGraceMinutes,
+                    globalGraceMinutes)))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSessionSummary>.Of(page, total,
@@ -190,6 +211,7 @@ internal sealed class AdminSessionService(
             request.Code, request.Title, request.TitleArabic);
         ValidateTimeWindow(request.Start, request.End);
         ValidateCapacity(request.CapacityOverride);
+        EnsureArrivalGraceInRange(request.ArrivalGraceMinutesOverride);
         ValidateLiveUrls(request.LiveStreamUrl, request.LiveSignLanguageUrl);
         ValidateTextLengths(
             request.Description, request.DescriptionArabic,
@@ -254,6 +276,7 @@ internal sealed class AdminSessionService(
             Type = request.Type,
             // D-485 — optional per-session seat-selection-mode override.
             SeatSelectionModeOverride = request.SeatSelectionModeOverride,
+            ArrivalGraceMinutesOverride = request.ArrivalGraceMinutesOverride, // D-839
             Start = request.Start,
             End = request.End,
             CapacityOverride = request.CapacityOverride,
@@ -343,6 +366,7 @@ internal sealed class AdminSessionService(
             request.Code, request.Title, request.TitleArabic);
         ValidateTimeWindow(request.Start, request.End);
         ValidateCapacity(request.CapacityOverride);
+        EnsureArrivalGraceInRange(request.ArrivalGraceMinutesOverride);
         ValidateLiveUrls(request.LiveStreamUrl, request.LiveSignLanguageUrl);
         ValidateTextLengths(
             request.Description, request.DescriptionArabic,
@@ -478,6 +502,7 @@ internal sealed class AdminSessionService(
         session.CategoryId = request.CategoryId;
         session.Type = request.Type; // D-452
         session.SeatSelectionModeOverride = request.SeatSelectionModeOverride; // D-485
+        session.ArrivalGraceMinutesOverride = request.ArrivalGraceMinutesOverride; // D-839
         session.Start = request.Start;
         session.End = request.End;
         // A4 — a rescheduled session must stay remindable and rateable. Both workers
@@ -988,6 +1013,22 @@ internal sealed class AdminSessionService(
         }
     }
 
+    /// <summary>D-839 — the per-session arrival-grace override is optional (null =
+    /// inherit the hall) but, when given, must be inside the one shared bound.
+    /// Rejected rather than clamped, for the same reason as the hall's: quietly
+    /// storing 240 when an admin typed 2400 would misreport how long the doors are
+    /// open.</summary>
+    private static void EnsureArrivalGraceInRange(int? minutes)
+    {
+        if (!WalkInModeOptions.IsValidArrivalGrace(minutes))
+        {
+            throw new ApiException(
+                ErrorCodes.SessionInvalid, 400,
+                $"Arrival grace must be between 0 and {WalkInModeOptions.MaxArrivalGraceMinutes} minutes.",
+                $"يجب أن تكون مهلة الوصول بين 0 و{WalkInModeOptions.MaxArrivalGraceMinutes} دقيقة.");
+        }
+    }
+
     // §8 / D-349 — a non-blank live feed URL must be a YouTube link or a direct
     // HLS/MP4 stream (the same rule the CP form enforces, LiveStreamUrlPolicy).
     // Blank stays "no feed" and is persisted as null (NullIfBlank below).
@@ -1302,10 +1343,17 @@ internal sealed class AdminSessionService(
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static AdminSessionDetail ToDetail(Session session)
+    private AdminSessionDetail ToDetail(Session session)
     {
         var hallSeats = session.Hall?.Capacity ?? 0;
         var effective = session.CapacityOverride ?? hallSeats;
+        // D-839 — what this session would INHERIT if its override were cleared:
+        // the hall's grace, else the global value. Deliberately EXCLUDES the
+        // override itself, because the edit form offers this as "leave blank to
+        // get this" — the resolved-including-override value would tell an admin
+        // who has an override that clearing it keeps the same number.
+        var inheritedGrace = WalkInModeOptions.ResolveArrivalGraceMinutes(
+            null, session.Hall?.ArrivalGraceMinutes, GlobalArrivalGraceMinutes);
         var speakers = session.Speakers
             .OrderBy(link => link.DisplayOrder)
             .Select(link => new AdminSessionSpeakerEntry(
@@ -1366,6 +1414,10 @@ internal sealed class AdminSessionService(
             // counts keep their defaults (GetAsync/UpdateAsync stamp those with a
             // `with` once the counts are known).
             LiveNotice: session.LiveNotice,
-            LiveNoticeArabic: session.LiveNoticeArabic);
+            LiveNoticeArabic: session.LiveNoticeArabic,
+            // D-839 — the stored override (null = inherit the hall) and the number
+            // clearing it would fall back to, which is what the edit form names.
+            ArrivalGraceMinutesOverride: session.ArrivalGraceMinutesOverride,
+            InheritedArrivalGraceMinutes: inheritedGrace);
     }
 }

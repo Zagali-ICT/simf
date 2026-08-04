@@ -774,3 +774,94 @@ Scenario: The row action is hidden without the seat-layout permission
 
 _Last reviewed:_ 2026-07-27 by Claude (QA A40 — the "Seat layout" row action on the
 Halls grid + its permission gate; E2E-HAL-031).
+
+## D-839 — per-hall arrival grace
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-HAL-033 | A hall's **Arrival grace (minutes)** opens a session the 15-minute default would refuse, without arming the global walk-in capability | happy | P0 | authored ✓ (`ArrivalGraceResolutionTests.A_hall_grace_opens_a_session_the_default_would_refuse`) |
+| E2E-HAL-034 | An explicit hall grace of **0** is honoured as zero, not treated as "unset" and silently replaced by the global 15 | validation | P0 | authored ✓ (`ArrivalGraceResolutionTests.A_hall_grace_of_zero_beats_the_global_default`) |
+| E2E-HAL-035 | Arrival grace outside 0..240 is refused with 400, and blank stores null (inherit) rather than 0 | validation | P1 | authored ✓ (`ArrivalGraceResolutionTests.A_hall_grace_outside_the_bound_is_refused`) |
+
+### E2E-HAL-033 — a hall opens its doors early for a queue
+
+```gherkin
+Feature: A slow-filling hall widens its own arrival window
+  As an Administrator preparing a keynote hall
+  I want the doors to open before the default 15 minutes
+  So that a queue forming 40 minutes early can be scanned in
+  # And crucially WITHOUT arming WalkInMode, which is server-access-only
+  # because it also relaxes an approval gate. Before D-839 those were the
+  # same lever.
+
+  Background:
+    Given I am signed in to the Control Panel as an Administrator
+    And a hall "GR-KEYNOTE" exists with capacity 100
+    And a session "GRS-OPENING" in that hall starts in 40 minutes
+    And an approved visitor holds badge QR "ABC123456789"
+
+  Scenario: the default refuses, the hall setting admits
+    When an operator scans "ABC123456789" at the hall door
+    Then the API responds 409 with error code SESSION_NOT_LIVE
+    And the message reads "This session is not open for arrivals right now."
+        / "هذه الجلسة ليست مفتوحة لتسجيل الوصول حالياً."
+
+    When I open /admin/halls, edit "GR-KEYNOTE"
+    And I set "Arrival grace (minutes)" to 60
+    And I save
+    Then the hall is saved and the grid shows it
+
+    When the operator scans "ABC123456789" again
+    Then the API responds 200
+    And the attendee is marked arrived with method QrScan
+    And the Hall-Arrivals console now lists "GRS-OPENING" in its session picker
+    # The console reads the RESOLVED value off the session row; before D-839 it
+    # hard-coded 15 and would still have hidden this session.
+```
+
+### E2E-HAL-034 — zero means zero
+
+```gherkin
+Feature: An explicit zero arrival grace is not mistaken for "unset"
+  As an Administrator locking a hall to exact session times
+  I want 0 to mean 0
+  So that "no grace" is a setting I can actually express
+
+  Scenario: 0 does not fall through to the global default
+    Given a hall "GR-STRICT" has "Arrival grace (minutes)" set to 0
+    And a session in that hall starts in 8 minutes
+    # 8 minutes is INSIDE the global 15, so the door would open if the
+    # explicit 0 were read as "inherit".
+    When an operator scans an approved visitor's badge at that hall's door
+    Then the API responds 409 with error code SESSION_NOT_LIVE
+```
+
+### E2E-HAL-035 — the bound is enforced
+
+```gherkin
+Feature: Arrival grace is rejected outside its bound, not clamped
+  As an Administrator
+  I want to be told when I typed the wrong number
+  So that I am not left believing the doors are open four times longer than they are
+
+  Scenario Outline: out of range is refused
+    Given I am signed in as an Administrator
+    When I create a hall with arrivalGraceMinutes = <value>
+    Then the API responds 400
+    And the message names the 0 to 240 bound
+
+    Examples:
+      | value |
+      | -1    |
+      | 241   |
+
+  Scenario: blank means inherit, not zero
+    When I create a hall leaving "Arrival grace (minutes)" empty
+    Then the hall is created with arrivalGraceMinutes = null
+    And a session in that hall uses the global WalkInMode value (15 by default)
+    # An Excel import of a blank cell behaves the same way; a non-numeric cell
+    # is a per-row error rather than a silent 0, which would slam the hall shut
+    # the instant a session ended.
+```
+
+_Last reviewed:_ 2026-08-04 by Claude (D-839 — per-hall arrival grace; E2E-HAL-033..035).

@@ -5,6 +5,7 @@ using SIMF.Application.Excel;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -85,6 +86,11 @@ public sealed class ExportSessionsEndpoint(
         new("LiveCaptionsArabic", row => row.LiveCaptionsArabic),
         new("LiveNotice", row => row.LiveNotice),
         new("LiveNoticeArabic", row => row.LiveNoticeArabic),
+        // D-839 — blank means "inherit the hall", so an empty cell is a real
+        // value here, not a missing one. The RESOLVED value is deliberately not
+        // exported: it is derived, and a round-trip would turn what a session
+        // merely inherits into an override pinned onto it.
+        new("ArrivalGraceMinutesOverride", row => row.ArrivalGraceMinutesOverride),
     ];
 
     protected override async Task<IReadOnlyList<AdminSessionSummary>> ListAsync(
@@ -244,8 +250,25 @@ public sealed class ImportSessionsEndpoint(
             Type = ParseType(row.Cells.GetValueOrDefault("Type", string.Empty)),
             SeatSelectionModeOverride = ParseSeatSelectionMode(
                 row.Cells.GetValueOrDefault("SeatSelectionModeOverride", string.Empty)),
+            ArrivalGraceMinutesOverride = ParseArrivalGrace(
+                row.Cells.GetValueOrDefault("ArrivalGraceMinutesOverride", string.Empty)),
         }, ct);
         return GridRowApplyKind.Created;
+    }
+
+    // D-839 — parses the optional per-session arrival-grace override. Blank stays
+    // null, which is the real "inherit the hall" value. A non-blank, out-of-range
+    // or non-numeric cell is a per-row error rather than a silent 0, which would
+    // otherwise close this session's doors the instant it ended.
+    private static int? ParseArrivalGrace(string value)
+    {
+        if (WalkInModeOptions.TryParseArrivalGrace(value, out var minutes))
+        {
+            return minutes;
+        }
+        throw new DataValidationException(
+            $"Arrival grace must be a whole number of minutes between 0 and {WalkInModeOptions.MaxArrivalGraceMinutes}, or blank.",
+            $"يجب أن تكون مهلة الوصول عدداً صحيحاً من الدقائق بين 0 و{WalkInModeOptions.MaxArrivalGraceMinutes}، أو فارغة.");
     }
 
     // Maps a Type cell to its enum value, or null when blank (the type is

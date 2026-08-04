@@ -5,6 +5,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -23,6 +24,9 @@ public partial class SessionsAddEdit
     private string _startInput = string.Empty;
     private string _endInput = string.Empty;
     private string _capacityInput = string.Empty;
+    // D-839 — blank means "inherit the hall" (which may itself inherit the global
+    // value); the placeholder shows what that currently resolves to.
+    private string _arrivalGraceInput = string.Empty;
     private string _speakerPickInput = string.Empty;
     private string _themePickInput = string.Empty;
     private EditContext _editContext = default!;
@@ -105,6 +109,7 @@ public partial class SessionsAddEdit
             _startInput = Initial.Start.ToString("yyyy-MM-ddTHH:mm");
             _endInput = Initial.End.ToString("yyyy-MM-ddTHH:mm");
             _capacityInput = Initial.CapacityOverride?.ToString() ?? string.Empty;
+            _arrivalGraceInput = Initial.ArrivalGraceMinutesOverride?.ToString() ?? string.Empty;
             _selectedSpeakers.AddRange(Initial.Speakers);
             _selectedThemes.AddRange(Initial.ThemeIds);
             if (Initial.Outcomes is not null)
@@ -547,6 +552,14 @@ public partial class SessionsAddEdit
             }
             capacityOverride = parsed;
         }
+        // D-839 — blank = inherit the hall; otherwise a whole number inside the
+        // shared bound. Same rule object the server validates with.
+        if (!WalkInModeOptions.TryParseArrivalGrace(
+                _arrivalGraceInput, out var arrivalGraceOverride))
+        {
+            _error = L["Admin.Sessions.Field.ArrivalGraceInvalid"];
+            return null;
+        }
         // §8 / D-349 — each non-blank live URL must be a YouTube link or an HLS/MP4
         // stream. Shared rule (LiveStreamUrlPolicy); the API enforces the same.
         var liveUrlInvalid =
@@ -564,7 +577,7 @@ public partial class SessionsAddEdit
 
         var type = ParseType(_typeInput);
         return ValidateTypeAndSpeakers(type)
-            ? new FormValues(hallId, start, end, capacityOverride, categoryId, type)
+            ? new FormValues(hallId, start, end, capacityOverride, categoryId, type, arrivalGraceOverride)
             : null;
     }
 
@@ -618,6 +631,7 @@ public partial class SessionsAddEdit
         LiveCaptions = NullIfBlank(_model.LiveCaptions),
         LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
         SeatSelectionModeOverride = ParseSeatModeOverride(),
+        ArrivalGraceMinutesOverride = form.ArrivalGraceMinutesOverride,
         Language = NullIfBlank(_model.Language),
         LanguageArabic = NullIfBlank(_model.LanguageArabic),
         Outcomes = BuildOutcomes(),
@@ -648,10 +662,28 @@ public partial class SessionsAddEdit
         LiveCaptions = NullIfBlank(_model.LiveCaptions),
         LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
         SeatSelectionModeOverride = ParseSeatModeOverride(),
+        ArrivalGraceMinutesOverride = form.ArrivalGraceMinutesOverride,
         Language = NullIfBlank(_model.Language),
         LanguageArabic = NullIfBlank(_model.LanguageArabic),
         Outcomes = BuildOutcomes(),
     };
+
+
+    /// <summary>D-839 — the shared 0..240 bound as the input's own `max`, so the
+    /// browser refuses out-of-range values before the parser has to.</summary>
+    private static string ArrivalGraceMax =>
+        WalkInModeOptions.MaxArrivalGraceMinutes.ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>D-839 — the helper under the arrival-grace box. On edit it names
+    /// the number the server would actually use if the box is left blank, so an
+    /// admin can see what they are inheriting instead of guessing whether the hall
+    /// or the global value is in force.</summary>
+    private string ArrivalGraceHint() => Initial is null
+        ? L["Admin.Sessions.Field.ArrivalGraceHint"]
+        : string.Format(
+            CultureInfo.CurrentCulture,
+            L["Admin.Sessions.Field.ArrivalGraceInheritHint"],
+            Initial.InheritedArrivalGraceMinutes);
 
     /// <summary>The form's validated, parsed values — everything the two request
     /// builders need that is not read straight off <see cref="_model"/>.</summary>
@@ -661,7 +693,9 @@ public partial class SessionsAddEdit
         DateTime End,
         int? CapacityOverride,
         Guid? CategoryId,
-        SessionType? Type);
+        SessionType? Type,
+        // D-839 — null = inherit the hall.
+        int? ArrivalGraceMinutesOverride);
 
     /// <summary>A1/A6 — true when saving would destroy seats: this is an edit, the
     /// hall or the start/end window actually moves, and something is currently held.

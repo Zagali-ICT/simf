@@ -388,6 +388,7 @@ deactivation also produces a `Session.Deactivated` row alongside the ordinary
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-08-04 | D-839 | **Arrival grace (minutes)** on `SessionsAddEdit`, beside `CapacityOverride` — the other "blank inherits" knob. Additive nullable `Session.ArrivalGraceMinutesOverride` (0..240, `CK_Sessions_ArrivalGrace`); **blank = inherit the hall**, which may itself inherit the global `WalkInMode` value. Resolution is session → hall → global → 15. On edit the field's helper names the number currently being inherited, read off `AdminSessionDetail.EffectiveArrivalGraceMinutes`, so an admin can see what blank means rather than guessing which layer is in force. Lets one keynote open its doors 40 minutes early without changing the hall the rest of that day's programme runs in. Round-trips through Excel as `ArrivalGraceMinutesOverride` (the **resolved** value is deliberately not exported — it is derived, and a round-trip would pin an inherited value on as an override). New resx quartet (EN + AR). New E2E-SES-057..059. |
 | 2026-07-31 | D-815 | **FR-702 re-scoped from a geographic restriction to an informational notice** (owner: *"No restriction, this is only notification and be added to session."*). `SessionsAddEdit` gained a bilingual "Live notice — shown with the stream" textarea pair (≤512 each) in the broadcast block; the value rides `AdminSessionDetail` + `PublicSessionDetail` (appended, D-219) to the app live screen and the Website session page, where it is displayed **with** the stream. No region check, no location lookup, no gate — the feed is unchanged. Blank in both languages shows nothing; clearing the boxes stores `null` and removes the banner. E2E SES-054..056; `SessionLiveNoticeTests.cs`. |
 | 2026-07-01 | D-578 | `SessionsAddEdit` "get subtitle" tools below the caption fields: import an `.srt`/`.vtt`/`.txt` file (parsed server-side to text) or **Fetch subtitle from video** (`POST /admin/sessions/subtitle/fetch-from-video`, gated `Sessions.Edit`), both filling `LiveCaptions`/`LiveCaptionsArabic` which feed the AI session-summary. Fetch degrades to `SUBTITLE_FETCH_FAILED` where the server can't reach YouTube (on-prem NCA network) → paste/upload instead. E2E SES-027..030. |
 | 2026-06-10 | D-356 | Uniform-CRUD Excel export (`Sessions.Export`) + import (`Sessions.Import`) via `CrudGridExcel`; reference doc created. |
@@ -396,6 +397,8 @@ deactivation also produces a `Session.Deactivated` row alongside the ordinary
 
 ---
 
-_Last reviewed:_ 2026-07-31 by Claude (D-815 — FR-702 live-notice fields on the broadcast block: informational bilingual text shown with the stream, gating nothing).
+_Last reviewed:_ 2026-08-04 by Claude (D-839 — per-session arrival-grace override).
+
+_Prior:_ 2026-07-31 by Claude (D-815 — FR-702 live-notice fields on the broadcast block: informational bilingual text shown with the stream, gating nothing).
 
 _Prior:_ 2026-07-01 by Claude (D-578 — subtitle import/fetch tools).

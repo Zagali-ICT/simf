@@ -5,6 +5,7 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
@@ -88,7 +89,8 @@ internal sealed class AdminHallService(
                 // order must match the AdminHallSummary record exactly).
                 hall.EquipmentNotes,
                 hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
-                (int)hall.SeatSelectionMode))
+                (int)hall.SeatSelectionMode,
+                hall.ArrivalGraceMinutes))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminHallSummary>.Of(page, total,
@@ -131,6 +133,7 @@ internal sealed class AdminHallService(
             Floor = floor, EquipmentNotes = equipmentNotes,
             GeofenceCenterLat = geoLat, GeofenceCenterLon = geoLon, GeofenceRadiusMeters = geoRadius,
             SeatSelectionMode = mode,
+            ArrivalGraceMinutes = ValidateArrivalGrace(request.ArrivalGraceMinutes),
             IsActive = true,
             CreatedAt = now,
         };
@@ -201,6 +204,7 @@ internal sealed class AdminHallService(
         hall.GeofenceCenterLat = geoLat; hall.GeofenceCenterLon = geoLon;
         hall.GeofenceRadiusMeters = geoRadius;
         hall.SeatSelectionMode = ParseSeatSelectionMode(request.SeatSelectionMode);
+        hall.ArrivalGraceMinutes = ValidateArrivalGrace(request.ArrivalGraceMinutes);
         hall.IsActive = request.IsActive;
         hall.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -296,7 +300,23 @@ internal sealed class AdminHallService(
             hall.Capacity, hall.Floor, hall.EquipmentNotes,
             hall.IsActive, hall.CreatedAt, hall.UpdatedAt,
             hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
-            (int)hall.SeatSelectionMode);
+            (int)hall.SeatSelectionMode,
+            hall.ArrivalGraceMinutes);
+
+    /// <summary>D-839 — the arrival grace is optional (null = inherit the global
+    /// value) but, when given, must be inside the one shared bound. Rejected rather
+    /// than clamped: silently storing 240 when an admin typed 2400 would tell them
+    /// the doors are open four times longer than they are.</summary>
+    private static int? ValidateArrivalGrace(int? minutes)
+    {
+        if (!WalkInModeOptions.IsValidArrivalGrace(minutes))
+        {
+            throw new ApiException(ErrorCodes.HallInvalid, 400,
+                $"Arrival grace must be between 0 and {WalkInModeOptions.MaxArrivalGraceMinutes} minutes.",
+                $"يجب أن تكون مهلة الوصول بين 0 و{WalkInModeOptions.MaxArrivalGraceMinutes} دقيقة.");
+        }
+        return minutes;
+    }
 
     /// <summary>D-485 — validate the incoming seat-selection mode int against the
     /// defined <see cref="SeatSelectionMode"/> values (the CP dropdown only offers

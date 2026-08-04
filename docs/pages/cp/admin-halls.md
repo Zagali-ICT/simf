@@ -132,8 +132,10 @@ by bUnit `tests/SIMF.ControlPanel.Tests/HallsListSeatLayoutActionTests.cs`.
 | 2026-07-26 | QA B16 | Hall occupancy view — `HallsViewDelete` lists the sessions assigned to the hall (code / title / local start + end / status) from the new `GET /admin/halls/{id}/schedule` (`Halls.View`, reusing `AdminSessionService.ListAllAsync`'s `hallId` filter). New E2E-HAL-026..028. |
 | 2026-07-27 | QA B16 follow-up | The occupancy view pins `isActive=true`, so a soft-deleted session no longer renders as a live booking (the Status column shows the lifecycle enum, not `IsActive`); a schedule longer than one page now says it was capped. New E2E-HAL-029/030. |
 | 2026-07-27 | QA A40 | **"Seat layout" row action.** A quiet-icon row action per hall opens `/admin/halls/seat-layouts?hallId={id}` with that hall pre-selected; gated by `<AuthorizedAction Permission="SeatLayouts.View">`. New resx pair `Admin.Halls.Action.SeatLayout` (EN + AR). New E2E-HAL-031. |
+| 2026-08-04 | D-839 | **Arrival grace (minutes)** on the hall form, beside the geofence triple it belongs with. Additive nullable `Hall.ArrivalGraceMinutes` (0..240, `CK_Halls_ArrivalGrace`); **blank = inherit the global `WalkInMode` value**, which is what every existing hall does, so nothing changed for them. It sets how long before a session starts, and after it ends, this hall still accepts arrivals — a slow-filling keynote hall can now open early **without** arming the global walk-in capability, which is server-access-only because it also relaxes an approval gate. A session may override it (`Session.ArrivalGraceMinutesOverride`). Round-trips through the Excel lane as `ArrivalGraceMinutes`; an out-of-range or non-numeric cell is a per-row error, never a silent 0. New resx trio (EN + AR). New E2E-HAL-033..035. |
 
-_Last reviewed:_ 2026-07-27 by Claude (QA B16 follow-up — active-only occupancy +
+_Last reviewed:_ 2026-08-04 by Claude (D-839 — per-hall arrival grace).
+Prior: 2026-07-27 by Claude (QA B16 follow-up — active-only occupancy +
 capped-page notice). Prior: 2026-07-26 by Claude (QA B16 — hall occupancy view).
 Prior: 2026-06-10 by Claude (D-356 / D-353 uniform CRUD — Excel + toggle).
 Prior: 2026-07-27 by Claude (QA A40 - the Halls grid now carries a "Seat layout" row action that deep-links each hall to its seat-layout editor; E2E-HAL-031).

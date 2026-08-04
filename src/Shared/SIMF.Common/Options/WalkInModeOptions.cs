@@ -1,3 +1,4 @@
+using System.Globalization;
 using SIMF.Common.Badges;
 
 namespace SIMF.Common.Options;
@@ -114,7 +115,11 @@ public sealed class WalkInModeOptions
     /// <summary>The arrival grace the system has always used.</summary>
     public const int DefaultArrivalGraceMinutes = 15;
 
-    private const int MaxArrivalGraceMinutes = 240;
+    /// <summary>The widest arrival grace any layer may set. Public since D-839,
+    /// which gave the same knob a per-hall and per-session home: the bound has to
+    /// be one number, or the DB check constraint, the request validators and this
+    /// clamp could disagree about what is legal.</summary>
+    public const int MaxArrivalGraceMinutes = 240;
 
     /// <summary>
     /// True when the capability is armed at <paramref name="now"/>: the master
@@ -142,12 +147,74 @@ public sealed class WalkInModeOptions
     /// </summary>
     public bool BadgeActivationAllowedForWalkIns => AllowBadgeActivation;
 
+    /// <summary>The effective GLOBAL arrival grace in whole minutes, clamped,
+    /// falling back to the historical 15 whenever the mode is not armed. Minutes
+    /// is the stored unit, so this is the primitive and the
+    /// <see cref="TimeSpan"/> accessor derives from it — not the other way round,
+    /// which had callers unwrapping a TimeSpan with a truncating cast to recover
+    /// the int it was built from.</summary>
+    public int ResolveArrivalGraceMinutes(DateTime now) =>
+        IsArmed(now)
+            ? Math.Clamp(ArrivalGraceMinutes, 0, MaxArrivalGraceMinutes)
+            : DefaultArrivalGraceMinutes;
+
     /// <summary>The effective arrival grace, clamped, falling back to the
     /// historical 15 minutes whenever the mode is not armed.</summary>
     public TimeSpan ResolveArrivalGrace(DateTime now) =>
-        TimeSpan.FromMinutes(IsArmed(now)
-            ? Math.Clamp(ArrivalGraceMinutes, 0, MaxArrivalGraceMinutes)
-            : DefaultArrivalGraceMinutes);
+        TimeSpan.FromMinutes(ResolveArrivalGraceMinutes(now));
+
+    /// <summary>
+    /// D-839 — the arrival-grace precedence, in whole minutes:
+    /// <c>session override → hall → the global value</c>. Null at a layer means
+    /// "inherit the one below"; a stored <c>0</c> is a real zero and wins.
+    ///
+    /// <para>Static and free of any option state so the SAME rule serves the
+    /// hall door, the admin list projection and the detail read. It previously
+    /// existed as three hand-written copies that already disagreed — only the
+    /// door clamped — which is the exact class of divergence D-839 was written
+    /// to end. Clamping here rather than trusting the check constraints keeps it
+    /// true for a row that reaches the database another way (a restore with
+    /// <c>NOCHECK</c>, a direct UPDATE).</para>
+    /// </summary>
+    public static int ResolveArrivalGraceMinutes(
+        int? sessionOverrideMinutes, int? hallMinutes, int globalMinutes) =>
+        (sessionOverrideMinutes ?? hallMinutes) is { } minutes
+            ? Math.Clamp(minutes, 0, MaxArrivalGraceMinutes)
+            : globalMinutes;
+
+    /// <summary>D-839 — null means "inherit the layer above"; any other value must
+    /// sit inside the one shared bound, the same bound the DB check constraints
+    /// enforce.</summary>
+    public static bool IsValidArrivalGrace(int? minutes) =>
+        minutes is not { } value || value is >= 0 and <= MaxArrivalGraceMinutes;
+
+    /// <summary>
+    /// D-839 — parses a blank-or-bounded arrival-grace input. Blank returns true
+    /// with <paramref name="minutes"/> null, which is the real "inherit" value —
+    /// NOT zero, which would slam a hall's doors shut the instant a session ends.
+    ///
+    /// <para>Shared by both Excel importers and both Control Panel forms, which
+    /// each carried a copy. Same reasoning as <see cref="LiveStreamUrlPolicy"/>,
+    /// which the sibling field on those very forms already uses: the rule lives
+    /// in exactly one place so the client and the server cannot disagree.</para>
+    /// </summary>
+    public static bool TryParseArrivalGrace(string? raw, out int? minutes)
+    {
+        minutes = null;
+        var trimmed = raw?.Trim() ?? string.Empty;
+        if (trimmed.Length == 0)
+        {
+            return true;
+        }
+        if (!int.TryParse(
+                trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+            || !IsValidArrivalGrace(value))
+        {
+            return false;
+        }
+        minutes = value;
+        return true;
+    }
 
     /// <summary>
     /// The key for a given badge version, or null when that version is not

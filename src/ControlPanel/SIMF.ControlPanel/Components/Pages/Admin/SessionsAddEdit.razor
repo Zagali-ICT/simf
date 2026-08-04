@@ -166,6 +166,16 @@
                        ValueExpression="@(() => _capacityInput)"
                        Disabled="_busy" />
 
+        @* D-839 — beside CapacityOverride, the other "blank inherits the hall" knob. *@
+        <SimfTextField Label="@L["Admin.Sessions.Field.ArrivalGraceOverride"]"
+                       Helper="@ArrivalGraceHint()"
+                       Type="number"
+                       Min="0" Max="@ArrivalGraceMax"
+                       Value="@_arrivalGraceInput"
+                       ValueChanged="@(v => _arrivalGraceInput = v)"
+                       ValueExpression="@(() => _arrivalGraceInput)"
+                       Disabled="_busy" />
+
         @if (_speakerOptions.Length > 0)
         {
             <SimfSelect TValue="string"

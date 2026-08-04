@@ -83,6 +83,18 @@ public class Session : BaseAuditEntity
     /// open seating (or vice-versa) without re-configuring the hall.</summary>
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
 
+    /// <summary>D-839 — optional per-session override of the parent
+    /// <see cref="Hall"/>'s <see cref="Hall.ArrivalGraceMinutes"/>, in minutes
+    /// (0..240). Null means "inherit the hall", which is the state every
+    /// pre-existing session is in.
+    ///
+    /// <para>The resolution order is session → hall → the global
+    /// <c>WalkInMode.ArrivalGraceMinutes</c> → 15, so one keynote can open its
+    /// doors 40 minutes early without changing the hall the other sessions of
+    /// that day run in. Same nullable-inherit shape as
+    /// <see cref="CapacityOverride"/> and <see cref="SeatSelectionModeOverride"/>.</para></summary>
+    public int? ArrivalGraceMinutesOverride { get; set; }
+
     /// <summary>P1.7 (D-217 freeze-lift) — set by the automated reminder
     /// worker once it has dispatched the "starting soon" notifications for
     /// this session. The null check is the worker's dedup guard: a session
