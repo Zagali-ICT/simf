@@ -15,13 +15,17 @@ namespace SIMF.ControlPanel;
 /// Cookie-validation hook that keeps the bearer token in the auth cookie
 /// fresh by exchanging the stored refresh_token for a new token pair just
 /// before the access_token expires. Wired into the cookie scheme from
-/// <c>Program.cs</c>. A near-identical copy lives in <c>SIMF.Web</c>
-/// — the file is duplicated by design, matching the existing
-/// SignInTicketStore / AuthEndpoints split between the two host projects.
-/// The two have diverged since BUG-005: only this copy carries the
-/// cross-request single-flight (see <see cref="Rotations"/>), because the
-/// Control Panel is the surface that fires several authenticated fetches per
-/// page. The Website copy still rotates once per request.
+/// <c>Program.cs</c>.
+///
+/// <para>D-848 — this paragraph previously read "a near-identical copy lives in
+/// <c>SIMF.Web</c> … the Website copy still rotates once per request". There is
+/// no such copy: the Website holds no <c>expires_at</c>, no cookie-validate
+/// rotation and no equivalent type. Corrected rather than deleted, because the
+/// claim actively misleads — a reader taking it at face value goes hunting for
+/// a second file to change, and may conclude the Website carries an unpatched
+/// variant of whatever bug they are chasing. The cross-request single-flight
+/// (see <see cref="Rotations"/>) is simply this handler's, added by BUG-005
+/// because the Control Panel fires several authenticated fetches per page.</para>
 ///
 /// <para>Why this exists (D-121): the auth cookie lives 8 hours with sliding
 /// renewal but the access token's lifetime is 30 minutes (JwtOptions).
@@ -188,7 +192,29 @@ public static class SimfCookieRefreshHandler
             new AuthenticationToken
             {
                 Name = ExpiresAtTokenName,
-                Value = issuedAt.AddSeconds(tokens.AccessTokenExpiresInSeconds)
+                // D-848 — stamped WITH its +03:00 offset. issuedAt comes from
+                // SimfClock, whose Kind is Unspecified, and "O" on an
+                // Unspecified value emits no "Z" and no offset at all. That
+                // bare string is handed to the browser by /session/status,
+                // where `new Date(...)` reads an offset-less ISO date-time as
+                // the BROWSER's local time — so the session's apparent length
+                // silently tracked whichever timezone the admin's machine was
+                // set to. Naming the offset makes the value an instant, which
+                // is what both sides are actually comparing against.
+                //
+                // SpecifyKind first: new DateTimeOffset(DateTime, TimeSpan)
+                // THROWS when the value's Kind is Utc or Local and its own
+                // offset disagrees with the one given. This method is public
+                // and that throw would land inside OnValidatePrincipal — i.e.
+                // it would break authentication for every request rather than
+                // degrade. Both callers pass SimfClock.Now today; normalising
+                // means a future one passing DateTime.UtcNow cannot take the
+                // Control Panel down.
+                Value = new DateTimeOffset(
+                        DateTime.SpecifyKind(
+                            issuedAt.AddSeconds(tokens.AccessTokenExpiresInSeconds),
+                            DateTimeKind.Unspecified),
+                        SimfClock.Offset)
                     .ToString("O", CultureInfo.InvariantCulture),
             },
         ]);
@@ -201,13 +227,33 @@ public static class SimfCookieRefreshHandler
         // waiting for the next BFF call to 401, which is exactly the bug
         // this hook exists to fix.
         if (string.IsNullOrEmpty(expiresAtRaw)) return true;
-        if (!DateTime.TryParse(expiresAtRaw,
+
+        // D-848 — a cookie written before D-848 carries no offset, and parsing
+        // that would silently assume THIS host's zone. Treat a zone-free legacy
+        // value as due: one extra rotation on the next request beats a wrong
+        // answer, and it is the same "refresh now" branch an absent value takes.
+        if (!HasZoneDesignator(expiresAtRaw)) return true;
+
+        if (!DateTimeOffset.TryParse(expiresAtRaw,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.RoundtripKind,
                 out var expiresAt))
         {
             return true;
         }
-        return expiresAt - SimfClock.Now <= RefreshThreshold;
+        return expiresAt - DateTimeOffset.Now <= RefreshThreshold;
+    }
+
+    /// <summary>True when a round-trip timestamp names its zone ("…Z" or
+    /// "…+03:00") — i.e. it identifies an instant, rather than a bare
+    /// wall-clock reading whose meaning depends on who reads it.</summary>
+    private static bool HasZoneDesignator(string value)
+    {
+        if (value.EndsWith('Z') || value.EndsWith('z')) return true;
+
+        // "…±HH:mm". Measured from the END, so the date's own '-' separators
+        // can never be mistaken for the offset's sign.
+        var sign = value.LastIndexOfAny(['+', '-']);
+        return sign > 0 && value.Length - sign == 6 && value[sign + 3] == ':';
     }
 }

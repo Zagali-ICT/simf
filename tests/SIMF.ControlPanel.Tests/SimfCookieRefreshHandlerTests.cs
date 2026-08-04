@@ -104,6 +104,79 @@ public sealed class SimfCookieRefreshHandlerTests
         Assert.False(context.ShouldRenew);
     }
 
+    /// <summary>D-848 — the stored expiry must name its zone.
+    ///
+    /// <para><c>/session/status</c> hands this string straight to the browser,
+    /// where <c>new Date(...)</c> reads an offset-less ISO date-time as the
+    /// BROWSER's local time. Written from <see cref="SimfClock"/> (Kind
+    /// Unspecified), <c>"O"</c> emitted no designator at all — so how long a
+    /// Control Panel session appeared to last depended on the timezone of the
+    /// admin's laptop, and a browser far enough east of Riyadh saw an expiry
+    /// already in the past and was signed out on the guard's first tick.</para></summary>
+    [Fact]
+    public void The_stored_expiry_names_its_offset_so_a_browser_cannot_reinterpret_it()
+    {
+        var properties = new AuthenticationProperties();
+        var issuedAt = new DateTime(2026, 8, 4, 23, 17, 56, DateTimeKind.Unspecified);
+
+        SimfCookieRefreshHandler.StoreTokens(
+            properties,
+            new AuthTokens(
+                AccessToken,
+                "refresh-zoned",
+                "Bearer",
+                AccessTokenExpiresInSeconds: 300,
+                new AuthUser(Guid.NewGuid(), "admin@simf.test", "Admin")),
+            issuedAt);
+
+        var stored = properties.GetTokenValue(SimfCookieRefreshHandler.ExpiresAtTokenName);
+
+        Assert.NotNull(stored);
+        Assert.EndsWith("+03:00", stored, StringComparison.Ordinal);
+
+        // And it round-trips to the intended instant rather than to whatever
+        // the reader's own zone would have made of a bare reading.
+        Assert.True(DateTimeOffset.TryParse(
+            stored, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed));
+        Assert.Equal(
+            new DateTimeOffset(issuedAt.AddSeconds(300), SimfClock.Offset),
+            parsed);
+    }
+
+    /// <summary>A cookie minted BEFORE D-848 carries no offset. Parsing it would
+    /// silently assume the CP host's zone, so it is treated as due instead —
+    /// one extra rotation on the next request, never a wrong answer.</summary>
+    [Fact]
+    public async Task A_legacy_zone_free_expiry_refreshes_rather_than_being_guessed()
+    {
+        using var handler = new RefreshApiStub();
+        var services = BuildServices(handler);
+        handler.Release();
+
+        var context = NewContext(services, NewRefreshToken(), expiresIn: TimeSpan.FromMinutes(4));
+        // Overwrite with the pre-D-848 shape: same instant, no designator.
+        context.Properties.StoreTokens(
+        [
+            new AuthenticationToken { Name = "access_token", Value = AccessToken },
+            new AuthenticationToken { Name = "refresh_token", Value = NewRefreshToken() },
+            new AuthenticationToken
+            {
+                Name = SimfCookieRefreshHandler.ExpiresAtTokenName,
+                Value = SimfClock.Now.AddMinutes(4).ToString("O", CultureInfo.InvariantCulture),
+            },
+        ]);
+
+        await SimfCookieRefreshHandler.OnValidatePrincipalAsync(context);
+
+        // Four minutes of life left, so a ZONED value would have been left alone
+        // (see A_cookie_whose_access_token_is_still_fresh_is_left_alone).
+        Assert.Equal(1, handler.Calls);
+        Assert.EndsWith(
+            "+03:00",
+            TokenOf(context, SimfCookieRefreshHandler.ExpiresAtTokenName)!,
+            StringComparison.Ordinal);
+    }
+
     // -- helpers --------------------------------------------------------------
 
     /// <summary>A fresh token per test — the single-flight map is static and
@@ -133,7 +206,13 @@ public sealed class SimfCookieRefreshHandlerTests
             new AuthenticationToken
             {
                 Name = SimfCookieRefreshHandler.ExpiresAtTokenName,
-                Value = SimfClock.Now.Add(expiresIn ?? TimeSpan.FromSeconds(30))
+                // D-848 — zoned, exactly as StoreTokens writes it. A zone-free
+                // value is now treated as a pre-D-848 legacy cookie and always
+                // refreshes, so writing one here would silently stop these
+                // tests exercising the freshness decision at all.
+                Value = new DateTimeOffset(
+                        SimfClock.Now.Add(expiresIn ?? TimeSpan.FromSeconds(30)),
+                        SimfClock.Offset)
                     .ToString("O", CultureInfo.InvariantCulture),
             },
         ]);
