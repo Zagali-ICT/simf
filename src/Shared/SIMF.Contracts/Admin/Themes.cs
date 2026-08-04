@@ -44,7 +44,9 @@ public sealed class AdminCreateThemeRequest
 }
 
 /// <summary>PUT body for <c>/admin/themes/{id}</c>.</summary>
-public sealed class AdminUpdateThemeRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateThemeRequest
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

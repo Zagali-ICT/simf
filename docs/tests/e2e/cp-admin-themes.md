@@ -44,6 +44,7 @@
 | E2E-THM-023 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-THM-024 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-THM-025 | Excel field-drop fix: Description + DescriptionArabic round-trip through export AND import (D-506) | happy | P1 | _to author_ |
+| E2E-THM-026 | Every field on a theme round-trips through an update, and an edit to one field leaves the rest alone | crud | P0 | authored ✓ (`AdminThemeUpdateTests`) |
 | E2E-THM-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-THM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -543,3 +544,37 @@ Scenario: Description + DescriptionArabic survive both export and import
 _Last reviewed:_ 2026-06-26 by Claude (D-506 — Excel Description/DescriptionArabic
 field-drop fix: export now surfaces both columns; previously D-356 Phase 5 — Excel
 export + import + D-353 Page↔Popup toggle).
+
+
+### E2E-THM-026 — every field survives an update
+
+```gherkin
+Feature: Editing a theme changes what was edited and nothing else
+  As an Administrator
+  I want every field on a theme to persist through a save
+  So that editing one field cannot silently revert another
+
+  Background:
+    Given I am signed in to the Control Panel as an Administrator
+    And a theme exists with a code, bilingual name, bilingual description,
+      display order 3, page colour "#0B7285" and Active ticked
+
+  Scenario: all eight fields round-trip
+    When I change every field and save
+    Then re-reading the theme reports every new value:
+      code, name, name (Arabic), description, description (Arabic),
+      display order, page colour, and Active
+
+  Scenario: editing one field leaves the others untouched
+    When I change only the English name and save
+    Then the name is updated
+    And code, name (Arabic), both descriptions, display order, page colour and
+      Active are all unchanged
+    # D-844: PUT /admin/themes/{id} had NO test, and ThemeEndpoints.cs cited
+    # `// Tests: SIMF.Api.Tests/AdminThemesTests.cs`, which does not exist. Each
+    # field is asserted individually because the defect this programme keeps
+    # finding is ONE field quietly not arriving — a test that only checked Name
+    # would sail straight past it.
+```
+
+_Updated:_ 2026-08-04 by Claude (D-844 — authored E2E-THM-026 for the previously untested update path).

@@ -115,7 +115,9 @@ public sealed class AdminCreateSpeakerRequest
     public double? Longitude { get; set; }
 }
 
-public sealed class AdminUpdateSpeakerRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateSpeakerRequest
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

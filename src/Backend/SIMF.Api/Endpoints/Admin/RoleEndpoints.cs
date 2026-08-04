@@ -1,4 +1,6 @@
-// Tests: SIMF.Api.Tests/AdminRolesTests.cs
+// Tests: SIMF.Api.Tests/AdminRoleUpdateTests.cs
+// Tests: SIMF.Api.Tests/RolesExcelTests.cs
+// Tests: SIMF.Api.Tests/RolePermissionsEndpointsTests.cs
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -89,10 +91,15 @@ public sealed class CreateRoleEndpoint(IAdminRoleService service)
     }
 }
 
-public sealed class UpdateRoleRequest
+/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// D-842 (sessions), D-843 (gates, profile types) and the four before them
+/// silently dropped a field on PUT. Passing the bound request straight through
+/// makes that drop impossible.</summary>
+public sealed class UpdateRoleRequest : AdminUpdateRoleRequest
 {
     public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
 }
 
 public sealed class UpdateRoleEndpoint(IAdminRoleService service)
@@ -117,7 +124,7 @@ public sealed class UpdateRoleEndpoint(IAdminRoleService service)
             return;
         }
         var summary = await service.UpdateAsync(actorId, req.Id,
-            new AdminUpdateRoleRequest { Name = req.Name }, ct);
+            req, ct);
         await Send.OkAsync(ApiResult<AdminRoleSummary>.Ok(summary), ct);
     }
 }

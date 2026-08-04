@@ -74,9 +74,12 @@ public sealed class AdminUpdateCountryRequest {
 }
 ```
 
-> The API `UpdateCountryEndpoint` binds an `UpdateCountryRequest` (route `Id` +
-> body) and maps it onto `AdminUpdateCountryRequest` before calling the service —
-> the CP's PUT body matches `AdminUpdateCountryRequest`.
+> The API `UpdateCountryEndpoint` binds an `UpdateCountryRequest`, which since
+> D-844 **inherits** `AdminUpdateCountryRequest` and adds only the route `Id`.
+> The bound request is passed straight to the service — there is no longer a
+> hand-written field-by-field mapping that could silently drop a field on PUT
+> (the D-842 / D-843 defect class). The CP's PUT body matches
+> `AdminUpdateCountryRequest`.
 
 ## Request / response shapes
 - **List** — request `GridQuery` (Search / Sort / SortDescending / Skip / Top);

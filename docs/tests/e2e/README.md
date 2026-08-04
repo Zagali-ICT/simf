@@ -67,14 +67,14 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/invitations` | [`cp-admin-invitations.md`](cp-admin-invitations.md) | E2E-INV-001..018 |
 | `/admin/announcements` | [`cp-announcements.md`](cp-announcements.md) | E2E-ANN-001..015 |
 | `/admin/reset-2fa` | [`cp-admin-reset-2fa.md`](cp-admin-reset-2fa.md) | E2E-R2F-001..012 |
-| `/admin/roles` | [`cp-admin-roles.md`](cp-admin-roles.md) | E2E-ROL-001..026 |
+| `/admin/roles` | [`cp-admin-roles.md`](cp-admin-roles.md) | E2E-ROL-001..027 |
 | `/admin/roles/{id}/permissions` | [`cp-admin-roles-permissions.md`](cp-admin-roles-permissions.md) | E2E-RPM-001..015 |
 
 ### Control Panel — Programme & sessions
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/themes` | [`cp-admin-themes.md`](cp-admin-themes.md) | E2E-THM-001..024 |
+| `/admin/themes` | [`cp-admin-themes.md`](cp-admin-themes.md) | E2E-THM-001..026 |
 | `/admin/halls` | [`cp-admin-halls.md`](cp-admin-halls.md) | E2E-HAL-001..035 |
 | `/admin/halls/seat-layouts` | [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md) | E2E-HSL-001..030 |
 | `/admin/speakers` | [`cp-admin-speakers.md`](cp-admin-speakers.md) | E2E-SPK-001..022 |
@@ -356,7 +356,7 @@ being quoted in planning as if current.
 - **Pages catalogued:** 193 (96 Control Panel + 69 mobile + 19 Website + 8
   API-only surfaces + 1 system-wide). One of the 193 — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3050 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3052 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
   functional total is 2671.

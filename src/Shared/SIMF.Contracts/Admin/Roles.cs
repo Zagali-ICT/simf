@@ -24,7 +24,9 @@ public sealed class AdminCreateRoleRequest
 
 /// <summary>The body of <c>PUT /api/v1/admin/roles/{id}</c> — renames a
 /// custom role. Baseline roles cannot be renamed.</summary>
-public sealed class AdminUpdateRoleRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateRoleRequest
 {
     public string Name { get; set; } = string.Empty;
 }

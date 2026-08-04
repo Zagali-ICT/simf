@@ -1,4 +1,5 @@
-// Tests: SIMF.Api.Tests/AdminThemesTests.cs
+// Tests: SIMF.Api.Tests/AdminThemeUpdateTests.cs
+// Tests: SIMF.Api.Tests/ThemesExcelTests.cs
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.Programme.Abstractions;
@@ -77,17 +78,15 @@ public sealed class CreateThemeEndpoint(IAdminThemeService service)
     }
 }
 
-public sealed class UpdateThemeRequest
+/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// D-842 (sessions), D-843 (gates, profile types) and the four before them
+/// silently dropped a field on PUT. Passing the bound request straight through
+/// makes that drop impossible.</summary>
+public sealed class UpdateThemeRequest : AdminUpdateThemeRequest
 {
     public Guid Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? DescriptionArabic { get; set; }
-    public int DisplayOrder { get; set; }
-    public string PageColor { get; set; } = string.Empty;
-    public bool IsActive { get; set; } = true;
 }
 
 public sealed class UpdateThemeEndpoint(IAdminThemeService service)
@@ -109,17 +108,7 @@ public sealed class UpdateThemeEndpoint(IAdminThemeService service)
             return;
         }
         var detail = await service.UpdateAsync(actorId, req.Id,
-            new AdminUpdateThemeRequest
-            {
-                Code = req.Code,
-                Name = req.Name,
-                NameArabic = req.NameArabic,
-                Description = req.Description,
-                DescriptionArabic = req.DescriptionArabic,
-                DisplayOrder = req.DisplayOrder,
-                PageColor = req.PageColor,
-                IsActive = req.IsActive,
-            }, ct);
+            req, ct);
         await Send.OkAsync(ApiResult<AdminThemeDetail>.Ok(detail), ct);
     }
 }

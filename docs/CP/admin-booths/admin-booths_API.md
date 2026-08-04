@@ -119,7 +119,7 @@ Create always sets `IsActive = true` (no `isActive` field in the create payload)
 | | |
 |---|---|
 | Full route | `PUT /api/v1/admin/booths/{id:guid}` (BFF `PUT /account/api/admin/booths/{id}`) |
-| Source | `UpdateBoothEndpoint` (binds `UpdateBoothRequest` then maps to `AdminUpdateBoothRequest`) |
+| Source | `UpdateBoothEndpoint` (binds `UpdateBoothRequest`, which since D-844 **inherits** `AdminUpdateBoothRequest` and adds only the route `Id`; the bound request is passed straight through, with no hand-written mapping that could drop a field) |
 | Policy | `Booths.Edit` + `RequireApprovedAccount`; rate-limit `auth` |
 | Request | `AdminUpdateBoothRequest` (same fields as create **plus** `"isActive": true`) |
 | Returns | `ApiResult<AdminBoothDetail>` |

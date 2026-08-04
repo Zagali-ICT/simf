@@ -13,51 +13,26 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P1.3 (D-214) — the route id + body for the visitor edit endpoint.
-/// Mirrors <see cref="RejectRouteRequest"/>: the user id comes from the path,
-/// the editable fields from the JSON body.</summary>
-public sealed class UpdateVisitorRouteRequest
+/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// D-842 (sessions), D-843 (gates, profile types) and the four before them
+/// silently dropped a field on PUT. Passing the bound request straight through
+/// makes that drop impossible.</summary>
+public sealed class UpdateVisitorRouteRequest : AdminUpdateVisitorRequest
 {
     public Guid Id { get; set; }
-    public string Email { get; set; } = string.Empty;
-    public string DisplayName { get; set; } = string.Empty;
-    public Guid? ProfileTypeId { get; set; }
-
-    /// <summary>Bi-Meeting rework — the admin-assigned speaker/delegation meeting flags.</summary>
-    public bool AllowsSpeakerMeeting { get; set; }
-    public bool AllowsDelegationMeeting { get; set; }
-
-    /// <summary>B22 — optional ISO alpha-2 nationality correction; null / empty leaves
-    /// the stored nationality untouched. See
-    /// <see cref="AdminUpdateVisitorRequest.NationalityCode"/>.</summary>
-    public string? NationalityCode { get; set; }
-
-    /// <summary>FR-PHN-002 — optional mobile correction; null / empty leaves the
-    /// stored number untouched. See <see cref="AdminUpdateVisitorRequest.SaudiMobile"/>.</summary>
-    public string? SaudiMobile { get; set; }
-    public string? InternationalMobile { get; set; }
 }
 
-/// <summary>P1.3 (D-214) — the route id + body for the Other edit endpoint.</summary>
-public sealed class UpdateOtherRouteRequest
+/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// D-842 (sessions), D-843 (gates, profile types) and the four before them
+/// silently dropped a field on PUT. Passing the bound request straight through
+/// makes that drop impossible.</summary>
+public sealed class UpdateOtherRouteRequest : AdminUpdateOtherRequest
 {
     public Guid Id { get; set; }
-    public string Email { get; set; } = string.Empty;
-    public string DisplayName { get; set; } = string.Empty;
-    public Guid ProfileTypeId { get; set; }
-
-    /// <summary>Bi-Meeting rework — the admin-assigned speaker/delegation meeting flags.</summary>
-    public bool AllowsSpeakerMeeting { get; set; }
-    public bool AllowsDelegationMeeting { get; set; }
-
-    /// <summary>B22 — optional ISO alpha-2 nationality correction; null / empty leaves
-    /// the stored nationality untouched.</summary>
-    public string? NationalityCode { get; set; }
-
-    /// <summary>FR-PHN-002 — optional mobile correction; null / empty leaves the
-    /// stored number untouched.</summary>
-    public string? SaudiMobile { get; set; }
-    public string? InternationalMobile { get; set; }
 }
 
 /// <summary>Validates the visitor edit (Email + DisplayName; tier optional).</summary>
@@ -179,20 +154,7 @@ public sealed class UpdateVisitorEndpoint(IAdminUserProvisioningService service)
             return;
         }
         await service.UpdateVisitorAsync(actorId, req.Id,
-            new AdminUpdateVisitorRequest
-            {
-                Email = req.Email,
-                DisplayName = req.DisplayName,
-                ProfileTypeId = req.ProfileTypeId,
-                AllowsSpeakerMeeting = req.AllowsSpeakerMeeting,
-                AllowsDelegationMeeting = req.AllowsDelegationMeeting,
-                // B22 — carry the optional nationality correction through the
-                // route DTO -> contract DTO hand-off.
-                NationalityCode = req.NationalityCode,
-                // FR-PHN-002 — and the optional mobile correction.
-                SaudiMobile = req.SaudiMobile,
-                InternationalMobile = req.InternationalMobile,
-            }, ct);
+            req, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }
@@ -221,20 +183,7 @@ public sealed class UpdateOtherEndpoint(IAdminUserProvisioningService service)
             return;
         }
         await service.UpdateOtherAsync(actorId, req.Id,
-            new AdminUpdateOtherRequest
-            {
-                Email = req.Email,
-                DisplayName = req.DisplayName,
-                ProfileTypeId = req.ProfileTypeId,
-                AllowsSpeakerMeeting = req.AllowsSpeakerMeeting,
-                AllowsDelegationMeeting = req.AllowsDelegationMeeting,
-                // B22 — carry the optional nationality correction through the
-                // route DTO -> contract DTO hand-off.
-                NationalityCode = req.NationalityCode,
-                // FR-PHN-002 — and the optional mobile correction.
-                SaudiMobile = req.SaudiMobile,
-                InternationalMobile = req.InternationalMobile,
-            }, ct);
+            req, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }

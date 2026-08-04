@@ -124,7 +124,9 @@ public sealed class AdminCreateVisitorRequest
 /// and the optional <see cref="ProfileTypeId"/> tier. Approval state is NOT
 /// editable here (use the approve/reject path). Administrator-only.
 /// </summary>
-public sealed class AdminUpdateVisitorRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateVisitorRequest
 {
     /// <summary>The visitor's login email; must not collide with another account.</summary>
     public string Email { get; set; } = string.Empty;
@@ -176,7 +178,9 @@ public sealed class AdminUpdateVisitorRequest
 /// mandatory and must be partner-scope (<c>IsVisitor = false</c>).
 /// Administrator-only.
 /// </summary>
-public sealed class AdminUpdateOtherRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateOtherRequest
 {
     /// <summary>The account's login email; must not collide with another account.</summary>
     public string Email { get; set; } = string.Empty;

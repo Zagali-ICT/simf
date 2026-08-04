@@ -95,18 +95,15 @@ public sealed class CreateInterestEndpoint(IInterestService service)
     }
 }
 
-/// <summary>
-/// <c>PUT /api/v1/admin/interests/{id}</c> — updates an interest (P9 —
-/// D-050). Administrator-only. Route-id + body shape — FastEndpoints
-/// merges them.
-/// </summary>
-public sealed class UpdateInterestRequest
+/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// D-842 (sessions), D-843 (gates, profile types) and the four before them
+/// silently dropped a field on PUT. Passing the bound request straight through
+/// makes that drop impossible.</summary>
+public sealed class UpdateInterestRequest : AdminUpdateInterestRequest
 {
     public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public int DisplayOrder { get; set; }
-    public bool IsActive { get; set; } = true;
 }
 
 public sealed class UpdateInterestEndpoint(IInterestService service)
@@ -131,13 +128,7 @@ public sealed class UpdateInterestEndpoint(IInterestService service)
             return;
         }
         var summary = await service.UpdateAsync(actorId, req.Id,
-            new AdminUpdateInterestRequest
-            {
-                Name = req.Name,
-                NameArabic = req.NameArabic,
-                DisplayOrder = req.DisplayOrder,
-                IsActive = req.IsActive,
-            }, ct);
+            req, ct);
         await Send.OkAsync(ApiResult<AdminInterestSummary>.Ok(summary), ct);
     }
 }

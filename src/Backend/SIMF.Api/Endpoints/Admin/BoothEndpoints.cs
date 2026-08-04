@@ -73,39 +73,15 @@ public sealed class CreateBoothEndpoint(IAdminBoothService service)
     }
 }
 
-public sealed class UpdateBoothRequest
+/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// D-842 (sessions), D-843 (gates, profile types) and the four before them
+/// silently dropped a field on PUT. Passing the bound request straight through
+/// makes that drop impossible.</summary>
+public sealed class UpdateBoothRequest : AdminUpdateBoothRequest
 {
     public Guid Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public Guid? ExhibitorId { get; set; }
-    public string? OfficerName { get; set; }
-    public string? OfficerPhone { get; set; }
-    public string? OfficerEmail { get; set; }
-
-    // NEW inline booth-officer identity-card fields (D-766). All optional.
-    public string? OfficerNameArabic { get; set; }
-    public string? OfficerPhoneSecondary { get; set; }
-    public string? OfficerWebsite { get; set; }
-    public string? OfficerFacebookUrl { get; set; }
-    public string? OfficerXUrl { get; set; }
-    public string? OfficerLinkedInUrl { get; set; }
-    public string? OfficerInstagramUrl { get; set; }
-    public string? OfficerCity { get; set; }
-    public string? OfficerCityArabic { get; set; }
-    public double? OfficerLatitude { get; set; }
-    public double? OfficerLongitude { get; set; }
-    public int? OfficerCountryId { get; set; }
-
-    public string? Sector { get; set; }
-    public string? SectorArabic { get; set; }
-    public string? Description { get; set; }
-    public string? DescriptionArabic { get; set; }
-    public Guid? HallId { get; set; }
-    public double? MapX { get; set; }
-    public double? MapY { get; set; }
-    public bool IsActive { get; set; } = true;
 }
 
 public sealed class UpdateBoothEndpoint(IAdminBoothService service)
@@ -129,36 +105,7 @@ public sealed class UpdateBoothEndpoint(IAdminBoothService service)
         }
         await Send.OkAsync(ApiResult<AdminBoothDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id,
-                new AdminUpdateBoothRequest
-                {
-                    Code = req.Code,
-                    Name = req.Name,
-                    NameArabic = req.NameArabic,
-                    ExhibitorId = req.ExhibitorId,
-                    OfficerName = req.OfficerName,
-                    OfficerPhone = req.OfficerPhone,
-                    OfficerEmail = req.OfficerEmail,
-                    OfficerNameArabic = req.OfficerNameArabic,
-                    OfficerPhoneSecondary = req.OfficerPhoneSecondary,
-                    OfficerWebsite = req.OfficerWebsite,
-                    OfficerFacebookUrl = req.OfficerFacebookUrl,
-                    OfficerXUrl = req.OfficerXUrl,
-                    OfficerLinkedInUrl = req.OfficerLinkedInUrl,
-                    OfficerInstagramUrl = req.OfficerInstagramUrl,
-                    OfficerCity = req.OfficerCity,
-                    OfficerCityArabic = req.OfficerCityArabic,
-                    OfficerLatitude = req.OfficerLatitude,
-                    OfficerLongitude = req.OfficerLongitude,
-                    OfficerCountryId = req.OfficerCountryId,
-                    Sector = req.Sector,
-                    SectorArabic = req.SectorArabic,
-                    Description = req.Description,
-                    DescriptionArabic = req.DescriptionArabic,
-                    HallId = req.HallId,
-                    MapX = req.MapX,
-                    MapY = req.MapY,
-                    IsActive = req.IsActive,
-                }, ct)), ct);
+                req, ct)), ct);
     }
 }
 

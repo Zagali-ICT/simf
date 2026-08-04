@@ -25,7 +25,9 @@ public sealed class AdminCreateInterestRequest
 
 /// <summary>The body of <c>PUT /api/v1/admin/interests/{id}</c> (P9). Same
 /// fields as the create request plus the soft-delete flag.</summary>
-public sealed class AdminUpdateInterestRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateInterestRequest
 {
     /// <summary>English display name (1-128 chars; unique).</summary>
     public string Name { get; set; } = string.Empty;

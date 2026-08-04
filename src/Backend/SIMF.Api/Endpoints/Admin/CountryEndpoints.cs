@@ -67,30 +67,17 @@ public sealed class CreateCountryEndpoint(IAdminCountryService service)
     }
 }
 
-public sealed class UpdateCountryRequest
+/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// D-842 (sessions), D-843 (gates, profile types) and the four before them
+/// silently dropped a field on PUT. Passing the bound request straight through
+/// makes that drop impossible.</summary>
+public sealed class UpdateCountryRequest : AdminUpdateCountryRequest
 {
+    // Countries are the one admin resource with an int key, not a Guid — the
+    // route is {id:int}.
     public int Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public string? PhonePrefix { get; set; }
-    public int DisplayOrder { get; set; }
-    public bool IsActive { get; set; } = true;
-
-    /// <summary>D-473 (#10) — invited to send a delegation (وفد). (Threaded through
-    /// from D-499: this binding model previously omitted IsInvited, so editing a
-    /// country silently reset the flag to false — fixed here.)</summary>
-    public bool IsInvited { get; set; }
-
-    /// <summary>D-499 (الوفود) — the invited delegation's arrival date (optional).</summary>
-    public DateOnly? DelegationArrivalDate { get; set; }
-
-    /// <summary>D-499 (الوفود) — the invited delegation's departure date (optional).</summary>
-    public DateOnly? DelegationDepartureDate { get; set; }
-
-    /// <summary>D-499 (الوفود) — the UserProfile id of the head of delegation
-    /// (رئيس الوفد); must be an active delegate of this country (optional).</summary>
-    public Guid? HeadOfDelegationUserProfileId { get; set; }
 }
 
 public sealed class UpdateCountryEndpoint(IAdminCountryService service)
@@ -113,19 +100,7 @@ public sealed class UpdateCountryEndpoint(IAdminCountryService service)
         }
         await Send.OkAsync(ApiResult<AdminCountryDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id,
-                new AdminUpdateCountryRequest
-                {
-                    Code = req.Code,
-                    Name = req.Name,
-                    NameArabic = req.NameArabic,
-                    PhonePrefix = req.PhonePrefix,
-                    DisplayOrder = req.DisplayOrder,
-                    IsActive = req.IsActive,
-                    IsInvited = req.IsInvited,
-                    DelegationArrivalDate = req.DelegationArrivalDate,
-                    DelegationDepartureDate = req.DelegationDepartureDate,
-                    HeadOfDelegationUserProfileId = req.HeadOfDelegationUserProfileId,
-                }, ct)), ct);
+                req, ct)), ct);
     }
 }
 

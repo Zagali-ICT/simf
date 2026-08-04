@@ -195,7 +195,9 @@ public sealed class AdminCreateSessionRequest
         = new List<AdminSessionOutcomeEntry>();
 }
 
-public sealed class AdminUpdateSessionRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateSessionRequest
 {
     public string Code { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;

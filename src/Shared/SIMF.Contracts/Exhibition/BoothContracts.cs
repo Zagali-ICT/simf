@@ -219,7 +219,9 @@ public sealed class AdminCreateBoothRequest
 
 /// <summary>D-199 — admin update payload. B1 — D-222: exhibitor =
 /// <see cref="ExhibitorId"/> relation + booth-officer contact.</summary>
-public sealed class AdminUpdateBoothRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateBoothRequest
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

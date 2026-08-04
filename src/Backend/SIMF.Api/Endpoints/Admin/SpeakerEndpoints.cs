@@ -73,42 +73,15 @@ public sealed class CreateSpeakerEndpoint(IAdminSpeakerService service)
     }
 }
 
-public sealed class UpdateSpeakerRequest
+/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// D-842 (sessions), D-843 (gates, profile types) and the four before them
+/// silently dropped a field on PUT. Passing the bound request straight through
+/// makes that drop impossible.</summary>
+public sealed class UpdateSpeakerRequest : AdminUpdateSpeakerRequest
 {
     public Guid Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public string? Rank { get; set; }
-    public string? RankArabic { get; set; }
-    public int? CountryId { get; set; }
-    public Guid? UserProfileId { get; set; }
-    public string? Bio { get; set; }
-    public string? BioArabic { get; set; }
-    public string? Qualifications { get; set; }
-    public string? QualificationsArabic { get; set; }
-    public string? TrainingExperience { get; set; }
-    public string? TrainingExperienceArabic { get; set; }
-    public string? Awards { get; set; }
-    public string? AwardsArabic { get; set; }
-    public bool AllowsMeetingRequests { get; set; }
-    public bool AllowsDataSharing { get; set; }
-    public string? FacebookUrl { get; set; }
-    public string? LinkedInUrl { get; set; }
-    public string? XUrl { get; set; }
-    public string? WebsiteUrl { get; set; }
-    public int DisplayOrder { get; set; }
-    public bool IsActive { get; set; } = true;
-
-    // Contact identity-card fields inlined from the removed Contact directory (D-766).
-    public string? Email { get; set; }
-    public string? PhonePrimary { get; set; }
-    public string? PhoneSecondary { get; set; }
-    public string? InstagramUrl { get; set; }
-    public string? City { get; set; }
-    public string? CityArabic { get; set; }
-    public double? Latitude { get; set; }
-    public double? Longitude { get; set; }
 }
 
 public sealed class UpdateSpeakerEndpoint(IAdminSpeakerService service)
@@ -132,40 +105,7 @@ public sealed class UpdateSpeakerEndpoint(IAdminSpeakerService service)
         }
         await Send.OkAsync(ApiResult<AdminSpeakerDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id,
-                new AdminUpdateSpeakerRequest
-                {
-                    Code = req.Code,
-                    Name = req.Name,
-                    NameArabic = req.NameArabic,
-                    Rank = req.Rank,
-                    RankArabic = req.RankArabic,
-                    CountryId = req.CountryId,
-                    UserProfileId = req.UserProfileId,
-                    Bio = req.Bio,
-                    BioArabic = req.BioArabic,
-                    Qualifications = req.Qualifications,
-                    QualificationsArabic = req.QualificationsArabic,
-                    TrainingExperience = req.TrainingExperience,
-                    TrainingExperienceArabic = req.TrainingExperienceArabic,
-                    Awards = req.Awards,
-                    AwardsArabic = req.AwardsArabic,
-                    AllowsMeetingRequests = req.AllowsMeetingRequests,
-                    AllowsDataSharing = req.AllowsDataSharing,
-                    FacebookUrl = req.FacebookUrl,
-                    LinkedInUrl = req.LinkedInUrl,
-                    XUrl = req.XUrl,
-                    WebsiteUrl = req.WebsiteUrl,
-                    DisplayOrder = req.DisplayOrder,
-                    IsActive = req.IsActive,
-                    Email = req.Email,
-                    PhonePrimary = req.PhonePrimary,
-                    PhoneSecondary = req.PhoneSecondary,
-                    InstagramUrl = req.InstagramUrl,
-                    City = req.City,
-                    CityArabic = req.CityArabic,
-                    Latitude = req.Latitude,
-                    Longitude = req.Longitude,
-                }, ct)), ct);
+                req, ct)), ct);
     }
 }
 
