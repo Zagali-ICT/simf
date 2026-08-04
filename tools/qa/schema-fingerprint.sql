@@ -5,12 +5,14 @@
 
   WHY IT EXISTS
     To answer "does this database really match the EF model?" with evidence rather
-    than trust. Its first use was the 2026-07-31 UTC -> Saudi-local cutover
-    (`docs/migrations/2026/SIMF_UtcToSaudiLocal_DateTime.sql`): that script rewrites
-    the migration history to say the consolidated baseline is applied, so if the
-    schema did NOT match, EF would never notice and the mismatch would surface later
-    as a runtime error on some rarely-hit table. Diffing against a database built
-    fresh from the migrations catches it immediately.
+    than trust. Its first use was the 2026-07-31 UTC -> Saudi-local cutover, whose
+    script rewrote the migration history to say the consolidated baseline was
+    applied — so if the schema did NOT match, EF would never notice and the mismatch
+    would surface later as a runtime error on some rarely-hit table. Diffing against
+    a database built fresh from the migrations catches it immediately. (That cutover
+    script was retired in D-847 once every environment was past it; see
+    DECISIONS_LOG D-818. The fingerprint remains useful for any
+    "is this database really what the model says?" question.)
 
     It found two genuine defects on first run: `AspNetUsers.LockoutEnd` being
     converted when the model still maps it `datetimeoffset`, and six schema additions
