@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -20,7 +21,10 @@ namespace SIMF.Api.Tests;
 public sealed class OrganizationHeroVideoTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";
-    private const string StreamPath = "/api/v1/app/organization/hero-video.mp4";
+    // D-841 — derived from the ONE constant, not a fourth hand-copy of the
+    // literal. If the route ever moves, these tests move with it.
+    private const string StreamPath =
+        "/api/v1" + OrganizationHeroVideoRoute.StreamRoute;
     private const string UploadPath = "/api/v1/admin/organization-profile/hero-video";
     private static readonly byte[] SampleVideo =
         "FAKE-MP4-HERO-VIDEO-BYTES-0123456789"u8.ToArray();
@@ -186,5 +190,39 @@ public sealed class OrganizationHeroVideoTests : IClassFixture<SimfApiFactory>
         }
 
         return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
+    }
+
+    [Fact]
+    public void The_API_serves_the_hero_video_from_the_route_the_shared_constant_names()
+    {
+        // D-841 — the Control Panel decides whether to offer "Remove" by testing the
+        // stored BackgroundVideoUrl against OrganizationHeroVideoRoute.StreamRoute.
+        // It used to hold its own copy of that string; both now read the one
+        // constant, so they cannot disagree with each other.
+        //
+        // What they CAN still disagree with is the route the API actually maps. If
+        // someone changes this endpoint's Get(...) to a literal, or moves the route
+        // and updates only the endpoint, the constant silently stops describing
+        // reality — and the failure is invisible: no error, no 404 the CP can see,
+        // just a "Remove" button that stops being drawn and an uploaded hero video
+        // that can no longer be removed from the Control Panel.
+        var expected = "/api/v1" + OrganizationHeroVideoRoute.StreamRoute;
+
+        var mapped = _factory.Services
+            .GetServices<EndpointDataSource>()
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Select(endpoint => "/" + (endpoint.RoutePattern.RawText ?? string.Empty).TrimStart('/'))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        Assert.True(
+            mapped.Contains(expected, StringComparer.OrdinalIgnoreCase),
+            "No endpoint is mapped at the hero-video route the shared constant "
+            + $"names ({expected}). The Control Panel tests the stored "
+            + "BackgroundVideoUrl against that constant to decide whether the hero "
+            + "is an uploaded file, so a mismatch silently removes the \"Remove\" "
+            + "affordance. Update OrganizationHeroVideoRoute.StreamRoute and the "
+            + "endpoint together.");
     }
 }

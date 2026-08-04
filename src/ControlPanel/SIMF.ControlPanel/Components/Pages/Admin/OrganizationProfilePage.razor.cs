@@ -27,13 +27,14 @@ public partial class OrganizationProfilePage
     // "Remove" affordance only when an uploaded video (not a pasted external /
     // YouTube link) is the current hero source.
     private const string HeroVideoInputId = "org-hero-video-input";
-    // Keep in sync with OrganizationHeroVideoRoutes.StreamRoute (the API assembly the
-    // CP does not reference). If the served route changes, the "Remove" affordance
-    // silently stops appearing until this matches.
-    private const string HeroVideoRouteSuffix = "/app/organization/hero-video.mp4";
+    // D-841 — the SAME constant the API registers its stream route from. This used
+    // to be a hand-copied literal with a comment asking the next person to keep the
+    // two equal; nothing detected the drift, and the failure was silent — the
+    // "Remove" button simply stops being drawn, so an uploaded hero video becomes
+    // unremovable from here.
     private bool HasUploadedHeroVideo =>
         (_model.BackgroundVideoUrl ?? string.Empty)
-            .EndsWith(HeroVideoRouteSuffix, StringComparison.OrdinalIgnoreCase);
+            .EndsWith(OrganizationHeroVideoRoute.StreamRoute, StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
