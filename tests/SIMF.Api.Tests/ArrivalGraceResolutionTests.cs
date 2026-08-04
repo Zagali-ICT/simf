@@ -135,6 +135,34 @@ public sealed class ArrivalGraceResolutionTests : IClassFixture<SimfApiFactory>
         Assert.Equal(5, Row(rows, otherSessionId).ArrivalGraceMinutesOverride);
     }
 
+    [Theory]
+    [InlineData(60, null, 60)]   // the hall's grace, inherited
+    [InlineData(60, 5, 5)]       // the session's own override wins
+    [InlineData(60, 0, 0)]       // a deliberate zero is honoured, not "unset"
+    [InlineData(null, null, 15)] // nothing set anywhere: the historical default
+    public async Task The_public_session_detail_carries_the_resolved_grace(
+        int? hallGrace, int? sessionGrace, int expected)
+    {
+        // D-840 — the app decides from this whether to show its "you can check
+        // in now" strip. It used to hard-code 15 under a comment telling the
+        // next person to keep it in step with a server constant by hand; D-839
+        // removed the constant there was to mirror, so the server sends the
+        // answer instead. Anonymous, like the rest of the public programme read.
+        var (sessionId, _, _) = await SeedAsync(hallGrace, sessionGrace);
+
+        using var response = await _client.GetAsync(
+            $"/api/v1/app/programme/sessions/{sessionId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var detail = (await response.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessionGraceRow>>())!.Data!;
+        Assert.Equal(expected, detail.ArrivalGraceMinutes);
+    }
+
+    /// <summary>Just the field under test, so a later append to
+    /// <c>PublicSessionDetail</c> cannot break this test's deserialisation.</summary>
+    private sealed record PublicSessionGraceRow(int ArrivalGraceMinutes);
+
     [Fact]
     public void The_bound_still_matches_the_one_baked_into_the_shipped_migration()
     {

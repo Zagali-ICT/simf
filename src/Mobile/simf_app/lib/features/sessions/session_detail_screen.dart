@@ -189,19 +189,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   bool _showArrivalStatus(SessionDetail detail) =>
       _canJoin &&
       detail.type != SessionType.workshop &&
-      !saudiNow().isBefore(detail.start.subtract(_arrivalGrace));
-
-  /// The server's DEFAULT arrival grace (15 minutes), used only to decide
-  /// whether to show the arrival strip — it gates nothing, so being optimistic
-  /// here costs a hint, not an admission.
-  ///
-  /// D-839 made the real grace configurable per hall and per session
-  /// (`WalkInModeOptions.ResolveArrivalGraceMinutes`), so this constant is no
-  /// longer a mirror of any single server value and cannot be kept in step by
-  /// hand. Landing that properly means appending the resolved minutes to
-  /// `PublicSessionDetail` and reading it here; deferred to its own wave with
-  /// the rest of the app work, because it needs an app release.
-  static const Duration _arrivalGrace = Duration(minutes: 15);
+      !saudiNow().isBefore(detail.start.subtract(detail.arrivalGrace));
 
   Future<SessionSeatMap?> _safeSeatMap() async {
     try {

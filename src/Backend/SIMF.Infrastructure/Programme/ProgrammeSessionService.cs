@@ -6,9 +6,11 @@
 // Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Programme;
 using SIMF.Infrastructure.Persistence;
 
@@ -28,7 +30,10 @@ namespace SIMF.Infrastructure.Programme;
 internal sealed class ProgrammeSessionService(
     SimfAppDbContext dbContext,
     SimfIdentityDbContext identityDbContext,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    // D-840 — the last link in the arrival-grace chain (D-839), so the app can be
+    // told what the door will do instead of assuming the historical 15.
+    IOptionsMonitor<WalkInModeOptions> walkInMode)
     : IProgrammeSessionService
 {
     public async Task<PublicSessions> ListAsync(
@@ -323,6 +328,9 @@ internal sealed class ProgrammeSessionService(
                 // only; it takes part in no filter and gates nothing.
                 session.LiveNotice,
                 session.LiveNoticeArabic,
+                // D-840 — the two layers that can widen this session's door.
+                session.ArrivalGraceMinutesOverride,
+                HallArrivalGraceMinutes = session.Hall!.ArrivalGraceMinutes,
                 session.CategoryId,
                 CategoryName = session.Category != null ? session.Category.Name : null,
                 CategoryNameArabic =
@@ -528,6 +536,13 @@ internal sealed class ProgrammeSessionService(
             // title + time. Without it the client read json['type'] as null on
             // every session and the branch could never fire.
             row.Type,
+            // D-840: the grace the door will actually apply, resolved by the SAME
+            // rule the door uses so the app's check-in hint and the server's answer
+            // cannot disagree.
+            WalkInModeOptions.ResolveArrivalGraceMinutes(
+                row.ArrivalGraceMinutesOverride,
+                row.HallArrivalGraceMinutes,
+                walkInMode.CurrentValue.ResolveArrivalGraceMinutes(timeProvider.SimfNow())),
             // FR-702: the informational live notice (null when the admin set none).
             // Served alongside the feed above, which stays available to everyone.
             row.LiveNotice,

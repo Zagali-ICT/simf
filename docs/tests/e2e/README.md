@@ -270,7 +270,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #118 `staffSeating` — **guest seating desk** (`POST /app/staff/sessions/{id}/seating/by-badge` · `GET …/seating/seat` · `GET …/seating/occupant/{userId}/photo`) | [`mobile-staff-seating.md`](mobile-staff-seating.md) | E2E-MOBSEATDESK-001..008 |
 | #15 `venueMap` (`GET /app/venue-map` + `/app/booths` + `/{id}`) | [`mobile-venue-map.md`](mobile-venue-map.md) | E2E-MOB015-001..008 |
 | #16 `sessions` (`GET /app/programme/sessions`) | [`mobile-agenda.md`](mobile-agenda.md) | E2E-MOB016-001..019 |
-| #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats` + `…/sessions/{id}/attendance` — the read-only gate-scan hall check-in status) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..040 |
+| #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats` + `…/sessions/{id}/attendance` — the read-only gate-scan hall check-in status) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..043 |
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/**move**/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..019 |
 | `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random` / **`move`** — B1 change seat) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..016 |
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..019 |
@@ -356,7 +356,7 @@ being quoted in planning as if current.
 - **Pages catalogued:** 193 (96 Control Panel + 69 mobile + 19 Website + 8
   API-only surfaces + 1 system-wide). One of the 193 — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3044 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3047 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
   functional total is 2671.
