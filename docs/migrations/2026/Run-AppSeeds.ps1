@@ -51,6 +51,24 @@ param(
 $ErrorActionPreference = 'Stop'
 $dir = $PSScriptRoot
 
+if (-not (Get-Command sqlcmd -ErrorAction SilentlyContinue)) {
+    Write-Error "sqlcmd is not on PATH. Install the SQL Server command line utilities."
+    exit 1
+}
+
+# -C ("trust server certificate") only exists in the ODBC-era tools (sqlcmd 17+).
+# The SQL 2012/2014-era sqlcmd still shipped on some servers rejects it outright
+# with "Sqlcmd: 'C': Unknown Option", so probe the help text once and only pass it
+# when this build understands it. Older builds do not encrypt by default, so they
+# do not need it; newer ones do, and would fail on a self-signed cert without it.
+$sqlcmdHelp = (& sqlcmd -? 2>&1 | Out-String)
+$common = @('-E')
+if ($sqlcmdHelp -match '\-C\b') {
+    $common += '-C'
+} else {
+    Write-Host "note: this sqlcmd build has no -C; running without trust-server-certificate." -ForegroundColor DarkGray
+}
+
 # Order matters: Programme creates the MAIN hall that SeedGaps (booths + venue
 # map) references, and Speakers creates the rows SpeakerPhotos points at.
 $seeds = @(
@@ -67,7 +85,7 @@ $seeds = @(
 
 # Refuse to seed the Identity database — the two are physically separate (D-157)
 # and the content tables simply are not there, so this would fail late and messily.
-$probe = sqlcmd -S $Server -d $Database -E -C -h-1 -W -b -Q `
+$probe = & sqlcmd -S $Server -d $Database @common -h-1 -W -b -Q `
     "SET NOCOUNT ON; SELECT CASE WHEN OBJECT_ID('dbo.Speakers') IS NULL THEN 'NO' ELSE 'YES' END;" 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Cannot connect to [$Database] on [$Server]: $probe"
@@ -91,7 +109,7 @@ foreach ($seed in $seeds) {
     Write-Host ("[{0}/{1}] {2}" -f $n, $seeds.Count, $seed) -NoNewline
     # -f 65001: read the file as UTF-8 regardless of BOM or system codepage.
     # -b      : non-zero exit on the first SQL error.
-    $out = sqlcmd -S $Server -d $Database -E -C -b -f 65001 -i $path 2>&1
+    $out = & sqlcmd -S $Server -d $Database @common -b -f 65001 -i $path 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  FAILED" -ForegroundColor Red
         $out | Select-Object -Last 15 | ForEach-Object { Write-Host "    $_" }
