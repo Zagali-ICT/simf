@@ -35,8 +35,7 @@ Order matters: `SIMF_App_Programme.sql` creates the **`MAIN` hall** that
 `SIMF_App_SeedGaps.sql` (booths + venue-map nodes) references, so Programme runs
 **before** SeedGaps; `SpeakerPhotos` must run **after** `Speakers` (it points at
 those speaker rows). Both options below run the **same 9 content files** in that
-order. The `RegistrationReferenceSequence` hotfix is **not** part of this run
-(see the Files table) — it is a separate, prod-only unblock.
+order.
 
 **Target database.** These seeds go to the **App / content** database — the one
 that holds the app tables (`Speakers`, `Halls`, `Sessions`, …), i.e. whatever the
@@ -46,7 +45,18 @@ on a local dev box. **Never** run them against the Identity database
 (`SIMF_Identity`). To find it: `SELECT name FROM sys.databases WHERE
 OBJECT_ID(QUOTENAME(name)+'.dbo.Speakers') IS NOT NULL;`
 
-### Option A — SSMS, one click (`Run_All_App_Seeds.sql`)
+### Option A — terminal (`Run-AppSeeds.ps1`) — preferred
+
+```powershell
+cd docs\migrations6
+.\Run-AppSeeds.ps1 -Server "PROD\SQL01" -Database SIMF_Data   # local dev: just .\Run-AppSeeds.ps1
+```
+
+Runs all 9 seeds in order, stops on the first error, and refuses to run against a
+database with no `dbo.Speakers` (so it cannot be pointed at `SIMF_Identity`).
+Idempotent. Then do the speaker-photo copy step below.
+
+### Option B — SSMS, one click (`Run_All_App_Seeds.sql`)
 
 Open **`Run_All_App_Seeds.sql`** in SSMS, turn on **SQLCMD Mode**
 (*Query → SQLCMD Mode* — **required**, or the `:r` / `:setvar` lines error with
@@ -56,7 +66,7 @@ Open **`Run_All_App_Seeds.sql`** in SSMS, turn on **SQLCMD Mode**
 progress, and stops on the first error (`:on error exit`, so no partial data).
 Idempotent — safe to re-run. Then do the speaker-photo copy step below.
 
-### Option B — `sqlcmd` CLI (one file at a time)
+### Option C — `sqlcmd` CLI (one file at a time)
 
 Run from the repo root. Set `$Db` to the App/content DB (`SIMF_Data` on the
 server, `SIMF_App` on local dev — never `SIMF_Identity`); add `-S <server>` if
@@ -76,11 +86,12 @@ sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_SeedGaps.sql
 # then copy docs\migrations\2026\speaker-photos\speakerphoto  →  C:\SIMF\Storage\files\speakerphoto
 ```
 
-> **UTF-8 Arabic (`-f 65001`).** The seed files are UTF-8 with **no BOM**. The
-> `sqlcmd` CLI otherwise reads input in the ANSI code page and mangles the Arabic
-> (it can also overflow `nvarchar` limits and fail the run), so every command
-> above passes **`-f 65001`**. SSMS SQLCMD Mode (Option A) reads UTF-8 natively
-> and needs no flag.
+> **UTF-8 Arabic.** Since D-845 every seed file carries a **UTF-8 BOM**, so
+> `sqlcmd`, SSMS and any other tool read the Arabic correctly with no flag. The
+> commands above still pass `-f 65001` belt-and-braces. **Do not re-save these
+> files without the BOM** — without it `sqlcmd` falls back to the system ANSI code
+> page, each Arabic character becomes 2-3 Latin-1 characters, and the run dies on
+> `Msg 2628 ... would be truncated`.
 
 > **Dev / Test auto-run (D-747).** In **Development** and **Testing** these files
 > are applied automatically by `SqlContentSeeder` (dev boot runs all of them;
@@ -92,16 +103,25 @@ sqlcmd -d $Db -f 65001 -i docs\migrations\2026\SIMF_App_SeedGaps.sql
 
 ## Files
 
-Two files are **not** content seeds:
+Not content seeds:
 
-- **`Run_All_App_Seeds.sql`** — the SSMS one-click runner (Option A above). Runs
-  the 9 content seeds below, in order, via SQLCMD-Mode `:r` includes.
-- **`SIMF_App_RegistrationReferenceSequence_Hotfix.sql`** — a separate, **prod-only**
-  unblock that creates the missing `dbo.RegistrationReferenceSequence` on a
-  *running* DB (fixes create-user 500 · SqlException 208). Run by hand **only** if
-  a live prod is missing it and you are not rebuilding; see the file header. The
-  permanent fix is the sequence on the model + the consolidated App migration
-  (D-373), so a fresh DB needs nothing from it. **Not part of the seed run.**
+- **`Run-AppSeeds.ps1`** — the terminal runner (Option A above). Preferred.
+- **`Run_All_App_Seeds.sql`** — the SSMS one-click runner (Option B). Runs the 9
+  content seeds below, in order, via SQLCMD-Mode `:r` includes.
+- **`DEPLOY.md`** — the one-page deploy / migrate / sign-in runbook card. The
+  authoritative operations document is `docs/SIMF-OPS-001`.
+- **`SIMF_App_RegistrationReferenceSequence_Hotfix.sql`** — a **prod-only** unblock
+  creating a missing `dbo.RegistrationReferenceSequence` on a *running* DB (fixes
+  create-user 500 · SqlException 208). A fresh DB needs nothing from it (the
+  sequence is in the consolidated App `InitialCreate`), but it stays for an
+  existing production database. **Not part of the seed run.**
+- **`SIMF_App_AssistancePromptGrounding.sql`** / **`SIMF_App_AssistancePromptHistory.sql`**
+  — idempotent one-shot updates that re-point an **already-seeded** `assistance`
+  AI prompt at the grounded / history-carrying template. A freshly-seeded DB
+  already has it (`IdentitySeeder`), so they update 0 rows there; they exist for
+  databases seeded before that change. `SIMF-OPS-001` §"Existing databases and the
+  grounded assistant prompt" instructs operators to run the first one. **Not part
+  of the seed run.**
 
 The 9 content seeds (run in this order):
 

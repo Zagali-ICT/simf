@@ -36,7 +36,8 @@
     NOT run here (deliberately):
       * SIMF_App_RegistrationReferenceSequence_Hotfix.sql — a prod-only unblock
         for a database missing the sequence; run by hand when that applies.
-      * SIMF_UtcToSaudiLocal_DateTime.sql — a one-time D-818 conversion, not seed.
+      * SIMF_App_AssistancePrompt*.sql — one-shot updates that re-point an
+        already-seeded AI prompt; a fresh database already has the right template.
       * The speaker-photo BYTES — after this completes, copy
             speaker-photos\speakerphoto  ->  <FileStorage:RootPath>\speakerphoto
         (production: C:\SIMF\Storage\files\speakerphoto). A StoredFile row whose
