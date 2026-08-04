@@ -14,9 +14,12 @@ public partial class HallArrivalsConsole
 
     private record Toast(string Variant, string Message);
 
-    // X-3 — mirrors HallAttendanceService.ArrivalGrace: how far outside a session's
-    // [Start, End] window an ARRIVAL is still accepted by the server.
-    private static readonly TimeSpan ArrivalGrace = TimeSpan.FromMinutes(15);
+    // X-3 — how far outside a session's [Start, End] window an ARRIVAL is still
+    // accepted by the server. D-839: the server sends the RESOLVED value per
+    // session (its override, else its hall's, else the global one), so there is
+    // no constant here to keep in step with HallAttendanceService.
+    private static TimeSpan GraceOf(AdminSessionSummary session) =>
+        TimeSpan.FromMinutes(session.EffectiveArrivalGraceMinutes);
 
     private List<AdminSessionSummary> _sessions = new();
     private AdminSessionSummary? _selected;
@@ -49,10 +52,10 @@ public partial class HallArrivalsConsole
                 // bilingual SESSION_NOT_LIVE message in the error toast.
                 var now = SimfClock.Now;
                 _sessions = envelope.Data.Items
-                    .Where(s => s.IsActive && now >= s.Start - ArrivalGrace)
+                    .Where(s => s.IsActive && now >= s.Start - GraceOf(s))
                     // Live sessions first (the common check-in case), then the most
                     // recently ended — those are the ones still being closed out.
-                    .OrderBy(s => now <= s.End + ArrivalGrace ? 0 : 1)
+                    .OrderBy(s => now <= s.End + GraceOf(s) ? 0 : 1)
                     .ThenByDescending(s => s.Start)
                     .ToList();
             }

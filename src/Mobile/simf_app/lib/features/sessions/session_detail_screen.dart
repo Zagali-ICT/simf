@@ -189,12 +189,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   bool _showArrivalStatus(SessionDetail detail) =>
       _canJoin &&
       detail.type != SessionType.workshop &&
-      !saudiNow().isBefore(detail.start.subtract(_arrivalGrace));
-
-  /// Mirrors `HallAttendanceService.ArrivalGrace` (15 minutes). If that server
-  /// constant changes, change this with it — they describe the same window from
-  /// two sides.
-  static const Duration _arrivalGrace = Duration(minutes: 15);
+      !saudiNow().isBefore(detail.start.subtract(detail.arrivalGrace));
 
   Future<SessionSeatMap?> _safeSeatMap() async {
     try {

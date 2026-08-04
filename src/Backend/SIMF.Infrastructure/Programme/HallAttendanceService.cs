@@ -47,8 +47,21 @@ internal sealed class HallAttendanceService(
     // disarmed this still resolves to exactly 15 minutes, so nothing changes
     // until the capability is deliberately armed. Read per call (rather than
     // cached in a field) so arming it takes effect without a restart.
-    private TimeSpan ArrivalGrace =>
-        walkInMode.CurrentValue.ResolveArrivalGrace(timeProvider.SimfNow());
+    //
+    // D-839 — this is now the FALLBACK, not the only answer: a hall may carry its
+    // own grace and a session may override the hall. See ResolveGrace.
+    private int GlobalArrivalGraceMinutes =>
+        walkInMode.CurrentValue.ResolveArrivalGraceMinutes(timeProvider.SimfNow());
+
+    /// <summary>D-839 — the effective arrival grace for one session, against a
+    /// caller-supplied global fallback so a whole scan resolves on ONE instant
+    /// and one options snapshot. The precedence itself lives in
+    /// <see cref="WalkInModeOptions.ResolveArrivalGraceMinutes(int?, int?, int)"/>,
+    /// shared with the admin surfaces so they cannot disagree with this door.</summary>
+    private static TimeSpan ResolveGrace(
+        int? sessionOverrideMinutes, int? hallMinutes, int globalMinutes) =>
+        TimeSpan.FromMinutes(WalkInModeOptions.ResolveArrivalGraceMinutes(
+            sessionOverrideMinutes, hallMinutes, globalMinutes));
 
     public async Task<HallAttendanceStatus> RecordGeofenceArrivalAsync(
         Guid userId, Guid sessionId, double lat, double lon,
@@ -73,6 +86,9 @@ internal sealed class HallAttendanceService(
                 s.Hall!.GeofenceCenterLat,
                 s.Hall!.GeofenceCenterLon,
                 s.Hall!.GeofenceRadiusMeters,
+                // D-839 — the two layers that can widen this session's door.
+                s.ArrivalGraceMinutesOverride,
+                HallArrivalGraceMinutes = s.Hall!.ArrivalGraceMinutes,
             })
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(ErrorCodes.SessionNotFound, 404,
@@ -82,7 +98,9 @@ internal sealed class HallAttendanceService(
         // X-3 — arrival is only valid while the session is live (its time window,
         // ± a short grace); a stale or future sessionId must not open an
         // attendance row (single-source attendance, FDS-003 §5.4).
-        EnsureSessionLiveNow(session.Start, session.End);
+        EnsureSessionLiveNow(session.Start, session.End, ResolveGrace(
+            session.ArrivalGraceMinutesOverride, session.HallArrivalGraceMinutes,
+            GlobalArrivalGraceMinutes));
 
         if (session.GeofenceCenterLat is not { } centerLat
             || session.GeofenceCenterLon is not { } centerLon
@@ -144,14 +162,25 @@ internal sealed class HallAttendanceService(
         var session = await appDbContext.Sessions
             .AsNoTracking()
             .Where(s => s.Id == sessionId && s.IsActive)
-            .Select(s => new { s.Id, s.Start, s.End, s.HallId })
+            .Select(s => new
+            {
+                s.Id,
+                s.Start,
+                s.End,
+                s.HallId,
+                // D-839 — the two layers that can widen this session's door.
+                s.ArrivalGraceMinutesOverride,
+                HallArrivalGraceMinutes = s.Hall!.ArrivalGraceMinutes,
+            })
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(ErrorCodes.SessionNotFound, 404,
                 "The session was not found.",
                 "لم يتم العثور على الجلسة.");
 
         // X-3 — bind the operator door scan to the session's live window (± grace).
-        EnsureSessionLiveNow(session.Start, session.End);
+        EnsureSessionLiveNow(session.Start, session.End, ResolveGrace(
+            session.ArrivalGraceMinutesOverride, session.HallArrivalGraceMinutes,
+            GlobalArrivalGraceMinutes));
 
         // No geofence check — the operator is physically at the door. Merges
         // with any existing open row (e.g. a prior geofence arrival).
@@ -264,7 +293,8 @@ internal sealed class HallAttendanceService(
 
     /// <summary>
     /// Every session this hall is ADMITTING for at this instant: active, and
-    /// inside [Start, End] widened by <see cref="ArrivalGrace"/> at both ends.
+    /// inside [Start, End] widened at both ends by that session's own effective
+    /// grace (D-839: its override, else its hall's, else the global value).
     /// Ordered best-first - the session actually running, then the nearest by
     /// start, then by id so the order is total.
     ///
@@ -278,19 +308,46 @@ internal sealed class HallAttendanceService(
         Guid hallId, CancellationToken cancellationToken)
     {
         var now = timeProvider.SimfNow();
-        var grace = ArrivalGrace;
         // The window bounds are shifted onto the constant `now` (not the
         // DateTimeOffset column) so the filter translates to SQL. A single hall
         // runs one session at a time (BookingOverlap prevents overlapping hall
         // bookings), so this candidate set is tiny.
-        var latestStart = now + grace;   // s.Start - grace <= now
-        var earliestEnd = now - grace;   // now < s.End + grace
+        //
+        // D-839 — the grace is no longer ONE number: it can differ per session
+        // within the same hall. The exact window COULD go in SQL (DATEADD over the
+        // coalesced columns), but that computes on the column and gives up the
+        // range seek on the `(HallId, Start)` index, so this deliberately
+        // pre-filters on the WIDEST grace any layer may set and applies each
+        // session's own grace in memory. Being too wide is the safe direction: it
+        // can only over-fetch, never miss a session that is genuinely admitting.
+        // Bounded to one hall within 4 hours either side of now — tens of rows.
+        var widest = TimeSpan.FromMinutes(WalkInModeOptions.MaxArrivalGraceMinutes);
+        // One options snapshot and one clock read for the whole scan: resolving
+        // the fallback per row could give two sessions in the SAME decision
+        // different graces if a config reload landed mid-loop.
+        var globalMinutes = GlobalArrivalGraceMinutes;
+        var latestStart = now + widest;   // s.Start - grace <= now
+        var earliestEnd = now - widest;   // now < s.End + grace
         return (await appDbContext.Sessions
                 .AsNoTracking()
                 .Where(s => s.IsActive && s.HallId == hallId
                     && s.Start <= latestStart && earliestEnd < s.End)
-                .Select(s => new { s.Id, s.Start, s.End })
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Start,
+                    s.End,
+                    s.ArrivalGraceMinutesOverride,
+                    HallArrivalGraceMinutes = s.Hall!.ArrivalGraceMinutes,
+                })
                 .ToListAsync(cancellationToken))
+            // Now the real test, per session, with its own grace.
+            .Where(s =>
+            {
+                var grace = ResolveGrace(
+                    s.ArrivalGraceMinutesOverride, s.HallArrivalGraceMinutes, globalMinutes);
+                return s.Start - grace <= now && now < s.End + grace;
+            })
             // The session actually running beats a grace-margin neighbour.
             .OrderBy(s => now >= s.Start && now < s.End ? 0 : 1)
             // Then the nearest by start - unchanged from D-819.
@@ -642,12 +699,17 @@ internal sealed class HallAttendanceService(
     }
 
     /// <summary>X-3 — throws when now is outside the session's live window
-    /// (± <see cref="ArrivalGrace"/>). Keeps arrival bound to a session that is
-    /// actually running, so a stale or future sessionId cannot open a row.</summary>
-    private void EnsureSessionLiveNow(DateTime start, DateTime end)
+    /// (± its effective grace). Keeps arrival bound to a session that is
+    /// actually running, so a stale or future sessionId cannot open a row.
+    ///
+    /// <para>D-839 — the grace is passed in rather than read here, because it is
+    /// now a property of the SESSION (its own override, else its hall's, else the
+    /// global value). Taking it as a parameter is what stops this check and the
+    /// admitting-set query drifting apart on the same session.</para></summary>
+    private void EnsureSessionLiveNow(DateTime start, DateTime end, TimeSpan grace)
     {
         var now = timeProvider.SimfNow();
-        if (now < start - ArrivalGrace || now > end + ArrivalGrace)
+        if (now < start - grace || now > end + grace)
         {
             throw new ApiException(ErrorCodes.SessionNotLive, 409,
                 "This session is not open for arrivals right now.",

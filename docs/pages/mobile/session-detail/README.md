@@ -173,3 +173,31 @@ now via the shared core helpers — also killed the local weekday/month array
 copies) and the shared bottom-nav sessions label (`الأجندة`→`الجلسات`, nav
 component 206:1732 — chrome fix, applies app-wide). Golden re-locked at the
 frame; behaviour byte-identical otherwise (83 module tests green).
+
+## 6. Arrival grace comes from the server (D-840)
+The check-in status strip's "you can check in now" threshold is no longer a
+constant in this screen. `SessionDetail` decodes `arrivalGraceMinutes` off
+`GET /app/programme/sessions/{id}` — the value the SERVER has already resolved by
+the D-839 rule (the session's own override, else its hall's, else the global
+`WalkInMode` value) — and exposes it as `arrivalGrace`.
+
+Why it changed: the screen carried `static const _arrivalGrace = 15 minutes`
+under a comment reading *"Mirrors `HallAttendanceService.ArrivalGrace`. If that
+server constant changes, change this with it."* D-839 made the grace
+configurable per hall and per session and renamed that symbol, so the
+instruction had become unfollowable and the number could silently disagree with
+the door.
+
+**It gates nothing.** The door is enforced server-side; this only decides whether
+a hint renders, which is why D-839 could defer it honestly rather than rush it.
+
+**Append-only (D-219):** an older API omits the field and the app falls back to
+15 — exactly what it assumed before — so this build keeps working against a
+server that has not shipped D-840. A server-sent `0` is honoured as zero, not
+mistaken for absent. Covered by `session_detail_models_test.dart` (3 cases) and
+`ArrivalGraceResolutionTests.The_public_session_detail_carries_the_resolved_grace`
+(4 cases) on the server side. E2E-MOB017-041..043.
+
+**Not verified on a device.** `flutter analyze` sits at its pre-existing 67-info
+baseline with zero new issues and the touched tests are green; a device only
+benefits once the app ships.

@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 
 namespace SIMF.Contracts.Programme;
 
@@ -145,6 +146,18 @@ public sealed record PublicSessionDetail(
     // screen could never fire. Appended (append-only, D-219); null = an untyped
     // session, which renders the full detail exactly as before.
     SessionType? Type = null,
+    // D-840 — the arrival grace the SERVER will actually apply to this session,
+    // in whole minutes, already resolved (its own override, else its hall's, else
+    // the global walk-in value). The app decides from it whether to show the
+    // "you can check in now" strip.
+    //
+    // Appended (append-only, D-219) with the historical 15 as the default, so an
+    // older API answers exactly as the app assumed before. It exists because
+    // D-839 made the grace configurable per hall and per session: the app had a
+    // hard-coded 15 under a comment telling the next person to keep it in step
+    // with a server constant by hand, and after D-839 there is no single server
+    // constant left to mirror.
+    int ArrivalGraceMinutes = WalkInModeOptions.DefaultArrivalGraceMinutes,
     // FR-702 (owner decision 2026-07-31): the informational notice the client shows
     // WITH the live stream, in the active locale (falling back to the other pair
     // member when one is blank). NOTHING is gated by it — SIMF-FDS-007 §5.1

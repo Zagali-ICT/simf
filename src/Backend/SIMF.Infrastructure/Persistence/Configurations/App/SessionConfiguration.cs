@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Common.Options;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -12,8 +13,15 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
     public void Configure(EntityTypeBuilder<Session> builder)
     {
         // D-611 (Wave B) — a session must end after it starts.
-        builder.ToTable("Sessions", table => table.HasCheckConstraint(
-            "CK_Sessions_TimeWindow", "[End] > [Start]"));
+        // D-839 — the arrival-grace override is null (inherit the hall) or within
+        // the one shared bound; same rule as CK_Halls_ArrivalGrace.
+        builder.ToTable("Sessions", table =>
+        {
+            table.HasCheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
+            table.HasCheckConstraint(
+                "CK_Sessions_ArrivalGrace",
+                $"[ArrivalGraceMinutesOverride] IS NULL OR ([ArrivalGraceMinutesOverride] >= 0 AND [ArrivalGraceMinutesOverride] <= {WalkInModeOptions.MaxArrivalGraceMinutes})");
+        });
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.Code).HasMaxLength(16).IsRequired();

@@ -20,7 +20,11 @@ public sealed record AdminHallSummary(
     double? GeofenceCenterLat = null,
     double? GeofenceCenterLon = null,
     double? GeofenceRadiusMeters = null,
-    int SeatSelectionMode = 0);
+    int SeatSelectionMode = 0,
+    // D-839 — the hall's own arrival grace in minutes; null = inherit the global
+    // WalkInMode value. Carried for the same D-506 reason as the geofence triple:
+    // without it, an Excel round-trip of the halls grid would silently wipe it.
+    int? ArrivalGraceMinutes = null);
 
 /// <summary>Full hall detail (Details + Edit modals). P5.1 — D-240: the optional
 /// GPS geofence (centre lat/lon + radius in metres) is appended (all null when
@@ -41,7 +45,9 @@ public sealed record AdminHallDetail(
     double? GeofenceRadiusMeters = null,
     // D-485: the hall's seat-selection mode (SeatSelectionMode; 0 = AssignedSeat,
     // 1 = OpenSeating). Appended (defaulted) so the wire stays append-only (D-219).
-    int SeatSelectionMode = 0);
+    int SeatSelectionMode = 0,
+    // D-839: arrival grace in minutes (0..240); null = inherit the global value.
+    int? ArrivalGraceMinutes = null);
 
 public sealed class AdminCreateHallRequest
 {
@@ -57,6 +63,9 @@ public sealed class AdminCreateHallRequest
     public double? GeofenceRadiusMeters { get; set; }
     // D-485: 0 = AssignedSeat (pick a seat), 1 = OpenSeating (general admission).
     public int SeatSelectionMode { get; set; }
+    // D-839: how far outside a session's window this hall still admits an
+    // arrival, in minutes (0..240). Null = inherit the global WalkInMode value.
+    public int? ArrivalGraceMinutes { get; set; }
 }
 
 /// <summary>Not sealed: the admin update endpoint binds {id}+body via a derived
@@ -78,4 +87,7 @@ public class AdminUpdateHallRequest
     public double? GeofenceRadiusMeters { get; set; }
     // D-485: 0 = AssignedSeat (pick a seat), 1 = OpenSeating (general admission).
     public int SeatSelectionMode { get; set; }
+    // D-839: how far outside a session's window this hall still admits an
+    // arrival, in minutes (0..240). Null = inherit the global WalkInMode value.
+    public int? ArrivalGraceMinutes { get; set; }
 }

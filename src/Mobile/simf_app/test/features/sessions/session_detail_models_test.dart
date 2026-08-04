@@ -120,4 +120,55 @@ void main() {
       expect(MySeat.fromSeatMap(null), isNull);
     });
   });
+
+  group('SessionDetail.arrivalGraceMinutes (D-840)', () {
+    // D-839 made the arrival grace configurable per hall and per session, and
+    // the server now resolves it and sends the answer. Before D-840 this screen
+    // hard-coded 15 under a comment telling the next person to keep it in step
+    // with a server constant by hand — a constant that no longer exists.
+    test('reads the resolved grace the server sent', () {
+      final detail = SessionDetail.fromJson(
+        _minimalJson()..['arrivalGraceMinutes'] = 60,
+      );
+
+      expect(detail.arrivalGraceMinutes, 60);
+      expect(detail.arrivalGrace, const Duration(minutes: 60));
+    });
+
+    test('an older API omitting the field still means 15', () {
+      // The whole point of appending it (D-219 append-only): an app built
+      // against a newer contract must keep working against an older server,
+      // and 15 is exactly what this screen assumed before.
+      final detail = SessionDetail.fromJson(_minimalJson());
+
+      expect(detail.arrivalGraceMinutes, 15);
+      expect(detail.arrivalGrace, const Duration(minutes: 15));
+    });
+
+    test('a server-sent 0 is honoured, not treated as absent', () {
+      // The same trap the server-side precedence test covers: a deliberate 0
+      // read as "unset" would silently reopen a door the team closed.
+      final detail = SessionDetail.fromJson(
+        _minimalJson()..['arrivalGraceMinutes'] = 0,
+      );
+
+      expect(detail.arrivalGraceMinutes, 0);
+      expect(detail.arrivalGrace, Duration.zero);
+    });
+  });
 }
+
+/// The smallest payload SessionDetail.fromJson accepts, so each case above
+/// varies exactly one field.
+Map<String, dynamic> _minimalJson() => <String, dynamic>{
+      'id': 's1',
+      'code': 'OP-1',
+      'title': 'Opening',
+      'titleArabic': 'الافتتاح',
+      'hallId': 'h1',
+      'hallName': 'Main Hall',
+      'hallNameArabic': 'القاعة الرئيسية',
+      'start': '2026-11-23T06:00:00Z',
+      'end': '2026-11-23T07:30:00Z',
+      'speakers': <dynamic>[],
+    };

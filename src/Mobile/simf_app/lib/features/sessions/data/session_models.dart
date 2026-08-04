@@ -397,6 +397,7 @@ class SessionDetail {
     this.type,
     this.liveStreamUrl,
     this.displayOrder = 0,
+    this.arrivalGraceMinutes = defaultArrivalGraceMinutes,
   });
 
   final String id;
@@ -443,6 +444,24 @@ class SessionDetail {
   /// API), in which case the badge falls back to the [code].
   final int displayOrder;
 
+  /// D-840 — how many minutes before the start (and after the end) the
+  /// SERVER will accept an arrival for this session, already resolved by it
+  /// (the session's own override, else its hall's, else the global value).
+  ///
+  /// Read from the wire rather than assumed: D-839 made the grace configurable
+  /// per hall and per session, so there is no single server constant left to
+  /// mirror by hand. Falls back to [defaultArrivalGraceMinutes] on an older
+  /// API — the value this screen used to hard-code — so nothing changes until
+  /// the team actually configures a hall.
+  final int arrivalGraceMinutes;
+
+  /// The grace the system used before it was configurable, and the value an
+  /// older API implies by omitting the field.
+  static const int defaultArrivalGraceMinutes = 15;
+
+  /// [arrivalGraceMinutes] as a Duration, for comparing against a start time.
+  Duration get arrivalGrace => Duration(minutes: arrivalGraceMinutes);
+
   DateTime get startLocal => saudiOf(start);
   DateTime get endLocal => saudiOf(end);
 
@@ -478,6 +497,8 @@ class SessionDetail {
         type: SessionType.fromJson(json['type']),
         liveStreamUrl: json['liveStreamUrl'] as String?,
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        arrivalGraceMinutes: (json['arrivalGraceMinutes'] as num?)?.toInt() ??
+            defaultArrivalGraceMinutes,
       );
 }
 

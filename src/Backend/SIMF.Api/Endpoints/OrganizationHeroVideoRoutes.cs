@@ -1,18 +1,18 @@
 using Microsoft.AspNetCore.Http;
+using SIMF.Common;
 
 namespace SIMF.Api.Endpoints;
 
-/// <summary>D-768 — shared route + absolute-URL helpers for the hero background
-/// video, used by the admin upload/delete endpoints (to persist the served URL) and
-/// the public stream endpoint (to register its route).</summary>
+/// <summary>D-768 — absolute-URL helper for the hero background video, used by the
+/// admin upload/delete endpoints to persist the served URL.
+///
+/// <para>D-841 — the route itself moved to
+/// <see cref="OrganizationHeroVideoRoute.StreamRoute"/> in <c>SIMF.Common</c>,
+/// because the Control Panel needs it too and cannot reference this assembly. It
+/// was hand-copied there; now there is one constant. Only the composition, which
+/// needs <see cref="HttpRequest"/>, stays here.</para></summary>
 public static class OrganizationHeroVideoRoutes
 {
-    /// <summary>The public stream route, RELATIVE to the FastEndpoints
-    /// <c>RoutePrefix</c> ("api/v1"). Its <c>.mp4</c> suffix is load-bearing: it is
-    /// what makes the composed absolute URL pass the app/website hero accept-gate
-    /// (<c>LiveStreamUrlPolicy</c> — an https URL whose path ends <c>.mp4</c>).</summary>
-    public const string StreamRoute = "/app/organization/hero-video.mp4";
-
     // Mirrors Program.cs `config.Endpoints.RoutePrefix = "api/v1"` — prepended only
     // for the request-derived fallback URL (dev / direct calls).
     private const string RoutePrefix = "/api/v1";
@@ -26,8 +26,8 @@ public static class OrganizationHeroVideoRoutes
     {
         if (!string.IsNullOrWhiteSpace(publicApiBaseUrl))
         {
-            return $"{publicApiBaseUrl.TrimEnd('/')}{StreamRoute}";
+            return $"{publicApiBaseUrl.TrimEnd('/')}{OrganizationHeroVideoRoute.StreamRoute}";
         }
-        return $"{request.Scheme}://{request.Host}{RoutePrefix}{StreamRoute}";
+        return $"{request.Scheme}://{request.Host}{RoutePrefix}{OrganizationHeroVideoRoute.StreamRoute}";
     }
 }

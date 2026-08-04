@@ -137,6 +137,9 @@
 | E2E-MOB017-038 | **A FAILED read is never collapsed into "not checked in"** — a transport error / 5xx shows "تعذّر تحميل حالة حضورك في القاعة." / "Could not load your hall check-in status." plus **إعادة المحاولة / Retry**; the retry re-reads and renders the recovered state. While the read is in flight nothing is rendered, so nothing is claimed and nothing shifts the page | error/resilience | P0 | authored ✓ (widget — `a FAILED read is never collapsed into "not checked in"` + `retry re-reads the status and renders the recovered state`) |
 | E2E-MOB017-039 | **Where the strip is offered** — attendee roles only (a guest / Staff / Moderator never sees it), never on a `Workshop` detail (#29 reduction), and never on an **upcoming** session (the door cannot scan anyone into a session that has not started). A pull-to-refresh re-reads the status as well as the detail | auth/edge | P0 | authored ✓ (screen `_showArrivalStatus` gate + `_load()` invalidating `hallAttendanceStatusProvider`) |
 | E2E-MOB017-040 | **RTL** — the Arabic card renders the Arabic wording right-to-left, the gold glyph sits at the inline start, and the recorded time reads left-to-right inside the Arabic line (`formatSaudiTime12` emits Latin `10:30 AM` in Arabic too, by design — it matches the backend `SaudiTime.TimeFormat`) | i18n | P1 | authored ✓ (widget — `the Arabic card renders the Arabic wording`) |
+| E2E-MOB017-041 | **D-840** — the check-in strip appears at the grace the SERVER resolved for this session (its override, else its hall's, else the global value), not a hard-coded 15 | happy | P1 | authored ✓ (`session_detail_models_test.dart` — "reads the resolved grace the server sent") |
+| E2E-MOB017-042 | An older API that omits `arrivalGraceMinutes` still yields 15, so the app keeps working against a server that has not shipped D-840 | validation | P1 | authored ✓ (`session_detail_models_test.dart` — "an older API omitting the field still means 15") |
+| E2E-MOB017-043 | A server-sent `arrivalGraceMinutes` of **0** is honoured as zero, not read as absent and replaced by 15 | validation | P1 | authored ✓ (`session_detail_models_test.dart` — "a server-sent 0 is honoured") |
 | E2E-MOB017-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MOB017-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -876,3 +879,40 @@ session is live or ended (asking during a live session moves to the
 live-broadcast screen; a past session's view is a recording, not a live
 broadcast). Widget tests: approved-user-can-ask-future / live-hides / past-hides.**
 _Prior:_ `2026-07-08`.
+
+
+## D-840 — the arrival grace comes from the server
+
+```gherkin
+Feature: The check-in strip follows the hall's configured arrival window
+  As an attendee arriving early for a keynote
+  I want the "you can check in now" strip to appear when the doors actually open
+  So that the app does not tell me to wait while the gate is already scanning
+
+  # This gates NOTHING — the door is enforced server-side. It decides whether a
+  # hint renders. Before D-840 the app hard-coded 15 minutes; D-839 made the real
+  # grace configurable per hall and per session, so there was no single server
+  # constant left for the app to mirror.
+
+  Scenario: the hall opens an hour early
+    Given the hall "GR-KEYNOTE" has an arrival grace of 60 minutes
+    And its session "GRS-OPENING" starts in 40 minutes
+    When I open the session detail
+    Then GET /app/programme/sessions/{id} returns arrivalGraceMinutes = 60
+    And the check-in status strip is shown
+    # At the app's old hard-coded 15 the strip would still be hidden here.
+
+  Scenario: an older server says nothing
+    Given the API predates D-840 and omits arrivalGraceMinutes
+    When I open any session detail
+    Then the app uses 15 minutes, exactly as it did before D-840
+
+  Scenario: a hall that closes on time
+    Given the session's own override is 0
+    When I open the session detail
+    Then the app uses 0 minutes
+    And the strip appears only once the session has actually started
+```
+
+_Last reviewed:_ 2026-08-04 by Claude (D-840 — the resolved arrival grace rides
+`PublicSessionDetail`; E2E-MOB017-041..043).

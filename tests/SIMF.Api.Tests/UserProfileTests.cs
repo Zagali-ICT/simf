@@ -388,9 +388,13 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         // D-197: the registrant must be at least 18 years old.
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync();
-        // One day short of 18.
+        // One day short of 18, measured on the SAUDI day — the same clock
+        // BeAtLeastEighteen reads. Measuring this from DateTime.UtcNow made the
+        // test fail for the three hours after Riyadh midnight, when UTC is still
+        // on the previous date: the boundary it built was "exactly 18" by the
+        // server's reckoning, so the server correctly accepted it.
         request.DateOfBirth =
-            DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-18).AddDays(1);
+            DateOnly.FromDateTime(SimfClock.Now).AddYears(-18).AddDays(1);
 
         var response = await PostAuthAsync(Path, request, token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -399,10 +403,13 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task POST_accepts_a_registrant_exactly_18()
     {
-        // D-197: exactly 18 today is eligible (boundary).
+        // D-197: exactly 18 today is eligible (boundary). Same Saudi clock as
+        // its under-18 sibling: on UTC this never failed, it just stopped
+        // testing the boundary for three hours a day — it built "18 years and
+        // one day", which is eligible for a less interesting reason.
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync();
-        request.DateOfBirth = DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-18);
+        request.DateOfBirth = DateOnly.FromDateTime(SimfClock.Now).AddYears(-18);
 
         var response = await PostAuthAsync(Path, request, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

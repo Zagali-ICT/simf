@@ -1,9 +1,10 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -21,6 +22,9 @@ public partial class HallsAddEdit
     private string _geoLatInput = string.Empty;
     private string _geoLonInput = string.Empty;
     private string _geoRadiusInput = string.Empty;
+    // D-839 — blank means "inherit the global value", which is what every hall
+    // carried before this field existed.
+    private string _arrivalGraceInput = string.Empty;
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
@@ -40,9 +44,16 @@ public partial class HallsAddEdit
             _geoLatInput = Initial.GeofenceCenterLat?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _geoLonInput = Initial.GeofenceCenterLon?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _geoRadiusInput = Initial.GeofenceRadiusMeters?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            _arrivalGraceInput = Initial.ArrivalGraceMinutes?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         }
         _editContext = new EditContext(_model);
     }
+
+
+    /// <summary>D-839 — the shared 0..240 bound as the input's own `max`, so the
+    /// browser refuses out-of-range values before the parser has to.</summary>
+    private static string ArrivalGraceMax =>
+        WalkInModeOptions.MaxArrivalGraceMinutes.ToString(CultureInfo.InvariantCulture);
 
     private async Task HandleSubmitAsync()
     {
@@ -59,6 +70,8 @@ public partial class HallsAddEdit
         { _error = L["Admin.Halls.Field.CapacityInvalid"]; return; }
         if (!TryParseGeofence(out var geoLat, out var geoLon, out var geoRadius))
         { _error = L["Admin.Halls.Field.GeofenceInvalid"]; return; }
+        if (!WalkInModeOptions.TryParseArrivalGrace(_arrivalGraceInput, out var arrivalGrace))
+        { _error = L["Admin.Halls.Field.ArrivalGraceInvalid"]; return; }
 
         _busy = true;
         try
@@ -79,6 +92,7 @@ public partial class HallsAddEdit
                     GeofenceCenterLon = geoLon,
                     GeofenceRadiusMeters = geoRadius,
                     SeatSelectionMode = SeatModeValue(),
+                    ArrivalGraceMinutes = arrivalGrace,
                 },
                 new AdminUpdateHallRequest
                 {
@@ -93,6 +107,7 @@ public partial class HallsAddEdit
                     GeofenceCenterLon = geoLon,
                     GeofenceRadiusMeters = geoRadius,
                     SeatSelectionMode = SeatModeValue(),
+                    ArrivalGraceMinutes = arrivalGrace,
                 });
 
             if (!result.Succeeded)
@@ -134,6 +149,10 @@ public partial class HallsAddEdit
         return true;
     }
 
+    // D-839 — blank is legal and means "inherit"; anything else must be a whole
+    // number of minutes inside the one shared bound. Mirrors the server rule in
+    // AdminHallService.ValidateArrivalGrace so the admin is told here rather than
+    // by a round-trip.
     // D-485 — the hall's seat-selection mode select ("0" = assigned, "1" = open).
     private string SeatModeLabel(string id) => id switch
     {

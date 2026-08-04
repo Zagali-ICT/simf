@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/OrganizationHeroVideoTests.cs
 using FastEndpoints;
-using SIMF.Api.Endpoints;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Application.Files.Abstractions;
+using SIMF.Common;
 
 namespace SIMF.Api.Endpoints.Public;
 
@@ -19,7 +19,7 @@ public sealed class OrganizationHeroVideoStreamEndpoint(
 {
     public override void Configure()
     {
-        Get(OrganizationHeroVideoRoutes.StreamRoute);
+        Get(OrganizationHeroVideoRoute.StreamRoute);
         AllowAnonymous();
         Tags("Public");
     }
