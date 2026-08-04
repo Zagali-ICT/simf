@@ -44,6 +44,7 @@
 | E2E-OPT-015 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
 | E2E-OPT-016 | "Show in the app sign-up picker" toggle hides the type from the app (D-725) | happy | P1 | _to author_ |
 | E2E-OPT-017 | "Show in Meet People" toggle hides the whole partner type from the networking directory + recommender (D-760) | happy | P1 | authored ✓ (API twins) |
+| E2E-OPT-018 | Turning "Show in Meet People" **off** on an existing type actually stores false — the direction that silently failed open | validation | P0 | authored ✓ (`AdminProfileTypeTests.ShowInPartnerDirectory_can_be_turned_OFF_by_an_update`) |
 | E2E-OPT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-OPT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -417,6 +418,28 @@ Scenario: Un-ticking "Show in Meet People" hides the whole partner type from net
 
 ---
 
-_Last reviewed:_ 2026-07-23 by Claude (added E2E-OPT-017 for the D-760 "Show in
+### E2E-OPT-018 — turning "Show in Meet People" off actually stores false
+
+```gherkin
+Feature: The Meet-People visibility toggle can be turned off, not just on
+  As an Administrator
+  I want unticking "Show in Meet People" to persist
+  So that a partner type I hide is really hidden from the networking surfaces
+
+  Scenario: switching the flag from true to false stores false
+    Given I am signed in to the Control Panel as an Administrator
+    And an "Other" profile type exists with "Show in Meet People" ticked
+    When I untick "Show in Meet People" and save
+    Then the save succeeds
+    And re-reading the type reports showInPartnerDirectory = false
+    # D-843: the route DTO omitted the field, so FastEndpoints left it at the
+    # CONTRACT default — which is `true` — and the service assigned it
+    # unconditionally. The drop therefore failed OPEN: the admin got a success
+    # toast and the type stayed visible. E2E-OPT-017's API twin only ever drove
+    # false -> true, the direction the drop happens to force, so it passed.
+```
+
+_Last reviewed:_ 2026-08-04 by Claude (D-843 — the toggle can now be turned OFF;
+added E2E-OPT-018). Prior: 2026-07-23 by Claude (added E2E-OPT-017 for the D-760 "Show in
 Meet People" per-type master switch — hides a whole partner type from the
 networking directory + recommender). Prior: 2026-06-02 (E2E catalogue rebuild).

@@ -92,23 +92,21 @@ public sealed class CreateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
     }
 }
 
-/// <summary>D-115 — <c>PUT /api/v1/admin/profile-types/{id}</c>. UserType is
-/// NOT updatable post-creation — the route body does not carry it.
-/// D-186: IsVisitor IS updatable (audience-vs-partner queue routing).</summary>
-public sealed class UpdateAdminProfileTypeRouteRequest
+/// <summary>D-115 — <c>PUT /api/v1/admin/profile-types/{id}</c>. UserType is NOT
+/// updatable post-creation. D-186: IsVisitor IS updatable (audience-vs-partner
+/// queue routing).
+///
+/// <para>D-843 — inherits the contract per D-505 (see <c>UpdateHallRoute</c>). It
+/// used to re-declare the fields and the endpoint hand-copied them; it omitted
+/// <c>ShowInPartnerDirectory</c>, whose contract default is <c>true</c>, so the
+/// drop failed OPEN: unticking "show in partner directory" returned a success
+/// toast and silently re-exposed the type in the networking surfaces. The same
+/// class had already cost this DTO <c>IsVisitor</c> once before. UserType stays
+/// non-updatable because the CONTRACT omits it, which is where that rule
+/// belongs — not in a hand-maintained copy of the field list.</para></summary>
+public sealed class UpdateAdminProfileTypeRouteRequest : AdminUpdateProfileTypeRequest
 {
     public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public string PageColor { get; set; } = string.Empty;
-    /// <summary>D-161 — mobile-app authority assigned to this type.</summary>
-    public string? MobileAppRole { get; set; }
-    public bool IsActive { get; set; } = true;
-    /// <summary>D-186 — audience (true) or partner / staff (false).</summary>
-    public bool IsVisitor { get; set; } = true;
-    /// <summary>D-725 — whether the type appears in the app sign-up picker
-    /// (false = CP-only, e.g. Staff / Moderator).</summary>
-    public bool IsAppRegisterable { get; set; } = true;
 }
 
 public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandService service)
@@ -132,17 +130,9 @@ public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
             await Send.UnauthorizedAsync(ct);
             return;
         }
-        var summary = await service.UpdateAsync(actorId, req.Id,
-            new AdminUpdateProfileTypeRequest
-            {
-                Name = req.Name,
-                NameArabic = req.NameArabic,
-                PageColor = req.PageColor,
-                MobileAppRole = req.MobileAppRole,
-                IsActive = req.IsActive,
-                IsVisitor = req.IsVisitor,
-                IsAppRegisterable = req.IsAppRegisterable,
-            }, ct);
+        // D-843 — pass the bound request straight through. No hand-copy, so no
+        // field can be dropped from it.
+        var summary = await service.UpdateAsync(actorId, req.Id, req, ct);
         await Send.OkAsync(ApiResult<AdminProfileTypeSummary>.Ok(summary), ct);
     }
 }

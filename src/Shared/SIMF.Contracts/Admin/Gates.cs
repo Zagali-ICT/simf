@@ -51,7 +51,11 @@ public sealed class AdminCreateGateRequest
     public List<Guid> AssignedOperatorUserIds { get; set; } = new();
 }
 
-public sealed class AdminUpdateGateRequest
+/// <summary>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505, mirroring <c>UpdateHallRoute</c>) so it cannot drop a field
+/// at bind time — D-843: <c>HallId</c> was being wiped on every edit, unbinding a
+/// hall door from its hall, because the old inline bind model omitted it.</summary>
+public class AdminUpdateGateRequest
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

@@ -473,7 +473,12 @@ public sealed class AdminCreateProfileTypeRequest
 /// can be flipped because it only re-routes the CP approval queue, not
 /// the underlying user account.
 /// </summary>
-public sealed class AdminUpdateProfileTypeRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505, mirroring <c>UpdateHallRoute</c>) so it cannot drop a field
+/// at bind time — D-843: <c>ShowInPartnerDirectory</c> was being forced back to its
+/// <c>true</c> default on every edit, because the old inline bind model omitted it
+/// and the drop therefore failed OPEN.</remarks>
+public class AdminUpdateProfileTypeRequest
 {
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;

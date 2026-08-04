@@ -14,9 +14,10 @@
 // `UpdateHallRequest` omitted the GPS geofence fields, so a PUT wiped the stored
 // geofence on every edit.
 //
-// Under src/Backend/SIMF.Api/Endpoints/Admin as of D-842: TEN route DTOs use that
-// inheriting shape and are safe by construction; ELEVEN still re-declare their
-// fields and hand-copy them in HandleAsync, and are not.
+// Under src/Backend/SIMF.Api/Endpoints/Admin as of D-843: TEN route DTOs use that
+// inheriting shape and are safe by construction; NINE still re-declare their
+// fields and hand-copy them in HandleAsync, and are not. (D-843 moved two from the
+// second group to the first, so it was 8/11 before.)
 //
 // `UpdateSessionRequest` is one of the eleven. Its hand-copy had silently dropped
 // a field four times before D-842 — the live URLs (D-439), `Type`,
@@ -34,15 +35,16 @@
 // change from the one-field fix D-842 was approved as. Until that lands, this
 // asserts the parity the hand-copy is supposed to maintain.
 //
-// It is also scoped to ONE of the eleven. The D-842 audit diffed the others and
-// found two more live drops — `UpdateGateRequest` loses `Gate.HallId` (unbinding
-// a hall door, so it stops feeding hall attendance) and
-// `UpdateAdminProfileTypeRouteRequest` loses `ShowInPartnerDirectory` (whose
-// contract default is `true`, so the drop fails OPEN and silently re-exposes a
-// type in the partner directory). Both are reported separately and are NOT fixed
-// here. A generic version of this ratchet — discover every endpoint whose route
-// DTO hand-copies into a contract request, and diff each pair — would cover the
-// class rather than this instance, and would have caught both.
+// It is also scoped to ONE of the nine. The D-842 audit diffed the others and
+// found two more live drops, both since fixed by CONVERSION rather than by another
+// ratchet (D-843): `UpdateGateRequest` was losing `Gate.HallId`, unbinding a hall
+// door so it stopped feeding hall attendance; and `UpdateAdminProfileTypeRouteRequest`
+// was losing `ShowInPartnerDirectory`, whose contract default is `true`, so that
+// drop failed OPEN and silently re-exposed a type in the partner directory.
+//
+// Those two now inherit, which is why the count above moved 10/11 -> 12/9. The
+// remaining nine are still hand-copies; converting sessions would leave eight and
+// delete this file.
 //
 // It pins SHAPE, not behaviour: it proves a field cannot go missing, which is the
 // mistake that keeps being made. It does NOT prove the mapping block assigns each

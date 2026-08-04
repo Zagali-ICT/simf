@@ -209,6 +209,81 @@ public sealed class AdminGatesTests : IClassFixture<SimfApiFactory>
 
     // -- Helpers --------------------------------------------------------------
 
+    [Fact]
+    public async Task A_hall_door_keeps_its_hall_through_an_unrelated_edit()
+    {
+        // D-843 — the route DTO used to omit HallId while the endpoint hand-copied
+        // the rest across, and AdminGateService.UpdateAsync assigns it
+        // unconditionally. So ANY edit — renaming, toggling IsActive, adding an
+        // operator — wrote null over the stored binding and silently demoted a
+        // hall door to a perimeter gate. A perimeter gate never feeds hall
+        // attendance, so the loss shows up as arrivals quietly not being recorded.
+        //
+        // Create was never affected (CreateGateEndpoint binds the contract type),
+        // and the only existing HallId assertion is on that create path — which is
+        // exactly why the suite stayed green while the field was being wiped.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var hallId = await CreateHallAsync(adminToken);
+
+        var code = $"H-{Guid.NewGuid().ToString("N")[..8]}";
+        var create = await PostAuthAsync(
+            "/api/v1/admin/gates",
+            new AdminCreateGateRequest
+            {
+                Code = code,
+                Name = "Hall Door",
+                NameArabic = "باب القاعة",
+                DirectionMode = DirectionMode.Both,
+                HallId = hallId,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminGateDetail>>())!.Data!;
+        Assert.Equal(hallId, created.HallId);
+
+        // Rename it. Nothing about the hall is touched — the Control Panel echoes
+        // the loaded HallId straight back, as its form does.
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/gates/{created.Id}",
+            new AdminUpdateGateRequest
+            {
+                Code = created.Code,
+                Name = "Hall Door (renamed)",
+                NameArabic = created.NameArabic,
+                DirectionMode = created.DirectionMode,
+                IsActive = true,
+                HallId = created.HallId,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+
+        var updated = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminGateDetail>>())!.Data!;
+        Assert.Equal("Hall Door (renamed)", updated.Name);
+        Assert.Equal(hallId, updated.HallId);
+
+        // And re-read it, so this cannot pass on a response the service composed
+        // in memory while the row said something else.
+        var get = await GetAuthAsync($"/api/v1/admin/gates/{created.Id}", adminToken);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminGateDetail>>())!.Data!;
+        Assert.Equal(hallId, fetched.HallId);
+    }
+
+    private async Task<Guid> CreateHallAsync(string adminToken)
+    {
+        var response = await PostAuthAsync("/api/v1/admin/halls", new
+        {
+            code = "GH-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            name = "Gate Hall",
+            nameArabic = "قاعة البوابة",
+            capacity = 50,
+        }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminHallDetail>>())!.Data!;
+        return body.Id;
+    }
+
     private async Task<AdminGateDetail> CreateGateAsync(string adminToken, DirectionMode mode)
     {
         var code = $"H-{Guid.NewGuid().ToString("N").Substring(0, 8)}";

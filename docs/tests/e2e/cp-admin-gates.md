@@ -652,6 +652,7 @@ Scenario: binding a gate to a missing/inactive hall is a clean 400
 | E2E-GAT-027 | Assigning an ineligible operator id via the API → `GATE_ASSIGNMENT_INVALID` (400) naming the id | validation | P1 | _to author_ |
 | E2E-GAT-028 | A `Gates.Manage`-only admin sees populated profile-type / hall / operator lists (no silent empties) | auth | P1 | _to author_ |
 | E2E-GAT-029 | The Details view lists the assigned operators by name + email | crud | P2 | _to author_ |
+| E2E-GAT-030 | A hall door keeps its hall through an edit that does not touch it — renaming a gate must not demote it to a perimeter gate | crud | P0 | authored ✓ (`AdminGatesTests.A_hall_door_keeps_its_hall_through_an_unrelated_edit`) |
 | E2E-GAT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-GAT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -715,7 +716,30 @@ Scenario: an assignment can be audited from the Control Panel
 
 ---
 
-_Last reviewed:_ 2026-07-26 by Claude (BUG-018 — gate-operator model; added
+### E2E-GAT-030 — renaming a gate must not unbind its hall
+
+```gherkin
+Feature: A hall door keeps its hall through an unrelated edit
+  As an Administrator
+  I want a gate's Hall binding to survive edits that do not touch it
+  So that a hall door does not silently stop recording session attendance
+
+  Scenario: renaming a hall door leaves it bound to its hall
+    Given I am signed in to the Control Panel as an Administrator
+    And a hall "Gate Hall" exists
+    And a gate "Hall Door" is bound to that hall
+    When I open the gate, change only its name to "Hall Door (renamed)" and save
+    Then the save succeeds
+    And re-reading the gate still reports that hall as its Hall
+    # D-843: the route DTO omitted HallId while UpdateAsync assigned it
+    # unconditionally, so ANY edit wrote null over the binding. A gate with a null
+    # HallId is a perimeter gate, and a perimeter gate never feeds hall
+    # attendance — so the visible symptom was arrivals silently not recorded.
+    # Create was unaffected, which is why the suite stayed green.
+```
+
+_Last reviewed:_ 2026-08-04 by Claude (D-843 — the PUT no longer drops the hall
+binding; added E2E-GAT-030). Prior: 2026-07-26 by Claude (BUG-018 — gate-operator model; added
 E2E-GAT-025..029). Prior: 2026-07-11 by Claude (W4 on-site remediation — X-1 hall-door gate binding; E2E-GAT-023/024). Prior: 2026-06-26 by Claude (D-506 — appended the Description /
 DescriptionArabic Excel round-trip columns; added E2E-GAT-022 and corrected the
 stale export header list in the page facts + E2E-GAT-019).

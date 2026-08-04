@@ -69,18 +69,17 @@ public sealed class CreateGateEndpoint(IAdminGateService service)
     }
 }
 
-public sealed class UpdateGateRequest
+/// <summary>D-843 — bind {id} + body via a derived route that INHERITS the
+/// contract, per D-505 (see <c>UpdateHallRoute</c>). This class used to re-declare
+/// the contract's fields and the endpoint hand-copied them across; it omitted
+/// <c>HallId</c>, so FastEndpoints dropped the hall the Control Panel's picker
+/// sends and <c>UpdateAsync</c> — which assigns it unconditionally — wiped the
+/// stored binding on every edit. Renaming a gate silently demoted a hall door to a
+/// perimeter gate, and a perimeter gate never feeds hall attendance. Inheriting
+/// makes the drop impossible rather than merely detectable.</summary>
+public sealed class UpdateGateRequest : AdminUpdateGateRequest
 {
     public Guid Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? DescriptionArabic { get; set; }
-    public DirectionMode DirectionMode { get; set; } = DirectionMode.Both;
-    public bool IsActive { get; set; } = true;
-    public List<Guid> AllowedProfileTypeIds { get; set; } = new();
-    public List<Guid> AssignedOperatorUserIds { get; set; } = new();
 }
 
 public sealed class UpdateGateEndpoint(IAdminGateService service)
@@ -101,16 +100,10 @@ public sealed class UpdateGateEndpoint(IAdminGateService service)
             await Send.UnauthorizedAsync(ct);
             return;
         }
+        // D-843 — pass the bound request straight through. No hand-copy, so no
+        // field can be dropped from it.
         await Send.OkAsync(ApiResult<AdminGateDetail>.Ok(
-            await service.UpdateAsync(actorId, req.Id, new AdminUpdateGateRequest
-            {
-                Code = req.Code, Name = req.Name, NameArabic = req.NameArabic,
-                Description = req.Description, DescriptionArabic = req.DescriptionArabic,
-                DirectionMode = req.DirectionMode,
-                IsActive = req.IsActive,
-                AllowedProfileTypeIds = req.AllowedProfileTypeIds,
-                AssignedOperatorUserIds = req.AssignedOperatorUserIds,
-            }, ct)), ct);
+            await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
 }
 

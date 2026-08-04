@@ -50,7 +50,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/print-bag` | ✅ Real | Administrator | [cp/admin-print-bag.md](cp/admin-print-bag.md) | [e2e/cp-admin-print-bag.md](../tests/e2e/cp-admin-print-bag.md) |
 | `/admin/interests` | ✅ Real | Administrator | [cp/admin-interests.md](cp/admin-interests.md) | [e2e/cp-admin-interests.md](../tests/e2e/cp-admin-interests.md) |
 | `/admin/profile-types/visitor` | ✅ Real | Administrator | [cp/admin-profile-types-visitor.md](cp/admin-profile-types-visitor.md) | [e2e/cp-admin-profile-types-visitor.md](../tests/e2e/cp-admin-profile-types-visitor.md) |
-| `/admin/profile-types/other` | ✅ Real | Administrator | [cp/admin-profile-types-other.md](cp/admin-profile-types-other.md) | [e2e/cp-admin-profile-types-other.md](../tests/e2e/cp-admin-profile-types-other.md) |
+| `/admin/profile-types/other` | ✅ Real. **D-843 (2026-08-04)** — the D-760 "Show in Meet People" switch could only ever be turned ON; the update endpoint dropped the field and its `true` default won, so un-ticking it silently left the type exposed. Fixed. | Administrator | [cp/admin-profile-types-other.md](cp/admin-profile-types-other.md) | [e2e/cp-admin-profile-types-other.md](../tests/e2e/cp-admin-profile-types-other.md) |
 | `/admin/organisations` | ✅ Real (D-220) | Administrator  | [cp/admin-organisations.md](cp/admin-organisations.md) | [e2e/cp-admin-organisations.md](../tests/e2e/cp-admin-organisations.md) |
 | `/admin/regions` | ✅ Real (D-547) | Administrator  | [cp/admin-regions.md](cp/admin-regions.md) | [e2e/cp-admin-regions.md](../tests/e2e/cp-admin-regions.md) |
 | `/admin/countries` | ✅ Real | Administrator  | [cp/admin-countries.md](cp/admin-countries.md) | [e2e/cp-admin-countries.md](../tests/e2e/cp-admin-countries.md) |
@@ -114,7 +114,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/ai/invocations` | ✅ Real (D-176/D-179) | Administrator | — | [e2e/cp-admin-ai-invocations.md](../tests/e2e/cp-admin-ai-invocations.md) |
 | _(floating widget — every CP page)_ | ✅ Real | Any CP operator (`Assistant.Use`) | [cp/assistant.md](cp/assistant.md) | [e2e/cp-assistant.md](../tests/e2e/cp-assistant.md) |
 | **Access control & system** | | | | |
-| `/admin/gates` | ✅ Real (D-148) | Administrator  | [cp/admin-gates.md](cp/admin-gates.md) | [e2e/cp-admin-gates.md](../tests/e2e/cp-admin-gates.md) |
+| `/admin/gates` | ✅ Real (D-148). **D-843 (2026-08-04)** — every edit used to wipe the gate's Hall binding, demoting a hall door to a perimeter gate and silently stopping session-attendance capture. Fixed. | Administrator  | [cp/admin-gates.md](cp/admin-gates.md) | [e2e/cp-admin-gates.md](../tests/e2e/cp-admin-gates.md) |
 | `/admin/gates/operator` | ✅ Real (D-148) | Gate operator | — | [e2e/cp-admin-gates-operator.md](../tests/e2e/cp-admin-gates-operator.md) |
 | `/admin/gates/dashboard` | ✅ Real | Administrator | — | [e2e/cp-admin-gates-dashboard.md](../tests/e2e/cp-admin-gates-dashboard.md) |
 | `/admin/configuration` | ✅ Real (D-229) | Administrator  | [cp/admin-configuration.md](cp/admin-configuration.md) | [e2e/cp-admin-configuration.md](../tests/e2e/cp-admin-configuration.md) |

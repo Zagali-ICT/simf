@@ -399,6 +399,62 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task ShowInPartnerDirectory_can_be_turned_OFF_by_an_update()
+    {
+        // D-843 — the direction that was broken, and the reason the sibling test
+        // below did not catch it. The route DTO omitted ShowInPartnerDirectory, so
+        // FastEndpoints left it at the CONTRACT's default, which is `true`, and
+        // AdminProfileTypeCommandService assigns it unconditionally.
+        //
+        // The drop therefore failed OPEN: unticking "show in partner directory"
+        // returned a success toast and silently re-exposed the type in the Meet
+        // People surfaces. false -> true passed (the drop forced the expected
+        // answer); true -> false was untested and never worked.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var name = $"Exposed {Guid.NewGuid():N}";
+
+        var created = await PostAuthAsync(
+            "/api/v1/admin/profile-types",
+            new AdminCreateProfileTypeRequest
+            {
+                UserType = "Visitor",
+                IsVisitor = false,
+                Name = name,
+                NameArabic = "شريك",
+                PageColor = "#10B981",
+                IsActive = true,
+                ShowInPartnerDirectory = true,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var detail = (await created.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.True(detail.ShowInPartnerDirectory);
+
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/profile-types/{detail.Id}",
+            new AdminUpdateProfileTypeRequest
+            {
+                Name = detail.Name,
+                NameArabic = detail.NameArabic,
+                PageColor = detail.PageColor,
+                IsActive = true,
+                IsVisitor = detail.IsVisitor,
+                ShowInPartnerDirectory = false,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var after = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.False(after.ShowInPartnerDirectory);
+
+        // Re-read, so a response composed in memory cannot mask a stored `true`.
+        var get = await GetAuthAsync(
+            $"/api/v1/admin/profile-types/{detail.Id}", adminToken);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.False(fetched.ShowInPartnerDirectory);
+    }
+
+    [Fact]
     public async Task ShowInPartnerDirectory_round_trips_through_Create_Get_and_Update()
     {
         // D-760 (owner request): the "Meet People" visibility flag on a partner
