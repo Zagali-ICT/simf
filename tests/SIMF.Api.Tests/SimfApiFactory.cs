@@ -36,7 +36,16 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     // Started near real time so a test-issued JWT — whose lifetime the bearer
     // middleware validates against the real system clock — is not seen as
     // expired. Tests advance this clock explicitly when they need to.
-    public FakeTimeProvider Time { get; } = new(SimfClock.Now);
+    //
+    // D-848 — the offset is named rather than inferred. SimfClock.Now is a
+    // Saudi wall-clock reading with Kind = Unspecified, and the implicit
+    // DateTime → DateTimeOffset conversion resolves that against
+    // TimeZoneInfo.Local — so the fake clock was seeded at
+    // realUtc + (3h − hostOffset), and "near real time" held only on a
+    // UTC+03:00 machine. Anywhere else every authenticated test minted a
+    // token the bearer middleware then rejected as not-yet-valid or expired.
+    // Identical on a +03:00 host; correct on all the others.
+    public FakeTimeProvider Time { get; } = new(new DateTimeOffset(SimfClock.Now, SimfClock.Offset));
 
     /// <summary>
     /// Per-test-run temp directory the FilesystemAvatarStorage writes into,
