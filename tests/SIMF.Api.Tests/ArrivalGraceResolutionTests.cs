@@ -198,7 +198,87 @@ public sealed class ArrivalGraceResolutionTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task An_edit_can_set_an_override_and_the_door_honours_it()
+    {
+        // D-842 — the whole feature was unreachable from its only UI. D-839 added
+        // the field to the contract DTO, the Control Panel and the service, but the
+        // API's own route DTO (UpdateSessionRequest) omitted it, so the PUT bound
+        // null and the mapping passed null on. The CP reported "Session … was
+        // updated" and the column stayed NULL.
+        //
+        // Asserted through the DOOR rather than the stored row: the point of the
+        // setting is that the hall admits earlier, and only a scan proves the edit
+        // travelled the whole way instead of merely landing in a column.
+        var (sessionId, qrId, operatorToken) =
+            await SeedAsync(hallGrace: null, sessionGrace: null);
+        var adminToken = await CreateAdministratorAndSignInAsync();
+
+        // 40 minutes out with nothing configured: the default 15 keeps it shut.
+        using (var before = await ScanAsync(sessionId, qrId, operatorToken))
+        {
+            Assert.Equal(HttpStatusCode.Conflict, before.StatusCode);
+        }
+
+        using var update = await PutSessionAsync(
+            sessionId, adminToken, arrivalGraceMinutesOverride: 60);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+
+        using var after = await ScanAsync(sessionId, qrId, operatorToken);
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
+        var result = (await after.Content
+            .ReadFromJsonAsync<ApiResult<QrArrivalResult>>())!.Data!;
+        Assert.True(result.Status.Arrived);
+    }
+
+    [Fact]
+    public async Task An_override_survives_an_edit_that_does_not_change_it()
+    {
+        // The second half of the same defect, and the more dangerous half: the CP
+        // loads the stored override into its form and echoes it back on every save,
+        // so before the fix editing ANYTHING else on the session silently reset the
+        // override to null. The doors then quietly narrowed back to the hall's
+        // grace with no error, no toast and nothing in the audit trail to read.
+        var (sessionId, _, _) = await SeedAsync(hallGrace: null, sessionGrace: 60);
+        var adminToken = await CreateAdministratorAndSignInAsync();
+
+        using var response = await PutSessionAsync(
+            sessionId, adminToken, arrivalGraceMinutesOverride: 60);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var rows = await ListSessionsAsync(adminToken);
+        Assert.Equal(60, Row(rows, sessionId).ArrivalGraceMinutesOverride);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    /// <summary>Edits a seeded session the way the Control Panel does: every stored
+    /// scalar echoed back, with the arrival-grace override as the value under test.
+    /// Reading the row first is what makes this a real round-trip rather than a
+    /// create in disguise.</summary>
+    private async Task<HttpResponseMessage> PutSessionAsync(
+        Guid sessionId, string token, int? arrivalGraceMinutesOverride)
+    {
+        Session stored;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            stored = await db.Sessions.AsNoTracking()
+                .SingleAsync(session => session.Id == sessionId);
+        }
+
+        return await PutAuthAsync($"/api/v1/admin/sessions/{sessionId}", new
+        {
+            code = stored.Code,
+            title = stored.Title,
+            titleArabic = stored.TitleArabic,
+            hallId = stored.HallId,
+            start = stored.Start,
+            end = stored.End,
+            isActive = stored.IsActive,
+            arrivalGraceMinutesOverride,
+        }, token);
+    }
 
     private static AdminSessionSummaryRow Row(
         IReadOnlyList<AdminSessionSummaryRow> rows, Guid sessionId) =>
@@ -330,9 +410,18 @@ public sealed class ArrivalGraceResolutionTests : IClassFixture<SimfApiFactory>
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)
+        where TBody : class =>
+        SendAuthAsync(HttpMethod.Post, url, body, token);
+
+    private Task<HttpResponseMessage> PutAuthAsync<TBody>(string url, TBody body, string token)
+        where TBody : class =>
+        SendAuthAsync(HttpMethod.Put, url, body, token);
+
+    private Task<HttpResponseMessage> SendAuthAsync<TBody>(
+        HttpMethod method, string url, TBody body, string token)
         where TBody : class
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        var request = new HttpRequestMessage(method, url)
         {
             Content = JsonContent.Create(body),
         };

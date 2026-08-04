@@ -1,6 +1,8 @@
 // Tests: SIMF.Api.Tests/AdminSessionsTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
 // Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
+// Tests: SIMF.Api.Tests/UpdateSessionRequestParityTests.cs (D-842 — route-DTO parity)
+// Tests: SIMF.Api.Tests/ArrivalGraceResolutionTests.cs (D-842 — the PUT round-trip)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.Programme.Abstractions;
@@ -111,6 +113,11 @@ public sealed class UpdateSessionRequest
     // D-485 — optional per-session seat-selection-mode override (null = inherit
     // the hall). Carried on the update route DTO so a PUT round-trips it.
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
+    // D-842 — per-session arrival-grace override (null = inherit the hall). D-839
+    // added it everywhere except here, so a PUT sent null and wiped it. The fifth
+    // field this hand-copy has dropped; UpdateSessionRequestParityTests now pins
+    // the whole DTO, and D-505's inheriting shape would end the class outright.
+    public int? ArrivalGraceMinutesOverride { get; set; }
     // Fix: the route DTO previously omitted Type, so a PUT silently dropped the
     // session type back to null (the same class of bug D-439 fixed for the live
     // URLs). Carried here so the type round-trips on update like the create path.
@@ -169,6 +176,7 @@ public sealed class UpdateSessionEndpoint(IAdminSessionService service)
                     LiveNotice = req.LiveNotice,
                     LiveNoticeArabic = req.LiveNoticeArabic,
                     SeatSelectionModeOverride = req.SeatSelectionModeOverride,
+                    ArrivalGraceMinutesOverride = req.ArrivalGraceMinutesOverride, // D-842
                     Type = req.Type,
                     // Website Session-detail — language + outcomes round-trip on update.
                     Language = req.Language,

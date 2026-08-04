@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-07-31 (FR-702 live-notice fields on the session form — informational text shown with the stream, gating nothing; D-815) |
+| **Last reviewed** | 2026-08-04 (arrival-grace override: added D-839 SES-057..059, its PUT round-trip fixed D-842 SES-060) |
 
 > **Permissions.** The page is gated `@attribute [RequirePermission(PermissionCatalog.Sessions.View)]`
 > (`"Sessions.View"`). CRUD actions sit behind distinct codes:
@@ -1216,6 +1216,7 @@ _Last reviewed:_ 2026-07-31 by Claude (FR-702 re-scoped by the owner from a Riya
 | E2E-SES-057 | A session's **Arrival grace (minutes)** override opens a session its hall would refuse; blank inherits the hall | happy | P0 | authored ✓ (`ArrivalGraceResolutionTests.A_session_override_opens_a_session_its_hall_would_refuse`) |
 | E2E-SES-058 | A session override of **0** overrules a wide hall grace — a deliberate zero is not read as "inherit" | validation | P0 | authored ✓ (`ArrivalGraceResolutionTests.A_session_override_of_zero_beats_a_wide_hall_grace`) |
 | E2E-SES-059 | The admin session row reports the **resolved** grace the door will use, so the Hall-Arrivals picker and the server agree | happy | P0 | authored ✓ (`ArrivalGraceResolutionTests.The_admin_session_row_reports_the_grace_the_door_will_use`) |
+| E2E-SES-060 | Editing a session **saves** its arrival-grace override, and an existing override survives an edit that does not change it | happy | P0 | authored ✓ (`ArrivalGraceResolutionTests.An_edit_can_set_an_override_and_the_door_honours_it`, `.An_override_survives_an_edit_that_does_not_change_it`) |
 
 ### E2E-SES-057 — one keynote opens early, the hall is untouched
 
@@ -1292,4 +1293,37 @@ Feature: The admin session row reports the grace the door will actually use
     # merely inherits onto it as an override.
 ```
 
-_Last reviewed:_ 2026-08-04 by Claude (D-839 — per-session arrival-grace override; E2E-SES-057..059).
+### E2E-SES-060 — the edit actually saves, and does not wipe itself later
+
+```gherkin
+Feature: A session's arrival-grace override survives being edited
+  As an Administrator
+  I want the override I type to be stored, and to still be there after I edit
+    something else on the same session
+  So that a hall does not quietly narrow its doors back to the default
+
+  Background:
+    Given I am signed in to the Control Panel as an Administrator
+    And a hall "GR-MAIN" has no arrival grace of its own (it inherits the global 15)
+
+  Scenario: setting the override on an existing session reaches the door
+    Given a session "GRS-KEYNOTE" in that hall starts in 40 minutes
+    And it has no arrival-grace override
+    And an approved visitor scanned at that hall door is refused SESSION_NOT_LIVE
+    When I open the session, set "Arrival grace (minutes)" to 60 and save
+    Then the save succeeds
+    And the same visitor scanned at that hall door is admitted
+    # Asserted through the DOOR, not the stored row. Before D-842 the Control
+    # Panel showed "Session ... was updated" and the column stayed NULL, because
+    # the API's own route DTO omitted the field and the PUT bound it to null.
+
+  Scenario: an existing override is not wiped by an unrelated edit
+    Given a session "GRS-KEYNOTE" already has its override set to 60
+    When I open the session, change nothing but the title, and save
+    Then the session still reports arrivalGraceMinutesOverride = 60
+    # The worse half of the same defect: the form loads the stored value and
+    # echoes it back on save, so before D-842 ANY edit reset it to null with no
+    # error, no toast and nothing in the audit trail.
+```
+
+_Last reviewed:_ 2026-08-04 by Claude (D-842 — the PUT round-trip the D-839 field was missing; E2E-SES-060).
