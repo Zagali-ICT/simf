@@ -61,6 +61,20 @@ $vars = [ordered]@{
     "SIMF_Jwt__AccessTokenMinutes"              = ""   # default 5   (NCA cap, D-443)
     "SIMF_Jwt__SessionLifetimeHours"            = ""   # default 24  (NCA cap, D-443)
 
+    # Ops override for the access-token lifetime, in HOURS. Bound to
+    # Session:TimeoutHours and CLAMPED to SessionLifetimeHours above, so it can
+    # never breach the D-443 24h ceiling. It was deliberately left out of this
+    # template so the shipped posture stays NCA-compliant; it is listed now,
+    # still EMPTY, because leaving it invisible is how a server ends up with a
+    # knob nobody can find. Empty = the NCA default (5 minutes) stands.
+    #
+    # It does NOT lengthen a session that is failing for another reason: a token
+    # rejected at validation is rejected however long it was minted to live
+    # (D-848). Reach for this only for a genuinely longer idle window, and know
+    # that permission codes are baked into the JWT, so a revoked role keeps
+    # working until the token lapses.
+    "SIMF_Session__TimeoutHours"                = ""   # default empty => 5 min; max = SessionLifetimeHours
+
     # --- Encryption keys (base64 32-byte AES) ---------------------------------
     # SIMF_FileStorage__EncryptionKey missing => THE API DOES NOT BOOT. It is the
     # KEK for the centralized file store (D-568). Two guards fire: the Production

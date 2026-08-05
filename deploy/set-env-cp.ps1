@@ -29,6 +29,32 @@ $vars = [ordered]@{
     "SIMF_Api__BaseUrl"                     = "https://localhost:12340/"   # API loopback binding (avoids NAT hairpin); MUST be HTTPS outside Development
     "SIMF_Api__AllowSelfSignedCertificate"  = "true"                       # accept the API's self-signed cert (host-mismatch on localhost)
     "SIMF_Storage__LogDirectory"            = "C:\SIMF\Storage\logs"       # per-app logs under {dir}/SIMF.ControlPanel/
+
+    # Auth-cookie IDLE lifetime, in hours (Session:LifetimeHours). Empty = the
+    # 8h default. Listed explicitly because it was previously invisible here
+    # while the API carries a DIFFERENTLY NAMED knob (Session:TimeoutHours) --
+    # two keys, one section, neither documented, which is how a server acquires
+    # settings nobody can account for. The CP reads only this one.
+    #
+    # Raising it cannot extend the real session past the API's absolute cap
+    # (Jwt:SessionLifetimeHours, D-443 = 24h): the refresh token still expires
+    # there and forces re-login. Use it for a SHORTER idle window.
+    "SIMF_Session__LifetimeHours"           = ""                           # default 8; cannot exceed the API's 24h cap
+}
+
+# The whole system stores and compares Saudi local wall-clock time (SimfClock,
+# +03:00, no DST). A host on another timezone is a deployment defect worth
+# seeing at provisioning time rather than discovering from a support ticket:
+# scheduled workers, reminder windows and "is this session live" all read a
+# Saudi clock, and anything that hands a naive value to a framework that
+# converts it inherits the host offset. D-848 removed the one such call site
+# that could reject every access token, but the setting is still wrong.
+# Reported, never changed -- altering a server's timezone is the operator's call.
+$tz = tzutil /g
+if ($tz -ne 'Arab Standard Time') {
+    Write-Warning "Host timezone is '$tz', not 'Arab Standard Time' (UTC+03:00). SIMF works on the Saudi clock; verify this is intended."
+} else {
+    Write-Host "host timezone: $tz (UTC+03:00) - correct for SIMF."
 }
 
 $set = 0

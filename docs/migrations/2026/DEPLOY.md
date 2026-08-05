@@ -109,6 +109,7 @@ Lost the authenticator? Use a recovery code, or reset the account through
 
 | Symptom | Cause | Fix |
 |---|---|---|
+| Sign-in succeeds, then every page bounces to `/login` within seconds; the CP console shows 401s on `/account/api/*` | The API rejected the token it had just minted (D-848). Fixed in code; before that fix it happened on any host not at UTC+03:00 | Deploy a build containing D-848. Check the host with `tzutil /g` — no env var fixes this, and raising `SIMF_Session__TimeoutHours` does nothing because a rejected token is rejected however long it was minted to live |
 | Arabic garbled, or `Msg 2628 … would be truncated` while seeding | `sqlcmd` read the file as ANSI | Use `Run-AppSeeds.ps1`; keep the UTF-8 BOM on the seeds |
 | `sqlcmd: 'C': Unknown Option` | server has pre-17 `sqlcmd` | Already handled — the runner probes for `-C` |
 | Photos 404 but rows exist | photo bytes never copied | Step 3's `robocopy` |
