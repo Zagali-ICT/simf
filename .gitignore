@@ -8,6 +8,16 @@ set-env-prod.ps1
 set-env-*.local.ps1
 deploy/set-env-api.ps1
 
+# ── Runtime file store — personal data, NEVER commit ───────────────
+# App_Data/files is the filesystem storage root (FilesystemFileStorageProvider),
+# so anything a local run uploads lands here: avatars, ID-document scans,
+# speaker photos. 55 such files had been committed by accident and were
+# untracked on 2026-08-05; they are runtime artifacts, referenced by nothing in
+# source, and an ID scan has no business in source control. Ignored so a
+# `git add` on the project directory cannot sweep them back in.
+src/Backend/SIMF.Api/App_Data/files/
+src/Backend/SIMF.Api/App_Data/recordings/
+
 # ── .NET build output ──────────────────────────────────────────────
 [Bb]in/
 [Oo]bj/
