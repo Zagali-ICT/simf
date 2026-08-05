@@ -29,7 +29,7 @@ public sealed class DeviceKey
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>A real foreign key to <see cref="SimfUser.Id"/>: the user lives
+    /// <summary>A real foreign key to <c>SimfUser.Id</c>: the user lives
     /// in the same Identity database. Deleting the user cascades to their
     /// keys.</summary>
     public Guid UserId { get; set; }

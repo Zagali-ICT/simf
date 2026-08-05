@@ -41,7 +41,7 @@ public interface IDelegationMeetingRequestService
     /// the app. The exact mirror of <see cref="ConfirmByOtherPartyAsync"/>: same
     /// authorization model (an eligible member of the target delegation), same audit
     /// event, same notification treatment. Flips AwaitingSpeaker →
-    /// <see cref="MeetingRequestStatus.Rejected"/> via a race-safe conditional update and
+    /// <see cref="SIMF.Common.Enums.MeetingRequestStatus.Rejected"/> via a race-safe conditional update and
     /// releases the held hall slot, so the target is no longer trapped between confirming
     /// and waiting for an admin cancel. 403 when the caller is not an eligible member;
     /// 409 when the request is not awaiting confirmation.</summary>
@@ -61,7 +61,7 @@ public interface IDelegationMeetingRequestService
         Guid requestId, CancellationToken cancellationToken = default);
 
     /// <summary>Bi-Meeting rework — an operator checks the meeting in at the hall,
-    /// flipping a confirmed (Accepted) meeting to <see cref="MeetingRequestStatus.Done"/>
+    /// flipping a confirmed (Accepted) meeting to <see cref="SIMF.Common.Enums.MeetingRequestStatus.Done"/>
     /// and stamping <c>CheckedInAt</c>/<c>CheckedInByUserId</c>. 409 when the meeting is
     /// not confirmed.</summary>
     Task<AdminDelegationMeetingRequestDetail> CheckInAsync(

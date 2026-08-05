@@ -16,7 +16,7 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 /// <para>A target that fails either guard returns <c>null</c>, which the
 /// endpoint then translates to a 404. The 404-for-all-mismatch stance
 /// is load-bearing — it stops an admin enumerating approved users or
-/// cross-type ids via error-code diff (same guard <see cref="D-113"/>
+/// cross-type ids via error-code diff (the same guard <c>D-113</c>
 /// took for type-smuggling).</para>
 /// </summary>
 public interface IAdminApprovalReadService

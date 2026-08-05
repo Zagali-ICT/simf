@@ -6,7 +6,7 @@ namespace SIMF.Domain.Profiles;
 
 /// <summary>
 /// The per-account information captured at registration. One row per non-Admin
-/// <see cref="SimfUser"/>, absent until the user fills the form in or an admin
+/// <see cref="IdentityAccess.SimfUser"/>, absent until the user fills the form in or an admin
 /// creates a stub on their behalf; Admin-typed users carry no profile.
 ///
 /// <para><see cref="ProfileTypeId"/> hangs off the profile rather than off the
@@ -191,7 +191,7 @@ public class UserProfile : BaseAuditEntity
     /// <summary>
     /// The short, opaque event-entry identifier carried in the participant's QR
     /// code, which staff scan to check them in. Minted by <c>IQrIdMinter</c> the
-    /// moment the owning account's <see cref="SimfUser.AccountState"/> reaches
+    /// moment the owning account's <see cref="IdentityAccess.SimfUser.AccountState"/> reaches
     /// <see cref="AccountState.Approved"/>, so it stays null until the account is
     /// approved. Twelve characters of the Crockford base32 alphabet (no 0, O, 1,
     /// I, L or U), unique across the system.
@@ -200,7 +200,7 @@ public class UserProfile : BaseAuditEntity
 
     /// <summary>
     /// The admin's reason for rejecting the account, written when the owning
-    /// account's <see cref="SimfUser.AccountState"/> reaches
+    /// account's <see cref="IdentityAccess.SimfUser.AccountState"/> reaches
     /// <see cref="AccountState.Rejected"/> and cleared on a later approval. Up to
     /// 500 characters, matching the <c>AdminRejectRequest.Reason</c> validator.
     /// </summary>

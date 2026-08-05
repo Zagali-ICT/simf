@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.PublicRelations;
 
 /// <summary>D-199 — admin CRUD over <see cref="News"/> (PR / marketing).
-/// Mirrors <see cref="SIMF.Infrastructure.Delegations.AdminDelegationService"/>:
+/// Mirrors <c>AdminDelegationService</c>:
 /// built on <see cref="SimfAppDbContext"/>, writes one audit row per mutation,
 /// stamps timestamps via <see cref="TimeProvider"/>, and guards a unique
 /// English title with a 409. The admin list returns every row (including

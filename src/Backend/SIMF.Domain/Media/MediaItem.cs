@@ -5,7 +5,7 @@ namespace SIMF.Domain.Media;
 
 /// <summary>
 /// One item in the app's media gallery, an image or a video, managed from the
-/// Control Panel and soft-deleted through <see cref="IsActive"/>.
+/// Control Panel and soft-deleted through <see cref="BaseAuditEntity.IsActive"/>.
 ///
 /// <para>Binary bytes live outside this row, as they do for avatars and identity
 /// documents. An uploaded image is addressed by <see cref="ImageFileId"/> in the

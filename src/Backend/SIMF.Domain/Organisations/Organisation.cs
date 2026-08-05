@@ -6,7 +6,7 @@ namespace SIMF.Domain.Organisations;
 /// A Saudi company / organisation row in the bilingual organisations lookup.
 /// Populated by the government Excel import (CP "Import" affordance) and also
 /// editable one-by-one from the Control Panel. Bilingual like
-/// <c>Booth</c> (NameAr / NameEn), soft-deleted via <see cref="IsActive"/>,
+/// <c>Booth</c> (NameAr / NameEn), soft-deleted via <see cref="BaseAuditEntity.IsActive"/>,
 /// and audited through the row-audit trail by the admin service.
 ///
 /// <para><see cref="CommercialRegistration"/> is the company's commercial

@@ -19,7 +19,7 @@ namespace SIMF.Api.Tests;
 
 /// <summary>
 /// H25 — D-085: end-to-end visitor lifecycle test (Sprint 1 §3.5).
-/// Drives the full chain in one <see cref="Fact"/> so a cross-hop seam
+/// Drives the full chain in one <c>Fact</c> so a cross-hop seam
 /// regression (e.g. an Approved visitor cannot sign in on the App
 /// audience because of a stamp/claim drift) is caught at the boundary
 /// between any two hops, not lost in the gap between two per-hop

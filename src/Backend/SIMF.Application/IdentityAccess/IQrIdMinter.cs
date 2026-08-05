@@ -10,7 +10,7 @@ namespace SIMF.Application.IdentityAccess;
 /// idempotent (a second mint on an already-set profile is a no-op).
 ///
 /// <para>D-106: takes a <see cref="UserProfile"/> rather than a
-/// <see cref="SimfUser"/> because the QR lives on the profile row now
+/// <see cref="SIMF.Domain.IdentityAccess.SimfUser"/> because the QR lives on the profile row now
 /// (it is profile-scope — Admin-typed accounts neither attend nor get
 /// a QR). The caller ensures a UserProfile row exists for the user
 /// before minting.</para>

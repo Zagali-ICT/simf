@@ -26,7 +26,7 @@ public sealed class AdminResetTwoFactorRequest
 /// <summary>
 /// The body of <c>POST /api/v1/admin/admins</c> (P7c — renamed from
 /// <c>/admin/staff</c>). Creates a new Control Panel <b>Admin</b> user
-/// — the only <see cref="SIMF.Domain.IdentityAccess.UserType"/> that
+/// — the only <see cref="SIMF.Common.Enums.UserType"/> that
 /// carries RBAC roles per the P7 model (decision D-048). The new
 /// account lands in <c>PendingApproval</c> with no password; the user
 /// receives a 7-day invitation code (D-042). Approval is
@@ -592,7 +592,7 @@ public sealed class AdminWalkInRegistrationRequest
     /// chars). The column already exists on <c>UserProfile</c> (D-371).</summary>
     public string? PlateNumber { get; set; }
 
-    /// <summary>B3 — D-221 (الجهة): the picked <see cref="Organisation"/> id.
+    /// <summary>B3 — D-221 (الجهة): the picked <c>Organisation</c> id.
     /// Required at the walk-in desk (the validator rejects null / empty); the
     /// service rejects an unknown / inactive id with <c>OrganisationInvalid</c>.</summary>
     public Guid? OrganisationId { get; set; }

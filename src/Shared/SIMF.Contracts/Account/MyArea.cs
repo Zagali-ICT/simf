@@ -81,14 +81,15 @@ public sealed record MyAreaCalendarEvent(
 /// The "my sessions" list — App "تفاصيل الجلسات" (Figma 1388:9067), reached from
 /// the My-Area "my sessions" counter. The user's booked / joined sessions (the
 /// same active seat-bookings the dashboard counts), each enriched with the
-/// per-user heart (<see cref="IsFavourite"/>) and whether the user actually
-/// arrived (<see cref="Attended"/>, derived from <c>HallAttendance</c> — no
-/// schema). The app partitions these into the four tabs client-side from the
-/// device clock: القادمة (upcoming = <see cref="Start"/> in the future),
-/// حضرتها (<see cref="Attended"/>), فاتتني (ended &amp; not attended), and الأرشيف
-/// (recorded / published — <see cref="Status"/>). Read-only aggregate, own
-/// <c>sub</c>; no migration (D-249 pattern). <see cref="SessionFavourite"/>
-/// powers the heart.
+/// per-user heart (<see cref="MyAreaSessionItem.IsFavourite"/>) and whether the
+/// user actually arrived (<see cref="MyAreaSessionItem.Attended"/>, derived from
+/// <c>HallAttendance</c> — no schema). The app partitions these into the four
+/// tabs client-side from the device clock: القادمة (upcoming =
+/// <see cref="MyAreaSessionItem.Start"/> in the future), حضرتها
+/// (<see cref="MyAreaSessionItem.Attended"/>), فاتتني (ended &amp; not attended),
+/// and الأرشيف (recorded / published — <see cref="MyAreaSessionItem.Status"/>).
+/// Read-only aggregate, own <c>sub</c>; no migration (D-249 pattern).
+/// <c>SessionFavourite</c> powers the heart.
 /// </summary>
 public sealed record MyAreaSessions(IReadOnlyList<MyAreaSessionItem> Items);
 

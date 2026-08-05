@@ -35,14 +35,14 @@ public interface ISpeakerMeetingRequestService
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>Bi-Meeting rework — an operator checks the meeting in at the hall,
-    /// flipping a confirmed (Accepted) meeting to <see cref="MeetingRequestStatus.Done"/>
+    /// flipping a confirmed (Accepted) meeting to <see cref="SIMF.Common.Enums.MeetingRequestStatus.Done"/>
     /// and stamping <c>CheckedInAt</c>/<c>CheckedInByUserId</c>. 409 when the meeting is
     /// not confirmed.</summary>
     Task<AdminSpeakerMeetingRequestDetail> CheckInAsync(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>QA B20 — put a Rejected / Cancelled request back to a clean
-    /// <see cref="MeetingRequestStatus.Pending"/> so a mistaken decline or cancel is
+    /// <see cref="SIMF.Common.Enums.MeetingRequestStatus.Pending"/> so a mistaken decline or cancel is
     /// recoverable. 409 for any other status (the slot-holding states must not be
     /// reopened behind the parties' backs). Writes a
     /// <c>SpeakerMeetingRequest.Reopened</c> audit entry.</summary>

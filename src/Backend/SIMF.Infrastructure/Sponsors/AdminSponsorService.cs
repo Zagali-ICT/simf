@@ -13,7 +13,7 @@ namespace SIMF.Infrastructure.Sponsors;
 
 /// <summary>D-199 (Mockup page 23) — admin CRUD over <see cref="Sponsor"/>.
 /// Mirrors AdminDelegationService structure (validation → mutate → save →
-/// audit). Soft-delete via <see cref="Sponsor.Deactivate"/>.</summary>
+/// audit). Soft-delete via <see cref="SIMF.Domain.Common.BaseAuditEntity.Deactivate"/>.</summary>
 internal sealed class AdminSponsorService(
     SimfAppDbContext appDbContext,
     IAssetService assetService,

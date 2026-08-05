@@ -13,7 +13,7 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Configuration;
 
 /// <summary>D-768 — stores + serves the singleton Organization Profile's hero
-/// background video through the centralized <see cref="StoredFile"/> store
+/// background video through the centralized <see cref="SIMF.Domain.Files.StoredFile"/> store
 /// (<c>FileService.OrganizationHeroVideo</c>: public, plaintext, seekable). Upload
 /// streams the bytes to disk (never buffered whole), retires any prior video, and
 /// points <c>BackgroundVideoUrl</c> at the served <c>.mp4</c> route so the app +

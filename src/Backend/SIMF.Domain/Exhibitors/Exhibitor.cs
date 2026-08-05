@@ -7,7 +7,7 @@ namespace SIMF.Domain.Exhibitors;
 /// An exhibiting company, created in the Control Panel only. The name comes
 /// first and login accounts are provisioned under it afterwards, each tracked as
 /// an <see cref="ExhibitorMembership"/>. Soft-deleted through
-/// <see cref="IsActive"/>, which the admin grids and pickers filter on.
+/// <see cref="BaseAuditEntity.IsActive"/>, which the admin grids and pickers filter on.
 /// </summary>
 public sealed class Exhibitor : BaseAuditEntity
 {

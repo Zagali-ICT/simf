@@ -73,7 +73,7 @@ public interface IAdminUserBulkService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Like <see cref="DuplicateUserAsync"/> but refuses any source whose
+    /// Like <see cref="IAdminUserProvisioningService.DuplicateUserAsync"/> but refuses any source whose
     /// <see cref="UserType"/> doesn't match <paramref name="kind"/> — returns
     /// 404 (same code as a missing source) so cross-type duplication probes
     /// don't reveal whether a wrong-type id exists. D-186:

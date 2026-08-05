@@ -10,7 +10,7 @@ namespace SIMF.Contracts.UserProfile;
 /// already assigned a subtype).</summary>
 public sealed class UserProfileResponse
 {
-    /// <summary>The <see cref="ProfileType"/> id, when one is assigned.
+    /// <summary>The <c>ProfileType</c> id, when one is assigned.
     /// P8 moved this off <c>SimfUser</c>.</summary>
     public Guid? ProfileTypeId { get; set; }
 
@@ -55,7 +55,7 @@ public sealed class UserProfileResponse
     /// QR id.</summary>
     public string? ReferenceNumber { get; set; }
 
-    /// <summary>B3 — D-221 (الجهة): the picked <see cref="Organisation"/> id,
+    /// <summary>B3 — D-221 (الجهة): the picked <c>Organisation</c> id,
     /// or null when the user has not picked one.</summary>
     public Guid? OrganisationId { get; set; }
 
@@ -87,7 +87,7 @@ public sealed class UserProfileResponse
     public string? QrId { get; set; }
 
     /// <summary>D-729 (owner item 15) — true when the account's assigned
-    /// <see cref="ProfileType"/> is a VIP tier
+    /// <c>ProfileType</c> is a VIP tier
     /// (<c>AllowsVipMeetingSlots</c>, i.e. VVIP / VIP). The app uses it to
     /// show the "request a speaker meeting" affordance to VIP guests only;
     /// the endpoint enforces the same rule server-side. Append-only field.</summary>
@@ -142,7 +142,7 @@ public sealed class UpsertUserProfileRequest
     public Guid? ProfileTypeId { get; set; }
 
     /// <summary>The picked interest ids (P9 — D-050). Required: 1-10
-    /// active <see cref="Interest"/> ids; the validator rejects empties /
+    /// active <c>UserInterest</c> ids; the validator rejects empties /
     /// duplicates / unknown ids / deactivated ids.</summary>
     public IList<Guid> InterestIds { get; set; } = new List<Guid>();
 
@@ -170,7 +170,7 @@ public sealed class UpsertUserProfileRequest
     public string? PlateNumber { get; set; }
 
     /// <summary>B3 — D-221 (الجهة): the user's self-picked
-    /// <see cref="Organisation"/> id (from <c>GET /api/v1/app/organisations</c>).
+    /// <c>Organisation</c> id (from <c>GET /api/v1/app/organisations</c>).
     /// Optional; the service rejects an unknown / inactive id.</summary>
     public Guid? OrganisationId { get; set; }
 

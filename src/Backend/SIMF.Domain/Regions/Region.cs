@@ -6,7 +6,7 @@ namespace SIMF.Domain.Regions;
 /// One administrative region in the bilingual regions lookup (e.g. the 13
 /// official Saudi regions). A small, stable reference table the app reads to
 /// populate region pickers. Bilingual like <c>Organisation</c> (NameArabic /
-/// Name), soft-deleted via <see cref="IsActive"/>, and audited through the
+/// Name), soft-deleted via <see cref="BaseAuditEntity.IsActive"/>, and audited through the
 /// row-audit trail by the admin service.
 ///
 /// <para><see cref="Code"/> is the stable lookup key (e.g. "riyadh"). Unique

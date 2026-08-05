@@ -21,7 +21,7 @@ public sealed class RejectVisitorEndpoint(IAdminUserApprovalService adminAccount
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Reject), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
-            "Reject a pending visitor. Requires the Administrator role (P7b).");
+            "Reject a pending visitor. Requires the Visitors.Reject permission.");
     }
 
     public override async Task HandleAsync(RejectRouteRequest req, CancellationToken ct)

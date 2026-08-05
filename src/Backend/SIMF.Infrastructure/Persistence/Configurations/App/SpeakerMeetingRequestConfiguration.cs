@@ -8,7 +8,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <summary>D-269 (Mockup page 20) — SpeakerMeetingRequest EF config. Real FK
 /// to Speaker with cascade so a deleted speaker removes its pending requests;
 /// RequestedByUserId is a logical FK to SimfUser on the Identity DB (no cross-DB
-/// relation, D-157). Mirrors <see cref="MeetingRequestConfiguration"/>.</summary>
+/// relation, D-157).</summary>
 internal sealed class SpeakerMeetingRequestConfiguration
     : IEntityTypeConfiguration<SpeakerMeetingRequest>
 {

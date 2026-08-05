@@ -23,7 +23,7 @@ public sealed class ApproveVisitorEndpoint(IAdminUserApprovalService adminAccoun
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Approve), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
-            "Approve a pending visitor. Requires the Administrator role (P7b).");
+            "Approve a pending visitor. Requires the Visitors.Approve permission.");
     }
 
     public override async Task HandleAsync(ApproveVisitorRequest req, CancellationToken ct)

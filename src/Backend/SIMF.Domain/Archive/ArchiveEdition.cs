@@ -5,7 +5,7 @@ namespace SIMF.Domain.Archive;
 /// <summary>
 /// A previous SIMF edition, one row per forum year, shown on the public archive
 /// screen and managed from the Control Panel. The public list is gated by the
-/// archive-visibility operations toggle as well as by <see cref="IsActive"/>:
+/// archive-visibility operations toggle as well as by <see cref="BaseAuditEntity.IsActive"/>:
 /// with the toggle off the endpoint returns nothing, however many active
 /// editions exist.
 /// </summary>

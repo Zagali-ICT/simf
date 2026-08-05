@@ -4,7 +4,7 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Profiles;
 
 /// <summary>
-/// A subtype an admin assigns to a <see cref="SimfUser"/>: VVIP, Gold,
+/// A subtype an admin assigns to a <see cref="IdentityAccess.SimfUser"/>: VVIP, Gold,
 /// Exhibitor, Staff and so on. The rows are curated from the Control Panel at
 /// runtime, so a new subtype is a row insert rather than a code change.
 ///

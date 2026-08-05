@@ -7,7 +7,7 @@ namespace SIMF.Domain.Sponsors;
 /// One event sponsor, shown on the public sponsors screen and managed from the
 /// Control Panel. The public surface groups by <see cref="Tier"/>, Platinum
 /// first, and orders within a tier by <see cref="DisplayOrder"/> then
-/// <see cref="NameArabic"/>. Soft-deleted through <see cref="IsActive"/>, which
+/// <see cref="NameArabic"/>. Soft-deleted through <see cref="BaseAuditEntity.IsActive"/>, which
 /// the public list filters on.
 /// </summary>
 public sealed class Sponsor : BaseAuditEntity

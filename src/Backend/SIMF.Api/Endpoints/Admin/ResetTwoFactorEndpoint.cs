@@ -48,7 +48,7 @@ public static class AuthorizationPolicies
 {
     /// <summary>
     /// Requires the caller to hold the Administrator role. Per the P7
-    /// model (decision D-048) only <see cref="SIMF.Domain.IdentityAccess.UserType.Admin"/>
+    /// model (decision D-048) only <see cref="SIMF.Common.Enums.UserType.Admin"/>
     /// users carry RBAC roles at all, so this is **the** policy every
     /// CP endpoint uses today. The P4-era <c>TeamMember</c> policy was
     /// removed by P7b when the reviewer roles (Staff / Scientific /

@@ -99,11 +99,11 @@ public interface IUserProfileService
     /// <summary>D-161 — resolves the mobile-app role that the
     /// <see cref="IJwtTokenService.CreateAccessToken"/> claim
     /// <c>mobile_app_role</c> should carry for this user. Visitors are
-    /// always <see cref="MobileAppRole.Visitor"/>; Others look up the
+    /// always <see cref="SIMF.Common.Enums.MobileAppRole.Visitor"/>; Others look up the
     /// assigned <c>ProfileType.MobileAppRole</c> (or
-    /// <see cref="MobileAppRole.None"/> when no profile-type is assigned
+    /// <see cref="SIMF.Common.Enums.MobileAppRole.None"/> when no profile-type is assigned
     /// or it explicitly says None); Admins are
-    /// <see cref="MobileAppRole.None"/> (admins do not use the mobile
+    /// <see cref="SIMF.Common.Enums.MobileAppRole.None"/> (admins do not use the mobile
     /// app).</summary>
     Task<SIMF.Common.Enums.MobileAppRole> ResolveMobileAppRoleAsync(
         Guid userId, CancellationToken cancellationToken = default);

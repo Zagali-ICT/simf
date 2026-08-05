@@ -23,7 +23,7 @@ public sealed class UserIdDocumentUploadRequest
 /// WebP, up to 5 MB, content-type + magic-byte verified before the
 /// bytes touch the storage layer. The storage layer then encrypts the
 /// file with AES-GCM under the per-installation key (see
-/// <see cref="SIMF.Infrastructure.Identity.EncryptedUserIdDocumentStorage"/>).
+/// <c>EncryptedUserIdDocumentStorage</c>).
 /// </summary>
 public sealed class UserIdDocumentUploadEndpoint(
     IUserProfileService service,
