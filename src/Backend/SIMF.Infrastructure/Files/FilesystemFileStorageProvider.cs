@@ -38,11 +38,22 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
         ILogger<FilesystemFileStorageProvider> logger)
     {
         var configured = options.Value.RootPath;
-        _root = Path.GetFullPath(string.IsNullOrWhiteSpace(configured) ? "App_Data/files" : configured);
+        _root = Path.GetFullPath(string.IsNullOrWhiteSpace(configured) ? DefaultRoot() : configured);
         Directory.CreateDirectory(_root);
         _cipher = cipher;
         _logger = logger;
     }
+
+    /// <summary>Where the store lives when <c>FileStorage:RootPath</c> is unset:
+    /// a SIMF folder under the machine's shared application-data directory
+    /// (<c>C:\ProgramData\SIMF\files</c> on Windows). Absolute on purpose, so an
+    /// unconfigured run writes to the machine's data store rather than to
+    /// whatever directory the process happens to have started in.</summary>
+    internal static string DefaultRoot() =>
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "SIMF",
+            "files");
 
     public async Task<FileWriteResult> WriteAsync(
         FileService service, Guid fileId, string extension, byte[] content, bool encrypt,
