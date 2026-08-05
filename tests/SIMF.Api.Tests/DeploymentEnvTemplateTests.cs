@@ -101,6 +101,15 @@ public sealed class DeploymentEnvTemplateTests
         // The minimum set: the two databases, the token key, the three
         // Production boot gates, the meeting-link origin, the two seed
         // passwords, the AI keys and the storage paths.
+        //
+        // Storage__AvatarBase and Storage__UserIdDocumentBase were required
+        // here until 2026-08-05. They named the roots of bespoke filesystem
+        // stores that D-568 replaced with the unified StoredFile store, and by
+        // then nothing read either one - AvatarBase was read only by its own
+        // boot-gate validator. Both were removed from StorageOptions and from
+        // the template, so requiring them here would pin a key that configures
+        // nothing. The file store's own root, FileStorage__RootPath, is still
+        // required below and is what actually decides where the bytes land.
         foreach (var key in new[]
                  {
                      "SIMF_ConnectionStrings__SimfIdentityDb",
@@ -115,8 +124,6 @@ public sealed class DeploymentEnvTemplateTests
                      "SIMF_Ai__Gemini__ApiKey",
                      "SIMF_Ai__Anthropic__ApiKey",
                      "SIMF_Ai__OpenAi__ApiKey",
-                     "SIMF_Storage__AvatarBase",
-                     "SIMF_Storage__UserIdDocumentBase",
                      "SIMF_Storage__LogDirectory",
                      "SIMF_FileStorage__RootPath",
                  })
