@@ -144,7 +144,7 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
     private async Task<(string Token, string DisplayName)> SeedApprovedVisitorAsync()
     {
         var email = $"asker-{Guid.NewGuid():N}@simf.test";
-        var displayName = "Asker " + Guid.NewGuid().ToString("N")[..4];
+        var displayName = "Asker " + Guid.NewGuid().ToString("N")[..8];
         using (var scope = _factory.Services.CreateScope())
         {
             var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();

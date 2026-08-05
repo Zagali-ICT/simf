@@ -346,7 +346,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
         var profileType = new UserProfileType
         {
             Id = Guid.NewGuid(),
-            Name = "VVIP " + Guid.NewGuid().ToString("N")[..4], NameArabic = "كبار الشخصيات",
+            Name = "VVIP " + Guid.NewGuid().ToString("N")[..8], NameArabic = "كبار الشخصيات",
             PageColor = "#FFD700",
             IsForVisitor = true,
             MobileAppRole = MobileAppRole.None, IsActive = true, CreatedAt = now,

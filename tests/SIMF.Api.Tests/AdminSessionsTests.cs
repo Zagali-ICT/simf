@@ -1210,8 +1210,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         {
             Id = Guid.NewGuid(),
             Code = "SPK-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
-            Name = "Speaker " + Guid.NewGuid().ToString("N")[..4],
-            NameArabic = "متحدّث " + Guid.NewGuid().ToString("N")[..4],
+            Name = "Speaker " + Guid.NewGuid().ToString("N")[..8],
+            NameArabic = "متحدّث " + Guid.NewGuid().ToString("N")[..8],
             DisplayOrder = 0,
             IsActive = true,
             CreatedAt = SimfClock.Now,

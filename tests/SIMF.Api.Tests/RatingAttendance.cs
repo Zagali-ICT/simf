@@ -83,7 +83,7 @@ internal static class RatingAttendance
             var profileType = new UserProfileType
             {
                 Id = Guid.NewGuid(),
-                Name = "Visitor " + Guid.NewGuid().ToString("N")[..4],
+                Name = "Visitor " + Guid.NewGuid().ToString("N")[..8],
                 NameArabic = "زائر",
                 PageColor = "#0EA5E9",
                 IsForVisitor = true,
