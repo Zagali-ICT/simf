@@ -10,6 +10,24 @@ Branch delivered: `chore/clean-code-hardening-2026-07` @ `15bef3d4` (3 fix commi
 > "Not executed / untested scope". Secret values are redacted. Nothing was run
 > against production; `tools/smoke/smoke.sh` was never executed.
 
+> **SUPERSEDED 2026-08-05 - the red baseline described below no longer exists.**
+> A full `dotnet test SIMF.slnx -c Release` on `feat/cp-dashboard-reporting`
+> @ `448f3167` returned **3,214 passed, 0 failed** (227 E2E skipped for want of
+> the QA stack): Api.Tests 2304/2304, ControlPanel 588/588, Web 140/140,
+> Application 119/119, ApiClient 50/50, Domain 5/5. Every failure recorded in
+> this report - the 25 Api.Tests (D-753 `BusinessMeetingsTests` x19,
+> `SpeakerAvailabilityTests` x4, the two seeder tests) and the 3
+> `PermissionCatalogBaselineTests` - now passes. The figures below stand as the
+> record of 2026-07-24; do **not** use them as a current baseline, and do not
+> "subtract the known-red suites" when verifying a change. The suite is green,
+> so any failure is a real regression.
+>
+> One genuine instability remains, and it is not what this report recorded:
+> several tests generated names from four hex characters
+> (`Guid.NewGuid().ToString("N")[..4]`, a 65,536-value space) against unique
+> indexes, so a long run collided at random. Fixed 2026-08-05 by widening those
+> six generators to eight characters.
+
 ---
 
 ## 1. Executive summary
