@@ -34,7 +34,7 @@ public sealed class OfflineBadgeBatchEndpoint(IOfflineBadgeUploadService service
         Options(routeBuilder => routeBuilder.RequireRateLimiting(
             RateLimitOptions.OperationalPolicy));
         Summary(summary => summary.Summary =
-            "Uploads a batch of badges registered at an offline desk (D-819).");
+            "Uploads a batch of badges registered at an offline desk.");
     }
 
     public override async Task HandleAsync(

@@ -54,7 +54,7 @@ internal static class AiAuditDetail
                 Encoding.UTF8.GetBytes("simf-ai-prompt-hash-dev"));
             _hmacKeyIsDevFallback = true;
             logger?.LogWarning(
-                "D-181 — AI prompt hash secret not configured; using dev "
+                "AI prompt hash secret not configured; using dev "
                 + "fallback key. Set Ai:PromptHash:Secret in production.");
         }
         else

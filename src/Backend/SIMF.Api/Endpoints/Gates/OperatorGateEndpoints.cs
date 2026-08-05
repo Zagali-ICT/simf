@@ -47,7 +47,7 @@ public sealed class GateOfflineConfigEndpoint(IGateOperatorService service)
         Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Gates");
         Summary(summary => summary.Summary =
-            "Offline scanning rules + badge key for this operator's gates (D-820).");
+            "Offline scanning rules + badge key for this operator's gates.");
     }
 
     public override async Task HandleAsync(CancellationToken ct)

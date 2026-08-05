@@ -36,7 +36,7 @@ public sealed class StaffRegisterVisitorEndpoint(IAdminUserProvisioningService s
         Tags("Staff");
         Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Summary(s => s.Summary =
-            "Staff-app on-site walk-in visitor registration. Creates a PENDING account (D-425); the QR is minted on approval.");
+            "Staff-app on-site walk-in visitor registration. Creates a PENDING account; the QR is minted on approval.");
     }
 
     public override async Task HandleAsync(

@@ -291,7 +291,7 @@ internal sealed class ProgrammeRatingPromptWorker(
             Id = Guid.NewGuid(),
             Key = ProgramEndSettingKey,
             Value = now.ToString("O"),
-            Description = "Internal marker: end-of-programme rating prompts dispatched (D-679).",
+            Description = "Internal marker: end-of-programme rating prompts dispatched.",
             IsActive = false,
             CreatedBy = Guid.Empty,
             CreatedAt = now,

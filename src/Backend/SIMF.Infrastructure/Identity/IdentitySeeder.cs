@@ -526,7 +526,7 @@ public sealed class IdentitySeeder(
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
-            "D-124: renamed seeded ProfileType '{OldName}' to '{NewName}' for {UserType}.",
+            "Renamed seeded ProfileType '{OldName}' to '{NewName}' for {UserType}.",
             oldName, newName, userType);
     }
 
@@ -825,7 +825,7 @@ public sealed class IdentitySeeder(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
-            "D-174: cybersecurity policy content blocks ensured (seeded {NewCount} of {Total}).",
+            "Cybersecurity policy content blocks ensured (seeded {NewCount} of {Total}).",
             seed.Length - existingKeys.Count, seed.Length);
     }
 
@@ -857,7 +857,7 @@ public sealed class IdentitySeeder(
         profile.EventEndDate = ToLocalMidnight(EventEndDate);
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
-            "D-755: OrganizationProfile forum dates set to the real edition ({Start}..{End}).",
+            "OrganizationProfile forum dates set to the real edition ({Start}..{End}).",
             EventStartDate, EventEndDate);
     }
 
@@ -1099,7 +1099,7 @@ public sealed class IdentitySeeder(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
-            "D-377: baseline interests seeded ({Count} rows; table was empty).",
+            "Baseline interests seeded ({Count} rows; table was empty).",
             seed.Length);
     }
 
@@ -1142,7 +1142,7 @@ public sealed class IdentitySeeder(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
-            "D-377: baseline organisations seeded ({Count} rows; table was empty).",
+            "Baseline organisations seeded ({Count} rows; table was empty).",
             seed.Length);
     }
 
@@ -1213,7 +1213,7 @@ public sealed class IdentitySeeder(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
-            "D-377: core app content blocks ensured (seeded {NewCount} of {Total}).",
+            "Core app content blocks ensured (seeded {NewCount} of {Total}).",
             seed.Length - existingKeys.Count, seed.Length);
     }
 
@@ -1302,7 +1302,7 @@ public sealed class IdentitySeeder(
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
         logger.LogInformation(
-            "D-176: default AI prompts ensured (seeded {NewCount} of {Total}).",
+            "Default AI prompts ensured (seeded {NewCount} of {Total}).",
             toSeed, seed.Length);
     }
 

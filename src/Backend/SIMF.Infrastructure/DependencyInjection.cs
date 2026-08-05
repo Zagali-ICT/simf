@@ -75,7 +75,7 @@ public static class DependencyInjection
         {
             throw new InvalidOperationException(
                 "FileStorage:EncryptionKey must be a base64 32-byte AES key in Production — "
-                + "it is the KEK for the centralized file store (D-568). "
+                + "it is the KEK for the centralized file store. "
                 + "Set SIMF_FileStorage__EncryptionKey before starting.");
         }
     }

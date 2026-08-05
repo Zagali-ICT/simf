@@ -28,7 +28,7 @@ public sealed class RegisterVisitorOnSiteEndpoint(IAdminUserProvisioningService 
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Summary(summary => summary.Summary =
-            "On-site walk-in visitor registration. Creates a PENDING account (D-425); the QR is minted on approval.");
+            "On-site walk-in visitor registration. Creates a PENDING account; the QR is minted on approval.");
     }
 
     public override async Task HandleAsync(

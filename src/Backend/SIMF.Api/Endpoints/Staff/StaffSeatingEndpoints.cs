@@ -108,7 +108,7 @@ public sealed class StaffSeatOccupantPhotoEndpoint(
             nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Staff");
         Summary(s => s.Summary =
-            "Staff seating desk: stream the seated guest's photo (authenticated bytes, D-422).");
+            "Staff seating desk: stream the seated guest's photo (authenticated bytes).");
     }
 
     public override async Task HandleAsync(CancellationToken ct)
