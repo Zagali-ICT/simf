@@ -3,38 +3,32 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Badges;
 
 /// <summary>
-/// D-758 (#10 Phase 2) — one bulk-badge generation run, persisted so the set of
-/// placeholder badges minted together can be managed as a unit afterwards
-/// (re-email the QR pack, or revoke the whole batch). Before D-758 the "batch"
-/// existed only in the <c>AdminBulkGenerateBadgesRequest</c> DTO and evaporated
-/// once the loop finished; each generated <see cref="Profiles.UserProfile"/> now
-/// carries a nullable <c>BadgeBatchId</c> back-reference to its row here.
+/// One bulk-badge generation run, kept so the placeholder badges minted together
+/// can be managed as a unit afterwards — the QR pack re-emailed, or the whole
+/// batch revoked. Each generated profile carries a back-reference to its row
+/// here.
 ///
-/// <para>Lives entirely in <c>SIMF_App</c>: the FK from <c>UserProfile</c> is an
-/// intra-database relation (both sides are App entities), so the D-157
-/// Data/Identity separation rule does not apply — this row holds no
-/// Identity-owned data. Soft-deleted via <see cref="BaseAuditEntity.IsActive"/>
-/// (revoke calls <see cref="BaseAuditEntity.Deactivate"/>); never hard-deleted,
-/// so the member profiles' back-reference always resolves.</para>
+/// <para>Soft-deleted rather than removed, so those back-references always
+/// resolve; revoking a batch deactivates it.</para>
 /// </summary>
 public class BadgeBatch : BaseAuditEntity
 {
-    /// <summary>Human-readable breakdown of what the batch minted, e.g.
-    /// <c>"VIP × 3 + Normal × 2"</c>. Rendered as-is in the CP batches list so an
-    /// admin recognises the run without expanding it. Built invariant-culture at
-    /// generate time (Arabic-Indic digits / Hijri would drift a stored string).</summary>
+    /// <summary>A readable breakdown of what the batch minted, such as
+    /// "VIP × 3 + Normal × 2", rendered as-is in the batches list so an admin
+    /// recognises the run without expanding it. Built with the invariant culture,
+    /// because Arabic-Indic digits or a Hijri date would drift once stored.</summary>
     public string CountsSummary { get; set; } = string.Empty;
 
-    /// <summary>Total number of badges minted in this batch — denormalised from the
-    /// member rows so the list does not COUNT the profiles table per row.</summary>
+    /// <summary>Denormalised from the member rows so the list does not count the
+    /// profiles table once per row.</summary>
     public int TotalCount { get; set; }
 
     /// <summary>True when every badge in the batch was flagged as a delegation
-    /// member (وفد) — mirrors <c>AdminBulkGenerateBadgesRequest.IsDelegate</c>.</summary>
+    /// member.</summary>
     public bool IsDelegate { get; set; }
 
-    /// <summary>The organiser address the QR pack was emailed to at generate time,
-    /// if any (the default recipient a re-email pre-fills). Null when the batch was
-    /// generated without an email.</summary>
+    /// <summary>The organiser address the QR pack went to at generate time, which
+    /// a re-email pre-fills. Null when the batch was generated without an
+    /// email.</summary>
     public string? RecipientEmail { get; set; }
 }

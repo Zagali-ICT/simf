@@ -2,36 +2,36 @@ using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Programme;
 
-/// <summary>P2.3 — D-228 (SIMF-FDS-004 §5.3 + §7, FR-407): one presentation
-/// file a <see cref="Speaker"/> presents in a <see cref="Session"/>. The bytes
-/// live OUTSIDE the row (decision D-90, same policy as media images / avatars)
-/// via <c>ISpeakerPresentationStorage</c>; this row keeps only the metadata +
-/// the storage key. Soft-deleted via <see cref="IsActive"/>.</summary>
+/// <summary>
+/// One presentation file a <see cref="Speaker"/> presents in a
+/// <see cref="Session"/>. The bytes live outside the row, behind the
+/// presentation storage abstraction, as they do for media images and avatars;
+/// this row keeps the metadata and the storage key.
+/// </summary>
 public sealed class SpeakerPresentation : BaseAuditEntity
 {
-    /// <summary>The presenting speaker. Real FK (same DbContext), cascade.</summary>
+    /// <summary>Cascade-deleted with the speaker.</summary>
     public Guid SpeakerId { get; set; }
     public Speaker? Speaker { get; set; }
 
-    /// <summary>The session the file is presented in. Real FK (same DbContext),
-    /// restrict (a session in use cannot be hard-deleted; sessions soft-delete).</summary>
+    /// <summary>Delete is restricted here rather than cascading, since sessions
+    /// soft-delete and a session in use should not be removable.</summary>
     public Guid SessionId { get; set; }
     public Session? Session { get; set; }
 
-    /// <summary>The original upload file name, also used as the display title
-    /// (≤256).</summary>
+    /// <summary>The original upload name, which doubles as the display
+    /// title.</summary>
     public string FileName { get; set; } = string.Empty;
 
-    /// <summary>The storage key returned by <c>ISpeakerPresentationStorage</c>
-    /// (a file name under the configured root, ≤256).</summary>
+    /// <summary>The key the storage layer returned, being a file name under the
+    /// configured root.</summary>
     public string StoredFileName { get; set; } = string.Empty;
 
-    /// <summary>The upload MIME type (≤128).</summary>
     public string ContentType { get; set; } = string.Empty;
 
     public long SizeBytes { get; set; }
 
-    /// <summary>The admin (logical FK to SimfUser on the Identity DB) who
-    /// uploaded the file.</summary>
+    /// <summary>The admin who uploaded the file. A bare Guid: the user lives in
+    /// the Identity database.</summary>
     public Guid UploadedByUserId { get; set; }
 }

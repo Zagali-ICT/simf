@@ -1,10 +1,8 @@
 namespace SIMF.Domain.Operations;
 
 /// <summary>
-/// D-166 (gap doc G4, PDF §2.3) — singleton "registration open" gate.
-/// One row, fixed Id (Guid.Empty), updated in place by admins.
-/// Sign-up reads this; sign-up is rejected with REGISTRATION_CLOSED when
-/// <see cref="IsOpen"/> is false.
+/// The "registration open" gate. A single row with a fixed id, updated in place.
+/// Sign-up reads it and is rejected outright while <see cref="IsOpen"/> is false.
 /// </summary>
 public class RegistrationGate
 {
@@ -13,27 +11,26 @@ public class RegistrationGate
 
     public Guid Id { get; set; } = SingletonId;
 
-    /// <summary>True while sign-up is accepted. Admins toggle via the
-    /// admin endpoint; the background worker flips it to false when
-    /// <see cref="AutoClose"/> passes.</summary>
+    /// <summary>True while sign-up is accepted. An admin toggles it, and the
+    /// background worker flips it to false once <see cref="AutoClose"/>
+    /// passes.</summary>
     public bool IsOpen { get; set; } = true;
 
-    /// <summary>Optional Saudi-local moment after which the worker auto-closes
-    /// the gate. Null means "no scheduled close".</summary>
+    /// <summary>The Saudi-local moment after which the worker closes the gate on
+    /// its own. Null schedules no close.</summary>
     public DateTime? AutoClose { get; set; }
 
     public DateTime LastChangedAt { get; set; }
 
-    /// <summary>Admin user id of the last manual toggle. Null when the
-    /// auto-close worker did the flip.</summary>
+    /// <summary>The admin behind the last manual toggle. Null when the
+    /// auto-close worker made the change.</summary>
     public Guid? LastChangedByUserId { get; set; }
 }
 
 /// <summary>
-/// D-166 (gap doc G4, PDF §2.4) — singleton "archive visible" switch.
-/// Drives whether the Flutter app + Website surface the past-events
-/// archive. Public GET endpoint lets unauthenticated callers check the
-/// current state without authentication.
+/// The "archive visible" switch, deciding whether the app and website surface
+/// the past-events archive at all. A single row with a fixed id. Its read
+/// endpoint is public, so an unauthenticated caller can check the current state.
 /// </summary>
 public class ArchiveVisibility
 {
@@ -42,8 +39,6 @@ public class ArchiveVisibility
 
     public Guid Id { get; set; } = SingletonId;
 
-    /// <summary>True while the archive is visible. Admins toggle via
-    /// the admin endpoint.</summary>
     public bool IsVisible { get; set; } = true;
 
     public DateTime LastChangedAt { get; set; }

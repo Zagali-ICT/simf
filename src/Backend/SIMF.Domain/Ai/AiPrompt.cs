@@ -2,18 +2,17 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Domain.Ai;
 
-/// <summary>D-176 (gap doc G12) — one named, versioned, editable AI
-/// prompt. <see cref="Key"/> is the stable slug callers reference
-/// (e.g. <c>question-filter</c>, <c>faq-answer</c>); the active
-/// content (<see cref="SystemPrompt"/>, <see cref="UserPromptTemplate"/>,
-/// <see cref="Provider"/>, <see cref="Model"/>, <see cref="Temperature"/>,
-/// <see cref="MaxOutputTokens"/>) can be edited by an admin from the
-/// CP at runtime — no redeploy needed.</summary>
+/// <summary>
+/// One named, versioned, editable AI prompt. An admin can change its content,
+/// provider, model and limits from the Control Panel at runtime, without a
+/// redeploy.
+/// </summary>
 public sealed class AiPrompt
 {
     public Guid Id { get; set; }
 
-    /// <summary>Stable slug, kebab-case, 2–64 chars. Unique.</summary>
+    /// <summary>The stable slug callers reference, such as
+    /// <c>question-filter</c>. Kebab-case and unique.</summary>
     public string Key { get; set; } = string.Empty;
 
     /// <summary>Which feature this prompt is registered against.</summary>
@@ -27,16 +26,16 @@ public sealed class AiPrompt
 
     public AiProvider Provider { get; set; }
 
-    /// <summary>Provider-specific model identifier (e.g.
-    /// <c>gpt-4o-mini</c>, <c>claude-opus-4-7</c>).</summary>
+    /// <summary>A provider-specific model identifier, such as
+    /// <c>gpt-4o-mini</c>.</summary>
     public string Model { get; set; } = string.Empty;
 
-    /// <summary>System / role prompt. Template — supports
-    /// <c>{placeholder}</c> substitutions from caller inputs.</summary>
+    /// <summary>A template: <c>{placeholder}</c> spans are substituted from
+    /// caller inputs.</summary>
     public string SystemPrompt { get; set; } = string.Empty;
 
-    /// <summary>User-turn template. Same <c>{placeholder}</c> rules
-    /// as <see cref="SystemPrompt"/>.</summary>
+    /// <summary>The user turn, following the same placeholder rules as
+    /// <see cref="SystemPrompt"/>.</summary>
     public string UserPromptTemplate { get; set; } = string.Empty;
 
     public double Temperature { get; set; }
@@ -45,9 +44,8 @@ public sealed class AiPrompt
 
     public bool IsActive { get; set; } = true;
 
-    /// <summary>Bumped by 1 on every successful save. Lets the CP
-    /// show a version label and helps the test rig assert that a
-    /// new version was written.</summary>
+    /// <summary>Incremented on every successful save, so the Control Panel can
+    /// show a version label and a test can assert a new one was written.</summary>
     public int Version { get; set; } = 1;
 
     public DateTime CreatedAt { get; set; }

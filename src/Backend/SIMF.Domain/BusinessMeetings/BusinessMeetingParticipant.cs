@@ -4,39 +4,32 @@ using SIMF.Domain.Exhibitors;
 namespace SIMF.Domain.BusinessMeetings;
 
 /// <summary>
-/// SIMF-FDS-013 (owner, 2026-06-03) — one party in a <see cref="BusinessMeeting"/>.
-/// A <see cref="MeetingPartyKind.Company"/> participant carries a real FK
-/// (<see cref="ExhibitorId"/>) to <c>Exhibitor</c> on the App DB; a
-/// <see cref="MeetingPartyKind.Visitor"/> participant carries a <b>bare
-/// <c>Guid</c></b> (<see cref="VisitorUserId"/>) logical FK to <c>SimfUser.Id</c>
-/// on the Identity DB — no cross-DB navigation / no FK (D-157 / D-246).
-///
-/// <para><see cref="DisplayNameSnapshot"/> is an immutable audit snapshot of the
-/// party's name at schedule time — the one allowed copy of Identity-owned data
-/// (D-246), so the meeting record stays self-contained.</para>
+/// One party in a <see cref="BusinessMeeting"/>. A company participant carries a
+/// real foreign key to its exhibitor, which lives in this database; a visitor
+/// participant carries only a bare Guid, because the user lives in the Identity
+/// database and a foreign key cannot cross the two.
 /// </summary>
 public sealed class BusinessMeetingParticipant
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>Real FK to <see cref="BusinessMeeting.Id"/> (cascade delete).</summary>
+    /// <summary>Cascade-deleted with the meeting.</summary>
     public Guid BusinessMeetingId { get; set; }
     public BusinessMeeting? BusinessMeeting { get; set; }
 
-    /// <summary>Whether this party is a company or a visitor.</summary>
     public MeetingPartyKind Kind { get; set; }
 
-    /// <summary>Real FK to <see cref="Exhibitor.Id"/> on the App DB when
-    /// <see cref="Kind"/> = Company; null otherwise.</summary>
+    /// <summary>Set when <see cref="Kind"/> is Company, null otherwise.</summary>
     public Guid? ExhibitorId { get; set; }
     public Exhibitor? Exhibitor { get; set; }
 
-    /// <summary>Bare logical FK to <c>SimfUser.Id</c> on the Identity DB when
-    /// <see cref="Kind"/> = Visitor; null otherwise. No navigation, no DB FK.</summary>
+    /// <summary>Set when <see cref="Kind"/> is Visitor, null otherwise. No
+    /// navigation and no database foreign key.</summary>
     public Guid? VisitorUserId { get; set; }
 
-    /// <summary>Immutable audit snapshot of the party's display name at schedule
-    /// time (≤ 256 chars) — the allowed Identity-data copy (D-246).</summary>
+    /// <summary>The party's display name as it stood when the meeting was
+    /// scheduled. One of the few permitted copies of Identity-owned data, so the
+    /// meeting record stays readable on its own.</summary>
     public string DisplayNameSnapshot { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }

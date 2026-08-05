@@ -3,54 +3,46 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Domain.SeatReservations;
 
-/// <summary>D-175 (gap doc G11, Mockup page 7) — visual seat-grid
-/// layout for a <see cref="Hall"/>. Optional 1:1 with Hall (a hall
-/// without a layout has no per-seat picker and falls back to
-/// random-only allocation against <see cref="Hall.Capacity"/>).
-/// <para>RowLabels is a comma-separated list of row identifiers
-/// ("A,B,C" or "VIP,A,B"). By default the seat count per row is uniform
-/// (<see cref="SeatsPerRow"/>). D-767 adds an optional per-row override
-/// (<see cref="SeatCounts"/>): when it is set the grid becomes ragged —
-/// each row has its own seat count — and <see cref="SeatsPerRow"/> is kept
-/// only as the uniform fallback (storing <c>max(SeatCounts)</c>).
-/// The layout capacity is <c>RowLabels.Count * SeatsPerRow</c> when uniform,
-/// or <c>sum(SeatCounts)</c> when variable, and must not exceed
-/// <see cref="Hall.Capacity"/> — validated at the service layer.</para>
-/// <para>Per the D-110 freeze on the Hall table, layout columns live
-/// on this separate table rather than as extra columns on
-/// <see cref="Hall"/>.</para></summary>
+/// <summary>
+/// The visual seat grid for a <see cref="Hall"/>, optional and one per hall. A
+/// hall without a layout has no per-seat picker and falls back to random-only
+/// allocation against <see cref="Hall.Capacity"/>.
+///
+/// <para>The three CSV columns are parallel to one another: <see cref="RowLabels"/>
+/// names the rows, and <see cref="SeatCounts"/> and <see cref="SeatTiers"/> — when
+/// set — carry exactly one entry per row. Everything is validated at the service
+/// layer, not by the database.</para>
+///
+/// <para>These columns live on their own table rather than on <see cref="Hall"/>
+/// because the Hall table was frozen before seating shipped.</para>
+/// </summary>
 public sealed class HallSeatLayout
 {
     public Guid Id { get; set; }
 
-    /// <summary>FK to <see cref="Hall"/>. Unique — one layout per hall.</summary>
+    /// <summary>Unique — one layout per hall.</summary>
     public Guid HallId { get; set; }
     public Hall? Hall { get; set; }
 
-    /// <summary>CSV of row labels in display order, e.g. "A,B,C,D".
-    /// 1–256 chars. Each individual label is 1–8 chars.</summary>
+    /// <summary>Row labels in display order, comma-separated, such as "A,B,C,D"
+    /// or "VIP,A,B". Up to 256 characters overall, each label 1 to 8.</summary>
     public string RowLabels { get; set; } = string.Empty;
 
-    /// <summary>Number of seats per row (1–80). The uniform fallback: it applies to
-    /// every row when <see cref="SeatCounts"/> is null, and stores <c>max(SeatCounts)</c>
-    /// when the layout is variable so an un-upgraded reader still sees a valid width.</summary>
+    /// <summary>Seats per row, 1 to 80. Applies to every row while
+    /// <see cref="SeatCounts"/> is null; when the layout is ragged this holds the
+    /// largest per-row count instead, so a reader that predates ragged layouts
+    /// still sees a usable grid width.</summary>
     public int SeatsPerRow { get; set; }
 
-    /// <summary>D-767 — optional per-row seat counts. Null = uniform (every row uses
-    /// <see cref="SeatsPerRow"/>, unchanged pre-D-767 behaviour). When set it is a CSV
-    /// of ints PARALLEL to <see cref="RowLabels"/> (e.g. "4,10,8,8"): its length equals
-    /// <c>RowLabels.Count</c>, each count is 1–80, and <c>sum(SeatCounts) &lt;= Hall.Capacity</c>
-    /// — all validated at the service layer. Max 256 chars.</summary>
+    /// <summary>Per-row seat counts, making the grid ragged. Null keeps every row
+    /// at <see cref="SeatsPerRow"/>. Their sum may not exceed
+    /// <see cref="Hall.Capacity"/>.</summary>
     public string? SeatCounts { get; set; }
 
-    /// <summary>D-771 — optional per-row seat TIERS. Null = a layout written before
-    /// D-771, which reads as an all-<see cref="SIMF.Common.Enums.SeatTier.Normal"/>
-    /// grid (unchanged pre-D-771 behaviour — no shipped session loses a bookable
-    /// seat). When set it is a CSV of <see cref="SIMF.Common.Enums.SeatTier"/> ints
-    /// PARALLEL to <see cref="RowLabels"/> (e.g. "2,1,0,0"): its length equals
-    /// <c>RowLabels.Count</c> and each value is a defined tier — validated at the
-    /// service layer. The Control Panel editor always writes it, and defaults a
-    /// NEWLY defined row to <c>Vvip</c> (owner 2026-07-26). Max 256 chars.</summary>
+    /// <summary>Per-row seat tiers, as <see cref="SIMF.Common.Enums.SeatTier"/>
+    /// values. Null reads as an all-Normal grid, so a layout written before tiers
+    /// existed loses no bookable seat. The Control Panel editor always writes this
+    /// column and defaults a newly added row to VVIP.</summary>
     public string? SeatTiers { get; set; }
 
     public DateTime CreatedAt { get; set; }

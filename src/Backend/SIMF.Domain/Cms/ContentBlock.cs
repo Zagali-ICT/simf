@@ -1,48 +1,40 @@
 namespace SIMF.Domain.Cms;
 
 /// <summary>
-/// D-173 (gap doc G8, PDF §1 + §2.1) — one editable piece of public
-/// content (welcome message, page heading, body copy, label).
-/// Identified by a stable <see cref="Key"/> slug the client codes
-/// against (e.g. <c>home.welcome.title</c>); the EN + AR text is
-/// edited by an admin at runtime from the CP, no code change needed.
+/// One editable piece of public content — a welcome message, a page heading,
+/// body copy, a label. It is identified by a stable <see cref="Key"/> the clients
+/// code against, and an admin edits both languages at runtime without a code
+/// change.
 ///
-/// <para>The Flutter app and the Website both read these via the
-/// public <c>GET /api/v1/content/{key}</c> endpoint and cache locally
-/// with an <c>If-Modified-Since</c> header keyed on
-/// <see cref="LastUpdatedAt"/>.</para>
+/// <para>The app and the website read these through the public content endpoint
+/// and cache locally, revalidating against <see cref="LastUpdatedAt"/>.</para>
 /// </summary>
 public sealed class ContentBlock
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>Stable slug — lower-kebab-case, dotted hierarchy. The
-    /// client codes against this value; renaming a key is a wire-
-    /// breaking change. Up to 128 chars, unique across the table.</summary>
+    /// <summary>Lower-kebab-case with a dotted hierarchy, such as
+    /// <c>home.welcome.title</c>. Unique, and renaming one is a breaking change
+    /// for every client coded against it.</summary>
     public string Key { get; set; } = string.Empty;
 
-    /// <summary>English content, rendered as PLAIN TEXT. Up to 8000 chars
-    /// so a long body / article body fits without a separate
-    /// "long-form" table.
-    ///
-    /// <para>FR-1203 (2026-07-30) — this previously read "markdown allowed",
-    /// which no renderer ever honoured: every consumer emits the value as text
-    /// through Razor's auto-encoding. The claim was corrected rather than a
-    /// renderer added, because the field is admin-editable and rendering it as
-    /// markup would mean rendering admin-supplied HTML. Any future renderer MUST
-    /// sanitise before emitting.</para></summary>
+    /// <summary>Rendered as plain text, never as markup. It is admin-editable, so
+    /// rendering it as markup would mean rendering admin-supplied HTML; every
+    /// consumer emits it through Razor's auto-encoding. A renderer added later
+    /// would have to sanitise first. Long enough that an article body needs no
+    /// separate table.</summary>
     public string Content { get; set; } = string.Empty;
 
-    /// <summary>Arabic content, rendered as PLAIN TEXT. Same shape as
+    /// <summary>Rendered as plain text, on the same terms as
     /// <see cref="Content"/>.</summary>
     public string ContentArabic { get; set; } = string.Empty;
 
-    /// <summary>Soft-delete flag — hides the row from the public read
-    /// endpoint without losing the editor's text.</summary>
+    /// <summary>Hides the row from the public endpoint without losing the
+    /// editor's text.</summary>
     public bool IsActive { get; set; } = true;
 
-    /// <summary>The admin who last saved the row. Logical FK to
-    /// <c>SimfUser.Id</c> on the Identity DB.</summary>
+    /// <summary>The admin who last saved the row. A bare Guid: the user lives in
+    /// the Identity database.</summary>
     public Guid LastUpdatedByUserId { get; set; }
 
     public DateTime CreatedAt { get; set; }

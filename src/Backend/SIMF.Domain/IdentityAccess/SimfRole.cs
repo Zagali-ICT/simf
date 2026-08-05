@@ -4,8 +4,7 @@ namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>
 /// A SIMF role. Extends ASP.NET Core Identity's <see cref="IdentityRole{TKey}"/>.
-/// Roles are dynamic — an administrator creates them and assigns permissions
-/// (SIMF-RPM-001).
+/// Roles are dynamic: an administrator creates them and assigns permissions.
 /// </summary>
 public class SimfRole : IdentityRole<Guid>
 {

@@ -1,11 +1,12 @@
 namespace SIMF.Domain.Archive;
 
-/// <summary>D-432 — one past speaker for an archive edition (Mockup screen
-/// 24-01 "المتحدثون السابقون"). A snapshot child of <see cref="ArchiveEdition"/>:
-/// parent FK only (no live Speaker FK — past editions' speakers are not live
-/// rows), cascade-deleted with the edition, no own <c>IsActive</c> (inherits the
-/// parent's visibility). The photo is a stored relative path, never an absolute
-/// URL — matching Speaker / Sponsor.</summary>
+/// <summary>
+/// One past speaker of an archive edition, and a snapshot child of
+/// <see cref="ArchiveEdition"/>. It holds only the parent foreign key, because a
+/// past edition's speakers are not live speaker rows, and it is cascade-deleted
+/// with the edition. It has no active flag of its own; the parent's visibility
+/// governs.
+/// </summary>
 public sealed class ArchivePastSpeaker
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -13,20 +14,20 @@ public sealed class ArchivePastSpeaker
     public Guid ArchiveEditionId { get; set; }
     public ArchiveEdition? Edition { get; set; }
 
-    /// <summary>English name. ≤ 128 chars.</summary>
     public string NameEn { get; set; } = string.Empty;
 
-    /// <summary>Arabic name — the primary surface. ≤ 128 chars.</summary>
+    /// <summary>The primary surface.</summary>
     public string NameAr { get; set; } = string.Empty;
 
-    /// <summary>Optional relative path to the speaker's photo (≤ 256 chars).</summary>
+    /// <summary>A path under the media root, never an absolute URL — the same
+    /// convention live speakers and sponsors use.</summary>
     public string? PhotoRelativePath { get; set; }
 
-    /// <summary>D-456 — optional country (ISO 3166-1 numeric, a logical FK to
-    /// <c>Country.Id</c>) for the app's corner flag. No nav property — names are
-    /// resolved on read, mirroring the live <c>Speaker</c>.</summary>
+    /// <summary>ISO 3166-1 numeric, driving the corner flag in the app. No
+    /// navigation: names are resolved on read, as they are for a live
+    /// speaker.</summary>
     public int? CountryId { get; set; }
 
-    /// <summary>Sort key within the edition's past-speaker row — ascending.</summary>
+    /// <summary>Ascending, within this edition.</summary>
     public int DisplayOrder { get; set; }
 }

@@ -3,29 +3,24 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Contacts;
 
 /// <summary>
-/// SIMF-FDS-014 §5.6 (D-284, Track 2) — a contact a visitor saved to their
-/// <em>My Contacts</em> after scanning / resolving another visitor's share
-/// token. Both user references are <b>bare Guid logical FKs</b> to
-/// <c>SimfUser.Id</c> on the Identity DB — no EF navigation, no DB FK, no
-/// cross-DB join (D-157).
+/// A contact one visitor saved after resolving another's share token. Both user
+/// references are bare Guids: the users live in the Identity database, so there
+/// is no navigation, no foreign key and no cross-database join.
 ///
-/// <para><b>No snapshot of the subject's PII is stored</b> (D-157 forbids
-/// extending the audit-snapshot copy pattern to live data): the card is
-/// resolved on read from the subject's <c>UserProfile</c> plus a permitted
-/// email round-trip. If the subject is later deactivated, the saved row shows a
-/// limited / unavailable card. Saving is idempotent per
-/// (<see cref="OwnerUserId"/>, <see cref="SubjectUserId"/>); removing is a
-/// soft-delete (<see cref="BaseAuditEntity.Deactivate"/>). <c>SavedAt</c> is the
-/// inherited <see cref="BaseAuditEntity.CreatedAt"/>.</para>
+/// <para>None of the subject's own details are copied here. The card is resolved
+/// on read from their profile, so a saved contact never goes stale against the
+/// live record, and a subject who is later deactivated shows as unavailable
+/// rather than as a snapshot that no longer holds. Saving is idempotent per
+/// owner and subject, and removal is a soft-delete.</para>
 /// </summary>
 public sealed class SavedContact : BaseAuditEntity
 {
-    /// <summary>The visitor who saved the contact — bare Guid → <c>SimfUser.Id</c>.</summary>
+    /// <summary>The visitor who saved the contact.</summary>
     public Guid OwnerUserId { get; set; }
 
-    /// <summary>The saved (subject) visitor — bare Guid → <c>SimfUser.Id</c>.</summary>
+    /// <summary>The visitor who was saved.</summary>
     public Guid SubjectUserId { get; set; }
 
-    /// <summary>Optional free-text note the owner attached (≤512 chars).</summary>
+    /// <summary>A free-text note the owner attached.</summary>
     public string? Note { get; set; }
 }

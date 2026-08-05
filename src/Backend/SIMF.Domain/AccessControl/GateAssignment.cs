@@ -3,33 +3,24 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.AccessControl;
 
 /// <summary>
-/// D-148 — an operator-to-gate assignment (SIMF-FDS-003 §5.6 / design notes
-/// §2.1). Many-to-many between <see cref="Gate"/> and <c>SimfUser</c> with
-/// activation lifecycle. An operator can be assigned to multiple gates; an
-/// admin can rotate them between gates and the history survives via the
-/// <see cref="RevokedAt"/> / <see cref="IsActive"/> pair. All UserId references
-/// are logical FKs (cross-context — DAT-001 §5.3.1).
+/// An operator's assignment to a <see cref="Gate"/>, many-to-many and with its
+/// own activation lifecycle. One operator can hold several gates, and an admin
+/// can rotate them between gates without losing the history, which survives in
+/// the revoked and active columns.
 /// </summary>
 public class GateAssignment : BaseEntity
 {
-
     public Guid GateId { get; set; }
     public Gate? Gate { get; set; }
 
-
-    /// <summary>The assigned operator. Logical FK to <c>SimfUser</c>.</summary>
+    /// <summary>The assigned operator. A bare Guid: the user lives in the
+    /// Identity database, so there is no foreign key across the two.</summary>
     public Guid UserId { get; set; }
 
-    /// <summary>True while this assignment is in effect. The constraint
-    /// engine reads only active rows.</summary>
+    /// <summary>The constraint engine reads active rows only.</summary>
     public bool IsActive { get; set; } = true;
 
-
-
-    /// <summary>The admin who revoked this assignment, when applicable.
-    /// Logical FK to <c>SimfUser</c>.</summary>
+    /// <summary>The admin who revoked the assignment, where one did.</summary>
     public Guid? RevokedByUserId { get; set; }
     public DateTime? RevokedAt { get; set; }
-
-    
 }

@@ -1,23 +1,23 @@
 namespace SIMF.Domain.Ai;
 
-/// <summary>One turn in a visitor's AI-assistant conversation (Page 036 —
-/// المساعد الذكي). Per-user, append-only; the assistant's persisted memory.
-/// <see cref="UserId"/> is a bare logical FK to SimfUser.Id on the Identity DB
-/// (D-157 — no cross-DB FK, no navigation, resolved on read). Convention-B POCO:
-/// <see cref="Id"/> / <see cref="CreatedAt"/> are set by the service, not the
-/// audit interceptor.</summary>
+/// <summary>
+/// One turn in a visitor's conversation with the AI assistant. Per-user and
+/// append-only: these rows are the assistant's memory.
+/// </summary>
 public sealed class AiChatMessage
 {
+    /// <summary>Set by the service rather than by the audit interceptor, as is
+    /// <see cref="CreatedAt"/>.</summary>
     public Guid Id { get; set; }
 
-    /// <summary>Logical FK to SimfUser.Id (Identity DB) — never a DB constraint
-    /// and never a navigation (D-157).</summary>
+    /// <summary>A bare Guid: the user lives in the Identity database, so there is
+    /// no navigation and no foreign key across the two.</summary>
     public Guid UserId { get; set; }
 
     /// <summary>Who authored the turn: "user" or "assistant".</summary>
     public string Role { get; set; } = string.Empty;
 
-    /// <summary>The message text (≤ the per-AI-input cap).</summary>
+    /// <summary>Capped at the configured AI input limit.</summary>
     public string Content { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }

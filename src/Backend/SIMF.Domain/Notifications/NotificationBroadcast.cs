@@ -3,31 +3,30 @@ using SIMF.Common.Enums;
 namespace SIMF.Domain.Notifications;
 
 /// <summary>
-/// A manual admin notification broadcast composed in the Control Panel
-/// "Announcements" desk. The API inserts one <see cref="BroadcastStatus.Pending"/>
-/// row; the background <c>NotificationBroadcastWorker</c> fans it out (one in-app
-/// notification row + one queued email per recipient) and stamps the counters +
-/// status. Lives on SIMF_App; recipients are resolved across the D-157 boundary
-/// at send time and are never copied onto this row.
+/// A manual announcement composed at the Control Panel's broadcast desk. The API
+/// inserts a single pending row and a background worker fans it out, writing one
+/// in-app notification and one queued email per recipient, then stamps the
+/// counters and status here.
+///
+/// <para>Recipients are resolved from the Identity database at send time and are
+/// never copied onto this row.</para>
 /// </summary>
 public sealed class NotificationBroadcast
 {
     public Guid Id { get; set; }
 
-    /// <summary>The admin who composed it — logical FK to <c>SimfUser.Id</c> on the
-    /// Identity DB (no cross-DB constraint, D-157).</summary>
+    /// <summary>The admin who composed it. A bare Guid: the user lives in the
+    /// Identity database.</summary>
     public Guid CreatedByUserId { get; set; }
 
     public BroadcastTargetMode TargetMode { get; set; }
 
-    /// <summary>Set when <see cref="TargetMode"/> is
-    /// <see cref="BroadcastTargetMode.Session"/> — logical FK to <c>Session.Id</c>
-    /// (no navigation, so the broadcast survives as history even if the session is
-    /// later removed). Null for an audience broadcast.</summary>
+    /// <summary>Set for a session broadcast, null for an audience one. There is
+    /// no navigation, so the broadcast survives as history even after the session
+    /// is removed.</summary>
     public Guid? SessionId { get; set; }
 
-    /// <summary>Set when <see cref="TargetMode"/> is
-    /// <see cref="BroadcastTargetMode.Audience"/>. Null for a session broadcast.</summary>
+    /// <summary>Set for an audience broadcast, null for a session one.</summary>
     public BroadcastAudienceScope? AudienceScope { get; set; }
 
     public string Title { get; set; } = string.Empty;
@@ -39,27 +38,28 @@ public sealed class NotificationBroadcast
 
     public BroadcastStatus Status { get; set; } = BroadcastStatus.Pending;
 
-    /// <summary>Distinct recipients the worker resolved; 0 until processed.</summary>
+    // Counters, all zero until the worker has processed the row.
+
+    /// <summary>Distinct recipients the worker resolved.</summary>
     public int TotalRecipients { get; set; }
 
-    /// <summary>In-app notification rows successfully dispatched.</summary>
+    /// <summary>In-app notifications successfully written.</summary>
     public int Dispatched { get; set; }
 
-    /// <summary>Emails enqueued (recipients with an email on file).</summary>
+    /// <summary>Emails enqueued, meaning recipients with an address on file.</summary>
     public int EmailsEnqueued { get; set; }
 
-    /// <summary>Recipients skipped (a dispatch that threw).</summary>
+    /// <summary>Recipients whose dispatch threw.</summary>
     public int Skipped { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
-    /// <summary>When the worker claimed the row (moved it to Processing).</summary>
+    /// <summary>When the worker claimed the row.</summary>
     public DateTime? StartedAt { get; set; }
 
-    /// <summary>When the fan-out finished (Completed or Failed).</summary>
+    /// <summary>When the fan-out finished, whether it completed or failed.</summary>
     public DateTime? CompletedAt { get; set; }
 
-    /// <summary>Failure detail when <see cref="Status"/> is
-    /// <see cref="BroadcastStatus.Failed"/>; null otherwise. ≤1024 chars.</summary>
+    /// <summary>Failure detail, set only when the broadcast failed.</summary>
     public string? Error { get; set; }
 }

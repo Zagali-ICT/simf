@@ -3,27 +3,25 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Contacts;
 
 /// <summary>
-/// SIMF-FDS-014 §5.4 (D-284, Track 2) — a visitor's dedicated, rotatable
-/// "share my contact" token. Minted on demand the first time the visitor opens
-/// <em>Share my contact</em>; resolving it returns a card projected live from
-/// the owner's <c>UserProfile</c>. It is <b>separate from the entry QrId</b> so
-/// scanning someone at the gate never harvests their card (the Q3 decision).
+/// A visitor's rotatable "share my contact" token, minted the first time they
+/// open the share screen. Resolving one returns a card projected live from the
+/// owner's profile.
 ///
-/// <para><see cref="UserId"/> is a <b>bare Guid logical FK</b> to
-/// <c>SimfUser.Id</c> on the Identity DB — no EF navigation, no DB FK, no
-/// cross-DB join (D-157). Rotating revokes the active token
-/// (<see cref="IsActive"/> = false, <see cref="RevokedAt"/> set) and mints a new
-/// one so a previously shared code stops resolving.</para>
+/// <para>Deliberately separate from the entry QR, so scanning someone at a gate
+/// never harvests their contact card. Rotating revokes the active token and mints
+/// a replacement, which is what makes a code already shared stop
+/// resolving.</para>
 /// </summary>
 public sealed class VisitorShareToken : BaseAuditEntity
 {
-    /// <summary>Owning visitor — bare Guid logical FK to <c>SimfUser.Id</c>.</summary>
+    /// <summary>The owning visitor. A bare Guid: the user lives in the Identity
+    /// database, so there is no foreign key across the two.</summary>
     public Guid UserId { get; set; }
 
-    /// <summary>Opaque Crockford base32 token (≤32 chars, unique) — the
-    /// shareable code encoded into the visitor's QR / share-intent.</summary>
+    /// <summary>The shareable code encoded into the visitor's QR, an opaque
+    /// Crockford base32 string, unique across the table.</summary>
     public string Token { get; set; } = string.Empty;
 
-    /// <summary>When the token was revoked on rotation; null while active.</summary>
+    /// <summary>When rotation revoked the token; null while it is active.</summary>
     public DateTime? RevokedAt { get; set; }
 }

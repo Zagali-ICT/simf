@@ -3,44 +3,41 @@ using SIMF.Domain.Programme;
 namespace SIMF.Domain.BusinessMeetings;
 
 /// <summary>
-/// SIMF-FDS-013 (owner, 2026-06-03) — one bookable meeting table inside a hall
-/// (the "table/location in hall" the owner described). Tables live in a hall whose
-/// <see cref="Hall.Purpose"/> is Meeting or General; they may be added one-by-one
-/// or generated in bulk (random-by-count / by row-column). A
-/// <see cref="BusinessMeeting"/> is scheduled at one table for a time-slot.
-/// Soft-deleted via <see cref="IsActive"/>; admin grids/pickers filter on it.
+/// One bookable table inside a hall. Tables belong to a hall whose purpose is
+/// Meeting or General, and can be added one at a time or generated in bulk. A
+/// <see cref="BusinessMeeting"/> is scheduled at one table for a time slot.
 /// </summary>
 public sealed class MeetingTable
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>Real FK to <see cref="Hall.Id"/> on the App DB (cascade delete).</summary>
+    /// <summary>Cascade-deleted with the hall.</summary>
     public Guid HallId { get; set; }
     public Hall? Hall { get; set; }
 
-    /// <summary>Stable short code, unique among active tables in the hall
-    /// (1–16 chars, e.g. "T-01"). Entered or generated.</summary>
+    /// <summary>A short code such as "T-01", entered or generated, and unique
+    /// among the active tables in its hall.</summary>
     public string Code { get; set; } = string.Empty;
 
-    /// <summary>Optional row label (1–8 chars) — set when the table is placed by
-    /// the row/column allocation mode.</summary>
+    /// <summary>Set when the table was placed by the row-and-column mode, paired
+    /// with <see cref="ColumnNumber"/>.</summary>
     public string? RowLabel { get; set; }
 
-    /// <summary>Optional 1-based column number within the row — paired with
-    /// <see cref="RowLabel"/> for the row/column allocation mode.</summary>
+    /// <summary>One-based within the row.</summary>
     public int? ColumnNumber { get; set; }
 
-    /// <summary>Seats at the table (≥ 2). Caps a meeting's participant count
-    /// (group meetings, OI-5).</summary>
+    /// <summary>Seats at the table, which caps a meeting's participant
+    /// count.</summary>
     public int Capacity { get; set; } = 2;
 
-    /// <summary>Soft-delete flag. List/pick endpoints filter on this.</summary>
+    /// <summary>Soft-delete flag, which the list and picker endpoints filter
+    /// on.</summary>
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
-    /// <summary>Soft-delete: marks the table inactive so it drops out of pickers
-    /// and the default grid. Idempotent.</summary>
+    /// <summary>Drops the table out of the pickers and the default grid.
+    /// Idempotent.</summary>
     public void Deactivate() => IsActive = false;
 }

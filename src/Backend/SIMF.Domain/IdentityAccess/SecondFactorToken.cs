@@ -4,9 +4,8 @@ namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>
 /// The short-lived, single-use ticket issued after the password step of sign-in
-/// and exchanged at the second-factor step — the <c>mfaToken</c> / <c>otpToken</c>
-/// of SIMF-API-001 section 12.4. The token value itself is never stored; only
-/// its hash is (SIMF-FDS-001 Amendment A.3).
+/// and exchanged at the second-factor step. The token value itself is never
+/// stored; only its hash is.
 /// </summary>
 public class SecondFactorToken
 {

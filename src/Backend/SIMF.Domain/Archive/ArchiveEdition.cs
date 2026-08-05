@@ -2,64 +2,47 @@ using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Archive;
 
-/// <summary>D-199 — a previous SIMF edition shown on the public Archive /
-/// Past Editions screen (Mockup screen 24) and managed from the Control
-/// Panel. One row per forum year. The public list is additionally gated by
-/// the archive-visibility operations toggle (D-166): when that toggle is
-/// off, the public endpoint returns an empty list regardless of how many
-/// active editions exist.</summary>
-public class ArchiveEdition:BaseAuditEntity
-{ 
-
-    /// <summary>Forum year (e.g. 2023). Unique across active + inactive rows
-    /// — one edition per calendar year. Used as the natural display key
-    /// ("SIMF 2023") and the default sort.</summary>
+/// <summary>
+/// A previous SIMF edition, one row per forum year, shown on the public archive
+/// screen and managed from the Control Panel. The public list is gated by the
+/// archive-visibility operations toggle as well as by <see cref="IsActive"/>:
+/// with the toggle off the endpoint returns nothing, however many active
+/// editions exist.
+/// </summary>
+public class ArchiveEdition : BaseAuditEntity
+{
+    /// <summary>Unique across active and inactive rows alike — one edition per
+    /// calendar year. Doubles as the natural display key and the default
+    /// sort.</summary>
     public int Year { get; set; }
 
-    /// <summary>English edition title (e.g. "SIMF 2023"). 1–200 chars.</summary>
     public string TitleEn { get; set; } = string.Empty;
-
-    /// <summary>Arabic edition title. 1–200 chars.</summary>
     public string TitleAr { get; set; } = string.Empty;
 
-    /// <summary>Optional English summary / theme line
-    /// (e.g. "The third edition — Securing Tomorrow's Seas"). ≤ 1024 chars.</summary>
+    /// <summary>The theme line, such as "The third edition — Securing
+    /// Tomorrow's Seas".</summary>
     public string? SummaryEn { get; set; }
-
-    /// <summary>Optional Arabic summary / theme line. ≤ 1024 chars.</summary>
     public string? SummaryAr { get; set; }
 
-    /// <summary>Reported attendee count for the edition (≥ 0).</summary>
+    // Reported totals for the edition, entered by an admin rather than counted.
     public int Attendees { get; set; }
-
-    /// <summary>Reported session count for the edition (≥ 0).</summary>
     public int Sessions { get; set; }
-
-    /// <summary>Reported speaker count for the edition (≥ 0).</summary>
     public int Speakers { get; set; }
 
-    /// <summary>Optional cover image relative path under the media root
-    /// (e.g. "archive/simf2023.png"). ≤ 512 chars.</summary>
+    /// <summary>Path under the media root, such as "archive/simf2023.png".</summary>
     public string? CoverImageRelativePath { get; set; }
 
-    /// <summary>§9 (Mockup screen 24-01 "تفاصيل النسخة") — the edition's
-    /// place/venue (e.g. "الرياض · واجهة الرياض"). Optional, ≤ 256 chars.</summary>
+    /// <summary>The edition's venue, such as "الرياض · واجهة الرياض".</summary>
     public string? LocationEn { get; set; }
     public string? LocationAr { get; set; }
 
-    /// <summary>§9 (screen 24-01) — a human date label for the edition
-    /// (e.g. "نوفمبر 2024 · 3 أيام" / "November 2024 · 3 days"); distinct from
-    /// the numeric <see cref="Year"/>. Optional, ≤ 128 chars.</summary>
+    /// <summary>A human date label such as "November 2024 · 3 days", distinct
+    /// from the numeric <see cref="Year"/>.</summary>
     public string? DateLabelEn { get; set; }
     public string? DateLabelAr { get; set; }
 
-    /// <summary>D-432 — the edition's gallery (الصور والفيديو). Owned snapshot
-    /// children, cascade-deleted with the edition.</summary>
+    // Owned snapshot children, cascade-deleted with the edition.
     public ICollection<ArchiveMediaItem> Media { get; set; } = new List<ArchiveMediaItem>();
-
-    /// <summary>D-432 — the edition's programme/session titles (عناوين الجلسات).</summary>
     public ICollection<ArchiveSessionTitle> SessionTitles { get; set; } = new List<ArchiveSessionTitle>();
-
-    /// <summary>D-432 — the edition's past speakers (المتحدثون السابقون).</summary>
     public ICollection<ArchivePastSpeaker> PastSpeakers { get; set; } = new List<ArchivePastSpeaker>();
 }

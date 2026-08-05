@@ -4,8 +4,7 @@ namespace SIMF.Domain.IdentityAccess;
 /// A refresh token issued to a user. The token value itself is never stored —
 /// only its hash. Tokens are rotated on use; presenting a token that has
 /// already been revoked is detected as reuse. <see cref="RotatedFromId"/>
-/// records the rotation chain for forensic reconstruction (SIMF-FDS-001
-/// section 5.3, SIMF-DAT-001 section 5.1).
+/// records the rotation chain, so one can be reconstructed after the fact.
 /// </summary>
 public class RefreshToken
 {

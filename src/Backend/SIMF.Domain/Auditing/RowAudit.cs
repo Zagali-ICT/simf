@@ -3,64 +3,56 @@ using SIMF.Common.Enums;
 namespace SIMF.Domain.Auditing;
 
 /// <summary>
-/// D-109: one row of the table-level audit trail — captures every
-/// INSERT / UPDATE / DELETE performed through EF on the tables that
-/// are not on the exclusion list (the interceptor in
-/// <c>SIMF.Infrastructure.Auditing.RowAuditingSaveChangesInterceptor</c>
-/// is the single writer).
+/// One row of the table-level audit trail, capturing every insert, update and
+/// delete performed through EF on the tables that are not excluded. The
+/// row-auditing save-changes interceptor is its only writer.
 ///
-/// <para>Distinct from <see cref="OperationLogEntry"/>: <c>OperationLog</c>
-/// captures security-relevant business events (sign-in succeeded,
-/// password reset requested, admin approved). <c>RowAudit</c> captures
-/// raw data changes (which column on which row changed, by which actor,
-/// when, what was the before/after) — the forensic trail that answers
-/// "who changed Foo.X on 2026-05-12 at 14:03?".</para>
+/// <para>Distinct from <see cref="OperationLogEntry"/>, which records
+/// security-relevant business events such as a sign-in or an approval. This
+/// records raw data changes — which column on which row changed, by whom, when,
+/// and what it held before and after — the forensic trail that answers "who
+/// changed this field, and when?".</para>
 ///
-/// <para>Each <see cref="SimfIdentityDbContext"/> / <see cref="SimfAppDbContext"/>
-/// owns its own <c>RowAudits</c> table — keeps the same-transaction
-/// guarantee (the audit row and the data row commit together).</para>
+/// <para>Each database owns its own audit table, which is what keeps the audit
+/// row and the data row committing in the same transaction.</para>
 /// </summary>
 public sealed class RowAudit
 {
-    /// <summary>Auto-increment surrogate key — ordering / paging.</summary>
+    /// <summary>Auto-increment surrogate key, used for ordering and paging.</summary>
     public long Id { get; set; }
 
-    /// <summary>When the change committed (Saudi local).</summary>
+    /// <summary>When the change committed, in Saudi local time.</summary>
     public DateTime OccurredAt { get; set; }
 
-    /// <summary>The DB table name the change happened on (e.g. <c>AspNetUsers</c>).</summary>
     public string TableName { get; set; } = string.Empty;
 
-    /// <summary>The CLR entity-type name (e.g. <c>SimfUser</c>) — for analytics
-    /// that don't want to know the table mapping.</summary>
+    /// <summary>The CLR entity name, for analytics that would rather not know
+    /// the table mapping.</summary>
     public string EntityType { get; set; } = string.Empty;
 
-    /// <summary>INSERT / UPDATE / DELETE.</summary>
     public RowAuditOperation Operation { get; set; }
 
-    /// <summary>The row's primary-key value, JSON-encoded for composite keys.</summary>
+    /// <summary>The row's primary key, JSON-encoded when it is composite.</summary>
     public string PrimaryKey { get; set; } = string.Empty;
 
-    /// <summary>The user who performed the change; null if the change came
-    /// from a background worker / seeder (no request context).</summary>
+    /// <summary>Null when the change came from a background worker or the
+    /// seeder, which have no request context.</summary>
     public Guid? ActorUserId { get; set; }
 
-    /// <summary>D-157 — snapshot of the actor's display name at the time
-    /// of the change. Lets a forensic reviewer read "Ahmad Salem" without
-    /// joining back to a cross-DB Identity row that may have been
-    /// renamed or deleted since. Null when the change had no actor.</summary>
+    /// <summary>The actor's display name at the time of the change, so a
+    /// reviewer can read it without joining back to an Identity row in the other
+    /// database that may since have been renamed or deleted. Null when the change
+    /// had no actor.</summary>
     public string? ActorDisplayName { get; set; }
 
-    /// <summary>The request correlation id, when available.</summary>
     public string? CorrelationId { get; set; }
 
-    /// <summary>Pre-image JSON for UPDATE and DELETE; null for INSERT.</summary>
+    /// <summary>Set on update and delete; null on insert.</summary>
     public string? OldValuesJson { get; set; }
 
-    /// <summary>Post-image JSON for INSERT and UPDATE; null for DELETE.</summary>
+    /// <summary>Set on insert and update; null on delete.</summary>
     public string? NewValuesJson { get; set; }
 
-    /// <summary>Comma-separated list of column names that changed
-    /// (UPDATE only); null for INSERT and DELETE.</summary>
+    /// <summary>The columns that changed, comma-separated. Update only.</summary>
     public string? AffectedColumns { get; set; }
 }

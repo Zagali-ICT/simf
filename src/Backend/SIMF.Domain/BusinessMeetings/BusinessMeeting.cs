@@ -3,53 +3,50 @@ using SIMF.Common.Enums;
 namespace SIMF.Domain.BusinessMeetings;
 
 /// <summary>
-/// SIMF-FDS-013 (owner, 2026-06-03) — one admin-arranged B2B/B2C business meeting
-/// scheduled at a <see cref="MeetingTable"/> for a from–to time-slot. Meetings are
-/// arranged from the Control Panel only (no attendee request queue), so they are
-/// created <see cref="BusinessMeetingStatus.Confirmed"/> and can be Cancelled. The
-/// participants (two or more — group meetings allowed) are <see cref="Participants"/>.
+/// One admin-arranged business meeting, scheduled at a <see cref="MeetingTable"/>
+/// for a time slot. Meetings are arranged from the Control Panel only, with no
+/// attendee request queue behind them, so a meeting is created already confirmed
+/// and the only other state is cancelled.
 /// </summary>
 public sealed class BusinessMeeting
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>Real FK to <see cref="MeetingTable.Id"/> on the App DB.</summary>
     public Guid MeetingTableId { get; set; }
     public MeetingTable? MeetingTable { get; set; }
 
-    /// <summary>The category — set explicitly by the admin (OI-10); participants
-    /// may be any mix of companies and visitors.</summary>
+    /// <summary>Set explicitly by the admin. Participants may be any mix of
+    /// companies and visitors, so this is a label rather than something derived
+    /// from them.</summary>
     public BusinessMeetingType MeetingType { get; set; }
 
-    /// <summary>Slot start (inclusive, Saudi local).</summary>
+    /// <summary>Inclusive, Saudi local time.</summary>
     public DateTime Start { get; set; }
 
-    /// <summary>Slot end (exclusive, Saudi local). Must be after <see cref="Start"/>.</summary>
+    /// <summary>Exclusive, Saudi local time, and must be after
+    /// <see cref="Start"/>.</summary>
     public DateTime End { get; set; }
 
-    /// <summary>Lifecycle state. Confirmed on create; Cancelled after an admin
-    /// cancels.</summary>
     public BusinessMeetingStatus Status { get; set; } = BusinessMeetingStatus.Confirmed;
 
-    /// <summary>Optional admin note / subject (≤ 1024 chars).</summary>
+    /// <summary>An admin note or subject line.</summary>
     public string? Notes { get; set; }
 
-    /// <summary>The admin who scheduled the meeting — logical FK to
-    /// <c>SimfUser.Id</c> on the Identity DB (bare Guid).</summary>
+    /// <summary>The admin who scheduled it. A bare Guid: the user lives in the
+    /// Identity database.</summary>
     public Guid ScheduledByUserId { get; set; }
 
-    /// <summary>The admin who cancelled it — logical FK to the Identity DB; null
-    /// while Confirmed.</summary>
+    /// <summary>The admin who cancelled it; null while the meeting stands.</summary>
     public Guid? CancelledByUserId { get; set; }
 
     public DateTime? CancelledAt { get; set; }
 
-    /// <summary>Optional reason recorded on cancel (≤ 512 chars, OI-6).</summary>
     public string? CancellationReason { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
-    /// <summary>The meeting's participants (≥ 2). Cascade-deleted with the meeting.</summary>
+    /// <summary>At least two, and more for a group meeting. Cascade-deleted with
+    /// the meeting.</summary>
     public List<BusinessMeetingParticipant> Participants { get; set; } = [];
 }

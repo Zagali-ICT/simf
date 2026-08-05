@@ -3,26 +3,18 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Faq;
 
 /// <summary>
-/// P2.1 (D-211) — a top-level FAQ category (e.g. "Registration",
-/// "Venue &amp; Travel"). Groups own an ordered list of <see cref="FaqEntry"/>
-/// question/answer pairs. Bilingual, orderable, soft-deletable — mirrors the
-/// News module's CRUD shape.
+/// A top-level FAQ category, such as "Registration" or "Venue and Travel",
+/// owning an ordered list of <see cref="FaqEntry"/> pairs.
 /// </summary>
-public sealed class FaqGroup:BaseAuditEntity
+public sealed class FaqGroup : BaseAuditEntity
 {
-    
-    /// <summary>English group name.</summary>
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>Arabic group name — paired with <see cref="Name"/>.</summary>
+    /// <summary>Paired with <see cref="Name"/>.</summary>
     public string NameArabic { get; set; } = string.Empty;
 
-    /// <summary>Sort key within the FAQ list (ascending).</summary>
+    /// <summary>Ascending, within the FAQ list.</summary>
     public int DisplayOrder { get; set; }
 
-   
-     
-
-    /// <summary>The group's question/answer entries.</summary>
     public ICollection<FaqEntry> Entries { get; set; } = new List<FaqEntry>();
 }

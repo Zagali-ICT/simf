@@ -5,31 +5,30 @@ using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Venue;
 
-/// <summary>P2.5 — D-230 (SIMF-FDS-006 §5.3/§7, FR-605): one node on the 2D
-/// venue map — a position plus an optional reference to the Hall or Booth it
-/// marks (the agreed 2D target, D-199). The Logistics role places nodes; the
-/// app renders them. Soft-deleted via <see cref="IsActive"/>.</summary>
-public sealed class VenueMapNode:BaseAuditEntity
-{ 
-
+/// <summary>
+/// One node on the 2D venue map: a position, plus an optional reference to the
+/// hall or booth it marks. Logistics staff place the nodes and the app renders
+/// them.
+/// </summary>
+public sealed class VenueMapNode : BaseAuditEntity
+{
     public string Label { get; set; } = string.Empty;
     public string LabelArabic { get; set; } = string.Empty;
 
     public VenueMapNodeKind Kind { get; set; }
 
-    /// <summary>2D map coordinates (relative units, e.g. 0–1000). The app
-    /// scales them to its canvas.</summary>
+    /// <summary>Relative units, roughly 0 to 1000, which the app scales to its
+    /// own canvas.</summary>
     public double X { get; set; }
     public double Y { get; set; }
 
-    /// <summary>Optional real FK to the <see cref="Hall"/> this node marks
-    /// (Kind = Hall). Restrict delete.</summary>
+    /// <summary>Set when this node marks a hall. Delete is restricted, so a hall
+    /// cannot vanish from under its node.</summary>
     public Guid? HallId { get; set; }
     public Hall? Hall { get; set; }
 
-    /// <summary>Optional real FK to the <see cref="Booth"/> this node marks
-    /// (Kind = Booth). Restrict delete.</summary>
+    /// <summary>Set when this node marks a booth, restricted in the same
+    /// way.</summary>
     public Guid? BoothId { get; set; }
     public Booth? Booth { get; set; }
-     
 }

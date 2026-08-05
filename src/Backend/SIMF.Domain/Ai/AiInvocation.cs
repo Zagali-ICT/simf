@@ -2,9 +2,10 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Domain.Ai;
 
-/// <summary>D-176 (gap doc G12) — one telemetry/audit row per AI
-/// call. Persisted on both success and failure. The CP admin
-/// invocations grid pages over this table.</summary>
+/// <summary>
+/// One telemetry row per AI call, written on success and on failure alike. The
+/// Control Panel's invocations grid pages over this table.
+/// </summary>
 public sealed class AiInvocation
 {
     public Guid Id { get; set; }
@@ -16,27 +17,26 @@ public sealed class AiInvocation
     public AiProvider Provider { get; set; }
     public string Model { get; set; } = string.Empty;
 
-    /// <summary>JSON of the substituted input dictionary. Redact at
-    /// the service layer before persisting (PII / API keys / etc.).</summary>
+    /// <summary>The substituted inputs, as JSON. The service redacts personal
+    /// data and secrets before this is persisted.</summary>
     public string InputJson { get; set; } = string.Empty;
 
-    /// <summary>The provider's text response (null on error).</summary>
+    /// <summary>The provider's response; null when the call failed.</summary>
     public string? OutputText { get; set; }
 
     public int? TokensInput { get; set; }
     public int? TokensOutput { get; set; }
     public int LatencyMs { get; set; }
 
-    /// <summary>Stable error code (<see cref="SIMF.Common.ErrorCodes"/>)
-    /// — null on success.</summary>
+    /// <summary>One of the stable API error codes; null on success.</summary>
     public string? ErrorCode { get; set; }
 
-    /// <summary>Logical FK to SimfUser.Id (Identity DB). Null for
-    /// anonymous callers.</summary>
+    /// <summary>Null for an anonymous caller. A bare Guid: the user lives in the
+    /// Identity database.</summary>
     public Guid? CallerUserId { get; set; }
 
-    /// <summary>Free-text caller bucket: Anonymous, Visitor, Staff,
-    /// Admin, Moderator.</summary>
+    /// <summary>Which bucket the caller fell into — Anonymous, Visitor, Staff,
+    /// Admin or Moderator.</summary>
     public string CallerKind { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }

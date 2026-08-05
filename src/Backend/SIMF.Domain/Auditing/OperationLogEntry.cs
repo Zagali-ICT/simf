@@ -3,60 +3,52 @@ using SIMF.Common.Enums;
 namespace SIMF.Domain.Auditing;
 
 /// <summary>
-/// One entry in the operation log — the durable audit trail of
-/// security-relevant events (SIMF-FDS-001 section 9). The operation log is
-/// append-only.
+/// One entry in the operation log, the append-only audit trail of
+/// security-relevant events.
 /// </summary>
 public class OperationLogEntry
 {
     public Guid Id { get; set; }
 
-    /// <summary>When the event occurred (Saudi local).</summary>
+    /// <summary>When the event occurred, in Saudi local time.</summary>
     public DateTime Timestamp { get; set; }
 
-    /// <summary>The stable event-type name (see <c>AuditEvents</c>).</summary>
+    /// <summary>A stable event-type name, drawn from the audit-event
+    /// constants.</summary>
     public string EventType { get; set; } = string.Empty;
 
-    /// <summary>Whether the operation succeeded or failed.</summary>
     public AuditOutcome Outcome { get; set; }
 
-    /// <summary>The email address the event concerns; null if not applicable.</summary>
+    /// <summary>The email the event concerns, when it concerns one.</summary>
     public string? SubjectEmail { get; set; }
 
-    /// <summary>The user the event concerns; null if not applicable.</summary>
+    /// <summary>The user the event concerns, when it concerns one.</summary>
     public Guid? SubjectUserId { get; set; }
 
-    /// <summary>D-157 — snapshot of the subject's display name at the
-    /// time of the event. Lets a SOC reviewer read "Ahmad Salem" without
-    /// joining back to a cross-DB Identity row that may have been
-    /// renamed or deleted since. Null when the event has no subject.</summary>
+    /// <summary>The subject's display name as it stood at the time. Snapshotting
+    /// it keeps the log readable without joining back to an Identity row in the
+    /// other database that may since have been renamed or deleted.</summary>
     public string? SubjectDisplayName { get; set; }
 
-    /// <summary>
-    /// The user who performed the action, when distinct from the subject —
-    /// e.g. an admin resetting another user's 2FA (D-041). Null in the usual
-    /// case where the actor is the subject.
-    /// </summary>
+    /// <summary>Who performed the action, when that is someone other than the
+    /// subject — an admin resetting another user's second factor, for instance.
+    /// Null in the ordinary case where the actor is the subject.</summary>
     public Guid? ActorUserId { get; set; }
 
-    /// <summary>D-157 — snapshot of the actor's display name at the time
-    /// of the event. Same rationale as <see cref="SubjectDisplayName"/>.
-    /// Null when the actor and subject are the same (the subject's
-    /// display name covers both) or when the event has no actor.</summary>
+    /// <summary>The actor's display name at the time, held for the same reason
+    /// as <see cref="SubjectDisplayName"/>. Null when actor and subject are the
+    /// same person, since the subject's name covers both.</summary>
     public string? ActorDisplayName { get; set; }
 
-    /// <summary>The client IP the request came from.</summary>
     public string? SourceIp { get; set; }
-
-    /// <summary>The client user-agent.</summary>
     public string? UserAgent { get; set; }
 
-    /// <summary>The request correlation id, for stitching multi-step activity.</summary>
+    /// <summary>Stitches multi-step activity together across entries.</summary>
     public string? CorrelationId { get; set; }
 
-    /// <summary>The API error code, when the event is a failure.</summary>
+    /// <summary>Set when the event is a failure.</summary>
     public string? ErrorCode { get; set; }
 
-    /// <summary>Optional extra detail; never a secret.</summary>
+    /// <summary>Extra detail, never a secret.</summary>
     public string? Detail { get; set; }
 }
