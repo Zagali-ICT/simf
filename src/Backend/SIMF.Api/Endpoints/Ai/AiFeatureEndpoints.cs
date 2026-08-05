@@ -137,12 +137,7 @@ public sealed class AssistanceHistoryEndpoint(IAiChatHistoryService history)
     }
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (AiCaller.FromUser(User).UserId is not Guid userId)
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
-        var turns = await history.GetHistoryAsync(userId, ct);
+        var turns = await history.GetHistoryAsync(User.ActorId(), ct);
         await Send.OkAsync(ApiResult<IReadOnlyList<AiChatTurn>>.Ok(turns), ct);
     }
 }
