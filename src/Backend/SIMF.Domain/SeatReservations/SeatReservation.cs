@@ -3,111 +3,96 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Domain.SeatReservations;
 
-/// <summary>D-175 (gap doc G11, Mockup page 7) — one reserved seat
-/// in one <see cref="Session"/>. Owners:
-/// <list type="bullet">
-/// <item>A visitor (<see cref="Kind"/> = UserBooking or RandomAssignment) —
-/// <see cref="ReservedForUserId"/> is the visitor's user id (logical FK
-/// to the Identity DB).</item>
-/// <item>An entire row blocked by an admin (<see cref="Kind"/> =
-/// AdminReservedRow) — <see cref="ReservedForUserId"/> is null and one
-/// row is materialized as N rows (one per seat).</item>
-/// </list>
-/// Per-session uniqueness: a seat (row+number) can only be active for
-/// one reservation at a time; a user can only hold one active seat
-/// per session. Released reservations stay in the table for audit;
-/// <see cref="ReleasedAt"/> is set and the filtered unique indexes
-/// allow the seat to be re-taken.</summary>
+/// <summary>
+/// One reserved seat in one <see cref="Session"/>, held either by a visitor or by
+/// an admin blocking the seat off.
+///
+/// <para>A visitor hold carries the holder in <see cref="ReservedForUserId"/>. An
+/// admin block (<see cref="SeatReservationKind.AdminReservedRow"/>) has no holder,
+/// and blocking a whole row writes one row here per seat rather than a single
+/// range.</para>
+///
+/// <para>Two uniqueness rules hold while a reservation is live: a seat (row and
+/// number) belongs to one reservation per session, and a user holds one seat per
+/// session. Releasing does not delete the row, so the history stays auditable.
+/// <see cref="ReleasedAt"/> is stamped instead, and because both unique indexes
+/// are filtered on it being null, the seat becomes bookable again.</para>
+/// </summary>
 public sealed class SeatReservation
 {
     public Guid Id { get; set; }
 
-    /// <summary>FK to <see cref="Session"/>. Cascade delete.</summary>
+    /// <summary>A real foreign key, cascade-deleted with the session.</summary>
     public Guid SessionId { get; set; }
     public Session? Session { get; set; }
 
-    /// <summary>Row label from <see cref="HallSeatLayout.RowLabels"/>
-    /// (1–8 chars, e.g. "A", "VIP"). D-485: <b>null</b> for an
-    /// <see cref="SeatReservationKind.OpenSeating"/> join (general admission —
-    /// no specific seat); always set for the seat-specific kinds.</summary>
+    // The seat itself. Both null together on an OpenSeating join, which is general
+    // admission and grants no particular place; both set together on every
+    // seat-specific kind. RowLabel comes from HallSeatLayout.RowLabels (1 to 8
+    // chars, e.g. "A" or "VIP"); SeatNumber is 1-based within that row, up to the
+    // layout's seats per row.
     public string? RowLabel { get; set; }
 
-    /// <summary>1-based seat number within the row
-    /// (1 .. <see cref="HallSeatLayout.SeatsPerRow"/>). D-485: <b>null</b> for an
-    /// <see cref="SeatReservationKind.OpenSeating"/> join; paired with
-    /// <see cref="RowLabel"/> (both null together, or both set together).</summary>
     public int? SeatNumber { get; set; }
 
     public SeatReservationKind Kind { get; set; }
 
-    /// <summary>Logical FK to SimfUser.Id on the Identity DB. Null
-    /// when <see cref="Kind"/> = AdminReservedRow.</summary>
+    /// <summary>The holder. A bare Guid rather than a navigation: the user lives in
+    /// the Identity database, so there is no foreign key across the two. Null on an
+    /// admin block, which is what tells a blocked seat from a taken one.</summary>
     public Guid? ReservedForUserId { get; set; }
 
-    /// <summary>Who created the reservation — the visitor for self
-    /// bookings, the admin who blocked the row for
-    /// <see cref="SeatReservationKind.AdminReservedRow"/>.</summary>
+    /// <summary>Who made the reservation, which is not always who holds it: the
+    /// visitor on a self-booking, the admin who blocked the row otherwise.</summary>
     public Guid CreatedByUserId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
-    /// <summary>Set when the reservation is released (visitor cancels
-    /// or admin clears). Released rows are excluded from the unique
-    /// indexes so the seat is bookable again.</summary>
+    /// <summary>Stamped when the seat is given up, whether the visitor cancels, an
+    /// admin clears it, or the no-show sweep frees it. A released row falls out of
+    /// the filtered unique indexes, so the seat is bookable again.</summary>
     public DateTime? ReleasedAt { get; set; }
 
-    /// <summary>P2.2 — D-227 (FDS-005 §4): the booking lifecycle state.
-    /// <para>A9 (2026-07-27) — as built there is NO approval step: the owner made
-    /// bookings reservation-only on 2026-07-18, so every create path (visitor
-    /// self-pick, random allocation, open-seating join, admin row/seat block)
-    /// writes <see cref="BookingStatus.Approved"/>, and the only other value ever
-    /// written is <see cref="BookingStatus.Cancelled"/>, always together with
-    /// <see cref="ReleasedAt"/>. A live row is therefore always Approved; a
-    /// released row is Cancelled. <see cref="BookingStatus.Pending"/> and
-    /// <see cref="BookingStatus.Rejected"/> have no writer — see
-    /// <see cref="BookingStatus"/> for why they are kept.</para></summary>
+    /// <summary>Narrower in practice than the enum suggests, because there is no
+    /// approval step: every create path writes <see cref="BookingStatus.Approved"/>,
+    /// and the only other value ever written is <see cref="BookingStatus.Cancelled"/>,
+    /// always together with <see cref="ReleasedAt"/>. So a live row is Approved and a
+    /// released row is Cancelled. See <see cref="BookingStatus"/> for why the two
+    /// values nothing writes are kept.</summary>
     public BookingStatus Status { get; set; }
 
-    /// <summary>P2.2 — originally "the admin who approved or rejected the booking".
-    /// <para>A9 (2026-07-27) — with the approval queue gone this is written by
-    /// exactly one path: an admin RELEASE from the Control Panel seat plan stamps
-    /// the acting admin here. Read it as "who released this reservation", not as a
-    /// review decision. Null on every live row. Logical FK to SimfUser on the
-    /// Identity DB (no constraint — D-157).</para></summary>
+    /// <summary><b>Not a review decision, despite the name.</b> One path writes it:
+    /// an admin releasing a seat from the Control Panel seat plan stamps themselves
+    /// here. Read it as "who released this". Null on every live row, and a bare Guid
+    /// because the user is in the Identity database.</summary>
     public Guid? ReviewedByUserId { get; set; }
 
-    /// <summary>P2.2 — the timestamp paired with <see cref="ReviewedByUserId"/>.
-    /// A9: written only by an admin RELEASE (alongside <see cref="ReleasedAt"/>);
-    /// null on every live row.</summary>
+    /// <summary>Written with <see cref="ReviewedByUserId"/> by that same admin
+    /// release, alongside <see cref="ReleasedAt"/>. Null on every live row.</summary>
     public DateTime? ReviewedAt { get; set; }
 
-    /// <summary>P2.2 — the reason recorded when a booking is rejected (FDS-005 §8).
-    /// <para>A9 (2026-07-27) — VESTIGIAL: no code path writes it, because the reject
-    /// action it belonged to was removed with the approval queue. The column is kept
-    /// (nullable, ≤512 chars, always NULL) rather than dropped — dropping it is a
-    /// destructive schema change against a frozen baseline, and it is the landing
-    /// spot if an approval step is ever restored. Do not read it expecting a
-    /// value.</para></summary>
+    /// <summary>Vestigial: nothing writes it, because the reject action it belonged
+    /// to went with the approval queue. Always null, at most 512 chars. Kept rather
+    /// than dropped, because dropping a column is a destructive schema change against
+    /// a frozen baseline and this is where a restored approval step would put its
+    /// reason. Do not read it expecting a value.</summary>
     public string? RejectionReason { get; set; }
 
-    /// <summary>M-6 — when a Pending, still-held visitor booking auto-expires and
-    /// frees its seat. Set at creation to CreatedAt + the hold window on the
-    /// visitor-booking kinds (UserBooking / RandomAssignment / OpenSeating); NULL
-    /// for an AdminReservedRow block (admin holds never expire). Existing rows and
-    /// already-decided bookings carry NULL and are ignored by the expiry worker.</summary>
+    /// <summary>The no-show deadline, stamped at creation as the session's start
+    /// minus SeatReservationService.NoShowReleaseGrace. Once it passes, the sweep
+    /// releases the seat unless the holder has checked in. Null means the sweep can
+    /// never touch the row: admin blocks, and the walk-in hold created at the door
+    /// for someone already in the hall. A seat booked at or after the deadline is
+    /// exempt for the same reason, the holder is there.</summary>
     public DateTime? Expires { get; set; }
 
-    /// <summary>D-771 (owner 2026-07-26) — the manual guest HINT an administrator
-    /// types when blocking a VVIP seat from the Control Panel. A VVIP seat has no
-    /// registration, so there is no <see cref="ReservedForUserId"/> to resolve a
-    /// name from: the hint IS the occupant record (e.g. "Reserved for the
-    /// Minister"). Only meaningful on a
-    /// <see cref="SeatReservationKind.AdminReservedRow"/> block; null everywhere
-    /// else. ≤256 chars.</summary>
+    // The occupant of a VVIP seat an admin has blocked. Such a seat has no
+    // registration behind it, so there is no ReservedForUserId to resolve a name
+    // from and this typed hint IS the occupant record, e.g. "Reserved for the
+    // Minister". Meaningful only on an AdminReservedRow block, null everywhere else.
+    // At most 256 chars each, and the Arabic twin is null when the admin typed one
+    // language only.
     public string? GuestHint { get; set; }
 
-    /// <summary>D-771 — the Arabic twin of <see cref="GuestHint"/> (the surrounding
-    /// entities are all bilingual), e.g. "هذا المقعد محجوز لمعالي الوزير". ≤256
-    /// chars; null when the admin typed only one language.</summary>
     public string? GuestHintArabic { get; set; }
 }

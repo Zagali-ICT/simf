@@ -3,43 +3,42 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Programme;
 
 /// <summary>
-/// One programme speaker (SIMF-DAT-001 §5.4). D-153 enhances the basic
-/// shape introduced by the <c>AddSpeakers</c> migration with: an int
-/// nationality FK to the new <c>Country</c> table (replaces the prior
-/// free-text <c>CountryCode</c>); an optional logical FK to a
-/// <c>UserProfile</c> for speakers who also hold a SIMF account; full
-/// Arabic counterparts for every long-form text (Bio / Qualifications
-/// / TrainingExperience / Awards); two consent toggles
-/// (<see cref="AllowsMeetingRequests"/>, <see cref="AllowsDataSharing"/>)
-/// that drive what the public speaker page is allowed to surface; and
-/// three social-profile URLs the speaker has opted to publish.
+/// One person who presents a <see cref="Session"/>, joined to their sessions
+/// through <see cref="SessionSpeaker"/>.
+///
+/// <para>A speaker is a programme record before it is an account: most are
+/// external guests who never hold a SIMF login, and everything the public profile
+/// shows sits behind the two consent toggles below.</para>
 /// </summary>
 public class Speaker : BaseAuditEntity
 {
+    /// <summary>Unique, upper-cased, and the key the Excel grid import matches a
+    /// sheet row on.</summary>
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
+    /// <summary>The honorific or title line printed under the name, not a sort
+    /// position: <see cref="DisplayOrder"/> is the sort position.</summary>
     public string? Rank { get; set; }
     public string? RankArabic { get; set; }
 
-    /// <summary>D-153 — ISO 3166-1 numeric country id, logical FK to
-    /// <c>SIMF.Domain.Common.Country.Id</c>. Optional (some speakers
-    /// may have no recorded nationality). Indexed so the rare
-    /// "speakers by country" admin query stays cheap.</summary>
+    /// <summary>ISO 3166-1 numeric country id, and the entity's only nationality
+    /// field. Null when none is recorded.</summary>
     public int? CountryId { get; set; }
 
-    /// <summary>A5 — navigation for <see cref="CountryId"/> (same FK), so the
-    /// public projection reads the country name through one join instead of a
-    /// separate dictionary-stitch round-trip.</summary>
+    /// <summary>A real foreign key: the country is in the same DbContext, so the
+    /// public projection reads its name through this join instead of a second
+    /// query per page.</summary>
     public Country? Country { get; set; }
 
-    /// <summary>D-153 / D-167 — when the speaker also holds a SIMF
-    /// account, the owning <c>UserProfile.Id</c>. After D-167 moved
-    /// <c>UserProfile</c> onto <c>SimfAppDbContext</c>, this is a real
-    /// same-DB FK with <c>OnDelete.Restrict</c>. Null for external
-    /// speakers who do not have a SIMF account.</summary>
+    /// <summary>The <c>UserProfile</c> of a speaker who also holds a SIMF account,
+    /// null for the external speakers who do not. A real foreign key despite there
+    /// being no navigation for it: profiles live in the App database beside the
+    /// speakers, not in Identity. Never surfaced publicly.</summary>
     public Guid? UserProfileId { get; set; }
 
+    // The four long-form pairs behind the four bilingual tabs of the public
+    // speaker profile.
     public string? Bio { get; set; }
     public string? BioArabic { get; set; }
 
@@ -52,40 +51,32 @@ public class Speaker : BaseAuditEntity
     public string? Awards { get; set; }
     public string? AwardsArabic { get; set; }
 
-    /// <summary>D-153 — when true, the public speaker page exposes the
-    /// "Request meeting" affordance; false (default) hides it.</summary>
+    /// <summary>Shows the "Request meeting" affordance, and is checked again
+    /// server-side before a request is accepted, so clearing it closes the endpoint
+    /// as well as hiding the button. False by default.</summary>
     public bool AllowsMeetingRequests { get; set; }
 
-    /// <summary>D-153 — when true, the speaker has consented to having
-    /// their bio + social URLs surfaced to other attendees via the
-    /// in-app delegate-data exchange; false (default) keeps them
-    /// admin-only.</summary>
+    /// <summary>The consent gate over the URLs below: without it the public profile
+    /// returns null for each of them and they stay admin-only. False by default, so
+    /// a new speaker publishes nothing until an admin turns it on.</summary>
     public bool AllowsDataSharing { get; set; }
 
-    /// <summary>D-153 — optional Facebook profile URL the speaker has
-    /// chosen to publish.</summary>
     public string? FacebookUrl { get; set; }
 
-    /// <summary>D-153 — optional LinkedIn profile URL.</summary>
     public string? LinkedInUrl { get; set; }
 
-    /// <summary>D-153 — optional X (formerly Twitter) profile URL.</summary>
     public string? XUrl { get; set; }
 
-    /// <summary>Optional Instagram profile URL. Inlined from the removed shared
-    /// <c>Contact</c> directory (its identity-card fields now live on each
-    /// entity); grouped with the other opted-in social URLs above.</summary>
+    /// <summary>Captured on the admin form but published nowhere: unlike the other
+    /// social URLs there is no Instagram slot on the public speaker contract.</summary>
     public string? InstagramUrl { get; set; }
 
-    /// <summary>D-544 — optional personal / organisation website URL the
-    /// speaker has chosen to publish. Surfaced on the public profile under
-    /// the same data-sharing consent gate as the social URLs.</summary>
     public string? WebsiteUrl { get; set; }
 
-    // Contact identity-card fields inlined from the removed shared Contact
-    // directory (supersedes SIMF-FDS-014 / D-260). All nullable. Nationality
-    // (CountryId/Country) is NOT re-added here — the speaker's existing
-    // nationality FK above is reused as the country slot.
+    // The identity-card block, the admin's contact sheet for the speaker. None of
+    // it reaches the public projection, and there is deliberately no country in it:
+    // CountryId above is the nationality. Latitude and Longitude are decimal
+    // degrees.
     public string? Email { get; set; }
     public string? PhonePrimary { get; set; }
     public string? PhoneSecondary { get; set; }
@@ -94,7 +85,13 @@ public class Speaker : BaseAuditEntity
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
 
+    /// <summary>Vestigial: nothing writes it any more and the seed scripts leave it
+    /// null. The photo comes from the speaker's active SpeakerPhoto asset in the
+    /// StoredFile store; this path survives on the public contracts only as a
+    /// fallback for rows that predate that store.</summary>
     public string? PhotoRelativePath { get; set; }
 
+    /// <summary>Ascending sort position for the speakers list, ties broken by name.
+    /// Indexed with IsActive, the pair those queries filter and order on.</summary>
     public int DisplayOrder { get; set; }
 }

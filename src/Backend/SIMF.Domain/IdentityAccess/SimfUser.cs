@@ -5,101 +5,80 @@ namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>
 /// A SIMF user account. Extends ASP.NET Core Identity's
-/// <see cref="IdentityUser{TKey}"/>, which provides the email, password hash,
-/// security stamp, lockout fields and two-factor state (SIMF-DAT-001 section 5.1
-/// and Amendment B).
+/// <see cref="IdentityUser{TKey}"/>, where the email, password hash, security
+/// stamp, lockout counters and two-factor state live.
 ///
-/// <para>D-106: QrId, RejectionReason and RejectionReasonArabic have moved
-/// to <see cref="UserProfile"/> — they describe the visitor / participant's
-/// onboarding state, not the account identity. Admin-typed users do not get
-/// a QR (they don't attend with one) and do not get rejected; the
-/// AdminAccountService approve/reject paths ensure a UserProfile row exists
-/// before minting / writing the rejection text.</para>
+/// <para>This row is the account identity and nothing more. The same person's
+/// attendee side, the badge QR id and the rejection text among it, sits on
+/// <c>UserProfile</c> in the App database, so there is no navigation from here
+/// to it; the approve and reject paths create that row when it is missing.</para>
 /// </summary>
 public class SimfUser : IdentityUser<Guid>
 {
-    /// <summary>The name shown in the user interface.</summary>
     public string DisplayName { get; set; } = string.Empty;
 
-    /// <summary>The account lifecycle state (SIMF-RPM-001 section 6).</summary>
+    /// <summary>Registered, the default, is the state before the email is
+    /// verified. Sign-in refuses it and Disabled outright, but PendingApproval
+    /// and Rejected do sign in and are routed to their own screens by the
+    /// account_state claim, so this is not on its own an access decision.</summary>
     public AccountState AccountState { get; set; } = AccountState.Registered;
 
-    /// <summary>
-    /// The hardcoded user type (P7 — D-048; P8 — D-049; D-186 collapsed
-    /// Other into Visitor). Determines where the user can sign in (CP
-    /// for <see cref="UserType.Admin"/>; App / Website for
-    /// <see cref="UserType.Visitor"/>) and whether RBAC applies (Admin
-    /// only). Defaults to <see cref="UserType.Visitor"/> — the
-    /// least-privileged surface — so any row that loses its metadata
-    /// falls into the safest bucket.
-    ///
-    /// <para>The user's profile-type (Visitor tier / Other partner-kind)
-    /// no longer lives on this row — P8 moved it to
-    /// <c>UserProfile.ProfileTypeId</c> so the lookup row sits with the
-    /// rest of the per-user profile data.</para>
-    /// </summary>
+    /// <summary>Decides the surface the account may sign in on: Admin the
+    /// Control Panel, Visitor the App and Website, and the wrong surface is
+    /// refused even with the right password. RBAC roles are honoured on Admin
+    /// rows only; a visitor is tiered by <c>UserProfile.ProfileTypeId</c>
+    /// instead. Defaults to Visitor, the least-privileged surface, so a row
+    /// that loses this value falls into the safest bucket.</summary>
     public UserType UserType { get; set; } = UserType.Visitor;
 
-    /// <summary>
-    /// True when the account holds a temporary password and must change it
-    /// before any other action (SIMF-FDS-001 Amendment A.5; enforced at
-    /// sign-in by H4 — D-059). Default false — only explicitly-seeded
-    /// accounts (the super-admin) or operator-forced credential rotations
-    /// set this to true. A regular sign-up never sets the flag because
-    /// the user's own password is the only one ever set on the row.
-    /// </summary>
+    /// <summary>Blocks every path that mints a session until the password is
+    /// replaced. Set by the seeder for the super-admin, by an operator forcing
+    /// a rotation, and by sign-in itself once the password passes the
+    /// configured maximum age. An ordinary sign-up never sets it: the only
+    /// password ever put on the row is the user's own.</summary>
     public bool PasswordChangeRequired { get; set; }
 
-    /// <summary>When the account was created (Saudi local).</summary>
+    // Saudi local time, as is every other timestamp on this row.
     public DateTime CreatedAt { get; set; }
 
-    /// <summary>When the account was last updated (Saudi local); null if never.</summary>
     public DateTime? UpdatedAt { get; set; }
 
-    /// <summary>
-    /// The most recent TOTP time-step accepted for this account. A code at or
-    /// below this step is rejected as a replay (RFC 6238 section 5.2).
-    /// </summary>
+    /// <summary>The most recent TOTP time-step accepted for this account. A
+    /// code at or below this step is rejected as a replay (RFC 6238 section
+    /// 5.2).</summary>
     public long? LastUsedTotpTimestep { get; set; }
 
-    /// <summary>
-    /// The relative path of the user's avatar file, under the file store's
-    /// <c>Avatar</c> folder. For example <c>"abc123.png"</c>. Null when no
-    /// avatar is set. The bytes live in the unified store rooted at
-    /// <c>FileStorage:RootPath</c>, not in the row.
-    /// </summary>
+    /// <summary><b>Not a path.</b> It holds the id of the avatar's
+    /// <c>StoredFile</c> row in the App database, as a bare Guid string,
+    /// because a foreign key cannot cross the two databases. The bytes moved to
+    /// the unified file store but the name and the column stayed, so the
+    /// Identity-side readers that only test it for emptiness (the avatar URL
+    /// builder, the profile-completeness and face-photo gates) kept working
+    /// without a migration. Null means no avatar.</summary>
     public string? AvatarRelativePath { get; set; }
 
-    /// <summary>
-    /// When the <see cref="AccountState"/> last changed (Saudi local) — P10 —
-    /// D-051. Set on every transition through Approve / Reject / Disable
-    /// / unblock, and back-filled to <see cref="CreatedAt"/> by the P10
-    /// migration for existing rows. Lets admins answer "when was this
-    /// rejected?" without joining the audit log.
-    /// </summary>
+    /// <summary>When <see cref="AccountState"/> last changed. Written on every
+    /// transition through approve, reject, disable and unblock, and back-filled
+    /// to <see cref="CreatedAt"/> for rows that predate the column, so an admin
+    /// can answer "when was this rejected?" without joining the audit log.</summary>
     public DateTime? StateChangedAt { get; set; }
 
-    /// <summary>
-    /// The admin who last changed the <see cref="AccountState"/> (P10 —
-    /// D-051). Nullable so legacy rows (and self-driven transitions like
-    /// email verification) stay valid.
-    /// </summary>
+    /// <summary>The admin behind that change. Null when there is no actor: a
+    /// self-driven transition such as email verification, or a system sweep
+    /// such as the dormant-account disable.</summary>
     public Guid? StateChangedByUserId { get; set; }
 
-    /// <summary>
-    /// A7-13 (NCA) — when the password was last set (Saudi local). Set on every
-    /// change / reset (see <c>PasswordService</c>). Null for accounts whose
-    /// password was never changed since this column was added; the expiry check
-    /// falls back to <see cref="CreatedAt"/> as the baseline. Lets sign-in
-    /// enforce an admin-configured maximum password age.
-    /// </summary>
+    /// <summary>When the password was last set. Null on an account whose
+    /// password has not been changed since this column shipped, and the
+    /// maximum-password-age check then measures from <see cref="CreatedAt"/>
+    /// instead.</summary>
     public DateTime? PasswordChangedAt { get; set; }
 
-    /// <summary>
-    /// A7-31 / A1-19 (NCA) — when the account last completed a sign-in (Saudi local). Set
-    /// when tokens are issued. Surfaced to the client as the "previous sign-in"
-    /// notice (A7-31) and used as the activity signal for dormant-account
-    /// auto-disable (A1-19). Null until the first sign-in after this column shipped.
-    /// </summary>
+    /// <summary>The last completed sign-in, stamped when tokens are issued. Two
+    /// things read it: the "previous sign-in" notice returned to the client,
+    /// and the dormant-account sweep, which takes it as the activity signal and
+    /// falls back to <see cref="CreatedAt"/> when it is null. That fallback
+    /// would disable every long-standing account on the first run, which is why
+    /// <c>DormantAccountService</c> ships switched off.</summary>
     public DateTime? LastSuccessfulSignInAt { get; set; }
 }
