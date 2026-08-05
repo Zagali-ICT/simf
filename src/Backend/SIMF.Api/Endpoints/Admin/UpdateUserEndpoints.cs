@@ -2,11 +2,11 @@
 //        SIMF.Api.Tests/AdminAccountMobileTests.cs (FR-PHN-002 — the optional
 //        SaudiMobile / InternationalMobile correction: correct, canonicalise,
 //        omit-means-unchanged, malformed rolls the whole edit back, permission)
-using System.Security.Claims;
 using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Account.Validators;
 using SIMF.Api.Endpoints.Auth.Validators;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -148,11 +148,7 @@ public sealed class UpdateVisitorEndpoint(IAdminUserProvisioningService service)
 
     public override async Task HandleAsync(UpdateVisitorRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.UpdateVisitorAsync(actorId, req.Id,
             req, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
@@ -177,11 +173,7 @@ public sealed class UpdateOtherEndpoint(IAdminUserProvisioningService service)
 
     public override async Task HandleAsync(UpdateOtherRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.UpdateOtherAsync(actorId, req.Id,
             req, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);

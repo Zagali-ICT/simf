@@ -1,9 +1,9 @@
 // Tests: SIMF.Api.Tests/SeatTierEligibilityTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Api.Endpoints.Account;
 using SIMF.Api.Endpoints.Admin; // AuthorizationPolicies
+using SIMF.Api.RequestContext;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.SeatReservations.Abstractions;
 using SIMF.Common;
@@ -113,11 +113,7 @@ public sealed class StaffSeatOccupantPhotoEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out _))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        User.RequireActor();
 
         var sessionId = Route<Guid>("sessionId");
         var userId = Route<Guid>("userId");

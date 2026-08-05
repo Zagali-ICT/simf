@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/OrganizationProfileTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -45,11 +45,7 @@ public sealed class SaveAdminOrganizationProfileEndpoint(
     public override async Task HandleAsync(
         AdminUpdateOrganizationProfileRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.UpdateAsync(req, actorId, ct);
         await Send.OkAsync(ApiResult<OrganizationProfileResponse>.Ok(
             await service.GetAsync(ct)), ct);

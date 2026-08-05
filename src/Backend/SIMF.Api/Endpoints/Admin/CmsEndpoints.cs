@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/CmsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Cms.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -60,11 +60,7 @@ public sealed class UpsertContentBlockEndpoint(IAdminCmsService service)
     }
     public override async Task HandleAsync(UpsertContentBlockRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminContentBlockSummary>.Ok(
             await service.UpsertContentBlockAsync(actorId, req, ct)), ct);
     }
@@ -85,11 +81,7 @@ public sealed class DeleteContentBlockEndpoint(IAdminCmsService service)
     }
     public override async Task HandleAsync(DeleteContentBlockRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateContentBlockAsync(actorId, req.Key, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -146,11 +138,7 @@ public sealed class CreateBannerEndpoint(IAdminCmsService service)
     }
     public override async Task HandleAsync(CreateBannerRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminBannerDetail>.Ok(
             await service.CreateBannerAsync(actorId, req, ct)), ct);
     }
@@ -171,11 +159,7 @@ public sealed class UpdateBannerEndpoint(IAdminCmsService service)
     }
     public override async Task HandleAsync(UpdateBannerRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminBannerDetail>.Ok(
             await service.UpdateBannerAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -196,11 +180,7 @@ public sealed class DeleteBannerEndpoint(IAdminCmsService service)
     }
     public override async Task HandleAsync(DeleteBannerRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateBannerAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

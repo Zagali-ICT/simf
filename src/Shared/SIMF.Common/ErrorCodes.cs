@@ -21,6 +21,10 @@ public static class ErrorCodes
     public const string UploadScanUnavailable = "UPLOAD_SCAN_UNAVAILABLE";
 
     // Authentication (SIMF-API-001 section 12.6 and Amendment A)
+    /// <summary>The request carried no usable signed-in identity: either no
+    /// bearer token at all, or one whose <c>sub</c> claim is missing or is not
+    /// a Guid.</summary>
+    public const string AuthNotAuthenticated = "AUTH_NOT_AUTHENTICATED";
     public const string AuthEmailAlreadyRegistered = "AUTH_EMAIL_ALREADY_REGISTERED";
     public const string AuthAccountNotFound = "AUTH_ACCOUNT_NOT_FOUND";
     public const string AuthCodeInvalid = "AUTH_CODE_INVALID";

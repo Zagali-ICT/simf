@@ -1,10 +1,10 @@
 // Tests: SIMF.Api.Tests/OrganizationHeroVideoTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Organization;
@@ -51,11 +51,7 @@ public sealed class UploadOrganizationHeroVideoEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         // The persisted URL must be one the app/website hero can actually play: an
         // absolute https .mp4 (LiveStreamUrlPolicy). Behind the reverse proxy the
@@ -134,11 +130,7 @@ public sealed class DeleteOrganizationHeroVideoEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var servedUrl = OrganizationHeroVideoRoutes.ServedUrl(
             HttpContext.Request, options.Value.PublicApiBaseUrl);
         await heroVideo.RemoveAsync(actorId, servedUrl, ct);

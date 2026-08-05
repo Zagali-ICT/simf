@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/StaffWalkInRegistrationTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin; // AuthorizationPolicies
+using SIMF.Api.RequestContext;
 using SIMF.Application.Abstractions;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -42,11 +42,7 @@ public sealed class StaffRegisterVisitorEndpoint(IAdminUserProvisioningService s
     public override async Task HandleAsync(
         AdminWalkInRegistrationRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         // Audience-side: the desk creates a Visitor-typed account; the guard
         // rejects a partner ProfileType (parity with the CP visitors desk).
         var response = await service.RegisterOnSiteAsync(
@@ -85,11 +81,7 @@ public sealed class StaffUploadVisitorIdDocumentEndpoint(
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)
@@ -161,11 +153,7 @@ public sealed class StaffUploadVisitorAvatarEndpoint(IAccountService accountServ
 
     public override async Task HandleAsync(EmptyRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out _))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        User.RequireActor();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)

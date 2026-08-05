@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminCountriesTests.cs, SIMF.Api.Tests/DelegationsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Common.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -57,11 +57,7 @@ public sealed class CreateCountryEndpoint(IAdminCountryService service)
     }
     public override async Task HandleAsync(AdminCreateCountryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminCountryDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -93,11 +89,7 @@ public sealed class UpdateCountryEndpoint(IAdminCountryService service)
     }
     public override async Task HandleAsync(UpdateCountryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminCountryDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id,
                 req, ct)), ct);
@@ -137,11 +129,7 @@ public sealed class DeactivateCountryEndpoint(IAdminCountryService service)
     }
     public override async Task HandleAsync(DeactivateCountryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

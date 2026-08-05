@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminHallsTests.cs
 // Tests: SIMF.Api.Tests/HallScheduleTests.cs (QA B16 — active-only occupancy)
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -100,11 +100,7 @@ public sealed class CreateHallEndpoint(IAdminHallService service)
     }
     public override async Task HandleAsync(AdminCreateHallRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminHallDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -133,11 +129,7 @@ public sealed class UpdateHallEndpoint(IAdminHallService service)
     }
     public override async Task HandleAsync(UpdateHallRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminHallDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -158,11 +150,7 @@ public sealed class DeactivateHallEndpoint(IAdminHallService service)
     }
     public override async Task HandleAsync(DeactivateHallRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

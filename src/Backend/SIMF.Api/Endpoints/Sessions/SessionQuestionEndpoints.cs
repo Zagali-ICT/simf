@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.SessionQuestions.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Sessions;
@@ -40,11 +41,7 @@ public sealed class SubmitSessionQuestionEndpoint(ISessionQuestionService servic
 
     public override async Task HandleAsync(SubmitSessionQuestionRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var result = await service.SubmitAsync(
             req.SessionId, userId,
             new SubmitSessionQuestionRequest
@@ -71,7 +68,7 @@ internal static class SessionModeratorAuth
         ISessionModerationService moderationService,
         CancellationToken ct)
     {
-        if (!Guid.TryParse(user.FindFirstValue("sub"), out var actorId))
+        if (user.ActorIdOrNull() is not { } actorId)
         {
             return null;
         }
@@ -106,11 +103,7 @@ public sealed class ListMyModeratedSessionsEndpoint(ISessionModerationService se
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var rows = await service.ListMySessionsAsync(userId, ct);
         await Send.OkAsync(ApiResult<IReadOnlyList<ModeratedSessionRow>>.Ok(rows), ct);
     }

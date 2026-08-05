@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/SystemSettingsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -61,11 +61,7 @@ public sealed class CreateSystemSettingEndpoint(IAdminSystemSettingService servi
     }
     public override async Task HandleAsync(AdminCreateSystemSettingRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSystemSettingDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -84,11 +80,7 @@ public sealed class UpdateSystemSettingEndpoint(IAdminSystemSettingService servi
     }
     public override async Task HandleAsync(AdminUpdateSystemSettingRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var id = Route<Guid>("id");
         await Send.OkAsync(ApiResult<AdminSystemSettingDetail>.Ok(
             await service.UpdateAsync(actorId, id, req, ct)), ct);
@@ -110,11 +102,7 @@ public sealed class DeleteSystemSettingEndpoint(IAdminSystemSettingService servi
     }
     public override async Task HandleAsync(DeleteSystemSettingRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

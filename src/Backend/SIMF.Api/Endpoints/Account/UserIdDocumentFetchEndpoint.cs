@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs (round-trip, 404 when missing)
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 
@@ -28,11 +28,7 @@ public sealed class UserIdDocumentFetchEndpoint(IUserProfileService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var image = await service.ReadIdImageAsync(actorId, ct);
         if (image is null)

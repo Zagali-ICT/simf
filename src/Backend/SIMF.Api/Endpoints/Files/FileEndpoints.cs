@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -23,7 +24,7 @@ internal static class FileEndpointSupport
     public static FileAccessContext ContextFrom(ClaimsPrincipal user)
     {
         var isAuthenticated = user.Identity?.IsAuthenticated ?? false;
-        Guid? userId = Guid.TryParse(user.FindFirstValue("sub"), out var id) ? id : null;
+        Guid? userId = user.ActorIdOrNull();
         var permissions = user.FindAll(PermissionCatalog.ClaimType)
             .Select(c => c.Value)
             .ToHashSet(StringComparer.Ordinal);
@@ -86,11 +87,7 @@ public sealed class FileUploadEndpoint(
 
     public override async Task HandleAsync(FileUploadRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = req.File;
         if (file is null || file.Length == 0)
@@ -141,11 +138,7 @@ public sealed class FileLinkEndpoint(IFileService service)
 
     public override async Task HandleAsync(FileLinkRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var result = await service.CreateExternalLinkAsync(
             new CreateExternalLinkCommand(req.Service, req.OwnerEntityId, req.Url, actorId), ct);
@@ -238,11 +231,7 @@ public sealed class FileDeleteEndpoint(IFileService service)
 
     public override async Task HandleAsync(FileDeleteRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeleteAsync(req.Id, actorId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -266,11 +255,7 @@ public sealed class FileForceDeleteEndpoint(IFileService service)
 
     public override async Task HandleAsync(FileDeleteRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.ForceDeleteAsync(req.Id, actorId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

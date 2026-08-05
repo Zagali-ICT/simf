@@ -1,9 +1,9 @@
 // Tests: SIMF.Api.Tests/MyAreaDashboardTests.cs
 using System.Globalization;
-using System.Security.Claims;
 using System.Text;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.MyArea;
 using SIMF.Common;
 using SIMF.Contracts.Account;
@@ -30,11 +30,7 @@ public sealed class MyAreaDashboardEndpoint(IMyAreaService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var dashboard = await service.GetDashboardAsync(userId, ct);
         await Send.OkAsync(ApiResult<MyAreaDashboard>.Ok(dashboard), ct);
@@ -62,11 +58,7 @@ public sealed class MyAreaSessionsEndpoint(IMyAreaService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var sessions = await service.GetMySessionsAsync(userId, ct);
         await Send.OkAsync(ApiResult<MyAreaSessions>.Ok(sessions), ct);
@@ -92,11 +84,7 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var events = await service.GetCalendarEventsAsync(userId, ct);
         var ics = BuildCalendar(events, timeProvider.SimfNow());
@@ -170,11 +158,7 @@ public sealed class MyAreaContactCardEndpoint(IMyAreaService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var card = await service.GetContactCardAsync(userId, ct);
         var vcard = BuildVCard(card);

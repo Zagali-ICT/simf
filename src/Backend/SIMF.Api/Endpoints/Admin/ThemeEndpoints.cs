@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminThemeUpdateTests.cs
 // Tests: SIMF.Api.Tests/ThemesExcelTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -68,11 +68,7 @@ public sealed class CreateThemeEndpoint(IAdminThemeService service)
 
     public override async Task HandleAsync(AdminCreateThemeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var detail = await service.CreateAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminThemeDetail>.Ok(detail), ct);
     }
@@ -102,11 +98,7 @@ public sealed class UpdateThemeEndpoint(IAdminThemeService service)
 
     public override async Task HandleAsync(UpdateThemeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var detail = await service.UpdateAsync(actorId, req.Id,
             req, ct);
         await Send.OkAsync(ApiResult<AdminThemeDetail>.Ok(detail), ct);
@@ -128,11 +120,7 @@ public sealed class DeactivateThemeEndpoint(IAdminThemeService service)
 
     public override async Task HandleAsync(DeactivateThemeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

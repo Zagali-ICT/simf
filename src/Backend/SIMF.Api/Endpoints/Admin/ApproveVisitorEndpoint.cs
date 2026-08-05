@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminApprovalTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -28,11 +28,7 @@ public sealed class ApproveVisitorEndpoint(IAdminUserApprovalService adminAccoun
 
     public override async Task HandleAsync(ApproveVisitorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await adminAccountService.ApproveVisitorAsync(actorId, req.Id, req.ProfileTypeId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

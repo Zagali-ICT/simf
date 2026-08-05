@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -28,11 +28,7 @@ public sealed class ListBadgeBatchesEndpoint(IAdminUserBulkService adminAccountS
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var page = await adminAccountService.ListBadgeBatchesAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<GridPage<AdminBadgeBatchSummary>>.Ok(page), ct);
     }
@@ -58,11 +54,7 @@ public sealed class ReEmailBadgeBatchEndpoint(IAdminUserBulkService adminAccount
 
     public override async Task HandleAsync(AdminReEmailBadgeBatchRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.ReEmailBadgeBatchAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminReEmailBadgeBatchResponse>.Ok(response), ct);
     }
@@ -88,11 +80,7 @@ public sealed class RevokeBadgeBatchEndpoint(IAdminUserBulkService adminAccountS
 
     public override async Task HandleAsync(AdminRevokeBadgeBatchRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.RevokeBadgeBatchAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminRevokeBadgeBatchResponse>.Ok(response), ct);
     }

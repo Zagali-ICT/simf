@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/DelegationsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Delegations.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Delegations;
@@ -37,8 +37,7 @@ public sealed class ListPublicDelegationsEndpoint(IPublicDelegationService servi
         // The bearer token is optional here: authentication still runs on an
         // anonymous endpoint, so a signed-in caller carries `sub` and an anonymous
         // one does not (same pattern as SubmitContactInquiryEndpoint).
-        Guid? viewerUserId =
-            Guid.TryParse(User.FindFirstValue("sub"), out var callerId) ? callerId : null;
+        Guid? viewerUserId = User.ActorIdOrNull();
         var delegations = await service.GetAsync(viewerUserId, ct);
         await Send.OkAsync(ApiResult<AppDelegations>.Ok(delegations), ct);
     }

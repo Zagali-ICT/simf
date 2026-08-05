@@ -3,6 +3,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.Extensions.Logging;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Ai.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Ai;
@@ -22,7 +23,7 @@ internal static class AiCaller
         {
             return new AiCallerContext(null, "Anonymous");
         }
-        Guid? userId = Guid.TryParse(user.FindFirstValue("sub"), out var p) ? p : null;
+        Guid? userId = user.ActorIdOrNull();
         var kind = user.IsInRole("Administrator") ? "Admin"
             : user.IsInRole("Moderator") ? "Moderator"
             : user.IsInRole("Staff") ? "Staff"

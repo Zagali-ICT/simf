@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Assets.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -135,11 +136,7 @@ public sealed class UploadAssetEndpoint(IAssetService service)
 
     public override async Task HandleAsync(AssetUploadRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         if (!AssetAuth.TryParseCategory(req.Category, out var category))
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
@@ -192,11 +189,7 @@ public sealed class SetAssetLinkEndpoint(IAssetService service)
 
     public override async Task HandleAsync(SetAssetLinkRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         if (!AssetAuth.TryParseCategory(req.Category, out var category))
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
@@ -345,11 +338,7 @@ public sealed class DeactivateAssetEndpoint(IAssetService service)
 
     public override async Task HandleAsync(AssetItemRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         if (!AssetAuth.Has(User, PermissionCatalog.MediaLibrary.Manage))
         {
             await Send.ForbiddenAsync(ct);
@@ -375,11 +364,7 @@ public sealed class RestoreAssetEndpoint(IAssetService service)
 
     public override async Task HandleAsync(RestoreAssetRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         if (!AssetAuth.Has(User, PermissionCatalog.MediaLibrary.Manage))
         {
             await Send.ForbiddenAsync(ct);

@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminGridV2Tests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -41,11 +41,7 @@ public sealed class ImportUsersEndpoint(IAdminUserBulkService adminAccountServic
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)

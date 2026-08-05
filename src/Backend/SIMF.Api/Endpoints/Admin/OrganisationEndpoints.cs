@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/OrganisationTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Organisations.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Organisations;
@@ -79,11 +79,7 @@ public sealed class CreateOrganisationEndpoint(IAdminOrganisationService service
 
     public override async Task HandleAsync(CreateOrganisationRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminOrganisationDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -106,11 +102,7 @@ public sealed class UpdateOrganisationEndpoint(IAdminOrganisationService service
 
     public override async Task HandleAsync(UpdateOrganisationRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminOrganisationDetail>.Ok(
             await service.UpdateAsync(actorId, Route<Guid>("id"), req, ct)), ct);
     }
@@ -132,11 +124,7 @@ public sealed class DeactivateOrganisationEndpoint(IAdminOrganisationService ser
 
     public override async Task HandleAsync(OrganisationByIdRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -176,11 +164,7 @@ public sealed class ImportOrganisationsEndpoint(IAdminOrganisationService servic
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)

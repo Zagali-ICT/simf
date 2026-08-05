@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.RateLimiting;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -25,11 +25,7 @@ public sealed class SignOutEndpoint(ISessionService sessionService)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         await sessionService.SignOutAsync(userId, ct);
         await Send.OkAsync(ApiResult<SignOutResponse>.Ok(new SignOutResponse(true)), ct);

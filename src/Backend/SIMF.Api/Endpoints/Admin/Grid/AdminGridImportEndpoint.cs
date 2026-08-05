@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
@@ -75,11 +75,7 @@ public abstract class AdminGridImportEndpoint(IGridExcelImporter importer)
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)

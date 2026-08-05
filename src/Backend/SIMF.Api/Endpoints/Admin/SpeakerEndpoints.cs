@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminSpeakersTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -63,11 +63,7 @@ public sealed class CreateSpeakerEndpoint(IAdminSpeakerService service)
 
     public override async Task HandleAsync(AdminCreateSpeakerRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSpeakerDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -98,11 +94,7 @@ public sealed class UpdateSpeakerEndpoint(IAdminSpeakerService service)
 
     public override async Task HandleAsync(UpdateSpeakerRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSpeakerDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id,
                 req, ct)), ct);
@@ -125,11 +117,7 @@ public sealed class DeactivateSpeakerEndpoint(IAdminSpeakerService service)
 
     public override async Task HandleAsync(DeactivateSpeakerRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

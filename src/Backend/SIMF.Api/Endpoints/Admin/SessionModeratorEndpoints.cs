@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminSessionModeratorsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.SessionQuestions.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -60,11 +60,7 @@ public sealed class AssignSessionModeratorEndpoint(IAdminSessionModeratorService
 
     public override async Task HandleAsync(AssignSessionModeratorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSessionModeratorRow>.Ok(
             await service.AssignAsync(actorId, req, ct)), ct);
     }
@@ -90,11 +86,7 @@ public sealed class RevokeSessionModeratorEndpoint(IAdminSessionModeratorService
 
     public override async Task HandleAsync(RevokeSessionModeratorRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.RevokeAsync(actorId, req.SessionId, req.UserId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

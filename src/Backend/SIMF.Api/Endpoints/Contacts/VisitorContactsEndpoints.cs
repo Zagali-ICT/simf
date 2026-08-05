@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/VisitorContactSharingTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Contacts.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Contacts;
@@ -27,11 +27,7 @@ public sealed class GetShareTokenEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await Send.OkAsync(ApiResult<VisitorShareTokenResponse>.Ok(
             await service.GetOrMintTokenAsync(userId, ct)), ct);
     }
@@ -51,11 +47,7 @@ public sealed class RotateShareTokenEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await Send.OkAsync(ApiResult<VisitorShareTokenResponse>.Ok(
             await service.RotateTokenAsync(userId, ct)), ct);
     }
@@ -92,11 +84,7 @@ public sealed class SaveContactEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(SaveContactRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var ownerUserId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var ownerUserId = User.ActorId();
         await Send.OkAsync(ApiResult<SavedContactRow>.Ok(
             await service.SaveAsync(ownerUserId, req.Token, req.Note, ct)), ct);
     }
@@ -115,11 +103,7 @@ public sealed class ListSavedContactsEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var ownerUserId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var ownerUserId = User.ActorId();
         await Send.OkAsync(ApiResult<IReadOnlyList<SavedContactRow>>.Ok(
             await service.ListSavedAsync(ownerUserId, ct)), ct);
     }
@@ -141,11 +125,7 @@ public sealed class RemoveSavedContactEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(SavedContactRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var ownerUserId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var ownerUserId = User.ActorId();
         await service.RemoveSavedAsync(ownerUserId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -165,11 +145,7 @@ public sealed class SavedContactVCardEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(SavedContactRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var ownerUserId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var ownerUserId = User.ActorId();
         var card = await service.GetSavedCardAsync(ownerUserId, req.Id, ct);
 
         // FR-EXH-002 — the rendering moved to the shared VisitorCardVCard so the

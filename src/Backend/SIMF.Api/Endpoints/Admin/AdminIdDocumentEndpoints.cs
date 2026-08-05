@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (round-trip smoke),
 //        SIMF.Api.Tests/UserProfileFaceGateTests.cs (admin walk-in face gate)
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -35,11 +35,7 @@ public abstract class AdminIdDocumentUploadEndpointBase(
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         // D-836 — confine this Edit permission to its own family. The service's
         // guard only compares UserType, and D-186 made BOTH the visitors and the
@@ -169,11 +165,7 @@ public abstract class AdminIdDocumentFetchEndpointBase(
         // A9 (PII) — capture the acting admin so the read is audited. The route is
         // permission-gated, so a token without a `sub` cannot legitimately reach
         // here; treat its absence as unauthorized rather than write a null actor.
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         // D-836 — confine this View permission to its own family, mirroring the
         // avatar endpoints. The national ID / Iqama / passport image is the most

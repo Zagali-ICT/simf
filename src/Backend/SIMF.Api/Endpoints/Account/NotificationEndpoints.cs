@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/NotificationTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Contracts.Notifications;
@@ -29,11 +29,7 @@ public sealed class ListNotificationsEndpoint(INotificationService service)
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var page = await service.ListMineAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<GridPage<NotificationDto>>.Ok(page), ct);
     }
@@ -57,11 +53,7 @@ public sealed class UnreadNotificationCountEndpoint(INotificationService service
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var count = await service.UnreadCountMineAsync(actorId, ct);
         await Send.OkAsync(
             ApiResult<UnreadCountResponse>.Ok(new UnreadCountResponse(count)), ct);
@@ -91,11 +83,7 @@ public sealed class MarkNotificationReadEndpoint(INotificationService service)
     public override async Task HandleAsync(
         MarkNotificationReadRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.MarkReadMineAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -118,11 +106,7 @@ public sealed class MarkAllNotificationsReadEndpoint(INotificationService servic
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.MarkAllReadMineAsync(actorId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -151,11 +135,7 @@ public sealed class DeleteNotificationEndpoint(INotificationService service)
     public override async Task HandleAsync(
         DeleteNotificationRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeleteMineAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

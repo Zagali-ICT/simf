@@ -2,9 +2,9 @@
 // Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235)
 // Tests: SIMF.Api.Tests/SessionSummaryTests.cs (P4.1a — D-237)
 using System.Globalization;
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Programme;
@@ -192,11 +192,7 @@ public sealed class GetApprovedSessionSummaryForHostEndpoint(IProgrammeSessionSe
     public override async Task HandleAsync(
         GetSessionSummaryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var summary = await service.GetApprovedSummaryForHostAsync(callerId, req.Id, ct)
             ?? throw new ApiException(
                 ErrorCodes.SessionNotFound, 404,

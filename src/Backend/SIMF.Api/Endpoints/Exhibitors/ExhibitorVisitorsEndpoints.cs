@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/ExhibitorVisitorScanTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Exhibitors.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Contacts;
@@ -33,11 +33,7 @@ public sealed class ScanVisitorBadgeEndpoint(IExhibitorVisitorService service)
 
     public override async Task HandleAsync(ScanVisitorBadgeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var card = await service.ScanByBadgeAsync(userId, req.QrId, req.Note, ct);
         await Send.OkAsync(ApiResult<VisitorCard>.Ok(card), ct);
     }
@@ -58,11 +54,7 @@ public sealed class ListMyVisitorsEndpoint(IExhibitorVisitorService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var rows = await service.ListMyVisitorsAsync(userId, ct);
         await Send.OkAsync(ApiResult<IReadOnlyList<ExhibitorVisitorRow>>.Ok(rows), ct);
     }
@@ -94,11 +86,7 @@ public sealed class RemoveCapturedVisitorEndpoint(IExhibitorVisitorService servi
 
     public override async Task HandleAsync(ExhibitorVisitorRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await service.RemoveCaptureAsync(userId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -122,11 +110,7 @@ public sealed class CapturedVisitorVCardEndpoint(IExhibitorVisitorService servic
 
     public override async Task HandleAsync(ExhibitorVisitorRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var card = await service.GetCaptureCardAsync(userId, req.Id, ct);
 
         HttpContext.Response.ContentType = Contacts.VisitorCardVCard.ContentType;

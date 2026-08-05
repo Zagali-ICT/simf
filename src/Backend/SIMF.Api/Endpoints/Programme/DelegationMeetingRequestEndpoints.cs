@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/DelegationMeetingRequestsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Programme;
@@ -24,11 +24,7 @@ public sealed class SubmitDelegationMeetingRequestEndpoint(IDelegationMeetingReq
     }
     public override async Task HandleAsync(SubmitDelegationMeetingRequestRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<DelegationMeetingRequestSubmitted>.Ok(
             await service.SubmitAsync(actorId, req, ct)), ct);
     }
@@ -48,11 +44,7 @@ public sealed class ListAdminDelegationMeetingRequestsEndpoint(IDelegationMeetin
     }
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<GridPage<AdminDelegationMeetingRequestRow>>.Ok(
             await service.ListAllAsync(actorId, req, ct)), ct);
     }
@@ -78,11 +70,7 @@ public sealed class GetAdminDelegationMeetingRequestEndpoint(IDelegationMeetingR
     }
     public override async Task HandleAsync(GetAdminDelegationMeetingRequestRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminDelegationMeetingRequestDetail>.Ok(
             await service.GetAsync(actorId, req.Id, ct)), ct);
     }
@@ -107,11 +95,7 @@ public sealed class ConfirmDelegationMeetingEndpoint(IDelegationMeetingRequestSe
     }
     public override async Task HandleAsync(ConfirmDelegationMeetingRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminDelegationMeetingRequestDetail>.Ok(
             await service.ConfirmByOtherPartyAsync(actorId, req.Id, ct)), ct);
     }
@@ -137,11 +121,7 @@ public sealed class DeclineDelegationMeetingEndpoint(IDelegationMeetingRequestSe
     }
     public override async Task HandleAsync(DeclineDelegationMeetingRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminDelegationMeetingRequestDetail>.Ok(
             await service.DeclineByOtherPartyAsync(actorId, req.Id, ct)), ct);
     }
@@ -165,11 +145,7 @@ public sealed class RespondToDelegationMeetingRequestEndpoint(IDelegationMeeting
     }
     public override async Task HandleAsync(RespondToDelegationMeetingRequestRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminDelegationMeetingRequestDetail>.Ok(
             await service.RespondAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -194,11 +170,7 @@ public sealed class CheckInDelegationMeetingEndpoint(IDelegationMeetingRequestSe
     }
     public override async Task HandleAsync(CheckInDelegationMeetingRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminDelegationMeetingRequestDetail>.Ok(
             await service.CheckInAsync(actorId, req.Id, ct)), ct);
     }

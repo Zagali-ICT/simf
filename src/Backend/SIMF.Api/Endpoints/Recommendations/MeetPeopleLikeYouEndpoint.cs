@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/RecommendationServiceTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Recommendations.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Recommendations;
@@ -28,11 +28,7 @@ public sealed class MeetPeopleLikeYouEndpoint(IRecommendationService service)
 
     public override async Task HandleAsync(MeetPeopleLikeYouRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var result = await service.MeetPeopleLikeYouAsync(
             callerId, req.Take ?? 20, ct);
         await Send.OkAsync(ApiResult<RecommendationsResponse>.Ok(result), ct);

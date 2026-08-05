@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/MovementTrackingTests.cs
 using System.Globalization;
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Programme;
@@ -33,11 +33,7 @@ public sealed class RecordDevicePositionsEndpoint(IMovementTrackingService servi
     public override async Task HandleAsync(
         RecordDevicePositionsRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await Send.OkAsync(ApiResult<RecordDevicePositionsResponse>.Ok(
             await service.RecordPositionsAsync(userId, req, ct)), ct);
     }

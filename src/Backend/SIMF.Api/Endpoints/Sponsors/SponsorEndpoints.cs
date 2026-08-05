@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/SponsorsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Sponsors.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -108,11 +108,7 @@ public sealed class CreateSponsorEndpoint(IAdminSponsorService service)
 
     public override async Task HandleAsync(AdminCreateSponsorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSponsorDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -142,11 +138,7 @@ public sealed class UpdateSponsorEndpoint(IAdminSponsorService service)
 
     public override async Task HandleAsync(UpdateSponsorRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSponsorDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -168,11 +160,7 @@ public sealed class DeactivateSponsorEndpoint(IAdminSponsorService service)
 
     public override async Task HandleAsync(DeactivateSponsorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

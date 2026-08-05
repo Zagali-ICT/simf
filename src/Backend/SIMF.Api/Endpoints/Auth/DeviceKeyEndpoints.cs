@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/DeviceKeySignInTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -24,11 +24,7 @@ public sealed class RegisterDeviceKeyEndpoint(IDeviceKeyService service)
 
     public override async Task HandleAsync(RegisterDeviceKeyRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var entry = await service.RegisterAsync(callerId, req, ct);
         await Send.OkAsync(ApiResult<DeviceKeyEntry>.Ok(entry), ct);
     }
@@ -53,11 +49,7 @@ public sealed class SendBiometricStepUpEndpoint(IDeviceKeyService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var result = await service.IssueEnrolStepUpAsync(callerId, ct);
         await Send.OkAsync(ApiResult<SendBiometricStepUpResponse>.Ok(result), ct);
     }
@@ -75,11 +67,7 @@ public sealed class ListMyDeviceKeysEndpoint(IDeviceKeyService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var rows = await service.ListMineAsync(callerId, ct);
         await Send.OkAsync(ApiResult<IReadOnlyList<DeviceKeyEntry>>.Ok(rows), ct);
     }
@@ -157,11 +145,7 @@ public sealed class RevokeMyDeviceKeyEndpoint(IDeviceKeyService service)
 
     public override async Task HandleAsync(RevokeMyDeviceKeyRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         await service.RevokeAsync(callerId, req.Id, actorIsAdministrator: false, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -186,11 +170,7 @@ public sealed class AdminRevokeDeviceKeyEndpoint(IDeviceKeyService service)
 
     public override async Task HandleAsync(AdminRevokeDeviceKeyRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.RevokeAsync(actorId, req.Id, actorIsAdministrator: true, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

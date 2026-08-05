@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/AdminRoleUpdateTests.cs
 // Tests: SIMF.Api.Tests/RolesExcelTests.cs
 // Tests: SIMF.Api.Tests/RolePermissionsEndpointsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -81,11 +81,7 @@ public sealed class CreateRoleEndpoint(IAdminRoleService service)
     public override async Task HandleAsync(
         AdminCreateRoleRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var summary = await service.CreateAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminRoleSummary>.Ok(summary), ct);
     }
@@ -118,11 +114,7 @@ public sealed class UpdateRoleEndpoint(IAdminRoleService service)
     public override async Task HandleAsync(
         UpdateRoleRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var summary = await service.UpdateAsync(actorId, req.Id,
             req, ct);
         await Send.OkAsync(ApiResult<AdminRoleSummary>.Ok(summary), ct);
@@ -183,11 +175,7 @@ public sealed class SetRolePermissionsEndpoint(IAdminRoleService service)
 
     public override async Task HandleAsync(SetRolePermissionsRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.SetPermissionsAsync(actorId, req.Id, req.Codes, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -216,11 +204,7 @@ public sealed class DeleteRoleEndpoint(IAdminRoleService service)
     public override async Task HandleAsync(
         DeleteRoleRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeleteAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

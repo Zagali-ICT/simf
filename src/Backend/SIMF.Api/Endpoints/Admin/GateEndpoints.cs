@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
 //        SIMF.Api.Tests/GateOperatorModelTests.cs (BUG-018)
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -59,11 +59,7 @@ public sealed class CreateGateEndpoint(IAdminGateService service)
     }
     public override async Task HandleAsync(AdminCreateGateRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminGateDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -95,11 +91,7 @@ public sealed class UpdateGateEndpoint(IAdminGateService service)
     }
     public override async Task HandleAsync(UpdateGateRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         // D-843 — pass the bound request straight through. No hand-copy, so no
         // field can be dropped from it.
         await Send.OkAsync(ApiResult<AdminGateDetail>.Ok(
@@ -122,11 +114,7 @@ public sealed class DeactivateGateEndpoint(IAdminGateService service)
     }
     public override async Task HandleAsync(DeactivateGateRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

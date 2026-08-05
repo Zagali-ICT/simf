@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/ArchiveVisibilityTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Operations.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -57,11 +57,7 @@ public sealed class UpdateArchiveVisibilityEndpoint(IOperationsToggleService ser
     public override async Task HandleAsync(
         UpdateArchiveVisibilityRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<ArchiveVisibilityState>.Ok(
             await service.UpdateArchiveVisibilityAsync(actorId, req, ct)), ct);
     }

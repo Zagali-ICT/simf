@@ -18,10 +18,7 @@ internal sealed class HttpRequestContext(IHttpContextAccessor accessor) : IReque
     public string? CorrelationId =>
         accessor.HttpContext?.TraceIdentifier;
 
-    public Guid? ActorUserId =>
-        Guid.TryParse(accessor.HttpContext?.User.FindFirstValue("sub"), out var id)
-            ? id
-            : null;
+    public Guid? ActorUserId => accessor.HttpContext?.User.ActorIdOrNull();
 
     public string? ActorDisplayName =>
         accessor.HttpContext?.User.FindFirstValue("display_name");

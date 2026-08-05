@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/NetworkingTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Networking.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Networking;
@@ -25,11 +25,7 @@ public sealed class SendConnectionEndpoint(INetworkingService service)
 
     public override async Task HandleAsync(SendConnectionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var result = await service.RequestAsync(callerId, req.TargetUserId, ct);
         await Send.OkAsync(ApiResult<ConnectionResult>.Ok(result), ct);
     }
@@ -50,11 +46,7 @@ public sealed class AcceptConnectionEndpoint(INetworkingService service)
 
     public override async Task HandleAsync(AcceptConnectionRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var result = await service.AcceptAsync(callerId, req.Id, ct);
         await Send.OkAsync(ApiResult<ConnectionResult>.Ok(result), ct);
     }
@@ -75,11 +67,7 @@ public sealed class RemoveConnectionEndpoint(INetworkingService service)
 
     public override async Task HandleAsync(RemoveConnectionRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         await service.RemoveAsync(callerId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -97,11 +85,7 @@ public sealed class ListConnectionsEndpoint(INetworkingService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var rows = await service.ListMineAsync(callerId, ct);
         await Send.OkAsync(ApiResult<IReadOnlyList<ConnectionRow>>.Ok(rows), ct);
     }

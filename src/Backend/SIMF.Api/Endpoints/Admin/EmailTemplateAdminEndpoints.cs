@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/EmailTemplateAdminTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Email;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -79,11 +79,7 @@ public sealed class UpdateEmailTemplateEndpoint(IAdminEmailTemplateService servi
 
     public override async Task HandleAsync(UpdateEmailTemplateRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         await Send.OkAsync(ApiResult<AdminEmailTemplateDetail>.Ok(
             await service.UpdateAsync(
@@ -105,11 +101,7 @@ public sealed class ResetEmailTemplateEndpoint(IAdminEmailTemplateService servic
 
     public override async Task HandleAsync(EmailTemplateRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         await Send.OkAsync(ApiResult<AdminEmailTemplateDetail>.Ok(
             await service.ResetAsync(

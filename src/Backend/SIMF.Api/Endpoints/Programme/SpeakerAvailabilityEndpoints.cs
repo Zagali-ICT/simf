@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/SpeakerAvailabilityTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Programme;
@@ -27,11 +27,7 @@ public sealed class CreateSpeakerAvailabilityWindowEndpoint(ISpeakerAvailability
     public override async Task HandleAsync(
         CreateSpeakerAvailabilityWindowRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var speakerId = Route<Guid>("speakerId");
         await Send.OkAsync(ApiResult<AdminSpeakerAvailabilityWindow>.Ok(
             await service.CreateWindowAsync(actorId, speakerId, req, ct)), ct);
@@ -68,11 +64,7 @@ public sealed class DeleteSpeakerAvailabilityWindowEndpoint(ISpeakerAvailability
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeleteWindowAsync(actorId, Route<Guid>("id"), ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

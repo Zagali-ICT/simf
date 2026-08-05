@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.RateLimiting;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -25,11 +25,7 @@ public sealed class ChangePasswordEndpoint(IPasswordService passwordService)
 
     public override async Task HandleAsync(ChangePasswordRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var response = await passwordService.ChangePasswordAsync(userId, req, ct);
         await Send.OkAsync(ApiResult<ChangePasswordResponse>.Ok(response), ct);

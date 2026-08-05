@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/FeedbackRatingsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Feedback.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Feedback;
@@ -54,11 +54,7 @@ public sealed class GetRatingFormEndpoint(IRatingFormService service)
 
     public override async Task HandleAsync(RatingFormRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var view = await service.GetFormAsync(userId, req, ct);
         await Send.OkAsync(ApiResult<RatingFormView>.Ok(view), ct);
     }
@@ -79,11 +75,7 @@ public sealed class SubmitRatingEndpoint(IRatingFormService service)
 
     public override async Task HandleAsync(SubmitRatingRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var view = await service.SubmitAsync(userId, req, ct);
         await Send.OkAsync(ApiResult<RatingSubmissionView>.Ok(view), ct);
     }

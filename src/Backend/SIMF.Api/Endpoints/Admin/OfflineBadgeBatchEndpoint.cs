@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/OfflineBadgeUploadTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Options;
@@ -40,11 +40,7 @@ public sealed class OfflineBadgeBatchEndpoint(IOfflineBadgeUploadService service
     public override async Task HandleAsync(
         OfflineBadgeBatchRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await service.UploadAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<OfflineBadgeBatchResponse>.Ok(response), ct);
     }

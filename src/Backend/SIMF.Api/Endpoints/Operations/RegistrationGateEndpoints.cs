@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/RegistrationGateTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Operations.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -42,11 +42,7 @@ public sealed class UpdateRegistrationGateEndpoint(IOperationsToggleService serv
     public override async Task HandleAsync(
         UpdateRegistrationGateRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<RegistrationGateState>.Ok(
             await service.UpdateRegistrationGateAsync(actorId, req, ct)), ct);
     }

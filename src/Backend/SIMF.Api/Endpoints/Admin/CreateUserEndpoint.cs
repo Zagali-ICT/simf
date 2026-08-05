@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminCreateUserTests.cs, SIMF.Api.Tests/AdminApprovalTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.RateLimiting;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -32,11 +32,7 @@ public sealed class CreateAdminEndpoint(IAdminUserProvisioningService adminAccou
 
     public override async Task HandleAsync(AdminCreateAdminRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         // Granting roles at create time requires the same permission as the
         // standalone role-assignment desk (Admins.AssignRoles): an admin who can
         // create but not assign roles must not mint an elevated (Administrator)
@@ -77,11 +73,7 @@ public sealed class CreateOtherEndpoint(IAdminUserProvisioningService adminAccou
 
     public override async Task HandleAsync(AdminCreateOtherRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.CreateOtherAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(response), ct);
     }
@@ -106,11 +98,7 @@ public sealed class CreateVisitorEndpoint(IAdminUserProvisioningService adminAcc
 
     public override async Task HandleAsync(AdminCreateVisitorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.CreateVisitorAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(response), ct);
     }

@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/AdminChangeAccountTypeTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Auth.Validators;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -55,11 +55,7 @@ public sealed class ChangeAccountTypeEndpoint(IAdminUserProvisioningService serv
     public override async Task HandleAsync(
         ChangeAccountTypeRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.ChangeAccountTypeAsync(
             actorId, req.Id, req.NewProfileTypeId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);

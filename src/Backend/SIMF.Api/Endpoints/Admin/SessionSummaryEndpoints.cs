@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/SessionSummaryCommitteeTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -64,11 +64,7 @@ public sealed class GenerateSessionSummaryEndpoint(IAdminSessionSummaryService s
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.GenerateAsync(actorId, sessionId, ct)), ct);
@@ -89,11 +85,7 @@ public sealed class SaveSessionSummaryEndpoint(IAdminSessionSummaryService servi
 
     public override async Task HandleAsync(SaveSessionSummaryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.SaveAsync(actorId, sessionId, req, ct)), ct);
@@ -114,11 +106,7 @@ public sealed class PublishSessionSummaryEndpoint(IAdminSessionSummaryService se
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.PublishAsync(actorId, sessionId, ct)), ct);
@@ -139,11 +127,7 @@ public sealed class UnpublishSessionSummaryEndpoint(IAdminSessionSummaryService 
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.UnpublishAsync(actorId, sessionId, ct)), ct);
@@ -168,11 +152,7 @@ public sealed class SubmitSessionSummaryForReviewEndpoint(IAdminSessionSummarySe
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.SubmitForReviewAsync(actorId, sessionId, ct)), ct);
@@ -193,11 +173,7 @@ public sealed class ApproveSessionSummaryEndpoint(IAdminSessionSummaryService se
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.ApproveAsync(actorId, sessionId, ct)), ct);
@@ -218,11 +194,7 @@ public sealed class ReturnSessionSummaryToDraftEndpoint(IAdminSessionSummaryServ
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.ReturnToDraftAsync(actorId, sessionId, ct)), ct);

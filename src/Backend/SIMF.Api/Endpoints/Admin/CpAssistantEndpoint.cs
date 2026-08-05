@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/CpAssistantEndpointTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Ai.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Ai;
@@ -41,7 +41,7 @@ public sealed class CpAssistantEndpoint(IAiService service)
                 "السؤال مطلوب.");
         }
 
-        var userId = Guid.TryParse(User.FindFirstValue("sub"), out var p) ? p : (Guid?)null;
+        var userId = User.ActorIdOrNull();
         var caller = new AiCallerContext(userId, "Admin");
 
         var result = await service.InvokeAsync(

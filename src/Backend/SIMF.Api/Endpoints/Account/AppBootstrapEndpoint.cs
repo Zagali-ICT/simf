@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AppBootstrapTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.Notifications;
 using SIMF.Common;
@@ -34,11 +34,7 @@ public sealed class AppBootstrapEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var user = await accountService.GetCurrentUserAsync(userId, ct);
         var unread = await notificationService.UnreadCountMineAsync(userId, ct);

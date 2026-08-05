@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminGridOthersTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -28,11 +28,7 @@ public sealed class BulkDeleteOthersEndpoint(IAdminUserBulkService adminAccountS
 
     public override async Task HandleAsync(AdminBulkDeleteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.BulkDeleteUsersByKindAsync(
             // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
             actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
@@ -60,11 +56,7 @@ public sealed class DuplicateOtherEndpoint(IAdminUserBulkService adminAccountSer
 
     public override async Task HandleAsync(AdminDuplicateUserRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var created = await adminAccountService.DuplicateUserByKindAsync(
             // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
             actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
@@ -91,11 +83,7 @@ public sealed class ExportOthersEndpoint(IAdminUserBulkService adminAccountServi
 
     public override async Task HandleAsync(AdminExportUsersRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var bytes = await adminAccountService.ExportUsersByKindAsync(
             // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
             actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
@@ -133,11 +121,7 @@ public sealed class ImportOthersEndpoint(IAdminUserBulkService adminAccountServi
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)

@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/SessionQuestionCommitteeTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.SessionQuestions.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Sessions;
@@ -42,11 +42,7 @@ public sealed class ApproveQuestionEndpoint(ISessionQuestionCommitteeService ser
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var id = Route<Guid>("questionId");
         await Send.OkAsync(ApiResult<SessionQuestionQueueRow>.Ok(
             await service.ApproveAsync(actorId, id, ct)), ct);
@@ -67,11 +63,7 @@ public sealed class HideQuestionFromQueueEndpoint(ISessionQuestionCommitteeServi
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var id = Route<Guid>("questionId");
         await Send.OkAsync(ApiResult<SessionQuestionQueueRow>.Ok(
             await service.HideAsync(actorId, id, ct)), ct);
@@ -92,11 +84,7 @@ public sealed class EscalateQuestionEndpoint(ISessionQuestionCommitteeService se
 
     public override async Task HandleAsync(EscalateQuestionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var id = Route<Guid>("questionId");
         await Send.OkAsync(ApiResult<SessionQuestionQueueRow>.Ok(
             await service.EscalateAsync(actorId, id, req.Role, ct)), ct);

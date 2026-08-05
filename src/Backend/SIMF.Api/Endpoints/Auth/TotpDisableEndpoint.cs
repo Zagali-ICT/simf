@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/TotpEnrolmentTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.RateLimiting;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -26,11 +26,7 @@ public sealed class TotpDisableEndpoint(ITotpEnrollmentService totpEnrollment)
 
     public override async Task HandleAsync(TotpDisableRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var response = await totpEnrollment.DisableAsync(userId, req, ct);
         await Send.OkAsync(ApiResult<TotpDisableResponse>.Ok(response), ct);

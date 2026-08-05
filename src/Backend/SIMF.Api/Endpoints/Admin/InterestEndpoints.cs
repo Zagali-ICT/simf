@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/InterestTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -85,11 +85,7 @@ public sealed class CreateInterestEndpoint(IInterestService service)
     public override async Task HandleAsync(
         AdminCreateInterestRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var summary = await service.CreateAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminInterestSummary>.Ok(summary), ct);
     }
@@ -122,11 +118,7 @@ public sealed class UpdateInterestEndpoint(IInterestService service)
     public override async Task HandleAsync(
         UpdateInterestRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var summary = await service.UpdateAsync(actorId, req.Id,
             req, ct);
         await Send.OkAsync(ApiResult<AdminInterestSummary>.Ok(summary), ct);
@@ -158,11 +150,7 @@ public sealed class DeactivateInterestEndpoint(IInterestService service)
     public override async Task HandleAsync(
         DeactivateInterestRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

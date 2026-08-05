@@ -1,9 +1,9 @@
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -50,11 +50,7 @@ public sealed class UploadSessionRecordingEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var id = Route<Guid>("id");
         var maxBytes = storageOptions.Value.MaxUploadBytes;
 
@@ -123,11 +119,7 @@ public sealed class DeleteSessionRecordingEndpoint(IAdminSessionService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var id = Route<Guid>("id");
         await Send.OkAsync(ApiResult<AdminSessionDetail>.Ok(
             await service.DeleteRecordingAsync(actorId, id, ct)), ct);

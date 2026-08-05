@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/ArchiveTests.cs, SIMF.Api.Tests/AdminArchiveTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Archive.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Archive;
@@ -109,11 +109,7 @@ public sealed class CreateArchiveEditionEndpoint(IAdminArchiveService service)
     public override async Task HandleAsync(
         CreateArchiveEditionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -139,11 +135,7 @@ public sealed class UpdateArchiveEditionEndpoint(IAdminArchiveService service)
     public override async Task HandleAsync(
         UpdateArchiveEditionRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -166,11 +158,7 @@ public sealed class DeleteArchiveEditionEndpoint(IAdminArchiveService service)
     public override async Task HandleAsync(
         DeleteArchiveEditionRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -196,11 +184,7 @@ public sealed class SnapshotCurrentArchiveEndpoint(IAdminArchiveService service)
     public override async Task HandleAsync(
         SnapshotCurrentEditionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(
             await service.SnapshotCurrentAsync(actorId, req, ct)), ct);
     }

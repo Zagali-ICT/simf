@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/ExhibitorsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Exhibitors.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Exhibitors;
@@ -63,11 +63,7 @@ public sealed class CreateExhibitorEndpoint(IAdminExhibitorService service)
 
     public override async Task HandleAsync(CreateExhibitorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminExhibitorDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -89,11 +85,7 @@ public sealed class UpdateExhibitorEndpoint(IAdminExhibitorService service)
 
     public override async Task HandleAsync(UpdateExhibitorRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminExhibitorDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -115,11 +107,7 @@ public sealed class DeleteExhibitorEndpoint(IAdminExhibitorService service)
 
     public override async Task HandleAsync(DeleteExhibitorRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -164,11 +152,7 @@ public sealed class ProvisionExhibitorAccountEndpoint(IAdminExhibitorService ser
 
     public override async Task HandleAsync(ProvisionExhibitorAccountRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<ExhibitorAccountSummary>.Ok(
             await service.ProvisionAccountAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -200,11 +184,7 @@ public sealed class LinkExhibitorAccountEndpoint(IAdminExhibitorService service)
 
     public override async Task HandleAsync(LinkExhibitorAccountRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<ExhibitorAccountSummary>.Ok(
             await service.LinkAccountAsync(actorId, req.Id, req, ct)), ct);
     }

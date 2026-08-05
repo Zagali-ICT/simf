@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/SiteSettingsAdminTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -45,11 +45,7 @@ public sealed class SaveAdminSiteSettingsEndpoint(
 
     public override async Task HandleAsync(AdminUpdateSiteSettingsRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await admin.SaveSiteSettingsAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<SiteSettingsResponse>.Ok(
             await siteSettings.GetAsync(ct)), ct);

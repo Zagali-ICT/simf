@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_visitor_avatar_sets_path,
 //        Avatar_family_guard_confines_each_route_to_its_own_family — D-357 per-family scope guard)
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Account;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -40,11 +40,7 @@ public abstract class AdminAvatarUploadEndpointBase(
 
     public override async Task HandleAsync(EmptyRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out _))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        User.RequireActor();
 
         // D-357 (review follow-up) — confine this Edit permission to its own family
         // so it can't overwrite another family's photo across the shared id space.

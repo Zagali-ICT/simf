@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminOperationLogTests.cs, SIMF.Api.Tests/AdminOperationLogExportTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -83,11 +83,7 @@ public sealed class ExportOperationLogEndpoint(IAdminOperationLogService service
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var bytes = await service.ExportAsync(actorId, req, ct);
         HttpContext.Response.Headers.ContentDisposition =
             $"attachment; filename=\"simf-operation-log-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";

@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -33,11 +33,7 @@ public sealed class RegisterOtherOnSiteEndpoint(IAdminUserProvisioningService se
     public override async Task HandleAsync(
         AdminWalkInRegistrationRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         // D-186 + review-pass: walk-in registrations create
         // Visitor-typed accounts; the partner desk enforces
         // expectedIsVisitor=false so a desk that picks an audience

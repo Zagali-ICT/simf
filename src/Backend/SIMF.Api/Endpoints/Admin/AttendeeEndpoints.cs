@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminAttendeesTests.cs, SIMF.Api.Tests/AdminAttendeesExportTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -51,11 +51,7 @@ public sealed class ExportAttendeesEndpoint(IAdminAttendeeService service)
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var bytes = await service.ExportAsync(actorId, req, ct);
         HttpContext.Response.Headers.ContentDisposition =
             $"attachment; filename=\"simf-attendees-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";

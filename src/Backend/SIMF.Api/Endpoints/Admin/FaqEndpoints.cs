@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/FaqTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Faq.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Faq;
@@ -64,11 +64,7 @@ public sealed class CreateFaqGroupEndpoint(IAdminFaqService service)
 
     public override async Task HandleAsync(CreateFaqGroupRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminFaqGroupSummary>.Ok(
             await service.CreateGroupAsync(actorId, req, ct)), ct);
     }
@@ -87,11 +83,7 @@ public sealed class UpdateFaqGroupEndpoint(IAdminFaqService service)
 
     public override async Task HandleAsync(UpdateFaqGroupRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminFaqGroupSummary>.Ok(
             await service.UpdateGroupAsync(actorId, Route<Guid>("id"), req, ct)), ct);
     }
@@ -110,11 +102,7 @@ public sealed class DeleteFaqGroupEndpoint(IAdminFaqService service)
 
     public override async Task HandleAsync(FaqByIdRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateGroupAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -169,11 +157,7 @@ public sealed class CreateFaqEntryEndpoint(IAdminFaqService service)
 
     public override async Task HandleAsync(CreateFaqEntryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminFaqEntrySummary>.Ok(
             await service.CreateEntryAsync(actorId, req, ct)), ct);
     }
@@ -192,11 +176,7 @@ public sealed class UpdateFaqEntryEndpoint(IAdminFaqService service)
 
     public override async Task HandleAsync(UpdateFaqEntryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminFaqEntrySummary>.Ok(
             await service.UpdateEntryAsync(actorId, Route<Guid>("id"), req, ct)), ct);
     }
@@ -215,11 +195,7 @@ public sealed class DeleteFaqEntryEndpoint(IAdminFaqService service)
 
     public override async Task HandleAsync(FaqByIdRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateEntryAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

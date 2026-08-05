@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/ProfileEndpointsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
@@ -57,11 +57,7 @@ public sealed class AvatarFetchEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
 
         var requestedId = Route<Guid>("userId");
         // For this increment a caller may only fetch their own avatar. A future

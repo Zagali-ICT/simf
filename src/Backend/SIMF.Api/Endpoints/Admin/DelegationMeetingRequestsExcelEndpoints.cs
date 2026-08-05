@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/MeetingCheckInExportTests.cs
-using System.Security.Claims;
 using SIMF.Api.Endpoints.Admin.Grid;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Excel;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Common;
@@ -53,11 +53,7 @@ public sealed class ExportDelegationMeetingRequestsEndpoint(
     protected override async Task<IReadOnlyList<AdminDelegationMeetingRequestRow>> ListAsync(
         GridQuery query, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return [];
-        }
+        var actorId = User.ActorId();
         return (await service.ListAllAsync(actorId, query, ct)).Items;
     }
 

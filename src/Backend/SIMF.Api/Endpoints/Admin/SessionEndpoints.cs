@@ -2,8 +2,8 @@
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
 // Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
 // Tests: SIMF.Api.Tests/ArrivalGraceResolutionTests.cs (D-842 — the PUT round-trip)
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -68,11 +68,7 @@ public sealed class CreateSessionEndpoint(IAdminSessionService service)
 
     public override async Task HandleAsync(AdminCreateSessionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSessionDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -103,11 +99,7 @@ public sealed class UpdateSessionEndpoint(IAdminSessionService service)
 
     public override async Task HandleAsync(UpdateSessionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSessionDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id,
                 req, ct)), ct);
@@ -130,11 +122,7 @@ public sealed class DeactivateSessionEndpoint(IAdminSessionService service)
 
     public override async Task HandleAsync(DeactivateSessionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -158,11 +146,7 @@ public sealed class SetSessionStatusEndpoint(IAdminSessionService service)
 
     public override async Task HandleAsync(SetSessionStatusRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var id = Route<Guid>("id");
         await Send.OkAsync(ApiResult<AdminSessionDetail>.Ok(
             await service.SetStatusAsync(actorId, id, req.Status, ct)), ct);

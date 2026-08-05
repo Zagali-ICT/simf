@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/AccountPreferencesTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Preferences;
 using SIMF.Common;
 using SIMF.Contracts.Account;
@@ -30,11 +30,7 @@ public sealed class AccountPreferencesGetEndpoint(IAccountPreferencesService ser
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var preferences = await service.GetMineAsync(actorId, ct);
         await Send.OkAsync(ApiResult<AccountPreferences>.Ok(preferences), ct);
@@ -64,11 +60,7 @@ public sealed class AccountPreferencesUpdateEndpoint(IAccountPreferencesService 
     public override async Task HandleAsync(
         UpdateAccountPreferencesRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var preferences = await service.SaveMineAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AccountPreferences>.Ok(preferences), ct);

@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -36,11 +36,7 @@ public sealed class ResetTwoFactorEndpoint(IAdminTwoFactorService adminAccountSe
     public override async Task HandleAsync(
         AdminResetTwoFactorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         await adminAccountService.ResetTwoFactorAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);

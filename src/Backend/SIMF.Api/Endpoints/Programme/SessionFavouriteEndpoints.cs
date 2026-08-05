@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/SessionFavouriteTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 
@@ -23,11 +23,7 @@ public sealed class FavouriteSessionEndpoint(ISessionFavouriteService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await service.AddAsync(userId, Route<Guid>("id"), ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -47,11 +43,7 @@ public sealed class UnfavouriteSessionEndpoint(ISessionFavouriteService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await service.RemoveAsync(userId, Route<Guid>("id"), ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -71,11 +63,7 @@ public sealed class MyFavouriteSessionsEndpoint(ISessionFavouriteService service
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await Send.OkAsync(
             ApiResult<IReadOnlyList<Guid>>.Ok(await service.ListMineAsync(userId, ct)), ct);
     }

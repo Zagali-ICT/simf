@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/HallAttendanceTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Options;
@@ -32,11 +32,7 @@ public sealed class RecordArrivalEndpoint(IHallAttendanceService service)
 
     public override async Task HandleAsync(RecordArrivalRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         var status = await service.RecordGeofenceArrivalAsync(userId, sessionId, req.Lat, req.Lon, ct);
         await Send.OkAsync(ApiResult<HallAttendanceStatus>.Ok(status), ct);
@@ -61,11 +57,7 @@ public sealed class RecordDepartureEndpoint(IHallAttendanceService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         var status = await service.RecordDepartureAsync(userId, sessionId, ct);
         await Send.OkAsync(ApiResult<HallAttendanceStatus>.Ok(status), ct);
@@ -84,11 +76,7 @@ public sealed class GetHallAttendanceStatusEndpoint(IHallAttendanceService servi
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         var status = await service.GetStatusAsync(userId, sessionId, ct);
         await Send.OkAsync(ApiResult<HallAttendanceStatus>.Ok(status), ct);

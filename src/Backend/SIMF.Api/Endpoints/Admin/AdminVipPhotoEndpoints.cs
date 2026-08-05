@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_vip_photo_sets_path)
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -38,11 +38,7 @@ public sealed class UploadVisitorVipPhotoEndpoint(
 
     public override async Task HandleAsync(EmptyRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         // D-836 — this route is Visitors.Edit and lives under /admin/visitors/,
         // so it must act only on the audience tier. The service guard compares
@@ -107,11 +103,7 @@ public sealed class FetchVisitorVipPhotoEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         // D-836 — audience tier only, checked before any byte is read.
         if (!await provisioning.IsSubjectInFamilyAsync(

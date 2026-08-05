@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/RegionTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Regions.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Regions;
@@ -78,11 +78,7 @@ public sealed class CreateRegionEndpoint(IAdminRegionService service)
 
     public override async Task HandleAsync(CreateRegionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminRegionDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -105,11 +101,7 @@ public sealed class UpdateRegionEndpoint(IAdminRegionService service)
 
     public override async Task HandleAsync(UpdateRegionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminRegionDetail>.Ok(
             await service.UpdateAsync(actorId, Route<Guid>("id"), req, ct)), ct);
     }
@@ -131,11 +123,7 @@ public sealed class DeactivateRegionEndpoint(IAdminRegionService service)
 
     public override async Task HandleAsync(RegionByIdRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

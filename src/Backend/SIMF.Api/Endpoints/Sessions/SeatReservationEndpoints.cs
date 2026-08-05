@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/SeatReservationsTests.cs
 // Tests: SIMF.Api.Tests/SeatChangeTests.cs (B1 — the change-seat endpoint)
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.SeatReservations.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Sessions;
@@ -26,8 +26,7 @@ public sealed class GetSessionSeatMapEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(GetSessionSeatMapRoute req, CancellationToken ct)
     {
-        Guid? actorId = Guid.TryParse(User.FindFirstValue("sub"), out var parsed)
-            ? parsed : null;
+        Guid? actorId = User.ActorIdOrNull();
         await Send.OkAsync(ApiResult<SessionSeatMap>.Ok(
             await service.GetSessionSeatMapAsync(req.SessionId, actorId, ct)), ct);
     }
@@ -50,11 +49,7 @@ public sealed class ReserveSeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(ReserveSeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
             await service.ReserveAsync(req.SessionId, actorId,
                 new ReserveSeatRequest
@@ -79,11 +74,7 @@ public sealed class ReserveRandomSeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(ReserveRandomSeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
             await service.ReserveRandomAsync(req.SessionId, actorId, ct)), ct);
     }
@@ -108,11 +99,7 @@ public sealed class JoinOpenSeatingEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(JoinOpenSeatingRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
             await service.JoinOpenSeatingAsync(req.SessionId, actorId, ct)), ct);
     }
@@ -143,11 +130,7 @@ public sealed class MoveSeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(MoveSeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
             await service.MoveAsync(req.SessionId, actorId,
                 // Re-projected so the route model cannot over-post onto the request.
@@ -173,11 +156,7 @@ public sealed class ReleaseMySeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(ReleaseMySeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.ReleaseMineAsync(req.SessionId, actorId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -220,11 +199,7 @@ public sealed class SetHallSeatLayoutEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(SetHallSeatLayoutRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<HallSeatLayoutSnapshot>.Ok(
             await service.SetLayoutAsync(actorId, req.HallId,
                 new SetHallSeatLayoutRequest
@@ -259,11 +234,7 @@ public sealed class DeleteHallSeatLayoutEndpoint(ISeatReservationService service
     }
     public override async Task HandleAsync(DeleteHallSeatLayoutRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<HallSeatLayoutSnapshot>.Ok(
             await service.DeleteLayoutAsync(actorId, req.HallId, ct)), ct);
     }
@@ -287,11 +258,7 @@ public sealed class AdminReserveRowEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(AdminReserveRowRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.AdminReserveRowAsync(actorId, req.SessionId,
             new AdminReserveRowRequest { RowLabel = req.RowLabel }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
@@ -316,11 +283,7 @@ public sealed class AdminReserveSeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(AdminReserveSeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.AdminReserveSeatAsync(actorId, req.SessionId,
             new AdminReserveSeatRequest
             {
@@ -355,11 +318,7 @@ public sealed class AdminReleaseSeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(AdminReleaseSeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.AdminReleaseAsync(actorId, req.SessionId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

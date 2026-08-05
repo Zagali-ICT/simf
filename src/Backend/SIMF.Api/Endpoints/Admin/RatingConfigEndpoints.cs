@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/RatingConfigTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Feedback.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Feedback;
@@ -63,11 +63,7 @@ public sealed class CreateRatingTypeEndpoint(IAdminRatingConfigService service)
 
     public override async Task HandleAsync(CreateRatingTypeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminRatingTypeSummary>.Ok(
             await service.CreateTypeAsync(actorId, req, ct)), ct);
     }
@@ -86,11 +82,7 @@ public sealed class UpdateRatingTypeEndpoint(IAdminRatingConfigService service)
 
     public override async Task HandleAsync(UpdateRatingTypeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminRatingTypeSummary>.Ok(
             await service.UpdateTypeAsync(actorId, Route<Guid>("id"), req, ct)), ct);
     }
@@ -109,11 +101,7 @@ public sealed class DeleteRatingTypeEndpoint(IAdminRatingConfigService service)
 
     public override async Task HandleAsync(RatingByIdRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateTypeAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -168,11 +156,7 @@ public sealed class CreateRatingGroupEndpoint(IAdminRatingConfigService service)
 
     public override async Task HandleAsync(CreateRatingQuestionGroupRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminRatingQuestionGroupSummary>.Ok(
             await service.CreateGroupAsync(actorId, req, ct)), ct);
     }
@@ -191,11 +175,7 @@ public sealed class UpdateRatingGroupEndpoint(IAdminRatingConfigService service)
 
     public override async Task HandleAsync(UpdateRatingQuestionGroupRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminRatingQuestionGroupSummary>.Ok(
             await service.UpdateGroupAsync(actorId, Route<Guid>("id"), req, ct)), ct);
     }
@@ -214,11 +194,7 @@ public sealed class DeleteRatingGroupEndpoint(IAdminRatingConfigService service)
 
     public override async Task HandleAsync(RatingByIdRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateGroupAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -273,11 +249,7 @@ public sealed class CreateRatingQuestionEndpoint(IAdminRatingConfigService servi
 
     public override async Task HandleAsync(CreateRatingQuestionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminRatingQuestionSummary>.Ok(
             await service.CreateQuestionAsync(actorId, req, ct)), ct);
     }
@@ -296,11 +268,7 @@ public sealed class UpdateRatingQuestionEndpoint(IAdminRatingConfigService servi
 
     public override async Task HandleAsync(UpdateRatingQuestionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminRatingQuestionSummary>.Ok(
             await service.UpdateQuestionAsync(actorId, Route<Guid>("id"), req, ct)), ct);
     }
@@ -319,11 +287,7 @@ public sealed class DeleteRatingQuestionEndpoint(IAdminRatingConfigService servi
 
     public override async Task HandleAsync(RatingByIdRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateQuestionAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

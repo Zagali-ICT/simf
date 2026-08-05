@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs (round-trip, magic-byte gate)
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
@@ -45,11 +45,7 @@ public sealed class UserIdDocumentUploadEndpoint(
     public override async Task HandleAsync(
         UserIdDocumentUploadRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         if (req.File is null || req.File.Length == 0)
         {

@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminMediaTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Media.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Media;
@@ -59,11 +59,7 @@ public sealed class CreateMediaEndpoint(IAdminMediaService service)
     }
     public override async Task HandleAsync(AdminCreateMediaRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminMediaDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -84,11 +80,7 @@ public sealed class UpdateMediaEndpoint(IAdminMediaService service)
     }
     public override async Task HandleAsync(UpdateMediaRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminMediaDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -109,11 +101,7 @@ public sealed class DeleteMediaEndpoint(IAdminMediaService service)
     }
     public override async Task HandleAsync(DeleteMediaRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -144,11 +132,7 @@ public sealed class MediaImageUploadEndpoint(IAdminMediaService service)
 
     public override async Task HandleAsync(MediaImageUploadRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = req.File;
         if (file is null || file.Length == 0)

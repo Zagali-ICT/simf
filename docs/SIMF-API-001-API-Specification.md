@@ -519,6 +519,7 @@ item OI-2.
 | `AUTH_RESET_CODE_INVALID` | 400 | The password-reset code is wrong, or the email has no account. |
 | `AUTH_RESET_CODE_EXPIRED` | 400 | The password-reset code has expired. |
 | `AUTH_INVALID_CREDENTIALS` | 401 | The email or password is incorrect. |
+| `AUTH_NOT_AUTHENTICATED` | 401 | The request carried no usable signed-in identity. Raised by an endpoint whose token was accepted but whose `sub` claim is missing or is not a Guid; a request with no token at all is refused earlier by the bearer pipeline. |
 | `AUTH_EMAIL_NOT_VERIFIED` | 403 | Sign-in attempted before the email was verified. |
 | `AUTH_ACCOUNT_NOT_APPROVED` | 403 | The registration is awaiting approval. |
 | `AUTH_ACCOUNT_DISABLED` | 403 | The account is deactivated. |

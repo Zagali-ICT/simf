@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/HallArrivalScanTests.cs
 // Tests: SIMF.Api.Tests/OperationalRateLimitExemptionTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Options;
@@ -30,11 +30,7 @@ public sealed class RecordQrArrivalEndpoint(IHallAttendanceService service)
 
     public override async Task HandleAsync(RecordQrArrivalRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         var result = await service.RecordQrArrivalAsync(operatorId, sessionId, req.QrId, ct);
         await Send.OkAsync(ApiResult<QrArrivalResult>.Ok(result), ct);
@@ -61,11 +57,7 @@ public sealed class RecordQrDepartureEndpoint(IHallAttendanceService service)
 
     public override async Task HandleAsync(RecordQrArrivalRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         var result = await service.RecordQrDepartureAsync(operatorId, sessionId, req.QrId, ct);
         await Send.OkAsync(ApiResult<QrArrivalResult>.Ok(result), ct);

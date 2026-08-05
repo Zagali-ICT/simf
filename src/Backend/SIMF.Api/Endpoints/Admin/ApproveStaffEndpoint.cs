@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminApprovalTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -27,11 +27,7 @@ public sealed class ApproveAdminEndpoint(IAdminUserApprovalService adminAccountS
 
     public override async Task HandleAsync(ApproveRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await adminAccountService.ApproveAdminAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -64,11 +60,7 @@ public sealed class ApproveOtherEndpoint(IAdminUserApprovalService adminAccountS
 
     public override async Task HandleAsync(ApproveRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await adminAccountService.ApproveOtherAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

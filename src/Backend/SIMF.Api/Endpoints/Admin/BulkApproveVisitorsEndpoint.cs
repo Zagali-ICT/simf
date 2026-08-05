@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminBulkApprovalTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Options;
@@ -29,11 +29,7 @@ public sealed class BulkApproveVisitorsEndpoint(IAdminUserApprovalService servic
     public override async Task HandleAsync(
         AdminBulkApprovalRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         if (req.Ids is null || req.Ids.Count == 0)
         {
             throw new ApiException(
@@ -68,11 +64,7 @@ public sealed class BulkApproveOthersEndpoint(IAdminUserApprovalService service)
     public override async Task HandleAsync(
         AdminBulkApprovalRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         if (req.Ids is null || req.Ids.Count == 0)
         {
             throw new ApiException(

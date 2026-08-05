@@ -3,6 +3,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Authentication;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.Programme.Abstractions;
@@ -42,11 +43,7 @@ public sealed class RequestRecordingStreamTokenEndpoint(
                 "لا يوجد تسجيل منشور متاح لهذه الجلسة.");
         }
 
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var token = tokens.CreateRecordingStreamToken(req.Id, userId);
         var streamUrl = $"/api/v1/app/programme/sessions/{req.Id}/recording/stream";

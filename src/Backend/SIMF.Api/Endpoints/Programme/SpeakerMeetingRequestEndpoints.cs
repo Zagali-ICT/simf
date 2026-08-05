@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/SpeakerMeetingRequestsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Programme;
@@ -37,11 +37,7 @@ public sealed class SubmitSpeakerMeetingRequestEndpoint(ISpeakerMeetingRequestSe
     }
     public override async Task HandleAsync(SubmitSpeakerMeetingRequestRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<SpeakerMeetingRequestSubmitted>.Ok(
             await service.SubmitAsync(req.SpeakerId, actorId,
                 new SubmitSpeakerMeetingRequestRequest
@@ -68,11 +64,7 @@ public sealed class ListAdminSpeakerMeetingRequestsEndpoint(ISpeakerMeetingReque
     }
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<GridPage<AdminSpeakerMeetingRequestRow>>.Ok(
             await service.ListAllAsync(actorId, req, ct)), ct);
     }
@@ -100,11 +92,7 @@ public sealed class GetAdminSpeakerMeetingRequestEndpoint(ISpeakerMeetingRequest
     }
     public override async Task HandleAsync(GetAdminSpeakerMeetingRequestRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSpeakerMeetingRequestDetail>.Ok(
             await service.GetAsync(actorId, req.Id, ct)), ct);
     }
@@ -128,11 +116,7 @@ public sealed class RespondToSpeakerMeetingRequestEndpoint(ISpeakerMeetingReques
     }
     public override async Task HandleAsync(RespondToSpeakerMeetingRequestRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSpeakerMeetingRequestDetail>.Ok(
             await service.RespondAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -158,11 +142,7 @@ public sealed class ResendSpeakerMeetingConfirmationEndpoint(ISpeakerMeetingRequ
     }
     public override async Task HandleAsync(ResendSpeakerMeetingConfirmationRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.ResendSpeakerConfirmationAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -187,11 +167,7 @@ public sealed class CheckInSpeakerMeetingEndpoint(ISpeakerMeetingRequestService 
     }
     public override async Task HandleAsync(CheckInSpeakerMeetingRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSpeakerMeetingRequestDetail>.Ok(
             await service.CheckInAsync(actorId, req.Id, ct)), ct);
     }
@@ -218,11 +194,7 @@ public sealed class ReopenSpeakerMeetingRequestEndpoint(ISpeakerMeetingRequestSe
     }
     public override async Task HandleAsync(ReopenSpeakerMeetingRequestRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSpeakerMeetingRequestDetail>.Ok(
             await service.ReopenAsync(actorId, req.Id, ct)), ct);
     }

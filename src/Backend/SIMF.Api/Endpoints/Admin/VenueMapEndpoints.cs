@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/VenueMapTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Venue.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -60,11 +60,7 @@ public sealed class CreateVenueMapNodeEndpoint(IVenueMapService service)
     }
     public override async Task HandleAsync(AdminCreateVenueMapNodeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminVenueMapNodeDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -83,11 +79,7 @@ public sealed class UpdateVenueMapNodeEndpoint(IVenueMapService service)
     }
     public override async Task HandleAsync(AdminUpdateVenueMapNodeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var id = Route<Guid>("id");
         await Send.OkAsync(ApiResult<AdminVenueMapNodeDetail>.Ok(
             await service.UpdateAsync(actorId, id, req, ct)), ct);
@@ -109,11 +101,7 @@ public sealed class DeleteVenueMapNodeEndpoint(IVenueMapService service)
     }
     public override async Task HandleAsync(DeleteVenueMapNodeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

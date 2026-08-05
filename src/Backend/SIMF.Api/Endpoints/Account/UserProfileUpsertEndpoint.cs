@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.UserProfile;
@@ -29,11 +29,7 @@ public sealed class UserProfileUpsertEndpoint(IUserProfileService service)
     public override async Task HandleAsync(
         UpsertUserProfileRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await service.UpsertMineAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<UserProfileResponse>.Ok(response), ct);
     }

@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/AiAdminTests.cs, SIMF.Api.Tests/AiHardeningTests.cs
-using System.Security.Claims;
 using System.Text.Json;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Ai.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Common;
@@ -89,11 +89,7 @@ public sealed class CreateAiPromptEndpoint(IAdminAiPromptService service)
     }
     public override async Task HandleAsync(CreateAiPromptRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminAiPromptDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -114,11 +110,7 @@ public sealed class UpdateAiPromptEndpoint(IAdminAiPromptService service)
     }
     public override async Task HandleAsync(UpdateAiPromptRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminAiPromptDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -139,11 +131,7 @@ public sealed class DeleteAiPromptEndpoint(IAdminAiPromptService service)
     }
     public override async Task HandleAsync(DeleteAiPromptRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -167,11 +155,7 @@ public sealed class TestAiPromptEndpoint(IAdminAiPromptService service)
     }
     public override async Task HandleAsync(TestAiPromptRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AiCallResult>.Ok(
             await service.TestAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -250,8 +234,7 @@ public sealed class GetAiInvocationDetailEndpoint(
         // D-179 (review-pass) — admin-on-admin surveillance trail.
         // Without this, "admin reads 50k invocations on Sunday night"
         // is invisible to SOC.
-        Guid? viewedBy = Guid.TryParse(User.FindFirstValue("sub"), out var p)
-            ? p : null;
+        Guid? viewedBy = User.ActorIdOrNull();
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.AiInvocationViewed,

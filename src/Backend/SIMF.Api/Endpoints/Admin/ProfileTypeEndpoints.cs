@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -82,11 +82,7 @@ public sealed class CreateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
     public override async Task HandleAsync(
         AdminCreateProfileTypeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var summary = await service.CreateAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminProfileTypeSummary>.Ok(summary), ct);
     }
@@ -125,11 +121,7 @@ public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
     public override async Task HandleAsync(
         UpdateAdminProfileTypeRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         // D-843 — pass the bound request straight through. No hand-copy, so no
         // field can be dropped from it.
         var summary = await service.UpdateAsync(actorId, req.Id, req, ct);
@@ -161,11 +153,7 @@ public sealed class DeactivateAdminProfileTypeEndpoint(IAdminProfileTypeCommandS
     public override async Task HandleAsync(
         DeactivateAdminProfileTypeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

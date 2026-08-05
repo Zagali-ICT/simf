@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/MyRequestsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Requests.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Requests;
@@ -24,11 +24,7 @@ public sealed class MyRequestsEndpoint(IMyRequestsService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await Send.OkAsync(ApiResult<IReadOnlyList<AppRequestItem>>.Ok(
             await service.GetMyRequestsAsync(userId, ct)), ct);
     }
@@ -50,11 +46,7 @@ public sealed class CancelMyRequestEndpoint(IMyRequestsService service)
 
     public override async Task HandleAsync(CancelMyRequestBody req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await service.CancelAsync(userId, req.Kind, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

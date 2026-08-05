@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/GateScanTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.AccessControl;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Common;
@@ -22,11 +22,7 @@ public sealed class MyAssignmentsEndpoint(IGateOperatorService service)
     }
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
         await Send.OkAsync(ApiResult<IReadOnlyList<OperatorGateAssignment>>.Ok(
             await service.ListMyAssignmentsAsync(operatorId, ct)), ct);
     }
@@ -56,11 +52,7 @@ public sealed class GateOfflineConfigEndpoint(IGateOperatorService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
         await Send.OkAsync(ApiResult<GateOfflineConfig>.Ok(
             await service.GetOfflineConfigAsync(operatorId, ct)), ct);
     }
@@ -93,11 +85,7 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
     }
     public override async Task HandleAsync(PostScanRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
 
         var headerKey = HttpContext.Request.Headers.TryGetValue(
             GateProtocol.IdempotencyKeyHeader, out var hk) ? hk.ToString() : null;
@@ -187,11 +175,7 @@ public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)
     public override async Task HandleAsync(
         PostGateVisitorsListRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
         var serviceRequest = new GateVisitorsListRequest
         {
             Cursor = req.Cursor,
@@ -232,11 +216,7 @@ public sealed class MyDailyReportEndpoint(IGateOperatorService service)
     }
     public override async Task HandleAsync(MyDailyReportRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
         await Send.OkAsync(ApiResult<OperatorDailyReport>.Ok(
             await service.GetMyDailyReportAsync(operatorId, req.GateId, ct)), ct);
     }
