@@ -102,13 +102,12 @@ internal sealed class BadgeAuthService(
             // generic invalid-credentials error, so an unknown badge is
             // indistinguishable from a wrong password (the public badge is never
             // a valid-QR oracle and never bypasses the password).
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.SignInBadCredentials,
-                Outcome = AuditOutcome.Failure,
-                ErrorCode = ErrorCodes.AuthInvalidCredentials,
-                Detail = "badge",
-            }, cancellationToken);
+            await auditLog.WriteFailureAsync(
+                AuditEvents.SignInBadCredentials,
+                null,
+                errorCode: ErrorCodes.AuthInvalidCredentials,
+                detail: "badge",
+                cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthInvalidCredentials, 401,
                 "The email address or password is not correct.",
                 "البريد الإلكتروني أو كلمة المرور غير صحيحة.");

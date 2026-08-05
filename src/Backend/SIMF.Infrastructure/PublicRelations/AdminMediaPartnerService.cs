@@ -148,13 +148,11 @@ internal sealed class AdminMediaPartnerService(
         appDbContext.MediaPartners.Add(partner);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaPartnerCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={partner.Id}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaPartnerCreated,
+            actorUserId,
+            $"id={partner.Id}; name={name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created MediaPartner {Name} (id {Id})",
@@ -216,13 +214,11 @@ internal sealed class AdminMediaPartnerService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaPartnerUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; name={name}; active={partner.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaPartnerUpdated,
+            actorUserId,
+            $"id={id}; name={name}; active={partner.IsActive}",
+            cancellationToken);
 
         var (en, ar) = await ResolveCountryAsync(partner.CountryId, cancellationToken);
         return ToDetail(partner, en, ar);
@@ -242,13 +238,11 @@ internal sealed class AdminMediaPartnerService(
         partner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaPartnerDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; name={partner.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaPartnerDeactivated,
+            actorUserId,
+            $"id={id}; name={partner.Name}",
+            cancellationToken);
     }
 
     private static (string name, string nameArabic, string? logoRelativePath, string? url, int displayOrder) Validate(

@@ -169,18 +169,16 @@ internal sealed class SpeakerMeetingRequestService(
             openRequest.AvailabilityWindowId = availabilityWindowId;
             await appDbContext.SaveChangesAsync(cancellationToken);
 
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.SpeakerMeetingRequestSubmitted,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = requesterUserId,
-                Detail = DetailJson(new
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.SpeakerMeetingRequestSubmitted,
+                requesterUserId,
+                DetailJson(new
                 {
                     speakerMeetingRequestId = openRequest.Id,
                     speakerId,
                     moved = true,
                 }),
-            }, cancellationToken);
+                cancellationToken);
 
             return new SpeakerMeetingRequestSubmitted(
                 openRequest.Id, speakerId, openRequest.Status, openRequest.CreatedAt);
@@ -203,17 +201,15 @@ internal sealed class SpeakerMeetingRequestService(
         appDbContext.SpeakerMeetingRequests.Add(req);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerMeetingRequestSubmitted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = requesterUserId,
-            Detail = DetailJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerMeetingRequestSubmitted,
+            requesterUserId,
+            DetailJson(new
             {
                 speakerMeetingRequestId = req.Id,
                 speakerId,
             }),
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "Speaker meeting request {Id} submitted for speaker {Code} by {Actor}",
@@ -299,12 +295,10 @@ internal sealed class SpeakerMeetingRequestService(
                 .ToList(),
             cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminSpeakerMeetingRequestsListed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = DetailJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminSpeakerMeetingRequestsListed,
+            actorUserId,
+            DetailJson(new
             {
                 count = pageRows.Count,
                 total,
@@ -313,7 +307,7 @@ internal sealed class SpeakerMeetingRequestService(
                 statusFilter,
                 speakerFilter,
             }),
-        }, cancellationToken);
+            cancellationToken);
 
         var items = pageRows.Select(r => new AdminSpeakerMeetingRequestRow(
             r.Id, r.SpeakerId, r.SpeakerName, r.SpeakerNameArabic,
@@ -331,13 +325,11 @@ internal sealed class SpeakerMeetingRequestService(
     {
         var detail = await LoadDetailAsync(id, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminSpeakerMeetingRequestViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = DetailJson(new { speakerMeetingRequestId = id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminSpeakerMeetingRequestViewed,
+            actorUserId,
+            DetailJson(new { speakerMeetingRequestId = id }),
+            cancellationToken);
 
         return detail;
     }
@@ -513,28 +505,24 @@ internal sealed class SpeakerMeetingRequestService(
                 "لم تعد هذه الفترة متاحة.");
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerMeetingRequestResponded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = DetailJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerMeetingRequestResponded,
+            actorUserId,
+            DetailJson(new
             {
                 speakerMeetingRequestId = req.Id,
                 status = req.Status.ToString(),
             }),
-        }, cancellationToken);
+            cancellationToken);
 
         // Mirrors the session flow (D-185): the respond path returns the
         // requester email, so SOC must see one Viewed event for every email
         // disclosure regardless of which endpoint disclosed it.
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminSpeakerMeetingRequestViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = DetailJson(new { speakerMeetingRequestId = req.Id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminSpeakerMeetingRequestViewed,
+            actorUserId,
+            DetailJson(new { speakerMeetingRequestId = req.Id }),
+            cancellationToken);
 
         // D-474 (#11) — notify the requester in-app, and on Accept email the speaker.
         // D-717 — an accept-WITH-hall is not a terminal decision: instead of the
@@ -601,13 +589,11 @@ internal sealed class SpeakerMeetingRequestService(
         req.CheckedInAt = now;
         req.CheckedInByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerMeetingRequestCheckedIn,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = DetailJson(new { speakerMeetingRequestId = id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerMeetingRequestCheckedIn,
+            actorUserId,
+            DetailJson(new { speakerMeetingRequestId = id }),
+            cancellationToken);
 
         // QA B12 — check-in used to be a bare status flip: the requester was told
         // nothing and their card still read "accepted". Tell them the attendance was
@@ -671,17 +657,15 @@ internal sealed class SpeakerMeetingRequestService(
         req.CheckedInByUserId = null;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerMeetingRequestReopened,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = DetailJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerMeetingRequestReopened,
+            actorUserId,
+            DetailJson(new
             {
                 speakerMeetingRequestId = req.Id,
                 previousStatus = previousStatus.ToString(),
             }),
-        }, cancellationToken);
+            cancellationToken);
 
         return await LoadDetailAsync(id, cancellationToken);
     }
@@ -722,13 +706,11 @@ internal sealed class SpeakerMeetingRequestService(
         var links = meetingActionTokens.StageTokensForRequest(req.Id);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerMeetingConfirmationResent,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = DetailJson(new { speakerMeetingRequestId = req.Id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerMeetingConfirmationResent,
+            actorUserId,
+            DetailJson(new { speakerMeetingRequestId = req.Id }),
+            cancellationToken);
         await meetingActionTokens.AuditMintedAsync(req.Id, cancellationToken);
         await EmailSpeakerConfirmationLinksAsync(req, links, cancellationToken);
     }

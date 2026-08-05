@@ -150,13 +150,8 @@ internal sealed class AdminCmsService(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ContentBlockUpserted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"key={key}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ContentBlockUpserted, actorUserId, $"key={key}", cancellationToken);
 
         logger.LogInformation(
             "Admin {Actor} upserted content block {Key}", actorUserId, key);
@@ -186,13 +181,11 @@ internal sealed class AdminCmsService(
         existing.LastUpdatedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ContentBlockDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"key={normalised}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ContentBlockDeactivated,
+            actorUserId,
+            $"key={normalised}",
+            cancellationToken);
     }
 
     public async Task<GridPage<AdminBannerSummary>> ListBannersAsync(
@@ -297,13 +290,8 @@ internal sealed class AdminCmsService(
         appDbContext.Banners.Add(banner);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BannerCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"bannerId={banner.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BannerCreated, actorUserId, $"bannerId={banner.Id}", cancellationToken);
 
         return ToBannerDetail(banner);
     }
@@ -336,13 +324,11 @@ internal sealed class AdminCmsService(
         banner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BannerUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"bannerId={banner.Id}; active={banner.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BannerUpdated,
+            actorUserId,
+            $"bannerId={banner.Id}; active={banner.IsActive}",
+            cancellationToken);
 
         return ToBannerDetail(banner);
     }
@@ -365,13 +351,8 @@ internal sealed class AdminCmsService(
         banner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BannerDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"bannerId={banner.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BannerDeactivated, actorUserId, $"bannerId={banner.Id}", cancellationToken);
     }
 
     // -- helpers --------------------------------------------------------------

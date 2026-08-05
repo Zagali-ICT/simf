@@ -168,13 +168,11 @@ internal sealed class AdminExhibitorService(
         appDbContext.Exhibitors.Add(exhibitor);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ExhibitorCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"exhibitorId={exhibitor.Id}; name={exhibitor.NameArabic}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ExhibitorCreated,
+            actorUserId,
+            $"exhibitorId={exhibitor.Id}; name={exhibitor.NameArabic}",
+            cancellationToken);
 
         return (await GetAsync(exhibitor.Id, cancellationToken))!;
     }
@@ -217,13 +215,11 @@ internal sealed class AdminExhibitorService(
         exhibitor.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ExhibitorUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"exhibitorId={exhibitor.Id}; active={exhibitor.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ExhibitorUpdated,
+            actorUserId,
+            $"exhibitorId={exhibitor.Id}; active={exhibitor.IsActive}",
+            cancellationToken);
 
         return (await GetAsync(exhibitor.Id, cancellationToken))!;
     }
@@ -243,13 +239,11 @@ internal sealed class AdminExhibitorService(
         exhibitor.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ExhibitorDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"exhibitorId={exhibitor.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ExhibitorDeactivated,
+            actorUserId,
+            $"exhibitorId={exhibitor.Id}",
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<ExhibitorAccountSummary>> ListAccountsAsync(

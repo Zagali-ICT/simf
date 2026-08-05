@@ -119,13 +119,11 @@ internal sealed class NotificationBroadcastService(
 
         var estimate = await CountRecipientsAsync(mode, sessionId, scope, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BroadcastQueued,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"broadcastId={broadcast.Id}; mode={mode}; sessionId={sessionId}; scope={scope}; estimate={estimate}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BroadcastQueued,
+            actorUserId,
+            $"broadcastId={broadcast.Id}; mode={mode}; sessionId={sessionId}; scope={scope}; estimate={estimate}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {Actor} queued broadcast {BroadcastId} (mode={Mode}, estimate={Estimate}).",

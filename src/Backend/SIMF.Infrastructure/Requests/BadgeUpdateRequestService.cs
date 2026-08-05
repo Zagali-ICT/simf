@@ -81,13 +81,11 @@ internal sealed class BadgeUpdateRequestService(
         appDbContext.BadgeUpdateRequests.Add(req);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BadgeUpdateRequestSubmitted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = requesterUserId,
-            Detail = JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BadgeUpdateRequestSubmitted,
+            requesterUserId,
+            JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
+            cancellationToken);
 
         logger.LogInformation(
             "Badge update request {Id} submitted by {Actor}", req.Id, requesterUserId);
@@ -133,13 +131,11 @@ internal sealed class BadgeUpdateRequestService(
         var names = await ResolveRequesterNamesAsync(
             pageRows.Select(r => r.RequestedByUserId), cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBadgeUpdateRequestsListed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { count = pageRows.Count, total, top, skip, statusFilter }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBadgeUpdateRequestsListed,
+            actorUserId,
+            JsonSerializer.Serialize(new { count = pageRows.Count, total, top, skip, statusFilter }),
+            cancellationToken);
 
         var items = pageRows.Select(r => new AdminBadgeUpdateRequestRow(
             r.Id, r.RequestedByUserId, names.GetValueOrDefault(r.RequestedByUserId),
@@ -154,13 +150,11 @@ internal sealed class BadgeUpdateRequestService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var detail = await LoadDetailAsync(id, cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBadgeUpdateRequestViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { badgeUpdateRequestId = id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBadgeUpdateRequestViewed,
+            actorUserId,
+            JsonSerializer.Serialize(new { badgeUpdateRequestId = id }),
+            cancellationToken);
         return detail;
     }
 
@@ -223,20 +217,16 @@ internal sealed class BadgeUpdateRequestService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BadgeUpdateRequestResponded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id, status = req.Status.ToString() }),
-        }, cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBadgeUpdateRequestViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BadgeUpdateRequestResponded,
+            actorUserId,
+            JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id, status = req.Status.ToString() }),
+            cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBadgeUpdateRequestViewed,
+            actorUserId,
+            JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
+            cancellationToken);
 
         // R-2 — notify the requester of the decision. On Accept the badge job title was
         // applied above; this makes that side effect visible instead of silent.

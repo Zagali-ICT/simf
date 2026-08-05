@@ -132,13 +132,11 @@ internal sealed class AdminRegionService(
         db.Regions.Add(region);
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RegionCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={region.Id}; code={v.Code}; nameAr={v.NameAr}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RegionCreated,
+            actorUserId,
+            $"id={region.Id}; code={v.Code}; nameAr={v.NameAr}",
+            ct);
 
         logger.LogInformation(
             "Admin {ActorId} created Region {Code} ({Id})",
@@ -179,13 +177,11 @@ internal sealed class AdminRegionService(
         region.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RegionUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={region.Id}; code={v.Code}; active={region.IsActive}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RegionUpdated,
+            actorUserId,
+            $"id={region.Id}; code={v.Code}; active={region.IsActive}",
+            ct);
 
         return ToDetail(region);
     }
@@ -208,13 +204,8 @@ internal sealed class AdminRegionService(
         region.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RegionDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={region.Id}; code={region.Code}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RegionDeactivated, actorUserId, $"id={region.Id}; code={region.Code}", ct);
     }
 
     private sealed record RegionDraft(string Code, string NameAr, string? NameEn, int SortOrder);

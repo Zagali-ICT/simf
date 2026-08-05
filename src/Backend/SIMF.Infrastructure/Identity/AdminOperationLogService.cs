@@ -71,13 +71,11 @@ internal sealed class AdminOperationLogService(
 
         var bytes = excel.Export(rows);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminOperationLogExported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"count={rows.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminOperationLogExported,
+            actorUserId,
+            $"count={rows.Count}",
+            cancellationToken);
 
         return bytes;
     }

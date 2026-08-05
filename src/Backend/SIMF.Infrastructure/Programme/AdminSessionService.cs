@@ -331,13 +331,11 @@ internal sealed class AdminSessionService(
         dbContext.Sessions.Add(session);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={code}; hall={hall.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionCreated,
+            actorUserId,
+            $"id={session.Id}; code={code}; hall={hall.Id}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Session {Code} ({Id})",
@@ -554,13 +552,11 @@ internal sealed class AdminSessionService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={code}; active={session.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionUpdated,
+            actorUserId,
+            $"id={session.Id}; code={code}; active={session.IsActive}",
+            cancellationToken);
 
         // A1/A6 — the cascade release used to leave no trace anywhere: the admin saw
         // only the generic "was updated" toast and the admin row-blocks vanished
@@ -572,15 +568,13 @@ internal sealed class AdminSessionService(
         var releasedAdminBlocks = releasedReservations.Count - releasedForVisitors;
         if (releasedReservations.Count > 0)
         {
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.SeatReservationReleased,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = actorUserId,
-                Detail = $"session={session.Id}; code={code}; reason="
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.SeatReservationReleased,
+                actorUserId,
+                $"session={session.Id}; code={code}; reason="
                     + $"{(hallChanged ? "HallChanged" : "Rescheduled")}; "
                     + $"reservations={releasedForVisitors}; adminBlocks={releasedAdminBlocks}",
-            }, cancellationToken);
+                cancellationToken);
         }
 
         // S-1 — notify each affected visitor AFTER the commit (best-effort; the
@@ -667,13 +661,11 @@ internal sealed class AdminSessionService(
         IReadOnlyList<Guid> audience,
         CancellationToken cancellationToken)
     {
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={session.Code}; notified={audience.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionDeactivated,
+            actorUserId,
+            $"id={session.Id}; code={session.Code}; notified={audience.Count}",
+            cancellationToken);
 
         foreach (var userId in audience)
         {
@@ -800,13 +792,11 @@ internal sealed class AdminSessionService(
                 => AuditEvents.SessionUnpublished,
             _ => AuditEvents.SessionStatusChanged,
         };
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = eventType,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={session.Code}; {from}->{status}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            eventType,
+            actorUserId,
+            $"id={session.Id}; code={session.Code}; {from}->{status}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} moved Session {Code} ({Id}) {From} -> {To}",
@@ -850,13 +840,11 @@ internal sealed class AdminSessionService(
         // source of truth; SessionRecording is DeletableDefault:true).
         await RetireRecordingAsync(priorPointer, result.Id, actorUserId, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionRecordingUploaded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={session.Code}; file={fileName}; bytes={sizeBytes}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionRecordingUploaded,
+            actorUserId,
+            $"id={session.Id}; code={session.Code}; file={fileName}; bytes={sizeBytes}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} uploaded recording for Session {Code} ({Id}), {Bytes} bytes",
@@ -891,13 +879,11 @@ internal sealed class AdminSessionService(
         await dbContext.SaveChangesAsync(cancellationToken);
         await RetireRecordingAsync(storedFileName, null, actorUserId, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionRecordingDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={session.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionRecordingDeleted,
+            actorUserId,
+            $"id={session.Id}; code={session.Code}",
+            cancellationToken);
 
         return ToDetail(session);
     }

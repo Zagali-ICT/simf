@@ -143,13 +143,11 @@ internal sealed class AdminProgrammeDayService(
         db.ProgrammeDays.Add(day);
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProgrammeDayCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={day.Id}; date={day.Date:yyyy-MM-dd}; title={title}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProgrammeDayCreated,
+            actorUserId,
+            $"id={day.Id}; date={day.Date:yyyy-MM-dd}; title={title}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created ProgrammeDay {Title} ({Id}) on {Date}",
@@ -180,13 +178,11 @@ internal sealed class AdminProgrammeDayService(
         day.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProgrammeDayUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={day.Id}; date={day.Date:yyyy-MM-dd}; active={day.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProgrammeDayUpdated,
+            actorUserId,
+            $"id={day.Id}; date={day.Date:yyyy-MM-dd}; active={day.IsActive}",
+            cancellationToken);
 
         var hasImage = await HasImageAsync(id, cancellationToken);
         return ToDetail(day, hasImage);
@@ -210,13 +206,11 @@ internal sealed class AdminProgrammeDayService(
         day.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProgrammeDayDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={day.Id}; date={day.Date:yyyy-MM-dd}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProgrammeDayDeactivated,
+            actorUserId,
+            $"id={day.Id}; date={day.Date:yyyy-MM-dd}",
+            cancellationToken);
     }
 
     /// <summary>One active programme day per date — the invariant the

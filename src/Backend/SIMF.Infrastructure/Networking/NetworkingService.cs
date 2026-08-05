@@ -80,13 +80,11 @@ internal sealed class NetworkingService(
         appDbContext.Connections.Add(connection);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ConnectionRequested,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = requesterUserId,
-            Detail = $"connectionId={connection.Id}; targetUserId={targetUserId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ConnectionRequested,
+            requesterUserId,
+            $"connectionId={connection.Id}; targetUserId={targetUserId}",
+            cancellationToken);
 
         logger.LogInformation(
             "Connection {ConnectionId} requested by {Requester} to {Target}",
@@ -120,13 +118,11 @@ internal sealed class NetworkingService(
         connection.RespondedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ConnectionAccepted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"connectionId={connection.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ConnectionAccepted,
+            actorUserId,
+            $"connectionId={connection.Id}",
+            cancellationToken);
 
         return ToResult(connection);
     }
@@ -157,13 +153,11 @@ internal sealed class NetworkingService(
         connection.RespondedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ConnectionRemoved,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"connectionId={connection.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ConnectionRemoved,
+            actorUserId,
+            $"connectionId={connection.Id}",
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<ConnectionRow>> ListMineAsync(

@@ -95,14 +95,12 @@ internal sealed class StoredFileService(
         dbContext.StoredFiles.Add(file);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.FileUploaded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = command.ActorUserId,
-            Detail = $"id={fileId}; service={command.Service}; type={detected.Type}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileUploaded,
+            command.ActorUserId,
+            $"id={fileId}; service={command.Service}; type={detected.Type}; "
                 + $"bytes={command.Content.LongLength}; encrypted={policy.EncryptAtRest}",
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "File {Id} uploaded (service={Service}, type={Type}, {Bytes} bytes, encrypted={Encrypted}).",
@@ -165,13 +163,11 @@ internal sealed class StoredFileService(
         dbContext.StoredFiles.Add(file);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.FileUploaded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={fileId}; service={service}; type=Video; bytes={write.SizeBytes}; encrypted=false; streamed",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileUploaded,
+            actorUserId,
+            $"id={fileId}; service={service}; type=Video; bytes={write.SizeBytes}; encrypted=false; streamed",
+            cancellationToken);
 
         logger.LogInformation(
             "File {Id} streamed (service={Service}, {Bytes} bytes, plaintext).", fileId, service, write.SizeBytes);
@@ -265,13 +261,11 @@ internal sealed class StoredFileService(
             await storage.DeleteAsync(previousUploadKey, cancellationToken);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.FileLinked,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = command.ActorUserId,
-            Detail = $"id={file.Id}; service={command.Service}; url={url}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileLinked,
+            command.ActorUserId,
+            $"id={file.Id}; service={command.Service}; url={url}",
+            cancellationToken);
 
         return new StoredFileResult(
             file.Id, $"/api/v1/files/{file.Id}", command.Service, file.FileType, IsEncrypted: false, SizeBytes: 0);
@@ -287,13 +281,11 @@ internal sealed class StoredFileService(
         var policy = FileServicePolicies.Resolve(file.Service);
         if (!IsAuthorized(policy, file, caller))
         {
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.FileAccessDenied,
-                Outcome = AuditOutcome.Failure,
-                ActorUserId = caller.UserId,
-                Detail = $"id={id}; service={file.Service}",
-            }, cancellationToken);
+            await auditLog.WriteFailureAsync(
+                AuditEvents.FileAccessDenied,
+                caller.UserId,
+                detail: $"id={id}; service={file.Service}",
+                cancellationToken: cancellationToken);
             // Uniform 404 — no exists-but-forbidden oracle for a private file.
             throw NotFound();
         }
@@ -323,13 +315,11 @@ internal sealed class StoredFileService(
                 logger.LogError(
                     "Integrity mismatch on file {Id} (service={Service}) — refusing to serve tampered bytes.",
                     id, file.Service);
-                await auditLog.WriteAsync(new AuditEntry
-                {
-                    EventType = AuditEvents.FileIntegrityFailed,
-                    Outcome = AuditOutcome.Failure,
-                    ActorUserId = caller.UserId,
-                    Detail = $"id={id}; service={file.Service}; expected={file.Sha256}; actual={actual}",
-                }, cancellationToken);
+                await auditLog.WriteFailureAsync(
+                    AuditEvents.FileIntegrityFailed,
+                    caller.UserId,
+                    detail: $"id={id}; service={file.Service}; expected={file.Sha256}; actual={actual}",
+                    cancellationToken: cancellationToken);
                 throw NotFound();
             }
         }
@@ -337,13 +327,11 @@ internal sealed class StoredFileService(
         // Per-row audit only for non-public reads (public reads would flood the log).
         if (policy.Access != FileAccessClass.Public)
         {
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.FileDownloaded,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = caller.UserId,
-                Detail = $"id={id}; service={file.Service}",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.FileDownloaded,
+                caller.UserId,
+                $"id={id}; service={file.Service}",
+                cancellationToken);
         }
 
         return new FileDownload(
@@ -382,13 +370,11 @@ internal sealed class StoredFileService(
             await storage.DeleteAsync(file.StorageKey, cancellationToken);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.FileDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; service={file.Service}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileDeleted,
+            actorUserId,
+            $"id={id}; service={file.Service}",
+            cancellationToken);
     }
 
     public async Task ForceDeleteAsync(Guid id, Guid actorUserId, CancellationToken cancellationToken = default)
@@ -413,13 +399,11 @@ internal sealed class StoredFileService(
         file.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.FileSecurelyDestroyed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; service={file.Service}; force-delete",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileSecurelyDestroyed,
+            actorUserId,
+            $"id={id}; service={file.Service}; force-delete",
+            cancellationToken);
     }
 
     private static bool IsAuthorized(FileServicePolicy policy, StoredFile file, FileAccessContext caller) =>

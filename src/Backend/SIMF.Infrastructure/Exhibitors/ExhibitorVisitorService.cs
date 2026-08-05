@@ -299,13 +299,11 @@ internal sealed class ExhibitorVisitorService(
         capture.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ExhibitorLeadRemoved,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = exhibitorUserId,
-            Detail = $"captureId={captureId}; exhibitorId={exhibitor.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ExhibitorLeadRemoved,
+            exhibitorUserId,
+            $"captureId={captureId}; exhibitorId={exhibitor.Id}",
+            cancellationToken);
     }
 
     public async Task<VisitorCard> GetCaptureCardAsync(

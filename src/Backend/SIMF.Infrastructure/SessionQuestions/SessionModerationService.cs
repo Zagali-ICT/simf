@@ -186,15 +186,13 @@ internal sealed class SessionModerationService(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = isHidden
+        await auditLog.WriteSuccessAsync(
+            isHidden
                 ? AuditEvents.SessionQuestionHidden
                 : AuditEvents.SessionQuestionUnhidden,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sessionId={sessionId}; questionId={questionId}",
-        }, cancellationToken);
+            actorUserId,
+            $"sessionId={sessionId}; questionId={questionId}",
+            cancellationToken);
 
         logger.LogInformation(
             "Moderator {Actor} {Action} question {QuestionId} on session {SessionId}",
@@ -234,15 +232,13 @@ internal sealed class SessionModerationService(
         question.Status = isAnswered ? QuestionStatus.Answered : QuestionStatus.Approved;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = isAnswered
+        await auditLog.WriteSuccessAsync(
+            isAnswered
                 ? AuditEvents.SessionQuestionAnswered
                 : AuditEvents.SessionQuestionUnanswered,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sessionId={sessionId}; questionId={questionId}",
-        }, cancellationToken);
+            actorUserId,
+            $"sessionId={sessionId}; questionId={questionId}",
+            cancellationToken);
 
         logger.LogInformation(
             "Moderator {Actor} {Action} question {QuestionId} on session {SessionId}",
@@ -279,13 +275,11 @@ internal sealed class SessionModerationService(
         question.PushedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionQuestionPushed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sessionId={sessionId}; questionId={questionId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionQuestionPushed,
+            actorUserId,
+            $"sessionId={sessionId}; questionId={questionId}",
+            cancellationToken);
 
         return await ToRowAsync(question, cancellationToken);
     }
@@ -341,13 +335,11 @@ internal sealed class SessionModerationService(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionQuestionReordered,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sessionId={sessionId}; count={distinctIds.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionQuestionReordered,
+            actorUserId,
+            $"sessionId={sessionId}; count={distinctIds.Count}",
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<ModeratedSessionRow>> ListMySessionsAsync(

@@ -66,13 +66,11 @@ internal sealed class HallAvailabilityService(
         appDbContext.HallAvailabilityWindows.Add(window);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallAvailabilityWindowCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"windowId={window.Id}; hallId={hallId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallAvailabilityWindowCreated,
+            actorUserId,
+            $"windowId={window.Id}; hallId={hallId}",
+            cancellationToken);
 
         logger.LogInformation(
             "Hall availability window {WindowId} created for hall {HallId} by {Actor}",
@@ -101,13 +99,11 @@ internal sealed class HallAvailabilityService(
         window.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallAvailabilityWindowDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"windowId={windowId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallAvailabilityWindowDeleted,
+            actorUserId,
+            $"windowId={windowId}",
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<HallAvailableSlot>> GetAvailableSlotsAsync(

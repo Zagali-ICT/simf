@@ -415,13 +415,8 @@ internal sealed partial class AdminAccountService
 
         var bytes = excel.Export(rows);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminUsersExported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"count={rows.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminUsersExported, actorUserId, $"count={rows.Count}", cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} exported {Count} users to XLSX",
@@ -490,13 +485,11 @@ internal sealed partial class AdminAccountService
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminUsersImported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"created={created}, skipped={skipped}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminUsersImported,
+            actorUserId,
+            $"created={created}, skipped={skipped}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} imported {Created} users from XLSX (skipped {Skipped})",
@@ -722,13 +715,11 @@ internal sealed partial class AdminAccountService
 
         var bytes = excel.Export(rows);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminUsersExported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"kind={kind}; count={rows.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminUsersExported,
+            actorUserId,
+            $"kind={kind}; count={rows.Count}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} exported {Count} {Kind} to XLSX",
@@ -829,13 +820,11 @@ internal sealed partial class AdminAccountService
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminUsersImported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"kind={kind}; created={created}; skipped={skipped}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminUsersImported,
+            actorUserId,
+            $"kind={kind}; created={created}; skipped={skipped}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} imported {Created} {Kind} from XLSX (skipped {Skipped})",
@@ -1008,13 +997,11 @@ internal sealed partial class AdminAccountService
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBulkBadgesGenerated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"created={created}; isDelegate={request.IsDelegate}; batchId={badgeBatch.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBulkBadgesGenerated,
+            actorUserId,
+            $"created={created}; isDelegate={request.IsDelegate}; batchId={badgeBatch.Id}",
+            cancellationToken);
         logger.LogInformation(
             "Admin {ActorId} bulk-generated {Created} badges (isDelegate={IsDelegate}).",
             actorUserId, created, request.IsDelegate);
@@ -1105,13 +1092,11 @@ internal sealed partial class AdminAccountService
         batch.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBulkBadgesGenerated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"re-email batchId={batch.Id}; count={badgeArtifacts.Count}; to={recipient}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBulkBadgesGenerated,
+            actorUserId,
+            $"re-email batchId={batch.Id}; count={badgeArtifacts.Count}; to={recipient}",
+            cancellationToken);
         return new AdminReEmailBadgeBatchResponse(badgeArtifacts.Count, true);
     }
 
@@ -1155,13 +1140,11 @@ internal sealed partial class AdminAccountService
         batch.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBulkBadgesGenerated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"revoke batchId={batch.Id}; disabled={revoked}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBulkBadgesGenerated,
+            actorUserId,
+            $"revoke batchId={batch.Id}; disabled={revoked}",
+            cancellationToken);
         return new AdminRevokeBadgeBatchResponse(revoked);
     }
 

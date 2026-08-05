@@ -104,7 +104,7 @@ internal sealed class AdminFaqService(
         dbContext.FaqGroups.Add(group);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqGroupCreated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqGroupCreated, actorUserId,
             $"id={group.Id}; nameEn={group.Name}", cancellationToken);
         logger.LogInformation("Admin {ActorId} created FAQ group {Name} ({Id})",
             actorUserId, group.Name, group.Id);
@@ -127,7 +127,7 @@ internal sealed class AdminFaqService(
         group.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqGroupUpdated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqGroupUpdated, actorUserId,
             $"id={group.Id}; nameEn={group.Name}; active={group.IsActive}", cancellationToken);
 
         var entryCount = await dbContext.FaqEntries
@@ -147,7 +147,7 @@ internal sealed class AdminFaqService(
         group.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqGroupDeactivated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqGroupDeactivated, actorUserId,
             $"id={group.Id}; nameEn={group.Name}", cancellationToken);
     }
 
@@ -224,7 +224,7 @@ internal sealed class AdminFaqService(
         dbContext.FaqEntries.Add(entry);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqEntryCreated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqEntryCreated, actorUserId,
             $"id={entry.Id}; groupId={entry.FaqGroupId}", cancellationToken);
 
         return ToEntrySummary(entry);
@@ -247,7 +247,7 @@ internal sealed class AdminFaqService(
         entry.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqEntryUpdated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqEntryUpdated, actorUserId,
             $"id={entry.Id}; groupId={entry.FaqGroupId}; active={entry.IsActive}", cancellationToken);
 
         return ToEntrySummary(entry);
@@ -265,21 +265,11 @@ internal sealed class AdminFaqService(
         entry.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqEntryDeactivated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqEntryDeactivated, actorUserId,
             $"id={entry.Id}; groupId={entry.FaqGroupId}", cancellationToken);
     }
 
     // -- internals ------------------------------------------------------------
-
-    private Task WriteAuditAsync(
-        string eventType, Guid actorUserId, string detail, CancellationToken cancellationToken) =>
-        auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = eventType,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = detail,
-        }, cancellationToken);
 
     private static AdminFaqGroupSummary ToGroupSummary(FaqGroup g, int entryCount) =>
         new(g.Id, g.Name, g.NameArabic, g.DisplayOrder, g.IsActive, entryCount, g.CreatedAt);

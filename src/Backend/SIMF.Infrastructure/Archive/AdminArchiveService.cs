@@ -178,13 +178,11 @@ internal sealed class AdminArchiveService(
         appDbContext.ArchiveEditions.Add(edition);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ArchiveEditionCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={edition.Id}; year={v.Year}; titleEn={v.TitleEn}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ArchiveEditionCreated,
+            actorUserId,
+            $"id={edition.Id}; year={v.Year}; titleEn={v.TitleEn}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created ArchiveEdition {Year} (id {Id})",
@@ -265,13 +263,11 @@ internal sealed class AdminArchiveService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ArchiveEditionUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; year={v.Year}; active={edition.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ArchiveEditionUpdated,
+            actorUserId,
+            $"id={id}; year={v.Year}; active={edition.IsActive}",
+            cancellationToken);
 
         return ToDetail(edition);
     }
@@ -291,13 +287,11 @@ internal sealed class AdminArchiveService(
         edition.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ArchiveEditionDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; year={edition.Year}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ArchiveEditionDeactivated,
+            actorUserId,
+            $"id={id}; year={edition.Year}",
+            cancellationToken);
     }
 
     public async Task<AdminArchiveEditionDetail> SnapshotCurrentAsync(

@@ -71,13 +71,11 @@ internal sealed class InterestService(
         };
         await interests.AddAsync(interest, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.InterestCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={interest.Id}; name={interest.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.InterestCreated,
+            actorUserId,
+            $"id={interest.Id}; name={interest.Name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created interest {Name} ({Id})",
@@ -120,13 +118,11 @@ internal sealed class InterestService(
         interest.UpdatedAt = timeProvider.SimfNow();
         await interests.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.InterestUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={interest.Id}; name={interest.Name}; active={interest.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.InterestUpdated,
+            actorUserId,
+            $"id={interest.Id}; name={interest.Name}; active={interest.IsActive}",
+            cancellationToken);
 
         return new AdminInterestSummary(
             interest.Id, interest.Name, interest.NameArabic,
@@ -154,12 +150,10 @@ internal sealed class InterestService(
         interest.UpdatedAt = timeProvider.SimfNow();
         await interests.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.InterestDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={interest.Id}; name={interest.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.InterestDeactivated,
+            actorUserId,
+            $"id={interest.Id}; name={interest.Name}",
+            cancellationToken);
     }
 }

@@ -235,19 +235,17 @@ public sealed class GetAiInvocationDetailEndpoint(
         // Without this, "admin reads 50k invocations on Sunday night"
         // is invisible to SOC.
         Guid? viewedBy = User.ActorIdOrNull();
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiInvocationViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = viewedBy ?? Guid.Empty,
-            Detail = JsonSerializer.Serialize(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AiInvocationViewed,
+            viewedBy ?? Guid.Empty,
+            JsonSerializer.Serialize(new
             {
                 invocationId = detail.Id,
                 promptKey = detail.PromptKey,
                 feature = detail.Feature.ToString(),
                 hasOutput = detail.OutputText is not null,
             }),
-        }, ct);
+            ct);
 
         await Send.OkAsync(ApiResult<AdminAiInvocationDetail>.Ok(detail), ct);
     }

@@ -94,13 +94,11 @@ internal sealed class SpeakerAvailabilityService(
         appDbContext.SpeakerAvailabilityWindows.Add(window);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerAvailabilityWindowCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"windowId={window.Id}; speakerId={speakerId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerAvailabilityWindowCreated,
+            actorUserId,
+            $"windowId={window.Id}; speakerId={speakerId}",
+            cancellationToken);
 
         logger.LogInformation(
             "Speaker availability window {WindowId} created for speaker {SpeakerId} by {Actor}",
@@ -129,13 +127,11 @@ internal sealed class SpeakerAvailabilityService(
         window.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerAvailabilityWindowDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"windowId={windowId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerAvailabilityWindowDeleted,
+            actorUserId,
+            $"windowId={windowId}",
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<SpeakerAvailableSlot>> GetAvailableSlotsAsync(

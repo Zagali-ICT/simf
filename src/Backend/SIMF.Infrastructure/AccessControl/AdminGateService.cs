@@ -187,13 +187,11 @@ internal sealed class AdminGateService(
         appDbContext.Gates.Add(gate);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.GateCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={gate.Id}; code={code}; mode={request.DirectionMode}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.GateCreated,
+            actorUserId,
+            $"id={gate.Id}; code={code}; mode={request.DirectionMode}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Gate {Code} ({Id}) with {AllowCount} allow + {OpCount} operators",
@@ -249,13 +247,11 @@ internal sealed class AdminGateService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.GateUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={gate.Id}; code={code}; active={gate.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.GateUpdated,
+            actorUserId,
+            $"id={gate.Id}; code={code}; active={gate.IsActive}",
+            cancellationToken);
 
         configCache.Invalidate(gate.Id);
         return ToDetail(gate);
@@ -277,13 +273,11 @@ internal sealed class AdminGateService(
         gate.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.GateDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={gate.Id}; code={gate.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.GateDeactivated,
+            actorUserId,
+            $"id={gate.Id}; code={gate.Code}",
+            cancellationToken);
 
         configCache.Invalidate(gate.Id);
     }

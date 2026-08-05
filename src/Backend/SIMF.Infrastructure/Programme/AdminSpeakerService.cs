@@ -208,13 +208,11 @@ internal sealed class AdminSpeakerService(
         dbContext.Speakers.Add(speaker);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={speaker.Id}; code={code}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerCreated,
+            actorUserId,
+            $"id={speaker.Id}; code={code}; name={name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Speaker {Code} ({Id})",
@@ -303,13 +301,11 @@ internal sealed class AdminSpeakerService(
         speaker.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={speaker.Id}; code={code}; active={speaker.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerUpdated,
+            actorUserId,
+            $"id={speaker.Id}; code={code}; active={speaker.IsActive}",
+            cancellationToken);
 
         var (en, ar) = await ResolveCountryAsync(speaker.CountryId, cancellationToken);
         return ToDetail(speaker, en, ar);
@@ -336,13 +332,11 @@ internal sealed class AdminSpeakerService(
         speaker.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={speaker.Id}; code={speaker.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerDeactivated,
+            actorUserId,
+            $"id={speaker.Id}; code={speaker.Code}",
+            cancellationToken);
     }
 
     private static (string code, string name, string nameArabic) ValidateAndNormalise(

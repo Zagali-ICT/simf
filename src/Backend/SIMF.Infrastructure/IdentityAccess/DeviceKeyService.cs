@@ -434,13 +434,12 @@ internal sealed class DeviceKeyService(
         Guid deviceKeyId, string errorCode, string detail,
         CancellationToken cancellationToken)
     {
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SignInWithDeviceKeyFailed,
-            Outcome = AuditOutcome.Failure,
-            ErrorCode = errorCode,
-            Detail = $"deviceKeyId={deviceKeyId}; reason={detail}",
-        }, cancellationToken);
+        await auditLog.WriteFailureAsync(
+            AuditEvents.SignInWithDeviceKeyFailed,
+            null,
+            errorCode: errorCode,
+            detail: $"deviceKeyId={deviceKeyId}; reason={detail}",
+            cancellationToken: cancellationToken);
     }
 
     /// <summary>#7a — validates the emailed step-up code that must accompany a

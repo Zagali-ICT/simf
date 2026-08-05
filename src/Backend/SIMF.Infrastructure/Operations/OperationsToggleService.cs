@@ -61,13 +61,11 @@ internal sealed class OperationsToggleService(
             row.LastChangedAt = now;
             row.LastChangedByUserId = actorUserId;
             await dbContext.SaveChangesAsync(cancellationToken);
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.RegistrationGateUpdated,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = actorUserId,
-                Detail = $"isOpen={row.IsOpen}; autoClose={row.AutoClose?.ToString("O") ?? "null"}",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.RegistrationGateUpdated,
+                actorUserId,
+                $"isOpen={row.IsOpen}; autoClose={row.AutoClose?.ToString("O") ?? "null"}",
+                cancellationToken);
             logger.LogInformation(
                 "RegistrationGate updated by {ActorId}: IsOpen={IsOpen}, AutoClose={AutoClose}",
                 actorUserId, row.IsOpen, row.AutoClose);
@@ -95,13 +93,11 @@ internal sealed class OperationsToggleService(
             row.LastChangedAt = now;
             row.LastChangedByUserId = actorUserId;
             await dbContext.SaveChangesAsync(cancellationToken);
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.ArchiveVisibilityUpdated,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = actorUserId,
-                Detail = $"isVisible={row.IsVisible}",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.ArchiveVisibilityUpdated,
+                actorUserId,
+                $"isVisible={row.IsVisible}",
+                cancellationToken);
             logger.LogInformation(
                 "ArchiveVisibility updated by {ActorId}: IsVisible={IsVisible}",
                 actorUserId, row.IsVisible);

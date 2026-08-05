@@ -115,13 +115,11 @@ internal sealed class AdminSystemSettingService(
         db.SystemSettings.Add(setting);
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SystemSettingCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={setting.Id}; key={key}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SystemSettingCreated,
+            actorUserId,
+            $"id={setting.Id}; key={key}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created system setting {Key} ({Id})", actorUserId, key, setting.Id);
@@ -143,13 +141,11 @@ internal sealed class AdminSystemSettingService(
         setting.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SystemSettingUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={setting.Id}; key={setting.Key}; active={setting.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SystemSettingUpdated,
+            actorUserId,
+            $"id={setting.Id}; key={setting.Key}; active={setting.IsActive}",
+            cancellationToken);
 
         return ToDetail(setting);
     }
@@ -169,13 +165,11 @@ internal sealed class AdminSystemSettingService(
         setting.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SystemSettingDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={setting.Id}; key={setting.Key}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SystemSettingDeactivated,
+            actorUserId,
+            $"id={setting.Id}; key={setting.Key}",
+            cancellationToken);
     }
 
     public async Task SaveSiteSettingsAsync(
@@ -238,13 +232,11 @@ internal sealed class AdminSystemSettingService(
         await db.SaveChangesAsync(cancellationToken);
         organizationProfileCache.Invalidate();
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganizationProfileUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = "site-settings saved (registration message + social links)",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganizationProfileUpdated,
+            actorUserId,
+            "site-settings saved (registration message + social links)",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} saved site settings via the organization profile", actorUserId);

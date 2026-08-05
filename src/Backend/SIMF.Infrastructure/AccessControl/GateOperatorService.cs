@@ -794,13 +794,11 @@ internal sealed class GateOperatorService(
             scan, idempotencyKey, context.GateId, context.AcceptLanguage, cancellationToken);
         if (replayResult is not null) { return replayResult; }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.GateScanDenied,
-            Outcome = AuditOutcome.Failure,
-            ActorUserId = context.OperatorUserId,
-            Detail = $"gateId={context.GateId}; reason={reason}; scanId={scan.Id}; corr={context.CorrelationId}",
-        }, cancellationToken);
+        await auditLog.WriteFailureAsync(
+            AuditEvents.GateScanDenied,
+            context.OperatorUserId,
+            detail: $"gateId={context.GateId}; reason={reason}; scanId={scan.Id}; corr={context.CorrelationId}",
+            cancellationToken: cancellationToken);
         // G-3 — only SYSTEM-fault denials count toward the failure-rate circuit.
         // Benign POLICY denials (unknown QR, holder-not-approved, wrong profile
         // type, …) are the operator's normal traffic and must never trip a 5-minute

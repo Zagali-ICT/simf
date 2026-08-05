@@ -59,13 +59,11 @@ internal sealed class BusinessMeetingService(
         hall.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallPurposeChanged,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"hallId={hallId}; purpose={request.Purpose}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallPurposeChanged,
+            actorUserId,
+            $"hallId={hallId}; purpose={request.Purpose}",
+            cancellationToken);
     }
 
     // ── Meeting tables ───────────────────────────────────────────────────────
@@ -109,13 +107,11 @@ internal sealed class BusinessMeetingService(
         appDbContext.MeetingTables.Add(table);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingTableCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"tableId={table.Id}; hallId={hallId}; code={code}; capacity={request.Capacity}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingTableCreated,
+            actorUserId,
+            $"tableId={table.Id}; hallId={hallId}; code={code}; capacity={request.Capacity}",
+            cancellationToken);
 
         return ToTableRow(table);
     }
@@ -143,13 +139,11 @@ internal sealed class BusinessMeetingService(
         table.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingTableUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"tableId={tableId}; code={code}; capacity={request.Capacity}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingTableUpdated,
+            actorUserId,
+            $"tableId={tableId}; code={code}; capacity={request.Capacity}",
+            cancellationToken);
 
         return ToTableRow(table);
     }
@@ -179,13 +173,11 @@ internal sealed class BusinessMeetingService(
         table.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingTableDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"tableId={tableId}; hallId={table.HallId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingTableDeactivated,
+            actorUserId,
+            $"tableId={tableId}; hallId={table.HallId}",
+            cancellationToken);
     }
 
     public async Task<MeetingTablesGenerated> GenerateTablesAsync(
@@ -277,14 +269,12 @@ internal sealed class BusinessMeetingService(
         appDbContext.MeetingTables.AddRange(toCreate);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingTablesGenerated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"hallId={hallId}; mode={request.Mode}; created={toCreate.Count}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingTablesGenerated,
+            actorUserId,
+            $"hallId={hallId}; mode={request.Mode}; created={toCreate.Count}; "
                 + $"removed={removed}; reset={request.Reset}",
-        }, cancellationToken);
+            cancellationToken);
 
         return new MeetingTablesGenerated(toCreate.Count, removed);
     }
@@ -362,14 +352,12 @@ internal sealed class BusinessMeetingService(
         appDbContext.HallAllocations.Add(allocation);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallAllocationCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"allocationId={allocation.Id}; hallId={hallId}; purpose={request.Purpose}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallAllocationCreated,
+            actorUserId,
+            $"allocationId={allocation.Id}; hallId={hallId}; purpose={request.Purpose}; "
                 + $"mode={request.Mode}; from={request.Start:o}; to={request.End:o}",
-        }, cancellationToken);
+            cancellationToken);
 
         return new HallAllocationRow(
             allocation.Id, allocation.HallId, allocation.Purpose, allocation.Mode,
@@ -388,13 +376,11 @@ internal sealed class BusinessMeetingService(
         allocation.ReleasedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallAllocationReleased,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"allocationId={allocationId}; hallId={allocation.HallId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallAllocationReleased,
+            actorUserId,
+            $"allocationId={allocationId}; hallId={allocation.HallId}",
+            cancellationToken);
     }
 
     // ── Business meetings ────────────────────────────────────────────────────
@@ -617,14 +603,12 @@ internal sealed class BusinessMeetingService(
             await tx.CommitAsync(cancellationToken);
         });
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BusinessMeetingScheduled,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"meetingId={meeting.Id}; tableId={table.Id}; type={request.MeetingType}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BusinessMeetingScheduled,
+            actorUserId,
+            $"meetingId={meeting.Id}; tableId={table.Id}; type={request.MeetingType}; "
                 + $"participants={parties.Count}; from={request.Start:o}; to={request.End:o}",
-        }, cancellationToken);
+            cancellationToken);
 
         await NotifyParticipantsAsync(meeting, NotificationKind.MeetingScheduled,
             "A meeting was scheduled for you", "تم تحديد موعد اجتماع لك", cancellationToken);
@@ -658,13 +642,11 @@ internal sealed class BusinessMeetingService(
         meeting.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BusinessMeetingCancelled,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"meetingId={id}; tableId={meeting.MeetingTableId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BusinessMeetingCancelled,
+            actorUserId,
+            $"meetingId={id}; tableId={meeting.MeetingTableId}",
+            cancellationToken);
 
         await NotifyParticipantsAsync(meeting, NotificationKind.MeetingCancelled,
             "A meeting was cancelled", "تم إلغاء اجتماع", cancellationToken);

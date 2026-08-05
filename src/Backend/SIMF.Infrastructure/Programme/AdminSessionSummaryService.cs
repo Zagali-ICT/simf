@@ -567,13 +567,8 @@ internal sealed class AdminSessionSummaryService(
     private async Task WriteAuditAsync(
         string eventType, Guid actorUserId, Guid sessionId, string detail,
         CancellationToken cancellationToken) =>
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = eventType,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sessionId={sessionId}; {detail}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            eventType, actorUserId, $"sessionId={sessionId}; {detail}", cancellationToken);
 
     private static string Clean(string? value, int max, string field)
     {

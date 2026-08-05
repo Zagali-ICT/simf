@@ -188,13 +188,11 @@ internal sealed class AdminNewsService(
         dbContext.News.Add(news);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.NewsCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={news.Id}; title={news.Title}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.NewsCreated,
+            actorUserId,
+            $"id={news.Id}; title={news.Title}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created News {Title} ({Id})",
@@ -252,13 +250,11 @@ internal sealed class AdminNewsService(
         news.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.NewsUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={news.Id}; title={news.Title}; active={news.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.NewsUpdated,
+            actorUserId,
+            $"id={news.Id}; title={news.Title}; active={news.IsActive}",
+            cancellationToken);
 
         return ToDetail(news);
     }
@@ -281,13 +277,11 @@ internal sealed class AdminNewsService(
         news.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.NewsDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={news.Id}; title={news.Title}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.NewsDeactivated,
+            actorUserId,
+            $"id={news.Id}; title={news.Title}",
+            cancellationToken);
     }
 
     private sealed record NewsDraft(

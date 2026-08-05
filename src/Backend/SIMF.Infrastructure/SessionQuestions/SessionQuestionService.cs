@@ -123,14 +123,12 @@ internal sealed class SessionQuestionService(
                 a => a.SessionId == sessionId && a.UserId == submittedByUserId, cancellationToken);
         if (!atVenue)
         {
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.SessionQuestionRejectedNotAtVenue,
-                Outcome = AuditOutcome.Failure,
-                ActorUserId = submittedByUserId,
-                ErrorCode = ErrorCodes.NotAtVenue,
-                Detail = $"sessionId={sessionId}; gate=hall-arrival",
-            }, cancellationToken);
+            await auditLog.WriteFailureAsync(
+                AuditEvents.SessionQuestionRejectedNotAtVenue,
+                submittedByUserId,
+                errorCode: ErrorCodes.NotAtVenue,
+                detail: $"sessionId={sessionId}; gate=hall-arrival",
+                cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.NotAtVenue, 403,
                 "You must have arrived at the hall to ask a question.",
@@ -181,13 +179,11 @@ internal sealed class SessionQuestionService(
         appDbContext.SessionQuestions.Add(question);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionQuestionSubmitted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = submittedByUserId,
-            Detail = $"sessionId={sessionId}; questionId={question.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionQuestionSubmitted,
+            submittedByUserId,
+            $"sessionId={sessionId}; questionId={question.Id}",
+            cancellationToken);
 
         logger.LogInformation(
             "Audience question {QuestionId} submitted on session {SessionId} ({Code}) by {UserId}",

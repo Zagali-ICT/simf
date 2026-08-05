@@ -124,13 +124,11 @@ internal sealed class AdminThemeService(
         dbContext.Themes.Add(theme);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ThemeCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={theme.Id}; code={code}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ThemeCreated,
+            actorUserId,
+            $"id={theme.Id}; code={code}; name={name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Theme {Code} ({Id})",
@@ -187,13 +185,11 @@ internal sealed class AdminThemeService(
         theme.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ThemeUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={theme.Id}; code={code}; active={theme.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ThemeUpdated,
+            actorUserId,
+            $"id={theme.Id}; code={code}; active={theme.IsActive}",
+            cancellationToken);
 
         return ToDetail(theme);
     }
@@ -219,13 +215,11 @@ internal sealed class AdminThemeService(
         theme.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ThemeDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={theme.Id}; code={theme.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ThemeDeactivated,
+            actorUserId,
+            $"id={theme.Id}; code={theme.Code}",
+            cancellationToken);
     }
 
     private static (string code, string name, string nameArabic, string pageColor)

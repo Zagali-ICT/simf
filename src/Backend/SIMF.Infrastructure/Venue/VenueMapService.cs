@@ -104,13 +104,11 @@ internal sealed class VenueMapService(
         db.VenueMapNodes.Add(node);
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.VenueMapNodeCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={node.Id}; label={label}; kind={request.Kind}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.VenueMapNodeCreated,
+            actorUserId,
+            $"id={node.Id}; label={label}; kind={request.Kind}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created venue-map node {Label} ({Id})", actorUserId, label, node.Id);
@@ -141,13 +139,11 @@ internal sealed class VenueMapService(
         node.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.VenueMapNodeUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={node.Id}; label={label}; active={node.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.VenueMapNodeUpdated,
+            actorUserId,
+            $"id={node.Id}; label={label}; active={node.IsActive}",
+            cancellationToken);
 
         return ToDetail(node);
     }
@@ -167,13 +163,11 @@ internal sealed class VenueMapService(
         node.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.VenueMapNodeDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={node.Id}; label={node.Label}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.VenueMapNodeDeactivated,
+            actorUserId,
+            $"id={node.Id}; label={node.Label}",
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<PublicVenueMapNode>> ListPublicAsync(

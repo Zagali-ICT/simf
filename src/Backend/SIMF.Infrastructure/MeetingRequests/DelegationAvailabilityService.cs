@@ -92,13 +92,11 @@ internal sealed class DelegationAvailabilityService(
         appDbContext.DelegationAvailabilityWindows.Add(window);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.DelegationAvailabilityWindowCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"windowId={window.Id}; countryId={countryId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.DelegationAvailabilityWindowCreated,
+            actorUserId,
+            $"windowId={window.Id}; countryId={countryId}",
+            cancellationToken);
 
         logger.LogInformation(
             "Delegation availability window {WindowId} created for country {CountryId} by {Actor}",
@@ -127,13 +125,11 @@ internal sealed class DelegationAvailabilityService(
         window.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.DelegationAvailabilityWindowDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"windowId={windowId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.DelegationAvailabilityWindowDeleted,
+            actorUserId,
+            $"windowId={windowId}",
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<DelegationAvailableSlot>> GetAvailableSlotsAsync(

@@ -278,13 +278,11 @@ internal sealed class MyRequestsService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AppRequestCancelled,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = userId,
-            Detail = JsonSerializer.Serialize(new { kind = kind.ToString(), id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AppRequestCancelled,
+            userId,
+            JsonSerializer.Serialize(new { kind = kind.ToString(), id }),
+            cancellationToken);
 
         logger.LogInformation(
             "App request {Kind}/{Id} cancelled by {Actor} at {When}", kind, id, userId, now);

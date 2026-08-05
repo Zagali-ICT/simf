@@ -55,13 +55,11 @@ internal sealed class AdminAttendeeService(
 
         var bytes = excel.Export(rows);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminAttendeesExported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"count={rows.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminAttendeesExported,
+            actorUserId,
+            $"count={rows.Count}",
+            cancellationToken);
 
         return bytes;
     }

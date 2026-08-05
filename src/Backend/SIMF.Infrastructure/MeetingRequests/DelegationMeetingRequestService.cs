@@ -153,13 +153,11 @@ internal sealed class DelegationMeetingRequestService(
             openRequest.SlotEnd = slotEnd;
             await appDbContext.SaveChangesAsync(cancellationToken);
 
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.DelegationMeetingRequestSubmitted,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = requesterUserId,
-                Detail = $"requestId={openRequest.Id}; target={targetCode}; moved=true",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.DelegationMeetingRequestSubmitted,
+                requesterUserId,
+                $"requestId={openRequest.Id}; target={targetCode}; moved=true",
+                cancellationToken);
 
             return new DelegationMeetingRequestSubmitted(
                 openRequest.Id, openRequest.Status, openRequest.CreatedAt);
@@ -182,13 +180,11 @@ internal sealed class DelegationMeetingRequestService(
         appDbContext.DelegationMeetingRequests.Add(req);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.DelegationMeetingRequestSubmitted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = requesterUserId,
-            Detail = $"requestId={req.Id}; target={targetCode}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.DelegationMeetingRequestSubmitted,
+            requesterUserId,
+            $"requestId={req.Id}; target={targetCode}",
+            cancellationToken);
 
         logger.LogInformation(
             "Delegation meeting request {Id} submitted by {Actor} (target {Target})",
@@ -263,13 +259,11 @@ internal sealed class DelegationMeetingRequestService(
             ResolveOperatorName(operatorNames, r.CheckedInByUserId)))
             .ToList();
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminDelegationMeetingRequestsListed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"count={page.Count}; total={total}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminDelegationMeetingRequestsListed,
+            actorUserId,
+            $"count={page.Count}; total={total}",
+            cancellationToken);
 
         return GridPage<AdminDelegationMeetingRequestRow>.Of(
             page, total, skip, top);
@@ -279,13 +273,11 @@ internal sealed class DelegationMeetingRequestService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var detail = await LoadDetailAsync(id, cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminDelegationMeetingRequestViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"requestId={id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminDelegationMeetingRequestViewed,
+            actorUserId,
+            $"requestId={id}",
+            cancellationToken);
         return detail;
     }
 
@@ -412,13 +404,11 @@ internal sealed class DelegationMeetingRequestService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.DelegationMeetingRequestResponded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"requestId={req.Id}; status={req.Status}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.DelegationMeetingRequestResponded,
+            actorUserId,
+            $"requestId={req.Id}; status={req.Status}",
+            cancellationToken);
 
         // The detail (returned below) carries the requester email and the target
         // country name — load it once and reuse the name for the notification body
@@ -427,13 +417,11 @@ internal sealed class DelegationMeetingRequestService(
 
         // D-185: the respond response discloses the requester email, so SOC must see
         // one Viewed event per disclosure regardless of which endpoint emitted it.
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminDelegationMeetingRequestViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"requestId={req.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminDelegationMeetingRequestViewed,
+            actorUserId,
+            $"requestId={req.Id}",
+            cancellationToken);
 
         // Notify (and email) the requesting delegate — they are a SimfUser, so the
         // dispatcher's email path applies. Best-effort.
@@ -545,13 +533,11 @@ internal sealed class DelegationMeetingRequestService(
                 "هذا الاجتماع ليس بانتظار التأكيد.");
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.DelegationMeetingRequestResponded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = callerUserId,
-            Detail = $"requestId={id}; status=Accepted; confirmedByOtherParty=true",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.DelegationMeetingRequestResponded,
+            callerUserId,
+            $"requestId={id}; status=Accepted; confirmedByOtherParty=true",
+            cancellationToken);
 
         var detail = await LoadDetailAsync(id, cancellationToken);
 
@@ -608,13 +594,11 @@ internal sealed class DelegationMeetingRequestService(
                 "هذا الاجتماع ليس بانتظار التأكيد.");
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.DelegationMeetingRequestResponded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = callerUserId,
-            Detail = $"requestId={id}; status=Rejected; declinedByOtherParty=true",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.DelegationMeetingRequestResponded,
+            callerUserId,
+            $"requestId={id}; status=Rejected; declinedByOtherParty=true",
+            cancellationToken);
 
         var detail = await LoadDetailAsync(id, cancellationToken);
 
@@ -730,13 +714,11 @@ internal sealed class DelegationMeetingRequestService(
         req.CheckedInAt = now;
         req.CheckedInByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.DelegationMeetingRequestCheckedIn,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"requestId={id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.DelegationMeetingRequestCheckedIn,
+            actorUserId,
+            $"requestId={id}",
+            cancellationToken);
         return await LoadDetailAsync(id, cancellationToken);
     }
 

@@ -110,13 +110,11 @@ internal sealed class OrganizationProfileAdminService(
         await db.SaveChangesAsync(cancellationToken);
         readCache.Invalidate();
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganizationProfileUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"organization profile saved; about={request.AboutItems.Count}; details={request.Details.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganizationProfileUpdated,
+            actorUserId,
+            $"organization profile saved; about={request.AboutItems.Count}; details={request.Details.Count}",
+            cancellationToken);
 
         logger.LogInformation("Admin {ActorId} saved the organization profile", actorUserId);
     }

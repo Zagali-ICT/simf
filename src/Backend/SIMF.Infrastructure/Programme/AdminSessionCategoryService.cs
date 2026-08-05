@@ -121,13 +121,11 @@ internal sealed class AdminSessionCategoryService(
         db.SessionCategories.Add(category);
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionCategoryCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={category.Id}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionCategoryCreated,
+            actorUserId,
+            $"id={category.Id}; name={name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created SessionCategory {Name} ({Id})",
@@ -155,13 +153,11 @@ internal sealed class AdminSessionCategoryService(
         category.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionCategoryUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={category.Id}; name={name}; active={category.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionCategoryUpdated,
+            actorUserId,
+            $"id={category.Id}; name={name}; active={category.IsActive}",
+            cancellationToken);
 
         return ToDetail(category);
     }
@@ -184,13 +180,11 @@ internal sealed class AdminSessionCategoryService(
         category.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionCategoryDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={category.Id}; name={category.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionCategoryDeactivated,
+            actorUserId,
+            $"id={category.Id}; name={category.Name}",
+            cancellationToken);
     }
 
     private static (string Name, string NameArabic) ValidateAndNormalise(

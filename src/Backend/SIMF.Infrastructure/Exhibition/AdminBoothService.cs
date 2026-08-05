@@ -214,13 +214,11 @@ internal sealed class AdminBoothService(
         dbContext.Booths.Add(booth);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BoothCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={booth.Id}; code={v.Code}; name={v.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BoothCreated,
+            actorUserId,
+            $"id={booth.Id}; code={v.Code}; name={v.Name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Booth {Code} ({Id})",
@@ -303,13 +301,11 @@ internal sealed class AdminBoothService(
         booth.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BoothUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={booth.Id}; code={v.Code}; active={booth.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BoothUpdated,
+            actorUserId,
+            $"id={booth.Id}; code={v.Code}; active={booth.IsActive}",
+            cancellationToken);
 
         var (officerCountryEn, officerCountryAr) =
             await ResolveOfficerCountryAsync(booth.OfficerCountryId, cancellationToken);
@@ -352,13 +348,11 @@ internal sealed class AdminBoothService(
         booth.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BoothDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={booth.Id}; code={booth.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BoothDeactivated,
+            actorUserId,
+            $"id={booth.Id}; code={booth.Code}",
+            cancellationToken);
     }
 
     private sealed record BoothDraft(

@@ -160,13 +160,11 @@ internal sealed class AdminOrganisationService(
         db.Organisations.Add(org);
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganisationCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={org.Id}; nameAr={v.NameAr}; cr={v.CommercialRegistration}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganisationCreated,
+            actorUserId,
+            $"id={org.Id}; nameAr={v.NameAr}; cr={v.CommercialRegistration}",
+            ct);
 
         logger.LogInformation(
             "Admin {ActorId} created Organisation {NameAr} ({Id})",
@@ -213,13 +211,11 @@ internal sealed class AdminOrganisationService(
         org.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganisationUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={org.Id}; nameAr={v.NameAr}; active={org.IsActive}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganisationUpdated,
+            actorUserId,
+            $"id={org.Id}; nameAr={v.NameAr}; active={org.IsActive}",
+            ct);
 
         return ToDetail(org);
     }
@@ -242,13 +238,11 @@ internal sealed class AdminOrganisationService(
         org.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganisationDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={org.Id}; nameAr={org.NameArabic}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganisationDeactivated,
+            actorUserId,
+            $"id={org.Id}; nameAr={org.NameArabic}",
+            ct);
     }
 
     public async Task<OrganisationImportResult> ImportAsync(
@@ -349,13 +343,11 @@ internal sealed class AdminOrganisationService(
             await db.SaveChangesAsync(ct);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganisationImported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"read={importRows.Count}; inserted={inserted}; updated={updated}; skipped={skipped}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganisationImported,
+            actorUserId,
+            $"read={importRows.Count}; inserted={inserted}; updated={updated}; skipped={skipped}",
+            ct);
 
         logger.LogInformation(
             "Admin {ActorId} imported organisations: read={Read} inserted={Inserted} updated={Updated} skipped={Skipped}",

@@ -145,13 +145,11 @@ internal sealed class AdminMediaService(
         dbContext.MediaItems.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={item.Id}; kind={item.Kind}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaCreated,
+            actorUserId,
+            $"id={item.Id}; kind={item.Kind}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created MediaItem {Id} ({Kind})",
@@ -187,13 +185,11 @@ internal sealed class AdminMediaService(
         item.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={item.Id}; active={item.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaUpdated,
+            actorUserId,
+            $"id={item.Id}; active={item.IsActive}",
+            cancellationToken);
 
         return ToDetail(item);
     }
@@ -219,13 +215,8 @@ internal sealed class AdminMediaService(
         item.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={item.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaDeactivated, actorUserId, $"id={item.Id}", cancellationToken);
     }
 
     public async Task<AdminMediaDetail> SetImageAsync(
@@ -261,13 +252,11 @@ internal sealed class AdminMediaService(
             await fileService.DeleteAsync(old, actorUserId, cancellationToken);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaImageSet,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={item.Id}; fileId={result.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaImageSet,
+            actorUserId,
+            $"id={item.Id}; fileId={result.Id}",
+            cancellationToken);
 
         return ToDetail(item);
     }

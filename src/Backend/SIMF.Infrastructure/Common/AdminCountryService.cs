@@ -127,13 +127,11 @@ internal sealed class AdminCountryService(
         appDbContext.Countries.Add(country);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.CountryCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; code={code}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.CountryCreated,
+            actorUserId,
+            $"id={id}; code={code}; name={name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Country {Code} (id {Id})",
@@ -184,13 +182,11 @@ internal sealed class AdminCountryService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.CountryUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; code={code}; active={country.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.CountryUpdated,
+            actorUserId,
+            $"id={id}; code={code}; active={country.IsActive}",
+            cancellationToken);
 
         return ToDetail(country);
     }
@@ -209,13 +205,11 @@ internal sealed class AdminCountryService(
         country.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.CountryDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; code={country.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.CountryDeactivated,
+            actorUserId,
+            $"id={id}; code={country.Code}",
+            cancellationToken);
     }
 
     private static (int id, string code, string name, string nameArabic, string? phonePrefix, int displayOrder) Validate(int idRaw, string codeRaw, string nameRaw, string nameArabicRaw, string? phonePrefixRaw, int displayOrderRaw)

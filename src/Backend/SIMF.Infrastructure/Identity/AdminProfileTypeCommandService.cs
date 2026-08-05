@@ -183,13 +183,11 @@ internal sealed class AdminProfileTypeCommandService(
                 "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0646\u0648\u0639 \u0645\u0644\u0641 \u0622\u062e\u0631 \u0641\u064a \u0646\u0641\u0633 \u0627\u0644\u0644\u062d\u0638\u0629. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.");
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProfileTypeCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={profileType.Id}; userType={userType}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProfileTypeCreated,
+            actorUserId,
+            $"id={profileType.Id}; userType={userType}; name={name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created ProfileType {Name} ({Id}) for {UserType}",
@@ -263,12 +261,10 @@ internal sealed class AdminProfileTypeCommandService(
                 .CountAsync(profile => profile.ProfileTypeId == id, cancellationToken)
             : 0;
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProfileTypeUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = isVisitorChanged
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProfileTypeUpdated,
+            actorUserId,
+            isVisitorChanged
                 ? $"id={profileType.Id}; name={profileType.Name}; "
                     + $"active={profileType.IsActive}; "
                     + $"isVisitorChanged=true; isVisitorOld={oldIsVisitor}; "
@@ -276,7 +272,7 @@ internal sealed class AdminProfileTypeCommandService(
                     + $"linkedAccountCount={linkedAccountCount}"
                 : $"id={profileType.Id}; name={profileType.Name}; "
                     + $"active={profileType.IsActive}; isVisitorChanged=false",
-        }, cancellationToken);
+            cancellationToken);
 
         return ToSummary(profileType);
     }
@@ -316,13 +312,11 @@ internal sealed class AdminProfileTypeCommandService(
         profileType.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProfileTypeDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={profileType.Id}; name={profileType.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProfileTypeDeactivated,
+            actorUserId,
+            $"id={profileType.Id}; name={profileType.Name}",
+            cancellationToken);
     }
 
     private static AdminProfileTypeSummary ToSummary(UserProfileType profileType) =>

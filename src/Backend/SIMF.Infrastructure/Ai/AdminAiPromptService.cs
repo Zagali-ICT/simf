@@ -142,12 +142,10 @@ internal sealed class AdminAiPromptService(
         // D-179 — structured JSON detail with prompt-content hash so
         // SOC can detect prompt drift across edits without storing
         // the raw text (may contain prompt-injection payloads).
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiPromptCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = AiAuditDetail.ToJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AiPromptCreated,
+            actorUserId,
+            AiAuditDetail.ToJson(new
             {
                 promptId = prompt.Id,
                 promptKey = prompt.Key,
@@ -158,7 +156,7 @@ internal sealed class AdminAiPromptService(
                 contentHash = AiAuditDetail.PromptContentHash(
                     prompt.SystemPrompt, prompt.UserPromptTemplate),
             }),
-        }, cancellationToken);
+            cancellationToken);
         logger.LogInformation(
             "AI prompt {Key} created by {Actor}", prompt.Key, actorUserId);
         return ToDetail(prompt);
@@ -233,12 +231,10 @@ internal sealed class AdminAiPromptService(
 
         var newHash = AiAuditDetail.PromptContentHash(
             prompt.SystemPrompt, prompt.UserPromptTemplate);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiPromptUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = AiAuditDetail.ToJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AiPromptUpdated,
+            actorUserId,
+            AiAuditDetail.ToJson(new
             {
                 promptId = prompt.Id,
                 promptKey = prompt.Key,
@@ -248,7 +244,7 @@ internal sealed class AdminAiPromptService(
                 contentChanged = !string.Equals(oldHash, newHash, StringComparison.Ordinal),
                 isActive = prompt.IsActive,
             }),
-        }, cancellationToken);
+            cancellationToken);
         return ToDetail(prompt);
     }
 
@@ -268,17 +264,15 @@ internal sealed class AdminAiPromptService(
         prompt.UpdatedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiPromptDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = AiAuditDetail.ToJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AiPromptDeactivated,
+            actorUserId,
+            AiAuditDetail.ToJson(new
             {
                 promptId = prompt.Id,
                 promptKey = prompt.Key,
             }),
-        }, cancellationToken);
+            cancellationToken);
     }
 
     public async Task<AiCallResult> TestAsync(

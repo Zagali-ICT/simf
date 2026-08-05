@@ -132,18 +132,14 @@ internal sealed class AdminEmailTemplateService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(
-            new AuditEntry
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.EmailTemplateUpdated,
+            actorUserId,
+            JsonSerializer.Serialize(new
             {
-                EventType = AuditEvents.EmailTemplateUpdated,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = actorUserId,
-                Detail = JsonSerializer.Serialize(new
-                {
-                    type = type.ToString(),
-                    version = row.Version,
-                }),
-            },
+                type = type.ToString(),
+                version = row.Version,
+            }),
             cancellationToken);
 
         return ToDetail(type, row);
@@ -162,14 +158,10 @@ internal sealed class AdminEmailTemplateService(
             appDbContext.EmailTemplates.Remove(row);
             await appDbContext.SaveChangesAsync(cancellationToken);
 
-            await auditLog.WriteAsync(
-                new AuditEntry
-                {
-                    EventType = AuditEvents.EmailTemplateReset,
-                    Outcome = AuditOutcome.Success,
-                    ActorUserId = actorUserId,
-                    Detail = JsonSerializer.Serialize(new { type = type.ToString() }),
-                },
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.EmailTemplateReset,
+                actorUserId,
+                JsonSerializer.Serialize(new { type = type.ToString() }),
                 cancellationToken);
         }
 

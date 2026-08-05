@@ -99,13 +99,11 @@ internal sealed class RegistrationGateAutoCloseWorker(
         row.LastChangedByUserId = null; // worker, not a person
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RegistrationGateAutoClosed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = null,
-            Detail = $"autoClose={closeAt:O}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RegistrationGateAutoClosed,
+            null,
+            $"autoClose={closeAt:O}",
+            cancellationToken);
 
         logger.LogInformation(
             "RegistrationGate auto-closed (AutoClose {CloseAt} passed).", closeAt);

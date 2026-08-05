@@ -54,13 +54,11 @@ internal sealed class OrganizationHeroVideoService(
         await db.SaveChangesAsync(cancellationToken);
         readCache.Invalidate();
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganizationProfileUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"hero video uploaded; file={result.Id}; bytes={result.SizeBytes}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganizationProfileUpdated,
+            actorUserId,
+            $"hero video uploaded; file={result.Id}; bytes={result.SizeBytes}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} uploaded organization hero video {FileId} ({Bytes} bytes)",
@@ -88,13 +86,11 @@ internal sealed class OrganizationHeroVideoService(
             readCache.Invalidate();
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganizationProfileUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = "hero video removed",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganizationProfileUpdated,
+            actorUserId,
+            "hero video removed",
+            cancellationToken);
 
         logger.LogInformation("Admin {ActorId} removed the organization hero video", actorUserId);
     }

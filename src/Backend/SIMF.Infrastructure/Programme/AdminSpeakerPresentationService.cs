@@ -122,14 +122,12 @@ internal sealed class AdminSpeakerPresentationService(
         db.SpeakerPresentations.Add(presentation);
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerPresentationUploaded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"presentationId={presentation.Id}; speakerId={speakerId}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerPresentationUploaded,
+            actorUserId,
+            $"presentationId={presentation.Id}; speakerId={speakerId}; "
                 + $"sessionId={sessionId}; file={safeName}; bytes={content.Length}",
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "Speaker presentation {File} uploaded for speaker {SpeakerId} session {SessionId} by {Actor}",
@@ -191,14 +189,12 @@ internal sealed class AdminSpeakerPresentationService(
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerPresentationDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"presentationId={presentation.Id}; speakerId={presentation.SpeakerId}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerPresentationDeleted,
+            actorUserId,
+            $"presentationId={presentation.Id}; speakerId={presentation.SpeakerId}; "
                 + $"file={presentation.FileName}",
-        }, cancellationToken);
+            cancellationToken);
     }
 
     private static readonly HashSet<string> AllowedPresentationExtensions =

@@ -182,12 +182,10 @@ internal sealed class AiService(
         // redactionKinds/redactionCount/inputPreview so SIEM rules
         // AI-005/007/008/009 can field-extract instead of joining the
         // OperationLog row back to the AiInvocation row.
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiInvocationSucceeded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = caller.UserId ?? Guid.Empty,
-            Detail = AiAuditDetail.ToJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AiInvocationSucceeded,
+            caller.UserId ?? Guid.Empty,
+            AiAuditDetail.ToJson(new
             {
                 promptKey = prompt.Key,
                 feature = prompt.Feature.ToString(),
@@ -202,7 +200,7 @@ internal sealed class AiService(
                 redactionCount = redacted.RedactionCount,
                 inputPreview = redacted.InputPreview,
             }),
-        }, cancellationToken);
+            cancellationToken);
 
         return new AiCallResult(
             invocation.Id, prompt.Key, prompt.Feature, prompt.Provider,
@@ -239,12 +237,10 @@ internal sealed class AiService(
         };
         appDbContext.AiInvocations.Add(invocation);
         await appDbContext.SaveChangesAsync(cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiInvocationFailed,
-            Outcome = AuditOutcome.Failure,
-            ActorUserId = caller.UserId ?? Guid.Empty,
-            Detail = AiAuditDetail.ToJson(new
+        await auditLog.WriteFailureAsync(
+            AuditEvents.AiInvocationFailed,
+            caller.UserId ?? Guid.Empty,
+            detail: AiAuditDetail.ToJson(new
             {
                 promptKey = prompt.Key,
                 feature = prompt.Feature.ToString(),
@@ -255,7 +251,7 @@ internal sealed class AiService(
                 errorCode,
                 invocationId = invocation.Id,
             }),
-        }, cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
     // D-179 (review-pass) — single source of truth for AI input caps. The

@@ -56,13 +56,11 @@ internal sealed class MeetingActionTokenService(
 
     public Task AuditMintedAsync(
         Guid speakerMeetingRequestId, CancellationToken cancellationToken = default) =>
-        auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingActionTokenMinted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = Guid.Empty,
-            Detail = $"requestId={speakerMeetingRequestId}",
-        }, cancellationToken);
+        auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingActionTokenMinted,
+            Guid.Empty,
+            $"requestId={speakerMeetingRequestId}",
+            cancellationToken);
 
     public string StageDelegationConfirmToken(Guid delegationMeetingRequestId)
     {
@@ -106,13 +104,11 @@ internal sealed class MeetingActionTokenService(
                     .SingleOrDefaultAsync(cancellationToken);
             }
 
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.MeetingActionTokenViewed,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = Guid.Empty,
-                Detail = $"requestId={request.Id}; action={token.Action}",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.MeetingActionTokenViewed,
+                Guid.Empty,
+                $"requestId={request.Id}; action={token.Action}",
+                cancellationToken);
 
             return new MeetingActionPreview(
                 token.Action, speaker?.Name ?? string.Empty, speaker?.NameArabic ?? string.Empty,
@@ -170,13 +166,11 @@ internal sealed class MeetingActionTokenService(
                 return null;
             }
 
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.MeetingActionTokenApplied,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = Guid.Empty,
-                Detail = $"requestId={request.Id}; action={token.Action}",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.MeetingActionTokenApplied,
+                Guid.Empty,
+                $"requestId={request.Id}; action={token.Action}",
+                cancellationToken);
 
             await NotifyRequesterAsync(request, token.Action, cancellationToken);
             return new MeetingActionOutcome(token.Action);
@@ -302,13 +296,11 @@ internal sealed class MeetingActionTokenService(
                 .SingleOrDefaultAsync(cancellationToken);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingActionTokenViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = Guid.Empty,
-            Detail = $"delegationRequestId={request.Id}; action=Confirm",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingActionTokenViewed,
+            Guid.Empty,
+            $"delegationRequestId={request.Id}; action=Confirm",
+            cancellationToken);
 
         return new MeetingActionPreview(
             MeetingActionType.Approve, string.Empty, string.Empty,
@@ -347,13 +339,11 @@ internal sealed class MeetingActionTokenService(
             return null;
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingActionTokenApplied,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = Guid.Empty,
-            Detail = $"delegationRequestId={request.Id}; action=Confirm",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingActionTokenApplied,
+            Guid.Empty,
+            $"delegationRequestId={request.Id}; action=Confirm",
+            cancellationToken);
 
         await NotifyDelegationRequesterConfirmedAsync(request, cancellationToken);
         return new MeetingActionOutcome(MeetingActionType.Approve);

@@ -720,15 +720,13 @@ internal sealed class HallAttendanceService(
     private Task AuditArrivalAsync(
         Guid attendeeUserId, Guid sessionId, Guid hallId, AttendanceMethod method,
         CancellationToken cancellationToken, Guid? operatorUserId = null) =>
-        auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallArrivalRecorded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = operatorUserId ?? attendeeUserId,
-            Detail = operatorUserId is { } op
+        auditLog.WriteSuccessAsync(
+            AuditEvents.HallArrivalRecorded,
+            operatorUserId ?? attendeeUserId,
+            operatorUserId is { } op
                 ? $"sessionId={sessionId}; hallId={hallId}; method={method}; attendee={attendeeUserId}; operator={op}"
                 : $"sessionId={sessionId}; hallId={hallId}; method={method}",
-        }, cancellationToken);
+            cancellationToken);
 
     public async Task<HallAttendanceStatus> RecordDepartureAsync(
         Guid userId, Guid sessionId, CancellationToken cancellationToken = default)
@@ -744,13 +742,11 @@ internal sealed class HallAttendanceService(
         open.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallDepartureRecorded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = userId,
-            Detail = $"sessionId={sessionId}; hallId={open.HallId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallDepartureRecorded,
+            userId,
+            $"sessionId={sessionId}; hallId={open.HallId}",
+            cancellationToken);
 
         // D-713 (GAP-A) — leaving the hall closes the attendee's session
         // attendance, so prompt them to rate the session they just left. The

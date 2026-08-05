@@ -171,14 +171,12 @@ internal sealed class RatingFormService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = revised ? AuditEvents.RatingRevised : AuditEvents.RatingSubmitted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = userId,
-            Detail = $"responseId={response.Id}; type={type.Code}; target={response.TargetId}; " +
+        await auditLog.WriteSuccessAsync(
+            revised ? AuditEvents.RatingRevised : AuditEvents.RatingSubmitted,
+            userId,
+            $"responseId={response.Id}; type={type.Code}; target={response.TargetId}; " +
                      $"overall={response.OverallStars}; answers={answers.Count}",
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "User {UserId} {Action} rating {ResponseId} for type {Code} ({Answers} answers)",

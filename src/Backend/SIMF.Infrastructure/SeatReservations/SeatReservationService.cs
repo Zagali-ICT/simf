@@ -217,14 +217,12 @@ internal sealed class SeatReservationService(
         await EnforceCapacityAfterInsertAsync(
             reservation, EffectiveCapacity(ctx), cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SeatReservationCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SeatReservationCreated,
+            actorUserId,
+            $"reservationId={reservation.Id}; sessionId={sessionId}; "
                 + $"row={row}; seat={seat}; kind=UserBooking; status=Approved",
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "Seat {Row}{Seat} reserved (auto-confirmed) on session {SessionId} by user {Actor}",
@@ -274,15 +272,13 @@ internal sealed class SeatReservationService(
             },
             cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SeatReservationCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SeatReservationCreated,
+            actorUserId,
+            $"reservationId={reservation.Id}; sessionId={sessionId}; "
                 + $"row={reservation.RowLabel}; seat={reservation.SeatNumber}; "
                 + "kind=RandomAssignment; status=Approved",
-        }, cancellationToken);
+            cancellationToken);
 
         // 2026-07-18 (reservation-only) — auto-confirmed on create; nothing dispatched here.
         return ToMine(reservation);
@@ -355,14 +351,12 @@ internal sealed class SeatReservationService(
             }),
             cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SeatReservationCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SeatReservationCreated,
+            actorUserId,
+            $"reservationId={reservation.Id}; sessionId={sessionId}; "
                 + "kind=OpenSeating; status=Approved",
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "Open-seating join (auto-confirmed) on session {SessionId} by user {Actor}",
@@ -399,15 +393,13 @@ internal sealed class SeatReservationService(
         var moved = await MoveHoldAtomicallyAsync(
             ctx, actorUserId, row, seat, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SeatReservationMoved,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"reservationId={moved.Reservation.Id}; sessionId={sessionId}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SeatReservationMoved,
+            actorUserId,
+            $"reservationId={moved.Reservation.Id}; sessionId={sessionId}; "
                 + $"fromRow={moved.FromRowLabel}; fromSeat={moved.FromSeatNumber}; "
                 + $"row={row}; seat={seat}; kind=UserBooking; status=Approved",
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "Seat moved from {FromRow}{FromSeat} to {Row}{Seat} on session {SessionId} by user {Actor}",
@@ -559,14 +551,12 @@ internal sealed class SeatReservationService(
         mine.ReleasedAt = now;
         mine.Status = BookingStatus.Cancelled;
         await appDbContext.SaveChangesAsync(cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BookingCancelled,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"reservationId={mine.Id}; sessionId={sessionId}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BookingCancelled,
+            actorUserId,
+            $"reservationId={mine.Id}; sessionId={sessionId}; "
                 + $"row={mine.RowLabel}; seat={mine.SeatNumber}; kind={mine.Kind}",
-        }, cancellationToken);
+            cancellationToken);
     }
 
     public async Task<HallSeatLayoutSnapshot> GetLayoutAsync(
@@ -759,14 +749,12 @@ internal sealed class SeatReservationService(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallSeatLayoutUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"hallId={hallId}; rows={rowsCsv}; seatsPerRow={seatsPerRow}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallSeatLayoutUpdated,
+            actorUserId,
+            $"hallId={hallId}; rows={rowsCsv}; seatsPerRow={seatsPerRow}; "
                 + $"seatCounts={countsCsv ?? "(uniform)"}; seatTiers={tiersCsv}",
-        }, cancellationToken);
+            cancellationToken);
 
         return new HallSeatLayoutSnapshot(
             hallId, rows, seatsPerRow, layoutCapacity, hall.Capacity,
@@ -811,15 +799,13 @@ internal sealed class SeatReservationService(
         appDbContext.HallSeatLayouts.Remove(layout);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallSeatLayoutDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"hallId={hallId}; rows={layout.RowLabels}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallSeatLayoutDeleted,
+            actorUserId,
+            $"hallId={hallId}; rows={layout.RowLabels}; "
                 + $"seatsPerRow={layout.SeatsPerRow}; "
                 + $"seatCounts={layout.SeatCounts ?? "(uniform)"}",
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "Seat layout removed for hall {HallId} by user {Actor} — the hall reverts "
@@ -888,13 +874,11 @@ internal sealed class SeatReservationService(
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SeatRowAdminReserved,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sessionId={sessionId}; row={row}; inserted={inserted}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SeatRowAdminReserved,
+            actorUserId,
+            $"sessionId={sessionId}; row={row}; inserted={inserted}",
+            cancellationToken);
     }
 
     // 2026-07-18 — reserve ONE specific seat for a VIP: a single admin block on
@@ -944,16 +928,14 @@ internal sealed class SeatReservationService(
         };
         await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SeatRowAdminReserved,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sessionId={sessionId}; row={row}; seat={seat}; single=true; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SeatRowAdminReserved,
+            actorUserId,
+            $"sessionId={sessionId}; row={row}; seat={seat}; single=true; "
                 + "guestHint="
                 + ((reservation.GuestHint ?? reservation.GuestHintArabic) is null
                     ? "(none)" : "(set)"),
-        }, cancellationToken);
+            cancellationToken);
     }
 
     /// <summary>D-771 — trim the admin-typed guest hint to null-or-content and reject
@@ -1007,15 +989,13 @@ internal sealed class SeatReservationService(
         var eventType = reservation.Kind == SeatReservationKind.AdminReservedRow
             ? AuditEvents.SeatRowAdminReleased
             : AuditEvents.SeatReservationReleased;
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = eventType,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
+        await auditLog.WriteSuccessAsync(
+            eventType,
+            actorUserId,
+            $"reservationId={reservation.Id}; sessionId={sessionId}; "
                 + $"row={reservation.RowLabel}; seat={reservation.SeatNumber}; "
                 + $"kind={reservation.Kind}",
-        }, cancellationToken);
+            cancellationToken);
 
         // M-4 — tell the attendee an admin released their held/confirmed seat
         // (no-op for an AdminReservedRow block: ReservedForUserId is null).

@@ -308,15 +308,13 @@ internal sealed class AdminInvitationService(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = stateChanged
+        await auditLog.WriteSuccessAsync(
+            stateChanged
                 ? AuditEvents.InvitationStateChanged
                 : AuditEvents.InvitationUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"invitationId={invitation.Id}; state={invitation.State}",
-        }, cancellationToken);
+            actorUserId,
+            $"invitationId={invitation.Id}; state={invitation.State}",
+            cancellationToken);
 
         return (await GetAsync(invitation.Id, cancellationToken))!;
     }
@@ -341,13 +339,11 @@ internal sealed class AdminInvitationService(
         invitation.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.InvitationDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"invitationId={invitation.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.InvitationDeactivated,
+            actorUserId,
+            $"invitationId={invitation.Id}",
+            cancellationToken);
     }
 
     public async Task<GridPage<AdminVipSummary>> ListVipsAsync(
@@ -506,13 +502,11 @@ internal sealed class AdminInvitationService(
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.VipNotificationSent,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"dispatched={dispatched}; emails={emailsEnqueued}; skipped={skipped.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.VipNotificationSent,
+            actorUserId,
+            $"dispatched={dispatched}; emails={emailsEnqueued}; skipped={skipped.Count}",
+            cancellationToken);
 
         logger.LogInformation(
             "PR rep {Actor} dispatched VIP broadcast to {Count} VIPs ({Emails} emails enqueued)",

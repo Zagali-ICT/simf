@@ -145,13 +145,11 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
             req.RespondedByUserId = null;
             req.ResponseNote = null;
 
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.SpeakerMeetingRequestReverted,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = Guid.Empty,
-                Detail = $"requestId={req.Id}; reason=AwaitingSpeakerTokensExpired",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.SpeakerMeetingRequestReverted,
+                Guid.Empty,
+                $"requestId={req.Id}; reason=AwaitingSpeakerTokensExpired",
+                cancellationToken);
         }
 
         await db.SaveChangesAsync(cancellationToken);
@@ -232,13 +230,11 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
             req.RespondedByUserId = null;
             req.ResponseNote = null;
 
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.DelegationMeetingRequestReverted,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = Guid.Empty,
-                Detail = $"requestId={req.Id}; reason=AwaitingConfirmTokenExpired",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.DelegationMeetingRequestReverted,
+                Guid.Empty,
+                $"requestId={req.Id}; reason=AwaitingConfirmTokenExpired",
+                cancellationToken);
         }
 
         await db.SaveChangesAsync(cancellationToken);

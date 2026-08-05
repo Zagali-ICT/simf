@@ -140,13 +140,11 @@ internal sealed class AdminHallService(
         dbContext.Halls.Add(hall);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={hall.Id}; code={code}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallCreated,
+            actorUserId,
+            $"id={hall.Id}; code={code}; name={name}",
+            cancellationToken);
 
         logger.LogInformation("Admin {ActorId} created Hall {Code} ({Id})",
             actorUserId, code, hall.Id);
@@ -209,13 +207,11 @@ internal sealed class AdminHallService(
         hall.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={hall.Id}; code={code}; active={hall.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallUpdated,
+            actorUserId,
+            $"id={hall.Id}; code={code}; active={hall.IsActive}",
+            cancellationToken);
 
         return ToDetail(hall);
     }
@@ -238,13 +234,11 @@ internal sealed class AdminHallService(
         hall.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={hall.Id}; code={hall.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallDeactivated,
+            actorUserId,
+            $"id={hall.Id}; code={hall.Code}",
+            cancellationToken);
     }
 
     private static (string code, string name, string nameArabic, string? floor, string? equipmentNotes)

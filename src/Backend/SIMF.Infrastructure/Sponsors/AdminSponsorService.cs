@@ -189,13 +189,11 @@ internal sealed class AdminSponsorService(
         appDbContext.Sponsors.Add(sponsor);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SponsorCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sponsorId={sponsor.Id}; tier={tier}; nameAr={nameAr}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SponsorCreated,
+            actorUserId,
+            $"sponsorId={sponsor.Id}; tier={tier}; nameAr={nameAr}",
+            cancellationToken);
 
         var (en, ar) = await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
         return ToDetail(sponsor, en, ar);
@@ -267,13 +265,11 @@ internal sealed class AdminSponsorService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SponsorUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sponsorId={sponsor.Id}; tier={tier}; active={sponsor.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SponsorUpdated,
+            actorUserId,
+            $"sponsorId={sponsor.Id}; tier={tier}; active={sponsor.IsActive}",
+            cancellationToken);
 
         var (en, ar) = await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
         return ToDetail(sponsor, en, ar);
@@ -295,13 +291,11 @@ internal sealed class AdminSponsorService(
         sponsor.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SponsorDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sponsorId={sponsor.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SponsorDeactivated,
+            actorUserId,
+            $"sponsorId={sponsor.Id}",
+            cancellationToken);
     }
 
     private static (string nameEn, string nameAr, SponsorTier tier,
