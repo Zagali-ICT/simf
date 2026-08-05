@@ -63,11 +63,10 @@ public class SimfUser : IdentityUser<Guid>
     public long? LastUsedTotpTimestep { get; set; }
 
     /// <summary>
-    /// The relative path of the user's avatar file on disk, under the
-    /// configured <c>Storage:AvatarBase</c>. For example <c>"abc123.png"</c>.
-    /// Null when no avatar is set. Decision D-039 (2026-05-23) moved storage
-    /// from <c>varbinary(max)</c> in the row to the filesystem, mirroring the
-    /// IBS V10 car-image-upload convention.
+    /// The relative path of the user's avatar file, under the file store's
+    /// <c>Avatar</c> folder. For example <c>"abc123.png"</c>. Null when no
+    /// avatar is set. The bytes live in the unified store rooted at
+    /// <c>FileStorage:RootPath</c>, not in the row.
     /// </summary>
     public string? AvatarRelativePath { get; set; }
 

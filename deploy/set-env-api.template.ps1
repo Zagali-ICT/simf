@@ -87,7 +87,7 @@ $vars = [ordered]@{
     # ROTATION WARNING: changing this key makes every ALREADY-STORED file
     # undecryptable. Set it once, back it up, never rotate it casually.
     "SIMF_FileStorage__EncryptionKey"           = ""   # [BOOT GATE][SECRET] base64 32-byte AES KEK
-    "SIMF_FileStorage__RootPath"                = ""   # default App_Data/files
+    "SIMF_FileStorage__RootPath"                = ""   # default C:\ProgramData\SIMF\files - set an explicit path in production
     "SIMF_FileStorage__KekVersion"              = ""   # default 1
 
     # Missing => the API refuses to start in Production
@@ -105,9 +105,9 @@ $vars = [ordered]@{
     # --- Filesystem paths -----------------------------------------------------
     # Storage:AvatarBase is validated with ValidateOnStart
     # (DependencyInjection.cs:207) => missing means the host fails to build.
-    "SIMF_Storage__AvatarBase"                  = ""   # [BOOT GATE] e.g. C:\SIMF\Storage\avatars
-    "SIMF_Storage__VipPhotoBase"                = ""   # optional - defaults to a vip-photos sibling of AvatarBase
-    "SIMF_Storage__UserIdDocumentBase"          = ""   # [REQUIRED] e.g. C:\SIMF\Storage\visitor-ids
+    # AvatarBase / VipPhotoBase / UserIdDocumentBase were removed 2026-08-05:
+    # avatars, VIP photos and ID documents live in the unified file store under
+    # SIMF_FileStorage__RootPath. Setting them now has no effect.
     "SIMF_Storage__LogDirectory"                = ""   # [REQUIRED] e.g. C:\SIMF\Storage\logs - per-app logs under {dir}/SIMF.Api/ and {dir}/SIMF.Workers/
     "SIMF_SessionRecordingStorage__MaxUploadBytes" = "" # default 1073741824 (1 GiB) - the recording upload ceiling
 

@@ -266,10 +266,10 @@ public class UserProfile : BaseAuditEntity
     /////set create and update by and update date
 
 
-    /// <summary>The relative path of the encrypted ID-image file on disk,
-    /// under the configured <c>Storage:UserIdDocumentBase</c>. Null when no
-    /// image has been uploaded. The bytes are AES-GCM encrypted with the
-    /// per-installation key — see <c>EncryptedUserIdDocumentStorage</c>.</summary>
+    /// <summary>The relative path of the encrypted ID-image file, under the
+    /// file store's <c>IdDocument</c> folder. Null when no image has been
+    /// uploaded. The bytes are envelope-encrypted in the unified store rooted
+    /// at <c>FileStorage:RootPath</c>.</summary>
     public string? IdImageRelativePath { get; set; }
 
     // -- `accessibility-server-sync`: the five accessibility choices the app

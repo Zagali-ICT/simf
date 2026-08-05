@@ -11,18 +11,14 @@ public sealed class StorageOptions
 {
     public const string SectionName = "Storage";
 
-    /// <summary>Root directory the filesystem avatar storage writes into.</summary>
-    public string AvatarBase { get; set; } = string.Empty;
-
-    /// <summary>V-1 (D-429) — root directory the VVIP/VIP welcome-photo storage
-    /// writes into. A store separate from <see cref="AvatarBase"/> so the VIP
-    /// photo never collides with the account avatar (both key files by user id).
-    /// Optional — when unset the storage derives a <c>vip-photos</c> sibling of
-    /// <see cref="AvatarBase"/> so a deploy that predates this key still boots.</summary>
-    public string VipPhotoBase { get; set; } = string.Empty;
-
-    /// <summary>Root directory the encrypted user-ID document storage writes into.</summary>
-    public string UserIdDocumentBase { get; set; } = string.Empty;
+    // AvatarBase, VipPhotoBase and UserIdDocumentBase were removed on
+    // 2026-08-05. D-568 moved all three stores into the unified StoredFile
+    // store under FileStorage:RootPath - avatars, ID documents and VIP photos
+    // are FileService values now, and the bespoke filesystem stores that read
+    // these paths no longer exist. Nothing had read them since that cutover
+    // except a boot gate that refused to start the API unless AvatarBase named
+    // a directory the code would never open. An old deployment may still set
+    // the environment variables; they bind to nothing and are ignored.
 
     /// <summary>Base64-encoded 32-byte AES-256-GCM key for the user-ID document
     /// encryption. Never committed; supplied via environment variable.</summary>

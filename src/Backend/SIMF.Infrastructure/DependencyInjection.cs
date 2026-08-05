@@ -194,19 +194,15 @@ public static class DependencyInjection
         // D-717 (item 7, FDS-013 §15 GAP-3) — the speaker email-link base URL + TTL.
         services.Configure<MeetingLinksOptions>(
             configuration.GetSection(MeetingLinksOptions.SectionName));
-        // R1 — D-074: typed Storage settings; replaces four scattered
-        // IConfiguration["Storage:..."] reads across FilesystemAvatarStorage,
-        // EncryptedUserIdDocumentStorage, LogFileService, and Program.cs.
-        // ValidateOnStart fires at host build time, so a missing AvatarBase
-        // surfaces as an OptionsValidationException at boot rather than on
-        // first request — same fail-fast posture as the pre-R1 explicit
-        // Program.cs gate.
+        // R1 — D-074: typed Storage settings. What is left of this section is
+        // the PII encryption key and the log directory; the avatar, VIP-photo
+        // and ID-document paths went with the D-568 move to the unified
+        // StoredFile store. The AvatarBase boot gate went with them: it made
+        // the API refuse to start without a path nothing would ever open. The
+        // gate that still matters is FileStorage:EncryptionKey, enforced by
+        // the file-cipher's own boot check.
         services.AddOptions<StorageOptions>()
-            .Bind(configuration.GetSection(StorageOptions.SectionName))
-            .Validate(
-                options => !string.IsNullOrWhiteSpace(options.AvatarBase),
-                "Storage:AvatarBase must be configured (filesystem path for user avatars).")
-            .ValidateOnStart();
+            .Bind(configuration.GetSection(StorageOptions.SectionName));
 
         // D-819 — the standby walk-in capability. Bound WITHOUT ValidateOnStart
         // and with no required values: every switch defaults to off, so an
