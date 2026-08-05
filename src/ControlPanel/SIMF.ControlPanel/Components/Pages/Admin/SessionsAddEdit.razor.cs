@@ -1,3 +1,4 @@
+using SIMF.Contracts.Sessions;
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -509,17 +510,17 @@ public partial class SessionsAddEdit
     /// setting <see cref="_error"/> to the first problem found.</summary>
     private FormValues? ReadForm()
     {
-        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Length is < 2 or > 16)
+        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Length is < SessionRules.MinCodeLength or > SessionRules.MaxCodeLength)
         {
             _error = L["Admin.Sessions.Field.CodeInvalid"];
             return null;
         }
-        if (string.IsNullOrWhiteSpace(_model.Title) || _model.Title.Length > 256)
+        if (string.IsNullOrWhiteSpace(_model.Title) || _model.Title.Length > SessionRules.MaxTitleLength)
         {
             _error = L["Admin.Sessions.Field.TitleInvalid"];
             return null;
         }
-        if (string.IsNullOrWhiteSpace(_model.TitleArabic) || _model.TitleArabic.Length > 256)
+        if (string.IsNullOrWhiteSpace(_model.TitleArabic) || _model.TitleArabic.Length > SessionRules.MaxTitleLength)
         {
             _error = L["Admin.Sessions.Field.TitleArabicInvalid"];
             return null;

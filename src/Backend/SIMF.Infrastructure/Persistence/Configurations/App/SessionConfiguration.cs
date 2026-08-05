@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Common.Options;
+using SIMF.Contracts.Sessions;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -24,9 +25,9 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         });
         builder.HasKey(s => s.Id);
 
-        builder.Property(s => s.Code).HasMaxLength(16).IsRequired();
-        builder.Property(s => s.Title).HasMaxLength(256).IsRequired();
-        builder.Property(s => s.TitleArabic).HasMaxLength(256).IsRequired();
+        builder.Property(s => s.Code).HasMaxLength(SessionRules.MaxCodeLength).IsRequired();
+        builder.Property(s => s.Title).HasMaxLength(SessionRules.MaxTitleLength).IsRequired();
+        builder.Property(s => s.TitleArabic).HasMaxLength(SessionRules.MaxTitleLength).IsRequired();
         builder.Property(s => s.Description).HasMaxLength(2048);
         builder.Property(s => s.DescriptionArabic).HasMaxLength(2048);
 

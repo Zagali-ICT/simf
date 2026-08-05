@@ -14,6 +14,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Sessions;
 using SIMF.Domain.Programme;
 using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
@@ -927,7 +928,7 @@ internal sealed class AdminSessionService(
         string codeRaw, string titleRaw, string titleArabicRaw)
     {
         var code = (codeRaw ?? string.Empty).Trim().ToUpperInvariant();
-        if (code.Length is < 2 or > 16)
+        if (code.Length is < SessionRules.MinCodeLength or > SessionRules.MaxCodeLength)
         {
             throw new ApiException(
                 ErrorCodes.SessionInvalid, 400,
@@ -935,7 +936,7 @@ internal sealed class AdminSessionService(
                 "يجب أن يتراوح طول رمز الجلسة بين 2 و 16 حرفاً.");
         }
         var title = (titleRaw ?? string.Empty).Trim();
-        if (title.Length is < 1 or > 256)
+        if (title.Length is < SessionRules.MinTitleLength or > SessionRules.MaxTitleLength)
         {
             throw new ApiException(
                 ErrorCodes.SessionInvalid, 400,
@@ -943,7 +944,7 @@ internal sealed class AdminSessionService(
                 "يجب أن يتراوح طول العنوان الإنجليزي للجلسة بين 1 و 256 حرفاً.");
         }
         var titleArabic = (titleArabicRaw ?? string.Empty).Trim();
-        if (titleArabic.Length is < 1 or > 256)
+        if (titleArabic.Length is < SessionRules.MinTitleLength or > SessionRules.MaxTitleLength)
         {
             throw new ApiException(
                 ErrorCodes.SessionInvalid, 400,
