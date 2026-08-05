@@ -13,42 +13,47 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        var headers = context.Response.Headers;
-        headers["X-Content-Type-Options"] = "nosniff";
-        headers["X-Frame-Options"] = "DENY";
-        headers["Referrer-Policy"] = "no-referrer";
-        headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()";
-        if (context.Request.IsHttps)
-        {
-            headers["Strict-Transport-Security"] = "max-age=31536000";
-        }
-
-        // A3-4 / A5-13 / A6-21 (NCA App-Sec Standard) — the API serves JSON and is
-        // never a document source, so lock the CSP down hard. Swagger UI (when
-        // enabled, prod-gated behind Basic auth) renders HTML/JS, so it is exempt.
-        if (!context.Request.Path.StartsWithSegments("/swagger"))
-        {
-            headers["Content-Security-Policy"] =
-                "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
-        }
-
-        // A5-12 (NCA App-Sec Standard) — declare an explicit charset on JSON
-        // responses. FastEndpoints / WriteAsJsonAsync may emit a bare
-        // "application/json"; append "; charset=utf-8" once the content type is
-        // known (OnStarting runs just before headers flush, so it cannot miss
-        // the type set by the endpoint).
+        // Written on the way out rather than on the way in. ErrorHandlingMiddleware
+        // runs inside this one and calls Response.Clear() to write a failure
+        // envelope, which drops any header already set — so headers applied before
+        // next() survived on a 200 and vanished on every ApiException. OnStarting
+        // fires after that clear, just before the headers flush, so an error
+        // response carries the same headers a success does.
         context.Response.OnStarting(static state =>
         {
-            var response = (HttpResponse)state;
-            var contentType = response.ContentType;
+            var context = (HttpContext)state;
+            var headers = context.Response.Headers;
+            headers["X-Content-Type-Options"] = "nosniff";
+            headers["X-Frame-Options"] = "DENY";
+            headers["Referrer-Policy"] = "no-referrer";
+            headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()";
+            if (context.Request.IsHttps)
+            {
+                headers["Strict-Transport-Security"] = "max-age=31536000";
+            }
+
+            // A3-4 / A5-13 / A6-21 (NCA App-Sec Standard) — the API serves JSON and is
+            // never a document source, so lock the CSP down hard. Swagger UI (when
+            // enabled, prod-gated behind Basic auth) renders HTML/JS, so it is exempt.
+            if (!context.Request.Path.StartsWithSegments("/swagger"))
+            {
+                headers["Content-Security-Policy"] =
+                    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+            }
+
+            // A5-12 (NCA App-Sec Standard) — declare an explicit charset on JSON
+            // responses. FastEndpoints / WriteAsJsonAsync may emit a bare
+            // "application/json"; append "; charset=utf-8" once the content type
+            // is known.
+            var contentType = context.Response.ContentType;
             if (contentType is not null
                 && contentType.StartsWith("application/json", StringComparison.OrdinalIgnoreCase)
                 && !contentType.Contains("charset", StringComparison.OrdinalIgnoreCase))
             {
-                response.ContentType = "application/json; charset=utf-8";
+                context.Response.ContentType = "application/json; charset=utf-8";
             }
             return Task.CompletedTask;
-        }, context.Response);
+        }, context);
 
         await next(context);
     }
