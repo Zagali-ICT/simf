@@ -3,7 +3,6 @@
   <ItemGroup>
     <ProjectReference Include="..\SIMF.Application\SIMF.Application.csproj" />
     <ProjectReference Include="..\SIMF.Infrastructure\SIMF.Infrastructure.csproj" />
-    <ProjectReference Include="..\SIMF.RealTime\SIMF.RealTime.csproj" />
     <ProjectReference Include="..\..\Shared\SIMF.Contracts\SIMF.Contracts.csproj" />
     <ProjectReference Include="..\..\Shared\SIMF.Common\SIMF.Common.csproj" />
   </ItemGroup>

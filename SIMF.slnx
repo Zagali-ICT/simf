@@ -8,7 +8,6 @@
     <Project Path="src/Backend/SIMF.Application/SIMF.Application.csproj" />
     <Project Path="src/Backend/SIMF.Domain/SIMF.Domain.csproj" />
     <Project Path="src/Backend/SIMF.Infrastructure/SIMF.Infrastructure.csproj" />
-    <Project Path="src/Backend/SIMF.RealTime/SIMF.RealTime.csproj" />
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/SIMF.ApiClient/SIMF.ApiClient.csproj" />

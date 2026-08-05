@@ -27,7 +27,6 @@ one section per delivered increment.
         SIMF.Application       Use cases, handlers, validators
         SIMF.Infrastructure    Persistence, external-service adapters
         SIMF.Api               The HTTP API (FastEndpoints) — the host
-        SIMF.RealTime          SignalR hubs
       ControlPanel/
         SIMF.ControlPanel      The Control Panel — a Blazor Server app
       Website/
@@ -372,12 +371,12 @@ the section names the relevant decision-log entry so you can dig deeper.
 │           ApiResult<T> envelope. The single source of truth for every       │
 │           business write. Talks to:                                          │
 └──────────┬───────────────────────────────────────────────────────────┬───────┘
-           │ EF Core 10                                                │ SignalR
+           │ EF Core 10                                                │ SignalR (planned)
            ▼                                                           ▼
 ┌──────────────────────┐                                  ┌──────────────────────┐
-│ SQL Server           │                                  │ SIMF.RealTime hubs   │
-│ [identity] schema    │                                  │ (live moderation,    │
-│ [app] schema         │                                  │  attendance, etc.)   │
+│ SQL Server           │                                  │ SignalR hubs         │
+│ [identity] schema    │                                  │ (planned - NOT built)│
+│ [app] schema         │                                  │ clients use REST     │
 └──────────────────────┘                                  └──────────────────────┘
 ```
 

@@ -284,7 +284,8 @@ references its FDS for full requirements.
   - `Poll { Id, SessionId, Title, Options[], IsClosed, CreatedAt }`.
   - `Question { Id, SessionId, FromUserId, BodyEn, BodyAr, Votes,
     Status (Pending/Asked/Skipped), AskedAt? }`.
-- **Dependencies:** Sessions (3.2.4), `SIMF.RealTime` hubs.
+- **Dependencies:** Sessions (3.2.4). Real-time push is not implemented; the
+  question stream is read over REST.
 
 #### 3.2.13 Moderation — `/m/moderation` (FDS-007)
 

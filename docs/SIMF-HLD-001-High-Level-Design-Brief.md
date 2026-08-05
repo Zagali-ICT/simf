@@ -245,11 +245,10 @@ cookies, never raw bearer tokens.
 | 2 | **SIMF.Application** | .NET 10 | Use-case orchestration, service contracts (abstractions) |
 | 3 | **SIMF.Infrastructure** | .NET 10, EF Core | Persistence (two DbContexts), storage, e-mail, JWT/identity, audit interceptors |
 | 4 | **SIMF.Domain** | .NET 10 | Entities, aggregates, enums, domain rules |
-| 5 | **SIMF.RealTime** | .NET 10 | Reserved for real-time push (SignalR); placeholder on this branch (see §4.4) |
-| 6 | **SIMF.ControlPanel** | Blazor Server, MudBlazor | Admin UI for the whole event |
-| 7 | **SIMF.Web** | Blazor SSR + interactive islands | Public website + visitor self-service auth |
-| 8 | **Mobile app** (`simf_app`) | Flutter (Riverpod, go_router, Dio) | Attendee-facing Android/iOS application |
-| 9 | **SIMF.Common** | .NET 10 | Shared kernel: `ApiResult<T>`, `PermissionCatalog`, `AppRoles`, enums, error codes |
+| 5 | **SIMF.ControlPanel** | Blazor Server, MudBlazor | Admin UI for the whole event |
+| 6 | **SIMF.Web** | Blazor SSR + interactive islands | Public website + visitor self-service auth |
+| 7 | **Mobile app** (`simf_app`) | Flutter (Riverpod, go_router, Dio) | Attendee-facing Android/iOS application |
+| 8 | **SIMF.Common** | .NET 10 | Shared kernel: `ApiResult<T>`, `PermissionCatalog`, `AppRoles`, enums, error codes |
 | 10 | **SIMF.Contracts** | .NET 10 | Request/response DTOs shared by API and clients |
 | 11 | **SIMF.ApiClient** | .NET 10 | Typed HTTP client used by CP and Website |
 | 12 | **SIMF.Components** | Blazor (Razor class library) | Shared `Simf*` UI components, themes, design tokens |
@@ -289,14 +288,16 @@ VIP photos, session recordings, speaker presentations, media assets).
   language interceptors; secure token storage; biometric sign-in; QR badge and scanning; and a
   navy-always bilingual (RTL) theme.
 
-### 4.4 Real-time (SIMF.RealTime) — as-designed vs. as-built
+### 4.4 Real-time push — as-designed vs. as-built
 
 The architecture **intends** SignalR-based push for live notifications, live-session interaction,
 and Q&A moderation, and the deployment design allows for a SignalR backplane at event-day scale.
-**As built on the current branch, `SIMF.RealTime` is a placeholder** — no hubs are wired into the
-API host, and clients get notifications and live data through REST reads. This HLD documents the
-intended design and flags the gap; the LLD records the as-built state precisely. Closing the gap
-is tracked as outstanding work.
+**As built there is no real-time push**: no hubs are registered, and clients get notifications
+and live data through REST reads. A `SIMF.RealTime` project existed as an empty placeholder and
+was removed on 2026-08-05 because it held no code and nothing referenced it; hubs would be
+hosted by `SIMF.Api` when push is built. This HLD documents the intended design and flags the
+gap; the LLD records the as-built state precisely. Closing the gap is tracked as outstanding
+work.
 
 ---
 

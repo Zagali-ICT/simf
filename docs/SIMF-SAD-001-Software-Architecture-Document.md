@@ -321,7 +321,6 @@ finalised with the low-level design.
   SIMF.Application       Use cases, service interfaces, validators
   SIMF.Infrastructure    EF Core, repositories, external-service adapters
   SIMF.Api               FastEndpoints endpoints, ApiResult<T>, middleware
-  SIMF.RealTime          SignalR hubs
 /src/Shared
   SIMF.Contracts         Request/response DTOs shared with clients
   SIMF.Common            Cross-cutting constants, enums, result types
@@ -347,11 +346,17 @@ describes the security middleware in detail.
 
 ### 6.4 The real-time layer
 
-`SIMF.RealTime` holds the SignalR hubs. Three hubs are foreseen: a live-session
-hub (broadcast state, the question and comment stream to moderators and
-audience), a notifications hub (in-app delivery and the unread count), and an
-admin hub (live updates on the Control Panel's lists and the moderation queue).
-The hub set is confirmed with the low-level design.
+Three SignalR hubs are foreseen: a live-session hub (broadcast state, the
+question and comment stream to moderators and audience), a notifications hub
+(in-app delivery and the unread count), and an admin hub (live updates on the
+Control Panel's lists and the moderation queue). The hub set is confirmed with
+the low-level design.
+
+None of them is built. There are no hubs and no `AddSignalR()` registration;
+clients read notifications and live data over REST. A `SIMF.RealTime` project
+was carried as an empty placeholder and removed on 2026-08-05. When the hubs
+are implemented they would be hosted by `SIMF.Api` rather than a separate
+assembly, unless the low-level design argues otherwise.
 
 ## 7. Data architecture
 
