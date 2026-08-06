@@ -11,10 +11,12 @@ namespace SIMF.Domain.Tests;
 ///
 /// <para>Two real defects motivated this. Rows were twice written so that several
 /// decisions shared one line and only the first kept an ID cell, leaving four ids
-/// resolving to nothing. And two dated batches were numbered from the same
-/// starting point, so 54 ids each label two unrelated decisions — a citation of
-/// one of those is ambiguous, not merely untidy. Both are frozen here as counted
-/// baselines: they may shrink, never grow.</para>
+/// resolving to nothing. And three batches were numbered over ranges already in
+/// use, so 55 ids label more than one decision: 52 label two, and D-772, D-774
+/// and D-771 label four, five and seven. A citation of any of them is ambiguous,
+/// not merely untidy, and the date column does not always break the tie — 18 of
+/// the 55 collide on the same day. Both are frozen here as counted baselines:
+/// they may shrink, never grow.</para>
 /// </summary>
 public sealed class DecisionsLogIntegrityTests
 {
@@ -27,11 +29,14 @@ public sealed class DecisionsLogIntegrityTests
     private static readonly Regex ExtraDateCell =
         new(@"\|\s*\d{4}-\d{2}-\d{2}\s*\|", RegexOptions.Compiled);
 
-    /// <summary>Ids that label two unrelated decisions, measured 2026-08-06.
-    /// Resolving a collision means renumbering one side, which invalidates
-    /// citations in commit messages that cannot be rewritten — an owner decision,
-    /// deliberately not taken here. Shrinking this set is welcome; growing it
-    /// means a new batch was numbered over an existing one.</summary>
+    /// <summary>Ids that label more than one decision, measured 2026-08-06.
+    /// Renumbering one side would be worse than the ambiguity it removes: 554
+    /// references across 161 tracked files cite one of these ids, plus commit
+    /// messages that cannot be rewritten at all, and every one of them would then
+    /// resolve confidently to the decision it does not mean. An ambiguous citation
+    /// announces itself; a redirected one does not. So the set is recorded rather
+    /// than resolved. Shrinking it is welcome; growing it means a new batch was
+    /// numbered over an existing one.</summary>
     private static readonly string[] KnownCollidingIds =
     [
         "D-587", "D-588", "D-589", "D-590", "D-591", "D-592", "D-593", "D-594", "D-595",
