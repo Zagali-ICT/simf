@@ -62,7 +62,7 @@ is no runtime config file. Optional parameters: `-AppKey`, `-SupportPhone`,
 
    Set this in the **published API's** `appsettings.json`, or as the
    Machine-scope environment variable `SIMF_Cors__WebAppOrigins__0`
-   (the `SIMF_` prefix convention, D-355 — see `deploy/set-env-api.ps1`),
+   (the `SIMF_` prefix convention, D-355 — see `deploy/set-env.template.ps1`),
    then restart the API app pool.
    If the web app is hosted on the **same origin** as the API (e.g. the API
    site also serves the static folder under `/`), no CORS entry is needed.

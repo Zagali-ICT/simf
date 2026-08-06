@@ -35,9 +35,7 @@
 # straight to the Machine environment and the local variable is cleared.
 #
 # Companion files:
-#   deploy\set-env-api.template.ps1  - the full SimfAPI variable list (template)
-#   deploy\set-env-cp.ps1            - SimfCP shared config
-#   deploy\set-env-web.ps1           - SimfWeb shared config
+#   deploy\set-env.template.ps1      - the full variable list for API + CP + Web
 #   deploy\clear-env.ps1             - remove the Machine-scope SIMF_* variables
 #   deploy\ops.ps1                   - install / start / stop the IIS sites
 # =============================================================================
@@ -153,12 +151,20 @@ $promptedValues = @(
     [pscustomobject]@{ Name = "SIMF_SuperAdmin__TempPassword";          Secret = $true;  Prompt = "bootstrap super-admin password (must NOT be the committed default)" }
     [pscustomobject]@{ Name = "SIMF_SuperAdmin__TotpSecret";            Secret = $true;  Prompt = "bootstrap super-admin TOTP seed (base32)" }
     [pscustomobject]@{ Name = "SIMF_MeetingLinks__PublicWebBaseUrl";    Secret = $false; Prompt = "public Website origin, e.g. https://simf.example.sa" }
-    [pscustomobject]@{ Name = "SIMF_Storage__AvatarBase";               Secret = $false; Prompt = "avatar directory, e.g. C:\SIMF\Storage\avatars" }
-    [pscustomobject]@{ Name = "SIMF_Storage__UserIdDocumentBase";       Secret = $false; Prompt = "ID-document directory, e.g. C:\SIMF\Storage\visitor-ids" }
+    # Storage:AvatarBase and Storage:UserIdDocumentBase were prompted for here
+    # until 2026-08-06. They named the roots of bespoke per-asset filesystem
+    # stores that D-568 replaced with the unified StoredFile store, and by then
+    # nothing read either one - so an operator was being asked for two
+    # directories that configured nothing, while never being asked for the one
+    # that does. FileStorage:RootPath is that setting: every uploaded avatar,
+    # ID document, media image and speaker photo lands under it. Left unset it
+    # silently falls back to %ProgramData%\SIMF\files, which is a real location
+    # an operator never chose and may not be backing up.
+    [pscustomobject]@{ Name = "SIMF_FileStorage__RootPath";             Secret = $false; Prompt = "file-store root for ALL uploads, e.g. C:\SIMF\Storage\files" }
     [pscustomobject]@{ Name = "SIMF_Storage__LogDirectory";             Secret = $false; Prompt = "log directory, e.g. C:\SIMF\Storage\logs" }
 )
 
-# Reported by the verify pass but never set here (see set-env-api.template.ps1).
+# Reported by the verify pass but never set here (see set-env.template.ps1).
 $alsoVerified = @(
     "ASPNETCORE_ENVIRONMENT"
     "SIMF_Ai__DefaultProvider"
@@ -269,7 +275,7 @@ if ($missing -eq 0) {
     Write-Host "All tracked variables are set." -ForegroundColor Green
 }
 else {
-    Write-Warning "$missing variable(s) still missing - see deploy\set-env-api.template.ps1 for what each one does."
+    Write-Warning "$missing variable(s) still missing - see deploy\set-env.template.ps1 for what each one does."
 }
 
 if ($VerifyOnly) {

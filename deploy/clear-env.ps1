@@ -26,7 +26,7 @@ param(
     # Wipe EVERY SIMF_* variable, including the non-secret shared config that is
     # normally preserved (SIMF_Api__BaseUrl, CORS origins, AI routing). Use for a
     # full scrub / decommission — it WILL take the CP + Website offline until
-    # set-env-api is run again.
+    # set-env is run again.
     [switch]$Full,
 
     # Also remove ASPNETCORE_ENVIRONMENT (host-level, shared). Without it the host
@@ -97,4 +97,4 @@ if (-not $Full -and $kept -gt 0) {
     Write-Host "Use -Full to wipe those too." -ForegroundColor DarkGray
 }
 Write-Host "Restart the IIS app pools (or the server) so w3wp drops the cleared values." -ForegroundColor Green
-Write-Host "Re-provision with:  .\deploy\set-env-api.ps1" -ForegroundColor Green
+Write-Host "Re-provision with:  .\deploy\set-env.ps1" -ForegroundColor Green

@@ -1,11 +1,15 @@
 # SIMF — .gitignore
 
 # ── Production secrets — NEVER commit real values (SIMF-OPS-001 §6) ──
-# set-env-cp.ps1 / set-env-web.ps1 are EMPTY templates and stay tracked; real
-# filled-in secret scripts (DB passwords, keys) stay untracked via the names below.
-# deploy/set-env-api.ps1 is the filled API overlay (real secrets) — untracked.
+# deploy/set-env.template.ps1 is the tracked template: every Secret entry is
+# empty and a test enforces it. deploy/set-env.ps1 is the FILLED overlay an
+# operator creates on the server — real connection strings, SMTP password and
+# keys — and must stay untracked. Never delete that rule to "share" the script.
+# deploy/set-env-api.ps1 is the pre-2026-08-06 filled overlay, still ignored so
+# an existing server's copy cannot be committed by accident.
 set-env-prod.ps1
 set-env-*.local.ps1
+deploy/set-env.ps1
 deploy/set-env-api.ps1
 
 # ── Runtime file store — personal data, NEVER commit ───────────────

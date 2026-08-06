@@ -47,17 +47,12 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     // Identical on a +03:00 host; correct on all the others.
     public FakeTimeProvider Time { get; } = new(new DateTimeOffset(SimfClock.Now, SimfClock.Offset));
 
-    /// <summary>
-    /// Per-test-run temp directory the FilesystemAvatarStorage writes into,
-    /// cleaned up on <see cref="Dispose(bool)"/>.
-    /// </summary>
-    public string AvatarStorageDirectory { get; } =
-        Path.Combine(Path.GetTempPath(), $"simf-avatars-{Guid.NewGuid():N}");
-
-    /// <summary>Temp dir for encrypted user ID-document files (decisions
-    /// D-046 b, P8 — D-049; renamed from <c>VisitorIdStorageDirectory</c>).</summary>
-    public string UserIdDocumentStorageDirectory { get; } =
-        Path.Combine(Path.GetTempPath(), $"simf-user-id-documents-{Guid.NewGuid():N}");
+    // AvatarStorageDirectory and UserIdDocumentStorageDirectory lived here until
+    // 2026-08-06. They were the per-asset temp roots for FilesystemAvatarStorage
+    // and its ID-document sibling, both of which D-568 deleted in favour of the
+    // unified StoredFile store; no type of either name survives, nothing wrote to
+    // the directories, and no test read them. FileStorageDirectory below is the
+    // one root the fixture still needs.
 
     /// <summary>D-568 — per-test-run root for the centralized file store
     /// (<c>FileStorage:RootPath</c>), cleaned up on <see cref="Dispose(bool)"/>.</summary>
@@ -153,12 +148,13 @@ public class SimfApiFactory : WebApplicationFactory<Program>
             "IdentityLifecycle__RequireControlPanelTwoFactorEnrolment", "true");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
-        Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);
+        // Storage__AvatarBase and Storage__UserIdDocumentBase were set here until
+        // 2026-08-06. Both config keys were removed when the unified StoredFile
+        // store replaced the bespoke per-asset stores, so setting them bound to
+        // nothing; the file store's own root is what the fixture configures below.
+        //
         // A fixed base64-encoded 32-byte AES key for the test environment so
         // the encrypted ID-image round-trip is deterministic across runs.
-        // P8 renamed the config keys off Storage__VisitorId* to
-        // Storage__UserIdDocument*.
-        Environment.SetEnvironmentVariable("Storage__UserIdDocumentBase", UserIdDocumentStorageDirectory);
         Environment.SetEnvironmentVariable(
             "Storage__UserIdDocumentEncryptionKey",
             "VnY3R0V2YnFwT0ZQUE1XdjJxQjJlbzVwUFp4MnNYbWY=");
@@ -273,10 +269,6 @@ public class SimfApiFactory : WebApplicationFactory<Program>
 
             try
             {
-                if (Directory.Exists(AvatarStorageDirectory))
-                {
-                    Directory.Delete(AvatarStorageDirectory, recursive: true);
-                }
                 if (Directory.Exists(FileStorageDirectory))
                 {
                     Directory.Delete(FileStorageDirectory, recursive: true);
