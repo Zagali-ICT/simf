@@ -1,5 +1,5 @@
-@* P2.3 (D-228) — speaker presentation-file management (SIMF-FDS-004 §5.3,
-   FR-407). Pick a speaker, see their presentation files (each linked to a
+@* Speaker presentation-file management.
+   Pick a speaker, see their presentation files (each linked to a
    session), upload a new file for a session, download or remove existing ones.
    Gated by Speakers.* (View to read, Edit to upload/delete). Mirrors the
    MediaList out-of-row upload via simfAccount.uploadFile.
@@ -24,7 +24,7 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        @* D-357 — pick a speaker from a wall of profile cards (photo + name +
+        @* Pick a speaker from a wall of profile cards (photo + name +
            country). Selecting one reveals their presentation files below; this
            gallery replaces the old <select> picker. *@
         @if (string.IsNullOrEmpty(_speakerId))
@@ -46,7 +46,7 @@
                                correctly 404s — a failed request per card and a
                                broken image the placeholder hid. SpeakersList.razor.cs
                                already gates on HasPhoto via CpAssetUrls.AdminImage;
-                               this picker (D-357) hand-rolled the URL and lost the
+                               this picker hand-rolled the URL and lost the
                                guard. SimfImageThumb renders its placeholder for a
                                null Src, so the empty state is unchanged. *@
                             <SimfImageThumb Src="@(s.HasPhoto

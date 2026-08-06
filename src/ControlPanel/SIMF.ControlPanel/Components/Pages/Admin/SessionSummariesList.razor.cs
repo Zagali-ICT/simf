@@ -24,15 +24,15 @@ public partial class SessionSummariesList
     private Guid _editSessionId;
     private string _editTitle = string.Empty;
     private string? _editAiModel;
-    // A19 — the review state the editor opened on, plus the values it opened
+    // The review state the editor opened on, plus the values it opened
     // with. Saving an EDITED summary clears the approval and takes it offline
-    // (server side, D-472 + owner 2026-07-19), so the reviewer is warned first
+    // server side, so the reviewer is warned first
     // instead of the محضر silently vanishing from the app.
     private bool _editWasPublished;
     private bool _editWasApprovedOrInReview;
     private SaveSessionSummaryRequest _editOriginal = new();
     private bool _confirmUnpublishOpen;
-    // Slice D — read-only AI-transparency sources shown in the editor modal.
+    // Read-only AI-transparency sources shown in the editor modal.
     private string _editSubtitle = string.Empty;
     private string _editSubtitleArabic = string.Empty;
     private string _editAiDraftArabic = string.Empty;
@@ -169,7 +169,7 @@ public partial class SessionSummariesList
         _editSubtitleArabic = detail.SubtitleArabic ?? string.Empty;
         _editAiDraftArabic = detail.AiDraftFullTextArabic ?? string.Empty;
         _editAiDraftGeneratedAt = detail.AiDraftGeneratedAt;
-        // A19 — remember what saving would cost before the reviewer starts typing.
+        // Remember what saving would cost before the reviewer starts typing.
         _editWasPublished = detail.IsPublished;
         _editWasApprovedOrInReview = detail.IsApproved || detail.IsInReview;
         _edit = FromDetail(detail);
@@ -187,7 +187,7 @@ public partial class SessionSummariesList
             SpeakersArabic = detail.SpeakersArabic,
             FullText = detail.FullText,
             FullTextArabic = detail.FullTextArabic,
-            // Item #35 — the optional team summary-video URL round-trips through
+            // The optional team summary-video URL round-trips through
             // the same upsert as the content sections.
             SummaryVideoUrl = detail.SummaryVideoUrl,
         };
@@ -198,7 +198,7 @@ public partial class SessionSummariesList
         _confirmUnpublishOpen = false;
     }
 
-    // A19 — true when the reviewer actually changed something the server persists.
+    // True when the reviewer actually changed something the server persists.
     // Mirrors AdminSessionSummaryService.ChangesPersistedContent, so the warning
     // fires exactly when the save would reset the review state.
     private bool HasUnsavedContentChange()
@@ -215,7 +215,7 @@ public partial class SessionSummariesList
             || !string.Equals(_edit.SummaryVideoUrl, _editOriginal.SummaryVideoUrl, StringComparison.Ordinal);
     }
 
-    // A19 — the Save button. When the edit would strip a published / approved
+    // The Save button. When the edit would strip a published / approved
     // summary of its approval (and pull it out of the app), ask first and name
     // that consequence; otherwise save straight away.
     private Task OnSaveClickedAsync()
@@ -236,7 +236,7 @@ public partial class SessionSummariesList
         return SaveAsync();
     }
 
-    /// <summary>The consequence spelled out on the A19 confirmation — a published
+    /// <summary>The consequence spelled out on the confirmation — a published
     /// summary disappears from the app; an approved / in-review one only loses
     /// its sign-off.</summary>
     private string UnpublishConfirmMessage =>
@@ -303,7 +303,7 @@ public partial class SessionSummariesList
         : row.GeneratedByAi ? L["Admin.SessionSummaries.Source.Ai"]
         : L["Admin.SessionSummaries.Source.Manual"];
 
-    // Slice D — the pristine AI-draft panel label, with the capture time rendered
+    // The pristine AI-draft panel label, with the capture time rendered
     // on the Saudi wall clock (the CP's 12-hour convention) when one is recorded.
     private string AiDraftLabel =>
         _editAiDraftGeneratedAt is { } at

@@ -3,7 +3,7 @@ using SIMF.Common.Resources.Enums;
 
 namespace SIMF.Common.Enums;
 
-/// <summary>The visual + audio tier of a notification (P12 — D-053).</summary>
+/// <summary>The visual + audio tier of a notification.</summary>
 public enum NotificationSeverity
 {
     [Display(Description = nameof(ResNotificationSeverity.Info), ResourceType = typeof(ResNotificationSeverity))]

@@ -3,8 +3,8 @@ using SIMF.Common.Enums;
 namespace SIMF.Application.AccessControl.Abstractions;
 
 /// <summary>
-/// Resolves a 12-char QR id to the gate engine's view of the holder
-/// (SIMF-FDS-003 §5.6 step 3; plan §11.1 reserved seam). The constraint
+/// Resolves a 12-char QR id to the gate engine's view of the holder.
+/// The constraint
 /// engine consumes <see cref="QrResolution"/>; the API resolver implementation
 /// queries the existing <c>UserProfile</c> table.
 ///
@@ -20,7 +20,7 @@ public interface IQrResolver
     /// database actually stores.
     ///
     /// <para>A minted serial is returned normalised and unchanged. An encrypted
-    /// offline badge (D-820) is decrypted and mapped to its derived <c>W</c> id.
+    /// offline badge is decrypted and mapped to its derived <c>W</c> id.
     /// Anything that cannot be translated comes back normalised, so the caller's
     /// existing lookup misses and produces its usual not-found.</para>
     ///

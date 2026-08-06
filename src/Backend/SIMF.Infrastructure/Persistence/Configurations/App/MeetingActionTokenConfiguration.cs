@@ -4,7 +4,7 @@ using SIMF.Domain.BusinessMeetings;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-717 (item 7, FDS-013 §15.7 GAP-3) — MeetingActionToken EF config.
+/// <summary>MeetingActionToken EF config.
 /// Real FK to SpeakerMeetingRequest with cascade so a deleted request removes its
 /// tokens. Only the keyed-HMAC hash is stored; redemption looks up by that hash,
 /// so it is unique-indexed.</summary>

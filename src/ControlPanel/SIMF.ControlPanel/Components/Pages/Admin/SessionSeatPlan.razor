@@ -1,4 +1,4 @@
-@* D-182 (CP UI for D-175 seat reservations) — admin picks a session,
+@* CP UI for seat reservations — admin picks a session,
    sees active seat reservations, can paint a row as admin-reserved
    (blocks visitor self-pick of that row) or release individual
    reservations. The hall layout determines which rows are valid;
@@ -61,11 +61,11 @@
                     </AuthorizedAction>
                 </div>
 
-                @* D-771 (owner 2026-07-26) — a VVIP seat has NO registration: the
+                @* A VVIP seat has NO registration: the
                    admin types the guest's name here, then taps the seat on the grid
                    to hold it. The note travels with the block and is what the app +
                    the staff seating desk show for that seat. Raw inputs (not
-                   SimfTextField, which freezes without ValueExpression — D-648). *@
+                   SimfTextField, which freezes without ValueExpression). *@
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.SessionSeatPlans.GuestHint.Arabic"]</span>
                     <input class="simf-field__input" type="text" maxlength="256"
@@ -83,7 +83,7 @@
                 <p class="simf-hint">@L["Admin.SessionSeatPlans.GuestHint.Hint"]</p>
             </div>
 
-            @* P1.4 (D-215) — visual seat grid: render the hall layout when it
+            @* Visual seat grid: render the hall layout when it
                is available, overlaying each reservation by (row, seat). A free
                seat is clickable to reserve it for a VIP (2026-07-18); a reserved
                seat is clickable to release it. *@
@@ -100,7 +100,7 @@
                             {
                                 var cell = FindReservation(rowLabel, seat);
                                 var seatNumber = seat;
-                                @* DEF-SEA-001 — a held seat no longer releases on the
+                                @* A held seat does not release on the
                                    click itself: tapping it opens the confirmation
                                    below, which names the holder. A free seat still
                                    reserves in one tap (non-destructive). *@
@@ -134,7 +134,7 @@
                     @(string.Format(L["Admin.SessionSeatPlans.Summary"], _reservations.Count))
                 </p>
 
-                @* DEF-SEA-001 — the grid alone never said WHOSE seat a coloured
+                @* The grid alone never said WHOSE seat a coloured
                    square was. This roster names every holder next to their seat, so
                    the admin can read the plan without hovering each square. *@
                 @if (_reservations.Count > 0)
@@ -169,7 +169,7 @@
             else
             {
                 @* Fallback: no hall layout defined yet — list the reservations.
-                   DEF-SEA-001: the holder column and the confirmed release apply
+                   The holder column and the confirmed release apply
                    here too, so both routes to a release name the person. *@
                 <table class="simf-table">
                     <thead>
@@ -212,7 +212,7 @@
     </div>
 </div>
 
-@* DEF-SEA-001 — a release takes a live attendee's seat and cannot be undone, so
+@* A release takes a live attendee's seat and cannot be undone, so
    it goes through the CP's shared must-decide confirm (the same component every
    CRUD delete uses). The message names the seat AND its holder. *@
 <SimfConfirm Open="@(_releasing is not null)"

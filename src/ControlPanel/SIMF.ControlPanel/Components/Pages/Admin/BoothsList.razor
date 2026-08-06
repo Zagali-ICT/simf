@@ -1,12 +1,11 @@
-@* D-199 (CP UI for the Exhibition booths, Mockup page 22) — admin CRUD
-   over the public exhibition booth list + 2D venue map. Each booth carries
+@* Admin CRUD over the public exhibition booth list + 2D venue map. Each booth carries
    a bilingual name / exhibitor / sector / description, an optional hall, and
    an optional MapX/MapY position used by the public 2D venue map. Centralized
-   dialog/full-page framing D-353: Add / Edit / View / Delete are hosted by
+   dialog/full-page framing: Add / Edit / View / Delete are hosted by
    CrudShell, which frames the reusable BoothsAddEdit and BoothsViewDelete forms
    as a popup or a full page per the admin's toolbar choice (persisted in
    localStorage via CpPreferences). The inline SimfModal form + native confirm()
-   delete it used to carry are gone. D-356: Excel export/import wired through
+   delete it used to carry are gone. Excel export/import is wired through
    CrudGridExcel. *@
 @page "/admin/booths"
 @layout CpShellLayout

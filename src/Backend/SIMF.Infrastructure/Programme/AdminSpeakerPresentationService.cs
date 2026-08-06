@@ -15,7 +15,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>Admin management of speaker presentation
-/// files (SIMF-FDS-004 §5.3). D-568 (Wave C S6): bytes live in the unified
+/// files. The bytes live in the unified
 /// <c>StoredFile</c> store (Internal tier, encrypted at rest); the row keeps only
 /// the metadata + the bare-Guid pointer in <c>StoredFileName</c>. Both Speaker and
 /// Session are real FKs on <see cref="SimfAppDbContext"/>, so the session title is

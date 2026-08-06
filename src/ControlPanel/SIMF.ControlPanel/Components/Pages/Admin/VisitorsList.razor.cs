@@ -295,7 +295,7 @@ public partial class VisitorsList
 
     // The row's avatar thumbnail URL, or null when the account has no photo so
     // SimfIdentityCell shows an initials tile (never a broken image). The CP BFF
-    // streams the bytes from the StoredFile avatar (D-568); only requested when
+    // streams the bytes from the StoredFile avatar; only requested when
     // HasAvatar is set so the grid never issues a 404.
     private static string? AvatarImageUrl(AdminUserSummary row) =>
         row.HasAvatar ? $"/account/api/admin/visitors/{row.Id}/avatar" : null;

@@ -2,8 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Gates;
 
-/// <summary>One row in `GET /api/v1/gates/my-assignments`
-/// (SIMF-API-GATES-001 §7.1).</summary>
+/// <summary>One row in `GET /api/v1/gates/my-assignments`.</summary>
 public sealed record OperatorGateAssignment(
     Guid GateId,
     string Code,
@@ -12,8 +11,7 @@ public sealed record OperatorGateAssignment(
     DirectionMode DirectionMode,
     bool IsActive);
 
-/// <summary>`POST /api/v1/gates/{gateId}/scans` body
-/// (SIMF-API-GATES-001 §7.2).</summary>
+/// <summary>`POST /api/v1/gates/{gateId}/scans` body.</summary>
 public sealed class GateScanRequest
 {
     public string Qr { get; set; } = string.Empty;
@@ -30,9 +28,8 @@ public sealed class GateScanRequest
     public ScanDirection? RequestedDirection { get; set; }
 }
 
-/// <summary>Response from `POST /api/v1/gates/{gateId}/scans`
-/// (SIMF-API-GATES-001 §7.2.1 / §7.2.2).</summary>
-/// <param name="NoticeMessage">DEF-CHK-004 — an ADVISORY note about a scan that
+/// <summary>Response from `POST /api/v1/gates/{gateId}/scans`.</summary>
+/// <param name="NoticeMessage">An ADVISORY note about a scan that
 /// was still ALLOWED, already resolved to the caller's Accept-Language exactly
 /// like <c>DenialMessage</c>. Today it carries the case the operator could not
 /// otherwise see: a hall-door gate scan that recorded no hall attendance — no
@@ -58,8 +55,7 @@ public sealed record GateScanUserProfile(
     string? ProfileTypeName,
     string? ProfileTypePageColor);
 
-/// <summary>One denial-breakdown bucket in the operator's daily report
-/// (SIMF-API-GATES-001 §7.3).</summary>
+/// <summary>One denial-breakdown bucket in the operator's daily report.</summary>
 public sealed record OperatorDenialBucket(string Code, int Count);
 
 /// <summary>One row in the operator daily-report grid.</summary>
@@ -82,8 +78,8 @@ public sealed record OperatorDailyReport(
 
 public sealed record OperatorDailyReportTotals(int Allowed, int Denied);
 
-/// <summary>`POST /api/v1/gates/{gateId}/visitors/list` body
-/// (SIMF-API-GATES-001 §7.4). Cursor-paged view of scans recorded at
+/// <summary>`POST /api/v1/gates/{gateId}/visitors/list` body.
+/// Cursor-paged view of scans recorded at
 /// a single gate. The staff app polls with the previous response's
 /// <see cref="GateVisitorsListResponse.NextCursor"/> to fetch new
 /// arrivals since the last poll; first call sends a null cursor.</summary>
@@ -116,7 +112,7 @@ public sealed class GateVisitorsListRequest
 
 /// <summary>One item in <see cref="GateVisitorsListResponse"/>.
 /// Snapshot fields (<see cref="DisplayName"/>, <see cref="ProfileTypeName"/>)
-/// come from the D-158 frozen columns on <c>GateScan</c>; no cross-DB
+/// come from the audit-snapshot columns on <c>GateScan</c>; no cross-DB
 /// JOIN to Identity is needed. PII (email / national-id / phone) is
 /// intentionally NOT in this list view — fetch it from the per-scan
 /// detail endpoint when an operator taps a row.</summary>

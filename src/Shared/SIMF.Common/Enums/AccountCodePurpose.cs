@@ -4,8 +4,7 @@ using SIMF.Common.Resources.Enums;
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// What an <c>AccountCode</c> is for (SIMF-FDS-001 section 6,
-/// SIMF-DAT-001 Amendment A.4).
+/// What an <c>AccountCode</c> is for.
 /// </summary>
 public enum AccountCodePurpose
 {
@@ -19,25 +18,25 @@ public enum AccountCodePurpose
     [Display(Description = nameof(ResAccountCodePurpose.SignInOtp), ResourceType = typeof(ResAccountCodePurpose))]
     SignInOtp = 2,
 
-    /// <summary>Part B — a one-time code emailed to verify the address a badge
+    /// <summary>A one-time code emailed to verify the address a badge
     /// holder is activating their (passwordless, admin-created / walk-in) account
-    /// against, before they set their first password. Additive value (D-110
-    /// freeze permits appending new enum values); display falls back to the enum
+    /// against, before they set their first password. Additive value (appending
+    /// new enum values is allowed); display falls back to the enum
     /// name (these codes are never enumerated in a UI).</summary>
     BadgeActivationOtp = 3,
 
-    /// <summary>#7a — a one-time code emailed to a signed-in user as the step-up
+    /// <summary>A one-time code emailed to a signed-in user as the step-up
     /// confirmation before a biometric (Face-ID) device key is enrolled, so a
     /// borrowed-but-unlocked phone can't silently bind a new credential without
-    /// also holding the account's email. Additive value (D-110 freeze permits
-    /// appending new enum values); display falls back to the enum name (these
+    /// also holding the account's email. Additive value (appending new enum
+    /// values is allowed); display falls back to the enum name (these
     /// codes are never enumerated in a UI).</summary>
     BiometricEnrolStepUp = 4,
 
-    /// <summary>#24 — a one-time code emailed to the NEW address a signed-in user
+    /// <summary>A one-time code emailed to the NEW address a signed-in user
     /// (or a self-service change) is moving their login email to, so the change
     /// only completes once the user proves they control the new inbox. Additive
-    /// value (D-110 freeze permits appending new enum values); display falls back
+    /// value (appending new enum values is allowed); display falls back
     /// to the enum name (these codes are never enumerated in a UI).</summary>
     EmailChangeVerification = 5,
 }

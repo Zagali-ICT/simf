@@ -4,7 +4,7 @@ using SIMF.Contracts.Notifications;
 namespace SIMF.Application.Notifications;
 
 /// <summary>
-/// Read + mutate the actor's notifications (P12 — D-053). Every call
+/// Read + mutate the actor's notifications. Every call
 /// is actor-scoped — a user only ever sees their own rows.
 /// </summary>
 public interface INotificationService

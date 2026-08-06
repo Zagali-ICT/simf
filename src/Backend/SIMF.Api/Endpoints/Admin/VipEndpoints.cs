@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-168 (gap doc G5, PDF §2.7.3) — VIP list (UserProfiles
+/// <summary>VIP list (UserProfiles
 /// whose ProfileType.Name is in {VVIP, VIP, Gold}) + bulk-notify
 /// dispatcher. Same auth policy as the invitation desk; Administrator
 /// and PublicRelations share the surface.</summary>

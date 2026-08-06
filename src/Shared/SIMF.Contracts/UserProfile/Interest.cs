@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.UserProfile;
 
-/// <summary>One interest the visitor can pick.
+/// <summary>One interest (الاهتمامات) the visitor can pick.
 /// Returned by <c>GET /api/v1/app/account/interests</c>. The list contains
 /// only active rows, ordered by <c>DisplayOrder</c> then <c>Name</c>.</summary>
 public sealed record InterestDto(

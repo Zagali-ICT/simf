@@ -4,7 +4,7 @@ namespace SIMF.Common;
 
 /// <summary>
 /// One entry in the permission catalogue — the metadata seeded into the
-/// <c>Permission</c> table (SIMF-RPM-001 §8, SIMF-DAT-001 §5.1).
+/// <c>Permission</c> table.
 /// <para><paramref name="BaselineRoles"/> lists the built-in non-Administrator
 /// roles that receive this permission as a seeded grant. Administrator is
 /// never listed: it is resolved to the wildcard <see cref="PermissionCatalog.Wildcard"/>
@@ -19,7 +19,7 @@ public sealed record PermissionDef(
 
 /// <summary>
 /// The complete page-and-action permission catalogue for the Control Panel
-/// and admin API (SIMF-RPM-001 §8). This is the single source of truth:
+/// and admin API. This is the single source of truth:
 /// <list type="bullet">
 /// <item>endpoints gate with <see cref="PolicyFor"/>(code);</item>
 /// <item>CP pages gate with <c>[RequirePermission(code)]</c>;</item>
@@ -28,7 +28,7 @@ public sealed record PermissionDef(
 /// </list>
 /// <para>Codes follow the existing <c>Page.Action</c> convention (e.g.
 /// <c>Sessions.Edit</c>). The six codes that pre-date this catalogue
-/// (D-148 gate triad, D-168 PR/VIP triad) keep their exact strings,
+/// (the gate triad and the public-relations / VIP triad) keep their exact strings,
 /// pages, actions and display names so existing seeded rows and grants
 /// match on re-seed.</para>
 /// </summary>
@@ -102,7 +102,7 @@ public static class PermissionCatalog
         public const string Export = "Visitors.Export";
         public const string Import = "Visitors.Import";
         public const string RegisterOnsite = "Visitors.RegisterOnsite";
-        // V-1 (D-429) — export the VVIP/VIP welcome roster (موج/Mawj) as the
+        // Export the VVIP/VIP welcome roster (موج/Mawj) as the
         // API + CSV + Excel feed shared with the technical teams.
         public const string ExportVip = "Visitors.ExportVip";
 
@@ -113,7 +113,7 @@ public static class PermissionCatalog
         /// <summary>View the persisted bulk-badge batches.</summary>
         public const string ViewBatches = "Visitors.ViewBatches";
 
-        /// <summary>Security review (2026-07-24) — the destructive batch actions
+        /// <summary>The destructive batch actions
         /// (re-email the QR pack / revoke a batch = disable its accounts), split out
         /// of <see cref="ViewBatches"/> so read-only batch visibility can be granted
         /// without the power to re-email or revoke.</summary>
@@ -124,7 +124,7 @@ public static class PermissionCatalog
     /// (Visitor) and partner (Other) desks.</summary>
     public static class Accounts
     {
-        /// <summary>D-728 (owner item 9) — flip an existing account between the
+        /// <summary>Flip an existing account between the
         /// audience (Visitor) and partner (Other) scope by reassigning its
         /// profile type to one in the opposite scope. A privilege change
         /// (rolls the security stamp + revokes sessions), so it carries its own
@@ -138,7 +138,7 @@ public static class PermissionCatalog
         public const string View = "Attendees.View";
         public const string PrintBag = "Attendees.PrintBag";
 
-        // P1.6 — XLSX export of the (filtered) attendee roster.
+        // XLSX export of the (filtered) attendee roster.
         public const string Export = "Attendees.Export";
     }
 
@@ -210,7 +210,7 @@ public static class PermissionCatalog
 
     // ── Programme ────────────────────────────────────────────────────────
 
-    /// <summary>B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).</summary>
+    /// <summary>Dynamic session-category lookup.</summary>
     public static class SessionCategories
     {
         public const string View = "SessionCategories.View";
@@ -246,7 +246,7 @@ public static class PermissionCatalog
     }
 
     /// <summary>The programme-days manager (date + bilingual title +
-    /// logo) backing the app's "تفاصيل اليوم" day banner (Figma 883:2308).</summary>
+    /// logo) backing the app's "تفاصيل اليوم" day banner.</summary>
     public static class ProgrammeDays
     {
         public const string View = "ProgrammeDays.View";
@@ -272,7 +272,7 @@ public static class PermissionCatalog
         public const string Import = "Halls.Import";
     }
 
-    // Q6 (2026-07-30) reserved HallGeofence.View / .Manage for a dedicated
+    // HallGeofence.View / .Manage were once reserved for a dedicated
     // geofence page. That page was not built and must not be: HallsAddEdit.razor
     // already edits GeofenceCenterLat / Lon / RadiusMeters under Halls.Create /
     // Halls.Edit. Unused permission codes are not free — they seed rows, appear
@@ -287,7 +287,7 @@ public static class PermissionCatalog
         public const string View = "SeatLayouts.View";
         public const string Edit = "SeatLayouts.Edit";
 
-        /// <summary>B15 — remove a hall's seat layout entirely (convert the hall back
+        /// <summary>Remove a hall's seat layout entirely (convert the hall back
         /// to general admission). Separate from <see cref="Edit"/> because it is
         /// destructive: it discards the whole grid, not one row of it.</summary>
         public const string Delete = "SeatLayouts.Delete";
@@ -300,7 +300,7 @@ public static class PermissionCatalog
         public const string Edit = "SeatPlans.Edit";
     }
 
-    /// <summary>D-771 (owner 2026-07-26) — the on-ground SEATING DESK: staff help a
+    /// <summary>The on-ground SEATING DESK: staff help a
     /// guest find their seat (scan a badge → where do they sit; tap a seat → who
     /// sits there). This is an OPERATIONAL capability, not a Control-Panel page: it
     /// is granted to the app's Staff / Moderator roles via
@@ -311,7 +311,7 @@ public static class PermissionCatalog
         public const string Assist = "Seating.Assist";
     }
 
-    /// <summary>#6/#17 (owner 2026-07-20) — the read-only booking monitor. There is
+    /// <summary>The read-only booking monitor. There is
     /// no approval step (bookings auto-confirm) and no-shows are released by a
     /// background worker, so Approve/Reject were retired — only View + Export
     /// remain.</summary>
@@ -321,7 +321,7 @@ public static class PermissionCatalog
         public const string Export = "Bookings.Export";
     }
 
-    /// <summary>SIMF-FDS-013 (D-248) — meeting tables inside a Meeting/General hall
+    /// <summary>Meeting tables inside a Meeting/General hall
     /// (define / generate random-by-count / by row-column).</summary>
     public static class MeetingTables
     {
@@ -330,7 +330,7 @@ public static class PermissionCatalog
         public const string Export = "MeetingTables.Export";
     }
 
-    /// <summary>SIMF-FDS-013 (D-248) — the flexible hall allocation layer
+    /// <summary>The flexible hall allocation layer
     /// (reserve whole / random-by-count / row-column over a time-slot).</summary>
     public static class HallAllocations
     {
@@ -338,9 +338,9 @@ public static class PermissionCatalog
         public const string Edit = "HallAllocations.Edit";
     }
 
-    /// <summary>QA A36 — the hall's meeting-time windows (D-715, FDS-013 §15
-    /// GAP-1) and the free slots derived from them. Its own code because the
-    /// resource is hall-scoped and read by BOTH meeting desks (speaker
+    /// <summary>The hall's meeting-time windows and the free slots derived from
+    /// them. Its own code because the resource is hall-scoped and read by BOTH
+    /// meeting desks (speaker
     /// <i>and</i> delegation): gating it on <see cref="SpeakerMeetingRequests"/>
     /// locked a delegation-only or halls-only operator out of the windows every
     /// meeting Approve modal depends on. <c>View</c> reads the windows + free
@@ -352,7 +352,7 @@ public static class PermissionCatalog
         public const string Manage = "HallAvailability.Manage";
     }
 
-    /// <summary>SIMF-FDS-013 (D-248) — admin-arranged B2B/B2C business meetings.</summary>
+    /// <summary>Admin-arranged B2B/B2C business meetings.</summary>
     public static class BusinessMeetings
     {
         public const string View = "BusinessMeetings.View";
@@ -375,7 +375,7 @@ public static class PermissionCatalog
         public const string View = "DelegationMeetings.View";
         public const string Manage = "DelegationMeetings.Manage";
 
-        /// <summary>OA-D5 — XLSX export of the delegation meeting-request grid,
+        /// <summary>XLSX export of the delegation meeting-request grid,
         /// including the hall check-in stamps. Split from <see cref="View"/> for
         /// the same reason as every other export gate (and to mirror
         /// <see cref="SpeakerMeetingRequests.Export"/>): taking a spreadsheet of
@@ -384,7 +384,7 @@ public static class PermissionCatalog
         public const string Export = "DelegationMeetings.Export";
     }
 
-    /// <summary>D-500 (Wave 5, الطلبات) — participation-document requests desk
+    /// <summary>The الطلبات participation-document requests desk
     /// (طلب وثيقة المشاركة). <c>View</c> lists/opens; <c>Manage</c> accepts/rejects.</summary>
     public static class ParticipationDocumentRequests
     {
@@ -392,7 +392,7 @@ public static class PermissionCatalog
         public const string Manage = "ParticipationDocumentRequests.Manage";
     }
 
-    /// <summary>D-500 (Wave 5, الطلبات) — badge-update requests desk
+    /// <summary>The الطلبات badge-update requests desk
     /// (طلب تحديث البادج). <c>View</c> lists/opens; <c>Manage</c> accepts/rejects.</summary>
     public static class BadgeUpdateRequests
     {
@@ -437,7 +437,7 @@ public static class PermissionCatalog
     /// <summary>The Scientific-Committee central Q&amp;A queue
     /// (stage 2 of the pipeline). The "Scientific Committee" is a role = a
     /// bundle of these + the programme codes, created by the owner in the
-    /// grant editor (D-207/D-208) — not new infrastructure.</summary>
+    /// grant editor — not new infrastructure.</summary>
     public static class Questions
     {
         public const string View = "Questions.View";
@@ -447,7 +447,7 @@ public static class PermissionCatalog
     }
 
     /// <summary>The Scientific-Committee AI session-summary / محضر
-    /// desk (Completion Programme §6.4.1, Mockup screen 34). View the desk +
+    /// desk. View the desk +
     /// editor; Edit drafts (AI-generate or hand-write + save); Publish makes the
     /// محضر public to the app (and un-publishes).</summary>
     public static class SessionSummaries
@@ -462,7 +462,7 @@ public static class PermissionCatalog
         public const string Approve = "SessionSummaries.Approve";
     }
 
-    /// <summary>P5.1d — D-244 (FDS-003 §5.4): the hall-door arrival console — an
+    /// <summary>The hall-door arrival console — an
     /// operator scans an attendee's badge QR to record hall arrival
     /// (<c>Method = QrScan</c>). View the console; Record a door movement.</summary>
     public static class HallArrivals
@@ -516,7 +516,7 @@ public static class PermissionCatalog
         public const string Import = "Sponsors.Import";
     }
 
-    /// <summary>2D venue map editor (FR-605, FDS-006 §5.3).</summary>
+    /// <summary>2D venue map editor (FR-605).</summary>
     public static class VenueMap
     {
         public const string View = "VenueMap.View";
@@ -652,7 +652,7 @@ public static class PermissionCatalog
         public const string Delete = "Faq.Delete";
     }
 
-    /// <summary>Contact-us inbox (Figma 1388:7567) — triage the inquiries the
+    /// <summary>Contact-us inbox — triage the inquiries the
     /// app's "تواصل معنا" form submits.</summary>
     public static class ContactInquiries
     {
@@ -710,14 +710,14 @@ public static class PermissionCatalog
         public const string Engagement = "Reports.Engagement";
     }
 
-    /// <summary>FR-506 (SRS §3.5; FDS-003 §5.5) — read-only session-attendance
-    /// dashboard over the HallAttendance arrival records (D-241).</summary>
+    /// <summary>FR-506 — read-only session-attendance
+    /// dashboard over the HallAttendance arrival records.</summary>
     public static class Attendance
     {
         public const string View = "Attendance.View";
     }
 
-    /// <summary>Gate Module (D-148). <see cref="Manage"/>, <see cref="Operate"/>
+    /// <summary>Gate Module. <see cref="Manage"/>, <see cref="Operate"/>
     /// and <see cref="ViewOwnReports"/> pre-date this catalogue and keep their
     /// exact strings.</summary>
     public static class Gates
@@ -736,7 +736,7 @@ public static class PermissionCatalog
         public const string Edit = "Operations.Edit";
     }
 
-    /// <summary>System Configuration page (FDS-012 §5.5).</summary>
+    /// <summary>System Configuration page.</summary>
     public static class Configuration
     {
         public const string View = "Configuration.View";
@@ -759,7 +759,7 @@ public static class PermissionCatalog
     {
         public const string View = "OperationLog.View";
 
-        // P1.6 — XLSX export of the (filtered) operation log.
+        // XLSX export of the (filtered) operation log.
         public const string Export = "OperationLog.Export";
     }
 
@@ -775,7 +775,7 @@ public static class PermissionCatalog
         public const string View = "ServicesMonitor.View";
     }
 
-    /// <summary>Invitations (D-168). <see cref="Manage"/> pre-dates this
+    /// <summary>Invitations. <see cref="Manage"/> pre-dates this
     /// catalogue and keeps its exact string.</summary>
     public static class Invitations
     {
@@ -784,7 +784,7 @@ public static class PermissionCatalog
         public const string Export = "Invitations.Export";
     }
 
-    /// <summary>VIP list + bulk notify (D-168). Both codes pre-date this
+    /// <summary>VIP list + bulk notify. Both codes pre-date this
     /// catalogue and keep their exact strings.</summary>
     public static class Vips
     {
@@ -923,7 +923,7 @@ public static class PermissionCatalog
         new(Themes.Export, "Themes", "Export", "Export themes", AdminOnly),
         new(Themes.Import, "Themes", "Import", "Import themes", AdminOnly),
 
-        // B9b — D-226: session categories (dynamic lookup).
+        // Session categories (dynamic lookup).
         new(SessionCategories.View, "SessionCategories", "View", "View session categories", AdminOnly),
         new(SessionCategories.Create, "SessionCategories", "Create", "Create session categories", AdminOnly),
         new(SessionCategories.Edit, "SessionCategories", "Edit", "Edit session categories", AdminOnly),
@@ -959,7 +959,7 @@ public static class PermissionCatalog
         new(Halls.Export, "Halls", "Export", "Export halls", AdminOnly),
         new(Halls.Import, "Halls", "Import", "Import halls", AdminOnly),
 
-        // Q6 — the two HallGeofence codes were withdrawn with their unbuilt page;
+        // The two HallGeofence codes were withdrawn with their unbuilt page;
         // the boundary is edited on the hall itself under Halls.Create / Halls.Edit.
 
         new(SeatLayouts.View, "SeatLayouts", "View", "View hall seat layouts", AdminOnly),
@@ -973,17 +973,17 @@ public static class PermissionCatalog
         // grantable to a Control-Panel role so a desk supervisor can hold it).
         new(Seating.Assist, "Seating", "Assist", "Assist guests with seating (staff seating desk)", AdminOnly),
 
-        // #6/#17 — read-only booking monitor (approve/reject retired: no approval step).
+        // Read-only booking monitor (approve/reject retired: no approval step).
         new(Bookings.View, "Bookings", "View", "View the booking monitor", AdminOnly),
         new(Bookings.Export, "Bookings", "Export", "Export bookings to Excel", AdminOnly),
 
-        // SIMF-FDS-013 — D-248: flexible hall config + B2B/B2C business meetings.
+        // Flexible hall config + B2B/B2C business meetings.
         new(MeetingTables.View, "MeetingTables", "View", "View meeting tables", AdminOnly),
         new(MeetingTables.Edit, "MeetingTables", "Edit", "Define / generate meeting tables", AdminOnly),
         new(MeetingTables.Export, "MeetingTables", "Export", "Export meeting tables", AdminOnly),
         new(HallAllocations.View, "HallAllocations", "View", "View hall allocations", AdminOnly),
         new(HallAllocations.Edit, "HallAllocations", "Edit", "Reserve / release hall allocations", AdminOnly),
-        // QA A36 — hall meeting-time windows: hall-scoped, read by both meeting desks.
+        // Hall meeting-time windows: hall-scoped, read by both meeting desks.
         new(HallAvailability.View, "HallAvailability", "View", "View hall availability windows & free slots", AdminOnly),
         new(HallAvailability.Manage, "HallAvailability", "Manage", "Define / delete hall availability windows", AdminOnly),
         new(BusinessMeetings.View, "BusinessMeetings", "View", "View business meetings", AdminOnly),
@@ -997,7 +997,7 @@ public static class PermissionCatalog
 
         new(DelegationMeetings.View, "DelegationMeetings", "View", "View delegation meeting requests", AdminOnly),
         new(DelegationMeetings.Manage, "DelegationMeetings", "Manage", "Manage delegation meeting requests", AdminOnly),
-        // OA-D5 — export the delegation meeting-request grid (with the check-in stamps).
+        // Export the delegation meeting-request grid (with the check-in stamps).
         new(DelegationMeetings.Export, "DelegationMeetings", "Export", "Export delegation meeting requests", AdminOnly),
 
         new(ParticipationDocumentRequests.View, "ParticipationDocumentRequests", "View", "View participation document requests", AdminOnly),
@@ -1229,7 +1229,7 @@ public static class PermissionCatalog
         new(Announcements.View, "Announcements", "View", "View broadcast send history", AdminOnly),
     ];
 
-    // ── App operational permissions by MobileAppRole (D-563) ──────────────
+    // ── App operational permissions by MobileAppRole ──────────────────────
     // The capability a partner-side app user carries comes from their
     // ProfileType.MobileAppRole — NOT an admin RBAC role. ResolveMobileAppRole
     // only returns Staff/Moderator for an APPROVED partner account, so these
@@ -1244,10 +1244,10 @@ public static class PermissionCatalog
         Gates.Operate,           // /app/gates scans + my-assignments
         Gates.ViewOwnReports,    // /app/gates visitor list + my reports
         Visitors.RegisterOnsite, // /app/staff/visitors/register-onsite
-        Seating.Assist,          // D-771 — /app/staff/sessions/{id}/seating/*
-        // /admin/sessions/{id}/arrivals + /departures. Missing until
-        // now, so a staff tablet could scan a badge at a perimeter gate but
-        // could not record a hall arrival at all.
+        Seating.Assist,          // /app/staff/sessions/{id}/seating/*
+        // Gates the /admin/sessions/{id}/arrivals + /departures calls. Without it a
+        // tablet could scan a badge at a perimeter gate but could not record
+        // a hall arrival at all.
         HallArrivals.Record,
     ];
 
@@ -1257,8 +1257,8 @@ public static class PermissionCatalog
         Gates.Operate,
         Gates.ViewOwnReports,
         Visitors.RegisterOnsite,
-        Seating.Assist,          // D-771 — the seating desk (Moderator = Staff + …)
-        HallArrivals.Record,     // D-819 — hall arrivals from a staff tablet
+        Seating.Assist,          // the seating desk (Moderator = Staff + …)
+        HallArrivals.Record,     // hall arrivals from a staff tablet
         Questions.View,
         Questions.Moderate,
         SessionModeration.Moderate,

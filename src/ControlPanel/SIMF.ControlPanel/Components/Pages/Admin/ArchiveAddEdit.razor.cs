@@ -223,7 +223,7 @@ public partial class ArchiveAddEdit
         public int Sessions { get; set; }
         public int Speakers { get; set; }
         public string? CoverImageRelativePath { get; set; }
-        // §9 (screen 24-01) — place + date label.
+        // Place + date label.
         public string? LocationEn { get; set; }
         public string? LocationAr { get; set; }
         public string? DateLabelEn { get; set; }
@@ -235,7 +235,7 @@ public partial class ArchiveAddEdit
         public bool IsActive { get; set; } = true;
     }
 
-    // ---- D-432 list parse / format helpers ----------------------------------
+    // ---- list parse / format helpers ----------------------------------------
 
     private static IEnumerable<string[]> Rows(string text) =>
         text.Replace("\r\n", "\n").Split('\n')

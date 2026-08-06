@@ -33,9 +33,11 @@ using SIMF.Common.Enums;
 namespace SIMF.ApiClient;
 
 /// <summary>
-/// A typed client over the SIMF Admin API (decision D-041). Today: reset
-/// another user's 2FA. The actor must hold the Administrator role; the
-/// access-token check is at the API.
+/// A typed client over the SIMF Admin API. The call surface is split across
+/// partial classes by area; this file carries the shared plumbing plus the
+/// 2FA reset — which the actor must hold the Administrator role to call —
+/// and the worker-status read. Every call carries an admin access token;
+/// the authorization check itself is at the API, never in this client.
 /// </summary>
 public sealed partial class SimfAdminClient(HttpClient http)
 {
@@ -63,7 +65,7 @@ public sealed partial class SimfAdminClient(HttpClient http)
             accessToken, cancellationToken);
 
 
-    /// <summary>P1.6 — POSTs a JSON body and returns the raw response bytes
+    /// <summary>POSTs a JSON body and returns the raw response bytes
     /// (an XLSX workbook). Shared by the read-only-grid exports; the response
     /// body is binary, so it bypasses the <c>ApiResult</c> envelope.</summary>
     private async Task<(int StatusCode, byte[] Bytes)> PostForBytesAsync(

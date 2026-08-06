@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Sessions;
 
-/// <summary>D-175 (gap doc G11, Mockup page 7) — full seat-grid view
+/// <summary>Full seat-grid view
 /// for one session. The Flutter app renders rows in
 /// <see cref="RowLabels"/> order, with each cell coloured per
 /// <see cref="ReservedCells"/>. <see cref="MyCell"/> is the caller's
@@ -43,16 +43,16 @@ public sealed record SessionSeatMap(
     // re-checks it on every reserve, so this is a UX hint, never the gate.
     bool CallerIsVip = false);
 
-/// <summary>D-175 — one occupied seat in the grid. D-485: <see cref="RowLabel"/>
-/// and <see cref="SeatNumber"/> are null for an OpenSeating join. D-572 appends
-/// <see cref="Status"/> (append-only wire) so the app's "my seat" card can switch
+/// <summary>One occupied seat in the grid. <see cref="RowLabel"/>
+/// and <see cref="SeatNumber"/> are null for an OpenSeating join.
+/// <see cref="Status"/> is appended (append-only wire) so the app's "my seat" card can switch
 /// its hint; default Pending keeps older callers safe.
-/// <para>A9 (2026-07-27) — as built, no production path ever writes
+/// <para>As built, no production path ever writes
 /// <see cref="BookingStatus.Pending"/>: every create path stamps
 /// <see cref="BookingStatus.Approved"/> (bookings auto-confirm — see
 /// <see cref="BookingStatus"/>), so a live cell always reads Approved and the
 /// Pending default is only the safety value for a payload that omits the key.</para>
-/// <para>Wave 2 (2026-07-18) appends <see cref="CheckedIn"/> (append-only wire):
+/// <para><see cref="CheckedIn"/> is appended (append-only wire):
 /// the holder has an OPEN <c>HallAttendance</c> row for this session — they scanned
 /// in at the hall gate ("تم التأكيد" / confirmed). The four app/CP seat states are:
 /// available (no cell) · unavailable (<c>Kind == AdminReservedRow</c>) · reserved
@@ -72,19 +72,19 @@ public sealed record SessionSeatCell(
     string? GuestHint = null,
     string? GuestHintArabic = null);
 
-/// <summary>DEF-SEA-001 / A11 (2026-07-27) — one active reservation on the
+/// <summary>One active reservation on the
 /// Control Panel seat plan (<c>POST /admin/sessions/{id}/seats/list</c>). It is a
 /// SEPARATE shape from <see cref="SessionSeatCell"/> on purpose: the seat plan is
 /// an admin surface that must name WHO holds a seat before an administrator
 /// releases it, and keeping that identity off the shared cell makes it impossible
 /// for the app-facing seat map (<c>GET /app/sessions/{id}/seats</c>, which reuses
 /// <see cref="SessionSeatCell"/>) to start carrying attendee names by accident.
-/// <para>A11 — <see cref="Status"/> and <see cref="CheckedIn"/> are REAL values
+/// <para><see cref="Status"/> and <see cref="CheckedIn"/> are REAL values
 /// here, never record defaults: the seat plan's own projection reads the stored
 /// status and resolves the open <c>HallAttendance</c> row, so the four seat
 /// states (available · unavailable · reserved · confirmed) are all decidable from
 /// this row.</para>
-/// <para>Cross-DB safe (D-157): <see cref="HolderUserId"/> is a bare logical
+/// <para>Cross-DB safe: <see cref="HolderUserId"/> is a bare logical
 /// user id and the bilingual holder name comes from the App-side
 /// <c>UserProfile</c> in a second query — no cross-database join and nothing
 /// duplicated.</para></summary>
@@ -113,20 +113,20 @@ public sealed record SeatPlanCell(
 /// <summary>Visitor self-pick request. Pass row+seat from
 /// the grid the app rendered against the <see cref="SessionSeatMap"/>.
 /// Open for inheritance so the route-binding endpoint can carry a
-/// <c>SessionId</c> field (matches the D-168 / D-174 pattern).</summary>
+/// <c>SessionId</c> field.</summary>
 public class ReserveSeatRequest
 {
     public string RowLabel { get; set; } = string.Empty;
     public int SeatNumber { get; set; }
 }
 
-/// <summary>B1 (owner "change seat") — move an EXISTING held seat to another one
+/// <summary>Move an EXISTING held seat to another one
 /// in the same session, atomically: the destination is acquired and the source
 /// released in a single unit of work, so a lost race leaves the caller on their
 /// original seat. Same shape as <see cref="ReserveSeatRequest"/> — the row+seat
 /// the app read off the <see cref="SessionSeatMap"/> — and open for inheritance so
-/// the route-binding endpoint can carry a <c>SessionId</c> (D-168 / D-174
-/// pattern).</summary>
+/// the route-binding endpoint can carry a <c>SessionId</c>
+/// field.</summary>
 public class MoveSeatRequest
 {
     public string RowLabel { get; set; } = string.Empty;
@@ -137,8 +137,8 @@ public class MoveSeatRequest
 /// <see cref="SeatReservationKind.AdminReservedRow"/> for this session
 /// (one reservation row per seat). Subsequent visitor picks against
 /// any seat in that row are rejected with
-/// <c>SEAT_ALREADY_RESERVED</c>. Open for inheritance per the
-/// D-168 / D-174 pattern.</summary>
+/// <c>SEAT_ALREADY_RESERVED</c>. Open for inheritance so the
+/// route-binding endpoint can carry a <c>SessionId</c> field.</summary>
 public class AdminReserveRowRequest
 {
     public string RowLabel { get; set; } = string.Empty;
@@ -165,11 +165,11 @@ public class AdminReserveSeatRequest
 
 /// <summary>Admin layout edit. When <see cref="SeatCounts"/> is null/empty the
 /// grid is UNIFORM: it writes <c>RowLabels.Count * SeatsPerRow</c> seats and is rejected
-/// if that product exceeds <c>Hall.Capacity</c>. D-767: when <see cref="SeatCounts"/> is
+/// if that product exceeds <c>Hall.Capacity</c>. When <see cref="SeatCounts"/> is
 /// non-empty it is AUTHORITATIVE (a per-row override) — its length MUST equal the row
 /// count, each element is 1–80, and <c>sum(SeatCounts) &lt;= Hall.Capacity</c>; the stored
 /// <see cref="SeatsPerRow"/> then keeps <c>max(SeatCounts)</c> as the uniform fallback.
-/// Open for inheritance per the D-168 / D-174 pattern.</summary>
+/// Open for inheritance so the route-binding endpoint can carry a <c>HallId</c> field.</summary>
 public class SetHallSeatLayoutRequest
 {
     public IReadOnlyList<string> RowLabels { get; set; } = Array.Empty<string>();
@@ -194,7 +194,7 @@ public class SetHallSeatLayoutRequest
     public IReadOnlyList<SeatTier>? SeatTiers { get; set; }
 }
 
-/// <summary>D-175 — admin layout read-back. D-767 appends <see cref="SeatCounts"/>: the
+/// <summary>Admin layout read-back. <see cref="SeatCounts"/> carries the
 /// per-row seat counts when the layout is variable (null when uniform); the existing
 /// <see cref="LayoutCapacity"/> is reused and simply carries <c>sum(SeatCounts)</c> in
 /// the variable case.</summary>
@@ -211,9 +211,9 @@ public sealed record HallSeatLayoutSnapshot(
 
 /// <summary>What the user sees after a successful reservation.
 /// Returned by both self-pick and random-allocate. <see cref="Status"/>
-/// (P2.2 — D-227) is appended (append-only — the shipped app ignores unknown
+/// is appended (append-only — the shipped app ignores unknown
 /// JSON keys).
-/// <para>A9 (2026-07-27) — the original D-227 approval queue is gone: a fresh
+/// <para>The original approval queue is gone: a fresh
 /// booking is created <c>Approved</c> (2026-07-18, reservation-only), so this
 /// always returns <c>Approved</c>. The <c>Pending</c> parameter default is the
 /// wire-safety value for a payload that omits the key, not a state the server
@@ -228,12 +228,12 @@ public sealed record MySeatReservation(
     DateTime CreatedAt,
     BookingStatus Status = BookingStatus.Pending);
 
-/// <summary>#6/#17 (owner 2026-07-20) — one row in the Control Panel booking
+/// <summary>One row in the Control Panel booking
 /// MONITOR: an ACTIVE (confirmed, still-held) visitor reservation. There is no
 /// approval step (bookings auto-confirm), so this is a read-only monitor, not an
 /// approval queue. Carries the session + seat + attendee. <see cref="AttendeeName"/>
-/// is resolved from the Identity DB in a separate round-trip (no cross-DB JOIN,
-/// D-157).</summary>
+/// is resolved from the Identity DB in a separate round-trip — there is no
+/// cross-DB JOIN.</summary>
 public sealed record ActiveBookingRow(
     Guid ReservationId,
     Guid SessionId,
@@ -248,7 +248,7 @@ public sealed record ActiveBookingRow(
     string AttendeeName,
     DateTime CreatedAt);
 
-/// <summary>D-771 (owner 2026-07-26) — the staff seating desk's badge lookup:
+/// <summary>The staff seating desk's badge lookup:
 /// resolve a scanned/typed badge QR id to where that guest is seated in this
 /// session.</summary>
 public class StaffSeatBadgeLookupRequest
@@ -260,7 +260,7 @@ public class StaffSeatBadgeLookupRequest
 
 /// <summary>Who is in a seat (or where a scanned badge sits). One shape
 /// serves both staff lookups so the tablet renders a single result card.
-/// <para>Cross-DB safe (D-157): the occupant's name/photo are resolved from the
+/// <para>Cross-DB safe: the occupant's name/photo are resolved from the
 /// Identity DB in a separate round-trip and returned as plain values — no
 /// cross-database join and nothing persisted into <c>SIMF_App</c>.</para></summary>
 public sealed record StaffSeatOccupant(
@@ -292,7 +292,7 @@ public sealed record StaffSeatOccupant(
     string? GuestHintArabic,
     // True when the occupant's avatar can be streamed from
     // GET /app/staff/sessions/{sessionId}/seating/occupant/{userId}/photo. The
-    // tablet must fetch it through the authenticated Dio bytes path (D-422) — a
+    // tablet must fetch it through the authenticated Dio bytes path — a
     // bearer token cannot ride on a raw image URL.
     bool HasPhoto,
     // The guest's badge QR id, echoed so the desk can confirm the scan.

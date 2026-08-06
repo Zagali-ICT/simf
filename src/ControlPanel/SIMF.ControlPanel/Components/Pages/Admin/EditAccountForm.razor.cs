@@ -22,7 +22,7 @@ public partial class EditAccountForm
     /// <summary>True for the audience (Visitor) desk; false for the partner (Other) desk.</summary>
     [Parameter] public bool IsVisitorScope { get; set; } = true;
 
-    /// <summary>V-1 (VIP edit) — when true, the form also offers the VVIP/VIP
+    /// <summary>When true, the form also offers the VVIP/VIP
     /// welcome photo (موج) field. Set by the VIP list; the visitors/others desks
     /// leave it false. Only meaningful for the visitors scope (the vip-photo
     /// endpoint lives under /admin/visitors only).</summary>
@@ -50,13 +50,13 @@ public partial class EditAccountForm
     private bool _allowsSpeakerMeeting;
     private bool _allowsDelegationMeeting;
 
-    // B22 — the nationality picker. `_nationalityCode` is the ISO alpha-2 code sent on
+    // The nationality picker. `_nationalityCode` is the ISO alpha-2 code sent on
     // save; empty means "leave the stored nationality alone" (the server treats an
     // empty/absent code as no change). Prefilled from the loaded profile.
     private IReadOnlyList<CountryDto> _countries = new List<CountryDto>();
     private string _nationalityCode = string.Empty;
 
-    // FR-PHN-002 — the mobile correction. Prefilled from the loaded profile;
+    // The mobile correction. Prefilled from the loaded profile;
     // an empty field sends nothing and leaves the stored number untouched.
     private string _saudiMobile = string.Empty;
     private string _internationalMobile = string.Empty;
@@ -99,7 +99,7 @@ public partial class EditAccountForm
     private void OnProfileTypeChanged(AdminProfileTypeSummary? selected) =>
         _profileTypeId = selected?.Id;
 
-    // B22 — nationality picker plumbing. Mirrors the walk-in desk's field so the two
+    // Nationality picker plumbing. Mirrors the walk-in desk's field so the two
     // admin surfaces label and pick a country identically.
     private CountryDto? _selectedCountry =>
         _countries.FirstOrDefault(c => c.Code == _nationalityCode);
@@ -143,7 +143,7 @@ public partial class EditAccountForm
 
     private async Task LoadProfileTypesAsync()
     {
-        // Both Visitor and Other profile types are UserType=Visitor post-D-186;
+        // Both Visitor and Other profile types are UserType=Visitor;
         // the picker route filters by UserType, then we narrow to the scope's
         // IsVisitor side so the dropdown only offers valid tiers.
         var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
@@ -156,7 +156,7 @@ public partial class EditAccountForm
         }
     }
 
-    // B22 — the same active-country list the walk-in desk's nationality dropdown uses,
+    // The same active-country list the walk-in desk's nationality dropdown uses,
     // through the existing BFF passthrough (no new proxy route). Nationality is an
     // OPTIONAL field on this form, so a failed country read must not block the edit:
     // swallow it, leave the picker empty (which sends no nationality and keeps the

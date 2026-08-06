@@ -10,7 +10,7 @@ namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
 /// <c>POST /api/v1/admin/admins/bulk-delete</c> — soft-deletes one or many
-/// users (decision D-044 b). Self / Administrator targets are silently
+/// users. Self / Administrator targets are silently
 /// skipped per-target so the batch never fails on a single guarded row.
 /// One audit row per subject so the SOC sees every deletion.
 /// </summary>
@@ -32,7 +32,7 @@ public sealed class BulkDeleteUsersEndpoint(IAdminUserBulkService adminAccountSe
         var actorId = User.ActorId();
         // Field-level rules (Ids cap, Reason 10-500) live in
         // AdminBulkDeleteRequestValidator so the standard VALIDATION_FAILED
-        // envelope (D-030) is the response shape.
+        // envelope is the response shape.
         var response = await adminAccountService.BulkDeleteUsersAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminBulkDeleteResponse>.Ok(response), ct);
     }

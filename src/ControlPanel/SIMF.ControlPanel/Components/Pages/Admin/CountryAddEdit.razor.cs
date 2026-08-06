@@ -13,9 +13,9 @@ public partial class CountryAddEdit
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    // D-499 (الوفود) — the "no head" sentinel prepended to the picker so an admin
-    // can clear a previously-set head (the SimfSelect placeholder is disabled once
-    // a value is chosen).
+    // The "no head" sentinel prepended to the الوفود head-of-delegation picker so
+    // an admin can clear a previously-set head (the SimfSelect placeholder is
+    // disabled once a value is chosen).
     private static readonly AdminCountryDelegateOption HeadNone =
         new(Guid.Empty, string.Empty, string.Empty, null);
 

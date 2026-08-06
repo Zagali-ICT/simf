@@ -126,7 +126,7 @@ public partial class OthersList
 
     // Edit / Details work against the full profile (the grid summary omits the
     // profile fields). Returns null and surfaces a toast on failure. Reuses the
-    // same D-126 admin read the inline Details modal used.
+    // same admin read the inline Details modal used.
     private async Task<AdminUserProfileView?> LoadProfileAsync(Guid id)
     {
         _toast = null;

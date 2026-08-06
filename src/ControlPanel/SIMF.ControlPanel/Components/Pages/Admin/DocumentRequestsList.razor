@@ -1,6 +1,6 @@
-@* D-500 (Wave 5, الطلبات "طلب وثيقة المشاركة") — admin queue for participation
-   document requests submitted from the app. Respond modal accepts / rejects with
-   an optional note; Pending → Pending is rejected server-side
+@* Admin queue for the participation document requests ("طلب وثيقة المشاركة")
+   submitted from the app's الطلبات section. Respond modal accepts / rejects
+   with an optional note; Pending → Pending is rejected server-side
    (PARTICIPATION_DOCUMENT_REQUEST_STATUS_INVALID). SimfDataGrid (server-paged,
    sortable + filterable, full pager); Respond is a quiet reply button shown only
    for Pending rows. Mirrors SpeakerMeetingRequestsList.razor (no export path —
@@ -164,9 +164,10 @@
                         OnClick="@(() => _respondOpen = false)">
                 @L["Admin.DocumentRequests.Cancel"]
             </SimfButton>
-            @* D-828 (second pass) - the page gates on ParticipationDocumentRequests.View; responding is .Manage. The page-level ratchet missed this
-               because the page already used <AuthorizedAction> elsewhere; the
-               guard is now per-button. *@
+            @* The page gates on ParticipationDocumentRequests.View, but
+               responding is .Manage. The page-level permission ratchet missed
+               this because the page already used <AuthorizedAction> elsewhere,
+               so the guard is now per-button. *@
             <AuthorizedAction Permission="@PermissionCatalog.ParticipationDocumentRequests.Manage">
                 <SimfButton Type="button" OnClick="SendResponseAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.DocumentRequests.Respond.Submit"]

@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.ApiClient;
 
 /// <summary>
-/// A typed client over the SIMF Login API (SIMF-API-001 section 12). Every
+/// A typed client over the SIMF Login API. Every
 /// call returns the API's <see cref="ApiResult{T}"/> envelope; a transport
 /// failure is mapped to a failed envelope as well, so a caller branches on
 /// success or failure one way only and never has to catch an exception.
@@ -33,7 +33,7 @@ public sealed class SimfAuthClient(HttpClient http)
         VerifyOtpRequest request, CancellationToken cancellationToken = default) =>
         PostAsync<VerifyOtpRequest, AuthTokens>("verify-otp", request, null, cancellationToken);
 
-    /// <summary>The recovery-code fallback for a lost authenticator (D-040).</summary>
+    /// <summary>The recovery-code fallback for a lost authenticator.</summary>
     public Task<ApiResult<AuthTokens>> VerifyRecoveryCodeAsync(
         VerifyRecoveryCodeRequest request, CancellationToken cancellationToken = default) =>
         PostAsync<VerifyRecoveryCodeRequest, AuthTokens>(
@@ -74,7 +74,7 @@ public sealed class SimfAuthClient(HttpClient http)
             "complete-password-change", request, null, cancellationToken);
 
     /// <summary>
-    /// #2 (Q1, 2026-07-30) — begins MANDATORY authenticator enrolment for a
+    /// Begins MANDATORY authenticator enrolment for a
     /// Control Panel account whose password step returned an enrolment ticket
     /// instead of a session. Anonymous — the ticket authorises it (no access
     /// token exists yet).
@@ -85,7 +85,7 @@ public sealed class SimfAuthClient(HttpClient http)
             "totp/enrolment/start", request, null, cancellationToken);
 
     /// <summary>
-    /// #2 — confirms the first authenticator code and completes the held-back
+    /// Confirms the first authenticator code and completes the held-back
     /// sign-in. Returns the session plus the one-time recovery codes.
     /// </summary>
     public Task<ApiResult<CompleteTwoFactorEnrolmentResponse>> CompleteTwoFactorEnrolmentAsync(

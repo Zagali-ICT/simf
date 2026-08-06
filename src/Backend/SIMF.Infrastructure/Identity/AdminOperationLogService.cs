@@ -16,8 +16,8 @@ namespace SIMF.Infrastructure.Identity;
 /// <summary>
 /// Admin viewer over the <c>OperationLogEntry</c> table.
 /// Read-only, AsNoTracking. **No schema change** — uses the existing
-/// <see cref="SimfAppDbContext.OperationLog"/> DbSet. P1.6 added the XLSX
-/// export; list + export share one filter/sort path.
+/// <see cref="SimfAppDbContext.OperationLog"/> DbSet. The list and the XLSX
+/// export share one filter/sort path.
 /// </summary>
 internal sealed class AdminOperationLogService(
     SimfAppDbContext dbContext,
@@ -25,7 +25,7 @@ internal sealed class AdminOperationLogService(
     IOperationLogExcelService excel)
     : IAdminOperationLogService
 {
-    /// <summary>P1.6 — the export bound. Matches the user export's cap so an
+    /// <summary>The export bound. Matches the user export's cap so an
     /// accidental "export everything" can't load the whole table into RAM;
     /// admins narrow with the filters (incl. the date range) then export.</summary>
     private const int ExportRowCap = 5_000;
@@ -173,8 +173,8 @@ internal sealed class AdminOperationLogService(
             ("sourceip", false) => rows.OrderBy(row => row.SourceIp)
                                        .ThenByDescending(row => row.Timestamp),
             // "timestamp" matches the grid column Key in OperationLogViewer.razor. It
-            // read "timestamputc" until 2026-08-01, left behind when D-770 renamed the
-            // persisted columns, so the ascending arm was unreachable: every click fell
+            // read "timestamputc" until 2026-08-01, left behind when the persisted
+            // columns were renamed, so the ascending arm was unreachable: every click fell
             // through to the newest-first catch-all and an operator tracing an
             // incident forward from its start could not get an oldest-first view.
             ("timestamp", false) => rows.OrderBy(row => row.Timestamp),

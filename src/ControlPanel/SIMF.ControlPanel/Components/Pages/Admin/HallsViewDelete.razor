@@ -1,4 +1,4 @@
-@* D-353 — reusable Hall View/Delete form, hosted by CrudShell (popup or full
+@* Reusable Hall View/Delete form, hosted by CrudShell (popup or full
    page) from HallsList. Inherits CrudViewDeleteFormBase so it exposes the
    standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show; when IsDelete=true a Deactivate button appears and a
@@ -29,7 +29,7 @@
         <dd>@(Initial.IsActive ? L["Admin.Halls.Active.Yes"] : L["Admin.Halls.Active.No"])</dd>
     </dl>
 
-    @* QA B16 — the hall's occupancy view: what this hall is actually doing.
+    @* The hall's occupancy view: what this hall is actually doing.
        Without it the session/booking overlap rule only ever surfaced as a 409. *@
     <h3 class="simf-section-title">@L["Admin.Halls.Schedule.Heading"]</h3>
     @if (_scheduleLoading)

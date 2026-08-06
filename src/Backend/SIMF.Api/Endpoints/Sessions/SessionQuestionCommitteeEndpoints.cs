@@ -8,7 +8,7 @@ using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Sessions;
 
-/// <summary>P3.3 — D-212 (Completion Programme §5.3): the Scientific-Committee
+/// <summary>The Scientific-Committee
 /// central Q&amp;A queue (stage 2). Cross-session, gated by the Questions.*
 /// permissions — View to read, Moderate to approve/hide, Escalate to route to a
 /// role. Distinct from the per-session moderator desk (stage 3).</summary>

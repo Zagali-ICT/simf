@@ -117,7 +117,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateHallAsync(id, token));
         });
 
-        // QA B16 — the hall's occupancy view (sessions assigned to this hall).
+        // The hall's occupancy view (sessions assigned to this hall).
         group.MapGet("/admin/halls/{id:guid}/schedule",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
@@ -126,7 +126,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.GetHallScheduleAsync(id, token));
         });
 
-        // SIMF-FDS-013 (D-248) — meeting tables + hall allocations + business
+        // Meeting tables + hall allocations + business
         // meetings BFF passthroughs (mirrors the Halls block above). Without
         // these the /admin/meeting-tables + /admin/business-meetings pages 400
         // on every data call (the backend endpoints exist; only these proxies

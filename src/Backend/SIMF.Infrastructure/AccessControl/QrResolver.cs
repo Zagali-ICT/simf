@@ -10,8 +10,8 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.AccessControl;
 
 /// <summary>Implements <see cref="IQrResolver"/> against
-/// <c>UserProfile</c> + <c>SimfUser</c> + <c>ProfileType</c>. After D-167
-/// moved UserProfile + ProfileType onto SimfAppDbContext, this is two
+/// <c>UserProfile</c> + <c>SimfUser</c> + <c>ProfileType</c>. Because
+/// UserProfile + ProfileType live on SimfAppDbContext, this is two
 /// round-trips: App-DB lookup by QR id, then Identity-DB lookup by user
 /// id. Both queries are PK / unique-index hits so total latency stays at
 /// sub-millisecond.</summary>

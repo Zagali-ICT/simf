@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P2.5 — D-230 (FR-605, FDS-006 §5.3): 2D venue-map node CRUD, gated
+/// <summary>2D venue-map node CRUD, gated
 /// by VenueMap.*. The public read lives in VenueMapPublicEndpoints.</summary>
 public sealed class ListVenueMapNodesEndpoint(IVenueMapService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminVenueMapNodeSummary>>>

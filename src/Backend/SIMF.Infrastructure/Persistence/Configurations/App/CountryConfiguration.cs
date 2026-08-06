@@ -27,8 +27,8 @@ internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
         builder.HasIndex(country => country.Code).IsUnique();
         builder.HasIndex(country => new { country.IsActive, country.DisplayOrder });
 
-        // D-499 (الوفود) — the head-of-delegation pointer is a same-DB real FK to
-        // UserProfile (both live on SimfAppDbContext, so the D-157 no-cross-DB-FK
+        // The الوفود head-of-delegation pointer is a same-DB real FK to
+        // UserProfile (both live on SimfAppDbContext, so the no-cross-DB-FK
         // rule is not engaged). Nullable with OnDelete.SetNull so removing a
         // delegate profile simply clears the country's head, never cascades.
         builder.HasOne<UserProfile>()

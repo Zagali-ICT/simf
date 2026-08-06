@@ -3,7 +3,7 @@ using SIMF.Contracts.Requests;
 
 namespace SIMF.Application.Requests.Abstractions;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب تحديث البادج") — badge job-title update
+/// <summary>The "طلب تحديث البادج" desk (الطلبات) — badge job-title update
 /// requests: login-required submission + admin review. On Accept the service
 /// applies the requested title to the requester's profile. Mirrors
 /// <c>ISpeakerMeetingRequestService</c>.</summary>

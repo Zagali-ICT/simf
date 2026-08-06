@@ -1,6 +1,6 @@
-@* D-166 (gap doc G4) — admin page for the two operations singletons:
-   the registration gate (PDF §2.3) and the archive visibility switch
-   (PDF §2.4). Both expose a single state row + a save button. *@
+@* Admin page for the two operations singletons: the registration gate and
+   the archive visibility switch. Both expose a single state row + a save
+   button. *@
 @page "/admin/operations"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Operations.View)]
@@ -19,7 +19,7 @@
         <h2 class="simf-section-h2">@L["Admin.Operations.RegistrationGate.Heading"]</h2>
         <p class="simf-section-desc">@L["Admin.Operations.RegistrationGate.Desc"]</p>
 
-        @* §6.16 (F-U5-007) — "Loading…" used to key off `_gate is null`, so a
+        @* "Loading…" used to key off `_gate is null`, so a
            FAILED load left this section reading "Loading…" for as long as the
            admin cared to wait. The three states are now distinct. *@
         @if (_loading)
@@ -53,7 +53,7 @@
                     <dd>@_gate.LastChangedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</dd>
                 </dl>
             </div>
-            @* D-828 — the page gates on Operations.View but this PUT needs
+            @* The page gates on Operations.View but this PUT needs
                Operations.Edit, so a View-only admin could close public sign-up
                here and learn of it only from the 403. *@
             <AuthorizedAction Permission="@PermissionCatalog.Operations.Edit">

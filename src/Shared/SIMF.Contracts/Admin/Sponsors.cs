@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>D-199 (Mockup page 23) — one row in the admin Sponsors grid.
+/// <summary>One row in the admin Sponsors grid.
 /// Mirrors AdminDelegationSummary. <c>Tier</c> carries both the int value and a
 /// display name so the grid renders the tier column without a second lookup.</summary>
 public sealed record AdminSponsorSummary(
@@ -44,7 +44,7 @@ public sealed record AdminSponsorDetail(
     string? About = null,
     string? AboutArabic = null,
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality is CountryId with its
+    // directory. All optional; nationality is CountryId with its
     // display names (CountryNameEn / CountryNameAr) projected alongside.
     // Trailing-optional so any other constructor call stays valid.
     int? CountryId = null,
@@ -82,7 +82,7 @@ public sealed class AdminCreateSponsorRequest
     public string? AboutArabic { get; set; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality is CountryId. The website
+    // directory. All optional; nationality is CountryId. The website
     // slot is the existing Url above (never re-added).
     public int? CountryId { get; set; }
     public string? Email { get; set; }
@@ -100,7 +100,7 @@ public sealed class AdminCreateSponsorRequest
 
 /// <summary>Update payload (adds IsActive to the create shape).
 /// Not sealed: the admin update endpoint binds {id}+body via a derived route
-/// class (D-504, mirroring <c>UpdateExhibitorRoute</c>) so it cannot drop a
+/// class (mirroring <c>UpdateExhibitorRoute</c>) so it cannot drop a
 /// field at bind time.</summary>
 public class AdminUpdateSponsorRequest
 {
@@ -120,7 +120,7 @@ public class AdminUpdateSponsorRequest
     public string? AboutArabic { get; set; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality is CountryId. The website
+    // directory. All optional; nationality is CountryId. The website
     // slot is the existing Url above (never re-added).
     public int? CountryId { get; set; }
     public string? Email { get; set; }

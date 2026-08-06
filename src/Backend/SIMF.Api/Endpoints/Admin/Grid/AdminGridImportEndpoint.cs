@@ -16,11 +16,11 @@ public enum GridRowApplyKind
 }
 
 /// <summary>
-/// Generic base for a resource's <c>POST /admin/{resource}/import</c> endpoint
-/// (D-356). A concrete subclass supplies the route, the <c>{Resource}.Import</c>
+/// Generic base for a resource's <c>POST /admin/{resource}/import</c> endpoint.
+/// A concrete subclass supplies the route, the <c>{Resource}.Import</c>
 /// permission, the sheet name + required headers, a per-row key (for the error
 /// list) and how to apply one parsed row to its create/upsert service; this
-/// base owns the auth gate, the 5 MB + ZIP-magic upload defence (D-045 H1), the
+/// base owns the auth gate, the 5 MB + ZIP-magic upload defence, the
 /// parse, the per-row try/catch (one bad row never aborts the batch) and the
 /// aggregated <see cref="AdminGridImportResult"/>. Mirrors the proven
 /// <c>ImportUsersEndpoint</c>.

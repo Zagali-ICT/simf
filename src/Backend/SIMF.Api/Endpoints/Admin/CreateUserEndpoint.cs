@@ -11,11 +11,11 @@ namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
 /// <c>POST /api/v1/admin/admins</c> — an Administrator creates a new
-/// Control Panel **Admin** user (P7c — renamed from
-/// <c>POST /admin/staff</c>; decisions D-042 + D-048). The new account
+/// Control Panel **Admin** user (renamed from
+/// <c>POST /admin/staff</c>). The new account
 /// lands in <c>PendingApproval</c> with no password and receives a
 /// 7-day password-set invitation. Approval is Administrator-only and
-/// mints the QR id (D-046a + P4).
+/// mints the QR id.
 /// </summary>
 public sealed class CreateAdminEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<AdminCreateAdminRequest, ApiResult<AdminCreateUserResponse>>
@@ -81,7 +81,7 @@ public sealed class CreateOtherEndpoint(IAdminUserProvisioningService adminAccou
 
 /// <summary>
 /// <c>POST /api/v1/admin/visitors</c> — Administrator creates a new
-/// <b>Visitor</b> user (P3; P7c added optional <c>ProfileTypeId</c>).
+/// <b>Visitor</b> user, with an optional <c>ProfileTypeId</c> tier.
 /// </summary>
 public sealed class CreateVisitorEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<AdminCreateVisitorRequest, ApiResult<AdminCreateUserResponse>>

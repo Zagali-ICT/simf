@@ -6,15 +6,15 @@ using Microsoft.JSInterop;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
-/// <summary>P7e (D-055) — the pending Other-typed approval queue. The shared grid /
-/// approve / reject / bulk logic lives in <see cref="PendingApprovalPageBase"/>
-/// (D-641); this partial pins the <c>others</c> API segment and adds the
-/// profile-review modal (D-124 preview, D-128 review-then-approve).</summary>
+/// <summary>The pending Other-typed approval queue. The shared grid /
+/// approve / reject / bulk logic lives in <see cref="PendingApprovalPageBase"/>;
+/// this partial pins the <c>others</c> API segment and adds the
+/// profile-review modal (preview, then review-then-approve).</summary>
 public partial class PendingOthers
 {
     protected override string ApiBase => "others";
 
-    // D-353 parity — the review "View" modal honours the popup/full-page toggle,
+    // The review "View" modal honours the popup/full-page toggle,
     // persisted per-user under this key. ViewFullPage hides the grid while the
     // review takes the full page.
     protected override string? PresentationPageKey => "pending-others";

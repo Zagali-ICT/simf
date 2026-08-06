@@ -25,7 +25,7 @@ public interface IAdminArchiveService
         Guid actorUserId, Guid id,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-275 (§9) — snapshot the current live event into a new edition
+    /// <summary>Snapshot the current live event into a new edition
     /// (year + title generated, counters computed from live data). Reuses
     /// <see cref="CreateAsync"/> so the one-edition-per-year 409 + audit apply.</summary>
     Task<AdminArchiveEditionDetail> SnapshotCurrentAsync(

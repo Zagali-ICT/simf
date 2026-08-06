@@ -82,7 +82,7 @@ public partial class SignIn
                 {
                     Email = _model.Email,
                     Password = _model.Password,
-                    Audience = SignInAudience.Cp,   // P2 — CP-only surface
+                    Audience = SignInAudience.Cp,   // CP-only surface
                 });
 
             if (!result.Success || result.Data is null)
@@ -103,7 +103,7 @@ public partial class SignIn
                 return;
             }
 
-            // #2 (Q1, 2026-07-30): the account proved its password but carries no
+            // The account proved its password but carries no
             // authenticator secret, so the API withheld the session and issued a
             // mandatory-enrolment ticket instead. Route to the enrolment page —
             // it pairs an authenticator and the completion issues the session.
@@ -115,9 +115,9 @@ public partial class SignIn
                 return;
             }
 
-            // Skip the second factor when the account has TwoFactorEnabled=false
-            // (myComment #34). The API answers with tokens immediately in that
-            // case; no MfaToken is returned. P11 — D-052: stash the optional
+            // Skip the second factor when the account has TwoFactorEnabled=false.
+            // The API answers with tokens immediately in that
+            // case; no MfaToken is returned. Stash the optional
             // AccountStateInfo too so the cookie carries the rejection
             // reason for the state-banner page.
             if (result.Data.MfaToken is null && result.Data.Tokens is not null)

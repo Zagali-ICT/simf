@@ -9,17 +9,17 @@ using SIMF.Contracts.Programme;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// OA-D5 — <c>POST /api/v1/admin/delegation-meeting-requests/export</c>, the
-/// missing grid export for the delegation (G2G) meeting-request desk. The speaker
-/// desk has had one since D-356; this desk had a check-in route but no export at
+/// <c>POST /api/v1/admin/delegation-meeting-requests/export</c> — the grid
+/// export for the delegation (G2G) meeting-request desk. The speaker desk has
+/// long had one; this desk had a check-in route but no export at
 /// all, so the <c>CheckedInAt</c> / <c>CheckedInByUserId</c> stamps it writes were
 /// reachable from no report.
 ///
 /// <para><b>Export only</b> — these requests are created from the app and decided
 /// in the CP modal, so there is no generic import path. The columns mirror the CP
-/// grid's visible columns; the requester email is deliberately NOT exported (it is
-/// per-record PII surfaced only via the audited detail endpoint, the D-185
-/// pattern). Gated on its own <see cref="PermissionCatalog.DelegationMeetings.Export"/>
+/// grid's visible columns; the requester email is deliberately NOT exported — it
+/// is per-record PII, surfaced only via the audited detail
+/// endpoint. Gated on its own <see cref="PermissionCatalog.DelegationMeetings.Export"/>
 /// code rather than <c>View</c>, for the same reason as every other export gate:
 /// taking a spreadsheet of meetings off the premises is a bigger act than reading
 /// a page of them on screen.</para>
@@ -45,7 +45,7 @@ public sealed class ExportDelegationMeetingRequestsEndpoint(
         new("SlotStart", row => Stamp(row.SlotStart)),
         new("CreatedAt", row => row.CreatedAt.ToString("yyyy-MM-dd HH:mm")),
         new("RespondedAt", row => Stamp(row.RespondedAt)),
-        // OA-D5 — the hall check-in stamps, the whole point of this export.
+        // The hall check-in stamps, the whole point of this export.
         new("CheckedInAt", row => Stamp(row.CheckedInAt)),
         new("CheckedInBy", row => row.CheckedInByName ?? string.Empty),
     ];

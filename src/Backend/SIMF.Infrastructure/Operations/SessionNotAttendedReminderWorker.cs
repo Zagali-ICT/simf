@@ -12,10 +12,10 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
-/// FR-903 (register defect <c>FR-903-not-attended-reminder</c>) — "the session
-/// started but you have not attended". The booking half of FR-903 shipped
-/// (BookingConfirmed / SessionReminder / BookingReleased); the not-attended half
-/// had no kind and no sender. <see cref="ReservationNoShowReleaseWorker"/> — the
+/// Sends the "the session started but you have not attended" nudge. The booking
+/// half of that notification requirement shipped (BookingConfirmed /
+/// SessionReminder / BookingReleased); the not-attended half had no kind and no
+/// sender. <see cref="ReservationNoShowReleaseWorker"/> — the
 /// only worker that reasons about no-shows — frees the seat and notifies nobody.
 ///
 /// <para>Once per minute this finds sessions that started at least
@@ -25,10 +25,10 @@ namespace SIMF.Infrastructure.Operations;
 /// people who booked and have not arrived, while there is still a session to
 /// arrive at.</para>
 ///
-/// <para><b>Dedup.</b> Unlike D-217's <c>Session.ReminderSent</c> this needs
+/// <para><b>Dedup.</b> Unlike <c>Session.ReminderSent</c> this needs
 /// once-per-(attendee, session), not once-per-session: two holders of the same
 /// session must both be nudged, and the sweep re-runs every tick inside the
-/// window. That is exactly what the D-713 dispatcher guard gives —
+/// window. That is exactly what the dispatcher's dedup guard gives —
 /// <see cref="NotificationRequest.DeduplicateByRelatedEntity"/> with the session
 /// as the related entity — so this worker needs NO new column and no claim/commit
 /// dance: it is idempotent by construction, and a restart mid-sweep re-runs
@@ -46,7 +46,7 @@ internal sealed class SessionNotAttendedReminderWorker(
     private static readonly TimeSpan StartupDelay = TimeSpan.FromMinutes(1);
 
     /// <summary>How long after <c>Start</c> a booked attendee is given to arrive
-    /// before the nudge fires (the "+N minutes" of FR-903).</summary>
+    /// before the nudge fires (the "+N minutes" grace).</summary>
     internal static readonly TimeSpan ArrivalGrace = TimeSpan.FromMinutes(10);
 
     /// <summary>How long past <see cref="ArrivalGrace"/> the sweep keeps looking.

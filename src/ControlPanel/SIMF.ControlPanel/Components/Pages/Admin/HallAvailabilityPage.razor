@@ -1,6 +1,6 @@
-@* D-715 (item 7, FDS-013 §15 GAP-1) — the team defines a hall's meeting time
-   (availability windows); the meeting-review flow (GAP-2) binds an accepted request
-   to a free hall slot. QA A36 — gated by the hall-scoped HallAvailability.Manage,
+@* The team defines a hall's meeting time (availability windows); the
+   meeting-review flow binds an accepted request to a free hall slot.
+   Gated by the hall-scoped HallAvailability.Manage,
    not by SpeakerMeetingRequests.Manage: the windows feed BOTH meeting desks. *@
 @page "/admin/hall-availability"
 @layout CpShellLayout
@@ -78,7 +78,7 @@
     </div>
 </div>
 
-@* R10 (D-767) — must-decide guard for the destructive availability-window delete. *@
+@* Must-decide guard for the destructive availability-window delete. *@
 @* Same code as the page gate: the API gates this DELETE on
 .Manage too, so there is no split to express. *@
 <SimfConfirm Open="_confirmOpen" Title="@L["Grid.Delete"]"

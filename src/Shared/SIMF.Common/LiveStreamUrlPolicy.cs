@@ -12,8 +12,8 @@ namespace SIMF.Common;
 ///
 /// <para>The Flutter live screen mirrors this rule in
 /// <c>src/Mobile/simf_app/lib/features/live/youtube_url.dart</c> — a separate
-/// runtime, so the duplicate is unavoidable and is kept equivalent on purpose
-/// (see DECISIONS_LOG D-349). Change one, change the other.</para>
+/// runtime, so the duplicate is unavoidable and is kept equivalent on purpose.
+/// Change one, change the other.</para>
 /// </summary>
 public static class LiveStreamUrlPolicy
 {
@@ -31,7 +31,7 @@ public static class LiveStreamUrlPolicy
     /// <b>https</b> URL that is either a YouTube link with a well-formed video id
     /// or a direct HLS/MP4 stream (path ending <c>.m3u8</c> or <c>.mp4</c>).
     /// Cleartext <c>http</c> is rejected so a feed cannot be silently downgraded /
-    /// man-in-the-middled (D-349 security hardening). A blank URL is NOT allowed —
+    /// man-in-the-middled. A blank URL is NOT allowed —
     /// callers treat blank as "no feed" and skip the check, so this method only
     /// ever sees a value the admin actually typed.
     /// </summary>

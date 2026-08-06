@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/AdminUpdateUserTests.cs
-//        SIMF.Api.Tests/AdminAccountMobileTests.cs (FR-PHN-002 — the optional
+//        SIMF.Api.Tests/AdminAccountMobileTests.cs (the optional
 //        SaudiMobile / InternationalMobile correction: correct, canonicalise,
 //        omit-means-unchanged, malformed rolls the whole edit back, permission)
 using FastEndpoints;
@@ -14,22 +14,22 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>Binds {id} + body via a derived route that INHERITS the
-/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
-/// D-842 (sessions), D-843 (gates, profile types) and the four before them
-/// silently dropped a field on PUT. Passing the bound request straight through
-/// makes that drop impossible.</summary>
+/// sessions, gates, profile types and several others silently dropped a field
+/// on PUT. Passing the bound request straight through makes that drop
+/// impossible.</summary>
 public sealed class UpdateVisitorRouteRequest : AdminUpdateVisitorRequest
 {
     public Guid Id { get; set; }
 }
 
 /// <summary>Binds {id} + body via a derived route that INHERITS the
-/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
-/// D-842 (sessions), D-843 (gates, profile types) and the four before them
-/// silently dropped a field on PUT. Passing the bound request straight through
-/// makes that drop impossible.</summary>
+/// sessions, gates, profile types and several others silently dropped a field
+/// on PUT. Passing the bound request straight through makes that drop
+/// impossible.</summary>
 public sealed class UpdateOtherRouteRequest : AdminUpdateOtherRequest
 {
     public Guid Id { get; set; }
@@ -56,7 +56,7 @@ public sealed class UpdateVisitorRouteRequestValidator : Validator<UpdateVisitor
                 "Display name must be at most 128 characters.",
                 "يجب ألا يتجاوز الاسم المعروض 128 حرفًا.");
 
-        // FR-PHN-002 — the optional mobile correction validates IDENTICALLY to
+        // The optional mobile correction validates IDENTICALLY to
         // the self-service rule: the shapes are the shared
         // UpsertUserProfileRequestValidator predicates (one source of truth), and
         // an omitted value means "leave the stored number alone", so a desk that
@@ -107,7 +107,7 @@ public sealed class UpdateOtherRouteRequestValidator : Validator<UpdateOtherRout
                 "A profile type is required.",
                 "نوع الملف الشخصي مطلوب.");
 
-        // FR-PHN-002 — same optional mobile correction as the visitor desk.
+        // The same optional mobile correction as the visitor desk.
         When(request => !string.IsNullOrWhiteSpace(request.SaudiMobile), () =>
         {
             RuleFor(request => request.SaudiMobile!)

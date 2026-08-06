@@ -13,8 +13,7 @@ namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
 /// Implements the session lifecycle — refresh-token rotation with stolen-token
-/// reuse detection, and sign-out (SIMF-API-001 section 12.4, SIMF-FDS-001
-/// section 5.3 and Amendment A.6).
+/// reuse detection, and sign-out.
 /// </summary>
 public sealed class SessionService(
     IUserAccountRepository accounts,
@@ -46,7 +45,7 @@ public sealed class SessionService(
 
         // A token that was already revoked is being presented again — it has
         // been rotated away, so its reuse means it was stolen. Kill every
-        // session for the account (SIMF-FDS-001 section 5.3).
+        // session for the account.
         if (presented.RevokedAt is not null)
         {
             await refreshTokenRepository.RevokeAllForUserAsync(
@@ -130,7 +129,7 @@ public sealed class SessionService(
                         UserId = user.Id,
                         TokenHash = OpaqueToken.Hash(refreshValue),
                         CreatedAt = now,
-                        // D-443 (NCA finding): absolute 24h session cap. The
+                        // The NCA-required absolute 24h session cap. The
                         // replacement inherits the chain's original deadline
                         // (sign-in + Jwt:SessionLifetimeHours) instead of
                         // sliding a fresh window, so rotation can never push a

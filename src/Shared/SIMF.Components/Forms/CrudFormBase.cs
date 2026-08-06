@@ -34,7 +34,7 @@ public abstract class CrudFormBase<T> : ComponentBase
     [Parameter] public EventCallback OnCancel { get; set; }
 }
 
-/// <summary>Base for the combined Add / Edit form (D-353).</summary>
+/// <summary>Base for the combined Add / Edit form.</summary>
 /// <typeparam name="T">The grid-row summary type the form creates or updates.</typeparam>
 public abstract class CrudAddEditFormBase<T> : CrudFormBase<T>
 {
@@ -95,7 +95,7 @@ public abstract class CrudAddEditFormBase<T> : CrudFormBase<T>
     }
 }
 
-/// <summary>Base for the combined View / Delete form (D-353).</summary>
+/// <summary>Base for the combined View / Delete form.</summary>
 /// <typeparam name="T">The grid-row summary type the form shows or deletes.</typeparam>
 public abstract class CrudViewDeleteFormBase<T> : CrudFormBase<T>
 {

@@ -1,7 +1,7 @@
-@* D-169 (gap doc G6, PDF §2.7.2) — admin desk for per-session moderator
+@* Admin desk for per-session moderator
    grants. Lists existing grants, supports assign (by SessionId +
-   UserId) and revoke. Distinct from MobileAppRole.Moderator (PDF §4.2
-   naming-collision rule). *@
+   UserId) and revoke. Distinct from MobileAppRole.Moderator despite the
+   shared word. *@
 @page "/admin/session-moderators"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.SessionModerators.View)]
@@ -97,7 +97,7 @@
             {
                 <SimfAlert Variant="error">@_error</SimfAlert>
             }
-            @* DEF-MOD-005 — real pickers, not free-text GUIDs: the session list is
+            @* Real pickers, not free-text GUIDs: the session list is
                the active sessions and the moderator list is the accounts eligible
                to moderate (approved + a profile type whose app role is Moderator).
                The server re-checks both on assign. *@
@@ -134,9 +134,9 @@
             <SimfButton Type="button" Variant="secondary" OnClick="@(() => _addOpen = false)">
                 @L["Admin.SessionModerators.Cancel"]
             </SimfButton>
-            @* D-828 (second pass) - the page gates on SessionModerators.View; assigning is .Assign. The page-level ratchet missed this
-               because the page already used <AuthorizedAction> elsewhere; the
-               guard is now per-button. *@
+            @* The page gates on SessionModerators.View; assigning is .Assign.
+               A page-level check would miss this, because the page already uses
+               <AuthorizedAction> elsewhere; the guard is per-button. *@
             <AuthorizedAction Permission="@PermissionCatalog.SessionModerators.Assign">
                 <SimfButton Type="button" OnClick="SubmitAssignAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.SessionModerators.Submit"]

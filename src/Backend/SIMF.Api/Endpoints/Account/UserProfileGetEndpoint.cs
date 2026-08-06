@@ -9,7 +9,7 @@ namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
 /// <c>GET /api/v1/app/account/user-profile</c> — returns the actor's
-/// profile (decisions D-046 b, P8 — D-049; renamed from
+/// profile (renamed from
 /// <c>/account/visitor-profile</c>). Auth required; the actor reads
 /// their own row only. The unrelated <c>/account/profile</c> endpoint
 /// is the lightweight identity-card surface (id / email / avatar / 2FA

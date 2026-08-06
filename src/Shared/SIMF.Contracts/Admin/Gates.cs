@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Admin;
 
-/// <summary>One row in the admin Gates grid (D-148 — SIMF-API-GATES-001 §6.1).</summary>
+/// <summary>One row in the admin Gates grid.</summary>
 public sealed record AdminGateSummary(
     Guid Id,
     string Code,
@@ -18,8 +18,7 @@ public sealed record AdminGateSummary(
     string? Description = null,
     string? DescriptionArabic = null);
 
-/// <summary>Full gate detail — Details + Edit modals
-/// (SIMF-API-GATES-001 §6.2).</summary>
+/// <summary>Full gate detail — Details + Edit modals.</summary>
 public sealed record AdminGateDetail(
     Guid Id,
     string Code,
@@ -52,8 +51,8 @@ public sealed class AdminCreateGateRequest
 }
 
 /// <summary>Not sealed: the admin update endpoint binds {id}+body via a derived
-/// route class (D-505, mirroring <c>UpdateHallRoute</c>) so it cannot drop a field
-/// at bind time — D-843: <c>HallId</c> was being wiped on every edit, unbinding a
+/// route class (mirroring <c>UpdateHallRoute</c>) so it cannot drop a field
+/// at bind time — <c>HallId</c> was being wiped on every edit, unbinding a
 /// hall door from its hall, because the old inline bind model omitted it.</summary>
 public class AdminUpdateGateRequest
 {
@@ -70,7 +69,7 @@ public class AdminUpdateGateRequest
     public List<Guid> AssignedOperatorUserIds { get; set; } = new();
 }
 
-/// <summary>BUG-018 — one selectable gate-operator candidate
+/// <summary>One selectable gate-operator candidate
 /// (`POST /api/v1/admin/gates/operator-candidates/list`). Gate scanning happens
 /// through the mobile app, so a candidate is an approved APP account whose
 /// profile type is operational (<c>IsForVisitor=false</c>) and carries a
@@ -83,10 +82,10 @@ public sealed record AdminGateOperatorCandidate(
     string ProfileTypeName,
     MobileAppRole MobileAppRole);
 
-/// <summary>BUG-018 — one option in a gate-form lookup list.</summary>
+/// <summary>One option in a gate-form lookup list.</summary>
 public sealed record AdminGateLookupOption(Guid Id, string Name, string NameArabic);
 
-/// <summary>BUG-018 — the lookup lists the gate Add/Edit form needs, served under
+/// <summary>The lookup lists the gate Add/Edit form needs, served under
 /// <c>Gates.Manage</c> (`GET /api/v1/admin/gates/form-options`). Previously the
 /// form read the shared ProfileTypes / Halls admin lists, which need
 /// <c>ProfileTypes.View</c> / <c>Halls.View</c> — so a Security-team gate manager
@@ -95,21 +94,19 @@ public sealed record AdminGateFormOptions(
     IReadOnlyList<AdminGateLookupOption> ProfileTypes,
     IReadOnlyList<AdminGateLookupOption> Halls);
 
-/// <summary>One row in `GET /api/v1/admin/gates/{id}/assignments`
-/// (SIMF-API-GATES-001 §6.7).</summary>
+/// <summary>One row in `GET /api/v1/admin/gates/{id}/assignments`.</summary>
 public sealed record AdminGateAssignmentRow(
     Guid AssignmentId,
     Guid UserId,
     string UserDisplayName,
     DateTime AssignedAt,
     Guid AssignedByUserId,
-    // BUG-018 (18-6) — the gate detail view lists WHO is assigned, not just a
+    // The gate detail view lists WHO is assigned, not just a
     // count, so an assignment can be audited from the CP. Appended with a default
     // so this CP-only contract stays append-only.
     string UserEmail = "");
 
-/// <summary>Filter for `GET /api/v1/admin/gates/reports/scans`
-/// (SIMF-API-GATES-001 §6.8).</summary>
+/// <summary>Filter for `GET /api/v1/admin/gates/reports/scans`.</summary>
 public sealed class AdminGateScanReportFilter
 {
     public DateTime? FromUtc { get; set; }
@@ -136,7 +133,7 @@ public sealed record AdminGateScanRow(
     ScanSource Source);
 
 /// <summary>One row of the "currently inside" view
-/// (SIMF-API-GATES-001 §6.8 /currently-inside endpoint).</summary>
+/// (the /currently-inside endpoint).</summary>
 public sealed record AdminCurrentlyInsideRow(
     Guid UserProfileId,
     string DisplayName,

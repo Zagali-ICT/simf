@@ -17,7 +17,7 @@ namespace SIMF.Infrastructure.Reporting;
 /// <para>Two rules apply to every report here:</para>
 /// <list type="number">
 ///   <item>A date range is a range of <b>Saudi calendar days</b>, inclusive on
-///   both ends, resolved once to a half-open window. Since D-813 the stored
+///   both ends, resolved once to a half-open window. The stored
 ///   instants ARE the Saudi wall clock, so no zone shift happens — but the
 ///   inclusive upper end still has to become the start of the FOLLOWING day, or
 ///   every report silently drops the last day, which is the day people check
@@ -48,7 +48,7 @@ internal sealed partial class ReportingService(
     private readonly record struct ReportWindow(DateTime? Start, DateTime? End);
 
     /// <summary>
-    /// Turns the requested Saudi date range into window bounds. Since D-813 this
+    /// Turns the requested Saudi date range into window bounds. This
     /// is a relabel, not a conversion — <c>SaudiTime.FromSaudiWallClock</c> only
     /// stamps the <c>Kind</c>, because the stored value already IS the Saudi wall
     /// clock. It is kept as the single named seam so the intent stays explicit.

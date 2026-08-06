@@ -62,9 +62,9 @@ internal static class AssetAuth
             return;
         }
 
-        // A6 — strong ETag seeded from a content hash of the bytes already in
+        // Strong ETag seeded from a content hash of the bytes already in
         // memory. The Asset row has no RowVersion / hash column and the schema is
-        // frozen (D-110), so a content hash is the zero-schema validator. A repeat
+        // frozen, so a content hash is the zero-schema validator. A repeat
         // fetch that sends a matching If-None-Match gets a 304 with no body; a
         // normal fetch is unchanged (200 + bytes). The ETag is emitted on BOTH the
         // 200 and the 304 so a cache refreshing its validator from the 304 keeps it.
@@ -271,7 +271,7 @@ public sealed class PublicFetchAssetEndpoint(IAssetService service)
     }
 }
 
-// -- D-357 — central Media Library management (gated by MediaLibrary.*) --
+// -- Central Media Library management (gated by MediaLibrary.*) --
 
 /// <summary>List every media asset (filter by category / kind / source / active).</summary>
 public sealed class ListAssetsEndpoint(IAssetService service)

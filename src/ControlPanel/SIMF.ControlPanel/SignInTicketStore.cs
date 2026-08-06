@@ -12,7 +12,7 @@ namespace SIMF.ControlPanel;
 /// token pair here, keyed by a random reference, and full-page-navigates to the
 /// completion endpoint, which redeems the reference and issues the cookie.
 ///
-/// <para>P11 — D-052 extends the ticket with the optional
+/// <para>The ticket also carries the optional
 /// <see cref="AccountStateInfo"/> from the API's sign-in response so the
 /// completion endpoint can write the bilingual rejection reason into the
 /// cookie claims — the state-banner pages read the cookie, never the API.</para>
@@ -44,7 +44,7 @@ public sealed class SignInTicketStore(IMemoryCache cache)
     private static string CacheKey(string reference) => $"simf:signin-ticket:{reference}";
 }
 
-/// <summary>The payload stashed under one sign-in ticket (P11 — D-052).</summary>
+/// <summary>The payload stashed under one sign-in ticket.</summary>
 public sealed record SignInTicketPayload(
     AuthTokens Tokens,
     AccountStateInfo? AccountState);

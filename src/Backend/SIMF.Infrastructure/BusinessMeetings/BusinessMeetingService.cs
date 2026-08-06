@@ -14,13 +14,13 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.BusinessMeetings;
 
-/// <summary>SIMF-FDS-013 — D-248: flexible hall configuration + admin-arranged
+/// <summary>Flexible hall configuration + admin-arranged
 /// B2B/B2C business meetings. Halls carry a <see cref="HallPurpose"/>; Meeting /
 /// General halls hold <see cref="MeetingTable"/>s (added one-by-one or generated
 /// random-by-count / by row-column); <see cref="HallAllocation"/> reserves hall
 /// space over a from–to slot; a <see cref="BusinessMeeting"/> schedules two or more
 /// parties (companies + visitors) at a table. Visitor names resolve via a second
-/// Identity round-trip (no cross-DB JOIN, D-157); company refs are App FKs.</summary>
+/// Identity round-trip (no cross-DB JOIN); company refs are App FKs.</summary>
 internal sealed class BusinessMeetingService(
     SimfAppDbContext appDbContext,
     SimfIdentityDbContext identityDbContext,
@@ -34,7 +34,7 @@ internal sealed class BusinessMeetingService(
 
     /// <summary>The event's local-day boundary (KSA, +03:00) — the same convention
     /// the programme uses to bucket a session to a Riyadh calendar day. A meeting's
-    /// start/end are already in this zone (D-813), so the forum-day bound is a
+    /// start/end are already in this zone, so the forum-day bound is a
     /// plain comparison and a late-evening slot files under the correct event
     /// day without any shift.</summary>
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
@@ -398,7 +398,7 @@ internal sealed class BusinessMeetingService(
         // manual double-Join and a post-projection sort 500'd at execution).
         var q = appDbContext.BusinessMeetings.AsNoTracking();
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored. The
+        // CP grid per-column filters. Unknown columns are ignored. The
         // legacy "status" filter (the old dropdown) still parses the enum name.
         foreach (var (column, raw) in query.Filters)
         {
@@ -421,7 +421,7 @@ internal sealed class BusinessMeetingService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: most recent start first.
+        // CP grid sortable columns. Default: most recent start first.
         q = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("hall", false) => q.OrderBy(m => m.MeetingTable!.Hall!.NameArabic).ThenByDescending(m => m.Start),
@@ -533,7 +533,7 @@ internal sealed class BusinessMeetingService(
             }).ToList(),
         };
 
-        // M-5 — close the read-then-insert double-book race. A time range cannot be a
+        // Close the read-then-insert double-book race. A time range cannot be a
         // SQL unique constraint, so the table / hall / participant overlap checks and
         // the insert must run inside ONE Serializable transaction: the range scans then
         // hold key-range locks and a concurrent overlapping insert cannot slip in
@@ -549,12 +549,12 @@ internal sealed class BusinessMeetingService(
             await using var tx = await appDbContext.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, cancellationToken);
 
-            // Table conflict — the table is already held over this slot. D-773: the
+            // Table conflict — the table is already held over this slot. The
             // scan used to see this service's OWN family only, so a business meeting
             // could be scheduled onto a table already held by a delegation or speaker
             // meeting request. The shared guard covers all three families; running it
             // here keeps its range scans inside this Serializable transaction, so the
-            // key-range locks that close the M-5 race still cover them.
+            // key-range locks that close the double-booking race still cover them.
             await MeetingTableOverlapGuard.EnsureTableIsFreeAsync(
                 appDbContext, table.Id, request.Start, request.End,
                 ErrorCodes.BusinessMeetingTableConflict,
@@ -564,8 +564,8 @@ internal sealed class BusinessMeetingService(
                 cancellationToken);
 
             // Hall conflict — the table's hall is wholly reserved for a non-meeting
-            // purpose (e.g. a session) for an overlapping slot (FDS-013 §5.6: a
-            // whole-hall allocation is a unit that cannot be double-reserved).
+            // purpose (e.g. a session) for an overlapping slot: a
+            // whole-hall allocation is a unit that cannot be double-reserved.
             var hallReserved = await appDbContext.HallAllocations.AsNoTracking()
                 .Where(a => a.HallId == table.HallId
                     && a.ReleasedAt == null
@@ -864,7 +864,7 @@ internal sealed class BusinessMeetingService(
                 "يجب أن يكون وقت النهاية بعد وقت البداية.");
         }
 
-        // M-5 — lower time bound: a meeting / allocation cannot start in the past.
+        // Lower time bound: a meeting / allocation cannot start in the past.
         if (start < timeProvider.SimfNow())
         {
             throw Invalid(ErrorCodes.HallAllocationInvalid,

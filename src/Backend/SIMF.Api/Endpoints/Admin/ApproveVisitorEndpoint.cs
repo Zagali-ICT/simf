@@ -9,8 +9,8 @@ namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
 /// <c>POST /api/v1/admin/visitors/{id:guid}/approve</c> — flip a pending
-/// visitor to Approved + mint the QR id (P4). Any CP role may call.
-/// CS-D (D-386) — the body may optionally carry a
+/// visitor to Approved + mint the QR id. Requires the Visitors.Approve
+/// permission. The body may optionally carry a
 /// <see cref="ApproveVisitorRequest.ProfileTypeId"/> to set the visitor's
 /// tier as part of the approval; null leaves the tier unchanged.
 /// </summary>
@@ -34,7 +34,7 @@ public sealed class ApproveVisitorEndpoint(IAdminUserApprovalService adminAccoun
     }
 }
 
-/// <summary>CS-D (D-386) — the approve-visitor request. <see cref="Id"/>
+/// <summary>The approve-visitor request. <see cref="Id"/>
 /// binds from the route; <see cref="ProfileTypeId"/> is an optional tier
 /// from the JSON body (null = leave the visitor's tier unchanged).</summary>
 public sealed class ApproveVisitorRequest

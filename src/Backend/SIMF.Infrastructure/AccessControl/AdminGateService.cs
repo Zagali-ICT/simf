@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
-//        SIMF.Api.Tests/GateOperatorModelTests.cs (BUG-018 — operator candidates,
+//        SIMF.Api.Tests/GateOperatorModelTests.cs (operator candidates,
 //        operator eligibility validation, gate-form lookups, assignment email)
 using System.Globalization;
 using ClosedXML.Excel;
@@ -32,12 +32,12 @@ internal sealed class AdminGateService(
     TimeProvider timeProvider,
     ILogger<AdminGateService> logger) : IAdminGateService
 {
-    /// <summary>G-2 — how long after a visitor's last allowed check-in (with no
+    /// <summary>How long after a visitor's last allowed check-in (with no
     /// later scan) they are still counted as "currently inside". Bounds the
     /// occupancy view against In-only gates that never emit a CheckOut.</summary>
     private static readonly TimeSpan StalePresenceWindow = TimeSpan.FromHours(16);
 
-    /// <summary>BUG-018 — the <c>ProfileType.MobileAppRole</c> values that actually
+    /// <summary>The <c>ProfileType.MobileAppRole</c> values that actually
     /// confer gate operation. Derived from the permission catalogue (the roles whose
     /// operational grant set carries <c>Gates.Operate</c> — Staff and Moderator) so
     /// the eligibility rule can never drift from the permission model.</summary>
@@ -54,7 +54,7 @@ internal sealed class AdminGateService(
 
         var rows = appDbContext.Gates.AsNoTracking().AsQueryable();
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored;
+        // CP grid per-column filters. Unknown columns are ignored;
         // isActive is a status filter handled below. Code/Name/NameArabic
         // are server-side substring matches on App-owned columns.
         foreach (var (column, raw) in query.Filters)
@@ -295,7 +295,7 @@ internal sealed class AdminGateService(
         var operatorIds = assignments.Select(a => a.UserId).ToHashSet();
         var operatorNames = await userDirectory.GetDisplayNamesAsync(
             operatorIds, cancellationToken);
-        // BUG-018 (18-6) — the CP detail view lists name + email per operator.
+        // The CP detail view lists name + email per operator.
         var operatorEmails = await userDirectory.GetEmailsAsync(
             operatorIds, cancellationToken);
 
@@ -309,13 +309,13 @@ internal sealed class AdminGateService(
             .ToList();
     }
 
-    /// <summary>BUG-018 (18-1 / 18-7) — the candidate gate operators. Gate scanning
+    /// <summary>The candidate gate operators. Gate scanning
     /// happens through the mobile app, so a candidate is an approved APP account
     /// whose profile type is operational (<c>IsForVisitor=false</c>) and carries a
     /// MobileAppRole that confers <c>Gates.Operate</c>. Deactivated / pending /
     /// rejected accounts are excluded and the list is searchable + paged.
     /// Resolved as three reads across the DB split (App → App → Identity), merged
-    /// in memory — never a cross-database JOIN (D-157).</summary>
+    /// in memory — never a cross-database JOIN.</summary>
     public async Task<GridPage<AdminGateOperatorCandidate>> ListOperatorCandidatesAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
@@ -398,7 +398,7 @@ internal sealed class AdminGateService(
         return GridPage<AdminGateOperatorCandidate>.Of(rows, total, skip, top);
     }
 
-    /// <summary>BUG-018 (18-4) — the gate form's own lookups. The form used to read
+    /// <summary>The gate form's own lookups. The form used to read
     /// the shared ProfileTypes / Halls admin lists, which need
     /// <c>ProfileTypes.View</c> / <c>Halls.View</c>; a Security-team gate manager
     /// holds only <c>Gates.Manage</c> and therefore saw silently empty dropdowns.
@@ -487,7 +487,7 @@ internal sealed class AdminGateService(
     {
         // Per design notes §3.3 — most-recent allowed scan across all gates
         // per visitor; inside if CheckIn, outside if CheckOut or absent.
-        // G-2 — In-only gates never emit a CheckOut, so a bare "latest scan is a
+        // In-only gates never emit a CheckOut, so a bare "latest scan is a
         // CheckIn" counts a visitor as inside forever. Bound presence to a rolling
         // window: a check-in older than StalePresenceWindow with no later scan is
         // treated as departed (day/session-boundary reconciliation).
@@ -639,7 +639,7 @@ internal sealed class AdminGateService(
         }
     }
 
-    /// <summary>X-1 — validates the optional hall-door binding. Null is a no-op
+    /// <summary>Validates the optional hall-door binding. Null is a no-op
     /// (perimeter gate); a non-null HallId must reference an existing active Hall
     /// in the App DB (logical-FK validation before write, mirroring
     /// <see cref="ValidateProfileTypesAsync"/>), else a clean 400 GATE_HALL_INVALID
@@ -658,7 +658,7 @@ internal sealed class AdminGateService(
         }
     }
 
-    /// <summary>BUG-018 (18-2) — an assigned operator must actually be able to work
+    /// <summary>An assigned operator must actually be able to work
     /// the gate; existence in <c>SIMF_Identity.Users</c> is not enough. Eligible is
     /// either an approved APP account whose profile type is operational
     /// (<c>IsForVisitor=false</c>) and carries a MobileAppRole that confers
@@ -668,7 +668,7 @@ internal sealed class AdminGateService(
     /// plain visitor, non-operational partner type, deactivated / pending /
     /// rejected account) is rejected with the offending ids named.
     /// Two reads across the DB split, merged in memory — never a cross-database
-    /// JOIN (D-157).</summary>
+    /// JOIN.</summary>
     private async Task ValidateOperatorsAsync(
         IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
     {

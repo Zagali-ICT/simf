@@ -11,11 +11,11 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Programme;
 
-/// <summary>D-199 (gap doc G3, Mockup page 16 "Agenda") — public,
-/// anonymous list of active programme sessions, ordered by start time.
+/// <summary>The public, anonymous list of active programme sessions,
+/// ordered by start time.
 /// Optional <c>?day=yyyy-MM-dd</c> restricts to one event-local (+03:00)
-/// calendar day (A6c — matches the day-grouped agenda) for the agenda's
-/// Day 1/2/3 segmented control. Optional <c>?categoryId=</c> (OA-D6) restricts
+/// calendar day (matching the day-grouped agenda) for the agenda's
+/// Day 1/2/3 segmented control. Optional <c>?categoryId=</c> restricts
 /// to one <c>SessionCategory</c> track. Mirrors the
 /// <c>ListPublicDelegationsEndpoint</c> public-read shape.</summary>
 public sealed class ListProgrammeSessionsRequest
@@ -24,8 +24,8 @@ public sealed class ListProgrammeSessionsRequest
     /// <c>yyyy-MM-dd</c>. Omitted = the whole programme.</summary>
     public string? Day { get; set; }
 
-    /// <summary>OA-D6 — optional server-side track filter: the id of a
-    /// <c>SessionCategory</c> (the dynamic D-226 lookup, exposed publicly by
+    /// <summary>Optional server-side track filter: the id of a
+    /// <c>SessionCategory</c> (the dynamic lookup, exposed publicly by
     /// <c>GET /app/programme/categories</c>). Omitted = every category.
     /// Combines with <see cref="Day"/> (AND). An unknown id returns an empty
     /// list rather than a 404, so the anonymous agenda is not a category-id
@@ -41,8 +41,8 @@ public sealed class ListProgrammeSessionsEndpoint(IProgrammeSessionService servi
         Get("/app/programme/sessions");
         AllowAnonymous();
         Tags("Public");
-        // A6d — 45s output cache; varies by all query keys so each ?day= (and, per
-        // OA-D6, each ?categoryId=) keeps a distinct entry (no-op under Testing).
+        // 45s output cache; varies by all query keys so each ?day= and each
+        // ?categoryId= keeps a distinct entry (no-op under Testing).
         Options(b => b.CacheOutput("PublicRead"));
     }
 
@@ -70,8 +70,8 @@ public sealed class ListProgrammeSessionsEndpoint(IProgrammeSessionService servi
     }
 }
 
-/// <summary>D-452 (Figma 883:2308 "تفاصيل اليوم") — the day-grouped public
-/// agenda: the active programme days (date + bilingual title + a has-logo flag),
+/// <summary>The day-grouped public agenda ("تفاصيل اليوم"):
+/// the active programme days (date + bilingual title + a has-logo flag),
 /// each with its sessions. Anonymous; drives the app's day banner + day strip.</summary>
 public sealed class ListProgrammeDaysEndpoint(IProgrammeSessionService service)
     : EndpointWithoutRequest<ApiResult<PublicProgrammeDays>>
@@ -90,8 +90,8 @@ public sealed class ListProgrammeDaysEndpoint(IProgrammeSessionService service)
     }
 }
 
-/// <summary>D-199 (gap doc G3, Mockup page 17 "Session detail") — public,
-/// anonymous full detail for one active session: bilingual title +
+/// <summary>The public, anonymous session detail:
+/// the full detail for one active session — bilingual title +
 /// abstract, hall, time window, ordered themes + speakers, and a cheap
 /// seat-availability summary. 404 when the session is missing or
 /// soft-deleted (mirrors the seat-map / content public reads).</summary>
@@ -119,10 +119,10 @@ public sealed class GetProgrammeSessionEndpoint(IProgrammeSessionService service
     }
 }
 
-/// <summary>P3.4 — D-235 (Completion Programme §5.4): the recorded Q&amp;A archive
+/// <summary>The recorded Q&amp;A archive
 /// for a published session — the questions that were actually asked on stage
-/// (pushed to the speaker), attributed to the asker. Owner 2026-07-19 (two-path
-/// Q&amp;A): filters on IsPushed, not Status==Approved (a live question now
+/// (pushed to the speaker), attributed to the asker. With the two-path
+/// Q&amp;A it filters on IsPushed, not Status==Approved (a live question now
 /// auto-approves onto the desk, so Approved alone would leak un-asked questions).
 /// Requires an approved (signed-in) account: attendee display names are not
 /// exposed to anonymous callers. Returns an empty list when the session is not
@@ -145,8 +145,8 @@ public sealed class ListRecordedQuestionsEndpoint(IProgrammeSessionService servi
             await service.ListRecordedQuestionsAsync(req.Id, ct)), ct);
 }
 
-/// <summary>P4.1 — D-237 (Completion Programme §6.4.1, Mockup screen 34): the
-/// published AI session summary / محضر for one session. Anonymous like the
+/// <summary>The published AI session summary / محضر for one
+/// session. Anonymous like the
 /// session detail — published editorial content with no attendee PII (the
 /// "speakers" line is curated public text). 404 when the session is missing /
 /// soft-deleted or the Committee has not published a summary yet.</summary>

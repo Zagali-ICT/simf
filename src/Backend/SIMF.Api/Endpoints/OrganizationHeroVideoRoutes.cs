@@ -6,7 +6,7 @@ namespace SIMF.Api.Endpoints;
 /// <summary>Absolute-URL helper for the hero background video, used by the
 /// admin upload/delete endpoints to persist the served URL.
 ///
-/// <para>D-841 — the route itself moved to
+/// <para>The route itself lives on
 /// <see cref="OrganizationHeroVideoRoute.StreamRoute"/> in <c>SIMF.Common</c>,
 /// because the Control Panel needs it too and cannot reference this assembly. It
 /// was hand-copied there; now there is one constant. Only the composition, which

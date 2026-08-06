@@ -9,7 +9,7 @@ namespace SIMF.Api.Endpoints.Public;
 
 /// <summary>Public, anonymous read of the Organization / About profile
 /// (the edition-generic forum config). The app loads it once on boot, caches it
-/// on-device and revalidates with the D-173 <c>Last-Modified</c> / <c>If-Modified-Since</c>
+/// on-device and revalidates with the <c>Last-Modified</c> / <c>If-Modified-Since</c>
 /// → <c>304</c> handshake. Only public branding fields are projected; the in-process
 /// cache + the 304 path keep the anonymous surface cheap.</summary>
 public sealed class GetOrganizationProfileEndpoint(IOrganizationProfileReadService service)

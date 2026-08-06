@@ -12,8 +12,8 @@ using SIMF.Contracts.Exhibitors;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/booths/export</c> — the D-356 grid export for the
-/// Exhibition booths (D-199, Mockup page 22). All the work lives in
+/// <c>POST /api/v1/admin/booths/export</c> — the grid export for the
+/// Exhibition booths. All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass declares the route,
 /// permission, sheet/file names, the column layout (mirroring the Booths grid)
 /// and how to list + identify a booth row (the same
@@ -76,7 +76,7 @@ public sealed class ExportBoothsEndpoint(
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/booths/import</c> — the D-356 grid import (insert-only)
+/// <c>POST /api/v1/admin/booths/import</c> — the grid import (insert-only)
 /// for the Exhibition booths. The base does the upload defence, parse and per-row
 /// error aggregation; this subclass binds one row to
 /// <see cref="AdminCreateBoothRequest"/> and creates it (the service rejects a
@@ -89,7 +89,7 @@ public sealed class ExportBoothsEndpoint(
 /// per-row <see cref="DataValidationException"/>.
 /// </para>
 /// <para><b>Omitted columns:</b> the officer fields, the optional shared-Contact
-/// link (SIMF-FDS-014 / D-283, a directory FK chosen with the ContactPicker) and
+/// link (a directory FK chosen with the ContactPicker) and
 /// the 2D map position cannot be expressed safely as plain text in a bulk import,
 /// so import always leaves them unset; an admin sets them afterwards via Edit.
 /// </para>

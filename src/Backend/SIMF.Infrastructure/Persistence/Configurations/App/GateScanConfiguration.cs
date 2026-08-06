@@ -5,10 +5,12 @@ using SIMF.Domain.AccessControl;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
-/// Append-only audit log of every scan (SIMF-FDS-003 §5.6 / API-GATES-001).
-/// Five non-clustered indexes per SIMF-DAT-001 §5.3.2 ride the clustered bigint
-/// IDENTITY PK. Opts out of <c>RowAudit</c> because it is itself an audit log
-/// (D-148 rationale — the per-decision opt-out D-135 (e) requires).
+/// Append-only audit log of every scan. Five non-clustered indexes ride the
+/// clustered bigint IDENTITY PK. Opts out of <c>RowAudit</c> because it is
+/// itself an audit log: it already carries the scanning user, the correlation id,
+/// the IP and the user agent, so auditing it would double the write volume for
+/// zero gain. The opt-out lives in the excluded-entity set of
+/// <c>RowAuditingSaveChangesInterceptor</c>, where each entry states its reason.
 /// </summary>
 internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
 {

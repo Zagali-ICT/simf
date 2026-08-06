@@ -8,7 +8,7 @@ using SIMF.Contracts.Cms;
 
 namespace SIMF.Api.Endpoints.Public;
 
-// -- D-173 (gap doc G8, PDF §1) — public CMS read surface -----------------
+// -- public CMS read surface ----------------------------------------------
 
 public sealed class GetPublicContentBlockRoute
 {
@@ -68,7 +68,7 @@ public sealed class BatchPublicContentBlocksEndpoint(IPublicCmsService service)
     }
     public override async Task HandleAsync(PublicContentBlockBatchRequest req, CancellationToken ct)
     {
-        // R1 audit (#28) — a {"keys": null} body overwrites the property
+        // A {"keys": null} body overwrites the property
         // initializer with null on deserialization. The validator rejects a
         // null/empty list with a clean 400; this guard keeps the handler
         // NRE-safe as defense-in-depth if the request ever reaches it.
@@ -78,7 +78,7 @@ public sealed class BatchPublicContentBlocksEndpoint(IPublicCmsService service)
     }
 }
 
-/// <summary>R1 audit (#28) — rejects a null/empty <c>Keys</c> list on the public
+/// <summary>Rejects a null/empty <c>Keys</c> list on the public
 /// batch read with a clean bilingual 400 (validation_failed) instead of letting
 /// a <c>{"keys": null}</c> body fault the handler. Auto-discovered by
 /// FastEndpoints and bound to the endpoint's request type.</summary>

@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// V-1 (D-429) — builds the VVIP/VIP welcome roster (موج) and renders it as CSV
-/// or Excel. Cross-DB read (D-157): VVIP/VIP profiles come from
+/// Builds the VVIP/VIP welcome roster (موج) and renders it as CSV
+/// or Excel. Cross-DB read: VVIP/VIP profiles come from
 /// <see cref="SimfAppDbContext"/>; the owners' email / display-name / state are
 /// resolved in one batched query against <see cref="SimfIdentityDbContext"/>.
 /// </summary>

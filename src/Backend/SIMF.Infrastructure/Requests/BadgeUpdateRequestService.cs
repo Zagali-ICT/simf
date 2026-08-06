@@ -14,8 +14,8 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب تحديث البادج") — badge job-title update
-/// request service. Submission snapshots the requester's current job title; on
+/// <summary>The badge job-title update request service
+/// (الطلبات "طلب تحديث البادج"). Submission snapshots the requester's current job title; on
 /// Accept the service applies the requested title to the requester's
 /// <c>UserProfile.JobTitle</c> (same App DB — no cross-DB write). Requester name
 /// is resolved from the profile, email on read from the Identity DB.
@@ -54,7 +54,7 @@ internal sealed class BadgeUpdateRequestService(
             .Select(p => p.JobTitle)
             .SingleOrDefaultAsync(cancellationToken);
 
-        // R-4 — one open badge-update request per requester (mirrors the speaker-meeting
+        // One open badge-update request per requester (mirrors the speaker-meeting
         // dup guard): a second Pending submission just floods the review desk.
         var hasOpenRequest = await appDbContext.BadgeUpdateRequests.AsNoTracking()
             .AnyAsync(r => r.RequestedByUserId == requesterUserId
@@ -228,7 +228,7 @@ internal sealed class BadgeUpdateRequestService(
             JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
             cancellationToken);
 
-        // R-2 — notify the requester of the decision. On Accept the badge job title was
+        // Notify the requester of the decision. On Accept the badge job title was
         // applied above; this makes that side effect visible instead of silent.
         // Best-effort: a dispatch failure never undoes the committed response.
         var accepted = req.Status == MeetingRequestStatus.Accepted;

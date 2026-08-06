@@ -36,7 +36,7 @@ public partial class ChangeAccountTypeBlock
     {
         try
         {
-            // Both audience and partner types are UserType=Visitor post-D-186;
+            // Both audience and partner types are UserType=Visitor;
             // the picker route filters by UserType, then we narrow to the
             // OPPOSITE scope's active types (the flip targets).
             var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(

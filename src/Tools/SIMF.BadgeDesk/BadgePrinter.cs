@@ -5,7 +5,7 @@ using QRCoder;
 namespace SIMF.BadgeDesk;
 
 /// <summary>
-/// D-819 — renders and prints a badge.
+/// Renders and prints a badge.
 ///
 /// <para>Native <see cref="PrintDocument"/> rather than a PDF library: the desk
 /// prints one badge at a time straight to a label or card printer with no file

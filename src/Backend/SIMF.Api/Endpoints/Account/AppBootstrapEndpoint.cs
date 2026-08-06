@@ -10,7 +10,7 @@ namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
 /// <c>GET /api/v1/app/bootstrap</c> — the on-login bundle the app fetches once
-/// and caches (D9 — D-249): the signed-in user (identity + app-role +
+/// and caches: the signed-in user (identity + app-role +
 /// registration status), the unread-notification count, and the server clock.
 /// One round-trip; an additive read-only aggregate composed from existing,
 /// tested reads (<see cref="IAccountService.GetCurrentUserAsync"/> +

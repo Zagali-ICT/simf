@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Api.Endpoints.Staff;
 
-/// <summary>D-771 (owner 2026-07-26) — the STAFF SEATING DESK API. Exhibition
+/// <summary>The STAFF SEATING DESK API. Exhibition
 /// staff open the tablet seating screen and help a guest find their seat two
 /// ways: scan the guest's badge QR ("where do I sit?") or tap a seat on the hall
 /// grid ("who sits here?").
@@ -21,7 +21,7 @@ namespace SIMF.Api.Endpoints.Staff;
 /// Moderator app roles already carry via
 /// <c>PermissionCatalog.OperationalPermissionsForAppRole</c> — a partner-side
 /// staff attendee reaches it with no admin RBAC role, exactly like the gate
-/// console and the walk-in desk (D-563). The routes live under <c>/app/staff/</c>
+/// console and the walk-in desk. The routes live under <c>/app/staff/</c>
 /// (not <c>/admin/</c>) so they are app-surface, not Control-Panel.</para></summary>
 public sealed class StaffSeatByBadgeRoute : StaffSeatBadgeLookupRequest
 {

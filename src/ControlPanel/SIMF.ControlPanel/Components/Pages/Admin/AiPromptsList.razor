@@ -1,7 +1,7 @@
-@* D-176 (gap doc G12) — AI prompt catalogue: create / edit / view /
+@* AI prompt catalogue: create / edit / view /
    deactivate, plus a per-row dry-run test. The owner ask was "manage all AI in
    one place, dynamically" — this is that one place. Centralized dialog/full-page
-   framing D-353: Add / Edit / View / Delete are hosted by CrudShell, which
+   framing: Add / Edit / View / Delete are hosted by CrudShell, which
    frames the reusable AiPromptsAddEdit and AiPromptsViewDelete forms as a popup
    or a full page per the admin's toolbar choice (persisted in localStorage via
    CpPreferences). The inline SimfModal Add/Edit form + one-click delete it used
@@ -132,7 +132,7 @@
                         <SimfToolbarButton Icon="flask" Title="@L["Admin.AiPrompts.Test"]"
                                            OnClick="@(() => OnTestAsync(context))" />
                     </AuthorizedAction>
-                    @* Surface the append-only version history (D-188). The endpoint
+                    @* Surface the append-only version history. The endpoint
                        gates on AiPrompts.View, so the action does too. *@
                     <AuthorizedAction Permission="@PermissionCatalog.AiPrompts.View">
                         <SimfToolbarButton Icon="clock" Title="@L["Admin.AiPrompts.History"]"

@@ -12,7 +12,7 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
-/// D-166 (gap doc G4, PDF §2.3) — background worker that flips
+/// Background worker that flips
 /// <see cref="RegistrationGate.IsOpen"/> to false the first time
 /// <see cref="RegistrationGate.AutoClose"/> passes. Runs once per
 /// minute; cheap query on a single-row table.

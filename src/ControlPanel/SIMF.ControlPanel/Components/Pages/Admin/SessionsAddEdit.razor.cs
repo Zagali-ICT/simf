@@ -466,7 +466,7 @@ public partial class SessionsAddEdit
         RefreshThemeOptions();
     }
 
-    // #3 / #4 — a lightweight "required" marker for the Type + Speakers fields.
+    // A lightweight "required" marker for the Type + Speakers fields.
     // Appended at render time so the underlying resx label stays reusable elsewhere.
     private string RequiredLabel(string key) => $"{L[key]} *";
 
@@ -561,7 +561,7 @@ public partial class SessionsAddEdit
             _error = L["Admin.Sessions.Field.ArrivalGraceInvalid"];
             return null;
         }
-        // §8 / D-349 — each non-blank live URL must be a YouTube link or an HLS/MP4
+        // Each non-blank live URL must be a YouTube link or an HLS/MP4
         // stream. Shared rule (LiveStreamUrlPolicy); the API enforces the same.
         var liveUrlInvalid =
             (!string.IsNullOrWhiteSpace(_model.LiveStreamUrl)
@@ -573,7 +573,7 @@ public partial class SessionsAddEdit
             _error = L["Admin.Sessions.Field.LiveUrlInvalid"];
             return null;
         }
-        // B9b — D-226: optional category (empty selection = no category).
+        // Optional category (empty selection = no category).
         Guid? categoryId = Guid.TryParse(_categoryIdInput, out var cid) ? cid : null;
 
         var type = ParseType(_typeInput);
@@ -583,7 +583,7 @@ public partial class SessionsAddEdit
     }
 
     /// <summary>
-    /// #3 / #4 — mirrors the API's two rules with the same no-regression
+    /// Mirrors the API's two rules with the same no-regression
     /// grandfather (<c>Initial</c> holds the stored row on edit): a new session
     /// must declare a type and, unless it is an Event, carry at least one
     /// speaker. On edit a legacy violating row stays saveable, but a compliant
@@ -852,13 +852,13 @@ public partial class SessionsAddEdit
         public string TitleArabic { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string DescriptionArabic { get; set; } = string.Empty;
-        // Website Session-detail "at a glance" language label (Figma 5991-85840).
+        // Website Session-detail "at a glance" language label.
         public string Language { get; set; } = string.Empty;
         public string LanguageArabic { get; set; } = string.Empty;
-        // §8 — live broadcast stream URLs (manual stub provider).
+        // Live broadcast stream URLs (manual stub provider).
         public string LiveStreamUrl { get; set; } = string.Empty;
         public string LiveSignLanguageUrl { get; set; } = string.Empty;
-        // FR-702 — bilingual informational notice shown with the live stream.
+        // Bilingual informational notice shown with the live stream.
         // Blank in both languages = no notice; it never withholds the stream.
         public string LiveNotice { get; set; } = string.Empty;
         public string LiveNoticeArabic { get; set; } = string.Empty;

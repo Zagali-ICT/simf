@@ -4,8 +4,8 @@ using SIMF.Contracts.Attendance;
 namespace SIMF.Application.Attendance.Abstractions;
 
 /// <summary>
-/// FR-506 (SIMF-SRS-001 §3.5; SIMF-FDS-003 §5.5) — read-only session-attendance
-/// reporting over the existing <c>HallAttendance</c> arrival records.
+/// Read-only session-attendance reporting over the existing
+/// <c>HallAttendance</c> arrival records.
 /// No schema, no writes — every method is an aggregate read. All data lives in
 /// the App database; the attendee <c>UserId</c> is counted as an opaque Guid,
 /// never resolved against the Identity database.
@@ -27,8 +27,8 @@ public interface ISessionAttendanceService
     /// <summary>2026-07-18 — the attendees currently present in a session's hall
     /// (open attendance rows), each with their App-DB profile data (name, org,
     /// profile type, job title) and seat, for the live per-session hall view.
-    /// Ordered by arrival time. All reads are App-DB only (D-157 — the profile is
-    /// resolved from <c>UserProfile</c>, never from the Identity database).</summary>
+    /// Ordered by arrival time. All reads are App-DB only — the profile is
+    /// resolved from <c>UserProfile</c>, never from the Identity database.</summary>
     Task<IReadOnlyList<SessionPresentAttendee>> GetPresentAttendeesAsync(
         Guid sessionId, CancellationToken cancellationToken = default);
 }

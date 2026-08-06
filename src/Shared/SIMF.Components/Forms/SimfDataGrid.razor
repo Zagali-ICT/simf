@@ -1,10 +1,10 @@
-@* SimfDataGrid v2 — the SIMF server-paged data grid (decision D-044, full
-   spec from myComment #16). One grid component used by every list page.
+@* SimfDataGrid v2 — the SIMF server-paged data grid. One grid component
+   used by every list page.
 
-   v1 (D-044 a): server-paged + sortable column headers + per-column filter
+   v1: server-paged + sortable column headers + per-column filter
    inputs + per-row actions slot + empty state.
 
-   v2 (D-044 b): adds the row right-click context menu (Copy/Delete/Edit),
+   v2: adds the row right-click context menu (Copy/Delete/Edit),
    per-row fixed action buttons at the row end (Copy/Delete/Edit), a top
    action toolbar (Select All / Add / Edit / Delete / Copy / Paste /
    Duplicate / Import / Export), per-row selection via a checkbox column,
@@ -16,7 +16,7 @@
    load — by design, since the grid never holds rows it didn't ask for).
 
    Action callbacks: each toolbar button is rendered only when its callback
-   is wired, AND — when the page sets the matching *Permission code (D-830) —
+   is wired, AND — when the page sets the matching *Permission code —
    only when the signed-in user holds it. Pages opt in to the actions they
    actually support, and say who may use them.
 
@@ -87,7 +87,7 @@
                         </SimfToolbarButton>
                     </SimfActionGate>
                 }
-                @* D-164 (gap doc G2) — bulk approve. Label is parent-supplied
+                @* Bulk approve. Label is parent-supplied
                    (`ApproveSelectedLabel`) so the same grid can host both the
                    pending-visitor and pending-other lists with localised copy. *@
                 @if (OnApproveSelected.HasDelegate)
@@ -100,7 +100,7 @@
                         </SimfToolbarButton>
                     </SimfActionGate>
                 }
-                @* D-209 — bulk reject. Mirrors bulk approve; the parent opens a
+                @* Bulk reject. Mirrors bulk approve; the parent opens a
                    shared-reason modal before calling the API. *@
                 @if (OnRejectSelected.HasDelegate)
                 {
@@ -394,7 +394,7 @@
              @oncontextmenu:preventDefault></div>
     }
 
-    @* D-117 — full pager: First / Prev / numbered pages / Next / Last + page-size selector + "Page X of Y" summary. *@
+    @* Full pager: First / Prev / numbered pages / Next / Last + page-size selector + "Page X of Y" summary. *@
     <div class="simf-grid__pager">
         <span class="simf-grid__pager-summary">@RenderSummary()</span>
         <div class="simf-grid__pager-page">@RenderPageLabel()</div>
@@ -484,17 +484,17 @@
     [Parameter] public Func<TItem, string>? RowKey { get; set; }
 
     /// <summary>Produces a per-row label used for the selection checkbox's
-    /// <c>aria-label</c> (D-045 H2). Defaults to the row key, so a screen
+    /// <c>aria-label</c>. Defaults to the row key, so a screen
     /// reader gets a useful per-row name instead of "Select row" repeated.</summary>
     [Parameter] public Func<TItem, string>? RowLabel { get; set; }
 
     /// <summary>Optional visually-hidden caption announced by screen readers
-    /// when the table receives focus (D-045 H2).</summary>
+    /// when the table receives focus.</summary>
     [Parameter] public string? Caption { get; set; }
 
     /// <summary>The string prefix used to label per-column filter inputs
     /// (e.g. "Filter") — combined with the column header for the
-    /// <c>aria-label</c> on each input (D-045 H2).</summary>
+    /// <c>aria-label</c> on each input.</summary>
     [Parameter] public string FilterColumnLabel { get; set; } = "Filter";
 
     /// <summary>Raised when the selection changes — receives every key currently selected.</summary>
@@ -527,7 +527,7 @@
     /// <summary>Delete one row (per-row button + context menu).</summary>
     [Parameter] public EventCallback<TItem> OnDeleteOne { get; set; }
 
-    /// <summary>Show read-only details for one row (per-row button + context menu). D-117.</summary>
+    /// <summary>Show read-only details for one row (per-row button + context menu).</summary>
     [Parameter] public EventCallback<TItem> OnDetailsOne { get; set; }
 
     /// <summary>Copy the selected rows (writes to the system clipboard as JSON).</summary>
@@ -548,7 +548,7 @@
     /// <summary>Export the selected rows (or, if none selected, the whole result set).</summary>
     [Parameter] public EventCallback<IReadOnlyList<TItem>> OnExport { get; set; }
 
-    // -- Parameters: action permissions (D-830) --------------------------------
+    // -- Parameters: action permissions ----------------------------------------
     //
     // The grid renders its own toolbar, row-end and context-menu buttons from the
     // callbacks above, so a page cannot wrap them in a permission gate from the
@@ -627,7 +627,7 @@
     [Parameter] public string ImportLabel { get; set; } = "Import";
     [Parameter] public string ExportLabel { get; set; } = "Export";
 
-    /// <summary>The page-size options shown in the pager. D-117.</summary>
+    /// <summary>The page-size options shown in the pager.</summary>
     [Parameter] public IReadOnlyList<int> PageSizeOptions { get; set; } = new[] { 10, 20, 50, 100 };
 
     /// <summary>The pager summary template — receives (skip, taken, total); the
@@ -636,7 +636,7 @@
     [Parameter] public Func<int, int, int, string> SummaryFormatter { get; set; } =
         (skip, taken, total) => $"{skip + 1}-{skip + taken} of {total}";
 
-    /// <summary>The pager "Page X of Y" formatter — receives (current, total). D-117.</summary>
+    /// <summary>The pager "Page X of Y" formatter — receives (current, total).</summary>
     [Parameter] public Func<int, int, string> PageFormatter { get; set; } =
         (current, total) => $"Page {current} of {total}";
 
@@ -666,18 +666,18 @@
     // page wires, which the grid knows synchronously, and not from the
     // PERMISSIONS, which it did not - so a fully denied holder got an empty
     // toolbar bar, an empty actions column and a right-click menu that opened
-    // with nothing in it but a backdrop that swallowed a click (D-830 measured
-    // six such containers; D-835's ungated Details filled five of them). And the
-    // per-row Edit/Delete gates re-evaluated their policy once per row per
-    // render, so a 100-row page ran ~200 authorization checks on every sort,
-    // filter, page change and checkbox tick - the part D-832's policy
+    // with nothing in it but a backdrop that swallowed a click - six such empty
+    // containers were measured, five of them held open only by the then-ungated
+    // Details button. And the per-row Edit/Delete gates re-evaluated their policy
+    // once per row per render, so a 100-row page ran ~200 authorization checks on
+    // every sort, filter, page change and checkbox tick - the part policy
     // memoisation could not reach, because building the policy was never the
     // cost; evaluating it was.
     //
     // Defaults are true so the un-opted caller is unchanged: a null permission
     // means ungated, and a host with no authorization cascade (the Website never
-    // renders this grid, and a bUnit test may not register one) keeps exactly the
-    // pre-D-837 behaviour rather than silently hiding every action.
+    // renders this grid, and a bUnit test may not register one) keeps the
+    // ungated behaviour rather than silently hiding every action.
     private bool _mayAdd = true;
     private bool _mayEdit = true;
     private bool _mayDelete = true;
@@ -747,7 +747,7 @@
         || (OnDuplicateOne.HasDelegate && _mayAdd);
 
     /// <summary>Back-compat alias retained because the Razor markup binds to
-    /// this name on conditional <c>@oncontextmenu</c> attributes (D-045 H1).</summary>
+    /// this name on conditional <c>@oncontextmenu</c> attributes.</summary>
     private bool _anyContextHandlerWired => AnyContextHandlerWired;
 
     private bool HasAnyFilterableColumn => _columns.Any(c => c.Filterable);
@@ -764,8 +764,8 @@
     /// <summary>Total selected keys across every page.</summary>
     private int SelectedCount => _selectedKeys.Count;
 
-    /// <summary>Selected rows on the current page only — D-045 H1: every
-    /// toolbar Disabled state now reads this rather than <see cref="SelectedCount"/>
+    /// <summary>Selected rows on the current page only. Every
+    /// toolbar Disabled state reads this rather than <see cref="SelectedCount"/>
     /// so the act-on-selection buttons disable correctly when the user has
     /// paged away from their selection.</summary>
     private int SelectedOnPageCount
@@ -932,7 +932,7 @@
         await OnQueryChanged.InvokeAsync(next);
     }
 
-    // -- Full pager (D-117) ----------------------------------------------------
+    // -- Full pager ------------------------------------------------------------
 
     private int CurrentPage
     {

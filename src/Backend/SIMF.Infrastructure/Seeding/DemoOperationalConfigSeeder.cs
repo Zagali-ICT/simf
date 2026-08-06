@@ -15,7 +15,7 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Seeding;
 
 /// <summary>
-/// BUG-023 — seeds the OPERATIONAL configuration the demo accounts need before
+/// Seeds the OPERATIONAL configuration the demo accounts need before
 /// three whole journeys can be exercised at all. A seeded QA database carried
 /// <c>Gates=0</c>, <c>GateAssignments=0</c>, <c>GateProfileTypeAllow=0</c>,
 /// <c>SessionModerators=0</c> and <c>HallSeatLayouts=0</c>, so the gate scanner
@@ -24,11 +24,11 @@ namespace SIMF.Infrastructure.Seeding;
 /// <c>GET /app/sessions/{id}/seats</c> returned an empty grid. The guards were all
 /// correct — the configuration simply did not exist.
 ///
-/// <para><b>Why C# and not the SQL content lane (D-718).</b> The content lane
+/// <para><b>Why C# and not the SQL content lane.</b> The content lane
 /// (<c>docs/migrations/2026/*.sql</c>) runs against <c>SIMF_App</c> only, and every
 /// row here binds an App entity to an <b>Identity</b> user id (the demo staff
 /// operator, the demo moderator). Resolving those ids in SQL would mean a cross-database
-/// join, which D-157 forbids outright. So this stays in C# next to the demo-account
+/// join, which is forbidden outright. So this stays in C# next to the demo-account
 /// seeder that mints those users, and is gated exactly like it: Development, or an
 /// explicit <c>Seed:EnableDemoAccounts</c> opt-in. Production is clean by construction.</para>
 ///
@@ -45,11 +45,11 @@ public sealed class DemoOperationalConfigSeeder(
     IHostEnvironment hostEnvironment,
     ILogger<DemoOperationalConfigSeeder> logger)
 {
-    /// <summary>The demo gate operator — the Staff demo account (D-585), whose
+    /// <summary>The demo gate operator — the Staff demo account, whose
     /// profile type carries <see cref="MobileAppRole.Staff"/>.</summary>
     private const string GateOperatorEmail = "staff@simf.local";
 
-    /// <summary>The demo session moderator — the Moderator demo account (D-585).</summary>
+    /// <summary>The demo session moderator — the Moderator demo account.</summary>
     private const string ModeratorEmail = "moderator@simf.local";
 
     /// <summary>The hall the 2026 programme seed creates

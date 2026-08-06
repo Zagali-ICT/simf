@@ -7,7 +7,7 @@ using SIMF.Application.SessionQuestions.Abstractions;
 namespace SIMF.Infrastructure.SessionQuestions;
 
 /// <summary>
-/// D-714 (item 12, FDS-007 §B.4 GAP-1) — the real audience-question AI filter.
+/// The real audience-question AI filter.
 /// Routes through the central <see cref="IAiService"/> and the seeded
 /// <c>question-filter</c> prompt (which replies JSON
 /// <c>{"allowed": bool, "reason": string}</c>), replacing

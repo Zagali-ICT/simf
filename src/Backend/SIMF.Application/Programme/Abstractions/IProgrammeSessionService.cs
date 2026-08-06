@@ -2,24 +2,23 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Application.Programme.Abstractions;
 
-/// <summary>D-199 (gap doc G3, Mockup pages 16-17) — public, anonymous
-/// reads over the programme <c>Session</c> surface: the agenda list and
-/// the single-session detail. Read-only; the admin CRUD lives on
-/// <see cref="IAdminSessionService"/>. Mirrors the
+/// <summary>Public, anonymous reads over the programme <c>Session</c> surface:
+/// the agenda list and the single-session detail. Read-only; the admin CRUD
+/// lives on <see cref="IAdminSessionService"/>. Mirrors the
 /// <c>IPublicDelegationService</c> public-read shape.</summary>
 public interface IProgrammeSessionService
 {
     /// <summary>Active sessions ordered by start time, optionally
     /// restricted to a single calendar day (Saudi local). Used by the agenda
     /// screen's Day 1/2/3 segmented control.
-    /// <para>OA-D6 — <paramref name="categoryId"/> optionally narrows the list to
-    /// one <c>SessionCategory</c> (the dynamic D-226 lookup) server-side, so the
+    /// <para><paramref name="categoryId"/> optionally narrows the list to
+    /// one <c>SessionCategory</c> (the dynamic lookup) server-side, so the
     /// app / website no longer has to pull the whole programme and filter the
     /// track client-side. Null = every category. The two filters combine (AND).</para></summary>
     Task<PublicSessions> ListAsync(
         DateOnly? day, Guid? categoryId = null, CancellationToken cancellationToken = default);
 
-    /// <summary>D-452 (Figma 883:2308 "تفاصيل اليوم") — the day-grouped agenda:
+    /// <summary>The day-grouped agenda behind "تفاصيل اليوم":
     /// the active programme days (date + bilingual title + has-logo flag), each
     /// with its sessions. Drives the app's day banner + day strip.</summary>
     Task<PublicProgrammeDays> ListDaysAsync(
@@ -39,17 +38,16 @@ public interface IProgrammeSessionService
     Task<SessionRecordingRef?> GetPublishedRecordingAsync(
         Guid id, CancellationToken cancellationToken = default);
 
-    /// <summary>P3.4 — D-235 (Completion Programme §5.4): the recorded Q&amp;A
-    /// archive for a published session — the Committee-approved questions,
-    /// attributed to the asker, in the moderator's display order. Empty when the
-    /// session is not active+published (the archive is gated like the recording).</summary>
+    /// <summary>The recorded Q&amp;A archive for a published session — the
+    /// Committee-approved questions, attributed to the asker, in the moderator's
+    /// display order. Empty when the session is not active+published (the archive
+    /// is gated like the recording).</summary>
     Task<IReadOnlyList<PublicRecordedQuestion>> ListRecordedQuestionsAsync(
         Guid id, CancellationToken cancellationToken = default);
 
-    /// <summary>P4.1 — D-237 (Completion Programme §6.4.1, Mockup screen 34): the
-    /// published AI session summary / محضر for one session, or null when the
-    /// session is soft-deleted, has no summary, or the summary is still an
-    /// unpublished draft. Gated on the summary's own <c>PublishedAt</c> (the
+    /// <summary>The published AI session summary / محضر for one session, or
+    /// null when the session is soft-deleted, has no summary, or the summary is
+    /// still an unpublished draft. Gated on the summary's own <c>PublishedAt</c> (the
     /// Committee's editorial publish), independent of the broadcast
     /// <c>Session.Status</c>.</summary>
     Task<PublicSessionSummary?> GetSessionSummaryAsync(

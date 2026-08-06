@@ -1,4 +1,4 @@
-@* D-474/D-475 (#11, Group G) — the team defines a speaker's availability windows;
+@* The team defines a speaker's availability windows;
    the VIP-meeting flow offers their free slots. Gated by SpeakerMeetingRequests.Manage. *@
 @page "/admin/speaker-availability"
 @layout CpShellLayout
@@ -36,7 +36,7 @@
             <h3 class="simf-section-title">@L["Admin.SpeakerAvailability.AddWindow"]</h3>
             <p class="simf-form__secondary">@L["Admin.Availability.WindowsHelp"]</p>
             <div class="simf-form__fields">
-                @* D-753 — bound the pickers to the forum days (MIN/MAX programme day),
+                @* Bound the pickers to the forum days (MIN/MAX programme day),
                    read from the backend instead of a hardcoded event window. *@
                 <SimfTextField Label="@L["Admin.SpeakerAvailability.Start"]" Type="datetime-local"
                                @bind-Value="_start" Disabled="_busy"
@@ -80,7 +80,7 @@
     </div>
 </div>
 
-@* R10 (D-767) — must-decide guard for the destructive availability-window delete. *@
+@* Must-decide guard for the destructive availability-window delete. *@
 @* Same code as the page gate: the API gates this DELETE on
 .Manage too, so there is no split to express. *@
 <SimfConfirm Open="_confirmOpen" Title="@L["Grid.Delete"]"

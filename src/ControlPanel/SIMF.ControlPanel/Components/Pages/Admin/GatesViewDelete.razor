@@ -1,4 +1,4 @@
-@* D-353 — reusable Gate View/Delete form, hosted by CrudShell (popup or full
+@* Reusable Gate View/Delete form, hosted by CrudShell (popup or full
    page) from GatesList. Inherits CrudViewDeleteFormBase so it exposes the
    standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show; when IsDelete=true a Deactivate button appears and a
@@ -24,7 +24,7 @@
         <dt>@L["Admin.Gates.Column.AllowCount"]</dt>
         <dd>@(Initial.AllowedProfileTypeIds.Count == 0 ? L["Admin.Gates.AllowAll"] : Initial.AllowedProfileTypeIds.Count.ToString())</dd>
         <dt>@L["Admin.Gates.Column.OperatorCount"]</dt>
-        @* BUG-018 (18-6) - list WHO is assigned (name + email), not just a count,
+        @* List WHO is assigned (name + email), not just a count,
            so an assignment can be audited from the CP. *@
         <dd>
             @if (_operatorsFailed)

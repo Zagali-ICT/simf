@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/DelegationMeetingRequestsTests.cs
 // Tests: SIMF.Api.Tests/DelegationMeetingQaFixesTests.cs
-// Tests: SIMF.Api.Tests/MeetingNoAvailabilityTests.cs (G3)
+// Tests: SIMF.Api.Tests/MeetingNoAvailabilityTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -56,7 +56,7 @@ internal sealed class DelegationMeetingRequestService(
                 $"يجب أن يتراوح عدد الحضور بين 1 و{MaxAttendees}.");
         }
 
-        // A1 — validate the optional slot pair (mirror the speaker flow): if either
+        // Validate the optional slot pair (mirror the speaker flow): if either
         // end is supplied, require both and end > start, so an invalid pair cannot
         // be persisted silently.
         DateTime? slotStart = null;
@@ -75,7 +75,7 @@ internal sealed class DelegationMeetingRequestService(
             slotEnd = pickedEnd;
         }
 
-        // Bi-Meeting rework + D-768 (owner) — the per-user AllowsDelegationMeeting flag
+        // The per-user AllowsDelegationMeeting flag
         // (admin-assigned) is the SOLE authorization to request. The requester's
         // nationality is recorded as the requesting country and must be set + active, but
         // it NO LONGER has to be an invited delegation: the host/owner side (KSA is the
@@ -122,12 +122,13 @@ internal sealed class DelegationMeetingRequestService(
                 "لا يمكن للوفد طلب اجتماع مع نفسه.");
         }
 
-        // G3 (owner 2026-07-30) — SUPERSEDES the "topic-only request" half of R1:
-        // a meeting request may no longer be sent when the target delegation has nothing
-        // left to offer. GetAvailableSlotsAsync returns an empty list for BOTH reasons —
-        // the delegation has no active future window at all, and every slot the windows
-        // offer is past or already taken — so this one call covers both. The app disables
-        // the send button on the same signal; this is the server-side backstop.
+        // This supersedes the earlier rule that let a topic-only request go out whatever
+        // the availability: a meeting request may no longer be sent when the target
+        // delegation has nothing left to offer. GetAvailableSlotsAsync returns an empty
+        // list for BOTH reasons — the delegation has no active future window at all, and
+        // every slot the windows offer is past or already taken — so this one call covers
+        // both. The app disables the send button on the same signal; this is the
+        // server-side backstop.
         var freeSlots = await delegationAvailability.GetAvailableSlotsAsync(
             targetCountry.Id, cancellationToken);
         if (freeSlots.Count == 0)
@@ -137,7 +138,7 @@ internal sealed class DelegationMeetingRequestService(
                 "لا توجد فترات متاحة لدى هذا الوفد.");
         }
 
-        // R8 (bi-meeting rules, D-767) — a requester keeps ONE open request per target
+        // A requester keeps ONE open request per target
         // delegation, but a repeat submission is NOT an error: MOVE the existing Pending
         // request (new slot / subject / attendee count) instead of a duplicate row or a
         // 409, so re-opening the sheet and picking a different time simply updates it.
@@ -224,14 +225,14 @@ internal sealed class DelegationMeetingRequestService(
                 r.ResponseNote,
                 r.CreatedAt,
                 r.RespondedAt,
-                // OA-D5 — the hall check-in stamps, so the desk and its new export
+                // The hall check-in stamps, so the desk and its export
                 // report who actually turned up, not only the decision.
                 r.CheckedInAt,
                 r.CheckedInByUserId,
             })
             .ToListAsync(cancellationToken);
 
-        // OA-D5 — resolve the check-in operators' display names in ONE Identity-DB
+        // Resolve the check-in operators' display names in ONE Identity-DB
         // query for the whole page. CheckedInByUserId is a bare logical FK,
         // so this is a second query merged in memory — never a cross-database JOIN.
         var operatorNames = await userDirectory.GetDisplayNamesAsync(
@@ -299,10 +300,10 @@ internal sealed class DelegationMeetingRequestService(
 
         var now = timeProvider.SimfNow();
 
-        // Bi-Meeting rework — unified 3-button model. Status=Rejected is CANCEL (with a
+        // Unified 3-button model. Status=Rejected is CANCEL (with a
         // justification note). Status=Accepted with a bound HallId is APPROVE
-        // (VerbalConfirmed=false → AwaitingSpeaker, awaiting the other party's confirm,
-        // wired in P4) or CONFIRM (VerbalConfirmed=true → Accepted, the admin has the
+        // (VerbalConfirmed=false → AwaitingSpeaker, awaiting the other party's confirm)
+        // or CONFIRM (VerbalConfirmed=true → Accepted, the admin has the
         // verbal confirmation). CONFIRM is independent of the hall: from Pending the CP
         // binds a fresh slot (HallId set); from AwaitingSpeaker (already Approved) it
         // sends HallId=null so the already-bound slot is kept — tying confirmVerbal to
@@ -425,7 +426,7 @@ internal sealed class DelegationMeetingRequestService(
 
         // Notify (and email) the requesting delegate — they are a SimfUser, so the
         // dispatcher's email path applies. Best-effort.
-        // A31 — every outcome emails the requester. The comment here always promised
+        // Every outcome emails the requester. The comment here always promised
         // "in-app + email too" for a decline, but the decline arm passed SendEmail=false,
         // so a declined/cancelled requester only ever saw an in-app row.
         var (title, titleAr, body, bodyAr, kind) = req.Status switch
@@ -456,18 +457,18 @@ internal sealed class DelegationMeetingRequestService(
             RelatedEntityType = nameof(DelegationMeetingRequest),
             RelatedEntityId = req.Id,
             SendEmail = true,
-            // A33 — a proper meeting notice (both delegations + topic + Saudi local time
+            // A proper meeting notice (both delegations + topic + Saudi local time
             // + hall) in the same style as the target-member link email, instead of the
             // dispatcher's bare HtmlEncode'd single paragraph. Deliberately carries NO
-            // action link: the confirm token (D-767) authorises whoever holds it, and the
+            // action link: the confirm token authorises whoever holds it, and the
             // REQUESTER must never be able to confirm their own meeting — that link goes
             // only to the target delegation (EmailMemberConfirmLinkAsync).
             PreRenderedEmailHtml = BuildOutcomeEmailHtml(body, detail, req),
         }, logger, cancellationToken);
 
-        // Bi-Meeting rework — on Approve (AwaitingSpeaker) notify the OTHER PARTY (each
-        // eligible target-delegation member) by app + email so they can confirm on tap
-        // (or by the email link, P4c). A verbal Confirm skips this (already Accepted).
+        // On Approve (AwaitingSpeaker) notify the OTHER PARTY (each eligible
+        // target-delegation member) by app + email so they can confirm on tap
+        // (or by the email link). A verbal Confirm skips this (already Accepted).
         if (req.Status == MeetingRequestStatus.AwaitingSpeaker)
         {
             await NotifyTargetMembersAsync(req, NotificationKind.MeetingRequested,
@@ -491,7 +492,7 @@ internal sealed class DelegationMeetingRequestService(
         }
         else if (req.Status == MeetingRequestStatus.Accepted)
         {
-            // A32 — the verbal-Confirm arm. Before this branch the chain notified the
+            // The verbal-Confirm arm. Before this branch the chain notified the
             // target members only on Approve (AwaitingSpeaker) and on a post-approval
             // cancel, so a Confirm straight from Pending — the admin already holds the
             // verbal agreement and books it outright — told the TARGET delegation
@@ -558,12 +559,12 @@ internal sealed class DelegationMeetingRequestService(
 
         // This is an APP caller (the other-party confirmer), not an admin — never disclose
         // the requester's Identity login email over the app wire. LoadDetailAsync resolves
-        // it for the admin desks (audited per D-185); strip it here so a peer app user
+        // it for the admin desks (an audited surface); strip it here so a peer app user
         // cannot read another user's private email from the confirm response.
         return detail with { RequesterEmail = null };
     }
 
-    /// <summary>B8 — the decline twin of <see cref="ConfirmByOtherPartyAsync"/>. Before
+    /// <summary>The decline twin of <see cref="ConfirmByOtherPartyAsync"/>. Before
     /// this, the target delegation's only exits from an Approved (AwaitingSpeaker) meeting
     /// were to confirm it or to wait for an admin cancel. Same authorization model, same
     /// audit event, same notification treatment; flips AwaitingSpeaker → Rejected (the
@@ -603,7 +604,7 @@ internal sealed class DelegationMeetingRequestService(
         var detail = await LoadDetailAsync(id, cancellationToken);
 
         // Tell the requester their meeting was declined — in-app + email, matching the
-        // confirm path (and A31's rule that a decline always reaches the requester).
+        // confirm path — a decline always reaches the requester.
         await notifications.TryDispatchAsync(new NotificationRequest
         {
             UserId = req.RequestedByUserId,
@@ -621,7 +622,7 @@ internal sealed class DelegationMeetingRequestService(
                 detail, req),
         }, logger, cancellationToken);
 
-        // D2 — the decline kills the meeting for the WHOLE target delegation, not just the
+        // The decline kills the meeting for the WHOLE target delegation, not just the
         // member who tapped. Every other eligible member still holds the "awaiting your
         // confirmation" card + the emailed confirm link from approve time, and both now
         // dead-end (409 APP_REQUEST_ALREADY_RESPONDED). Retract the prompt through the same
@@ -641,7 +642,7 @@ internal sealed class DelegationMeetingRequestService(
     public async Task RetractTargetMemberPromptsAsync(
         Guid requestId, CancellationToken cancellationToken = default)
     {
-        // D1 — the requester's own withdraw (B11) flips the status in MyRequestsService and
+        // The requester's own withdraw flips the status in MyRequestsService and
         // has no delegation-notification surface, so the retraction lives here next to the
         // admin cancel's. Projected read (no Identity round-trip, no cross-DB join): the
         // retraction only needs the target delegation and the requesting country's name.
@@ -661,7 +662,7 @@ internal sealed class DelegationMeetingRequestService(
             cancellationToken);
     }
 
-    // B8 — the shared other-party guard for confirm + decline: the request must exist, be
+    // The shared other-party guard for confirm + decline: the request must exist, be
     // Approved (AwaitingSpeaker), and the caller must be an eligible member of the TARGET
     // delegation (their profile country is the target country AND they hold the
     // admin-assigned delegation-meeting flag).
@@ -722,12 +723,12 @@ internal sealed class DelegationMeetingRequestService(
         return await LoadDetailAsync(id, cancellationToken);
     }
 
-    // Bi-Meeting rework — dispatch a notification to every eligible member of the target
+    // Dispatch a notification to every eligible member of the target
     // delegation (profile country == target country AND AllowsDelegationMeeting). App row
     // (deep-link from NotificationKindCatalog) + email. Members are resolved on the App DB;
     // their emails are resolved by the dispatcher (Identity) — no cross-DB JOIN. Used on
     // Approve (request-to-confirm) and on every retraction — admin cancel-after-approval,
-    // the other party's decline (D2) and the requester's own withdraw (D1) — so nobody is
+    // the other party's decline and the requester's own withdraw — so nobody is
     // left with a stale "please confirm" prompt. <paramref name="excludeUserId"/> skips the
     // member who triggered the retraction themselves (the decliner already has the answer).
     private async Task NotifyTargetMembersAsync(
@@ -902,7 +903,7 @@ internal sealed class DelegationMeetingRequestService(
         }
     }
 
-    // A33 — the shared outcome-email body for the REQUESTER (confirmed / approved /
+    // The shared outcome-email body for the REQUESTER (confirmed / approved /
     // declined). Same markup vocabulary as EmailMemberConfirmLinkAsync so the two
     // delegation emails read as one template family. Saudi local time only.
     private static string BuildOutcomeEmailHtml(
@@ -920,7 +921,7 @@ internal sealed class DelegationMeetingRequestService(
             + " &quot;My requests&quot;.</p>";
     }
 
-    /// <summary>OA-D5 — the check-in operator's display name for one row, or null
+    /// <summary>The check-in operator's display name for one row, or null
     /// when the meeting has not been checked in (or the operator account is gone).
     /// The map comes from the single per-page Identity-DB lookup above.</summary>
     private static string? ResolveOperatorName(

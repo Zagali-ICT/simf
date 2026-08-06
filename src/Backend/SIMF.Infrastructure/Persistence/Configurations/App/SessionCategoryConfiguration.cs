@@ -4,7 +4,7 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>B9b — D-226: SessionCategory lookup configuration. Bilingual,
+/// <summary>SessionCategory lookup configuration. Bilingual,
 /// soft-delete via IsActive, ordered. Auto-discovered by
 /// <c>ApplyConfigurationsFromAssembly</c> on the <c>...Configurations.App</c>
 /// namespace.</summary>

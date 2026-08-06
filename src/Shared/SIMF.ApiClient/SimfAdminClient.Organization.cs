@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-495 — Organization / About profile editor --------------------------
+    // -- Organization / About profile editor ----------------------------------
 
     /// <summary>Read the full Organization Profile (incl. child-row ids)
     /// for the CP editor. Gated by OrganizationProfile.View.</summary>

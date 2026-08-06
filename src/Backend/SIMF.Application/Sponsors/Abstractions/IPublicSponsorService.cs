@@ -2,14 +2,14 @@ using SIMF.Contracts.Sponsors;
 
 namespace SIMF.Application.Sponsors.Abstractions;
 
-/// <summary>D-199 (Mockup page 23) — anonymous public list of active sponsors,
+/// <summary>Anonymous public list of active sponsors,
 /// grouped by tier (highest first).</summary>
 public interface IPublicSponsorService
 {
     Task<PublicSponsors> ListAsync(
         CancellationToken cancellationToken = default);
 
-    /// <summary>Wave 3 (Figma 1439:11826) — the full sponsor-detail view (about,
+    /// <summary>The full sponsor-detail view (about,
     /// city, website, tier, country). Null when the sponsor is missing / inactive.</summary>
     Task<PublicSponsorDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default);

@@ -8,7 +8,7 @@ using SIMF.Contracts.PublicRelations;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/news/export</c> — the D-356 grid export for News
+/// <c>POST /api/v1/admin/news/export</c> — the grid export for News
 /// articles (PR / marketing). All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass only declares the
 /// route, permission, sheet/file names, the column layout (mirroring the News
@@ -48,7 +48,7 @@ public sealed class ExportNewsEndpoint(IAdminNewsService service, IGridExcelExpo
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/news/import</c> — the D-356 grid import (insert-only)
+/// <c>POST /api/v1/admin/news/import</c> — the grid import (insert-only)
 /// for News articles. The base does the upload defence, parse and per-row error
 /// aggregation; this subclass binds one row to <see cref="CreateNewsRequest"/>
 /// and creates it (the service rejects a duplicate English title → a per-row

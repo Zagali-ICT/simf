@@ -17,7 +17,7 @@ using SIMF.Common;
 
 namespace SIMF.Infrastructure.MeetingRequests;
 
-/// <summary>D-717 (item 7, FDS-013 §15.7 GAP-3) — the speaker double-opt-in
+/// <summary>The speaker double-opt-in
 /// action-link tokens. Mints two single-use, action-bound, 72h tokens per
 /// accept-with-hall request (Approve + Reject), stores only their keyed-HMAC hash,
 /// and validates / consumes them for the public landing page. GET-safe preview vs

@@ -20,12 +20,11 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// P5.1 — D-241 (FDS-003 §5.4): the hall-arrival service. Two means: the
-/// attendee's device crossing the GPS geofence (D-240/D-241) and an operator
-/// scanning the badge QR at the hall door (P5.1d — D-244). Both merge into the
-/// one open attendance row. Only the derived enter/leave times are persisted —
-/// never the raw coordinates (FDS-003 §10, sensitive PII; continuous
-/// movement/dwell is the deferred FR-1103 feature).
+/// The hall-arrival service. Two means: the attendee's device crossing the GPS
+/// geofence, and an operator scanning the badge QR at the hall door. Both merge
+/// into the one open attendance row. Only the derived enter/leave times are
+/// persisted — never the raw coordinates (sensitive PII; continuous
+/// movement/dwell is a deferred feature).
 /// </summary>
 internal sealed class HallAttendanceService(
     SimfAppDbContext appDbContext,
@@ -38,7 +37,7 @@ internal sealed class HallAttendanceService(
     ISeatReservationService seats,
     ILogger<HallAttendanceService> logger) : IHallAttendanceService
 {
-    // X-3 — how far outside a session's [Start, End] window an arrival is
+    // How far outside a session's [Start, End] window an arrival is
     // still accepted (early arrivals + a brief post-end tail). Mirrors the CP
     // Hall-Arrivals console's live-session picker filter.
     //
@@ -95,9 +94,9 @@ internal sealed class HallAttendanceService(
                 "The session was not found.",
                 "لم يتم العثور على الجلسة.");
 
-        // X-3 — arrival is only valid while the session is live (its time window,
+        // Arrival is only valid while the session is live (its time window,
         // ± a short grace); a stale or future sessionId must not open an
-        // attendance row (single-source attendance, FDS-003 §5.4).
+        // attendance row (single-source attendance).
         EnsureSessionLiveNow(session.Start, session.End, ResolveGrace(
             session.ArrivalGraceMinutesOverride, session.HallArrivalGraceMinutes,
             GlobalArrivalGraceMinutes));
@@ -145,7 +144,7 @@ internal sealed class HallAttendanceService(
                 "That badge QR was not recognised.",
                 "لم يتم التعرّف على رمز الشارة.");
         }
-        // X-4 — apply the SAME core holder-admission checks the perimeter gate
+        // Apply the SAME core holder-admission checks the perimeter gate
         // engine runs (not-approved, locked, profile-type-inactive) so a hall door
         // can never admit someone a gate would reject. Approved already excludes
         // the Disabled state; the gate's allow-list / gate-active / duplicate-window
@@ -177,7 +176,7 @@ internal sealed class HallAttendanceService(
                 "The session was not found.",
                 "لم يتم العثور على الجلسة.");
 
-        // X-3 — bind the operator door scan to the session's live window (± grace).
+        // Bind the operator door scan to the session's live window (± grace).
         EnsureSessionLiveNow(session.Start, session.End, ResolveGrace(
             session.ArrivalGraceMinutesOverride, session.HallArrivalGraceMinutes,
             GlobalArrivalGraceMinutes));
@@ -294,11 +293,11 @@ internal sealed class HallAttendanceService(
     /// <summary>
     /// Every session this hall is ADMITTING for at this instant: active, and
     /// inside [Start, End] widened at both ends by that session's own effective
-    /// grace (D-839: its override, else its hall's, else the global value).
+    /// grace (its own override, else its hall's, else the global value).
     /// Ordered best-first - the session actually running, then the nearest by
     /// start, then by id so the order is total.
     ///
-    /// <para>D-823 - a list, not a single winner, because a hall runs its
+    /// <para>A list, not a single winner, because a hall runs its
     /// sessions back to back and near a handover this set routinely holds two:
     /// the one running and the one about to start. The entry check reads the
     /// whole set; the attendance write takes the first. Both go through here so
@@ -350,7 +349,7 @@ internal sealed class HallAttendanceService(
             })
             // The session actually running beats a grace-margin neighbour.
             .OrderBy(s => now >= s.Start && now < s.End ? 0 : 1)
-            // Then the nearest by start - unchanged from D-819.
+            // Then the nearest by start.
             .ThenBy(s => (s.Start - now).Duration())
             // Then make the order total: the underlying read carries no ORDER BY,
             // so two candidates that tie on every key above could come back
@@ -379,12 +378,12 @@ internal sealed class HallAttendanceService(
         CancellationToken cancellationToken = default)
     {
         var now = timeProvider.SimfNow();
-        // X-3 (FIX B) — bind the arrival to the session live in this hall right
+        // Bind the arrival to the session live in this hall right
         // now, using the SAME ±ArrivalGrace window as EnsureSessionLiveNow (the
         // geofence / QR-door / CP picker) so an early or late gate check-in still
-        // binds instead of recording nothing. D-819 moved the query into
+        // binds instead of recording nothing. The query lives in
         // AdmittingSessionIdsAsync so the step-11.5 entry check and this write
-        // share one definition of what the hall is admitting for. D-823: the
+        // share one definition of what the hall is admitting for. The entry
         // check reads the WHOLE admitting set (a 10:00 booking is valid at the
         // door at 09:50), while attendance still binds to the single running
         // session, because occupancy counts who is physically in the room.
@@ -408,7 +407,7 @@ internal sealed class HallAttendanceService(
             // alternation guess; derive the real action from the attendee's open-row
             // state so a re-entry after a departure opens a fresh row instead of a
             // mis-inferred merge. An open row → this scan is the departure.
-            // #24 — but only a row opened by a DOOR scan (Method=QrScan) toggles this
+            // But only a row opened by a DOOR scan (Method=QrScan) toggles this
             // way. A row opened by the GPS geofence is a cross-channel arrival that
             // the contract says must MERGE into the one open row (interface doc), so
             // the first turnstile pass after a geofence arrival must NOT close it —
@@ -508,7 +507,7 @@ internal sealed class HallAttendanceService(
             return (open, false);
         }
 
-        // X-2 — a NEW arrival must not push live attendance past the hall's
+        // A NEW arrival must not push live attendance past the hall's
         // physical capacity. Runs on every arrival means (geofence + door QR +
         // hall-door gate) because it sits in the shared create path; a re-scan that
         // merges into an existing open row (early return above) is never re-checked.
@@ -671,7 +670,7 @@ internal sealed class HallAttendanceService(
         };
     }
 
-    /// <summary>X-2 — the currently-present count against the session's effective
+    /// <summary>The currently-present count against the session's effective
     /// physical capacity (the session <c>CapacityOverride</c>, else the hall
     /// <c>Capacity</c>), plus whether that arrival would exceed it. A capacity of 0
     /// means "no limit configured" and never blocks (<c>IsOver</c> = false). The
@@ -698,11 +697,11 @@ internal sealed class HallAttendanceService(
         return (present, cap, present >= cap);
     }
 
-    /// <summary>X-3 — throws when now is outside the session's live window
+    /// <summary>Throws when now is outside the session's live window
     /// (± its effective grace). Keeps arrival bound to a session that is
     /// actually running, so a stale or future sessionId cannot open a row.
     ///
-    /// <para>D-839 — the grace is passed in rather than read here, because it is
+    /// <para>The grace is passed in rather than read here, because it is
     /// now a property of the SESSION (its own override, else its hall's, else the
     /// global value). Taking it as a parameter is what stops this check and the
     /// admitting-set query drifting apart on the same session.</para></summary>

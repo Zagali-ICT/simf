@@ -242,7 +242,7 @@ internal static partial class AccountEndpoints
         });
 
         // Media image upload (multipart; same SameSite=Lax CSRF stance
-        // as /admin/visitors/{id}/id-document, D-029).
+        // as /admin/visitors/{id}/id-document).
         group.MapPost("/admin/media/{id:guid}/image",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {

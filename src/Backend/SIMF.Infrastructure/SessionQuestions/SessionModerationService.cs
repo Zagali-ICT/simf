@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/SessionQuestionsTests.cs
 // Tests: SIMF.Api.Tests/SessionQuestionCommitteeTests.cs
-// Tests: SIMF.Api.Tests/ModeratorDeskStateTests.cs (DEF-MOD-001/002 — answered + rejected recovery;
-// The Hidden tab excludes Committee rejections)
+// Tests: SIMF.Api.Tests/ModeratorDeskStateTests.cs (answered + rejected recovery;
+// the Hidden tab excludes Committee rejections)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -32,16 +32,16 @@ internal sealed class SessionModerationService(
     {
         // The desk works the Committee-approved set (stage 3);
         // Pending questions still await the Committee (stage 2).
-        // DEF-MOD-001 — an Answered row stays on the working desk (its own tab)
+        // An Answered row stays on the working desk (its own tab)
         // instead of dying in a screen-local Set.
-        // DEF-MOD-002 — an explicit status returns exactly that bucket, so the
+        // An explicit status returns exactly that bucket, so the
         // desk can pull back its own rejected (Hidden) rows and restore one; a
         // mis-click is no longer permanent from the app. The endpoint has already
         // proved the caller moderates THIS session (or is an Administrator), so a
         // hidden row is never exposed to an attendee.
         // The tab is an ALLOW-LIST, not a pass-through: a per-session moderator
         // works stage 3, so Pending text — still gated by the Scientific Committee
-        // at stage 2 (D-212) — must not be readable from this desk, and an
+        // at stage 2 — must not be readable from this desk, and an
         // unsupported value is refused rather than silently ignored.
         if (status is { } requested && !IsDeskTab(requested))
         {
@@ -61,12 +61,12 @@ internal sealed class SessionModerationService(
             // into the Committee's bin. Allowing ?status=Hidden through verbatim
             // still shipped the full QuestionText of every question the Scientific
             // Committee rejected while it was PENDING — text that never cleared the
-            // stage-2 gate (D-212) and that the same r2 allow-list was added to keep
-            // off this desk. StatusBeforeHidden (D-771) records where each hidden
+            // stage-2 gate and that the same allow-list above was added to keep
+            // off this desk. StatusBeforeHidden records where each hidden
             // row came from, so the tab now returns only rows hidden FROM the desk
             // (prior status Approved or Answered).
             //
-            // NULL provenance = hidden before D-771 existed = unknown, and unknown
+            // NULL provenance = hidden before StatusBeforeHidden existed = unknown, and unknown
             // is treated as Committee, NOT desk. That is the safe side: being wrong
             // here costs one legacy row the desk cannot self-serve (an Administrator
             // still recovers it from the Committee queue), whereas the other way it
@@ -128,7 +128,7 @@ internal sealed class SessionModerationService(
                 r.SubmittedByUserId,
                 user?.DisplayName ?? string.Empty,
                 // Email redacted; the nullable DTO field stays for
-                // wire-compat (D-219) but is always null on the moderator queue.
+                // wire compatibility but is always null on the moderator queue.
                 null,
                 r.QuestionText,
                 r.Recipient,
@@ -156,11 +156,11 @@ internal sealed class SessionModerationService(
         // is no longer written.)
         // Un-hiding RESTORES the status the row held before it was hidden
         // instead of promoting everything to Approved: an Answered question keeps
-        // its answered mark (the durability DEF-MOD-001 exists for), and a
-        // Committee-rejected question goes back to Pending — back into the
-        // Committee queue, not onto the desk, and still un-pushable. Rows hidden
-        // before this column existed have no memory, so they keep the old
-        // fall-back of Approved.
+        // its answered mark (the durability requirement: an answer must survive a
+        // hide then un-hide), and a Committee-rejected question goes back to
+        // Pending — back into the Committee queue, not onto the desk, and still
+        // un-pushable. Rows hidden before this column existed have no memory, so
+        // they keep the old fall-back of Approved.
         var currentlyHidden = question.Status == QuestionStatus.Hidden;
         if (currentlyHidden == isHidden)
         {
@@ -176,7 +176,7 @@ internal sealed class SessionModerationService(
             question.Status = question.StatusBeforeHidden ?? QuestionStatus.Approved;
             question.StatusBeforeHidden = null;
         }
-        // S-8 — a hidden question must not stay "pushed to the speaker": clear the
+        // A hidden question must not stay "pushed to the speaker": clear the
         // pushed marker so a pushed-then-hidden question drops off the on-stage
         // queue. (Un-hiding does not re-push — a fresh push is an explicit action.)
         if (isHidden && question.IsPushed)
@@ -210,7 +210,7 @@ internal sealed class SessionModerationService(
     {
         var question = await LoadQuestionAsync(sessionId, questionId, cancellationToken);
 
-        // DEF-MOD-001 — "تمت الإجابة" is now a persisted status, not a screen-local
+        // "تمت الإجابة" is a persisted status, not a screen-local
         // Set: the mark survives a screen exit, an app restart and a co-moderator
         // on another device. Mirrors SetHiddenAsync: idempotent, Status is the
         // single source of truth, and the only legal transition is
@@ -255,7 +255,7 @@ internal sealed class SessionModerationService(
     {
         var question = await LoadQuestionAsync(sessionId, questionId, cancellationToken);
 
-        // S-8 — only an APPROVED (desk-visible) question can be pushed to the
+        // Only an APPROVED (desk-visible) question can be pushed to the
         // speaker. A Pending question has not cleared the Committee, and a Hidden
         // one was rejected; neither appears on the moderator desk, so pushing it
         // would surface a suppressed question on stage.
@@ -303,12 +303,12 @@ internal sealed class SessionModerationService(
                 "تحتوي قائمة الترتيب على معرّفات مكررة.");
         }
 
-        // S-8 — reorder operates on the moderator DESK. Validate + renumber against
+        // Reorder operates on the moderator DESK. Validate + renumber against
         // exactly the set ListAsync returns with no status filter: a desk can only
         // ever supply the ids it is holding, so requiring SetEquals over EVERY row
         // (Pending / Hidden included) made the endpoint unsatisfiable (a latent
-        // 400). DEF-MOD-001 put Answered rows on that working desk too, so the
-        // Approved-only predicate had become a strict subset of what the desk
+        // 400). Answered rows sit on that working desk too, so an
+        // Approved-only predicate would be a strict subset of what the desk
         // sends — the same latent 400, one session-with-an-answered-question later.
         // Pending/Hidden rows stay off the desk and keep their Order (they sort by
         // CreatedAt when later approved).
@@ -345,10 +345,10 @@ internal sealed class SessionModerationService(
     public async Task<IReadOnlyList<ModeratedSessionRow>> ListMySessionsAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {
-        // FR-MOD-001 — the moderator's own grant list. Served by the existing
+        // The moderator's own grant list. Served by the existing
         // SessionModerators(UserId) index, joined to its session inside the SAME
-        // context (both live on the App DB, so this is not a cross-DB join —
-        // D-157 only forbids reaching across to Identity).
+        // context (both live on the App DB, so this is not a cross-database join —
+        // only reaching across to Identity is forbidden).
         //
         // Inactive (soft-deleted) sessions drop out: a grant on a session that no
         // longer exists for the audience is not a desk the moderator can work.
@@ -379,9 +379,9 @@ internal sealed class SessionModerationService(
 
     // -- helpers ---------------------------------------------------------------
 
-    /// <summary>DEF-MOD-002 — the three buckets the moderator desk renders as
+    /// <summary>The three buckets the moderator desk renders as
     /// tabs. Pending is deliberately absent: those questions are still inside the
-    /// Scientific Committee's stage-2 gate (D-212) and the desk must not be able
+    /// Scientific Committee's stage-2 gate and the desk must not be able
     /// to read them. Any other value (including an int outside the enum) is not a
     /// tab either.</summary>
     private static bool IsDeskTab(QuestionStatus status) =>

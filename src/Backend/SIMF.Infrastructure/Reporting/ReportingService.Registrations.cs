@@ -14,8 +14,8 @@ namespace SIMF.Infrastructure.Reporting;
 ///
 /// <para>This is the one report that genuinely spans both databases: the account
 /// lives in Identity (<c>SimfUser</c>) and its profile type lives in App
-/// (<c>UserProfile</c> -> <c>UserProfileType</c>). D-157 forbids a cross-database
-/// join, so the page of accounts is read from Identity first and the profile-type
+/// (<c>UserProfile</c> -> <c>UserProfileType</c>). A cross-database join is
+/// forbidden, so the page of accounts is read from Identity first and the profile-type
 /// names for exactly those user ids are then resolved with a second query against
 /// App. Nothing is duplicated and no constraint spans the two.</para>
 /// </summary>

@@ -6,7 +6,7 @@ using SIMF.Contracts.Exhibition;
 
 namespace SIMF.Api.Endpoints.Public;
 
-/// <summary>D-199 (Mockup page 22) — public anonymous list of active
+/// <summary>The public, anonymous list of active
 /// booths, feeding the exhibition page and the 2D venue map. Mirrors
 /// ListPublicDelegationsEndpoint's shape.</summary>
 public sealed class ListPublicBoothsEndpoint(IPublicBoothService service)

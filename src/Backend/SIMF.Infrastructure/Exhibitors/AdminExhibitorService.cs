@@ -21,7 +21,7 @@ namespace SIMF.Infrastructure.Exhibitors;
 /// hand-roll UserManager — the provisioned account is a partner-side booth
 /// officer carrying the exhibitor profile type (DEF-EXH-005), tagged to the
 /// exhibitor via an ExhibitorMembership row.
-/// <para>D-781 — <see cref="LinkAccountAsync"/> attaches an EXISTING account to an
+/// <para><see cref="LinkAccountAsync"/> attaches an EXISTING account to an
 /// exhibitor. Provisioning used to be the only writer of ExhibitorMembership, so
 /// an exhibitor-typed account created through the generic Others pipeline had no
 /// membership and was locked out of the booth tools (DEF-EXH-006) with no CP path
@@ -48,7 +48,7 @@ internal sealed class AdminExhibitorService(
                 || EF.Functions.Like(c.NameArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-256). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         // AccountCount is a computed sub-query, so it is not server-filterable.
         foreach (var (column, raw) in query.Filters)
         {
@@ -71,7 +71,7 @@ internal sealed class AdminExhibitorService(
             }
         }
 
-        // CP grid sortable columns (D-256). Default: NameAr.
+        // CP grid sortable columns. Default: NameAr.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("nameen", false) => rows.OrderBy(c => c.Name),
@@ -389,7 +389,7 @@ internal sealed class AdminExhibitorService(
     /// (<c>POST /admin/others</c>) or the Others walk-in desk therefore came out
     /// with the right profile type and NO membership — 403 on badge scan and on My
     /// Visitors, with nothing in the Control Panel able to attach it to a booth.
-    /// The scanner-side controls themselves are unchanged (owner decision D-780
+    /// The scanner-side controls themselves are unchanged (the owner decision
     /// widened the SUBJECT rule only): the caller must still be exhibitor-typed AND
     /// hold a live membership, so revoking a membership still revokes the tools.</para>
     ///
@@ -398,7 +398,7 @@ internal sealed class AdminExhibitorService(
     /// that silently changes the app role a different admin assigned. An admin sets
     /// the type on the Others page and then links here.</para>
     ///
-    /// <para>D-157 — the account lives on the Identity DB and the membership on the
+    /// <para>The account lives on the Identity DB and the membership on the
     /// App DB; they are resolved with two separate queries on two contexts, never a
     /// cross-database join, and only the App-DB row is written.</para></summary>
     public async Task<ExhibitorAccountSummary> LinkAccountAsync(
@@ -449,7 +449,7 @@ internal sealed class AdminExhibitorService(
         }
 
         // App DB — the same column the lead-capture endpoints authorise on
-        // (ProfileType.MobileAppRole, D-519). Linking an account that does not
+        // (ProfileType.MobileAppRole). Linking an account that does not
         // carry it would produce a membership that still cannot scan.
         var isExhibitorTyped = await appDbContext.UserProfiles
             .AsNoTracking()
@@ -556,7 +556,7 @@ internal sealed class AdminExhibitorService(
     /// under. Resolved by its <see cref="MobileAppRole"/> rather than by a name
     /// literal: the row is admin-curated at runtime (renameable, and an admin may
     /// add further exhibitor-mapped types), and MobileAppRole is exactly what the
-    /// lead-capture endpoints authorise on (D-519). Partner-side by definition
+    /// lead-capture endpoints authorise on. Partner-side by definition
     /// (<c>IsForVisitor=false</c>) so the Other provisioning pipeline accepts it.
     /// Deterministic pick — oldest first — when an admin has created more than one.
     /// The seeder creates the canonical row on every boot, so the 409 only fires

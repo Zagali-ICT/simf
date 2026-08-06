@@ -8,8 +8,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Api.Endpoints.Account;
 
-/// <summary>D-190 (D-186 follow-up, mobile sign-up unblock) —
-/// <c>GET /api/v1/app/account/profile-types</c> returns the active
+/// <summary><c>GET /api/v1/app/account/profile-types</c> returns the active
 /// ProfileType list the mobile sign-up Screen 2 dropdown reads.
 ///
 /// <para>Auth required (the bog-standard <c>auth</c> rate-limit
@@ -53,7 +52,7 @@ public sealed class ProfileTypesPickerEndpoint(SimfAppDbContext appDb)
         // Admin-scope rows (if any are ever seeded) are never valid
         // for a self-registering user to pick. Combined with the
         // IsActive filter so soft-deleted rows never appear.
-        // D-725 (owner item 1): CP-only operational types (Staff /
+        // CP-only operational types (Staff /
         // Moderator, or any row an admin has un-flagged) are hidden from
         // the self-registration picker — they are admin-assigned, never
         // customer-selected.

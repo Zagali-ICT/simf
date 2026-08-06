@@ -1,10 +1,9 @@
-@* D-165 (gap doc G3) — Sessions CRUD. SIMF-FDS-004 §5.3 + PDF §2.9.
-   Centralized dialog/full-page framing D-353: Add / Edit / View / Delete are
-   hosted by CrudShell, which frames the reusable SessionsAddEdit and
-   SessionsViewDelete forms as a popup or a full page per the admin's toolbar
-   choice (persisted in localStorage via CpPreferences). The inline SimfModal
-   forms + the in-modal lifecycle / recording panels are gone — the View form
-   carries them now. D-356: Excel export/import wired through CrudGridExcel. *@
+@* Sessions CRUD. Add / Edit / View / Delete are hosted by CrudShell, which
+   frames the reusable SessionsAddEdit and SessionsViewDelete forms as a popup
+   or a full page per the admin's toolbar choice (persisted in localStorage via
+   CpPreferences). The inline SimfModal forms + the in-modal lifecycle /
+   recording panels are gone — the View form carries them now. Excel
+   export/import is wired through CrudGridExcel. *@
 @page "/admin/sessions"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Sessions.View)]
@@ -128,7 +127,7 @@
                     </SimfDataGridColumn>
                 </Columns>
                 <RowActions>
-                    @* D-646 — the live Q&A moderation desk is per-session and is
+                    @* The live Q&A moderation desk is per-session and is
                        reached from this grid, not the nav (CpNavigation notes the
                        same). Gated by the same Questions.Moderate permission the
                        desk page + API enforce, so only moderators see the action. *@

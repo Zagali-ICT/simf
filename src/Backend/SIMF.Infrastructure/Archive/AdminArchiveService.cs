@@ -162,7 +162,7 @@ internal sealed class AdminArchiveService(
             Sessions = v.Sessions,
             Speakers = v.Speakers,
             CoverImageRelativePath = v.CoverImageRelativePath,
-            // §9 (screen 24-01) — optional place + date label.
+            // Optional place + date label.
             LocationEn = v.LocationEn,
             LocationAr = v.LocationAr,
             DateLabelEn = v.DateLabelEn,
@@ -233,7 +233,7 @@ internal sealed class AdminArchiveService(
         edition.Sessions = v.Sessions;
         edition.Speakers = v.Speakers;
         edition.CoverImageRelativePath = v.CoverImageRelativePath;
-        // §9 (screen 24-01) — optional place + date label.
+        // Optional place + date label.
         edition.LocationEn = v.LocationEn;
         edition.LocationAr = v.LocationAr;
         edition.DateLabelEn = v.DateLabelEn;
@@ -298,7 +298,7 @@ internal sealed class AdminArchiveService(
         Guid actorUserId, SnapshotCurrentEditionRequest request,
         CancellationToken cancellationToken = default)
     {
-        // §9 (D-275) — fully automatic: the year + bilingual title are generated
+        // Fully automatic: the year + bilingual title are generated
         // and the three counters are computed from live App data (no client input).
         var year = timeProvider.SimfNow().Year;
 
@@ -414,7 +414,7 @@ internal sealed class AdminArchiveService(
                 "يجب ألا يتجاوز مسار صورة الغلاف 512 حرفاً.");
         }
 
-        // §9 (screen 24-01) — optional place + date label, length-checked here
+        // Optional place + date label, length-checked here
         // too so the service mirrors the FluentValidation + EF limits (256 / 128)
         // for every persisted string field.
         var locationEn = string.IsNullOrWhiteSpace(locationEnRaw) ? null : locationEnRaw.Trim();
@@ -475,7 +475,7 @@ internal sealed class AdminArchiveService(
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    // R1 audit (#27) — the gallery / session-title / past-speaker columns carry
+    // The gallery / session-title / past-speaker columns carry
     // EF HasMaxLength limits (ArchiveDetailConfigurations) that neither Validate()
     // nor the FluentValidation validators covered, so an over-length child string
     // reached SQL Server as a truncation 500. Guard them here — the one point both

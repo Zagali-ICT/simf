@@ -12,7 +12,7 @@ namespace SIMF.Infrastructure.Preferences;
 /// `accessibility-server-sync` — the five accessibility choices as account
 /// preferences on the user's <c>UserProfile</c> row. Read is a five-column
 /// projection (no PII columns touched, nothing tracked); write is a full
-/// replace, so a repeated PUT stores the same row. D-157: the profile carries
+/// replace, so a repeated PUT stores the same row. The profile carries
 /// the bare <c>UserId</c>, so nothing here crosses into the Identity DB.
 /// </summary>
 internal sealed class AccountPreferencesService(

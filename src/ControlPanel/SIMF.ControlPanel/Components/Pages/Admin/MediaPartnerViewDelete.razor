@@ -1,4 +1,4 @@
-@* D-353 — reusable Media-Partner View/Delete form, hosted by CrudShell (popup
+@* Reusable Media-Partner View/Delete form, hosted by CrudShell (popup
    or full page) from MediaPartnersList.razor. Inherits CrudViewDeleteFormBase so
    it exposes the standard surface (IsDelete / Initial / OnDeleted / OnCancel).
    Read-only details always show (including the logo path); when IsDelete=true a
@@ -15,7 +15,7 @@
 
 @if (Initial is not null)
 {
-    @* D-357 — logo from the unified media-asset pipeline. *@
+    @* Logo from the unified media-asset pipeline. *@
     <div class="simf-image-upload__preview">
         <SimfImageThumb Src="@($"/account/api/admin/assets/MediaPartnerLogo/{Initial.Id}/image")"
                         Alt="@Initial.Name" Class="simf-img-thumb--lg" />

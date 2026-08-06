@@ -5,7 +5,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin.Validators;
 
-/// <summary>Validates the admin-create-interest request (P9 — D-050).</summary>
+/// <summary>Validates the admin-create-interest request.</summary>
 public sealed class AdminCreateInterestRequestValidator
     : Validator<AdminCreateInterestRequest>
 {

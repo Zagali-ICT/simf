@@ -6,8 +6,8 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
-/// EF configuration for the user-profile row (decisions D-046, P8 —
-/// D-048; D-167 moved this onto <c>SimfAppDbContext</c>). Length caps
+/// EF configuration for the user-profile row, which lives on
+/// <c>SimfAppDbContext</c>. Length caps
 /// line up with the FluentValidation rules in
 /// <c>UpsertUserProfileRequestValidator</c>. The <c>ProfileTypeId</c> FK
 /// references the <c>ProfileTypes</c> lookup with
@@ -27,13 +27,13 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // a sibling row.
         builder.HasIndex(profile => profile.UserId).IsUnique();
 
-        // Owner 2026-07-06 — reasonable name caps (was 256); tightened to 50
-        // (D-683, owner 2026-07-07), aligned client + server + EF.
+        // Reasonable name caps (they were 256), tightened to 50 and
+        // aligned across client + server + EF.
         builder.Property(profile => profile.NameArabic).HasMaxLength(50).IsRequired();
         builder.Property(profile => profile.Name).HasMaxLength(50).IsRequired();
-        // PDF §2.6 optional job title (max 100, owner 2026-07-06).
+        // Optional job title (max 100).
         builder.Property(profile => profile.JobTitle).HasMaxLength(100);
-        // 2026-07-19 (owner) — Arabic twin, same length as JobTitle.
+        // Arabic twin, same length as JobTitle.
         builder.Property(profile => profile.JobTitleArabic).HasMaxLength(100);
         // NationalityId is validated at the service layer
         // (UserProfileService.ResolveIdAsync rejects unknown ids). We do
@@ -50,7 +50,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.IqamaNumber).HasMaxLength(20);
         builder.Property(profile => profile.PassportNumber).HasMaxLength(32);
 
-        // H-1 — blind-index columns for the duplicate-identity guard. The
+        // Blind-index columns for the duplicate-identity guard. The
         // plaintext id columns above are randomly-nonce encrypted (SimfAppDbContext
         // OnModelCreating) so they CANNOT be unique-indexed; these deterministic
         // keyed-HMAC digests can. Filtered UNIQUE so two profiles cannot share a
@@ -84,11 +84,11 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .IsUnique()
             .HasFilter("[ReferenceNumber] IS NOT NULL");
         builder.Property(profile => profile.IdImageRelativePath).HasMaxLength(256);
-        // V-1 — VVIP/VIP extras (موج welcome-message integration). Nullable,
+        // VVIP/VIP extras (موج welcome-message integration). Nullable,
         // only set for VVIP/VIP. Lengths match the FluentValidation + UI.
         builder.Property(profile => profile.MawjId).HasMaxLength(64);
         builder.Property(profile => profile.Honorific).HasMaxLength(64);
-        // 2026-07-19 (owner) — Arabic twin, same length as Honorific.
+        // Arabic twin, same length as Honorific.
         builder.Property(profile => profile.HonorificArabic).HasMaxLength(64);
         builder.Property(profile => profile.PreferredLanguage).HasMaxLength(16);
         builder.Property(profile => profile.VipPhotoRelativePath).HasMaxLength(260);
@@ -135,7 +135,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // overwriting accessibility settings a user had already made on the device.
         builder.Property(profile => profile.AccessibilityConfiguredAt);
 
-        // P8 — ProfileType lookup; Restrict so a profile-type cannot
+        // ProfileType lookup; Restrict so a profile-type cannot
         // be deleted while any user is assigned to it.
         builder.HasIndex(profile => profile.ProfileTypeId);
         builder.HasOne(profile => profile.ProfileType)
@@ -172,7 +172,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .HasForeignKey(profile => profile.BadgeBatchId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // P9 — M-to-M with Interests (D-050). Composite-PK join table
+        // M-to-M with Interests. Composite-PK join table
         // UserProfileInterests, both FKs Cascade so deleting either side
         // cleans up the join row.
         builder.HasMany(profile => profile.Interests)

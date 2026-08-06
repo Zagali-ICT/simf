@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/YoutubeTranscriptServiceTests.cs (the service this wraps);
 //        endpoint auth-gate (401) + graceful 502 path live-verified on dev.
 //        A WebApplicationFactory integration test is deferred: this branch's host-boot
-//        env issue (FileStorage/Region, per D-572/D-568) fails all host-based API tests.
+//        env issue (FileStorage/Region) fails all host-based API tests.
 using FastEndpoints;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;

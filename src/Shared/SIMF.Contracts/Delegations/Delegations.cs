@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Delegations;
 
-/// <summary>D-499 (Figma 1426:10771 الوفود) — the public delegations view: the
+/// <summary>The public delegations view (الوفود): the
 /// invited countries' delegations with the screen's two aggregate stats. Public /
 /// anonymous (only the designated head + a member count are exposed, no member PII).</summary>
 public sealed record AppDelegations(

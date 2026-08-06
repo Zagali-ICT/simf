@@ -34,10 +34,10 @@ public sealed record AdminExhibitorDetail(
     bool IsActive,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    // Wave 3 (Figma 1439:11881) — optional exhibitor tier; null renders no pill.
+    // Optional exhibitor tier; null renders no pill.
     ExhibitorTier? Tier = null,
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; the email + primary phone reuse the
+    // directory. All optional; the email + primary phone reuse the
     // existing ContactEmail / ContactPhone above (no second slot). Trailing-
     // optional so the wire contract stays append-only.
     int? CountryId = null,
@@ -79,7 +79,7 @@ public sealed class CreateExhibitorRequest
     public ExhibitorTier? Tier { get; init; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; the email + primary phone reuse the
+    // directory. All optional; the email + primary phone reuse the
     // existing ContactEmail / ContactPhone above (no second slot).
     /// <summary>Optional same-DB country FK (nationality).</summary>
     public int? CountryId { get; init; }
@@ -113,7 +113,7 @@ public sealed class CreateExhibitorRequest
 }
 
 /// <summary>Body of <c>PUT /api/v1/admin/exhibitors/{id}</c>.
-/// Not sealed: the endpoint binds {id}+body via a derived route class (D-202).</summary>
+/// Not sealed: the endpoint binds {id}+body via a derived route class.</summary>
 public class UpdateExhibitorRequest
 {
     /// <summary>English display name (1–256 chars).</summary>
@@ -135,7 +135,7 @@ public class UpdateExhibitorRequest
     public ExhibitorTier? Tier { get; init; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; the email + primary phone reuse the
+    // directory. All optional; the email + primary phone reuse the
     // existing ContactEmail / ContactPhone above (no second slot).
     /// <summary>Optional same-DB country FK (nationality).</summary>
     public int? CountryId { get; init; }
@@ -188,7 +188,7 @@ public sealed record ExhibitorAccountSummary(
 /// Body of <c>POST /api/v1/admin/exhibitors/{id}/accounts</c>.
 /// Provisions a least-privilege login account tagged to the exhibitor. The
 /// account is created through the existing admin provisioning pipeline as a
-/// partner-side account carrying the exhibitor profile type (DEF-EXH-005, so
+/// partner-side account carrying the exhibitor profile type (so
 /// the booth officer can actually use the lead-capture tools), and an
 /// <c>ExhibitorMembership</c> row links it.
 /// Not sealed: the endpoint binds {id}+body via a derived route class.
@@ -212,8 +212,8 @@ public class ProvisionExhibitorAccountRequest
 /// other writer of that row, so an exhibitor-typed account created through the
 /// generic Others pipeline (<c>POST /admin/others</c>) or the Others walk-in desk
 /// had no membership at all — and therefore 403 on badge scan and on My Visitors,
-/// with no Control-Panel path to fix it (DEF-EXH-006 made a current membership
-/// half the authorisation). This is that path.
+/// with no Control-Panel path to fix it (a current membership is half the
+/// authorisation). This is that path.
 /// Not sealed: the endpoint binds {id}+body via a derived route class.
 /// </summary>
 public class LinkExhibitorAccountRequest

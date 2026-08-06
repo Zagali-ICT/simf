@@ -111,7 +111,7 @@ internal static class JwtBearerSetup
             return;
         }
 
-        // R3g — D-079: resolve the repository from request services rather
+        // Resolve the repository from request services rather
         // than UserManager directly. Same shape — the bearer events run
         // outside of a constructor injection scope.
         var accounts = context.HttpContext.RequestServices

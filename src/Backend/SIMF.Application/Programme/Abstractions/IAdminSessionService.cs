@@ -3,8 +3,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Programme.Abstractions;
 
-/// <summary>Admin CRUD over <c>Session</c>
-/// (SIMF-FDS-004 §5.3 + PDF §2.9).</summary>
+/// <summary>Admin CRUD over <c>Session</c>.</summary>
 public interface IAdminSessionService
 {
     Task<GridPage<AdminSessionSummary>> ListAllAsync(
@@ -25,7 +24,7 @@ public interface IAdminSessionService
         Guid actorUserId, Guid id,
         CancellationToken cancellationToken = default);
 
-    /// <summary>P3.2 — D-231 (Completion Programme §5.2): the Scientific
+    /// <summary>The Scientific
     /// Committee moves the session along its broadcast lifecycle. Only the
     /// adjacent transitions are legal
     /// (<c>Scheduled ↔ Held ↔ Recorded ↔ Published</c>); an illegal jump

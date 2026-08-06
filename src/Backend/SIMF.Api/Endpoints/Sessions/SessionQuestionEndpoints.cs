@@ -9,9 +9,9 @@ using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Sessions;
 
-/// <summary>D-169 (gap doc G6, PDF §2.7.2 + §2.10) — public submission
-/// endpoint. P5.1 — D-242 (FR-704): the venue gate is enforced in the service —
-/// a HallAttendance arrival when the hall has a geofence (D-240/D-241), else the
+/// <summary>Public submission
+/// endpoint. The venue gate is enforced in the service —
+/// a HallAttendance arrival when the hall has a geofence, else the
 /// <see cref="SubmitSessionQuestionRoute.IsAtVenue"/> self-assert fallback.</summary>
 public sealed class SubmitSessionQuestionRoute
 {
@@ -23,7 +23,7 @@ public sealed class SubmitSessionQuestionRoute
     /// otherwise the authoritative gate is the HallAttendance arrival record.</summary>
     public bool IsAtVenue { get; set; }
 
-    /// <summary>D-174 (gap doc G11, Mockup page 26) — Speaker or Host.</summary>
+    /// <summary>Speaker or Host.</summary>
     public SIMF.Common.Enums.SessionQuestionRecipient Recipient { get; set; }
         = SIMF.Common.Enums.SessionQuestionRecipient.Speaker;
 }
@@ -84,7 +84,7 @@ internal static class SessionModeratorAuth
     }
 }
 
-/// <summary>FR-MOD-001 — the signed-in user's own moderated sessions. Gated the
+/// <summary>The signed-in user's own moderated sessions. Gated the
 /// same way the desk is (an approved app account); the grant list itself is what
 /// scopes the response, so there is nothing here another moderator could read.
 /// The app calls it to offer the desk only where the grant exists — the icon used
@@ -113,7 +113,7 @@ public sealed class ListModeratorQueueRoute
 {
     public Guid SessionId { get; set; }
 
-    /// <summary>DEF-MOD-002 — the desk tab to read. Omitted (the shipped app's
+    /// <summary>The desk tab to read. Omitted (the shipped app's
     /// call shape) returns the working desk: the Committee-approved rows plus the
     /// ones already marked answered. An explicit status returns exactly that
     /// bucket — <c>Hidden</c> is how the desk lists (and can then restore) the
@@ -183,7 +183,7 @@ public sealed class HideQuestionEndpoint(ISessionModerationService service)
     }
 }
 
-/// <summary>DEF-MOD-001 — the moderator's "تمت الإجابة" mark, persisted. Same
+/// <summary>The moderator's "تمت الإجابة" mark, persisted. Same
 /// shape and gate as <see cref="HideQuestionRoute"/>: the target state travels on
 /// the body and the call is idempotent.</summary>
 public sealed class SetQuestionAnsweredRoute

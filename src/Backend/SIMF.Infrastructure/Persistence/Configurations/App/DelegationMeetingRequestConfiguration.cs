@@ -8,7 +8,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <summary>DelegationMeetingRequest EF config. Real
 /// FKs to Country for both the requesting and target countries (Restrict — a
 /// country in use can't be hard-deleted); RequestedByUserId is a logical FK to
-/// SimfUser on the Identity DB (no cross-DB relation, D-157).</summary>
+/// SimfUser on the Identity DB (no cross-DB relation).</summary>
 internal sealed class DelegationMeetingRequestConfiguration
     : IEntityTypeConfiguration<DelegationMeetingRequest>
 {

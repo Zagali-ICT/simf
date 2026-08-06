@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/AdminSessionModeratorsTests.cs
-// Tests: SIMF.Api.Tests/SessionModeratorEligibilityTests.cs (DEF-MOD-005)
+// Tests: SIMF.Api.Tests/SessionModeratorEligibilityTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -31,9 +31,9 @@ internal sealed class AdminSessionModeratorService(
         var (skip, top) = query.ClampPage(25, 200);
 
         // Join the session up front so the grid can filter / sort on the
-        // session code/title (D-255). The moderator + assigner names live in
-        // the Identity DB and are resolved on read below (D-157: no cross-DB
-        // JOIN), so those columns are not server-filterable.
+        // session code/title. The moderator + assigner names live in
+        // the Identity DB and are resolved on read below (no cross-database
+        // JOIN is possible), so those columns are not server-filterable.
         var joined = appDbContext.SessionModerators.AsNoTracking()
             .Join(appDbContext.Sessions,
                 g => g.SessionId, s => s.Id,
@@ -50,7 +50,7 @@ internal sealed class AdminSessionModeratorService(
             joined = joined.Where(r => r.SessionId == sessionFilter);
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -66,7 +66,7 @@ internal sealed class AdminSessionModeratorService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: most-recently assigned.
+        // CP grid sortable columns. Default: most-recently assigned.
         joined = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("session", false) => joined.OrderBy(r => r.Code).ThenBy(r => r.Title),
@@ -122,7 +122,7 @@ internal sealed class AdminSessionModeratorService(
     public async Task<SessionModeratorAssignOptions> ListAssignOptionsAsync(
         CancellationToken cancellationToken = default)
     {
-        // DEF-MOD-005 — the session picker: the active sessions, code-ordered
+        // The session picker: the active sessions, code-ordered
         // (the same shape the CP's live-hall picker uses).
         var sessions = await appDbContext.Sessions
             .AsNoTracking()
@@ -132,10 +132,10 @@ internal sealed class AdminSessionModeratorService(
                 s.Id, s.Code, s.Title, s.TitleArabic))
             .ToListAsync(cancellationToken);
 
-        // DEF-MOD-005 — the moderator picker: the App-side eligibility fact
+        // The moderator picker: the App-side eligibility fact
         // (profile type carries MobileAppRole.Moderator) intersected with the
         // Identity-side approval fact. Two queries against two databases, joined
-        // in memory — never a cross-DB JOIN.
+        // in memory — never a cross-database JOIN.
         var eligibleRows = await EligibleProfiles()
             .Select(p => new
             {
@@ -213,7 +213,7 @@ internal sealed class AdminSessionModeratorService(
                 "يجب أن يكون المُشرف حساباً معتمداً.");
         }
 
-        // DEF-MOD-005 — "approved" alone let ANY visitor be handed a moderation
+        // "Approved" alone would let ANY visitor be handed a moderation
         // desk by a typo in the old free-text GUID box. The account must also be
         // ELIGIBLE: an assigned partner profile type carrying
         // MobileAppRole.Moderator — the same fact
@@ -305,7 +305,7 @@ internal sealed class AdminSessionModeratorService(
 
     // -- helpers ---------------------------------------------------------------
 
-    /// <summary>DEF-MOD-005 — the App-side eligibility fact: the account has an
+    /// <summary>The App-side eligibility fact: the account has an
     /// assigned PARTNER profile type (<c>IsForVisitor = false</c>) whose
     /// <c>MobileAppRole</c> is <see cref="MobileAppRole.Moderator"/>. That is
     /// exactly the condition <c>UserProfileService.ResolveMobileAppRoleAsync</c>

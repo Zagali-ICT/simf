@@ -8,7 +8,7 @@ using SIMF.Contracts.Archive;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/archive/export</c> — the D-356 grid export for archive
+/// <c>POST /api/v1/admin/archive/export</c> — the generic grid export for archive
 /// editions. All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>;
 /// this subclass only declares the route, permission, sheet/file names, the
 /// column layout (mirroring the Archive grid), and how to list + identify an
@@ -53,7 +53,7 @@ public sealed class ExportArchiveEndpoint(IAdminArchiveService service, IGridExc
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/archive/import</c> — the D-356 grid import (insert-only)
+/// <c>POST /api/v1/admin/archive/import</c> — the generic grid import (insert-only)
 /// for archive editions. The base does the upload defence, parse and per-row
 /// error aggregation; this subclass binds one row to
 /// <see cref="CreateArchiveEditionRequest"/> and creates it (the service rejects

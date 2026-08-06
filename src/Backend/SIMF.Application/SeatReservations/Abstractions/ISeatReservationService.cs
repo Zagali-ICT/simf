@@ -3,7 +3,7 @@ using SIMF.Contracts.Sessions;
 
 namespace SIMF.Application.SeatReservations.Abstractions;
 
-/// <summary>D-175 (gap doc G11, Mockup page 7) — per-session seat
+/// <summary>Per-session seat
 /// reservations. Public surface for visitors plus admin surface for
 /// hall layout + row-blocking + release.</summary>
 public interface ISeatReservationService
@@ -107,7 +107,7 @@ public interface ISeatReservationService
     Task<int> ReleaseNoShowsAsync(
         DateTime now, CancellationToken cancellationToken = default);
 
-    // -- Staff seating desk (D-771 — owner 2026-07-26) --
+    // -- Staff seating desk --
 
     /// <summary>"who sits here?": resolve one seat in a session to its
     /// occupant (reference id, bilingual name, whether a photo can be streamed) or,

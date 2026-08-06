@@ -1,4 +1,4 @@
-@* SIMF-FDS-013 (D-248) — flexible hall configuration: set a hall's purpose,
+@* Flexible hall configuration: set a hall's purpose,
    define / generate meeting tables (random-by-count or by row-column), and
    reserve hall space (whole / random-by-count / row-column) over a time-slot.
    Mirrors BoothsList. *@
@@ -124,11 +124,11 @@
                           DeletePermission="@PermissionCatalog.HallAllocations.Edit">
                 <Columns>
                     <SimfDataGridColumn TItem="HallAllocationRow" Key="purpose" Header="@L["Admin.MeetingTables.Col.Purpose"]">
-                        @* R10 (D-767) — render the localized purpose, not the raw enum name. *@
+                        @* Render the localized purpose, not the raw enum name. *@
                         <CellTemplate>@(L[PurposeKey(context.Purpose)].Value)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="HallAllocationRow" Key="mode" Header="@L["Admin.MeetingTables.Col.Mode"]">
-                        @* R10 (D-767) — localized mode (was the raw 'RandomByCount' enum name). *@
+                        @* Localized mode, not the raw 'RandomByCount' enum name. *@
                         <CellTemplate>@(L[ModeKey(context.Mode)].Value) @(context.Mode == HallAllocationMode.RandomByCount ? $"({context.UnitCount})" : context.Mode == HallAllocationMode.RowColumn ? $"({context.RowColumnSpec})" : "")</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="HallAllocationRow" Key="start" Header="@L["Admin.MeetingTables.Col.Start"]">
@@ -146,7 +146,7 @@
     </div>
 </div>
 
-@* D-835 - the read affordance for both grids. The tables grid never shows
+@* The read affordance for both grids. The tables grid never shows
    IsActive, and the allocations grid never shows the notes, so Edit and Release
    were the only ways to see either. Both open from the row the grid already holds. *@
 <SimfDetails Open="@(_tableDetails is not null)"
@@ -224,9 +224,10 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _tableOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
-            @* D-828 (second pass) - the page gates on MeetingTables.View; saving a table is .Edit. The page-level ratchet missed this
-               because the page already used <AuthorizedAction> elsewhere; the
-               guard is now per-button. *@
+            @* The page gates on MeetingTables.View, but saving a table needs
+               MeetingTables.Edit. The page-level permission ratchet missed this
+               because the page already used <AuthorizedAction> elsewhere, so
+               the guard is now per-button. *@
             <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
                 <SimfButton Type="button" OnClick="SaveTableAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.MeetingTables.Save"]
@@ -346,7 +347,8 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _allocOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
-            @* D-828 (second pass) - page gates on MeetingTables.View; allocating tables is .Edit. *@
+            @* The page gates on MeetingTables.View, but saving an allocation
+               needs HallAllocations.Edit, so this button carries its own guard. *@
             <AuthorizedAction Permission="@PermissionCatalog.HallAllocations.Edit">
             <SimfButton Type="button" OnClick="SaveAllocationAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.MeetingTables.Save"]

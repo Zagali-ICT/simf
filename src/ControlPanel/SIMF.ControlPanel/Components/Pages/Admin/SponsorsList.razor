@@ -1,13 +1,13 @@
-@* D-199 (CP UI for D-199 sponsors, Mockup page 23) — admin CRUD over the
+@* The CP UI for sponsors — admin CRUD over the
    public sponsors list. The public screen groups logos by tier (Platinum
    first, then Gold, Silver, Bronze) then orders by DisplayOrder asc, NameAr
    asc within a tier — admins control tier, name (En/Ar), logo path, link,
-   display order and the active flag here. Centralized dialog/full-page framing
-   D-353: Add / Edit / View / Delete are hosted by CrudShell, which frames the
+   display order and the active flag here. Centralized dialog/full-page
+   framing: Add / Edit / View / Delete are hosted by CrudShell, which frames the
    reusable SponsorsAddEdit and SponsorsViewDelete forms as a popup or a full
    page per the admin's toolbar choice (persisted in localStorage via
    CpPreferences). The inline SimfModal form + native confirm() delete it used to
-   carry are gone. D-356: Excel export/import wired through CrudGridExcel. *@
+   carry are gone. Excel export/import is wired through CrudGridExcel. *@
 @page "/admin/sponsors"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Sponsors.View)]

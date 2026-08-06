@@ -9,7 +9,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// V-1 (D-429) — admin upload + read of a visitor's VVIP/VIP welcome photo
+/// Admin upload + read of a visitor's VVIP/VIP welcome photo
 /// (صورة واضحة) for the موج (Mawj) integration. The photo is distinct from the
 /// account avatar and the ID image: it lives in its own store and is written to
 /// <c>UserProfile.VipPhotoRelativePath</c>. Captured on the dedicated VIP
@@ -42,7 +42,7 @@ public sealed class UploadVisitorVipPhotoEndpoint(
 
         // This route is Visitors.Edit and lives under /admin/visitors/,
         // so it must act only on the audience tier. The service guard compares
-        // UserType alone, which D-186 made identical for both Visitor-family
+        // UserType alone, which is identical for both Visitor-family
         // tiers, so a partner id passed here would otherwise be accepted.
         if (!await provisioning.IsSubjectInFamilyAsync(
                 Route<Guid>("id"), UserType.Visitor, expectedIsVisitor: true, ct))

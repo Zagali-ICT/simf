@@ -53,7 +53,7 @@ public sealed record AdminAiPromptHistoryEntry(
     double Temperature,
     int MaxOutputTokens,
     bool IsActive,
-    /// <summary>D-181-shaped HMAC of the snapshot's prompt content
+    /// <summary>HMAC of the snapshot's prompt content
     /// (carries the <c>v1:</c> / <c>v2:</c> prefix). Matches the
     /// <c>contentHashOld</c> the audit row emitted at the time.</summary>
     string ContentHash,
@@ -67,8 +67,8 @@ public sealed record AdminAiPromptHistoryEntry(
     /// successor version replaced this one).</summary>
     DateTime CapturedAt);
 
-/// <summary>Create admin request. Open for inheritance per
-/// D-168 / D-174 / D-175 pattern.</summary>
+/// <summary>Create admin request. Open for inheritance, matching the other
+/// admin request contracts.</summary>
 public class CreateAiPromptRequest
 {
     public string Key { get; set; } = string.Empty;
@@ -112,11 +112,11 @@ public class TestAiPromptRequest
 /// <summary>Result of an AI call shown to the admin tester
 /// + the feature endpoints.
 ///
-/// <para>A18 (2026-07-27) — <c>IsStub</c> is APPENDED (append-only wire
+/// <para><c>IsStub</c> is APPENDED (append-only wire
 /// contract) and reports that the answer came from the offline stub provider,
 /// which echoes the prompt instead of answering it. <c>Provider</c> cannot be
-/// used for this: it reports the prompt's CONFIGURED provider, which D-484
-/// routing may have redirected. Server-side callers that must not ship
+/// used for this: it reports the prompt's CONFIGURED provider, which the
+/// routing layer may have redirected. Server-side callers that must not ship
 /// placeholder content branch on this flag; the mobile / website clients simply
 /// ignore the extra field.</para></summary>
 public sealed record AiCallResult(
@@ -146,8 +146,8 @@ public sealed record AdminAiInvocationRow(
     string? ErrorCode,
     DateTime CreatedAt);
 
-/// <summary>D-179 (gap doc G12 hardening) — full invocation payload
-/// for SOC threat-hunting. The grid row (<see cref="AdminAiInvocationRow"/>)
+/// <summary>Full invocation payload for SOC threat-hunting. The grid row
+/// (<see cref="AdminAiInvocationRow"/>)
 /// deliberately omits <c>InputJson</c> + <c>OutputText</c> so the
 /// admin grid stays light and non-PII; this drill-down endpoint
 /// returns them for the security-auditor role. Inputs are already

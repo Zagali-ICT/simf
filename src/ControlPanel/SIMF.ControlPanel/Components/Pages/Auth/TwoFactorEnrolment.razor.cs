@@ -26,7 +26,7 @@ public partial class TwoFactorEnrolment
 
     // Stage 2 state — set once the enrolment completes. The tokens are held
     // until the user acknowledges the recovery codes, which are shown exactly
-    // once (D-040); the hand-off to the cookie endpoint happens on Continue.
+    // once; the hand-off to the cookie endpoint happens on Continue.
     private IReadOnlyList<string>? _recoveryCodes;
     private AuthTokens? _tokens;
 

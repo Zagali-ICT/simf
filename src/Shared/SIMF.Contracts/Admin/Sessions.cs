@@ -3,9 +3,8 @@ using SIMF.Common.Options;
 
 namespace SIMF.Contracts.Admin;
 
-/// <summary>D-165 (gap doc G3, PDF §2.9) — one row in the admin Sessions
-/// grid. Hall name (EN + AR) is projected alongside so the grid does
-/// not need a second fetch.</summary>
+/// <summary>One row in the admin Sessions grid. Hall name (EN + AR) is
+/// projected alongside so the grid does not need a second fetch.</summary>
 public sealed record AdminSessionSummary(
     Guid Id,
     string Code,
@@ -19,7 +18,7 @@ public sealed record AdminSessionSummary(
     int Capacity,
     bool IsActive,
     DateTime CreatedAt,
-    // B9b — D-226: appended (default) — the CP grid resolves the name client-side.
+    // Appended (default) — the CP grid resolves the name client-side.
     Guid? CategoryId = null,
     // Broadcast lifecycle status (appended, default Scheduled).
     SessionStatus Status = SessionStatus.Scheduled,
@@ -35,14 +34,14 @@ public sealed record AdminSessionSummary(
     string? LiveCaptions = null,
     string? LiveCaptionsArabic = null,
     SeatSelectionMode? SeatSelectionModeOverride = null,
-    // FR-702 (owner 2026-07-31) — carried for the same D-506 reason as the live
+    // Carried for the same Excel round-trip reason as the live
     // fields above: without it, an admin who authors notices on 40 sessions, then
     // exports the grid to bulk-edit start times and re-imports, silently loses
     // every notice. The Excel lane is the only bulk authoring path there is.
     string? LiveNotice = null,
     string? LiveNoticeArabic = null,
     // The session's own arrival-grace override in minutes; null = inherit
-    // the hall. Carried for the same D-506 Excel round-trip reason as the fields
+    // the hall. Carried for the same Excel round-trip reason as the fields
     // above.
     int? ArrivalGraceMinutesOverride = null,
     // What the server will ACTUALLY use for this session, already
@@ -75,7 +74,7 @@ public sealed record AdminSessionDetail(
     IReadOnlyList<Guid> ThemeIds,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    // B9b — D-226: the session's category (dynamic lookup); null when unset.
+    // The session's category (dynamic lookup); null when unset.
     Guid? CategoryId = null,
     // Broadcast lifecycle (appended, defaults preserve the wire).
     SessionStatus Status = SessionStatus.Scheduled,
@@ -85,7 +84,7 @@ public sealed record AdminSessionDetail(
     string? RecordingFileName = null,
     long? RecordingSizeBytes = null,
     DateTime? RecordingUploadedAt = null,
-    // §8 — live broadcast feed(s); null when the session is not live.
+    // Live broadcast feed(s); null when the session is not live.
     string? LiveStreamUrl = null,
     string? LiveSignLanguageUrl = null,
     // AI live-caption text (manual stub provider, bilingual).
@@ -102,7 +101,7 @@ public sealed record AdminSessionDetail(
     string? Language = null,
     string? LanguageArabic = null,
     IReadOnlyList<AdminSessionOutcomeEntry>? Outcomes = null,
-    // A1/A6 — the seat-release blast radius of a hall / start / end change.
+    // The seat-release blast radius of a hall / start / end change.
     // Appended (defaulted) so the wire stays append-only.
     //
     // The first pair is the CURRENT holding, stamped on every read: how many
@@ -117,7 +116,7 @@ public sealed record AdminSessionDetail(
     // the Control Panel can report the outcome instead of a bare "was updated".
     int ReleasedReservationCount = 0,
     int ReleasedAdminBlockCount = 0,
-    // FR-702 (owner decision 2026-07-31) — the bilingual informational notice shown
+    // The bilingual informational notice shown
     // WITH the live stream. Purely informational: it gates nothing, and the feed
     // plays for every caller. Carried on the detail so the CP edit form can read the
     // stored value back into its inputs. Appended (defaulted) — wire stays
@@ -163,19 +162,19 @@ public sealed class AdminCreateSessionRequest
     public DateTime Start { get; set; }
     public DateTime End { get; set; }
     public int? CapacityOverride { get; set; }
-    // B9b — D-226: optional session category (dynamic lookup).
+    // Optional session category (dynamic lookup).
     public Guid? CategoryId { get; set; }
     public IList<AdminSessionSpeakerEntry> Speakers { get; set; }
         = new List<AdminSessionSpeakerEntry>();
     public IList<Guid> ThemeIds { get; set; } = new List<Guid>();
-    // §8 / D-349 — optional live feed URLs (YouTube POC + HLS fallback; the
+    // Optional live feed URLs (YouTube POC + HLS fallback; the
     // shared LiveStreamUrlPolicy validates both).
     public string? LiveStreamUrl { get; set; }
     public string? LiveSignLanguageUrl { get; set; }
     // Optional AI live-caption text (manual stub provider, bilingual).
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }
-    // FR-702 (owner 2026-07-31) — optional bilingual notice shown WITH the live
+    // Optional bilingual notice shown WITH the live
     // stream. Informational only: it restricts nothing and withholds nothing.
     public string? LiveNotice { get; set; }
     public string? LiveNoticeArabic { get; set; }
@@ -196,7 +195,7 @@ public sealed class AdminCreateSessionRequest
 }
 
 /// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
-/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+/// route class so it cannot drop a field at bind time.</remarks>
 public class AdminUpdateSessionRequest
 {
     public string Code { get; set; } = string.Empty;
@@ -208,20 +207,20 @@ public class AdminUpdateSessionRequest
     public DateTime Start { get; set; }
     public DateTime End { get; set; }
     public int? CapacityOverride { get; set; }
-    // B9b — D-226: optional session category (dynamic lookup).
+    // Optional session category (dynamic lookup).
     public Guid? CategoryId { get; set; }
     public IList<AdminSessionSpeakerEntry> Speakers { get; set; }
         = new List<AdminSessionSpeakerEntry>();
     public IList<Guid> ThemeIds { get; set; } = new List<Guid>();
     public bool IsActive { get; set; } = true;
-    // §8 / D-349 — optional live feed URLs (YouTube POC + HLS fallback; the
+    // Optional live feed URLs (YouTube POC + HLS fallback; the
     // shared LiveStreamUrlPolicy validates both).
     public string? LiveStreamUrl { get; set; }
     public string? LiveSignLanguageUrl { get; set; }
     // Optional AI live-caption text (manual stub provider, bilingual).
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }
-    // FR-702 (owner 2026-07-31) — optional bilingual notice shown WITH the live
+    // Optional bilingual notice shown WITH the live
     // stream. Informational only: it restricts nothing and withholds nothing.
     public string? LiveNotice { get; set; }
     public string? LiveNoticeArabic { get; set; }

@@ -20,7 +20,7 @@ namespace SIMF.Infrastructure.Notifications;
 /// <see cref="ProcessNextPendingAsync"/>. Recipients are resolved at send time —
 /// a session's active seat-holders (App DB) or a broad audience (Identity DB) —
 /// and their emails via <see cref="IIdentityUserDirectory"/>, so no recipient
-/// data is ever copied across the D-157 boundary and the two DBs never share a
+/// data is ever copied across the App/Identity boundary and the two DBs never share a
 /// transaction. Modelled on <c>AdminInvitationService.NotifyVipsAsync</c>, made
 /// durable + paced.
 /// </summary>
@@ -355,7 +355,7 @@ internal sealed class NotificationBroadcastService(
     }
 
     // Builds the distinct recipient-user-id query for a target — a single-context
-    // query per branch (no cross-DB JOIN, D-157). Session/EventAttendees read the
+    // query per branch (no cross-DB JOIN). Session/EventAttendees read the
     // App-DB seat reservations; the audience scopes read the Identity-DB users. All
     // reads are AsNoTracking so the Identity context (shared with the dispatcher's
     // writes) is never dirtied by a read. Returned as an IQueryable so the caller

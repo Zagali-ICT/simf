@@ -9,12 +9,12 @@ using SIMF.Contracts.Media;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/media/export</c> — the D-356 grid export for the Media
-/// gallery (Mockup page 30). All the work lives in
+/// <c>POST /api/v1/admin/media/export</c> — the generic grid export for the Media
+/// gallery. All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass only declares the
 /// route, permission, sheet/file names, the column layout (mirroring the Media
 /// grid), and how to list + identify a media row.
-/// <para>The image bitmap is held out-of-row (D-90) and is never exported — the
+/// <para>The image bitmap is held out-of-row and is never exported — the
 /// workbook carries only the metadata + the external playback <c>Url</c>.</para>
 /// </summary>
 public sealed class ExportMediaEndpoint(IAdminMediaService service, IGridExcelExporter exporter)
@@ -48,12 +48,12 @@ public sealed class ExportMediaEndpoint(IAdminMediaService service, IGridExcelEx
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/media/import</c> — the D-356 grid import (insert-only)
+/// <c>POST /api/v1/admin/media/import</c> — the generic grid import (insert-only)
 /// for the Media gallery. The base does the upload defence, parse and per-row
 /// error aggregation; this subclass binds one row to
 /// <see cref="AdminCreateMediaRequest"/> and creates it.
 /// <para>Import creates the metadata row only — the image bitmap is uploaded
-/// out-of-row afterwards via <c>POST /admin/media/{id}/image</c> (D-90), so no
+/// out-of-row afterwards via <c>POST /admin/media/{id}/image</c>, so no
 /// bytes ride the workbook. A Video row requires a <c>Url</c> (its playback
 /// source); an Image does not.</para>
 /// </summary>

@@ -41,7 +41,7 @@ public enum FileAccessClass
 /// <param name="OwnerRequired">When true, an upload MUST carry a (server-derived)
 /// owner id and the download owner-check can never silently fall through to admin.</param>
 /// <param name="Retention">Retention period from which RetainUntil is computed;
-/// null = indefinite. (The concrete schedule is open owner decision D-568 #7.)</param>
+/// null = indefinite. (The concrete schedule is still an open owner decision.)</param>
 /// <param name="DeletableDefault">Default for StoredFile.IsDeletable.</param>
 public sealed record FileServicePolicy(
     FileService Service,
@@ -96,7 +96,7 @@ public static class FileServicePolicies
                 AdminPermission: null, EncryptAtRest: true, Documents, FileOwnerEntityType.SpeakerPresentation,
                 OwnerRequired: false, Retention: null, DeletableDefault: true),
 
-            // EncryptAtRest:false (D-568 Wave C S7): a conference recording is
+            // EncryptAtRest:false: a conference recording is
             // Internal-tier (not PII), and Range/seek streaming (HTTP 206) needs a
             // SEEKABLE plaintext file — AES-GCM is not seekable. This matches the
             // posture of the legacy plaintext recording store it replaces (no

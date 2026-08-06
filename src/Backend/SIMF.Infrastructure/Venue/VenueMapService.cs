@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Venue;
 
-/// <summary>P2.5 — D-230 (FR-605, FDS-006 §5.3): the 2D venue map. Admin CRUD
+/// <summary>The 2D venue map. Admin CRUD
 /// over nodes + the public read for the app. Validates optional Hall / Booth
 /// references against the same DbContext. Mirrors AdminSessionCategoryService.</summary>
 internal sealed class VenueMapService(
@@ -29,7 +29,7 @@ internal sealed class VenueMapService(
 
         var rows = db.VenueMapNodes.AsNoTracking().AsQueryable();
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -50,7 +50,7 @@ internal sealed class VenueMapService(
                 || EF.Functions.Like(n.LabelArabic, $"%{term}%"));
         }
 
-        // CP grid sortable columns (D-255). Default: Label ascending.
+        // CP grid sortable columns. Default: Label ascending.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("label", true) => rows.OrderByDescending(n => n.Label),
@@ -232,7 +232,7 @@ internal sealed class VenueMapService(
     private static void EnsureKindMatchesReferences(
         VenueMapNodeKind kind, Guid? hallId, Guid? boothId)
     {
-        // #25 — reject an out-of-range Kind (e.g. a direct API call sending an
+        // Reject an out-of-range Kind (e.g. a direct API call sending an
         // undefined enum value) before it persists: the DB has no enum-range check,
         // only the weak arc below, so an unreferenced node would otherwise store it.
         if (!Enum.IsDefined(kind))

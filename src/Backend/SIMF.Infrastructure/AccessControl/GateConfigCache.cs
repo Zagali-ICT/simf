@@ -6,8 +6,8 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.AccessControl;
 
-/// <summary>IMemoryCache-backed read-through cache. 5-minute TTL
-/// per D-148 reasoning. <c>AdminGateService</c> calls <see cref="Invalidate"/>
+/// <summary>IMemoryCache-backed read-through cache with a 5-minute TTL.
+/// <c>AdminGateService</c> calls <see cref="Invalidate"/>
 /// on every Update / Deactivate; the cache also expires entries on its own
 /// schedule so a stale read can never persist beyond the TTL.</summary>
 internal sealed class GateConfigCache(

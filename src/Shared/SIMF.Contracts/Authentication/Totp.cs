@@ -21,7 +21,7 @@ public sealed class TotpConfirmRequest
 /// <summary>The body of a confirmed TOTP enrolment.</summary>
 /// <param name="RecoveryCodes">
 /// The freshly minted single-use recovery codes — shown plaintext exactly
-/// once (decision D-040). The user must save them now; the API never returns
+/// once. The user must save them now; the API never returns
 /// them again, only counts them on the profile.
 /// </param>
 public sealed record TotpConfirmResponse(

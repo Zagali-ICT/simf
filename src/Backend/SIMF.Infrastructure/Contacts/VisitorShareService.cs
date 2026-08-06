@@ -11,11 +11,11 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Contacts;
 
 /// <summary>
-/// SIMF-FDS-014 §5.4–5.7 (D-284, Track 2) — visitor-to-visitor contact sharing.
+/// Visitor-to-visitor contact sharing.
 /// Mints / rotates a visitor's dedicated share token, resolves a token to a live
 /// card projected from the owner's <c>UserProfile</c> (+ Organisation / Country
-/// lookups on the App DB + a permitted email round-trip on the Identity DB,
-/// OI-2), and manages the caller's <em>My Contacts</em>. Cross-DB references are
+/// lookups on the App DB + a permitted email round-trip on the Identity DB),
+/// and manages the caller's <em>My Contacts</em>. Cross-DB references are
 /// bare-Guid logical FKs resolved on read — no EF join, no PII snapshot.
 /// </summary>
 internal sealed class VisitorShareService(

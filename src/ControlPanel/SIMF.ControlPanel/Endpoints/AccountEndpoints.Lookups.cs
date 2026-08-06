@@ -75,7 +75,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateAdminProfileTypeAsync(id, token));
         });
 
-        // P9 — Interests CRUD proxy.
+        // Interests (الاهتمامات) CRUD proxy.
         group.MapPost("/admin/interests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {

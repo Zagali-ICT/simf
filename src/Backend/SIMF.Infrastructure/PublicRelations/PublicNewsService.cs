@@ -7,7 +7,7 @@ using SIMF.Common;
 
 namespace SIMF.Infrastructure.PublicRelations;
 
-/// <summary>D-199 (Mockup screen 29 / 29b) — public read of the News feed.
+/// <summary>Public read of the News feed.
 /// Surfaces only active articles whose <c>PublishedAt</c> has passed, newest
 /// first. Built on <see cref="SimfAppDbContext"/>; mirrors
 /// <c>PublicDelegationService</c> but adds paging because a news feed grows

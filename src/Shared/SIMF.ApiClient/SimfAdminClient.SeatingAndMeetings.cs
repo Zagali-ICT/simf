@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-182 (CP UI for D-175 seat reservations) -------------------------
+    // -- Seat reservations: the CP UI over the seat-plan API ---------------
 
     public Task<ApiCallResult<HallSeatLayoutSnapshot>> GetHallSeatLayoutAsync(
         Guid hallId, string accessToken,
@@ -52,7 +52,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>B15 — remove the hall's seat layout (the hall reverts to general
+    /// <summary>Remove the hall's seat layout (the hall reverts to general
     /// admission). Returns the now-empty snapshot.</summary>
     public Task<ApiCallResult<HallSeatLayoutSnapshot>> DeleteHallSeatLayoutAsync(
         Guid hallId, string accessToken,
@@ -61,7 +61,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"halls/{hallId}/seat-layout", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>DEF-SEA-001 / A11 — the seat plan's active reservations in the ADMIN
+    /// <summary>The seat plan's active reservations in the ADMIN
     /// shape: each row names its holder and carries the real status + check-in flag.</summary>
     public Task<ApiCallResult<GridPage<SeatPlanCell>>> ListSessionSeatReservationsAsync(
         Guid sessionId, GridQuery query, string accessToken,
@@ -94,7 +94,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"sessions/{sessionId}/seats/{reservationId}",
             content: null, accessToken, cancellationToken);
 
-    // 2026-07-18 (live per-session hall view, CP page 2e) — the session's 4-state
+    // The live per-session hall view: the session's 4-state
     // seat map (no "my seat" cell) and everyone currently present in the hall.
     // Both API-side gated Attendance.View.
     public Task<ApiCallResult<SessionSeatMap>> GetAdminSessionSeatMapAsync(
@@ -111,7 +111,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"sessions/{sessionId}/present", content: null,
             accessToken, cancellationToken);
 
-    // -- D-269 — speaker meeting requests (SIMF.Contracts.Programme) ---------
+    // -- Speaker meeting requests (SIMF.Contracts.Programme) -----------------
 
     public Task<ApiCallResult<GridPage<AdminSpeakerMeetingRequestRow>>> ListAdminSpeakerMeetingRequestsAsync(
         GridQuery query, string accessToken,
@@ -136,7 +136,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    // R-1 — re-send the speaker's Approve/Reject confirmation links (AwaitingSpeaker only).
+    // Re-send the speaker's Approve/Reject confirmation links (AwaitingSpeaker only).
     public Task<ApiCallResult<bool>> ResendSpeakerMeetingConfirmationAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -152,7 +152,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Post, $"speaker-meeting-requests/{id}/check-in",
             content: null, accessToken, cancellationToken);
 
-    // QA B20 — an admin reopens a Rejected / Cancelled request back to Pending.
+    // An admin reopens a Rejected / Cancelled request back to Pending.
     public Task<ApiCallResult<AdminSpeakerMeetingRequestDetail>> ReopenSpeakerMeetingRequestAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -160,7 +160,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Post, $"speaker-meeting-requests/{id}/reopen",
             content: null, accessToken, cancellationToken);
 
-    // -- D-500 (Wave 5, الطلبات) — participation-document + badge-update request
+    // -- Participation-document + badge-update (الطلبات) request
     //    desks (SIMF.Contracts.Requests) -------------------------------------
 
     public Task<ApiCallResult<GridPage<AdminParticipationDocumentRequestRow>>> ListAdminParticipationDocumentRequestsAsync(
@@ -241,7 +241,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, "programme/forum-window", content: null,
             accessToken, cancellationToken);
 
-    // -- D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows ---------
+    // -- Hall availability windows ---------------------------------------------
 
     public Task<ApiCallResult<IReadOnlyList<AdminHallAvailabilityWindow>>>
         ListHallAvailabilityWindowsAsync(Guid hallId, string accessToken,
@@ -275,7 +275,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"halls/{hallId}/available-slots", content: null,
             accessToken, cancellationToken);
 
-    // -- D-478 (#11) — delegation meeting requests (SIMF.Contracts.Programme) -
+    // -- Delegation meeting requests (SIMF.Contracts.Programme) ---------------
 
     public Task<ApiCallResult<GridPage<AdminDelegationMeetingRequestRow>>>
         ListAdminDelegationMeetingRequestsAsync(GridQuery query, string accessToken,

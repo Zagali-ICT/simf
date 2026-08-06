@@ -11,8 +11,8 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/venue-map/export</c> — the D-356 grid export for the 2D
-/// venue-map nodes (SIMF-FDS-006 §5.3, FR-605). All the work lives in
+/// <c>POST /api/v1/admin/venue-map/export</c> — the grid export for the 2D
+/// venue-map nodes. All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass only declares the
 /// route, permission, sheet/file names, the column layout (mirroring the grid)
 /// and how to list + identify a node. The list call goes through the same
@@ -87,7 +87,7 @@ public sealed class ExportVenueMapEndpoint(
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/venue-map/import</c> — the D-356 grid import
+/// <c>POST /api/v1/admin/venue-map/import</c> — the grid import
 /// (insert-only) for venue-map nodes. The base does the upload defence, parse and
 /// per-row error aggregation; this subclass binds one row to
 /// <see cref="AdminCreateVenueMapNodeRequest"/> and creates it.

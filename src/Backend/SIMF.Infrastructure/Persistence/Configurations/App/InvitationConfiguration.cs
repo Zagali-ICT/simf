@@ -7,8 +7,8 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
 /// Invitation entity configuration. Real DB FK to
-/// <see cref="UserProfile"/> on the recipient side (D-167 moved
-/// UserProfile to this DbContext so a real FK is possible). SentByUserId
+/// <see cref="UserProfile"/> on the recipient side, because UserProfile lives
+/// on this same DbContext. SentByUserId
 /// stays a logical FK because SimfUser lives on the Identity DB; the
 /// service layer enforces existence at write time.
 /// </summary>

@@ -17,5 +17,5 @@ public sealed class CompletePasswordChangeRequest
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
-/// <summary>The result of a completed forced password change (D-206).</summary>
+/// <summary>The result of a completed forced password change.</summary>
 public sealed record CompletePasswordChangeResponse(bool PasswordChanged);

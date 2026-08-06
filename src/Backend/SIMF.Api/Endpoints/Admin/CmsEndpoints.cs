@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-// -- D-173 (gap doc G8) — admin CMS endpoints (ContentBlock + Banner) ----
+// -- Admin CMS endpoints (ContentBlock + Banner) -------------------------
 
 public sealed class ListContentBlocksEndpoint(IAdminCmsService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminContentBlockSummary>>>

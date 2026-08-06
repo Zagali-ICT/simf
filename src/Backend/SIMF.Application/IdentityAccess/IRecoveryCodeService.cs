@@ -2,7 +2,7 @@ namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
 /// Mints, verifies and consumes the single-use recovery codes that a user can
-/// submit when they've lost access to their authenticator app (D-040). Codes
+/// submit when they've lost access to their authenticator app. Codes
 /// are returned plaintext only at issuance — never again.
 /// </summary>
 public interface IRecoveryCodeService

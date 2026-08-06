@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/SessionQuestionCommitteeTests.cs
-// Tests: SIMF.Api.Tests/ModeratorDeskStateTests.cs (D-771 — a Committee rejection
+// Tests: SIMF.Api.Tests/ModeratorDeskStateTests.cs (a Committee rejection
 //        restores to Pending, never onto the moderator desk)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -14,7 +14,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.SessionQuestions;
 
 /// <summary>
-/// P3.3 — D-212 (Completion Programme §5.3): the Scientific-Committee central
+/// The Scientific-Committee central
 /// Q&amp;A queue (stage 2). Trusts the caller is authorized — the endpoint layer
 /// gates with Questions.View / Moderate / Escalate. Cross-DB submitter display
 /// names are resolved against the Identity DB.
@@ -202,7 +202,7 @@ internal sealed class SessionQuestionCommitteeService(
         }, cancellationToken);
 
     // Mirror of SessionModerationService.ToRowAsync — submitter resolved from
-    // the Identity DB (no cross-DB JOIN, D-157); title is a separate scalar read.
+    // the Identity DB (no cross-DB JOIN); title is a separate scalar read.
     private async Task<SessionQuestionQueueRow> ToRowAsync(
         SessionQuestion question, CancellationToken cancellationToken)
     {

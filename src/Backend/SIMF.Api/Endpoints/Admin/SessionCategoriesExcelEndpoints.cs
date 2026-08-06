@@ -9,7 +9,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/session-categories/export</c> — D-356 grid export for
+/// <c>POST /api/v1/admin/session-categories/export</c> — the grid export for
 /// the dynamic session-category lookup. All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass only declares the
 /// route, permission, sheet/file names, the column layout, and how to list +
@@ -42,7 +42,7 @@ public sealed class ExportSessionCategoriesEndpoint(
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/session-categories/import</c> — D-356 grid import
+/// <c>POST /api/v1/admin/session-categories/import</c> — the grid import
 /// (insert-only). The base does the upload defence, parse and per-row error
 /// aggregation; this subclass binds one row to
 /// <see cref="AdminCreateSessionCategoryRequest"/> and creates it (the service

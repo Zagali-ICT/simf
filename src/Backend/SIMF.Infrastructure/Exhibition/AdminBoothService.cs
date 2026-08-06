@@ -43,7 +43,7 @@ internal sealed class AdminBoothService(
                 || EF.Functions.Like(booth.NameArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         // The Exhibitor + Hall columns are resolved client-side from cached
         // lookups (the summary carries only the ids), so they are NOT
         // server-filterable and are intentionally absent here.
@@ -68,7 +68,7 @@ internal sealed class AdminBoothService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: Code. The Exhibitor + Hall
+        // CP grid sortable columns. Default: Code. The Exhibitor + Hall
         // columns sort on a client-resolved value, so they are not server-
         // sortable and are absent here.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
@@ -394,7 +394,7 @@ internal sealed class AdminBoothService(
 
         // Optional fields — lengths mirror BoothConfiguration.HasMaxLength
         // (Officer name = 256 / phone = 32 / email = 320, Sector* = 128,
-        // Description* = 2048). B1 — D-222: booth-officer contact.
+        // Description* = 2048).
         var officerName = OptionalText(
             officerNameRaw, 256, "Booth officer name", "اسم مسؤول الجناح");
         var officerPhone = OptionalText(

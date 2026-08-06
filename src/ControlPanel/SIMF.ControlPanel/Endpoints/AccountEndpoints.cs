@@ -30,11 +30,11 @@ using SIMF.Common.Enums;
 namespace SIMF.ControlPanel.Endpoints;
 
 /// <summary>
-/// Control Panel proxy endpoints for the account-management calls
-/// (myComment item #11). Each endpoint reads the access token from the
+/// Control Panel proxy endpoints for the account-management calls.
+/// Each endpoint reads the access token from the
 /// cookie's stored auth tokens and forwards the request to the SIMF API,
 /// returning the upstream HTTP status verbatim so the page can react to
-/// 401 / 423 / 429 distinctly (5-agent review SEV-1.3).
+/// 401 / 423 / 429 distinctly.
 ///
 /// The Blazor profile page calls these endpoints via <c>fetch</c> so the
 /// browser sends the auth cookie automatically (the page itself never sees
@@ -95,7 +95,7 @@ internal static partial class AccountEndpoints
     /// Forwards one report export: pulls the caller's access token, calls the
     /// API, and streams the workbook back as a download. Shared by every report
     /// so the content type and the file-name convention live in one place.
-    /// The stamp is Saudi local (D-770), not a zoned stamp.
+    /// The stamp is Saudi local, not a zoned stamp.
     /// </summary>
     private static async Task<IResult> ForwardReportExportAsync(
         HttpContext http,
@@ -165,7 +165,7 @@ internal static partial class AccountEndpoints
         }).DisableAntiforgery();
     }
 
-    /// <summary>CS-D (D-386) — optional body for the approve-visitor
+    /// <summary>Optional body for the approve-visitor
     /// passthrough. <see cref="ProfileTypeId"/> null (or an empty body)
     /// leaves the visitor's tier unchanged.</summary>
     private sealed record ApproveVisitorBody(Guid? ProfileTypeId);

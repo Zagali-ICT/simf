@@ -5,39 +5,38 @@ using SIMF.Common.Enums;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// Admin-driven approve / reject for the three <c>UserType</c> families
-/// (Admin / Other / Visitor) per P7 (D-048). R2 — D-075: split out of
-/// <c>IAdminAccountService</c> per Architecture SEV-1.2.
+/// Admin-driven approve / reject for the three admin queues (Admin / Other /
+/// Visitor). Split out of <c>IAdminAccountService</c>.
 /// </summary>
 public interface IAdminUserApprovalService
 {
-    /// <summary>Approve a pending Admin (P7c).</summary>
+    /// <summary>Approve a pending Admin.</summary>
     Task ApproveAdminAsync(
         Guid actorUserId,
         Guid subjectUserId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Reject a pending Admin (P7c). Reason is mandatory.</summary>
+    /// <summary>Reject a pending Admin. Reason is mandatory.</summary>
     Task RejectAdminAsync(
         Guid actorUserId,
         Guid subjectUserId,
         AdminRejectRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Approve a pending Other (P7c — new).</summary>
+    /// <summary>Approve a pending Other.</summary>
     Task ApproveOtherAsync(
         Guid actorUserId,
         Guid subjectUserId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Reject a pending Other (P7c — new). Reason is mandatory.</summary>
+    /// <summary>Reject a pending Other. Reason is mandatory.</summary>
     Task RejectOtherAsync(
         Guid actorUserId,
         Guid subjectUserId,
         AdminRejectRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Approve a pending Visitor (P4). CS-D (D-386) — an optional
+    /// <summary>Approve a pending Visitor. An optional
     /// <paramref name="profileTypeId"/> sets the visitor's tier as part of
     /// the approval; null leaves it unchanged. A non-null id must be an
     /// active, audience-side (IsForVisitor=true) ProfileType — otherwise the
@@ -48,27 +47,26 @@ public interface IAdminUserApprovalService
         Guid? profileTypeId = null,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Reject a pending Visitor (P4). Reason is mandatory.</summary>
+    /// <summary>Reject a pending Visitor. Reason is mandatory.</summary>
     Task RejectVisitorAsync(
         Guid actorUserId,
         Guid subjectUserId,
         AdminRejectRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-164 (PDF §2.7.1, gap doc G2) — bulk approve a batch of
-    /// pending <see cref="UserType.Visitor"/> users. Each subject is
-    /// approved in its own atomic step; per-subject failures are recorded
-    /// in the returned report and do not block the rest. One row-audit +
-    /// one operation-log row per subject (the "Select All" affordance the
-    /// security team needs).</summary>
+    /// <summary>Bulk approve a batch of pending <see cref="UserType.Visitor"/>
+    /// users. Each subject is approved in its own atomic step; per-subject
+    /// failures are recorded in the returned report and do not block the rest.
+    /// One row-audit + one operation-log row per subject (the "Select All"
+    /// affordance the security team needs).</summary>
     Task<AdminBulkApprovalResponse> BulkApproveVisitorsAsync(
         Guid actorUserId,
         AdminBulkApprovalRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-164 — bulk approve partner-side accounts (D-186:
-    /// Visitor users whose linked ProfileType.IsVisitor is false).
-    /// Same shape as the visitor variant.</summary>
+    /// <summary>Bulk approve partner-side accounts (Visitor users whose
+    /// linked ProfileType.IsVisitor is false). Same shape as the visitor
+    /// variant.</summary>
     Task<AdminBulkApprovalResponse> BulkApproveOthersAsync(
         Guid actorUserId,
         AdminBulkApprovalRequest request,

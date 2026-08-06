@@ -9,12 +9,12 @@ using SIMF.Contracts.Programme;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/speaker-meeting-requests/export</c> — the D-356 grid
-/// export for the admin speaker-meeting-requests queue (D-269). <b>Export only:</b>
+/// <c>POST /api/v1/admin/speaker-meeting-requests/export</c> — the grid
+/// export for the admin speaker-meeting-requests queue. <b>Export only:</b>
 /// these requests are created from the app and responded to from the CP modal, so
 /// there is no generic import path. The columns mirror the CP grid's visible
-/// columns; the requester email is deliberately NOT exported (it is per-record
-/// PII surfaced only via the audited detail endpoint, the D-185 pattern). The row
+/// columns; the requester email is deliberately NOT exported — it is per-record
+/// PII, surfaced only via the audited detail endpoint. The row
 /// list reuses the same service the list endpoint calls so filters/sorts behave
 /// identically. The actor is resolved from the access token for the service's
 /// audit-log entry.
@@ -39,7 +39,7 @@ public sealed class ExportSpeakerMeetingRequestsEndpoint(ISpeakerMeetingRequestS
         new("RespondedAt", row => row.RespondedAt is null
             ? string.Empty
             : row.RespondedAt.Value.ToString("yyyy-MM-dd HH:mm")),
-        // OA-D5 — the hall check-in stamps. They were written by the check-in action
+        // The hall check-in stamps. They were written by the check-in action
         // (POST /admin/speaker-meeting-requests/{id}/check-in) but appeared in no
         // report, so "who actually turned up" was unanswerable off-screen.
         new("CheckedInAt", row => row.CheckedInAt is null

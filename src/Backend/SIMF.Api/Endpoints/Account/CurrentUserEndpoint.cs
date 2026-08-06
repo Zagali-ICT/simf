@@ -9,13 +9,13 @@ namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
 /// <c>GET /api/v1/app/users/me</c> — the signed-in user the Flutter app decodes
-/// into its <c>CurrentUserDto</c> (SIMF-MOB-API-001 §5.1): identity, the
+/// into its <c>CurrentUserDto</c>: identity, the
 /// resolved mobile app-role, the preferred language and the registration
 /// status. Available to ANY signed-in account — including not-yet-approved
 /// ones — so the app can poll the approval state on the Registration-Status
-/// screen (Page 011). Mirrors <see cref="ProfileEndpoint"/>'s auth model
+/// screen. Mirrors <see cref="ProfileEndpoint"/>'s auth model
 /// (signed-in, own <c>sub</c>); no permission code (app self-read, not an admin
-/// action). D-249.
+/// action).
 /// </summary>
 public sealed class CurrentUserEndpoint(IAccountService accountService)
     : EndpointWithoutRequest<ApiResult<CurrentUserResponse>>

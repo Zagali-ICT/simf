@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P2.3 — D-228 (FR-407, SIMF-FDS-004 §5.3): speaker presentation
+/// <summary>Speaker presentation
 /// files. Management is gated by the existing Speakers.* permissions (View to
 /// read/list/download, Edit to upload/delete). Bytes are stored out-of-row.</summary>
 public sealed class ListSpeakerPresentationsRoute { public Guid SpeakerId { get; set; } }

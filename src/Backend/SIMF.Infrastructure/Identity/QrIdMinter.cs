@@ -8,15 +8,15 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// Crockford base32 12-character QR-id minter (decision D-046). 32^12 ≈
+/// Crockford base32 12-character QR-id minter. 32^12 ≈
 /// 1.2 × 10^18 possible values; collisions are negligible at SIMF scale
 /// (thousands of users), but we still query the DB once to ensure
 /// uniqueness — the column carries a UNIQUE constraint anyway.
 ///
-/// <para>D-106 / D-167: minted on <see cref="UserProfile.QrId"/>; the
+/// <para>Minted on <see cref="UserProfile.QrId"/>; the
 /// uniqueness query is a LINQ-IQueryable read against
-/// <c>SimfAppDbContext.UserProfiles</c> after D-167 moved the entity to
-/// the App DB.</para>
+/// <c>SimfAppDbContext.UserProfiles</c>, which is where the entity
+/// lives.</para>
 /// </summary>
 internal sealed class QrIdMinter(SimfAppDbContext dbContext) : IQrIdMinter
 {

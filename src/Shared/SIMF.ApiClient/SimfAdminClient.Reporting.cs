@@ -51,7 +51,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, "feedback/ratings/kpi",
             content: null, accessToken, cancellationToken);
 
-    // -- D-202 Track-2 — Statistics dashboard (SIMF.Contracts.Statistics) ----
+    // -- Statistics dashboard (SIMF.Contracts.Statistics) --------------------
 
     public Task<ApiCallResult<StatisticsDashboard>> GetStatisticsAsync(
         string accessToken, CancellationToken cancellationToken = default) =>
@@ -192,7 +192,7 @@ public sealed partial class SimfAdminClient
         CancellationToken cancellationToken = default) =>
         PostForBytesAsync("reports/engagement/export", query, accessToken, cancellationToken);
 
-    // -- FR-506 — session-attendance dashboard (SIMF.Contracts.Attendance) ----
+    // -- Session-attendance dashboard (SIMF.Contracts.Attendance) -------------
 
     public Task<ApiCallResult<SessionAttendanceSummary>> GetSessionAttendanceSummaryAsync(
         string accessToken, CancellationToken cancellationToken = default) =>
@@ -208,7 +208,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    // -- D-202 Track-2 — Exhibitor admin CRUD + account provisioning --------
+    // -- Exhibitor admin CRUD + account provisioning ------------------------
     // (SIMF.Contracts.Exhibitors)
 
     public Task<ApiCallResult<GridPage<AdminExhibitorSummary>>> ListExhibitorsAsync(

@@ -7,7 +7,7 @@ namespace SIMF.Infrastructure.Configuration;
 /// <summary>Projects the singleton <see cref="OrganizationProfile"/> + its
 /// active child lists to the public <see cref="OrganizationProfileResponse"/>. Shared
 /// by the cached read service and the admin GET so the mapping lives in one place.
-/// URLs are sanitised on read (D-467): only an absolute http(s) URL is surfaced.</summary>
+/// URLs are sanitised on read: only an absolute http(s) URL is surfaced.</summary>
 internal static class OrganizationProfileMapper
 {
     public static OrganizationProfileResponse ToResponse(

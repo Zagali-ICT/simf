@@ -64,11 +64,11 @@ public sealed class CreateCountryEndpoint(IAdminCountryService service)
 }
 
 /// <summary>Binds {id} + body via a derived route that INHERITS the
-/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
-/// D-842 (sessions), D-843 (gates, profile types) and the four before them
-/// silently dropped a field on PUT. Passing the bound request straight through
-/// makes that drop impossible.</summary>
+/// the sessions route, the gates and profile-type routes, and the four before
+/// them silently dropped a field on PUT. Passing the bound request straight
+/// through makes that drop impossible.</summary>
 public sealed class UpdateCountryRequest : AdminUpdateCountryRequest
 {
     // Countries are the one admin resource with an int key, not a Guid — the
@@ -96,7 +96,7 @@ public sealed class UpdateCountryEndpoint(IAdminCountryService service)
     }
 }
 
-/// <summary>D-499 (الوفود) — <c>GET /admin/countries/{id}/delegates</c>: the active
+/// <summary>The delegations (الوفود) endpoint <c>GET /admin/countries/{id}/delegates</c>: the active
 /// delegates of a country, feeding the head-of-delegation picker on the CP country
 /// Edit form. Gated by <see cref="PermissionCatalog.Countries.View"/>.</summary>
 public sealed class ListCountryDelegatesEndpoint(IAdminCountryService service)

@@ -124,7 +124,7 @@ public sealed class PreviewEmailTemplateEndpoint(IAdminEmailTemplateService serv
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         // No rate limit: preview is a read-only, no-side-effect render the CP
         // editor calls on every keystroke — it must NOT drain the shared per-IP
-        // "auth" bucket that sign-in / OTP use (cf. D-731). The View permission
+        // "auth" bucket that sign-in / OTP use. The View permission
         // already gates it to admins.
         Tags("Admin");
     }

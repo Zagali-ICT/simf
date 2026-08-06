@@ -73,7 +73,7 @@ public sealed class RateLimitOptions
     /// <summary>The global window length, in seconds.</summary>
     public int GlobalWindowSeconds { get; set; } = 60;
 
-    /// <summary>D-179 (gap doc G12 hardening) — per-admin cap on the AI
+    /// <summary>The per-admin cap on the AI
     /// prompt dry-run endpoint (<c>POST /admin/ai/prompts/{id}/test</c>).
     /// The existing per-IP "auth" window does not protect against an
     /// office shared by multiple admins, or a stolen-credential botnet

@@ -12,12 +12,12 @@ namespace SIMF.Api.Endpoints.Admin.Validators;
 /// (the desk frequently registers walk-ins without one); the matching
 /// service synthesizes a placeholder.
 ///
-/// <para>D-819 — this validator now owns the SHAPE rules only (lengths, the
+/// <para>This validator owns the SHAPE rules only (lengths, the
 /// national-id / Iqama patterns and their Luhn checksum, the Saudi and E.164
 /// mobile formats, the plate format, the enum range), each applied when the
 /// field is supplied. The PRESENCE rules — which of those fields are mandatory
-/// — moved to <c>AdminAccountService.EnsureFullDeskFields</c>, because whether
-/// they are mandatory depends on whether the D-819 quick-register mode is
+/// — live in <c>AdminAccountService.EnsureFullDeskFields</c>, because whether
+/// they are mandatory depends on whether the quick-register mode is
 /// armed, and that cannot be read here: FluentValidation is synchronous and
 /// FastEndpoints validators are singletons, so a constructor read would freeze
 /// the answer at startup. Putting the choice in the service also keeps it
@@ -66,7 +66,7 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "Profile type is required.",
                 "نوع الملف الشخصي مطلوب.");
 
-        // B3 — D-221 (الجهة): required at the desk. Shape-check only here
+        // Organisation (الجهة): required at the desk. Shape-check only here
         // (non-null, non-empty Guid); the existence / IsActive check runs in
         // the service against the App DB (cross-context — FluentValidation is
         // sync), exactly like ProfileTypeId / NationalityCode.
@@ -146,7 +146,7 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "Place of birth must be at most 128 characters.",
                 "يجب ألا يتجاوز مكان الميلاد 128 حرفًا.");
 
-        // D-163 (PDF §2.6) — optional job title, max 100 chars (owner 2026-07-06).
+        // Optional job title, max 100 chars (owner 2026-07-06).
         RuleFor(request => request.JobTitle)
             .MaximumLength(100).When(r => !string.IsNullOrEmpty(r.JobTitle))
             .Bilingual(
@@ -165,7 +165,7 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "You can pick up to 10 interests.",
                 "يمكنك اختيار حتى 10 اهتمامات.");
 
-        // C6 (D-459, relaxed 2026-07-06) — optional plate; when present it must
+        // Optional plate (relaxed 2026-07-06); when present it must
         // be plate letters from the 17-letter set and/or digits (up to 3 + up
         // to 4), the same rule as the self-service profile upsert.
         RuleFor(request => request.PlateNumber)
@@ -180,9 +180,9 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "Select a valid gender.",
                 "اختر جنسًا صحيحًا.");
 
-        // V-1 (D-429) — VVIP/VIP موج-integration extras. All optional; lengths
+        // VVIP/VIP موج-integration extras. All optional; lengths
         // match UserProfile (MawjId 64, Honorific 64, PreferredLanguage 16) per
-        // the validation-alignment rule (SES §7).
+        // the validation-alignment rule.
         RuleFor(request => request.MawjId)
             .MaximumLength(64).When(r => !string.IsNullOrEmpty(r.MawjId))
             .Bilingual(

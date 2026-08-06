@@ -1,7 +1,7 @@
-@* P2.1 (D-211) — FAQ management. Two-level: a groups grid (top) and, when a
+@* FAQ management. Two-level: a groups grid (top) and, when a
    group is selected via "Manage entries", its entries grid (below). Migrated
-   from the custom raw <table> pair to the canonical SimfDataGrid (owner-mandated
-   standard, D-338) — server-paged + numbered pager + select-all + per-row icon
+   from the custom raw <table> pair to the canonical SimfDataGrid (the
+   owner-mandated standard) — server-paged + numbered pager + select-all + per-row icon
    actions. Each grid sorts on the columns the FAQ service supports (name /
    question / display-order); per-column text filters are not enabled because
    the service filters only by global search + isActive. Page-level
@@ -169,7 +169,7 @@
     </div>
 </div>
 
-@* D-835 - the read affordance. The grid shows the question, order and status; the
+@* The read affordance. The grid shows the question, order and status; the
    ANSWER is carried on the same summary and shown nowhere else, so before this an
    admin without Faq.Edit could not read the answer they are responsible for. *@
 <SimfDetails Open="@(_entryDetails is not null)"
@@ -220,7 +220,7 @@
             </div>
         </ChildContent>
         <Footer>
-            @* D-828 — the page gates on Faq.View; saving needs Create or Edit.
+            @* The page gates on Faq.View; saving needs Create or Edit.
                Keyed off the modal's own mode so a holder of only one of the two
                keeps the half they are entitled to, rather than being gated on
                whichever is stricter. Cancel stays ungated: closing a modal is
@@ -286,7 +286,7 @@
     </SimfModal>
 }
 
-@* §6.16 (F-U5-004) — these deletes cascade; confirm before running them. *@
+@* These deletes cascade; confirm before running them. *@
 <SimfConfirm Open="@(_pendingDelete is not null)"
              Danger="true"
              Title="@(_pendingDelete?.Title ?? string.Empty)"

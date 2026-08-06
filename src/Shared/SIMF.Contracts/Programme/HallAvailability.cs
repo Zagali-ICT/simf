@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Programme;
 
-/// <summary>D-715 (item 7, FDS-013 §15 GAP-1) — a hall availability window as the
+/// <summary>A hall availability window as the
 /// admin sees it (the team defines these; the meeting-review flow binds an
 /// accepted request to a free hall slot). Symmetric with
 /// <see cref="AdminSpeakerAvailabilityWindow"/>.</summary>

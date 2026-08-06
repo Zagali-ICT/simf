@@ -1,7 +1,7 @@
-@* SimfRadioGroup — a typed labelled radio group (decision D-044 c). One
+@* SimfRadioGroup — a typed labelled radio group. One
    field shell (label + helper + error) wrapping a set of native radio
    inputs. Used for mutually-exclusive choices like "Saudi / non-Saudi" or
-   "Visitor / Exhibitor / Press" on the visitor profile (myComment #18). *@
+   "Visitor / Exhibitor / Press" on the visitor profile. *@
 @namespace SIMF.Components.Forms
 @typeparam TValue
 
@@ -57,8 +57,8 @@
         : null;
 
     /// <summary>The group label. When omitted, callers should pass
-    /// <see cref="AriaLabel"/> so the radiogroup still has an accessible name
-    /// (D-045 H2).</summary>
+    /// <see cref="AriaLabel"/> so the radiogroup still has an accessible
+    /// name.</summary>
     [Parameter] public string? Label { get; set; }
 
     /// <summary>Fallback accessible name when <see cref="Label"/> is empty.</summary>

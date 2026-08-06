@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-485 (owner batch 2026-06-21) — how attendees join a session held in
+/// <summary>How attendees join a session held in
 /// a given <c>Hall</c> (or overridden per <c>Session</c>):
 /// <list type="bullet">
 /// <item><see cref="AssignedSeat"/> — the attendee picks a specific seat from the

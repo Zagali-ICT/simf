@@ -1,4 +1,4 @@
-@* P1.3 (D-214) — shared admin edit form for a Visitor or Other account.
+@* Shared admin edit form for a Visitor or Other account.
    Loads the current account (email, display name, tier) + the active
    profile-type options for the scope, then PUTs the edit. An email change
    signs the account out (security stamp roll on the server); the helper note
@@ -43,7 +43,7 @@ else
                     ValueChanged="OnProfileTypeChanged"
                     Placeholder="@(IsVisitorScope ? L["Admin.Edit.ProfileType.None"].Value : L["Admin.Edit.ProfileType.Choose"].Value)" />
 
-        @* B22 — nationality. It gates delegation-meeting confirm eligibility, yet it
+        @* Nationality. It gates delegation-meeting confirm eligibility, yet it
            was only ever written by the self-service sign-up, so an admin could not fix
            a delegate blocked by a wrong nationality. Leaving the picker empty sends no
            nationality and leaves the stored value untouched. *@
@@ -57,7 +57,7 @@ else
                     ValueChanged="OnNationalityPicked" />
         <p class="simf-form__hint">@L["Admin.Edit.Nationality.Hint"]</p>
 
-        @* FR-PHN-002 — the mobile numbers. Every other admin surface shows them
+        @* The mobile numbers. Every other admin surface shows them
            read-only and only the walk-in CREATE desk had an editable field, so a
            wrong number could never be corrected. Leaving a field empty sends
            nothing and leaves the stored number untouched. Same shapes as the

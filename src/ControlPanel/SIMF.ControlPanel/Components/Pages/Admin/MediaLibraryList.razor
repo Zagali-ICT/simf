@@ -1,4 +1,4 @@
-﻿@* D-357 — central Media Library: manage every unified media Asset across all
+﻿@* The central Media Library: manage every unified media Asset across all
    entities (speaker photos, company / sponsor / media-partner logos, archive
    covers, news images). Lists active + soft-deleted rows; preview + deactivate /
    restore. Gated by MediaLibrary.View; manage actions by MediaLibrary.Manage. *@
@@ -138,7 +138,7 @@
     </SimfModal>
 }
 
-@* D-809 — deactivating hides a live asset from the public site. *@
+@* Deactivating hides a live asset from the public site. *@
 <SimfConfirm Open="@(_deactivateTarget is not null)"
              Danger="true"
              Title="@L["Admin.MediaLibrary.Deactivate.Confirm.Title"]"

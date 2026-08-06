@@ -8,8 +8,8 @@ using SIMF.Contracts.Requests;
 
 namespace SIMF.Api.Endpoints.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب وثيقة المشاركة") — an approved attendee
-/// submits a participation-document request. Login-required.</summary>
+/// <summary>The الطلبات hub's "طلب وثيقة المشاركة" flow: an approved
+/// attendee submits a participation-document request. Login-required.</summary>
 public sealed class SubmitParticipationDocumentRequestEndpoint(IParticipationDocumentRequestService service)
     : Endpoint<SubmitParticipationDocumentRequestBody, ApiResult<ParticipationDocumentRequestSubmitted>>
 {

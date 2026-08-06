@@ -1,7 +1,7 @@
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// B6 — D-224 (additive new enum): the lifecycle of a visitor-to-visitor
+/// The lifecycle of a visitor-to-visitor
 /// networking <c>Connection</c>. The integer values are the persisted wire
 /// value and follow the same additive-only discipline as the frozen enums in
 /// this namespace: never renumber or rename an existing case; a new state

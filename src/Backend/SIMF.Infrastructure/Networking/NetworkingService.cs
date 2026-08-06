@@ -15,7 +15,7 @@ namespace SIMF.Infrastructure.Networking;
 /// <summary>
 /// Visitor-to-visitor networking connections over
 /// <see cref="SimfAppDbContext"/>. Display names are resolved from the
-/// Identity DB in a separate round-trip (no cross-DB JOIN — D-157). In-service
+/// Identity DB in a separate round-trip (no cross-DB JOIN). In-service
 /// validation throws <see cref="ApiException"/> with bilingual messages
 /// (matches the MeetingRequest app-facing services); one
 /// audit row per mutation.

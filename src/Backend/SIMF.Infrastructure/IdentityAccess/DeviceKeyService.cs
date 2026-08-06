@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/DeviceKeySignInTests.cs,
 //        SIMF.Api.Tests/TokenIssuerParityTests.cs (itokenissuer-extraction — the
-//        device-key session carries the same claim set and D-443 cap as the
+//        device-key session carries the same claim set and session cap as the
 //        password one)
 using System.Security.Cryptography;
 using System.Text;
@@ -21,13 +21,13 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.IdentityAccess;
 
 /// <summary>
-/// D-172 (gap doc G10, PDF §2.5) — Face ID / Touch ID sign-in.
+/// Face ID / Touch ID sign-in.
 /// Owns the four steps: register a new key, list my keys, issue a
 /// per-key challenge, verify a signed challenge + mint tokens.
 ///
 /// <para>itokenissuer-extraction (2026-07-30) — the token mint is no longer a
 /// local copy of <see cref="SIMF.Application.IdentityAccess.SignInService"/>'s:
-/// both go through <see cref="ITokenIssuer"/>, so the claim set and the D-443
+/// both go through <see cref="ITokenIssuer"/>, so the claim set and the
 /// absolute session cap cannot drift between the two ways into the system.</para>
 /// </summary>
 internal sealed class DeviceKeyService(
@@ -44,7 +44,7 @@ internal sealed class DeviceKeyService(
 {
     private static readonly TimeSpan ChallengeLifetime = TimeSpan.FromMinutes(5);
 
-    // #7a — emailed-OTP step-up, mirroring the sign-in OTP budget.
+    // Emailed-OTP step-up, mirroring the sign-in OTP budget.
     private static readonly TimeSpan StepUpLifetime = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan StepUpRequestWindow = TimeSpan.FromHours(1);
     private const int MaxStepUpRequestsPerWindow = 5;
@@ -99,7 +99,7 @@ internal sealed class DeviceKeyService(
 
         var now = timeProvider.SimfNow();
 
-        // #7a — emailed-OTP step-up: confirm the user actually intends to enable
+        // Emailed-OTP step-up: confirm the user actually intends to enable
         // biometric sign-in before binding a credential, so a borrowed-but-
         // unlocked phone can't silently enrol without also holding the account's
         // email. Validate (throws on a missing / wrong / expired code) but do NOT
@@ -405,7 +405,7 @@ internal sealed class DeviceKeyService(
     }
 
     /// <summary>The token-mint path. itokenissuer-extraction — the claim set and
-    /// the D-443 lifetime cap come from the shared <see cref="ITokenIssuer"/>;
+    /// the absolute lifetime cap come from the shared <see cref="ITokenIssuer"/>;
     /// what stays here is the device-key-specific audit row. The <c>amr</c> claim
     /// is left to its <c>TwoFactorEnabled</c> derivation (null), exactly as this
     /// path did before: a signed challenge is a possession factor, not one of the
@@ -442,7 +442,7 @@ internal sealed class DeviceKeyService(
             cancellationToken: cancellationToken);
     }
 
-    /// <summary>#7a — validates the emailed step-up code that must accompany a
+    /// <summary>Validates the emailed step-up code that must accompany a
     /// biometric enrolment and returns it (the caller consumes it only after the
     /// key is persisted). Returns null when the gate is disabled
     /// (<c>DeviceKey:RequireStepUpForEnrol=false</c>). Mirrors the sign-in OTP

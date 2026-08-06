@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapCatalogue(IEndpointRouteBuilder group)
     {
-        // B9b (D-226) — session-category dynamic lookup admin CRUD passthroughs.
+        // Session-category dynamic lookup admin CRUD passthroughs.
         group.MapPost("/admin/session-categories/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {

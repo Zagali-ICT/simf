@@ -1,7 +1,7 @@
-@* Control Panel — admin creates a new CP user (decision D-042; refactored in
-   D-117 to host the reusable CreateAdminForm so the admins list page can show
-   the same form inside an Add modal). The URL /admin/admins/new stays as a
-   deep-link fallback per Q-D — bookmarks and direct links keep working. *@
+@* Control Panel — admin creates a new CP user. Hosts the reusable
+   CreateAdminForm so the admins list page can show
+   the same form inside an Add modal. The URL /admin/admins/new stays as a
+   deep-link fallback — bookmarks and direct links keep working. *@
 @page "/admin/admins/new"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Admins.Create)]

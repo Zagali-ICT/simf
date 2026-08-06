@@ -9,13 +9,12 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// FR-1103 (Q6) — implements <see cref="IMovementTrackingService"/>. See that
+/// Implements <see cref="IMovementTrackingService"/>. See that
 /// interface for the shape and for why the feature is inert until halls are given
 /// geofence boundaries.
 ///
 /// <para>Everything here lives on <c>SIMF_App</c> (pings, halls, sessions), so
-/// there is no cross-database read; the attendee id is a bare <c>Guid</c>
-/// (D-157).</para>
+/// there is no cross-database read; the attendee id is a bare <c>Guid</c>.</para>
 /// </summary>
 internal sealed class MovementTrackingService(
     SimfAppDbContext dbContext,

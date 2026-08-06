@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
-//        SIMF.Api.Tests/GateOperatorModelTests.cs (BUG-018)
+//        SIMF.Api.Tests/GateOperatorModelTests.cs
 using FastEndpoints;
 using SIMF.Api.RequestContext;
 using SIMF.Application.AccessControl.Abstractions;
@@ -66,7 +66,7 @@ public sealed class CreateGateEndpoint(IAdminGateService service)
 }
 
 /// <summary>Bind {id} + body via a derived route that INHERITS the
-/// contract, per D-505 (see <c>UpdateHallRoute</c>). This class used to re-declare
+/// contract (see <c>UpdateHallRoute</c>). This class used to re-declare
 /// the contract's fields and the endpoint hand-copied them across; it omitted
 /// <c>HallId</c>, so FastEndpoints dropped the hall the Control Panel's picker
 /// sends and <c>UpdateAsync</c> — which assigns it unconditionally — wiped the
@@ -137,7 +137,7 @@ public sealed class ListGateAssignmentsEndpoint(IAdminGateService service)
             await service.ListAssignmentsAsync(req.Id, ct)), ct);
 }
 
-/// <summary>BUG-018 — the CP gate form's operator picker. Lists the accounts that
+/// <summary>The CP gate form's operator picker. Lists the accounts that
 /// can actually work a gate (approved app accounts on an operational profile type),
 /// searchable + paged. Gated on <c>Gates.Manage</c> like the rest of the gate admin
 /// surface, so a gate manager no longer needs <c>Admins.View</c> to fill the picker.
@@ -157,7 +157,7 @@ public sealed class ListGateOperatorCandidatesEndpoint(IAdminGateService service
             await service.ListOperatorCandidatesAsync(req, ct)), ct);
 }
 
-/// <summary>BUG-018 — the gate form's allowed-profile-type + hall lookups under
+/// <summary>The gate form's allowed-profile-type + hall lookups under
 /// <c>Gates.Manage</c>, so a Security-team gate manager stops seeing empty
 /// dropdowns fed by the ProfileTypes.View / Halls.View admin lists.</summary>
 public sealed class GetGateFormOptionsEndpoint(IAdminGateService service)

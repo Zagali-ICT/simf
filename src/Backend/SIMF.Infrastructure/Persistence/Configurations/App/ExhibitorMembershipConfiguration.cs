@@ -5,8 +5,8 @@ using SIMF.Domain.Exhibitors;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>ExhibitorMembership EF config. <see cref="ExhibitorMembership.UserId"/>
-/// is a logical FK to <c>SimfUser.Id</c> on the Identity database (D-157 keeps
-/// the two physical databases separate) so there is NO HasOne navigation to
+/// is a logical FK to <c>SimfUser.Id</c> on the Identity database, which is a
+/// physically separate database, so there is NO HasOne navigation to
 /// SimfUser and NO DB-level FK constraint — the link is by Guid only. Indexed
 /// on ExhibitorId (list accounts under an exhibitor) and on UserId (resolve the
 /// exhibitor a given account belongs to). Auto-discovered by

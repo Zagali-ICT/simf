@@ -1,4 +1,4 @@
-@* D-353 — reusable Booth Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Booth Add/Edit form, hosted by CrudShell (popup or full
    page) from BoothsList. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). IsEdit
    =false runs Create (POST); IsEdit=true runs Edit (PUT against Initial) and
@@ -66,7 +66,7 @@
                        ValueExpression="@(() => _model.OfficerEmail)"
                        MaxLength="320"
                        Disabled="_busy" />
-        @* NEW inline booth-officer identity-card fields (D-766). Most labels reuse
+        @* Inline booth-officer identity-card fields. Most labels reuse
            the generic Admin.ContactField.* keys; the officer Arabic name uses the
            officer-scoped Admin.Booths.Field.OfficerNameAr key; nationality is the
            officer-country picker below. *@

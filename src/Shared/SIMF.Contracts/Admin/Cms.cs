@@ -67,7 +67,7 @@ public sealed class CreateBannerRequest
 }
 
 /// <summary>Open for inheritance so the route-binding endpoint
-/// can carry an <c>Id</c> field (matches the D-168 pattern).</summary>
+/// can carry an <c>Id</c> field, matching the other admin requests.</summary>
 public class UpdateBannerRequest
 {
     public string Title { get; set; } = string.Empty;

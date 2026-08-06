@@ -9,8 +9,8 @@ using SIMF.Contracts.BusinessMeetings;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/business-meetings/export</c> — the D-356 grid export for
-/// the admin-arranged B2B/B2C business-meetings desk (SIMF-FDS-013). <b>Export
+/// <c>POST /api/v1/admin/business-meetings/export</c> — the grid export for
+/// the admin-arranged B2B/B2C business-meetings desk. <b>Export
 /// only:</b> meetings are scheduled and cancelled through the page's bespoke
 /// modals, so no generic import path is added. The list is not parent-scoped, so
 /// this delegates straight to the same service the list endpoint uses

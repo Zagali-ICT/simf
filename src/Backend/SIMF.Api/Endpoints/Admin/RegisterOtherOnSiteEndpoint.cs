@@ -10,11 +10,11 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-127 (amended D-425) — <c>POST /api/v1/admin/others/register-onsite</c>.
+/// <c>POST /api/v1/admin/others/register-onsite</c>.
 /// Twin of <see cref="RegisterVisitorOnSiteEndpoint"/> for the Other kind
 /// (exhibitor booth staff, vendors, AV, security, …). Same shape; Interests
-/// are ignored on this path. D-425: like the visitor desk, the account now
-/// lands <see cref="AccountState.PendingApproval"/> (no QR until approved from
+/// are ignored on this path. Like the visitor desk, the account lands
+/// <see cref="AccountState.PendingApproval"/> (no QR until approved from
 /// the pending-others queue), not auto-approved.
 /// </summary>
 public sealed class RegisterOtherOnSiteEndpoint(IAdminUserProvisioningService service)
@@ -34,7 +34,7 @@ public sealed class RegisterOtherOnSiteEndpoint(IAdminUserProvisioningService se
         AdminWalkInRegistrationRequest req, CancellationToken ct)
     {
         var actorId = User.ActorId();
-        // D-186 + review-pass: walk-in registrations create
+        // Walk-in registrations create
         // Visitor-typed accounts; the partner desk enforces
         // expectedIsVisitor=false so a desk that picks an audience
         // ProfileType is rejected with AdminProfileTypeInvalid (the

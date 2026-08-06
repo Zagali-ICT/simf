@@ -15,7 +15,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Identity;
 
-/// <summary>Issues HMAC-SHA256-signed JWT access tokens (SIMF-API-001 section 12.2).</summary>
+/// <summary>Issues HMAC-SHA256-signed JWT access tokens.</summary>
 internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider timeProvider)    : IJwtTokenService
 {
     /// <summary>The absolute session lifetime read from
@@ -37,10 +37,10 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new("display_name", user.DisplayName),
             // The security stamp lets a sensitive endpoint detect a revoked
-            // session before the token expires (SIMF-FDS-001 Amendment A.6).
+            // session before the token expires.
             new("security_stamp", user.SecurityStamp ?? string.Empty),
-            // Account_state + user_type travel in every token
-            // so an authorization handler (P11) can route a non-approved
+            // The account_state and user_type claims travel in every token
+            // so an authorization handler can route a non-approved
             // user to the pending / rejected page without an extra round
             // trip, and the client can switch surfaces (CP vs App) by
             // user_type alone.
@@ -49,7 +49,7 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             // The resolved mobile-app role the Flutter app uses to
             // route screens / show or hide gate-operator surfaces.
             new("mobile_app_role", mobileAppRole.ToString()),
-            // Held-item #2c — RFC 8176 `amr`. "mfa" means this token cleared a
+            // RFC 8176 `amr`. "mfa" means this token cleared a
             // second factor (TOTP, recovery code or emailed OTP); "pwd" means it
             // was minted on the password alone, which SignInService only does for
             // an account with 2FA turned off. Before this claim existed the two
@@ -60,13 +60,13 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-        // Issue-1 + D-563 — the resolved permission codes (or the single wildcard
+        // The resolved permission codes (or the single wildcard
         // "*" for an Administrator) UNION the operational perms the user's
         // MobileAppRole confers, minted as `perm` claims so the authorization
         // handler can gate per page-and-action without a per-request DB lookup
         // (PermissionCatalog.ClaimType). App Staff / Moderator attendees gain
         // gate-scan + walk-in + moderation purely from their ProfileType's
-        // MobileAppRole — never an admin RBAC role (option A) — so the same
+        // MobileAppRole — never an admin RBAC role — so the same
         // permission gate authorises both the CP desk and the staff app screen.
         var effectivePermissions = permissions
             .Concat(PermissionCatalog.OperationalPermissionsForAppRole(mobileAppRole))

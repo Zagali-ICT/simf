@@ -13,12 +13,12 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// Admin CRUD over the <see cref="ProgrammeDay"/> rows (Figma 883:2308
-/// "تفاصيل اليوم"). Built on <see cref="SimfAppDbContext"/>; mirrors
+/// Admin CRUD over the <see cref="ProgrammeDay"/> rows ("تفاصيل اليوم").
+/// Built on <see cref="SimfAppDbContext"/>; mirrors
 /// <c>AdminSessionCategoryService</c> — bilingual title, soft-delete, in-service
 /// validation, one audit row per mutation — plus a <c>Date</c>, a one-active-day
 /// -per-date uniqueness guard, and a <c>HasImage</c> flag resolved from the
-/// unified Asset table (the logo is the D-357 <c>ProgrammeDayImage</c> asset
+/// unified Asset table (the logo is the <c>ProgrammeDayImage</c> asset
 /// owned by the day's Id — no logo column).
 /// </summary>
 internal sealed class AdminProgrammeDayService(
@@ -42,7 +42,7 @@ internal sealed class AdminProgrammeDayService(
                 || EF.Functions.Like(day.TitleArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -64,7 +64,7 @@ internal sealed class AdminProgrammeDayService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: DisplayOrder, then Date.
+        // CP grid sortable columns. Default: DisplayOrder, then Date.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("title", true) => rows.OrderByDescending(day => day.Title),

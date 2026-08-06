@@ -89,10 +89,10 @@ public sealed class CreateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
 }
 
 /// <summary><c>PUT /api/v1/admin/profile-types/{id}</c>. UserType is NOT
-/// updatable post-creation. D-186: IsVisitor IS updatable (audience-vs-partner
+/// updatable post-creation. IsVisitor IS updatable (audience-vs-partner
 /// queue routing).
 ///
-/// <para>D-843 — inherits the contract per D-505 (see <c>UpdateHallRoute</c>). It
+/// <para>Inherits the contract (see <c>UpdateHallRoute</c>). It
 /// used to re-declare the fields and the endpoint hand-copied them; it omitted
 /// <c>ShowInPartnerDirectory</c>, whose contract default is <c>true</c>, so the
 /// drop failed OPEN: unticking "show in partner directory" returned a success

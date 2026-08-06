@@ -3,11 +3,11 @@ using SIMF.Contracts.Requests;
 namespace SIMF.Application.Requests.Abstractions;
 
 /// <summary>
-/// D-500 (Wave 5, الطلبات 1408:9726) — the unified "My requests" feed for the
+/// The unified "My requests" (الطلبات) feed for the
 /// mobile app: every request the signed-in user submitted, newest first —
-/// speaker meetings (D-269), delegation meetings (D-478, read-only),
-/// session-attendance seat bookings (D-175/D-227, surfaced), and the two new
-/// standalone types (participation-document + badge-update, D-500). Supersedes
+/// speaker meetings, delegation meetings (read-only),
+/// session-attendance seat bookings, and the two standalone
+/// types (participation-document + badge-update). Supersedes
 /// the old read-only <c>IMyMeetingsService</c>. Also owns the unified
 /// self-cancel of a still-pending speaker / document / badge request.
 /// </summary>

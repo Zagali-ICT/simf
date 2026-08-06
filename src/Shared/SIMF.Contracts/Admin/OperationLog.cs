@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>One row in the admin Operation log viewer (D-134 Sprint A —
-/// read-only over the existing <c>OperationLogEntry</c> table).</summary>
+/// <summary>One row in the admin Operation log viewer — read-only over
+/// the existing <c>OperationLogEntry</c> table.</summary>
 public sealed record AdminOperationLogSummary(
     Guid Id,
     DateTime Timestamp,

@@ -11,8 +11,7 @@ namespace SIMF.Api.Endpoints.Account;
 /// signed-in user's ID-document image back to the browser (decrypted
 /// on the fly from the AES-GCM file). Returns 404 when no image is
 /// set. Auth-only — only the owning user can read it. Renamed from
-/// <c>/account/visitor-profile/id-image</c> (decisions D-046 b,
-/// P8 — D-049).
+/// <c>/account/visitor-profile/id-image</c>.
 /// </summary>
 public sealed class UserIdDocumentFetchEndpoint(IUserProfileService service)
     : EndpointWithoutRequest

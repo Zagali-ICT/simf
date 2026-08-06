@@ -10,12 +10,12 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.MyArea;
 
 /// <summary>
-/// Builds the My-Area dashboard (App Screen 14) read model. Three read-only
-/// aggregates over the App DB — held seat bookings (Page_014 L-2), accepted
-/// speaker meetings + confirmed business meetings (L-3), merged into today's
-/// schedule (L-4) — plus the user's profile / tier and the account avatar. The
+/// Builds the My-Area dashboard read model. Three read-only
+/// aggregates over the App DB — held seat bookings, accepted
+/// speaker meetings + confirmed business meetings, merged into today's
+/// schedule — plus the user's profile / tier and the account avatar. The
 /// avatar comes from the Identity side via <see cref="IAccountService"/>, a
-/// second read on the other context (D-157 — no cross-DB join). D-249.
+/// second read on the other context (no cross-DB join).
 /// </summary>
 internal sealed class MyAreaService(
     SimfAppDbContext appDbContext,
@@ -95,7 +95,8 @@ internal sealed class MyAreaService(
         CancellationToken cancellationToken = default)
     {
         // The user's booked / joined sessions — the same active seat-bookings the
-        // dashboard counts (D-485 kinds, not released, active session). Project the
+        // dashboard counts (the booking kinds below, not released, active
+        // session). Project the
         // card fields + the primary speaker (DisplayOrder 0) to an anonymous type;
         // distinct by session, since a user may hold more than one active row.
         var rows = await appDbContext.SeatReservations.AsNoTracking()
@@ -180,7 +181,7 @@ internal sealed class MyAreaService(
                 TierAr = p.ProfileType != null ? p.ProfileType.NameArabic : null,
                 Color = p.ProfileType != null ? p.ProfileType.PageColor : null,
                 // Audience types are visitors; partner/exhibitor ("Other")
-                // types are not (UserProfileType.IsForVisitor, D-186). No
+                // types are not (UserProfileType.IsForVisitor). No
                 // ProfileType → treated as a visitor.
                 IsVisitor = p.ProfileType == null || p.ProfileType.IsForVisitor,
             })

@@ -1,8 +1,7 @@
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// P3.2 — D-231 (Completion Programme §5.2, broadcast Option A): the
-/// lifecycle of a programme <c>Session</c>. The Scientific Committee
+/// The broadcast lifecycle of a programme <c>Session</c>. The Scientific Committee
 /// drives the transitions in the Control Panel:
 /// <c>Scheduled → Held → Recorded → Published</c> (and the reverse
 /// adjacent steps). <c>Published</c> stamps <c>PublishedAt</c> and is the
@@ -14,8 +13,8 @@ namespace SIMF.Common.Enums;
 /// soft-deleted session keeps whatever status it had.</para>
 ///
 /// <para>Int-backed, additive-only discipline (never renumber/rename an
-/// existing case). A future true-live state (Option B, deferred behind
-/// provider D7) would append a new non-colliding value.</para>
+/// existing case). A future true-live state, deferred pending a
+/// live-video provider, would append a new non-colliding value.</para>
 /// </summary>
 public enum SessionStatus
 {

@@ -138,7 +138,7 @@ internal sealed class YoutubeTranscriptService(
     private async Task<string> DownloadTranscriptAsync(
         string baseUrl, CancellationToken cancellationToken)
     {
-        // SSRF defence-in-depth (D-578 security review): NEVER trust the host in the
+        // SSRF defence-in-depth: NEVER trust the host in the
         // baseUrl YouTube returned — re-validate it is an https YouTube/Google caption
         // host before fetching it. Combined with the no-redirect client (DI), a crafted
         // or MITM'd player response cannot steer this GET to an internal target. On

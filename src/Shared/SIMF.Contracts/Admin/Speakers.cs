@@ -26,7 +26,7 @@ public sealed record AdminSpeakerSummary(
     bool HasPhoto,
     DateTime CreatedAt);
 
-/// <summary>Full speaker detail (Details + Edit modals). D-153 carries
+/// <summary>Full speaker detail (Details + Edit modals). Carries
 /// the full bilingual rich-text set + consent toggles + social URLs +
 /// the optional <c>UserProfileId</c> link to a SIMF account.</summary>
 public sealed record AdminSpeakerDetail(
@@ -60,7 +60,7 @@ public sealed record AdminSpeakerDetail(
     DateTime CreatedAt,
     DateTime? UpdatedAt,
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality reuses CountryId above
+    // directory. All optional; nationality reuses CountryId above
     // (no second country slot). The service now populates all of these in
     // ToDetail; the trailing defaults are kept so an ad-hoc caller can omit
     // the block.
@@ -104,7 +104,7 @@ public sealed class AdminCreateSpeakerRequest
     public int DisplayOrder { get; set; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality reuses CountryId above.
+    // directory. All optional; nationality reuses CountryId above.
     public string? Email { get; set; }
     public string? PhonePrimary { get; set; }
     public string? PhoneSecondary { get; set; }
@@ -116,7 +116,7 @@ public sealed class AdminCreateSpeakerRequest
 }
 
 /// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
-/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+/// route class so it cannot drop a field at bind time.</remarks>
 public class AdminUpdateSpeakerRequest
 {
     public string Code { get; set; } = string.Empty;
@@ -143,7 +143,7 @@ public class AdminUpdateSpeakerRequest
     public int DisplayOrder { get; set; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality reuses CountryId above.
+    // directory. All optional; nationality reuses CountryId above.
     public string? Email { get; set; }
     public string? PhonePrimary { get; set; }
     public string? PhoneSecondary { get; set; }

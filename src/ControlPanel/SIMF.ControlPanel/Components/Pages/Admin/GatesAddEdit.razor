@@ -1,8 +1,8 @@
-@* D-353 — reusable Gate Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Gate Add/Edit form, hosted by CrudShell (popup or full
    page) from GatesList. Inherits CrudAddEditFormBase so it exposes the standard
    CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Branches Create
    vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when IsEdit).
-   Supersedes GateForm.razor (D-148), which keyed off Initial==null.
+   Supersedes GateForm.razor, which keyed off Initial==null.
    The fields are grouped into labelled sections and the allowed-profile-types /
    assigned-operators pickers are checkbox lists (clearer than a native
    <select multiple>); the posted request is unchanged. *@

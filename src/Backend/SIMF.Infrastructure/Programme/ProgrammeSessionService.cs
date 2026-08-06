@@ -3,7 +3,7 @@
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs
 // Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs
 // Tests: SIMF.Api.Tests/SessionSummaryTests.cs
-// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
+// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (informational live notice)
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,13 +17,13 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// D-199 (gap doc G3, Mockup pages 16-17) — public, anonymous reads over
+/// Public, anonymous reads over
 /// the programme <see cref="SIMF.Domain.Programme.Session"/> surface.
 /// Read-only sibling of <see cref="AdminSessionService"/>: only active
 /// sessions are returned (<c>IsActive</c>), times are the Saudi wall clock
-/// Nothing zoned is stored or served), and the
-/// effective capacity is <c>CapacityOverride ?? Hall.Capacity</c>
-/// (PDF §2.9). Seat availability is a single COUNT over active
+/// (nothing zoned is stored or served), and the
+/// effective capacity is <c>CapacityOverride ?? Hall.Capacity</c>.
+/// Seat availability is a single COUNT over active
 /// (non-released) reservations — no per-seat grid (that is the
 /// seat-map endpoint's job).
 /// </summary>
@@ -31,7 +31,7 @@ internal sealed class ProgrammeSessionService(
     SimfAppDbContext dbContext,
     SimfIdentityDbContext identityDbContext,
     TimeProvider timeProvider,
-    // D-840 — the last link in the arrival-grace chain (D-839), so the app can be
+    // The last link in the arrival-grace chain, so the app can be
     // told what the door will do instead of assuming the historical 15.
     IOptionsMonitor<WalkInModeOptions> walkInMode)
     : IProgrammeSessionService
@@ -44,8 +44,8 @@ internal sealed class ProgrammeSessionService(
             .Where(session => session.IsActive)
             .AsQueryable();
 
-        // OA-D6 — optional server-side track filter on the dynamic SessionCategory
-        // lookup (D-226). A plain equality on the indexed FK; combines with ?day=
+        // Optional server-side track filter on the dynamic SessionCategory
+        // lookup. A plain equality on the indexed FK; combines with ?day=
         // (AND). An unknown id simply matches nothing — no 404, because the public
         // agenda must not become a category-id oracle.
         if (categoryId is { } category)
@@ -55,7 +55,7 @@ internal sealed class ProgrammeSessionService(
 
         if (day is { } d)
         {
-            // A6c — half-open EVENT-LOCAL (+03:00) day window [dayStart, nextDayStart).
+            // Half-open EVENT-LOCAL (+03:00) day window [dayStart, nextDayStart).
             // The app sends ProgrammeDay.Date (a Riyadh calendar date) as ?day=, and
             // the day-grouped agenda (ListDaysAsync) buckets by Start,
             // so this filter must use the SAME day boundary or the flat list would
@@ -86,13 +86,13 @@ internal sealed class ProgrammeSessionService(
                 session.End,
                 // Broadcast lifecycle status.
                 session.Status,
-                // D-452 (Figma 883:2308): the session's type for the app's tabs.
+                // The session's type for the app's tabs.
                 session.Type,
-                // B9b — D-226: the session's category (dynamic lookup), if set.
+                // The session's category (dynamic lookup), if set.
                 session.CategoryId,
                 CategoryName = session.Category != null ? session.Category.Name : null,
                 CategoryNameArabic = session.Category != null ? session.Category.NameArabic : null,
-                // D-252 (Mockup screen 16/17): the body + ordered speaker cards, so
+                // The body + ordered speaker cards, so
                 // the cached agenda payload also drives the session detail/preview
                 // without a second fetch.
                 session.Description,
@@ -211,8 +211,8 @@ internal sealed class ProgrammeSessionService(
         return new PublicSessions(items);
     }
 
-    /// <summary>The event's local-day offset (KSA, +03:00, no DST). Since D-813
-    /// sessions are stored as the Saudi wall clock, so bucketing a session into
+    /// <summary>The event's local-day offset (KSA, +03:00, no DST). Sessions
+    /// are stored as the Saudi wall clock, so bucketing a session into
     /// its "programme day" is a plain date comparison with no zone shift. The
     /// constant is retained because the day boundary is still a Riyadh calendar
     /// day and callers reason in that offset.</summary>
@@ -221,7 +221,7 @@ internal sealed class ProgrammeSessionService(
     public async Task<PublicProgrammeDays> ListDaysAsync(
         CancellationToken cancellationToken = default)
     {
-        // D-452 (Figma 883:2308 "تفاصيل اليوم"): the day-grouped agenda. Pull the
+        // The day-grouped agenda ("تفاصيل اليوم"). Pull the
         // whole programme once and bucket sessions by their EVENT-LOCAL date
         // (ProgrammeDay.Date is a Riyadh calendar date), then attach each bucket
         // to its authored day. No per-day query (no N+1).
@@ -258,7 +258,7 @@ internal sealed class ProgrammeSessionService(
             return new PublicProgrammeDays(synthesized);
         }
 
-        // Which authored days have a linked image (D-568 (S1) — StoredFile store).
+        // Which authored days have a linked image in the StoredFile store.
         var dayIds = days.Select(d => d.Id).ToList();
         var withImage = (await dbContext.StoredFiles
                 .AsNoTracking()
@@ -324,7 +324,7 @@ internal sealed class ProgrammeSessionService(
                 session.LiveSignLanguageUrl,
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
-                // FR-702 — the informational live notice shown WITH the feed. Read
+                // The informational live notice shown WITH the feed. Read
                 // only; it takes part in no filter and gates nothing.
                 session.LiveNotice,
                 session.LiveNoticeArabic,
@@ -335,8 +335,8 @@ internal sealed class ProgrammeSessionService(
                 CategoryName = session.Category != null ? session.Category.Name : null,
                 CategoryNameArabic =
                     session.Category != null ? session.Category.NameArabic : null,
-                // #29 — the session kind. The agenda list has projected this since
-                // D-452; the detail read did not, which is why a type-conditional
+                // The session kind. The agenda list has long projected this;
+                // the detail read did not, which is why a type-conditional
                 // render on the detail screen could never fire.
                 session.Type,
                 session.Language,
@@ -369,7 +369,7 @@ internal sealed class ProgrammeSessionService(
                         link.Speaker!.PhotoRelativePath,
                     })
                     .ToList(),
-                // Website Session-detail "أبرز المخرجات" bullets (Figma 5991-85840),
+                // Website Session-detail "أبرز المخرجات" bullets,
                 // active + ordered.
                 Outcomes = session.Outcomes
                     .Where(outcome => outcome.IsActive)
@@ -478,8 +478,8 @@ internal sealed class ProgrammeSessionService(
                 presentation.SizeBytes))
             .ToListAsync(cancellationToken);
 
-        // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
-        // position within its day. A6c — match the agenda's day grouping exactly:
+        // The gold badge shows the session's 1-based
+        // position within its day. Match the agenda's day grouping exactly:
         // a half-open EVENT-LOCAL (+03:00) window ordered by Start (ProgrammeDay
         // is a Riyadh calendar day, and both ListDaysAsync and the ?day= list filter
         // bucket by the +03:00 date). Count the earlier active sessions in the same
@@ -526,13 +526,13 @@ internal sealed class ProgrammeSessionService(
             row.LiveCaptionsArabic,
             // The gold-badge ordinal (1-based position within the day).
             displayOrder,
-            // Website Session-detail (Figma 5991-85840): outcomes + language label.
+            // Website Session-detail: outcomes + language label.
             outcomes,
             row.Language,
             row.LanguageArabic,
             // "روابط التحميل" — the session's public downloadable files.
             downloads,
-            // #29: the session kind, so the app can reduce a WORKSHOP's detail to
+            // The session kind, so the app can reduce a WORKSHOP's detail to
             // title + time. Without it the client read json['type'] as null on
             // every session and the branch could never fire.
             row.Type,
@@ -543,7 +543,7 @@ internal sealed class ProgrammeSessionService(
                 row.ArrivalGraceMinutesOverride,
                 row.HallArrivalGraceMinutes,
                 walkInMode.CurrentValue.ResolveArrivalGraceMinutes(timeProvider.SimfNow())),
-            // FR-702: the informational live notice (null when the admin set none).
+            // The informational live notice (null when the admin set none).
             // Served alongside the feed above, which stays available to everyone.
             row.LiveNotice,
             row.LiveNoticeArabic);
@@ -618,7 +618,8 @@ internal sealed class ProgrammeSessionService(
             return Array.Empty<PublicRecordedQuestion>();
         }
 
-        // Attribute to the asker via the Identity DB.
+        // Attribute to the asker via the Identity DB — a second query, never a
+        // cross-database JOIN.
         var userIds = rows.Select(r => r.SubmittedByUserId).Distinct().ToList();
         var users = await identityDbContext.Users
             .AsNoTracking()
@@ -645,7 +646,7 @@ internal sealed class ProgrammeSessionService(
         // Gated on the summary's own publish stamp (the Committee's editorial
         // action), not the broadcast Session.Status. The session must still be
         // active (soft-delete hides its summary too).
-        // S-6 (owner) — a محضر is viewable only once the session has actually
+        // A محضر is viewable only once the session has actually
         // STARTED (in-progress or finished); it stays hidden before the session
         // begins. Keyed on the CLOCK (now >= Start), never the manual Held flag,
         // because "logically you can't view a summary before the session starts".
@@ -673,7 +674,7 @@ internal sealed class ProgrammeSessionService(
                 summary.FullTextArabic,
                 summary.AiModel != null,
                 summary.PublishedAt!.Value,
-                // Item #35 — the two videos on the summary surface (screen 34):
+                // The two videos on the summary surface:
                 // the session's FULL live recording (Session.LiveStreamUrl — the
                 // YouTube/HLS feed that doubles as the recording; no schema change)
                 // and the team's OPTIONAL short summary cut. Each is null when
@@ -686,7 +687,7 @@ internal sealed class ProgrammeSessionService(
     public async Task<HostSessionSummary?> GetApprovedSummaryForHostAsync(
         Guid callerUserId, Guid sessionId, CancellationToken cancellationToken = default)
     {
-        // Authz (D-472): only the session's moderator (the SessionModerator grant)
+        // Authz: only the session's moderator (the SessionModerator grant)
         // or its host (a speaker with Role=Host mapped to this user) may read the
         // approved-but-maybe-unpublished محضر — "ready for المحاور".
         var isModerator = await dbContext.SessionModerators

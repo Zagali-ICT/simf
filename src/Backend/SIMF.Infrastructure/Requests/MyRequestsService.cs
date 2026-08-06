@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/MyRequestsTests.cs
-//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (QA B12 CheckedIn, B13 cancel)
+//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (CheckedIn + cancel)
 //        SIMF.Api.Tests/DelegationMeetingQaFixesTests.cs
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -15,14 +15,14 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات 1408:9726) — the unified "My requests" feed.
-/// Concats the signed-in user's speaker meetings (D-269), delegation meetings
-/// (D-478, read-only), session-attendance seat bookings (D-175/D-227, surfaced
-/// from the user's own reservations — owner decision, no new entity), and the
-/// two new standalone types (participation-document + badge-update). Seat
-/// bookings map their <see cref="BookingStatus"/> onto the unified
+/// <summary>The unified "My requests" (الطلبات) feed. Concats the signed-in
+/// user's speaker meetings, delegation meetings (read-only),
+/// session-attendance seat bookings (a design ruling: surfaced from the user's
+/// own reservations, with no new entity), and the two standalone types
+/// (participation-document + badge-update). Seat bookings map their
+/// <see cref="BookingStatus"/> onto the unified
 /// <see cref="MeetingRequestStatus"/>. Supersedes <c>MyMeetingsService</c>.
-/// Self-cancel withdraws a still-pending speaker / delegation (B11) / document /
+/// Self-cancel withdraws a still-pending speaker / delegation / document /
 /// badge request.</summary>
 internal sealed class MyRequestsService(
     SimfAppDbContext appDbContext,
@@ -88,14 +88,14 @@ internal sealed class MyRequestsService(
         items.AddRange(speaker.Select(r => new AppRequestItem(
             AppRequestKind.SpeakerMeeting, r.Id, r.Name, r.NameArabic,
             ToRequesterDisplayStatus(r.Status), r.SlotStart, r.CreatedAt,
-            // R-1 — an AwaitingSpeaker request (admin accepted + bound a hall, speaker not
+            // An AwaitingSpeaker request (admin accepted + bound a hall, speaker not
             // yet confirmed) is still "under review" to the requester, so let them withdraw
             // it; cancelling frees the held slot and voids the speaker's confirmation tokens.
             r.Status is MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker,
             Subtitle: r.Rank, SubtitleArabic: r.RankArabic,
             SpeakerId: r.SpeakerId, CountryId: r.CountryId,
             ResponseNote: r.ResponseNote,
-            // QA B12 — Done still folds to Accepted on the wire (values 0–3), so the
+            // Done still folds to Accepted on the wire (values 0–3), so the
             // check-in reaches the requester through this append-only flag instead:
             // their card can now read "attended" rather than staying on "accepted".
             CheckedIn: r.Status == MeetingRequestStatus.Done)));
@@ -105,7 +105,7 @@ internal sealed class MyRequestsService(
             // Same fold as the speaker projection so the unified state machine's admin-only
             // states (AwaitingSpeaker / Done) never leak past the shipped wire contract (0–3).
             ToRequesterDisplayStatus(r.Status), r.SlotStart, r.CreatedAt,
-            // B11 — a delegation meeting is withdrawable on exactly the speaker rule
+            // A delegation meeting is withdrawable on exactly the speaker rule
             // (Pending OR AwaitingSpeaker). It used to report CanCancel:false while the
             // cancel switch fell through to a 409, so the requester could never withdraw
             // one — asymmetric with the speaker meeting sitting next to it in the feed.
@@ -141,7 +141,7 @@ internal sealed class MyRequestsService(
         CancellationToken cancellationToken = default)
     {
         var now = timeProvider.SimfNow();
-        // D1 — set when this withdraw killed a delegation meeting the TARGET delegation had
+        // Set when this withdraw killed a delegation meeting the TARGET delegation had
         // already been asked to confirm, so their live prompt is retracted once the cancel
         // is durable (see the dispatch after the audit write).
         Guid? retractDelegationPromptFor = null;
@@ -152,12 +152,12 @@ internal sealed class MyRequestsService(
                 var r = await appDbContext.SpeakerMeetingRequests.AsNoTracking().SingleOrDefaultAsync(
                     x => x.Id == id && x.RequestedByUserId == userId, cancellationToken)
                     ?? throw NotFound();
-                // R-1 — a speaker meeting may be withdrawn while Pending OR AwaitingSpeaker
+                // A speaker meeting may be withdrawn while Pending OR AwaitingSpeaker
                 // (see the feed's CanCancel). Cancelling voids the double-opt-in tokens
                 // (they validate against this status) and releases the held hall slot.
                 EnsureMeetingCancellable(r.Status);
 
-                // #10 — the DB is the single arbiter, not the read above (mirrors
+                // The DB is the single arbiter, not the read above (mirrors
                 // MeetingActionTokenService.ApplyAsync). While the requester was on the
                 // cancel screen the speaker may have Approved (AwaitingSpeaker -> Accepted)
                 // via the double-opt-in link; SpeakerMeetingRequest carries no rowversion
@@ -181,7 +181,7 @@ internal sealed class MyRequestsService(
                         "لا يمكن إلغاء سوى طلب قيد المراجعة.");
                 }
 
-                // QA B13 — a cancel used to leave the speaker's emailed Approve/Reject
+                // A cancel used to leave the speaker's emailed Approve/Reject
                 // tokens alive (they only stopped working because ApplyAsync re-checks
                 // the status, so the link 404'd neutrally weeks later) and told the
                 // speaker nothing at all. Void every live token for this request so a
@@ -211,7 +211,7 @@ internal sealed class MyRequestsService(
                     .SingleOrDefaultAsync(
                         x => x.Id == id && x.RequestedByUserId == userId, cancellationToken)
                     ?? throw NotFound();
-                // B11 — the same withdraw rule as a speaker meeting (see the feed's
+                // The same withdraw rule as a speaker meeting (see the feed's
                 // CanCancel). Cancelling from AwaitingSpeaker voids the target
                 // delegation's confirm token (it validates against this status) and
                 // clearing the hall binding releases the held slot.
@@ -239,7 +239,7 @@ internal sealed class MyRequestsService(
                         "لا يمكن إلغاء سوى طلب قيد المراجعة.");
                 }
 
-                // D1 — only an APPROVED (AwaitingSpeaker) meeting ever reached the target
+                // Only an APPROVED (AwaitingSpeaker) meeting ever reached the target
                 // delegation, so only that one leaves a live "please confirm" card + emailed
                 // confirm link behind. Withdrawing from Pending must stay silent: those
                 // members were never told the request existed.
@@ -269,7 +269,7 @@ internal sealed class MyRequestsService(
             }
             default:
                 // Session-attendance is not self-cancellable here (it has its own
-                // seat-release path); B11 moved delegation meetings to their own arm.
+                // seat-release path); delegation meetings have their own arm above.
                 throw new ApiException(
                     ErrorCodes.AppRequestNotCancellable, 409,
                     "This request type cannot be cancelled from the app.",
@@ -287,7 +287,7 @@ internal sealed class MyRequestsService(
         logger.LogInformation(
             "App request {Kind}/{Id} cancelled by {Actor} at {When}", kind, id, userId, now);
 
-        // D1 — dispatched only after the cancel is durable and audited: every eligible
+        // Dispatched only after the cancel is durable and audited: every eligible
         // member of the target delegation is holding a MeetingRequested card that deep-links
         // to /meeting-confirm plus an emailed confirm link, and both now dead-end (409
         // APP_REQUEST_ALREADY_RESPONDED). The admin cancel path retracts them the same way.
@@ -298,7 +298,7 @@ internal sealed class MyRequestsService(
         }
     }
 
-    // QA B13 — tell the speaker their proposed meeting was withdrawn. Bilingual (AR
+    // Tell the speaker their proposed meeting was withdrawn. Bilingual (AR
     // first, matching the app's default locale) and best-effort: the enqueue failure
     // path audits + swallows, so a mail problem never undoes the committed cancel.
     // The speaker is not a SIMF account, hence subjectUserId = Guid.Empty.
@@ -352,8 +352,8 @@ internal sealed class MyRequestsService(
         }
     }
 
-    // R-1 — a speaker meeting is withdrawable while Pending OR AwaitingSpeaker;
-    // B11 put delegation meetings on exactly the same rule.
+    // A speaker meeting is withdrawable while Pending OR AwaitingSpeaker;
+    // delegation meetings follow exactly the same rule.
     private static void EnsureMeetingCancellable(MeetingRequestStatus status)
     {
         if (status is not (MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker))
@@ -365,7 +365,7 @@ internal sealed class MyRequestsService(
         }
     }
 
-    // D-716 (item 7, GAP-2) + Bi-Meeting rework — the unified state machine adds two
+    // The unified state machine adds two
     // admin/operator-only states the shipped mobile wire contract (values 0–3) never sees:
     //   • AwaitingSpeaker (accepted + bound to a hall, awaiting the other party's confirmation)
     //     is still "under review" from the requester's view      -> fold to Pending;

@@ -1,8 +1,8 @@
-@* D-353 — reusable Hall Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Hall Add/Edit form, hosted by CrudShell (popup or full
    page) from HallsList. Inherits CrudAddEditFormBase so it exposes the standard
    CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Branches Create
    vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when IsEdit).
-   Supersedes HallForm.razor (D-134), which keyed off Initial==null. *@
+   Supersedes the earlier HallForm.razor, which keyed off Initial==null. *@
 @using System.Globalization
 @inherits CrudAddEditFormBase<AdminHallDetail>
 
@@ -32,7 +32,7 @@
                        ValueChanged="@(v => _capacityInput = v)"
                        ValueExpression="@(() => _capacityInput)"
                        Disabled="_busy" />
-        @* D-485 — how attendees join sessions in this hall (assigned seat vs
+        @* How attendees join sessions in this hall (assigned seat vs
            open/general admission). A session can override this per-session. *@
         <SimfSelect TValue="string"
                     Label="@L["Admin.Halls.Field.SeatMode"]"
@@ -69,7 +69,7 @@
                        ValueChanged="@(v => _geoRadiusInput = v)"
                        ValueExpression="@(() => _geoRadiusInput)"
                        Disabled="_busy" />
-        @* D-839 — the hall's other arrival knob, beside the geofence it belongs with. *@
+        @* The hall's other arrival knob, beside the geofence it belongs with. *@
         <SimfTextField Label="@L["Admin.Halls.Field.ArrivalGrace"]"
                        Helper="@L["Admin.Halls.Field.ArrivalGraceHint"]"
                        Type="number"

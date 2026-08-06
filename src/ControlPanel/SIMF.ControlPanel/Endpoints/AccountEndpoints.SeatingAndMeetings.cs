@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapSeatingAndMeetings(IEndpointRouteBuilder group)
     {
-        // D-182 (CP UI for D-175 seat reservations).
+        // CP UI for seat reservations.
         group.MapGet("/admin/halls/{hallId:guid}/seat-layout",
             async (Guid hallId, HttpContext http, SimfAdminClient api) =>
         {
@@ -51,7 +51,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.SetHallSeatLayoutAsync(hallId, body, token));
         });
 
-        // B15 — remove a hall's seat layout (back to general admission).
+        // Remove a hall's seat layout (back to general admission).
         group.MapDelete("/admin/halls/{hallId:guid}/seat-layout",
             async (Guid hallId, HttpContext http, SimfAdminClient api) =>
         {
@@ -146,7 +146,7 @@ internal static partial class AccountEndpoints
                 id, body, token));
         });
 
-        // R-1 — re-send the speaker confirmation links for an AwaitingSpeaker request.
+        // Re-send the speaker confirmation links for an AwaitingSpeaker request.
         group.MapPost("/admin/speaker-meeting-requests/{id:guid}/resend-confirmation",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
@@ -164,7 +164,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.CheckInSpeakerMeetingAsync(id, token));
         });
 
-        // QA B20 — reopen a Rejected / Cancelled request back to Pending.
+        // Reopen a Rejected / Cancelled request back to Pending.
         group.MapPost("/admin/speaker-meeting-requests/{id:guid}/reopen",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
@@ -173,7 +173,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.ReopenSpeakerMeetingRequestAsync(id, token));
         });
 
-        // D-500 (Wave 5, الطلبات) — participation-document request BFF passthroughs.
+        // Participation-document request (الطلبات) BFF passthroughs.
         group.MapPost("/admin/document-requests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -200,7 +200,7 @@ internal static partial class AccountEndpoints
                 id, body, token));
         });
 
-        // D-500 (Wave 5, الطلبات) — badge-update request BFF passthroughs.
+        // Badge-update request (الطلبات) BFF passthroughs.
         group.MapPost("/admin/badge-requests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -251,7 +251,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeleteSpeakerAvailabilityWindowAsync(windowId, token));
         });
 
-        // D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows passthroughs.
+        // Hall availability windows passthroughs.
         group.MapGet("/admin/halls/{hallId:guid}/availability-windows",
             async (Guid hallId, HttpContext http, SimfAdminClient api) =>
         {

@@ -1,8 +1,8 @@
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// B3 / D-221 (additive new enum) — a user's gender (الجنس), captured on the
-/// profile / sign-up screen (Mockup screen 05). The integer values are the
+/// A user's gender (الجنس), captured on the
+/// profile / sign-up screen. The integer values are the
 /// persisted wire value, so they follow the same additive-only discipline as
 /// the frozen enums in this namespace: never renumber or rename an existing
 /// case; a new value appends and must not collide. <see cref="Unspecified"/>
@@ -11,8 +11,8 @@ namespace SIMF.Common.Enums;
 /// </summary>
 public enum Gender
 {
-    /// <summary>Not stated yet (default for rows created before D-221, and for
-    /// users who submit the form without choosing).</summary>
+    /// <summary>Not stated yet (the backfill default for rows created before this
+    /// enum existed, and for users who submit the form without choosing).</summary>
     Unspecified = 0,
 
     /// <summary>Male — ذكر.</summary>

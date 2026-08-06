@@ -1,9 +1,9 @@
-﻿@* Control Panel — pending staff approval queue (P4b). Administrator-only.
+﻿@* Control Panel — pending staff approval queue. Administrator-only.
    Each row gets an Approve button and a Reject button that opens a reason
    modal (10–500 chars). Approval grants Control Panel access and mints the
-   QR id, so it confirms first (D-809 — this queue has no profile-review
-   modal to stage it, unlike the visitors/others queues under D-128). Both
-   actions audit one row per click (P4a backend). *@
+   QR id, so it confirms first: this queue has no profile-review
+   modal to stage it, unlike the visitors/others queues. Both
+   actions audit one row per click. *@
 @page "/admin/admins/pending"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Admins.View)]
@@ -67,7 +67,7 @@
                     <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
-            @* D-830 — the row pair matches the bulk pair above it. Gating only the
+            @* The row pair matches the bulk pair above it. Gating only the
                toolbar would have left the same two actions one row lower, which is
                a half-gated screen rather than a fix. *@
             <RowActions Context="user">
@@ -93,7 +93,7 @@
     </div>
 </div>
 
-@* D-809 — approving grants Control Panel access to an administrator-typed
+@* Approving grants Control Panel access to an administrator-typed
    account, so it must not commit on a single click. *@
 <SimfConfirm Open="@(_approveTarget is not null)"
              Title="@L["Admin.Pending.Approve.Confirm.Title"]"
@@ -137,7 +137,7 @@
                         OnClick="@(() => _rejectTarget = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
-            @* D-831 - the commit button of the modal this action opened. *@
+            @* The commit button of the modal this action opened. *@
             <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
             <SimfButton Type="button" Variant="primary"
                             Loading="_busy"
@@ -151,7 +151,7 @@
     </SimfModal>
 }
 
-@* P1.3 (D-214) — bulk reject: shared-reason modal for the selected pending admins. *@
+@* Bulk reject: shared-reason modal for the selected pending admins. *@
 @if (_bulkRejectSelected is not null)
 {
     <SimfModal Open="true"
@@ -172,7 +172,7 @@
                         OnClick="@(() => _bulkRejectSelected = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
-            @* D-831 - the commit button of the modal this action opened. *@
+            @* The commit button of the modal this action opened. *@
             <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
             <SimfButton Type="button" Variant="primary"
                             Loading="_busy"

@@ -5,7 +5,7 @@ using SIMF.Contracts.Badges;
 namespace SIMF.BadgeDesk;
 
 /// <summary>
-/// D-819 — posts a shift to <c>POST /api/v1/admin/offline/batch</c>.
+/// Posts a shift to <c>POST /api/v1/admin/offline/batch</c>.
 ///
 /// <para>The desk holds NO credentials. The operator pastes a bearer token taken
 /// from a Control Panel session at upload time, and it is kept in memory for

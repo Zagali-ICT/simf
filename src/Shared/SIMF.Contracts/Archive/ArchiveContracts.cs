@@ -1,8 +1,8 @@
 namespace SIMF.Contracts.Archive;
 
-/// <summary>Public Archive / Past Editions payload (Mockup screen 24).
+/// <summary>Public Archive / Past Editions payload.
 /// Returned by GET /archive. When the archive-visibility operations toggle
-/// (D-166) is off, <see cref="Items"/> is empty.</summary>
+/// is off, <see cref="Items"/> is empty.</summary>
 public sealed record PublicArchive(IReadOnlyList<PublicArchiveEdition> Items);
 
 public sealed record PublicArchiveEdition(
@@ -17,7 +17,7 @@ public sealed record PublicArchiveEdition(
     int Speakers,
     string? CoverImageRelativePath,
     // Place + date label carried on the list too, so the Website's
-    // per-year archive page renders the full mockup detail without a second
+    // per-year archive page renders the full detail without a second
     // round-trip. Appended with defaults → existing positional callers/wire
     // (and the mobile decoder, which reads by name) are unaffected.
     string? LocationEn = null,
@@ -25,16 +25,16 @@ public sealed record PublicArchiveEdition(
     string? DateLabelEn = null,
     string? DateLabelAr = null);
 
-/// <summary>One public gallery item (Mockup 24-01 "الصور والفيديو").
-/// <c>Kind</c> is the <c>ArchiveMediaKind</c> int (0 image, 1 video). P6 — D-440:
-/// for an image, <c>Url</c> is an absolute photo URL the app renders directly.</summary>
+/// <summary>One public gallery item ("الصور والفيديو").
+/// <c>Kind</c> is the <c>ArchiveMediaKind</c> int (0 image, 1 video).
+/// For an image, <c>Url</c> is an absolute photo URL the app renders directly.</summary>
 public sealed record PublicArchiveMediaItem(
     int Kind, string Url, string? CaptionEn, string? CaptionAr);
 
-/// <summary>One public session title (Mockup 24-01 "عناوين الجلسات").</summary>
+/// <summary>One public session title ("عناوين الجلسات").</summary>
 public sealed record PublicArchiveSessionTitle(string TitleEn, string TitleAr);
 
-/// <summary>One public past speaker (Mockup 24-01 "المتحدثون السابقون").
+/// <summary>One public past speaker ("المتحدثون السابقون").
 /// <c>PhotoRelativePath</c>, when an absolute URL, is the photo the
 /// app renders directly (else initials).</summary>
 public sealed record PublicArchivePastSpeaker(
@@ -43,11 +43,11 @@ public sealed record PublicArchivePastSpeaker(
     // corner flag; null when unset. Appended (append-only wire).
     int? CountryId = null);
 
-/// <summary>§9 (Mockup screen 24-01 "تفاصيل النسخة") — public detail for ONE
-/// past edition: title/summary + place + date label + counters + cover, plus the
-/// rich lists (gallery, session titles, past speakers — D-432). Served by
+/// <summary>Public detail for ONE
+/// past edition ("تفاصيل النسخة"): title/summary + place + date label + counters
+/// + cover, plus the rich lists (gallery, session titles, past speakers). Served by
 /// <c>GET /api/v1/app/archive/{id}</c>; gated by the archive-visibility
-/// operations toggle (D-166) — 404 when the archive is hidden or the edition is
+/// operations toggle — 404 when the archive is hidden or the edition is
 /// missing / inactive.</summary>
 public sealed record PublicArchiveEditionDetail(
     Guid Id,
@@ -88,7 +88,7 @@ public sealed record AdminArchiveEditionSummary(
     // True when an active ArchiveCover asset exists, so the grid renders
     // the cover thumbnail (SimfIdentityCell), else an initials tile.
     bool HasCover,
-    // §9 (screen 24-01) — place + date label, so the CP edit form (which
+    // Place + date label, so the CP edit form (which
     // populates straight from the grid row) carries them. Default null
     // preserves existing positional callers.
     string? LocationEn = null,
@@ -110,7 +110,7 @@ public sealed record AdminArchiveEditionDetail(
     bool IsActive,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    // §9 (screen 24-01) — place + date label (default null preserves callers).
+    // Place + date label (default null preserves callers).
     string? LocationEn = null,
     string? LocationAr = null,
     string? DateLabelEn = null,
@@ -161,7 +161,7 @@ public sealed record CreateArchiveEditionRequest
     public int Sessions { get; set; }
     public int Speakers { get; set; }
     public string? CoverImageRelativePath { get; set; }
-    // §9 (screen 24-01) — place + date label for the edition detail.
+    // Place + date label for the edition detail.
     public string? LocationEn { get; set; }
     public string? LocationAr { get; set; }
     public string? DateLabelEn { get; set; }
@@ -186,7 +186,7 @@ public record UpdateArchiveEditionRequest
     public int Sessions { get; set; }
     public int Speakers { get; set; }
     public string? CoverImageRelativePath { get; set; }
-    // §9 (screen 24-01) — place + date label for the edition detail.
+    // Place + date label for the edition detail.
     public string? LocationEn { get; set; }
     public string? LocationAr { get; set; }
     public string? DateLabelEn { get; set; }
@@ -199,7 +199,7 @@ public record UpdateArchiveEditionRequest
     public bool IsActive { get; set; } = true;
 }
 
-/// <summary>D-275 (§9) — "make this year history": snapshot the current live
+/// <summary>"Make this year history": snapshot the current live
 /// event into a new ArchiveEdition. Year + bilingual title are generated
 /// server-side (the current Saudi year from <c>SimfClock</c>, "SIMF {year}" /
 /// "سيمف {year}") and the three
@@ -208,7 +208,7 @@ public record UpdateArchiveEditionRequest
 /// to reveal the archive immediately.</summary>
 public sealed record SnapshotCurrentEditionRequest
 {
-    /// <summary>When true, flip the archive-visibility toggle (D-166) on after
+    /// <summary>When true, flip the archive-visibility toggle on after
     /// creating the snapshot so the new edition shows on the public Archive.</summary>
     public bool MakeVisible { get; set; }
 }

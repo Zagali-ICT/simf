@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/SeatReservationsTests.cs
 // Tests: SIMF.Api.Tests/SeatTierEligibilityTests.cs
-// Tests: SIMF.Api.Tests/SeatChangeTests.cs (B1 — the atomic seat move)
+// Tests: SIMF.Api.Tests/SeatChangeTests.cs (the atomic seat move)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.AccessControl.Abstractions;
@@ -15,7 +15,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.SeatReservations;
 
-/// <summary>D-175 (gap doc G11, Mockup page 7) — per-session seat
+/// <summary>Per-session seat
 /// reservation orchestration. Hall stays frozen — layout columns
 /// live on <c>HallSeatLayout</c>. Active uniqueness is enforced by
 /// filtered unique indexes; release sets <c>ReleasedAt</c> and frees
@@ -31,7 +31,7 @@ internal sealed class SeatReservationService(
     IQrResolver qrResolver,
     ILogger<SeatReservationService> logger) : ISeatReservationService
 {
-    /// <summary>#6/#17 (owner 2026-07-20) — how long before a session starts an
+    /// <summary>How long before a session starts an
     /// un-checked-in seat reservation is auto-released so the seat can go to
     /// someone else ("cancelled if you don't check in 3 minutes before start").
     /// A reservation's <c>Expires</c> is stamped at <c>Start - NoShowReleaseGrace</c>;
@@ -62,7 +62,7 @@ internal sealed class SeatReservationService(
             })
             .ToListAsync(cancellationToken);
 
-        // Wave 2 — the "confirmed" (تم التأكيد) seat state: a reservation whose
+        // The "confirmed" (تم التأكيد) seat state: a reservation whose
         // holder has an OPEN HallAttendance row for this session (scanned in at the
         // hall gate). One query for the whole session, matched by holder id.
         var checkedInUserIds = (await appDbContext.HallAttendances.AsNoTracking()
@@ -111,7 +111,7 @@ internal sealed class SeatReservationService(
             ? null
             : ExpandSeatCounts(layout, rowLabels);
 
-        // D-771 — always emit ONE tier per row (Normal for a pre-D-771 layout) so the
+        // Always emit ONE tier per row (Normal for a layout saved before tiers) so the
         // app can colour the grid and pre-disable ineligible seats, plus whether the
         // CALLER is VIP-tier. Both are UX hints — the reserve paths re-check.
         var seatTiers = layout is null
@@ -207,12 +207,12 @@ internal sealed class SeatReservationService(
             // provisional hold until the visitor checks in at the hall gate; the
             // pre-start sweep releases any hold that never checks in.
             Status = BookingStatus.Approved,
-            // #6/#17 — the no-show release deadline: 3 minutes before the session
+            // The no-show release deadline: 3 minutes before the session
             // starts. If the holder has not checked in by then the seat is freed.
             Expires = ctx.Start - NoShowReleaseGrace,
         };
         await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
-        // M-2 — hard capacity backstop against a concurrent booking that raced the
+        // Hard capacity backstop against a concurrent booking that raced the
         // pre-count; on overflow removes our row and throws SeatSessionFull.
         await EnforceCapacityAfterInsertAsync(
             reservation, EffectiveCapacity(ctx), cancellationToken);
@@ -253,7 +253,7 @@ internal sealed class SeatReservationService(
         await EnsureNoOverlapAsync(
             sessionId, actorUserId, ctx.Start, ctx.End, cancellationToken);
 
-        // M-2 / #21 — the capacity COUNT, the free-seat pick and the INSERT run in
+        // The capacity COUNT, the free-seat pick and the INSERT run in
         // ONE Serializable transaction so concurrent reserve-random can neither
         // oversell (the key-range lock serialises count-then-insert) nor over-reject
         // (a deadlock victim re-runs and its re-count sees the committed rival),
@@ -323,7 +323,7 @@ internal sealed class SeatReservationService(
         await EnsureNoOverlapAsync(
             sessionId, actorUserId, session.Start, session.End, cancellationToken);
 
-        // M-1 / #21 — open-seating capacity = the session override, else the hall
+        // Open-seating capacity = the session override, else the hall
         // capacity (no seat layout bounds it), and there is NO per-seat DB backstop.
         // So the capacity COUNT and the INSERT run in ONE Serializable transaction
         // (via the execution strategy so it composes with EnableRetryOnFailure):
@@ -346,7 +346,7 @@ internal sealed class SeatReservationService(
                 // 2026-07-18 (reservation-only) — confirmed on create, no approval
                 // step; the hold stays provisional until hall check-in.
                 Status = BookingStatus.Approved,
-                // #6/#17 — the no-show release deadline: 3 minutes before start.
+                // The no-show release deadline: 3 minutes before start.
                 Expires = session.Start - NoShowReleaseGrace,
             }),
             cancellationToken);
@@ -374,9 +374,9 @@ internal sealed class SeatReservationService(
         var seat = request.SeatNumber;
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
         EnsureSeatPickAllowed(ctx);
-        // B1 (owner rule, deliberate) — a self-service change of seat is allowed only
-        // BEFORE the session starts, the SAME boundary the cancel already enforces
-        // (D-227 / FR-504). Once the session is running the seat plan is what the
+        // Deliberate owner rule: a self-service change of seat is allowed only
+        // BEFORE the session starts, the SAME boundary the cancel already enforces.
+        // Once the session is running the seat plan is what the
         // staff seating desk and the gate flow work from on the floor, and the
         // pre-start no-show sweep has already redistributed the un-checked-in holds;
         // a visitor reshuffling themselves at that point would desync the desk. A
@@ -408,7 +408,7 @@ internal sealed class SeatReservationService(
         return ToMine(moved.Reservation);
     }
 
-    /// <summary>B1 — the ATOMIC half of the seat change: release the held seat and
+    /// <summary>The ATOMIC half of the seat change: release the held seat and
     /// acquire the destination in ONE serializable transaction, so the holder can
     /// never end up with no seat. Shaped like
     /// <see cref="InsertHoldWithinCapacityAsync"/> — run through the EF execution
@@ -504,7 +504,7 @@ internal sealed class SeatReservationService(
                 CreatedByUserId = actorUserId,
                 CreatedAt = now,
                 Status = BookingStatus.Approved,
-                // #6/#17 — the moved hold keeps the SAME no-show deadline as the seat
+                // The moved hold keeps the SAME no-show deadline as the seat
                 // it replaces: 3 minutes before the session starts.
                 Expires = ctx.Start - NoShowReleaseGrace,
             };
@@ -533,8 +533,7 @@ internal sealed class SeatReservationService(
                 "You do not have a seat to release in this session.",
                 "ليس لديك مقعد للإلغاء في هذه الجلسة.");
 
-        // P2.2 — D-227 (FDS-005 §5.3, FR-504): a booking can only be cancelled
-        // BEFORE the session starts.
+        // A booking can only be cancelled BEFORE the session starts.
         var sessionStart = await appDbContext.Sessions.AsNoTracking()
             .Where(s => s.Id == sessionId)
             .Select(s => (DateTime?)s.Start)
@@ -713,7 +712,7 @@ internal sealed class SeatReservationService(
         }
         var tiersCsv = string.Join(',', seatTiers.Select(t => (int)t));
 
-        // H-2 — an existing layout may already back active reservations; a change
+        // An existing layout may already back active reservations; a change
         // that drops a row or shrinks a row's seat count would strand any seat that
         // now falls outside the grid. Block it (the operator must release those
         // seats first). A first-time layout (layout is null) can have no seat-
@@ -781,7 +780,8 @@ internal sealed class SeatReservationService(
                 "This hall does not have a seat layout to remove.",
                 "لا يوجد مخطط مقاعد لهذه القاعة لإزالته.");
 
-        // B15 — the same orphan rule SetLayoutAsync enforces (H-2), applied to the
+        // The same orphan rule SetLayoutAsync enforces through
+        // EnsureLayoutChangeKeepsActiveReservationsAsync, applied to the
         // hardest possible shrink: removing the grid strands EVERY active
         // seat-specific reservation, so any single one blocks the delete and the
         // error names how many the operator must release first.
@@ -973,10 +973,10 @@ internal sealed class SeatReservationService(
         {
             return;
         }
-        // M-4 — a release must also close the booking's lifecycle. Leaving Status
+        // A release must also close the booking's lifecycle. Leaving Status
         // untouched left an Approved row with ReleasedAt set (a stale
         // "confirmed-but-gone" state the CP/app could still read as active), so mark
-        // it Cancelled. A9 — the ReviewedBy/ReviewedAt pair records the admin who
+        // it Cancelled. The ReviewedBy/ReviewedAt pair records the admin who
         // performed THIS RELEASE; there is no approval queue left for it to record a
         // review decision (see BookingStatus), and this is its only writer.
         var now = timeProvider.SimfNow();
@@ -997,7 +997,7 @@ internal sealed class SeatReservationService(
                 + $"kind={reservation.Kind}",
             cancellationToken);
 
-        // M-4 — tell the attendee an admin released their held/confirmed seat
+        // Tell the attendee an admin released their held/confirmed seat
         // (no-op for an AdminReservedRow block: ReservedForUserId is null).
         var session = await LoadSessionTitleAsync(reservation.SessionId, cancellationToken);
         await TryNotifyBookingReleasedAsync(reservation, session, cancellationToken);
@@ -1066,19 +1066,19 @@ internal sealed class SeatReservationService(
         return GridPage<SeatPlanCell>.Of(cells, total, skip, top);
     }
 
-    // -- Booking monitor + no-show release (#6/#17 — owner 2026-07-20) --
+    // -- Booking monitor + no-show release --
 
     public async Task<GridPage<ActiveBookingRow>> ListActiveBookingsAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
         var (skip, top) = query.ClampPage(50, 500);
 
-        // #6 — the read-only Control Panel monitor of ACTIVE (confirmed, still-held)
+        // The read-only Control Panel monitor of ACTIVE (confirmed, still-held)
         // visitor reservations across all sessions. There is no approval step —
         // bookings auto-confirm — so this is a monitor, not a queue. Admin
         // row-blocks are created Approved with a null ReservedForUserId, so they
         // never appear here. The session is joined up-front (before paging) so the
-        // session and seat columns are server-filterable/sortable (D-255). The
+        // session and seat columns are server-filterable/sortable. The
         // attendee name is resolved cross-DB from Identity afterwards, so that
         // column stays non-filterable/non-sortable.
         var joined = appDbContext.SeatReservations.AsNoTracking()
@@ -1093,7 +1093,7 @@ internal sealed class SeatReservationService(
                     r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForUserId, r.CreatedAt,
                 });
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -1109,7 +1109,7 @@ internal sealed class SeatReservationService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: newest booking first.
+        // CP grid sortable columns. Default: newest booking first.
         joined = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("session", false) => joined.OrderBy(x => x.Title),
@@ -1128,8 +1128,8 @@ internal sealed class SeatReservationService(
             .Skip(skip).Take(top)
             .ToListAsync(cancellationToken);
 
-        // Resolve attendee display names in one Identity round-trip (no
-        // cross-DB JOIN, D-157).
+        // Resolve attendee display names in one Identity round-trip (never a
+        // cross-DB JOIN).
         var attendeeIds = rows
             .Where(r => r.ReservedForUserId is not null)
             .Select(r => r.ReservedForUserId!.Value)
@@ -1159,7 +1159,7 @@ internal sealed class SeatReservationService(
             skip, top);
     }
 
-    /// <summary>#6/#17 (owner 2026-07-20, FR-503/903) — the no-show release: free
+    /// <summary>The no-show release: free
     /// every ACTIVE (Approved, still-held) visitor seat reservation whose no-show
     /// deadline (<c>Expires</c> = the session's <c>Start − 3min</c>) has passed
     /// <b>and whose holder never checked in</b> (no <c>HallAttendance</c> for that
@@ -1237,7 +1237,7 @@ internal sealed class SeatReservationService(
         return released.Count;
     }
 
-    // -- Staff seating desk (D-771 — owner 2026-07-26) --
+    // -- Staff seating desk --
 
     public async Task<StaffSeatOccupant> ResolveSeatOccupantAsync(
         Guid sessionId, string rowLabel, int seatNumber,
@@ -1333,7 +1333,7 @@ internal sealed class SeatReservationService(
     public async Task<StaffSeatOccupant> ResolveBadgeSeatAsync(
         Guid sessionId, string qrId, CancellationToken cancellationToken = default)
     {
-        // D-821 review — canonicalise first. A D-820 offline badge arrives as a
+        // Canonicalise first. An offline badge arrives as a
         // ~61-character encrypted blob, not a QrId, so the direct lookup below
         // would miss it and report an unknown badge. A minted serial passes
         // through unchanged.
@@ -1411,7 +1411,7 @@ internal sealed class SeatReservationService(
     /// badge id (from the App-side <c>UserProfile</c>), whether an avatar exists in
     /// the unified file store, and whether they have already checked into this
     /// session. Everything is on the App DB, so there is no cross-database read and
-    /// nothing is duplicated (D-157). A null <paramref name="userId"/> (a VVIP
+    /// nothing is duplicated. A null <paramref name="userId"/> (a VVIP
     /// protocol seat or an admin block) yields the empty occupant.</summary>
     private async Task<(string Name, string NameArabic, bool HasPhoto,
         string? QrId, bool CheckedIn)> LoadOccupantAsync(
@@ -1450,7 +1450,7 @@ internal sealed class SeatReservationService(
         DateTime start, DateTime end,
         CancellationToken cancellationToken)
     {
-        // FR-502: the attendee must not already hold a (Pending or Approved)
+        // The attendee must not already hold a (Pending or Approved)
         // booking for ANOTHER session whose time window overlaps this one.
         // Held = ReleasedAt IS NULL, so released/rejected/cancelled rows don't
         // block.
@@ -1516,9 +1516,9 @@ internal sealed class SeatReservationService(
             .SingleOrDefaultAsync(l => l.HallId == hallId, cancellationToken);
     }
 
-    /// <summary>H-2 — reject a hall-layout change that would orphan any active
+    /// <summary>Reject a hall-layout change that would orphan any active
     /// (ReleasedAt IS NULL) seat-specific reservation across the hall's sessions:
-    /// a booked row no longer in <paramref name="newRows"/>, or (D-767) a seat number
+    /// a booked row no longer in <paramref name="newRows"/>, or a seat number
     /// above that row's new per-row count in <paramref name="newSeatCounts"/>.
     /// Open-seating reservations (null row/seat) are unaffected. The operator must
     /// release the affected seats before shrinking the grid.</summary>
@@ -1555,7 +1555,7 @@ internal sealed class SeatReservationService(
         }
     }
 
-    /// <summary>B15 — how many ACTIVE (ReleasedAt IS NULL) seat-SPECIFIC reservations
+    /// <summary>How many ACTIVE (ReleasedAt IS NULL) seat-SPECIFIC reservations
     /// exist across every session in this hall. Open-seating rows (null row label)
     /// survive a layout removal untouched — general admission needs no grid — so they
     /// are excluded. Counted in the database (no rows materialised) because the caller
@@ -1575,7 +1575,7 @@ internal sealed class SeatReservationService(
     }
 
     /// <summary>Every session held in this hall. One definition shared by the two
-    /// layout guards (the shrink orphan check and the B15 delete count) so they can
+    /// layout guards (the shrink orphan check and the layout-delete count) so they can
     /// never disagree on which sessions a layout change affects.</summary>
     private Task<List<Guid>> HallSessionIdsAsync(
         Guid hallId, CancellationToken cancellationToken) =>
@@ -1592,10 +1592,11 @@ internal sealed class SeatReservationService(
 
     /// <summary>Expand a layout's per-row seat counts into a concrete array
     /// parallel to <paramref name="rowLabels"/>. When <c>SeatCounts</c> is null/blank the
-    /// layout is uniform, so every row gets <c>SeatsPerRow</c> (unchanged pre-D-767
-    /// behaviour); when set it is a CSV of ints, one per row. A stored CSV whose length
-    /// differs from the row set, or that fails to parse, is corrupt persisted state — a
-    /// deterministic 500, never a silent fallback (§2 no-silent-fallback rule).</summary>
+    /// layout is uniform, so every row gets <c>SeatsPerRow</c> (the behaviour before
+    /// per-row counts existed); when set it is a CSV of ints, one per row. A stored
+    /// CSV whose length differs from the row set, or that fails to parse, is corrupt
+    /// persisted state — a deterministic 500, never a silent fallback, per the
+    /// project's no-silent-fallback rule.</summary>
     private IReadOnlyList<int> ExpandSeatCounts(
         HallSeatLayout layout, IReadOnlyList<string> rowLabels)
     {
@@ -1629,11 +1630,12 @@ internal sealed class SeatReservationService(
 
     /// <summary>Expand a layout's per-row seat TIERS into a concrete array
     /// parallel to <paramref name="rowLabels"/>. A null/blank <c>SeatTiers</c> is a
-    /// layout written before D-771, so every row reads
-    /// <see cref="SeatTier.Normal"/> — the exact pre-D-771 behaviour, no shipped
-    /// session loses a bookable seat. A stored CSV whose length differs from the row
-    /// set, or that fails to parse into a defined tier, is corrupt persisted state —
-    /// a deterministic 500, never a silent fallback (§2 no-silent-fallback rule).</summary>
+    /// layout written before seat tiers existed, so every row reads
+    /// <see cref="SeatTier.Normal"/> — exactly the behaviour those layouts already
+    /// had, so no shipped session loses a bookable seat. A stored CSV whose length
+    /// differs from the row set, or that fails to parse into a defined tier, is
+    /// corrupt persisted state — a deterministic 500, never a silent fallback, per
+    /// the project's no-silent-fallback rule.</summary>
     private IReadOnlyList<SeatTier> ExpandSeatTiers(
         HallSeatLayout layout, IReadOnlyList<string> rowLabels)
     {
@@ -1714,8 +1716,8 @@ internal sealed class SeatReservationService(
     /// <summary>Is this visitor a VIP-tier attendee? Reuses the EXISTING
     /// VIP-tier notion rather than inventing a parallel one:
     /// <c>UserProfile.ProfileTypeId → UserProfileType.AllowsVipMeetingSlots</c>, which
-    /// the seeder sets on the VVIP + VIP audience tiers (D-611) and the app already
-    /// surfaces as <c>isVip</c> (D-729). Both tables live on the App DB, so this is a
+    /// the seeder sets on the VVIP + VIP audience tiers and the app already
+    /// surfaces as <c>isVip</c>. Both tables live on the App DB, so this is a
     /// single local query — no cross-database read.</summary>
     private async Task<bool> IsVipVisitorAsync(
         Guid actorUserId, CancellationToken cancellationToken) =>
@@ -1790,7 +1792,7 @@ internal sealed class SeatReservationService(
         }
     }
 
-    /// <summary>#20 (Round-1 held item, option C) — a booking may still be created on
+    /// <summary>A booking may still be created on
     /// a live, in-progress session (a walk-in can join), but NOT on one that has
     /// already ENDED: an ended session's seat can never be attended, so the hold would
     /// be dead, un-cancellable weight. Blocks at or after <paramref name="end"/>;
@@ -1806,9 +1808,9 @@ internal sealed class SeatReservationService(
         }
     }
 
-    /// <summary>B1 — the self-service seat CHANGE window: only BEFORE the session
+    /// <summary>The self-service seat CHANGE window: only BEFORE the session
     /// starts. Deliberately the same boundary <see cref="ReleaseMineAsync"/> uses for
-    /// a cancel (D-227 / FR-504) rather than the looser not-yet-ENDED rule the create
+    /// a cancel, rather than the looser not-yet-ENDED rule the create
     /// paths use: a walk-in may still book a live session, but reshuffling an
     /// already-placed attendee mid-session would desync the staff seating desk and the
     /// pre-start no-show sweep that has already redistributed the free seats.</summary>
@@ -1833,7 +1835,7 @@ internal sealed class SeatReservationService(
             ctx.SeatCounts.Sum(),
             ctx.CapacityOverride ?? ctx.HallCapacity);
 
-    /// <summary>M-2/M-1 — the hard capacity backstop the pre-count cannot give.
+    /// <summary>The hard capacity backstop the pre-count cannot give.
     /// The reserve/join pre-check reads-then-counts-then-inserts, so two
     /// concurrent bookings can each pass the check and both insert; only the
     /// per-seat unique index stops that, and it caps at the LAYOUT size, not at a
@@ -1858,7 +1860,7 @@ internal sealed class SeatReservationService(
         }
     }
 
-    /// <summary>M-2/M-1 (#21 — Round-1 held) — insert a Pending hold only while the
+    /// <summary>Insert a Pending hold only while the
     /// session is below <paramref name="effectiveCap"/>, with the capacity COUNT and
     /// the INSERT in ONE SERIALIZABLE transaction so concurrent reserve-random /
     /// open-seating joins can neither oversell nor over-reject. The COUNT takes a
@@ -1921,7 +1923,7 @@ internal sealed class SeatReservationService(
             "لا توجد مقاعد متبقية في هذه الجلسة.");
     }
 
-    /// <summary>#21 — the session's currently-held seat-specific cells (row + number),
+    /// <summary>The session's currently-held seat-specific cells (row + number),
     /// read inside the serializable transaction so reserve-random picks a free seat
     /// against range-locked, consistent state. Open-seating rows (null row/seat) are
     /// excluded.</summary>
@@ -1938,7 +1940,7 @@ internal sealed class SeatReservationService(
             .ToHashSet();
     }
 
-    /// <summary>#21 — the first free seat (row-major over the layout) as a fresh
+    /// <summary>The first free seat (row-major over the layout) as a fresh
     /// confirmed RandomAssignment hold, or null when every seat is taken. Built with
     /// the captured <paramref name="now"/> so a transaction retry stamps the same
     /// created-at / expiry window.</summary>
@@ -1976,7 +1978,7 @@ internal sealed class SeatReservationService(
                     CreatedAt = now,
                     // 2026-07-18 (reservation-only) — confirmed on create, no approval.
                     Status = BookingStatus.Approved,
-                    // #6/#17 — the no-show release deadline: 3 minutes before start.
+                    // The no-show release deadline: 3 minutes before start.
                     Expires = ctx.Start - NoShowReleaseGrace,
                 };
             }
@@ -2017,7 +2019,7 @@ internal sealed class SeatReservationService(
         }
     }
 
-    // M-4 / #6 — notify the attendee that their seat reservation was released:
+    // Notify the attendee that their seat reservation was released:
     // either by an administrator (default) or by the pre-start no-show sweep
     // (noShow=true, so the message explains they were not checked in). Same
     // swallow-and-log discipline as the other booking notifications: a

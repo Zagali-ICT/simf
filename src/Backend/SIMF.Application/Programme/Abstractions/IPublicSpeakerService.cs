@@ -2,7 +2,7 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Application.Programme.Abstractions;
 
-/// <summary>D-199 (Mockup pages 19-20) — public, anonymous read access to
+/// <summary>Public, anonymous read access to
 /// active speakers: the speakers list and the single-speaker profile.
 /// Read-only sibling of <see cref="IAdminSpeakerService"/>; only active
 /// speakers are returned. Mirrors <c>IPublicBoothService</c> /
@@ -10,13 +10,13 @@ namespace SIMF.Application.Programme.Abstractions;
 public interface IPublicSpeakerService
 {
     /// <summary>All active speakers ordered by <c>DisplayOrder</c> (then
-    /// name). Drives the public speakers list (Mockup page 19).</summary>
+    /// name). Drives the public speakers list.</summary>
     Task<PublicSpeakers> ListAsync(
         CancellationToken cancellationToken = default);
 
     /// <summary>Full public profile for one active speaker — including the
     /// speaker's active sessions — or null when the speaker does not exist
-    /// or has been soft-deleted (Mockup page 20).</summary>
+    /// or has been soft-deleted.</summary>
     Task<PublicSpeakerDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default);
 }

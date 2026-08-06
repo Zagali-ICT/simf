@@ -45,7 +45,7 @@ internal sealed class AiService(
                 "Prompt key is required.",
                 "مفتاح المحفّز مطلوب.");
         }
-        // D-179 (review-pass): caps live at the IAiService chokepoint, not
+        // Caps live at the IAiService chokepoint, not
         // only at AdminAiPromptService.TestAsync. The public feature endpoints
         // (FAQ, Assistance, Translate, live-translation, live-sign-language)
         // call InvokeAsync directly with raw user text — without this cap an
@@ -161,7 +161,7 @@ internal sealed class AiService(
             // Redact common secret / PII patterns before
             // persistence so PII/keys never land raw in the DB
             // (was an unfulfilled promise — comment in AiInvocation.cs:20).
-            // D-179 (review-pass) — also redact OutputText: an LLM that
+            // Also redact OutputText: an LLM that
             // echoes a user-pasted secret (or names a person verbatim
             // from RAG context) would otherwise persist it.
             InputJson = redacted.InputJson,
@@ -178,7 +178,7 @@ internal sealed class AiService(
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         // JSON-shape the audit Detail so SIEM field-extracts
-        // instead of regex-parsing free text. D-185 — added
+        // instead of regex-parsing free text. The Detail carries
         // redactionKinds/redactionCount/inputPreview so SIEM rules
         // AI-005/007/008/009 can field-extract instead of joining the
         // OperationLog row back to the AiInvocation row.
@@ -207,9 +207,9 @@ internal sealed class AiService(
             prompt.Model, providerResponse.OutputText,
             providerResponse.TokensInput, providerResponse.TokensOutput,
             latencyMs,
-            // A18 — carry the provider's own "this is the offline stub" flag out
+            // Carry the provider's own "this is the offline stub" flag out
             // to the caller. prompt.Provider is the CONFIGURED provider, which
-            // D-484 routing may have redirected, so it cannot answer this.
+            // routing may have redirected, so it cannot answer this.
             providerResponse.IsStub);
     }
 
@@ -254,7 +254,7 @@ internal sealed class AiService(
             cancellationToken: cancellationToken);
     }
 
-    // D-179 (review-pass) — single source of truth for AI input caps. The
+    // Single source of truth for AI input caps. The
     // numbers live in the shared SIMF.Contracts.Ai.AiInputLimits so producers
     // outside this assembly (the CP grounding builder) reference the same values;
     // these aliases keep the in-assembly references and the boundary tests
@@ -263,7 +263,7 @@ internal sealed class AiService(
     public const int MaxInputKeyLength = AiInputLimits.MaxInputKeyLength;
     public const int MaxInputValueLength = AiInputLimits.MaxInputValueLength;
 
-    // D-484 follow-up — every prompt is seeded with the sentinel Model="echo".
+    // Every prompt is seeded with the sentinel Model="echo".
     // When routing redirects an Echo-default prompt to a REAL provider,
     // that literal would be sent to the vendor API as a model name and 404. Blank
     // it so the real provider substitutes its configured DefaultModel; an Echo call

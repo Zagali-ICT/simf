@@ -10,7 +10,7 @@ namespace SIMF.Api.Endpoints.Public;
 /// (per-platform min/latest version + store URL, admin-edited on the CP
 /// configuration page). The app calls this on every launch and from the
 /// About-the-app manual check; it fails open on any error, so this endpoint
-/// carries no auth and no dedicated rate-limit bucket (D-731 — anonymous
+/// carries no auth and no dedicated rate-limit bucket (anonymous
 /// launch traffic must never drain the auth bucket; the global per-IP limiter
 /// applies). Mirrors the site-settings read shape.</summary>
 public sealed class GetAppVersionPolicyEndpoint(IAppVersionPolicyService service)

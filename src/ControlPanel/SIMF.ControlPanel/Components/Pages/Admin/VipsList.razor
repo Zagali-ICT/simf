@@ -1,4 +1,4 @@
-@* D-168 (gap doc G5, PDF §2.7.3) — VIP list + bulk-notify modal. The
+@* VIP list + bulk-notify modal. The
    VIP list is the subset of UserProfiles whose ProfileType.Name is in
    {VVIP, VIP, Gold}; the notify modal collects a bilingual message and
    fans it out via the API. *@
@@ -47,7 +47,7 @@
                       ExportPermission="@PermissionCatalog.Vips.Export">
             <CustomToolbar>
                 @* Bulk action: notify the selected VIPs (opens the bilingual message modal).
-                   D-828 — gated at the TRIGGER, not just at the modal's Submit: the
+                   Gated at the TRIGGER, not just at the modal's Submit: the
                    page gates on Vips.View while sending needs Vips.Notify, and this
                    flow asks the operator to select recipients and compose a bilingual
                    message before sending. Hiding the entry point is the difference

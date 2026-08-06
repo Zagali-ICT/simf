@@ -1,10 +1,10 @@
-@* D-199 (CP UI for the D-199 News module, Mockup screen 29 authoring) —
+@* The Control Panel authoring UI for the News module —
    admin CRUD over the public News feed. The public feed is sorted by
    PublishedAt / DisplayOrder; admins control the title, body, category,
    image, publish date and order here. The admin grid shows every row
    regardless of IsActive / publish window so editors can manage drafts
-   and reactivate soft-deleted items. Centralized dialog/full-page framing
-   D-353: Add / Edit / View / Delete are hosted by CrudShell, which frames
+   and reactivate soft-deleted items. Add / Edit / View / Delete are
+   hosted by CrudShell, which frames
    the reusable NewsAddEdit and NewsViewDelete forms as a popup or a full
    page per the admin's toolbar choice (persisted in localStorage via
    CpPreferences). The inline SimfModal form + native confirm() delete it

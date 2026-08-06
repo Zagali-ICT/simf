@@ -1,4 +1,4 @@
-@* D-353 — reusable Archive (Past Editions) View/Delete form, hosted by
+@* Reusable Archive (Past Editions) View/Delete form, hosted by
    CrudShell (as a popup or a full page) from ArchiveList.razor. Inherits
    CrudViewDeleteFormBase so it exposes the standard parameter surface
    (IsDelete / Initial / OnDeleted / OnCancel). Read-only details always show
@@ -16,7 +16,7 @@
 
 @if (Initial is not null)
 {
-    @* D-357 — cover image from the unified media-asset pipeline. *@
+    @* Cover image from the unified media-asset pipeline. *@
     <div class="simf-image-upload__preview">
         <SimfImageThumb Src="@($"/account/api/admin/assets/ArchiveCover/{Initial.Id}/image")"
                         Alt="@Initial.TitleEn" Class="simf-img-thumb--lg" />

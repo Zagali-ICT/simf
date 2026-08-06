@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-148 — Gate Module admin CRUD + reports ---------------------------
+    // -- Gate Module admin CRUD + reports -----------------------------------
 
     public Task<ApiCallResult<GridPage<AdminGateSummary>>> ListGatesAsync(
         GridQuery query, string accessToken,
@@ -82,7 +82,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"gates/{id}/assignments", content: null,
             accessToken, cancellationToken);
 
-    // BUG-018 — the gate form's own lookups, both gated on Gates.Manage so a gate
+    // The gate form's own lookups, both gated on Gates.Manage so a gate
     // manager no longer needs Admins.View / ProfileTypes.View / Halls.View to fill
     // the Add/Edit form.
 
@@ -116,7 +116,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, "gates/reports/currently-inside", content: null,
             accessToken, cancellationToken);
 
-    // -- D-148 — Gate Module operator surface --------------------------------
+    // -- Gate Module operator surface ----------------------------------------
 
     public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Gates.OperatorGateAssignment>>>
         ListMyGateAssignmentsAsync(string accessToken,
@@ -141,9 +141,9 @@ public sealed partial class SimfAdminClient
             gateId is { } id ? $"my-reports/today?gateId={id}" : "my-reports/today",
             content: null, accessToken, cancellationToken);
 
-    // -- D-115 — ProfileTypes CRUD (admin-managed lookup table) --------------
+    // -- ProfileTypes CRUD (admin-managed lookup table) ----------------------
 
-    /// <summary>One page of profile types for the admin grid (D-115).</summary>
+    /// <summary>One page of profile types for the admin grid.</summary>
     public Task<ApiCallResult<GridPage<AdminProfileTypeSummary>>> ListAdminProfileTypesAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -152,7 +152,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>One profile type by id (D-115).</summary>
+    /// <summary>One profile type by id.</summary>
     public Task<ApiCallResult<AdminProfileTypeSummary>> GetAdminProfileTypeAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -160,7 +160,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"profile-types/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>Creates a profile type (D-115).</summary>
+    /// <summary>Creates a profile type.</summary>
     public Task<ApiCallResult<AdminProfileTypeSummary>> CreateAdminProfileTypeAsync(
         AdminCreateProfileTypeRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -169,7 +169,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Updates a profile type (D-115). UserType is immutable post-creation.</summary>
+    /// <summary>Updates a profile type. UserType is immutable post-creation.</summary>
     public Task<ApiCallResult<AdminProfileTypeSummary>> UpdateAdminProfileTypeAsync(
         Guid id, AdminUpdateProfileTypeRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -178,7 +178,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Soft-deletes (deactivates) a profile type (D-115). 409 if in use.</summary>
+    /// <summary>Soft-deletes (deactivates) a profile type. 409 if in use.</summary>
     public Task<ApiCallResult<bool>> DeactivateAdminProfileTypeAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -186,7 +186,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"profile-types/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>Lists every project's log files (P6).</summary>
+    /// <summary>Lists every project's log files.</summary>
     public Task<ApiCallResult<LogListResponse>> ListLogsAsync(
         string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -195,7 +195,7 @@ public sealed partial class SimfAdminClient
             content: null,
             accessToken, cancellationToken);
 
-    /// <summary>Returns the last <paramref name="lines"/> of one log file (P6).</summary>
+    /// <summary>Returns the last <paramref name="lines"/> of one log file.</summary>
     public Task<ApiCallResult<LogTailResponse>> TailLogAsync(
         string project,
         string fileName,
@@ -213,7 +213,7 @@ public sealed partial class SimfAdminClient
             accessToken, cancellationToken);
     }
 
-    /// <summary>Streams one full log file (P6).</summary>
+    /// <summary>Streams one full log file.</summary>
     public async Task<(int StatusCode, byte[] Bytes, string FileName)> DownloadLogAsync(
         string project,
         string fileName,
@@ -238,7 +238,7 @@ public sealed partial class SimfAdminClient
         }
     }
 
-    /// <summary>Bulk-creates users from an XLSX workbook upload (D-044 b).</summary>
+    /// <summary>Bulk-creates users from an XLSX workbook upload.</summary>
     public async Task<ApiCallResult<AdminImportUsersResponse>> ImportUsersAsync(
         byte[] xlsx,
         string fileName,

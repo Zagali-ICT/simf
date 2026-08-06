@@ -16,7 +16,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// Implements authenticator-app enrolment (myComment #11, D-035). A user starts
+/// Implements authenticator-app enrolment. A user starts
 /// enrolment with <see cref="SetupAsync"/>, scans the returned QR with their
 /// authenticator, and confirms the first code with <see cref="ConfirmAsync"/>;
 /// the staged secret then becomes the active one and
@@ -42,7 +42,7 @@ internal sealed class TotpEnrollmentService(
     private const string PendingSecretTokenName = "PendingAuthenticatorKey";
 
     // The QR's otpauth issuer — what the authenticator app displays as the
-    // account's source. Matches SIMF-VID-001.
+    // account's source.
     private const string Issuer = "SIMF";
 
     public async Task<TotpSetupResponse> SetupAsync(
@@ -102,8 +102,7 @@ internal sealed class TotpEnrollmentService(
         {
             // Bind a wrong-code attempt to the account's lockout counter so a
             // brute-force burst lands the account in lockout after the
-            // configured threshold — same posture as sign-in (D-038 follow-up
-            // 5-agent review S1-1).
+            // configured threshold — the same posture as sign-in.
             await accounts.AccessFailedAsync(user);
             await AuditFailure(AuditEvents.TotpEnrolmentFailed, user,
                 ErrorCodes.TotpEnrolmentCodeInvalid, cancellationToken,
@@ -187,7 +186,7 @@ internal sealed class TotpEnrollmentService(
 
         // Turn 2FA off and remove the active secret — a re-enrolment then
         // starts cleanly from a fresh QR. Wipe the recovery-code batch too
-        // Codes only exist while 2FA is on; leaving them behind would
+        // because codes only exist while 2FA is on; leaving them behind would
         // let a leaked code re-enable bypass after the user thought they were
         // safe.
         await accounts.SetTwoFactorEnabledAsync(user, false).EnsureSuccessAsync();

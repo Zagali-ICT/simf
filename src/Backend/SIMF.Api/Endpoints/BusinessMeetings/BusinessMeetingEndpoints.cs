@@ -8,7 +8,7 @@ using SIMF.Contracts.BusinessMeetings;
 
 namespace SIMF.Api.Endpoints.BusinessMeetings;
 
-// SIMF-FDS-013 — D-248: Control Panel endpoints for flexible hall configuration +
+// Control Panel endpoints for flexible hall configuration +
 // admin-arranged B2B/B2C business meetings. All admin-only, gated by the
 // PermissionCatalog policy + RequireApprovedAccount, mirroring BoothEndpoints.
 

@@ -5,7 +5,7 @@ using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>EF mapping for <see cref="UserProfileType"/> (P7 — D-048).</summary>
+/// <summary>EF mapping for <see cref="UserProfileType"/>.</summary>
 internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserProfileType>
 {
     public void Configure(EntityTypeBuilder<UserProfileType> builder)
@@ -51,15 +51,15 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(false)
             .IsRequired();
 
-        // D-725 (owner item 1) — app sign-up picker visibility. Default true
-        // so existing + freshly created rows stay registerable; the D-725
-        // migration's data step flips Staff / Moderator to false, and the CP
-        // form lets an admin toggle any row.
+        // App sign-up picker visibility. Default true so existing +
+        // freshly created rows stay registerable; the migration's data step
+        // flips Staff / Moderator to false, and the CP form lets an admin
+        // toggle any row.
         builder.Property(profileType => profileType.IsAppRegisterable)
             .HasDefaultValue(true)
             .IsRequired();
 
-        // D-760 (owner request) — "Meet People" networking visibility. Default
+        // "Meet People" networking visibility. Default
         // true so existing rows backfill to visible and stay in the partner
         // directory + recommender; the CP "Others" form lets an admin hide a
         // whole partner type.

@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>D-166 (gap doc G4, PDF §2.3) — current state of the
-/// registration gate, returned by GET + admin endpoints.</summary>
+/// <summary>Current state of the registration gate, returned by
+/// GET + admin endpoints.</summary>
 public sealed record RegistrationGateState(
     bool IsOpen,
     DateTime? AutoClose,
@@ -16,7 +16,7 @@ public sealed class UpdateRegistrationGateRequest
     public DateTime? AutoClose { get; set; }
 }
 
-/// <summary>D-166 (gap doc G4, PDF §2.4) — current state of the archive
+/// <summary>Current state of the archive
 /// visibility switch.</summary>
 public sealed record ArchiveVisibilityState(
     bool IsVisible,

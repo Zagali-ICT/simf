@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-164 (PDF §2.7.1, gap doc G2) — <c>POST /api/v1/admin/visitors/bulk-approve</c>.
+/// <summary><c>POST /api/v1/admin/visitors/bulk-approve</c>.
 /// The security team's "Select All" affordance. Each subject is approved in
 /// its own step; per-subject failures are reported in the response and do
 /// not block the rest. One audit row + one operation-log row per subject.</summary>
@@ -50,7 +50,7 @@ public sealed class BulkApproveOthersEndpoint(IAdminUserApprovalService service)
 {
     public override void Configure()
     {
-        // P1.3 (D-214) security fix — was gated on Visitors.Approve, which let
+        // Security fix — this was gated on Visitors.Approve, which let
         // an admin holding only visitor-approve rights bulk-approve PARTNER
         // (Other) accounts. The partner queue must gate on Others.Approve, the
         // same code the single ApproveOther endpoint uses.

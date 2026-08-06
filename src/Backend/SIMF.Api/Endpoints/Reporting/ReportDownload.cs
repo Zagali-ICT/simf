@@ -15,8 +15,8 @@ internal static class ReportDownload
 
     /// <summary>
     /// The download file name, stamped in <b>Saudi local time</b>. An operator
-    /// exporting at 1am Riyadh should not find a file dated the previous day
-    /// (D-770). The slug is a fixed literal per report, never user input, so
+    /// exporting at 1am Riyadh should not find a file dated the previous day.
+    /// The slug is a fixed literal per report, never user input, so
     /// there is nothing here to sanitise.
     /// </summary>
     public static string FileName(string slug) =>

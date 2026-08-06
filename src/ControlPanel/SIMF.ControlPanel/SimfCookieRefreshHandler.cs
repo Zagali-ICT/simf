@@ -17,17 +17,17 @@ namespace SIMF.ControlPanel;
 /// before the access_token expires. Wired into the cookie scheme from
 /// <c>Program.cs</c>.
 ///
-/// <para>D-848 — this paragraph previously read "a near-identical copy lives in
+/// <para>This paragraph previously read "a near-identical copy lives in
 /// <c>SIMF.Web</c> … the Website copy still rotates once per request". There is
 /// no such copy: the Website holds no <c>expires_at</c>, no cookie-validate
 /// rotation and no equivalent type. Corrected rather than deleted, because the
 /// claim actively misleads — a reader taking it at face value goes hunting for
 /// a second file to change, and may conclude the Website carries an unpatched
 /// variant of whatever bug they are chasing. The cross-request single-flight
-/// (see <see cref="Rotations"/>) is simply this handler's, added by BUG-005
+/// (see <see cref="Rotations"/>) is simply this handler's, and exists
 /// because the Control Panel fires several authenticated fetches per page.</para>
 ///
-/// <para>Why this exists (D-121): the auth cookie lives 8 hours with sliding
+/// <para>Why this exists: the auth cookie lives 8 hours with sliding
 /// renewal but the access token's lifetime is 30 minutes (JwtOptions).
 /// Refresh-token rotation has always existed end-to-end on the API and in
 /// SimfAuthClient — but nothing in either web project ever called it. So
@@ -59,7 +59,7 @@ public static class SimfCookieRefreshHandler
     /// token is genuinely stale and the API's reuse-detection should see it.</summary>
     private static readonly TimeSpan RotationGrace = TimeSpan.FromMinutes(2);
 
-    /// <summary>BUG-005 — cross-request single-flight, keyed by a fingerprint of
+    /// <summary>Cross-request single-flight, keyed by a fingerprint of
     /// the PRESENTED refresh token.
     ///
     /// <para>Every Control Panel page loads its data with several same-origin
@@ -106,7 +106,7 @@ public static class SimfCookieRefreshHandler
             return;
         }
 
-        // BUG-005 — the API could not be reached (an unreachable service, a
+        // The API could not be reached (an unreachable service, a
         // timeout or a proxy error page all surface as INTERNAL_ERROR from
         // SimfAuthClient). That is not a rejection of the session, so keep the
         // principal: the access token is still valid for up to RefreshThreshold
@@ -228,7 +228,7 @@ public static class SimfCookieRefreshHandler
         // this hook exists to fix.
         if (string.IsNullOrEmpty(expiresAtRaw)) return true;
 
-        // D-848 — a cookie written before D-848 carries no offset, and parsing
+        // An older cookie carries no offset, and parsing
         // that would silently assume THIS host's zone. Treat a zone-free legacy
         // value as due: one extra rotation on the next request beats a wrong
         // answer, and it is the same "refresh now" branch an absent value takes.

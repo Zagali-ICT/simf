@@ -6,23 +6,23 @@ namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
 /// <see cref="IUserAccountRepository"/> implementation — a thin pass-through
-/// over ASP.NET Core Identity's <see cref="UserManager{T}"/> (R3 — D-076,
-/// H21 — D-082). Each method translates the <c>IdentityResult</c> the
+/// over ASP.NET Core Identity's <see cref="UserManager{T}"/>.
+/// Each method translates the <c>IdentityResult</c> the
 /// framework returns into the SIMF-owned <see cref="UserOperationResult"/>,
 /// so Application code never sees an Identity type.
 ///
-/// <para>R5 reverted (D-104): <see cref="SimfUser"/> is once again the
+/// <para><see cref="SimfUser"/> is once again the
 /// EF-tracked entity, so the merge-into-tracked + bidirectional-mapper
 /// machinery the marathon-era repo carried is gone. Every method is now
 /// a one-line forward to <c>UserManager</c>.</para>
 ///
-/// <para>H28 — D-088: every method calls
+/// <para>Every method calls
 /// <c>cancellationToken.ThrowIfCancellationRequested()</c> at entry, so a
 /// pre-cancelled call throws immediately rather than running the
 /// underlying <see cref="UserManager{T}"/> operation to completion.
 /// <c>UserManager</c>'s public API does not accept tokens, so true
 /// mid-operation cancellation requires a Domain-owned user store
-/// (deferred); the entry-throw is the §17 minimum that makes the
+/// (deferred); the entry-throw is the minimum that makes the
 /// <see cref="CancellationToken"/> parameter honest at the boundary.</para>
 /// </summary>
 internal sealed class UserAccountRepository(UserManager<SimfUser> userManager)

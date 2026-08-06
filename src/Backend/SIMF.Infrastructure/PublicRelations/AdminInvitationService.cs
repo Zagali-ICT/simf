@@ -14,9 +14,9 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.PublicRelations;
 
 /// <summary>
-/// D-168 (gap doc G5, PDF §2.7.3) — public-relations service. Real DB FK
-/// links <see cref="Invitation"/> to <c>UserProfile</c> (both on App DB
-/// since D-167); SimfUser lookups for sender display-name and recipient
+/// Public-relations service. A real DB FK
+/// links <see cref="Invitation"/> to <c>UserProfile</c> (both live on the App
+/// DB); SimfUser lookups for sender display-name and recipient
 /// email cross into the Identity DB via an in-memory merge — same
 /// pattern as <c>AdminAttendeeService</c>.
 /// </summary>

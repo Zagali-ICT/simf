@@ -28,7 +28,7 @@ internal sealed class AdminAiPromptService(
 
         var rows = appDbContext.AiPrompts.AsNoTracking().AsQueryable();
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -57,7 +57,7 @@ internal sealed class AdminAiPromptService(
                 || p.DisplayName.Contains(s) || p.DisplayNameArabic.Contains(s));
         }
 
-        // CP grid sortable columns (D-255). Default: Feature, then Key.
+        // CP grid sortable columns. Default: Feature, then Key.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("key", false) => rows.OrderBy(p => p.Key),
@@ -279,7 +279,7 @@ internal sealed class AdminAiPromptService(
         Guid actorUserId, Guid id, TestAiPromptRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-179 review-pass: input caps now live in AiService.InvokeAsync
+        // Input caps live in AiService.InvokeAsync
         // so every caller (admin Test + public feature endpoints) goes
         // through the same chokepoint. No duplicate validation here.
         var prompt = await appDbContext.AiPrompts.AsNoTracking()
@@ -314,7 +314,7 @@ internal sealed class AdminAiPromptService(
 
         var rows = appDbContext.AiInvocations.AsNoTracking().AsQueryable();
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         // Feature filters by enum name; the rest are substring matches. The
         // page-level "Errors only" toggle reaches us as the errorOnly filter.
         foreach (var (column, raw) in query.Filters)
@@ -344,7 +344,7 @@ internal sealed class AdminAiPromptService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: newest first.
+        // CP grid sortable columns. Default: newest first.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("createdat", false) => rows.OrderBy(i => i.CreatedAt),

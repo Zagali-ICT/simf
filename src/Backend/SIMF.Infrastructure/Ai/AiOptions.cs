@@ -87,7 +87,7 @@ public sealed class OpenAiOptions
     public string DefaultModel { get; set; } = "gpt-4o-mini";
 }
 
-/// <summary>D-181 (review-pass hardening of D-179) — HMAC key for
+/// <summary>HMAC key for
 /// <see cref="SIMF.Infrastructure.Ai.AiAuditDetail.PromptContentHash"/>.
 /// Raw SHA-256 over `SystemPrompt + 0x1F + UserPromptTemplate` lets an
 /// insider with audit-read brute-force short or templated prompts via

@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-168 (gap doc G5) — public-relations: invitations + VIPs ----------
+    // -- Public-relations: invitations + VIPs -------------------------------
 
     public Task<ApiCallResult<GridPage<AdminInvitationSummary>>> ListInvitationsAsync(
         GridQuery query, string accessToken,
@@ -124,7 +124,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"notifications/broadcasts/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-173 (gap doc G8) — Dynamic content CMS ---------------------------
+    // -- Dynamic content CMS ------------------------------------------------
 
     public Task<ApiCallResult<GridPage<AdminContentBlockSummary>>> ListContentBlocksAsync(
         GridQuery query, string accessToken,

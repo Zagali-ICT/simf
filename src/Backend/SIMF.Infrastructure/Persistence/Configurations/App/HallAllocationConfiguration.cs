@@ -4,7 +4,7 @@ using SIMF.Domain.BusinessMeetings;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>SIMF-FDS-013 — D-248: HallAllocation EF config (the flexible
+/// <summary>HallAllocation EF config (the flexible
 /// whole / random-by-count / row-column reservation of a hall over a time-slot).
 /// Real FK to Hall (Restrict). Indexes support the overlap check (active rows in a
 /// hall, by purpose) — time-overlap itself is enforced in the service, not a SQL

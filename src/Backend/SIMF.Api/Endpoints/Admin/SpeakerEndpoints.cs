@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>Admin CRUD over <c>Speakers</c> (SIMF-DAT-001 §5.4).
+/// <summary>Admin CRUD over <c>Speakers</c>.
 /// Mirrors ThemeEndpoints / HallEndpoints / CountryEndpoints shape.</summary>
 public sealed class ListSpeakersEndpoint(IAdminSpeakerService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminSpeakerSummary>>>
@@ -70,11 +70,11 @@ public sealed class CreateSpeakerEndpoint(IAdminSpeakerService service)
 }
 
 /// <summary>Binds {id} + body via a derived route that INHERITS the
-/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
-/// D-842 (sessions), D-843 (gates, profile types) and the four before them
-/// silently dropped a field on PUT. Passing the bound request straight through
-/// makes that drop impossible.</summary>
+/// the sessions, gates and profile-type routes — and the four before them —
+/// each silently dropped a field on PUT. Passing the bound request straight
+/// through makes that drop impossible.</summary>
 public sealed class UpdateSpeakerRequest : AdminUpdateSpeakerRequest
 {
     public Guid Id { get; set; }

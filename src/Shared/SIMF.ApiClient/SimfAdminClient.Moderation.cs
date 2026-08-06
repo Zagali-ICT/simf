@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-169 (gap doc G6) — session-question moderation -------------------
+    // -- Session-question moderation ----------------------------------------
 
     public Task<ApiCallResult<GridPage<AdminSessionModeratorRow>>> ListSessionModeratorsAsync(
         GridQuery query, string accessToken,

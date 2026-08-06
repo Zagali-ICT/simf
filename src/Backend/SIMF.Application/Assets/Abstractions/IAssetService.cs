@@ -51,7 +51,7 @@ public interface IAssetService
         AssetCategory category, IReadOnlyCollection<Guid> ownerIds,
         CancellationToken cancellationToken = default);
 
-    // -- Central Media Library management (D-357 / MediaLibrary.* permission) --
+    // -- Central Media Library management (MediaLibrary.* permission) --
 
     /// <summary>One page of all assets (filter by category / kind / sourceType /
     /// isActive), newest first, with the owner name resolved per category.</summary>

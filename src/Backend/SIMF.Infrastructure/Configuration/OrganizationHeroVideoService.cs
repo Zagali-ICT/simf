@@ -17,7 +17,7 @@ namespace SIMF.Infrastructure.Configuration;
 /// (<c>FileService.OrganizationHeroVideo</c>: public, plaintext, seekable). Upload
 /// streams the bytes to disk (never buffered whole), retires any prior video, and
 /// points <c>BackgroundVideoUrl</c> at the served <c>.mp4</c> route so the app +
-/// website hero accept-gate passes unchanged. Reuses the D-232 recording pipeline
+/// website hero accept-gate passes unchanged. Reuses the session-recording pipeline
 /// (streamed upload + Range serve); only the access policy differs (public here vs
 /// authenticated for a recording).</summary>
 internal sealed class OrganizationHeroVideoService(

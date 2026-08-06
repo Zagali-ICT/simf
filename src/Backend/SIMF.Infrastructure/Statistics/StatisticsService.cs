@@ -99,7 +99,7 @@ internal sealed class StatisticsService(
 
         // Role counts resolve through UserProfile -> UserProfileType. Both
         // tables live in the App DB, so this is a single-database join and
-        // never a cross-context query (D-157). Which profile type counts as
+        // never a cross-context query. Which profile type counts as
         // staff / exhibitor is admin-curated data (ProfileType.MobileAppRole,
         // ProfileType.IsForVisitor) — never a hardcoded role name.
         var profiles = appDbContext.UserProfiles.AsNoTracking().Where(p => p.IsActive);
@@ -161,7 +161,7 @@ internal sealed class StatisticsService(
         foreach (var day in days)
         {
             // The Saudi calendar day as an explicit half-open window
-            // [start, end). Since D-813 instants ARE the Saudi wall clock, so
+            // [start, end). Stored instants ARE the Saudi wall clock, so
             // this is a straight range on the stored value with no zone shift;
             // FromSaudiWallClock is kept as the single named seam (it only
             // stamps the Kind now). A plain range predicate also stays an

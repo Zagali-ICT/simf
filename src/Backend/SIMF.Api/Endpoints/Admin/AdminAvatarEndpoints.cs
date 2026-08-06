@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_visitor_avatar_sets_path,
-//        Avatar_family_guard_confines_each_route_to_its_own_family — D-357 per-family scope guard)
+//        Avatar_family_guard_confines_each_route_to_its_own_family — the per-family scope guard)
 using FastEndpoints;
 using SIMF.Api.Endpoints.Account;
 using SIMF.Api.RequestContext;
@@ -16,11 +16,11 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <summary>
 /// Admin upload of a subject's profile photo (avatar) for the
 /// walk-in flow. The avatar is the visitor's photo / "logo", distinct from the
-/// ID-document image, and is shown alongside the ID image in the approve modal
-/// (CS-4). Reuses <see cref="IAccountService.SetAvatarAsync"/>, which is
+/// ID-document image, and is shown alongside the ID image in the approve
+/// modal. Reuses <see cref="IAccountService.SetAvatarAsync"/>, which is
 /// id-parameterised and already enforces the 2 MB cap + MIME + magic-byte gate
-/// (no human-face requirement — it is a profile photo, optionally a logo, D-427
-/// owner decision). Permission-gated like the admin ID-document upload
+/// (no human-face requirement — it is a profile photo, optionally a
+/// logo). Permission-gated like the admin ID-document upload
 /// (Visitors.Edit / Others.Edit); the same SubjectId route shape.
 /// </summary>
 public abstract class AdminAvatarUploadEndpointBase(
@@ -42,7 +42,7 @@ public abstract class AdminAvatarUploadEndpointBase(
     {
         User.RequireActor();
 
-        // D-357 (review follow-up) — confine this Edit permission to its own family
+        // Confine this Edit permission to its own family
         // so it can't overwrite another family's photo across the shared id space.
         // 404 (not 403) so a wrong-family id is indistinguishable from a missing one.
         if (!await provisioning.IsSubjectInFamilyAsync(SubjectId, ExpectedType, ExpectedIsVisitor, ct))
@@ -113,7 +113,7 @@ public sealed class UploadOtherAvatarEndpoint(
 }
 
 /// <summary>
-/// CS-4 — admin stream-read of a subject's profile photo (avatar) so the CP
+/// Admin stream-read of a subject's profile photo (avatar) so the CP
 /// approve modal can render it alongside the ID image. Mirrors the self-service
 /// <c>account/avatar/{userId}</c> fetch but drops the self-only guard for an
 /// admin View permission (the avatar is the account's, on SimfUser/Identity).
@@ -136,7 +136,7 @@ public abstract class AdminAvatarFetchEndpointBase(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        // D-357 (review follow-up) — confine this View permission to its own family
+        // Confine this View permission to its own family
         // so it can't read another family's photo across the shared SimfUser id
         // space. 404 (not 403) keeps a wrong-family id indistinguishable from a
         // missing one (also the natural response for the no-avatar case below).

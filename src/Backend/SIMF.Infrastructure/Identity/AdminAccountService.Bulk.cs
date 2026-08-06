@@ -20,8 +20,8 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-209 (A2 split): the bulk + duplicate + export + import surface of
-/// <see cref="AdminAccountService"/> (D-113 / D-164 / D-045). Bulk-approve
+/// The bulk + duplicate + export + import surface of
+/// <see cref="AdminAccountService"/>. Bulk-approve
 /// delegates to the approval workers; duplicate delegates to the create
 /// workers; export re-runs the list query. Split into its own partial-class
 /// file for navigability; behaviour and DI are unchanged.
@@ -315,10 +315,10 @@ internal sealed partial class AdminAccountService
                 "The source account was not found.",
                 "لم يتم العثور على الحساب المصدر.");
 
-        // P7c — the duplicate keeps the source's UserType + role-membership
+        // The duplicate keeps the source's UserType + role-membership
         // shape: an Admin source duplicates as an Admin (with the same roles);
-        // an Other / Visitor source duplicates as the same UserType. P8 — the
-        // source's ProfileTypeId now lives on the source's UserProfile row;
+        // an Other / Visitor source duplicates as the same UserType. The
+        // source's ProfileTypeId lives on the source's UserProfile row;
         // look it up and pass it through.
         var sourceRoles = await accounts.GetRolesAsync(source);
         var sourceProfileTypeId = await appDbContext.UserProfiles
@@ -360,7 +360,7 @@ internal sealed partial class AdminAccountService
     // The whole-grid user export is bounded to this many rows so an accidental
     // "export everything" never loads the entire table into memory. Each page is
     // built via GridExportPaging.Page (a fresh GridQuery, so the caller's own live
-    // query is never mutated — D-045 H1, the CP page passes its own `_query` in).
+    // query is never mutated — the CP page passes its own `_query` in).
     private const int ExportRowCap = 5_000;
 
     public async Task<byte[]> ExportUsersAsync(
@@ -372,7 +372,7 @@ internal sealed partial class AdminAccountService
         if (request.Ids.Count > 0)
         {
             // Selected-ids path — pull, with the role flag projected in one
-            // query.
+            // query, which kills the per-row IsInRoleAsync N+1.
             var idSet = request.Ids.ToHashSet();
             var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
             var projected = await dbContext.Users
@@ -398,11 +398,11 @@ internal sealed partial class AdminAccountService
             // Whole-result-set path — page through the same query the grid used
             // (ListAdminsAsync clamps Top to its 200-row page size) until the whole
             // set is collected or the export cap is reached, so a >200-row grid is
-            // not silently truncated to the first page (D-642). Bounded to
+            // not silently truncated to the first page. Bounded to
             // ExportRowCap rows so an accidental "export everything" never loads the
             // entire table into memory.
             //
-            // P7c — export operates on the Admin family today (the /admin/admins
+            // Export operates on the Admin family today (the /admin/admins
             // grid is the only consumer that triggers it). When the Other / Visitor
             // grids grow their own export, this branches on a request-side
             // `UserType` filter.
@@ -460,7 +460,7 @@ internal sealed partial class AdminAccountService
             }
             try
             {
-                // P7c — the XLSX import is the Admin-family bulk-create
+                // The XLSX import is the Admin-family bulk-create
                 // path. The `IsAdministrator` flag on the imported row
                 // chooses whether the new admin gets the Administrator
                 // RBAC role; the UserType is always Admin here.
@@ -497,10 +497,10 @@ internal sealed partial class AdminAccountService
         return new AdminImportUsersResponse(created, skipped, errors);
     }
 
-    // -- D-113 — type-scoped bulk operations for /admin/visitors/* and
-    //            /admin/others/*. Each method narrows the existing helper
-    //            by SimfUser.UserType so the Admin grid surface above
-    //            stays bit-for-bit unchanged.
+    // -- Type-scoped bulk operations for /admin/visitors/* and
+    //    /admin/others/*. Each method narrows the existing helper
+    //    by SimfUser.UserType so the Admin grid surface above
+    //    stays bit-for-bit unchanged.
 
     public async Task<AdminBulkDeleteResponse> BulkDeleteUsersByKindAsync(
         Guid actorUserId,
@@ -860,7 +860,7 @@ internal sealed partial class AdminAccountService
         // Validate the optional organiser recipient in the SAME
         // pre-write pass as the empty / cap / profile-type checks below, so an
         // invalid address is a clean 400 with zero accounts created (a 4xx must
-        // have no side effects — SIMF-API-001). Empty / whitespace = no email.
+        // have no side effects). Empty / whitespace = no email.
         const int MaxRecipientEmailLength = 256;
         string? recipient = null;
         if (!string.IsNullOrWhiteSpace(request.RecipientEmail))
@@ -884,9 +884,9 @@ internal sealed partial class AdminAccountService
         // invalid later batch is a clean 400 with nothing persisted (mirrors the
         // up-front empty / cap checks above). Without this pass an invalid Nth batch
         // would 400 while earlier batches' Approved badges were already committed —
-        // and a 4xx must have no side effects (SIMF-API-001). No cross-DB transaction
-        // This only reads the App DB up front; nothing is written until every
-        // batch has passed.
+        // and a 4xx must have no side effects. There is no transaction spanning the
+        // two databases to roll that back, so this pass only READS the App DB up
+        // front; nothing is written until every batch has passed.
         var plan = new List<(BulkBadgeBatch Batch, UserProfileType ProfileType)>(batches.Count);
         foreach (var batch in batches)
         {
@@ -942,7 +942,8 @@ internal sealed partial class AdminAccountService
         foreach (var (batch, profileType) in plan)
         {
             // NOTE: each badge writes a SimfUser (Identity DB) then its UserProfile
-            // (App DB) with no distributed transaction (D-157). A mid-loop failure
+            // (App DB) with no distributed transaction — the two databases are
+            // physically separate. A mid-loop failure
             // can leave the last user without a profile — the established walk-in
             // trade-off; the already-created badges stay valid.
             for (var i = 0; i < batch.Count; i++)
@@ -1008,7 +1009,7 @@ internal sealed partial class AdminAccountService
 
         // When an organiser recipient was supplied, render the QR pack and email
         // it. The badges are already committed; a mail-side failure must NOT roll them
-        // back (the helper dispatches through the swallow-and-audit path, D-083).
+        // back (the helper dispatches through the swallow-and-audit path).
         var emailQueued = false;
         if (recipient is not null && badgeArtifacts is { Count: > 0 })
         {
@@ -1050,7 +1051,7 @@ internal sealed partial class AdminAccountService
                 "لم يتم العثور على دفعة الشارات.");
 
         // Validate the organiser address the same way BulkGenerateBadgesAsync does — a
-        // 400 must leave nothing sent (SIMF-API-001).
+        // 400 must leave nothing sent.
         var recipient = (request.RecipientEmail ?? string.Empty).Trim();
         if (recipient.Length == 0 || recipient.Length > 256
             || !System.Net.Mail.MailAddress.TryCreate(recipient, out var parsed)
@@ -1113,9 +1114,9 @@ internal sealed partial class AdminAccountService
 
         // Disable every account the batch minted, reusing the type-scoped bulk-delete
         // path (audience Visitors) so each account's disable + token-revoke + audit is
-        // identical to a manual bulk delete. Cross-DB (D-157): these SimfUsers live in
-        // the Identity DB — disabled first, THEN the App-DB batch is deactivated as a
-        // separate unit of work (no distributed transaction).
+        // identical to a manual bulk delete. This crosses databases: these SimfUsers
+        // live in the Identity DB — disabled first, THEN the App-DB batch is
+        // deactivated as a separate unit of work (no distributed transaction).
         var memberIds = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(profile => profile.BadgeBatchId == batch.Id)
@@ -1149,11 +1150,12 @@ internal sealed partial class AdminAccountService
     }
 
     // Render the batch's QR pack and enqueue it to the organiser as a
-    // single email. Extracted so bulk-generate and the D-758 re-email build the
+    // single email. Extracted so bulk-generate and the re-email build the
     // identical pack. Invariant formatting throughout — an ar-SA request culture would
     // otherwise render the filename / body tokens with a Hijri year + Arabic-Indic
-    // digits. `attachments` is a list so Phase 3 (D-759) can add the PDF sheet beside
-    // the ZIP without touching either caller.
+    // digits. `attachments` is a list so a second file could be added beside the ZIP
+    // without touching either caller — which is how the printable contact-sheet PDF
+    // came to sit next to the ZIP of individual QR PNGs.
     private async Task EnqueueBadgePackEmailAsync(
         string recipient,
         IReadOnlyList<(string ProfileTypeName, int Seq, string QrId)> badgeArtifacts,

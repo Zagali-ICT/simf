@@ -1,7 +1,7 @@
-@* D-464 / D-650 — CP "Site Settings" page: edit the registration welcome message
+@* CP "Site Settings" page: edit the registration welcome message
    (bilingual). Reads / writes via /admin/site-settings; the app + website consume
    it through GET /app/site-settings. The social-media links were moved to the
-   Organization Profile page (single source of truth — D-495/D-650) so they are no
+   Organization Profile page (single source of truth) so they are no
    longer edited here. Gated by Configuration.*. *@
 @page "/admin/site-settings"
 @layout CpShellLayout
@@ -37,7 +37,7 @@
                                    MaxLength="2048"
                                    @bind-Value="_model.RegistrationMessageEn" Disabled="_busy" />
                 </div>
-                @* Build #13 — the "Meet People Like You" partner-directory switch. *@
+                @* The "Meet People Like You" partner-directory switch. *@
                 <div class="simf-form__fields">
                     <h3>@L["Admin.SiteSettings.Section.PartnerDirectory"]</h3>
                     <p>@L["Admin.SiteSettings.Section.PartnerDirectory.Hint"]</p>

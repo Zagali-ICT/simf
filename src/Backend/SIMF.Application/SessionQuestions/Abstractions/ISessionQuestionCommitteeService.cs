@@ -3,7 +3,7 @@ using SIMF.Contracts.Sessions;
 
 namespace SIMF.Application.SessionQuestions.Abstractions;
 
-/// <summary>P3.3 — D-212 (Completion Programme §5.3): the Scientific-Committee
+/// <summary>The Scientific-Committee
 /// central Q&amp;A queue — stage 2 of the pipeline (AI advisory → Committee →
 /// per-session moderator). The Committee filters every question (pre + live)
 /// before the per-session moderator desk sees the approved set. "Escalate to a

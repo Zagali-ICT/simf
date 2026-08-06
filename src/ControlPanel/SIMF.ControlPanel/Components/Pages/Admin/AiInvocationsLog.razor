@@ -1,4 +1,4 @@
-@* D-176 (gap doc G12) — append-only AI invocations log. Read-only.
+@* Append-only AI invocations log. Read-only.
    Filterable by errors-only so SOC + product can spot regressions.
    Migrated to the canonical SimfDataGrid (owner-mandated): per-column
    sort/filter, full numbered pager. The page has no CRUD — the only
@@ -98,7 +98,7 @@
                 </SimfDataGridColumn>
             </Columns>
             <RowActions>
-                @* SOC drill-down (D-179): the full redacted payload for one row.
+                @* SOC drill-down: the full redacted payload for one row.
                    The endpoint gates on AiInvocations.View, so the action does too. *@
                 <AuthorizedAction Permission="@PermissionCatalog.AiInvocations.View">
                     <SimfToolbarButton Icon="eye" Title="@L["Admin.AiInvocations.Detail"]"

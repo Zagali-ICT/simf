@@ -8,8 +8,8 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>Admin CRUD over <c>Themes</c>
-/// (SIMF-FDS-004 §5.1). Mirrors the InterestEndpoints shape.</summary>
+/// <summary>Admin CRUD over <c>Themes</c>.
+/// Mirrors the InterestEndpoints shape.</summary>
 public sealed class ListThemesEndpoint(IAdminThemeService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminThemeSummary>>>
 {
@@ -75,10 +75,10 @@ public sealed class CreateThemeEndpoint(IAdminThemeService service)
 }
 
 /// <summary>Binds {id} + body via a derived route that INHERITS the
-/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
-/// D-842 (sessions), D-843 (gates, profile types) and the four before them
-/// silently dropped a field on PUT. Passing the bound request straight through
+/// several PUT endpoints — sessions, gates and profile types among them —
+/// silently dropped a field. Passing the bound request straight through
 /// makes that drop impossible.</summary>
 public sealed class UpdateThemeRequest : AdminUpdateThemeRequest
 {

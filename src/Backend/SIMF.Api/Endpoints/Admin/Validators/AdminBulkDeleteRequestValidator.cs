@@ -6,8 +6,8 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin.Validators;
 
 /// <summary>
-/// Validates the admin bulk-delete request (decision D-045, H1 hardening of
-/// D-044 b). The Ids list is capped at 500 — a single bulk action will not
+/// Validates the admin bulk-delete request. The Ids list is capped at 500 —
+/// a single bulk action will not
 /// hold the Identity DbContext for more than a few seconds, even at one
 /// 4-DB-write transaction per subject.
 /// </summary>

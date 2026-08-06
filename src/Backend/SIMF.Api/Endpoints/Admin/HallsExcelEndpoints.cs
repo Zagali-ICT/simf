@@ -11,7 +11,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/halls/export</c> — the D-356 grid export for Halls.
+/// <c>POST /api/v1/admin/halls/export</c> — the grid export for Halls.
 /// All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>; this
 /// subclass only declares the route, permission, sheet/file names, the column
 /// layout (mirroring the CP Halls grid), and how to list + identify a hall row.
@@ -56,7 +56,7 @@ public sealed class ExportHallsEndpoint(IAdminHallService service, IGridExcelExp
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/halls/import</c> — the D-356 grid import for Halls
+/// <c>POST /api/v1/admin/halls/import</c> — the grid import for Halls
 /// (insert-only). The base does the upload defence, parse and per-row error
 /// aggregation; this subclass binds one row to <see cref="AdminCreateHallRequest"/>
 /// and creates it (the service rejects a duplicate Code → a per-row error, not a

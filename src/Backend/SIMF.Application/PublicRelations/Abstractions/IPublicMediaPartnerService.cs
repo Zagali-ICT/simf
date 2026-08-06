@@ -3,7 +3,7 @@ using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.Application.PublicRelations.Abstractions;
 
-/// <summary>D-199 (Mockup page 31) — read-only public projection of active
+/// <summary>Read-only public projection of active
 /// media partners for the mobile app + website. The service returns active
 /// rows ordered by (DisplayOrder asc, NameAr asc).</summary>
 public interface IPublicMediaPartnerService

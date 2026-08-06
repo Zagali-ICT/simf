@@ -23,20 +23,19 @@ namespace SIMF.Infrastructure.Exhibitors;
 /// Exhibitor lead capture. Resolves a visitor by their entry-badge QR,
 /// records the capture, and projects the visitor's full card live from the
 /// App-DB <c>UserProfile</c> (+ Organisation / Country) and a permitted email
-/// round-trip on the Identity DB (D-157 — bare-Guid logical FKs, no join, no PII
-/// snapshot). DEF-EXH-001: only a genuine exhibitor (a profile type carrying
-/// <see cref="MobileAppRole.Exhibitor"/>, D-519) may use this; every other
-/// caller is rejected with 403. D-780 (owner decision 2026-07-27 — "can scan all
-/// badges"): the scanned subject only has to be an ACTIVE account holding a
-/// badge, whatever its profile type. DEF-EXH-004: that same subject test also
+/// round-trip on the Identity DB (bare-Guid logical FKs, no join, no PII
+/// snapshot). Only a genuine exhibitor (a profile type carrying
+/// <see cref="MobileAppRole.Exhibitor"/>) may use this; every other
+/// caller is rejected with 403. The scanned subject only has to be an ACTIVE
+/// account holding a badge, whatever its profile type. That same subject test also
 /// runs on the READ path, so a since-deactivated subject stops projecting a card.
-/// DEF-EXH-006: the role is not enough on its own — a CURRENT
+/// The role is not enough on its own — a CURRENT
 /// <see cref="ExhibitorMembership"/> of a live exhibitor is required too, so
 /// dropping an officer from a booth revokes their scanning authority.
-/// DEF-EXH-002 / DEF-EXH-007: a new capture notifies the visitor, naming the
+/// A new capture notifies the visitor, naming the
 /// EXHIBITOR their card was shared with.
 ///
-/// <para>BUG-024 — a NEW capture also emails the lead to the exhibitor's own
+/// <para>A NEW capture also emails the lead to the exhibitor's own
 /// account address (the owner's "send to exhibitor email" requirement), through
 /// the shared template resolver + email queue. A repeat scan is still idempotent
 /// and sends nothing, and a mail failure never fails the scan (the queue's
@@ -55,7 +54,7 @@ internal sealed class ExhibitorVisitorService(
 {
     private const int NoteMaxLength = 512;
 
-    // BUG-024 — placeholders for a lead field the visitor's profile leaves empty,
+    // Placeholders for a lead field the visitor's profile leaves empty,
     // one per body language (the token bag feeds both blocks of the one message).
     private const string NotProvidedEn = "Not provided";
     private const string NotProvidedAr = "غير محدد";
@@ -64,11 +63,11 @@ internal sealed class ExhibitorVisitorService(
     /// <summary>The SUBJECT eligibility test: an ACTIVE profile — i.e. any live
     /// account holding a badge, whatever profile type it carries.
     ///
-    /// <para><b>D-780 — owner decision, 2026-07-27: "can scan all badges".</b> The
+    /// <para><b>The owner's ruling is "can scan all badges".</b> The
     /// owner was asked directly whether a booth may capture a MEDIA or SPONSOR
-    /// attendee's badge and ruled that ALL badges are scannable. That REVERSES the
-    /// premise of DEF-EXH-003, which had narrowed the rule to audience-side
-    /// (<c>IsForVisitor</c>) types so that a media, sponsor, staff or fellow
+    /// attendee's badge and ruled that ALL badges are scannable. That REVERSES an
+    /// earlier narrowing of the rule to audience-side
+    /// (<c>IsForVisitor</c>) types, under which a media, sponsor, staff or fellow
     /// exhibitor badge answered the same 404 as an unknown code. Media, sponsor
     /// and staff attendees are attendees; a booth that meets one captures the lead
     /// like any other.</para>
@@ -77,7 +76,7 @@ internal sealed class ExhibitorVisitorService(
     /// account is not a valid attendee, and the read path must never project a
     /// live contact card for one.</para>
     ///
-    /// <para>DEF-EXH-004 — held as one expression so the capture path and the READ
+    /// <para>Held as one expression so the capture path and the READ
     /// path apply exactly the same rule and can never drift.</para></summary>
     private static readonly Expression<Func<UserProfile, bool>> IsCapturableSubject =
         profile => profile.IsActive;
@@ -88,7 +87,7 @@ internal sealed class ExhibitorVisitorService(
     {
         var exhibitor = await EnsureExhibitorAsync(exhibitorUserId, cancellationToken);
 
-        // D-821 review — canonicalise first. A D-820 offline badge arrives as a
+        // Canonicalise first. An offline badge arrives as a
         // ~61-character encrypted blob, not a QrId, so the direct lookup below
         // would miss it and report an unknown badge. A minted serial passes
         // through unchanged.
@@ -131,13 +130,13 @@ internal sealed class ExhibitorVisitorService(
                 $"يجب ألا تتجاوز الملاحظة {NoteMaxLength} حرفاً.");
         }
 
-        // Idempotent per (BOOTH, visitor) — FR-EXH-003. A repeat scan refreshes
+        // Idempotent per (BOOTH, visitor). A repeat scan refreshes
         // the note, and a colleague re-scanning the same visitor updates the
         // booth's existing lead instead of forking a second private copy of it.
         // Legacy rows carry no ExhibitorId, so the caller's own un-backfilled
         // capture of the same visitor still counts as the existing one.
         //
-        // FR-EXH-003 regression — the two kinds can be live AT ONCE: a colleague
+        // The two kinds can be live AT ONCE: a colleague
         // captures the visitor for the booth while this officer still holds their
         // own un-backfilled legacy row of that visitor. Taking whichever row the
         // database happened to return first then either stamped the booth id onto
@@ -158,7 +157,7 @@ internal sealed class ExhibitorVisitorService(
         // makes the choice unambiguous: at most ONE active row can carry this
         // (ExhibitorId, VisitorUserId), so there is never a second booth row to
         // arbitrate between. With no booth row the newest legacy row is adopted
-        // into the booth instead (the FR-EXH-003 hand-over), which is index-safe
+        // into the booth instead (the hand-over), which is index-safe
         // precisely because no active booth row exists for this pair.
         // The legacy tie-break is the migration's, so a row collapsed by hand and
         // a row collapsed here are decided the same way: freshest write wins.
@@ -178,7 +177,7 @@ internal sealed class ExhibitorVisitorService(
             // stops depending on the person who happened to capture it.
             existing.ExhibitorId ??= exhibitor.Id;
 
-            // FR-EXH-003 regression — converge the rows that did not win. They
+            // Converge the rows that did not win. They
             // are the caller's own legacy captures of a visitor the booth already
             // holds, so they can neither be adopted (the booth pair is taken) nor
             // be left active (the booth would list the visitor twice). Soft-delete
@@ -217,7 +216,7 @@ internal sealed class ExhibitorVisitorService(
         var cards = await ResolveCardsAsync(new[] { visitorId.Value }, cancellationToken);
         var card = cards[visitorId.Value];
 
-        // BUG-024 — only a NEW capture mails the lead out; a repeat scan is a
+        // Only a NEW capture mails the lead out; a repeat scan is a
         // no-op refresh, so the exhibitor is not spammed on every re-scan. The
         // row is already committed, so a mail failure cannot roll the scan back.
         if (existing is null)
@@ -244,13 +243,13 @@ internal sealed class ExhibitorVisitorService(
             return Array.Empty<ExhibitorVisitorRow>();
         }
 
-        // DEF-EXH-004 — re-run the capture-time SUBJECT test on the READ path.
+        // Re-run the capture-time SUBJECT test on the READ path.
         // Capture-time-only enforcement left every row taken while the old rule
         // was in force (no IsActive test at all) still projecting a full live card
         // — login email + both mobile numbers — for a since-deactivated subject. A
         // subject that is no longer capturable simply drops out of the list, so no
         // PII is projected for it (this also covers a subject whose profile row has
-        // gone). D-780 widened the rule itself to "any active badge holder", so a
+        // gone). The rule itself widened to "any active badge holder", so a
         // media / sponsor / staff capture now legitimately stays in the list.
         var subjectIds = rows.Select(r => r.VisitorUserId).Distinct().ToList();
         var eligibleSubjectIds = (await appDbContext.UserProfiles
@@ -283,7 +282,7 @@ internal sealed class ExhibitorVisitorService(
     {
         var exhibitor = await EnsureExhibitorAsync(exhibitorUserId, cancellationToken);
 
-        // FR-EXH-002 — soft-delete, the project convention (BaseAuditEntity
+        // Soft-delete, the project convention (BaseAuditEntity
         // .Deactivate), so the lead leaves the booth's list without destroying the
         // capture record. Idempotent: the row is already filtered to the ACTIVE
         // ones, so a repeat delete is a no-op 200 rather than a 404 — the same
@@ -322,7 +321,7 @@ internal sealed class ExhibitorVisitorService(
             throw CaptureNotFound();
         }
 
-        // DEF-EXH-004 — the export runs the SAME subject test as the read path:
+        // The export runs the SAME subject test as the read path:
         // a lead the list refuses to project must not be exportable through a
         // second door either.
         var eligible = await appDbContext.UserProfiles
@@ -338,7 +337,7 @@ internal sealed class ExhibitorVisitorService(
         return cards[subjectId.Value];
     }
 
-    /// <summary>FR-EXH-003 — the booth's active captures: everything tagged to the
+    /// <summary>The booth's active captures: everything tagged to the
     /// exhibitor, plus the caller's own legacy rows that predate the column (the
     /// migration backfills from membership, so only a capturer who had no
     /// membership at migration time leaves one behind). Held as one expression so
@@ -355,7 +354,7 @@ internal sealed class ExhibitorVisitorService(
             "That captured visitor is not on your booth's list.",
             "هذا الزائر غير موجود في قائمة جناحك.");
 
-    /// <summary>BUG-024 — emails the captured lead to the exhibitor's own account
+    /// <summary>Emails the captured lead to the exhibitor's own account
     /// address. Fire-and-forget by contract: the capture row is already committed,
     /// so an exhibitor with no account email is logged and skipped, and an enqueue
     /// failure is swallowed + audited by <see cref="EmailQueueExtensions.TryEnqueueAsync"/>
@@ -411,28 +410,28 @@ internal sealed class ExhibitorVisitorService(
         return string.IsNullOrWhiteSpace(fallback) ? placeholder : fallback;
     }
 
-    /// <summary>DEF-EXH-001 — 403 unless the caller is a genuine EXHIBITOR: an
+    /// <summary>403 unless the caller is a genuine EXHIBITOR: an
     /// active profile whose assigned profile type carries
-    /// <see cref="MobileAppRole.Exhibitor"/> (D-519). The former test admitted any
+    /// <see cref="MobileAppRole.Exhibitor"/>. The former test admitted any
     /// profile type that merely was NOT a visitor type, so Staff / Moderator /
     /// Media / Sponsor tokens could call the scan + list endpoints and harvest
     /// visitor PII (login email and both mobile numbers).
     ///
-    /// <para>DEF-EXH-006 — the role alone is not authority. It is granted at
+    /// <para>The role alone is not authority. It is granted at
     /// provisioning time and then lives on the PERSON's profile, so it outlived
     /// their booth: dropping an officer from an exhibitor left them able to go on
     /// scanning badges and reading contact cards. A CURRENT membership of a live
     /// exhibitor is required alongside the role, so revoking the membership (or
     /// closing the exhibitor) revokes the tools with it.</para>
     ///
-    /// <para>No cross-database work (D-157): <c>ProfileType</c>,
+    /// <para>No cross-database work: <c>ProfileType</c>,
     /// <c>ExhibitorMembership</c> and <c>Exhibitor</c> all live on the App DB
     /// beside <c>UserProfile</c>, and <c>MobileAppRole</c> is the same column the
     /// JWT's app role is resolved from
     /// (<c>UserProfileRepository.GetAssignedProfileTypeRoleAsync</c>).</para>
     ///
-    /// <para>Returns the booth's display names for the subject notification
-    /// (DEF-EXH-002 / DEF-EXH-007).</para></summary>
+    /// <para>Returns the booth's display names for the subject
+    /// notification.</para></summary>
     private async Task<ExhibitorIdentity> EnsureExhibitorAsync(
         Guid userId, CancellationToken cancellationToken)
     {
@@ -449,7 +448,7 @@ internal sealed class ExhibitorVisitorService(
             throw NotAnActiveBoothOfficer();
         }
 
-        // DEF-EXH-006 — the membership half. Second query rather than one clever
+        // The membership half. Second query rather than one clever
         // projection: it only runs once the role has already been established, and
         // ExhibitorMembership.UserId carries a filtered unique index on the active
         // rows, so it is a single-row indexed lookup.
@@ -467,7 +466,7 @@ internal sealed class ExhibitorVisitorService(
             throw NotAnActiveBoothOfficer();
         }
 
-        // DEF-EXH-007 — name the EXHIBITOR, not the account. A CP-provisioned
+        // Name the EXHIBITOR, not the account. A CP-provisioned
         // officer gets a stub UserProfile with no Name / NameArabic at all
         // (AdminAccountService.CreateAccountAsync), so reading the name off the
         // scanning account degraded the capture notice to "An exhibitor" for
@@ -482,22 +481,22 @@ internal sealed class ExhibitorVisitorService(
                 : booth.NameArabic);
     }
 
-    /// <summary>One 403 for both halves of the exhibitor test (DEF-EXH-001 role,
-    /// DEF-EXH-006 current membership) — the caller learns they may not use the
+    /// <summary>One 403 for both halves of the exhibitor test (the role and a
+    /// current membership) — the caller learns they may not use the
     /// booth tools, not which half of the rule they failed.</summary>
     private static ApiException NotAnActiveBoothOfficer() =>
         new(ErrorCodes.Forbidden, 403,
             "Only exhibitor accounts with a current booth membership can scan visitor badges.",
             "مسح بطاقات الزوار متاح فقط لحسابات العارضين المرتبطة بجناح فعّال.");
 
-    /// <summary>DEF-EXH-002 / DEF-EXH-007 — tell the visitor, in-app, that their
+    /// <summary>Tell the visitor, in-app, that their
     /// contact card was shared with the NAMED exhibitor whose officer scanned their
     /// entry badge (<see cref="EnsureExhibitorAsync"/> resolves the name). Raised
     /// once per new capture only; the idempotent re-scan path (which merely
     /// refreshes the note) stays silent. Best-effort like the other request /
     /// booking flows — a dispatch failure never undoes the committed capture.
     /// Notifications live on the Identity DB, dispatched through its own unit of
-    /// work, so this is not a cross-database transaction (D-157).</summary>
+    /// work, so this is not a cross-database transaction.</summary>
     private Task NotifyVisitorCapturedAsync(
         Guid visitorUserId, ExhibitorIdentity exhibitor,
         CancellationToken cancellationToken)
@@ -523,17 +522,17 @@ internal sealed class ExhibitorVisitorService(
         }, logger, cancellationToken);
     }
 
-    /// <summary>The EXHIBITOR the scanning officer represents — its id (FR-EXH-003,
-    /// the booth every capture is tagged to and every list is scoped by) and its
+    /// <summary>The EXHIBITOR the scanning officer represents — its id (the booth
+    /// every capture is tagged to and every list is scoped by) and its
     /// bilingual display name, carried from the authorisation query into the
-    /// subject notification so the visitor is told WHO their card went to
-    /// (DEF-EXH-007).</summary>
+    /// subject notification so the visitor is told WHO their card went
+    /// to.</summary>
     private sealed record ExhibitorIdentity(Guid Id, string Name, string NameArabic);
 
     /// <summary>Batch-resolves visitor cards from profiles + org / country lookups
     /// (App DB) and a single email round-trip (Identity DB). A subject with no
     /// profile resolves to an unavailable card. Mirrors the contact-share card
-    /// projection (D-284) — kept local to avoid coupling the two services.</summary>
+    /// projection — kept local to avoid coupling the two services.</summary>
     private async Task<Dictionary<Guid, VisitorCard>> ResolveCardsAsync(
         IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken)
     {

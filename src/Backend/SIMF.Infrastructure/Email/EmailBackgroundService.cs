@@ -10,9 +10,9 @@ namespace SIMF.Infrastructure.Email;
 /// <summary>
 /// Drains the <see cref="EmailQueue"/> and sends each message. A failed send is
 /// logged and does not stop the worker, so one bad address never blocks the
-/// queue (SIMF-SAD-001 Amendment A.2).
+/// queue.
 ///
-/// <para>D-097: when <see cref="EmailOptions.FailureAlertRecipients"/> is
+/// <para>When <see cref="EmailOptions.FailureAlertRecipients"/> is
 /// configured, every send failure also dispatches a short notification email
 /// to the operations distribution list so Support / IT see SMTP outages in
 /// real time without having to tail the OperationLog. The alert email is
@@ -49,9 +49,9 @@ public sealed class EmailBackgroundService(
                 // Log the SMTP endpoint that was attempted (host / port / from —
                 // never the user or password) so ops can tell a wrong host/port
                 // or unauthorised From address apart from a real outage straight
-                // from the log, without cross-referencing the config (#2 — a
+                // from the log, without cross-referencing the config. A
                 // "code not received" report is almost always this transport
-                // step, since the code itself is already persisted + enqueued).
+                // step, since the code itself is already persisted + enqueued.
                 heartbeat.RecordFailure(nameof(EmailBackgroundService), ex.Message);
                 var smtp = options.Value;
                 logger.LogError(ex,

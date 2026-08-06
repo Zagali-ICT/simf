@@ -14,7 +14,7 @@ namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
 /// <c>POST /api/v1/admin/admins/reset-two-factor</c> — an Administrator resets
-/// another user's 2FA (decision D-041). Requires the Administrator role; the
+/// another user's 2FA. Requires the Administrator role; the
 /// target cannot be the actor or another Administrator. Audits both sides
 /// with a mandatory reason.
 /// </summary>
@@ -47,12 +47,15 @@ public sealed class ResetTwoFactorEndpoint(IAdminTwoFactorService adminAccountSe
 public static class AuthorizationPolicies
 {
     /// <summary>
-    /// Requires the caller to hold the Administrator role. Per the P7
-    /// model (decision D-048) only <see cref="SIMF.Common.Enums.UserType.Admin"/>
-    /// users carry RBAC roles at all, so this is **the** policy every
-    /// CP endpoint uses today. The P4-era <c>TeamMember</c> policy was
-    /// removed by P7b when the reviewer roles (Staff / Scientific /
-    /// Security) ceased to be RBAC roles.
+    /// Requires the caller to hold the Administrator role. Only
+    /// <see cref="SIMF.Common.Enums.UserType.Admin"/> users carry RBAC roles at
+    /// all, so this used to be the policy every CP endpoint carried. The
+    /// per-action permission policies (<c>PermissionCatalog.PolicyFor</c>) have
+    /// since taken that job over, and this blunt role policy is now left only on
+    /// the actions that are Administrator-only by definition — today just the
+    /// admin device-key revoke. An earlier <c>TeamMember</c> policy was removed
+    /// when the reviewer roles (Staff / Scientific / Security) ceased to be RBAC
+    /// roles.
     /// </summary>
     public const string AdministratorOnly = "AdministratorOnly";
 
@@ -60,19 +63,20 @@ public static class AuthorizationPolicies
     /// Requires the caller's <c>account_state</c> JWT claim
     /// to be <c>"Approved"</c>. Defense-in-depth gate available to any
     /// endpoint that should not be reachable by a non-approved (guest)
-    /// user. Today (P11 — D-052) no endpoint applies this policy by
-    /// default — the client-side routing on CP + Website is the primary
-    /// gate. A follow-up sweep will opt sensitive endpoints into this
-    /// policy explicitly.
+    /// user. It began life applied nowhere, with the client-side routing on CP +
+    /// Website as the only gate and a follow-up sweep owing it to sensitive
+    /// endpoints; that sweep has since run, so the policy now sits alongside the
+    /// per-action permission policy across the admin and app surface and the
+    /// client-side routing is only the first gate, never the enforcing one.
     /// </summary>
     public const string RequireApprovedAccount = "RequireApprovedAccount";
 
     /// <summary>Admin-only management of gates / assignments /
-    /// allow-lists / reports (SIMF-API-GATES-001 §4).</summary>
+    /// allow-lists / reports.</summary>
     public const string GatesManage = "GatesManage";
 
     /// <summary>Operator-only scan submission and own-assignments
-    /// listing (SIMF-API-GATES-001 §4). Administrator inherits.</summary>
+    /// listing. Administrator inherits.</summary>
     public const string GatesOperate = "GatesOperate";
 
     /// <summary>Operator's own-daily-report endpoint.</summary>
@@ -92,7 +96,7 @@ public static class AuthorizationPolicies
             policy.RequireRole(SIMF.Common.AppRoles.Administrator));
 
         // Gate by the account_state claim minted by
-        // JwtTokenService (P10). Non-approved users see the state-banner
+        // JwtTokenService. Non-approved users see the state-banner
         // page on the client; this policy is the API's matching guard
         // for any endpoint that opts in.
         builder.AddPolicy(RequireApprovedAccount, policy =>

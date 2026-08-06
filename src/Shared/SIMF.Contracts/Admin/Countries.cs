@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>One row in the admin Countries grid (D-151).</summary>
+/// <summary>One row in the admin Countries grid.</summary>
 public sealed record AdminCountrySummary(
     int Id,
     string Code,
@@ -31,13 +31,13 @@ public sealed record AdminCountryDetail(
     DateTime? UpdatedAt,
     // Invited to send a delegation (وفد).
     bool IsInvited = false,
-    // D-499 (الوفود) — the invited delegation's arrival/departure dates + the
+    // The invited delegation's (الوفود) arrival/departure dates + the
     // UserProfile id of its head of delegation (رئيس الوفد). All nullable.
     DateOnly? DelegationArrivalDate = null,
     DateOnly? DelegationDepartureDate = null,
     Guid? HeadOfDelegationUserProfileId = null);
 
-/// <summary>D-499 (الوفود) — one delegate of an invited country, offered in the
+/// <summary>One delegate of an invited country (الوفود), offered in the
 /// CP head-of-delegation picker on the country Edit form.</summary>
 public sealed record AdminCountryDelegateOption(
     Guid UserProfileId,
@@ -58,19 +58,19 @@ public sealed class AdminCreateCountryRequest
     /// <summary>True for a country invited to send a delegation (وفد).</summary>
     public bool IsInvited { get; set; }
 
-    /// <summary>D-499 (الوفود) — the invited delegation's arrival date (optional).</summary>
+    /// <summary>The arrival date of the invited delegation (الوفود); optional.</summary>
     public DateOnly? DelegationArrivalDate { get; set; }
 
-    /// <summary>D-499 (الوفود) — the invited delegation's departure date (optional).</summary>
+    /// <summary>The departure date of the invited delegation (الوفود); optional.</summary>
     public DateOnly? DelegationDepartureDate { get; set; }
 
-    /// <summary>D-499 (الوفود) — the UserProfile id of the head of delegation
-    /// (رئيس الوفد); must be an active delegate of this country (optional).</summary>
+    /// <summary>الوفود — the UserProfile id of the invited delegation's head of
+    /// delegation (رئيس الوفد); must be an active delegate of this country (optional).</summary>
     public Guid? HeadOfDelegationUserProfileId { get; set; }
 }
 
 /// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
-/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+/// route class so it cannot drop a field at bind time.</remarks>
 public class AdminUpdateCountryRequest
 {
     public string Code { get; set; } = string.Empty;
@@ -83,13 +83,13 @@ public class AdminUpdateCountryRequest
     /// <summary>True for a country invited to send a delegation (وفد).</summary>
     public bool IsInvited { get; set; }
 
-    /// <summary>D-499 (الوفود) — the invited delegation's arrival date (optional).</summary>
+    /// <summary>The arrival date of the invited delegation (الوفود); optional.</summary>
     public DateOnly? DelegationArrivalDate { get; set; }
 
-    /// <summary>D-499 (الوفود) — the invited delegation's departure date (optional).</summary>
+    /// <summary>The departure date of the invited delegation (الوفود); optional.</summary>
     public DateOnly? DelegationDepartureDate { get; set; }
 
-    /// <summary>D-499 (الوفود) — the UserProfile id of the head of delegation
-    /// (رئيس الوفد); must be an active delegate of this country (optional).</summary>
+    /// <summary>الوفود — the UserProfile id of the invited delegation's head of
+    /// delegation (رئيس الوفد); must be an active delegate of this country (optional).</summary>
     public Guid? HeadOfDelegationUserProfileId { get; set; }
 }

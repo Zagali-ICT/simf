@@ -2,8 +2,8 @@ namespace SIMF.Common.Enums;
 
 /// <summary>Which entity family a unified media <c>Asset</c> belongs to.
 /// One active asset exists per (category, owner). Persisted as an int;
-/// append-only — never rename or reorder existing values (the D-110
-/// enum-stability rule, which survived the D-199 freeze-lift for new tables).</summary>
+/// append-only — never rename or reorder existing values: the enum-stability rule
+/// still holds, even though the schema freeze was later lifted for new tables.</summary>
 public enum AssetCategory
 {
     SpeakerPhoto = 0,
@@ -18,7 +18,7 @@ public enum AssetCategory
     /// <c>OrganizationProfile.SingletonId</c>).</summary>
     OrganizationLogo = 7,
 
-    /// <summary>#43 — an uploaded image for a home <c>Banner</c> row (owner =
+    /// <summary>An uploaded image for a home <c>Banner</c> row (owner =
     /// <c>Banner.Id</c>). Backs the rotating home hero; served publicly only
     /// while the banner is active and within its display window.</summary>
     Banner = 8,

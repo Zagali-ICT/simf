@@ -16,12 +16,12 @@ public sealed class JwtOptions
     /// <summary>The HMAC-SHA256 signing key — at least 32 bytes.</summary>
     public string SigningKey { get; set; } = string.Empty;
 
-    /// <summary>The access-token lifetime, in minutes. D-443 (NCA finding):
-    /// capped at 5 minutes — short-lived and silently rotated in the
+    /// <summary>The access-token lifetime, in minutes. An NCA finding
+    /// capped it at 5 minutes — short-lived and silently rotated in the
     /// background before it lapses, so an active user is never interrupted.</summary>
     public int AccessTokenMinutes { get; set; } = 5;
 
-    /// <summary>D-443 (NCA finding): the absolute session lifetime, in hours.
+    /// <summary>The NCA-mandated absolute session lifetime, in hours.
     /// The refresh token issued at sign-in expires at <c>sign-in + this</c>,
     /// and rotation carries that same deadline forward (it does NOT slide a
     /// fresh window), so a session can never outlive the cap — re-login is
@@ -37,9 +37,9 @@ public sealed class JwtOptions
 
     /// <summary>The recording-stream token lifetime, in minutes.
     /// Long enough to watch one recording in a sitting, still bounded/expiring
-    /// and scoped to a single recording (not a permanent URL). The deferred
-    /// upgrade path (per-segment signed URLs / client token refresh) is noted
-    /// in D-213.</summary>
+    /// and scoped to a single recording (not a permanent URL). Per-segment
+    /// signed URLs with a client token refresh are a known, deferred
+    /// upgrade path.</summary>
     public int StreamTokenMinutes { get; set; } = 180;
 
     /// <summary>
@@ -52,7 +52,7 @@ public sealed class JwtOptions
     /// absent or non-positive the NCA default (<see cref="AccessTokenMinutes"/>)
     /// stands. When set it is CLAMPED to the absolute session cap
     /// (<see cref="SessionLifetimeHours"/>) so it can never let a token outlive
-    /// the D-443 24-hour cap — the NCA absolute ceiling always wins.
+    /// the 24-hour cap — the NCA absolute ceiling always wins.
     /// </summary>
     /// <param name="defaultMinutes">The bound <see cref="AccessTokenMinutes"/> (NCA default 5).</param>
     /// <param name="overrideHours">The <c>Session:TimeoutHours</c> value (0/absent = no override).</param>

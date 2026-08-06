@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-174 (gap doc G11, Mockup page 27) — lifecycle state of
+/// <summary>The lifecycle state of
 /// a <c>MeetingRequest</c>.</summary>
 public enum MeetingRequestStatus
 {
@@ -8,22 +8,22 @@ public enum MeetingRequestStatus
     Accepted = 1,
     Rejected = 2,
 
-    /// <summary>D-500 (Wave 5, الطلبات 1408:9726) — the requester cancelled
-    /// their own still-pending request from the app. Additive value
+    /// <summary>The requester cancelled their own still-pending
+    /// request from the app's "الطلبات" screen. Additive value
     /// (append-only, the frozen-enum rule); stored as an int, so the existing
     /// rows and the wire contract are untouched.</summary>
     Cancelled = 3,
 
-    /// <summary>D-716 (item 7, FDS-013 §15 GAP-2) — a speaker meeting request the
+    /// <summary>A speaker meeting request the
     /// admin accepted AND bound to a hall slot: it now awaits the speaker's own
-    /// confirmation (the double-opt-in advanced by Slice C's email links) before
+    /// confirmation (the double-opt-in advanced by the emailed action links) before
     /// it becomes <see cref="Accepted"/>. Additive value (append-only, the
     /// frozen-enum rule), stored as an int. Admin-only state: the app-facing "My
     /// requests" feed folds it back to <see cref="Pending"/> so the shipped mobile
     /// wire contract (values 0–3) is preserved.</summary>
     AwaitingSpeaker = 4,
 
-    /// <summary>Bi-Meeting rework — a confirmed meeting (speaker or delegation) whose
+    /// <summary>A confirmed meeting (speaker or delegation) whose
     /// parties were checked in at the assigned hall by an operator: the meeting took
     /// place. Terminal state. Additive value (append-only, the frozen-enum rule),
     /// stored as an int. Admin/operator-only state: the app-facing "My requests" feed

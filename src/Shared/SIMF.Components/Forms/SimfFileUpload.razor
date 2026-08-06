@@ -1,9 +1,9 @@
-@* SimfFileUpload — a labelled file picker on the SIMF field shell
-   (decision D-044 c). The client picks the file; the server validates by
-   magic bytes (same pattern as the avatar — decision D-039). For
-   ID-card images on the visitor profile (myComment #18).
+@* SimfFileUpload — a labelled file picker on the SIMF field shell.
+   The client picks the file; the server validates by
+   magic bytes (the same pattern as the avatar). For
+   ID-card images on the visitor profile.
 
-   H14 — D-069: the picked-file status (`PickedFilename` parameter) is
+   The picked-file status (`PickedFilename` parameter) is
    rendered inside an aria-live region. Sighted keyboard users see a
    visible "Picked: foo.png" line; screen readers hear it announced
    without focus moving. `aria-describedby` includes the status region
@@ -90,7 +90,7 @@
 
     /// <summary>The DOM element id — useful so the page can read the chosen
     /// file from JS interop and POST it to a CP proxy (mirrors the avatar
-    /// upload pattern from D-039).</summary>
+    /// upload pattern).</summary>
     public string ElementId => _id;
 
     /// <summary>Raised when the user picks a file — the parent reads

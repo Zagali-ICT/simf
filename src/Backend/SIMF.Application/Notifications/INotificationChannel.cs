@@ -11,7 +11,7 @@ namespace SIMF.Application.Notifications;
 /// <para>Each channel decides for itself whether a given request concerns it
 /// (<see cref="ShouldHandle"/>) and then delivers it (<see cref="SendAsync"/>).
 /// The dispatcher owns only the policy that is common to every channel — the
-/// D-713 one-per-(user, kind, entity) guard — and runs the registered channels in
+/// one-per-(user, kind, entity) guard — and runs the registered channels in
 /// <see cref="Order"/>.</para>
 ///
 /// <para><b>Scope.</b> The two shipped implementations are

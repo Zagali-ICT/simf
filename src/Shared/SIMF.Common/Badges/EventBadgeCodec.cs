@@ -43,8 +43,8 @@ public readonly record struct EventBadgePayload(int ProfileTypeCode, long Sequen
 /// version character and full reconciliation of every scan after the event. An
 /// asymmetric scheme would remove the risk at the cost of a larger payload.</para>
 ///
-/// <para>Sizes: <see cref="AesGcm"/> requires a 12-byte nonce, and D-820 takes
-/// the full 16-byte tag (see <see cref="TagBytes"/>). Overhead is therefore 28
+/// <para>Sizes: <see cref="AesGcm"/> requires a 12-byte nonce, and this codec
+/// takes the full 16-byte tag (see <see cref="TagBytes"/>). Overhead is therefore 28
 /// bytes on a 9-byte payload, and a typical badge is about 61 characters — which
 /// is why <c>GateScans.QrIdAtScan</c> is nvarchar(96).</para>
 /// </summary>
@@ -56,7 +56,7 @@ public static class EventBadgeCodec
     /// <summary>
     /// AES-GCM tag length. The FULL 16 bytes.
     ///
-    /// <para>D-820 corrected this from the 12-byte .NET minimum, which was
+    /// <para>This was corrected from the 12-byte .NET minimum, which was
     /// chosen purely to shrink the printed QR. The Flutter scanner decrypts
     /// badges with <c>pointycastle</c>, whose GCM implementation accepts only a
     /// 128-bit tag — a 12-byte tag is unreadable on the device that has to read

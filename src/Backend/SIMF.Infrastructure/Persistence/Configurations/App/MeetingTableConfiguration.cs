@@ -4,7 +4,7 @@ using SIMF.Domain.BusinessMeetings;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>SIMF-FDS-013 — D-248: MeetingTable EF config. Real FK to Hall
+/// <summary>MeetingTable EF config. Real FK to Hall
 /// (Restrict — halls are soft-deleted, never hard-deleted under a table). A
 /// filtered unique index keeps the table <c>Code</c> unique among active tables in
 /// the same hall.</summary>

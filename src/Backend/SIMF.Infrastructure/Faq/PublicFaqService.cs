@@ -6,8 +6,8 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Faq;
 
-/// <summary>Public read of the two-level FAQ (D-211) for the app accordion
-/// (Figma 1388:7567). Two cheap queries (groups, then their entries) stitched in
+/// <summary>Public read of the two-level FAQ for the app accordion.
+/// Two cheap queries (groups, then their entries) stitched in
 /// memory — mirrors <see cref="SIMF.Infrastructure.Configuration.OrganizationProfileReadService"/>'s
 /// multi-query style. Active-only and ordered server-side; groups with no active
 /// entry are dropped so the accordion never shows an empty section.</summary>

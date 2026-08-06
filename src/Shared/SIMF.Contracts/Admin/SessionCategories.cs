@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-// B9b — D-226: session-category dynamic lookup (FDS-004 §5.4). Admin CRUD
+// Session-category dynamic lookup. Admin CRUD
 // contracts; mirrors the Organisation lookup shape (minus import). The CP
 // session form loads the active rows via the list endpoint to populate the
 // category picker, resolving the name client-side like the Hall/Company picker.

@@ -1,4 +1,4 @@
-@* D-134 Sprint A — Attendees roster. Read-only view over SimfUser +
+@* Attendees roster. Read-only view over SimfUser +
    UserProfile + ProfileType — no schema change. Admins are excluded.
    Filters: UserType (Visitor / Other / All), AccountState. *@
 @page "/admin/attendees"
@@ -48,7 +48,7 @@
                                Value="@_searchFilter"
                                ValueChanged="@(v => _searchFilter = v)"
                                ValueExpression="@(() => _searchFilter)" />
-                @* P1.6 — registration date-range filter (inclusive), on CreatedAt. *@
+                @* Registration date-range filter (inclusive), on CreatedAt. *@
                 <div class="simf-field">
                     <label class="simf-field__label" for="att-from">@L["Admin.Attendees.Filter.From"]</label>
                     <div class="simf-field__control">
@@ -73,7 +73,7 @@
                 <SimfButton Type="button" Variant="secondary" OnClick="ClearFiltersAsync">
                     @L["Admin.Attendees.Filter.Clear"]
                 </SimfButton>
-                @* P1.6 — export the filtered roster. Gated by the dedicated
+                @* Export the filtered roster. Gated by the dedicated
                    Attendees.Export permission (separate from View). *@
                 <AuthorizedAction Permission="@PermissionCatalog.Attendees.Export">
                     <SimfButton Type="button" Variant="secondary" OnClick="OnExportAsync">

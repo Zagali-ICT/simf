@@ -6,15 +6,15 @@ using Microsoft.Extensions.Logging;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>D-179 (gap doc G12 hardening) — helpers that produce
+/// <summary>Helpers that produce
 /// SIEM-friendly structured audit details + redact common secret
 /// patterns before persistence. Threat-detection + security
-/// reviews of D-177 flagged free-text audit detail (regex-only
+/// reviews flagged free-text audit detail (regex-only
 /// parseable) and unredacted invocation inputs (PII / keys land
 /// raw in the DB) as the two MED-severity gaps blocking effective
 /// SOC coverage of the AI module.
 ///
-/// <para>D-181 (review-pass hardening of D-179): switched from raw
+/// <para>A later hardening pass switched from raw
 /// SHA-256 to HMAC-SHA256 keyed on a server-only secret (preimage
 /// resistance against insiders with audit-read); added Saudi NID +
 /// mobile + IBAN, AWS AKIA/ASIA, GitHub PATs, Google AIza, Slack,
@@ -64,7 +64,7 @@ internal static class AiAuditDetail
         }
     }
 
-    /// <summary>D-181 (review-pass) — hosting layer can check this and
+    /// <summary>The hosting layer can check this and
     /// refuse to start in production when the HMAC secret was
     /// unconfigured. Required so the dev-fallback hashes never leak
     /// into a production audit trail (the key is derived from a
@@ -93,7 +93,7 @@ internal static class AiAuditDetail
     /// distinct fingerprints.</para></summary>
     public static string PromptContentHash(string? systemPrompt, string? userTemplate)
     {
-        // D-181 (review-pass) - fail loud if the key was never installed.
+        // Fail loud if the key was never installed.
         // The previous silent fallback masked a missing-init bug.
         if (_hmacKey is null)
         {
@@ -105,7 +105,7 @@ internal static class AiAuditDetail
             + (userTemplate ?? string.Empty);
         var bytes = Encoding.UTF8.GetBytes(input);
         var hash = HMACSHA256.HashData(_hmacKey, bytes);
-        // D-181 (review-pass) - `v1:` version prefix so a future HMAC
+        // `v1:` version prefix so a future HMAC
         // key rotation can bump to `v2:` and SOC rules can explicitly
         // skip cross-version drift comparisons rather than producing a
         // false-positive "content changed" storm on first edit after.
@@ -114,7 +114,7 @@ internal static class AiAuditDetail
 
     // -- Redaction patterns ------------------------------------------------
     //
-    // D-181 (review-pass hardening): all patterns use NonBacktracking.
+    // All patterns use NonBacktracking.
     // NonBacktracking is the .NET 7+ linear-time engine — gives O(n)
     // guaranteed worst case, no catastrophic backtracking even on
     // adversarial input. `Compiled` is intentionally omitted: it is
@@ -142,7 +142,7 @@ internal static class AiAuditDetail
         @"(?:\d[ -]?){13,19}", Opts);
 
     // Saudi national ID / Iqama (10 digits starting 1 or 2).
-    // D-181 (review-pass): tightened with negative look-around equivalents
+    // Tightened with negative look-around equivalents
     // (NonBacktracking doesn't support look-around, so we use word
     // boundaries + a leading non-digit-or-letter requirement enforced by
     // the match boundary). False-positive class: still matches bare
@@ -153,13 +153,13 @@ internal static class AiAuditDetail
         @"\b[12]\d{9}\b", Opts);
 
     // Saudi mobile (05XXXXXXXX or +9665XXXXXXXX or 9665XXXXXXXX).
-    // D-181 (review-pass): added \b on the 9665 branch so a 14-digit run
+    // The \b on the 9665 branch is there so a 14-digit run
     // doesn't match the inner 9665XXXXXXXX chunk.
     private static readonly Regex SaudiMobileRegex = new(
         @"(\b\+?9665\d{8}\b|\b05\d{8}\b)", Opts);
 
     // Saudi IBAN (SA + 22 digits, total 24 chars).
-    // D-181 (review-pass): allow optional whitespace between groups so
+    // Optional whitespace between groups is allowed so
     // the printed form `SA03 8000 0000 ...` is also redacted.
     private static readonly Regex SaudiIbanRegex = new(
         @"\bSA(?:\s?\d){22}\b", Opts);
@@ -192,12 +192,12 @@ internal static class AiAuditDetail
         @"\bAIza[A-Za-z0-9_-]{35}\b", Opts);
 
     // Slack tokens (xoxb / xoxa / xoxp / xoxr / xoxs / xoxe / xapp).
-    // D-181 (review-pass): added xoxe- (refresh) + xapp- (app-level).
+    // Covers xoxe- (refresh) + xapp- (app-level) as well.
     private static readonly Regex SlackTokenRegex = new(
         @"\b(xox[baprse]-|xapp-)[A-Za-z0-9-]{10,}\b", Opts);
 
     // PEM private-key block (full block, not just BEGIN line).
-    // D-181 (review-pass): security review flagged that the BEGIN-only
+    // Security review flagged that the BEGIN-only
     // match left the actual key material raw in the audit row. The
     // bounded `{0,9000}?` body keeps NonBacktracking happy and is sized
     // above the validated AI input cap (8000 chars).
@@ -205,7 +205,7 @@ internal static class AiAuditDetail
         @"-----BEGIN [A-Z ]{0,40}PRIVATE KEY-----[\s\S]{0,9000}?"
         + @"-----END [A-Z ]{0,40}PRIVATE KEY-----", Opts);
 
-    // D-181 (review-pass) — fallback: if the END marker is missing or
+    // Fallback: if the END marker is missing or
     // truncated, at least redact the BEGIN line so the indicator + any
     // following key prefix isn't visible. Runs after the spanning
     // pattern so the full-block redaction takes precedence.

@@ -42,7 +42,7 @@ internal sealed class AdminHallService(
             rows = rows.Where(hall => hall.IsActive == isActive);
         }
 
-        // CP grid per-column text filters (D-255). Unknown columns are ignored;
+        // CP grid per-column text filters. Unknown columns are ignored;
         // isActive is handled above. Floor is nullable, so guard the null case.
         foreach (var (column, raw) in query.Filters)
         {
@@ -180,7 +180,7 @@ internal sealed class AdminHallService(
             }
         }
 
-        // H-3 — a Capacity reduction must not drop below what the hall already
+        // A Capacity reduction must not drop below what the hall already
         // commits: its seat-layout total (rows × seats — SetLayoutAsync keeps this
         // ≤ Capacity) or the largest active (held) reservation count on any single
         // session held in this hall. Otherwise a shrink silently over-commits seats.
@@ -326,7 +326,7 @@ internal sealed class AdminHallService(
         return (SeatSelectionMode)raw;
     }
 
-    /// <summary>P5.1 — D-240 (FDS-003 §5.4): validate the optional hall geofence.
+    /// <summary>Validate the optional hall geofence.
     /// All three values are set together or all null (a partial geofence is
     /// meaningless). When set: latitude −90..90, longitude −180..180, radius in
     /// metres &gt; 0 and ≤ 100 km (a venue-scale sanity cap).</summary>
@@ -379,7 +379,7 @@ internal sealed class AdminHallService(
         }
     }
 
-    /// <summary>H-3 — guards a hall Capacity reduction. The new capacity must be
+    /// <summary>Guards a hall Capacity reduction. The new capacity must be
     /// ≥ the hall's seat-layout total (rows × seats) AND ≥ the largest active
     /// (held, not-released) reservation count on any single session held in this
     /// hall. Throws <see cref="ErrorCodes.HallCapacityBelowUsage"/> otherwise.

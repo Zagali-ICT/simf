@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace SIMF.Api.RateLimiting;
 
 /// <summary>
-/// Reads the <c>email</c> field (or the <c>qrId</c> fallback for badge sign-in,
-/// D-738) out of credential-touching request bodies (sign-in, forgot-password,
+/// Reads the <c>email</c> field (or the <c>qrId</c> fallback for badge sign-in)
+/// out of credential-touching request bodies (sign-in, forgot-password,
 /// reset-password, badge-sign-in) and stashes it on the HttpContext as
 /// <c>HttpContext.Items["RateLimitEmail"]</c>, so the <c>"auth-email"</c>
 /// rate-limit policy can key its partition on the target account/badge —
@@ -15,7 +15,7 @@ namespace SIMF.Api.RateLimiting;
 /// body so the endpoint's normal model binding still works. A malformed
 /// body or a missing email field just leaves the key unset — the
 /// per-IP "auth" policy still applies, the "auth-email" policy falls
-/// through to a no-op partition. H7 — D-062.</para>
+/// through to a no-op partition.</para>
 /// </summary>
 public sealed class EmailRateLimitKeyMiddleware
 {

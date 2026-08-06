@@ -62,7 +62,7 @@
                                     Header="@L["Admin.ProfileTypes.Column.PageColor"]">
                     <CellTemplate>@context.PageColor</CellTemplate>
                 </SimfDataGridColumn>
-                @* D-161 — mobile-app role; "Other" types only (Visitor types
+                @* Mobile-app role; "Other" types only (Visitor types
                    always resolve to Visitor at JWT issue time regardless). *@
                 <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="mobileAppRole"
                                     Header="@L["Admin.ProfileTypes.Column.MobileAppRole"]">
@@ -100,7 +100,7 @@
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
-            @* D-186: partner-side form — UserType is always Visitor;
+            @* Partner-side form — UserType is always Visitor;
                IsPartnerForm=true tells the form to send IsVisitor=false. *@
             <ProfileTypeForm IsPartnerForm="true"
                              OnSuccess="OnSavedAsync"
@@ -169,7 +169,7 @@
                         OnClick="@(() => _deleteTarget = null)">
                 @L["Admin.ProfileTypes.Delete.Cancel"]
             </SimfButton>
-            @* D-831 - the commit button of the modal this action opened. *@
+            @* The commit button of the modal this action opened. *@
             <AuthorizedAction Permission="@PermissionCatalog.ProfileTypes.Delete">
             <SimfButton Type="button" Variant="primary"
                             Loading="_busy"

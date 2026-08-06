@@ -7,8 +7,8 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <summary>ExhibitorVisitorScan EF config. Indexed by (booth, visitor)
 /// for the "My Visitors" list query and the idempotent capture, and by
 /// (officer, visitor) for the legacy un-backfilled rows. The two USER refs are
-/// bare-Guid logical FKs to <c>SimfUser.Id</c> on the Identity DB — no DB FK
-/// (D-157); <c>ExhibitorId</c> is a real FK because both tables live on the App
+/// bare-Guid logical FKs to <c>SimfUser.Id</c> on the Identity DB — no DB FK;
+/// <c>ExhibitorId</c> is a real FK because both tables live on the App
 /// DB. Auto-discovered by <c>ApplyConfigurationsFromAssembly</c> (App
 /// namespace).</summary>
 internal sealed class ExhibitorVisitorScanConfiguration
@@ -19,7 +19,7 @@ internal sealed class ExhibitorVisitorScanConfiguration
         builder.ToTable("ExhibitorVisitorScans");
         builder.HasKey(scan => scan.Id);
         builder.Property(scan => scan.Note).HasMaxLength(512);
-        // D-611 (Wave B) made this unique — one ACTIVE capture per
+        // This index used to be unique — one ACTIVE capture per
         // (officer, visitor). FR-EXH-003 moved the ownership to the BOOTH, so
         // that is no longer the invariant and the uniqueness moved with it (see
         // the booth index below). It stays as a plain index because it still

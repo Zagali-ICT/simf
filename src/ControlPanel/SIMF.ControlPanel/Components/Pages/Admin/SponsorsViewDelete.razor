@@ -1,4 +1,4 @@
-@* D-353 — reusable Sponsor View/Delete form, hosted by CrudShell (popup or full
+@* Reusable Sponsor View/Delete form, hosted by CrudShell (popup or full
    page) from SponsorsList. Inherits CrudViewDeleteFormBase so it exposes the
    standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show; when IsDelete=true a Delete button appears and a
@@ -13,7 +13,7 @@
 
 @if (Initial is not null)
 {
-    @* D-357 — logo from the unified media-asset pipeline. *@
+    @* Logo from the unified media-asset pipeline. *@
     <div class="simf-image-upload__preview">
         <SimfImageThumb Src="@($"/account/api/admin/assets/SponsorLogo/{Initial.Id}/image")"
                         Alt="@Initial.NameEn" Class="simf-img-thumb--lg" />

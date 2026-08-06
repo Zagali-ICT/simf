@@ -7,7 +7,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <summary>The single unified <c>StoredFile</c> table configuration.
 /// The enums persist as <c>int</c> (the EF default for enum-backed properties);
 /// <see cref="StoredFile.OwnerEntityId"/> / <c>CreatedBy</c> are polymorphic bare
-/// Guids and carry NO FK (D-157). Bytes live out-of-row (D-90); only the metadata
+/// Guids and carry NO FK. Bytes live out-of-row; only the metadata
 /// is stored here.</summary>
 internal sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredFile>
 {

@@ -1,7 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>One row in the admin Themes grid (D-134 Sprint B —
-/// SIMF-FDS-004 §5.1).</summary>
+/// <summary>One row in the admin Themes grid.</summary>
 public sealed record AdminThemeSummary(
     Guid Id,
     string Code,
@@ -45,7 +44,7 @@ public sealed class AdminCreateThemeRequest
 
 /// <summary>PUT body for <c>/admin/themes/{id}</c>.</summary>
 /// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
-/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+/// route class so it cannot drop a field at bind time.</remarks>
 public class AdminUpdateThemeRequest
 {
     public string Code { get; set; } = string.Empty;

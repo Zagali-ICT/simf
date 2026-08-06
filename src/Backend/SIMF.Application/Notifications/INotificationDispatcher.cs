@@ -4,9 +4,9 @@ using SIMF.Domain.Notifications;
 namespace SIMF.Application.Notifications;
 
 /// <summary>
-/// Writes one in-app notification row (P12 — D-053) and optionally
+/// Writes one in-app notification row and optionally
 /// queues an email through <c>IEmailSender</c>. The dispatcher is the
-/// seam every lifecycle event uses; P13 wires the call sites.
+/// seam every lifecycle event uses.
 /// </summary>
 public interface INotificationDispatcher
 {

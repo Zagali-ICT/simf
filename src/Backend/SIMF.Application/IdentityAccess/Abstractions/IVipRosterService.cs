@@ -6,7 +6,7 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 /// <summary>
 /// Reads the VVIP/VIP welcome roster for the موج (Mawj)
 /// integration and renders it as a downloadable CSV / Excel file. The roster is
-/// a cross-DB projection (D-157): VVIP/VIP profiles on SIMF_App joined on read
+/// a cross-database projection: VVIP/VIP profiles on SIMF_App joined on read
 /// with their owners on SIMF_Identity. Read-only — the export flows one way
 /// (us → the technical teams), there is no Mawj import.
 /// </summary>

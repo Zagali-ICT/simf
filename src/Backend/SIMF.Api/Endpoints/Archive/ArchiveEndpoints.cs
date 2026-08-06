@@ -8,9 +8,9 @@ using SIMF.Contracts.Archive;
 
 namespace SIMF.Api.Endpoints.Archive;
 
-/// <summary>D-199 (Mockup screen 24) — public anonymous list of active
+/// <summary>Public anonymous list of active
 /// archive editions. Returns an empty list when the archive-visibility
-/// operations toggle (D-166) is off; the gate lives in the service.</summary>
+/// operations toggle is off; the gate lives in the service.</summary>
 public sealed class ListPublicArchiveEndpoint(IPublicArchiveService service)
     : EndpointWithoutRequest<ApiResult<PublicArchive>>
 {
@@ -28,8 +28,8 @@ public sealed class ListPublicArchiveEndpoint(IPublicArchiveService service)
 
 public sealed class GetPublicArchiveEditionRoute { public Guid Id { get; set; } }
 
-/// <summary>§9 (Mockup screen 24-01 "تفاصيل النسخة") — public anonymous detail
-/// for one past edition. Gated by the archive-visibility toggle (D-166): 404
+/// <summary>The "تفاصيل النسخة" screen — public anonymous detail
+/// for one past edition. Gated by the archive-visibility toggle: 404
 /// when the archive is hidden, the edition is missing, or it is inactive.</summary>
 public sealed class GetPublicArchiveEditionEndpoint(IPublicArchiveService service)
     : Endpoint<GetPublicArchiveEditionRoute, ApiResult<PublicArchiveEditionDetail>>
@@ -164,11 +164,11 @@ public sealed class DeleteArchiveEditionEndpoint(IAdminArchiveService service)
     }
 }
 
-/// <summary>D-275 (§9) — "make this year history": one-click snapshot of the
+/// <summary>"Make this year history": one-click snapshot of the
 /// current live event into a new archive edition. Year + bilingual title are
 /// generated, and the counters (attendees = distinct gate-scan arrivals,
 /// sessions, speakers) are computed server-side. The optional
-/// <c>MakeVisible</c> flips the archive-visibility toggle (D-166) on.</summary>
+/// <c>MakeVisible</c> flips the archive-visibility toggle on.</summary>
 public sealed class SnapshotCurrentArchiveEndpoint(IAdminArchiveService service)
     : Endpoint<SnapshotCurrentEditionRequest, ApiResult<AdminArchiveEditionDetail>>
 {

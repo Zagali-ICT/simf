@@ -7,61 +7,61 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
 /// Admin-driven user provisioning for the three <c>UserType</c> families:
-/// create, list, list-pending, and duplicate. R2 — D-075: split out of
-/// <c>IAdminAccountService</c> per Architecture SEV-1.2.
+/// create, list, list-pending, and duplicate. Split out of
+/// <c>IAdminAccountService</c> to keep that interface focused.
 /// </summary>
 public interface IAdminUserProvisioningService
 {
     // -- Admin family (UserType = Admin) -------------------------------------
 
-    /// <summary>Creates a new Admin (P7c — replaces <c>CreateStaffAsync</c>).</summary>
+    /// <summary>Creates a new Admin. Replaces <c>CreateStaffAsync</c>.</summary>
     Task<AdminCreateUserResponse> CreateAdminAsync(
         Guid actorUserId,
         AdminCreateAdminRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>One page of Admin-typed accounts (P7c — replaces <c>ListStaffAsync</c>).</summary>
+    /// <summary>One page of Admin-typed accounts. Replaces <c>ListStaffAsync</c>.</summary>
     Task<GridPage<AdminUserSummary>> ListAdminsAsync(
         GridQuery query,
         CancellationToken cancellationToken = default);
 
-    /// <summary>One page of pending-approval Admins (P7c).</summary>
+    /// <summary>One page of pending-approval Admins.</summary>
     Task<GridPage<AdminPendingUserSummary>> ListPendingAdminsAsync(
         GridQuery query,
         CancellationToken cancellationToken = default);
 
     // -- Other family (UserType = Other) -------------------------------------
 
-    /// <summary>Creates a new Other (P7c — new).</summary>
+    /// <summary>Creates a new Other.</summary>
     Task<AdminCreateUserResponse> CreateOtherAsync(
         Guid actorUserId,
         AdminCreateOtherRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>One page of Other-typed accounts (P7c — new).</summary>
+    /// <summary>One page of Other-typed accounts.</summary>
     Task<GridPage<AdminUserSummary>> ListOthersAsync(
         GridQuery query,
         CancellationToken cancellationToken = default);
 
-    /// <summary>One page of pending-approval Others (P7c — new).</summary>
+    /// <summary>One page of pending-approval Others.</summary>
     Task<GridPage<AdminPendingUserSummary>> ListPendingOthersAsync(
         GridQuery query,
         CancellationToken cancellationToken = default);
 
     // -- Visitor family (UserType = Visitor) ---------------------------------
 
-    /// <summary>Creates a new Visitor (P3 — P7c added optional ProfileTypeId).</summary>
+    /// <summary>Creates a new Visitor; the ProfileTypeId on the request is optional.</summary>
     Task<AdminCreateUserResponse> CreateVisitorAsync(
         Guid actorUserId,
         AdminCreateVisitorRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>One page of Visitor-typed accounts (P3 — P7c rekeyed off UserType).</summary>
+    /// <summary>One page of Visitor-typed accounts, keyed off UserType.</summary>
     Task<GridPage<AdminUserSummary>> ListVisitorsAsync(
         GridQuery query,
         CancellationToken cancellationToken = default);
 
-    /// <summary>One page of pending-approval Visitors (P4).</summary>
+    /// <summary>One page of pending-approval Visitors.</summary>
     Task<GridPage<AdminPendingUserSummary>> ListPendingVisitorsAsync(
         GridQuery query,
         CancellationToken cancellationToken = default);
@@ -97,7 +97,7 @@ public interface IAdminUserProvisioningService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-728 (owner item 9) — flips an existing non-admin account between the
+    /// Flips an existing non-admin account between the
     /// audience (Visitor) and partner (Other) scope by reassigning its
     /// <c>ProfileType</c> to <paramref name="newProfileTypeId"/>, which must be
     /// active and in the <b>opposite</b> scope to the account's current one (a
@@ -147,7 +147,7 @@ public interface IAdminUserProvisioningService
     /// <see cref="AdminWalkInRegistrationRequest.IsSaudi"/>) is the
     /// soft uniqueness key.
     /// </summary>
-    /// <summary>D-186 review-pass: <paramref name="expectedIsVisitor"/> is
+    /// <summary><paramref name="expectedIsVisitor"/> is
     /// the audience-vs-partner desk guard — the Visitors desk endpoint
     /// passes <c>true</c>, the Others desk endpoint passes <c>false</c>.
     /// A mismatch rejects with <c>AdminProfileTypeInvalid</c> instead of
@@ -169,7 +169,7 @@ public interface IAdminUserProvisioningService
         bool? expectedIsVisitor = null,
         string? presetQrId = null);
 
-    // -- D-357 (review follow-up) — per-family avatar scope guard -------------
+    // -- Per-family avatar scope guard ----------------------------------------
 
     /// <summary>
     /// Confirms a subject account belongs to the given admin family, so the
@@ -189,7 +189,7 @@ public interface IAdminUserProvisioningService
         bool? expectedIsVisitor,
         CancellationToken cancellationToken = default);
 
-    // -- Issue-1 — RBAC role assignment for an existing admin user ----------
+    // -- RBAC role assignment for an existing admin user ---------------------
 
     /// <summary>The RBAC role names an Admin-typed user currently holds.
     /// Throws <c>UserNotFound</c> (404) when the user is missing.</summary>

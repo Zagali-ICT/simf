@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Auth;
 
-/// <summary>D-172 (gap doc G10, PDF §2.5) — register a new device key
+/// <summary>Register a new device key
 /// after a successful sign-in. Caller is the bound user; the new key
 /// is created with no challenge.</summary>
 public sealed class RegisterDeviceKeyEndpoint(IDeviceKeyService service)
@@ -30,7 +30,7 @@ public sealed class RegisterDeviceKeyEndpoint(IDeviceKeyService service)
     }
 }
 
-/// <summary>#7a — issue + email a step-up code to the signed-in caller's own
+/// <summary>Issue + email a step-up code to the signed-in caller's own
 /// address. The user supplies it on the following
 /// <see cref="RegisterDeviceKeyEndpoint"/> call, so a borrowed-but-unlocked
 /// phone can't silently enrol a biometric credential without also holding the

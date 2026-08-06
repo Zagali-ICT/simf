@@ -1,4 +1,4 @@
-@* D-182 (CP UI for D-175 seat reservations) — admin edits the seat
+@* The CP UI for seat reservations — admin edits the seat
    layout for one hall at a time. The layout drives the seat picker
    visitors see during sign-up and for session seat reservations.
    Backend constraints validated server-side: 1–26 unique row labels
@@ -57,10 +57,10 @@
                            disabled="@_busy" />
                 </label>
 
-                @* D-767 — one seat-count input per parsed row (raw input, NOT
-                   SimfTextField: a SimfTextField without ValueExpression freezes the
-                   page, D-648). Renaming a label keeps that position's count.
-                   D-771 — each row also carries its TIER (Normal / VIP / VVIP); a
+                @* One seat-count input per parsed row (raw input, NOT
+                   SimfTextField: a SimfTextField without ValueExpression freezes
+                   the page). Renaming a label keeps that position's count.
+                   Each row also carries its TIER (Normal / VIP / VVIP); a
                    NEWLY added row defaults to VVIP-reserved per the owner rule. *@
                 @if (_rows.Count > 0)
                 {
@@ -153,7 +153,7 @@
                     @* Decorative confirmation of the layout — the capacity panel
                        and the admin's own inputs already convey the numbers, so it
                        is hidden from assistive tech to avoid a seat-by-seat readout.
-                       D-767: each row renders its OWN seat count. *@
+                       Each row renders its OWN seat count. *@
                     <div class="hsl-preview__grid" aria-hidden="true">
                         @foreach (var row in _rows)
                         {
@@ -182,7 +182,7 @@
                         @L["Admin.HallSeatLayouts.Save"]
                     </SimfButton>
                 </AuthorizedAction>
-                @* B15 — remove the whole grid so the hall goes back to general
+                @* Remove the whole grid so the hall goes back to general
                    admission. Only offered once a layout actually exists. *@
                 @if (_hasStoredLayout)
                 {

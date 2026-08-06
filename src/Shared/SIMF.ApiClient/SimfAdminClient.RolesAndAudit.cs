@@ -35,9 +35,9 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-134 Sprint A — Roles admin CRUD (existing schema, no migration) --
+    // -- Roles admin CRUD (existing schema, no migration) --------------------
 
-    /// <summary>One page of roles for the admin grid (D-134 Sprint A).</summary>
+    /// <summary>One page of roles for the admin grid.</summary>
     public Task<ApiCallResult<GridPage<AdminRoleSummary>>> ListRolesAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -46,7 +46,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>One role by id (D-134 Sprint A).</summary>
+    /// <summary>One role by id.</summary>
     public Task<ApiCallResult<AdminRoleSummary>> GetRoleAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -54,7 +54,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"roles/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>Creates a custom role (D-134 Sprint A).</summary>
+    /// <summary>Creates a custom role.</summary>
     public Task<ApiCallResult<AdminRoleSummary>> CreateRoleAsync(
         AdminCreateRoleRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -63,7 +63,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Renames a custom role (D-134 Sprint A).</summary>
+    /// <summary>Renames a custom role.</summary>
     public Task<ApiCallResult<AdminRoleSummary>> UpdateRoleAsync(
         Guid id, AdminUpdateRoleRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -72,7 +72,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Deletes a custom role (D-134 Sprint A). Refused for
+    /// <summary>Deletes a custom role. Refused for
     /// baseline roles or roles still held by any user.</summary>
     public Task<ApiCallResult<bool>> DeleteRoleAsync(
         Guid id, string accessToken,
@@ -81,7 +81,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"roles/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>Issue-1 — a role's currently granted permission codes.</summary>
+    /// <summary>A role's currently granted permission codes.</summary>
     public Task<ApiCallResult<AdminRolePermissionsResponse>> GetRolePermissionsAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -89,7 +89,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"roles/{id}/permissions", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>Issue-1 — replaces a custom role's permission grants.</summary>
+    /// <summary>Replaces a custom role's permission grants.</summary>
     public Task<ApiCallResult<bool>> SetRolePermissionsAsync(
         Guid id, AdminSetRolePermissionsRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -98,7 +98,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Issue-1 — the RBAC roles an admin user currently holds.</summary>
+    /// <summary>The RBAC roles an admin user currently holds.</summary>
     public Task<ApiCallResult<AdminUserRolesResponse>> GetUserRolesAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -106,7 +106,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"admins/{id}/roles", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>Issue-1 — replaces an admin user's RBAC roles.</summary>
+    /// <summary>Replaces an admin user's RBAC roles.</summary>
     public Task<ApiCallResult<bool>> SetUserRolesAsync(
         Guid id, AdminSetUserRolesRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -115,9 +115,9 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    // -- D-134 Sprint A — Operation log read-only viewer ---------------------
+    // -- Operation log read-only viewer --------------------------------------
 
-    /// <summary>One page of OperationLog entries (D-134 Sprint A). Filters
+    /// <summary>One page of OperationLog entries. Filters
     /// via <c>GridQuery.Filters</c>: eventType, outcome, actorUserId,
     /// subjectEmail, from, to.</summary>
     public Task<ApiCallResult<GridPage<AdminOperationLogSummary>>> ListOperationLogAsync(
@@ -128,7 +128,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>One full OperationLog entry by id (D-134 Sprint A).</summary>
+    /// <summary>One full OperationLog entry by id.</summary>
     public Task<ApiCallResult<AdminOperationLogDetail>> GetOperationLogAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -136,10 +136,10 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"operation-log/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-134 Sprint A — Attendees roster (read-only) -----------------------
+    // -- Attendees roster (read-only) ----------------------------------------
 
-    /// <summary>One page of the attendee roster (D-134 Sprint A). Filters
-    /// via <c>GridQuery.Filters</c>: userType (Visitor|Other|All),
+    /// <summary>One page of the attendee roster. Filters
+    /// via <c>GridQuery.Filters</c>: userType (Visitor|All),
     /// profileTypeId, accountState.</summary>
     public Task<ApiCallResult<GridPage<AdminAttendeeSummary>>> ListAttendeesAsync(
         GridQuery query, string accessToken,

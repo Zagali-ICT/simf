@@ -8,9 +8,10 @@ using SIMF.Common;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>Persists + reads the visitor's AI-assistant conversation
-/// (Page 036). One append-only row per turn in SIMF_App, keyed by a bare Guid
-/// user id (D-157). Gives the assistant short-term memory via
+/// <summary>Persists + reads the visitor's AI-assistant conversation.
+/// One append-only row per turn in SIMF_App, keyed by the bare Guid
+/// user id — there is no cross-DB FK to Identity. Gives the assistant
+/// short-term memory via
 /// <see cref="GetRecentContextAsync"/> and the app its saved transcript via
 /// <see cref="GetHistoryAsync"/>.</summary>
 internal sealed class AiChatHistoryService(

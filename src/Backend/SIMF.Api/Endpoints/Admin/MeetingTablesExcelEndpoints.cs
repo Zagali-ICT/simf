@@ -8,8 +8,8 @@ using SIMF.Contracts.BusinessMeetings;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/meeting-tables/export</c> — the D-356 grid export for a
-/// hall's meeting tables (SIMF-FDS-013). <b>Export only:</b> meeting tables are
+/// <c>POST /api/v1/admin/meeting-tables/export</c> — the generic grid export for a
+/// hall's meeting tables. <b>Export only:</b> meeting tables are
 /// defined / generated from the page's own modals, so there is no generic
 /// import. Unlike a flat resource, the meeting-tables grid is <i>hall-scoped</i>
 /// (<see cref="IBusinessMeetingService.ListTablesAsync"/> needs a hall id), so

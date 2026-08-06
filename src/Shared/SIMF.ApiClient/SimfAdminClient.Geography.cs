@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-151 — Country admin lookup CRUD ----------------------------------
+    // -- Country admin lookup CRUD ------------------------------------------
 
     public Task<ApiCallResult<GridPage<AdminCountrySummary>>> ListCountriesAsync(
         GridQuery query, string accessToken,
@@ -75,7 +75,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"countries/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-547 — Region admin lookup CRUD (mirrors the Country block; Guid key) --
+    // -- Region admin lookup CRUD (mirrors the Country block; Guid key) --------
 
     public Task<ApiCallResult<GridPage<AdminRegionSummary>>> ListRegionsAsync(
         GridQuery query, string accessToken,
@@ -115,8 +115,9 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"regions/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-649 — Contact-inquiries inbox + Site-settings + Country delegates --
-    //    (pages + API shipped, but the CP client/BFF wiring was never added). --
+    // -- Contact-inquiries inbox + Site-settings + Country delegates ----------
+    //    (the pages + API shipped first; this block is the CP client/BFF
+    //    wiring they were missing). --
 
     public Task<ApiCallResult<GridPage<AdminContactInquiryRow>>> ListContactInquiriesAsync(
         GridQuery query, string accessToken,

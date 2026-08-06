@@ -36,8 +36,8 @@ public sealed class RejectAdminEndpoint(IAdminUserApprovalService adminAccountSe
 
 /// <summary>
 /// <c>POST /api/v1/admin/others/{id:guid}/reject</c> — set a pending
-/// Other to Rejected with a mandatory 10–500 char reason (P7c — new).
-/// <para>D-834 — gated on <c>Others.Reject</c>, matching
+/// Other to Rejected with a mandatory 10–500 char reason.
+/// <para>Gated on <c>Others.Reject</c>, matching
 /// <see cref="ApproveOtherEndpoint"/> and the bulk endpoint. Same
 /// copy-paste as the approve half: the admin policy line survived from
 /// <see cref="RejectAdminEndpoint"/> above.</para>

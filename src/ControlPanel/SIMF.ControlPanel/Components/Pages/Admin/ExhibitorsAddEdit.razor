@@ -1,10 +1,10 @@
-@* D-353 — reusable Exhibitor Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Exhibitor Add/Edit form, hosted by CrudShell (popup or full
    page) from ExhibitorsList. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Branch
    Create vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when
    IsEdit). Re-uses the same field controls, the same client guards, the same
    Create/Update request DTOs and the same simfAccount.postJson/putJson calls
-   the inline modal carried before (D-202). *@
+   the inline modal carried before. *@
 @inherits CrudAddEditFormBase<AdminExhibitorDetail>
 @using SIMF.Contracts.Exhibitors
 
@@ -78,7 +78,7 @@
     }
 </div>
 
-@* Contact information (D-766: identity-card fields inlined from the removed
+@* Contact information (identity-card fields inlined from the removed
    shared Contact directory). The email + primary phone reuse the fields above;
    nationality is the country picker here. *@
 <SimfFormSection Title="@L["Admin.ContactField.Heading"]">

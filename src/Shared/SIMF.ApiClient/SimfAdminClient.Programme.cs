@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-153 — Speaker admin CRUD -----------------------------------------
+    // -- Speaker admin CRUD -------------------------------------------------
 
     public Task<ApiCallResult<GridPage<AdminSpeakerSummary>>> ListSpeakersAsync(
         GridQuery query, string accessToken,
@@ -75,7 +75,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"speakers/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-165 (gap doc G3) — Session admin CRUD -----------------------------
+    // -- Session admin CRUD --------------------------------------------------
 
     // NOTE: returns AdminSessionSummary (the sessions GRID row — Code/Title/Hall/
     // times/capacity/status), NOT AdminSessionSummaryDetail (the AI session-summary
@@ -160,7 +160,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"sessions/{id}/recording", content: null,
             accessToken, cancellationToken);
 
-    // -- D-166 (gap doc G4) — registration gate + archive visibility -------
+    // -- Registration gate + archive visibility ----------------------------
 
     public Task<ApiCallResult<RegistrationGateState>> GetRegistrationGateAsync(
         string accessToken, CancellationToken cancellationToken = default) =>

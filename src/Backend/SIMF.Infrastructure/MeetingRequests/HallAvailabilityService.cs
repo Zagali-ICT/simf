@@ -11,11 +11,11 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;
 
-/// <summary>D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows + the
+/// <summary>Hall availability windows + the
 /// free slots derived from them. Windows are team-defined; a window is chopped
-/// into fixed-length slots, and a slot is offered when it is in the future (the
-/// taken-by-a-bound-meeting filter lands with the accept-binds-slot flow in
-/// GAP-2). Mirrors <see cref="SpeakerAvailabilityService"/>.</summary>
+/// into fixed-length slots, and a slot is offered when it is in the future and
+/// no bound meeting already holds it.
+/// Mirrors <see cref="SpeakerAvailabilityService"/>.</summary>
 internal sealed class HallAvailabilityService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
@@ -132,10 +132,10 @@ internal sealed class HallAvailabilityService(
             .Select(r => new { Start = r.SlotStart!.Value, End = r.SlotEnd!.Value })
             .ToListAsync(cancellationToken);
 
-        // Bi-Meeting rework — a DELEGATION meeting bound to this hall occupies the slot
-        // too. Once delegation meetings bind halls (P3), the hall free-slot read MUST
-        // subtract them as well, or a hall slot held by a delegation meeting is offered
-        // as free and double-booked across a speaker + a delegation meeting.
+        // A DELEGATION meeting bound to this hall occupies the slot too, so the
+        // free-slot read subtracts those as well. Without this a hall slot held by
+        // a delegation meeting is offered as free and double-booked across a
+        // speaker + a delegation meeting.
         var delegationBusy = await appDbContext.DelegationMeetingRequests.AsNoTracking()
             .Where(r => r.HallId == hallId
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)

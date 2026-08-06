@@ -3,8 +3,8 @@ using SIMF.Contracts.UserProfile;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// User self-service profile management (decisions D-046 b, P8 — D-049;
-/// renamed from <c>IVisitorProfileService</c>). Every call carries the
+/// User self-service profile management (renamed from
+/// <c>IVisitorProfileService</c>). Every call carries the
 /// actor's user id — the user can only see and edit their own row. The
 /// wider admin-edits-anyone flow lives in the User Management module
 /// and is out of scope here.
@@ -90,7 +90,7 @@ public interface IUserProfileService
     /// Focused read for the SignInService state-banner — returns
     /// the bilingual rejection text for the user (or <c>null</c> when no
     /// UserProfile row exists or no rejection is on record). The
-    /// rejection text lives on the profile post-D-106; SignInService
+    /// rejection text lives on the profile now; SignInService
     /// used to read it directly off the user row.
     /// </summary>
     Task<RejectionText?> GetRejectionTextAsync(
@@ -109,7 +109,7 @@ public interface IUserProfileService
         Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>Server-computed profile completeness (names + ≥1
-    /// interest + the C7 male-photo rule). Surfaced on the login flow's
+    /// interest + the male face-photo rule). Surfaced on the login flow's
     /// <c>/app/users/me</c> so the app forces the add-profile stage after
     /// ANY login path without a separate probe.</summary>
     Task<bool> IsProfileCompleteAsync(

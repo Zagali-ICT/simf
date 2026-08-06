@@ -228,7 +228,7 @@ internal sealed class AdminProfileTypeCommandService(
             }
         }
 
-        // D-186 review-pass (threat-detection H-1): capture the prior
+        // Capture the prior
         // IsVisitor BEFORE the mutation so the audit Detail records
         // any flip. Silent flips would let an insider mass-launder
         // partner accounts into the audience queue with no SOC trail.
@@ -252,7 +252,7 @@ internal sealed class AdminProfileTypeCommandService(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var isVisitorChanged = oldIsVisitor != profileType.IsForVisitor;
-        // D-186 review-pass: count linked accounts when the flag
+        // Count linked accounts when the flag
         // changed so SOC can prioritise the audit row (a flip on a
         // ProfileType with hundreds of linked accounts is a much
         // larger blast radius than a flip on a freshly-created one).

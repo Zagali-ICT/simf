@@ -166,7 +166,7 @@ internal static partial class AccountEndpoints
                 id, stream.ToArray(), file.ContentType, file.FileName, token));
         }).DisableAntiforgery();
 
-        // V-1 (D-429) — admin upload of the subject's VVIP/VIP welcome photo.
+        // Admin upload of the subject's VVIP/VIP welcome photo.
         // Mirrors the avatar upload proxy (multipart, SameSite=Lax CSRF).
         group.MapPost("/admin/visitors/{id:guid}/vip-photo",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
@@ -191,7 +191,7 @@ internal static partial class AccountEndpoints
                 id, stream.ToArray(), file.ContentType, file.FileName, token));
         }).DisableAntiforgery();
 
-        // V-1 (D-429) — admin stream-read of the subject's VIP welcome photo for
+        // Admin stream-read of the subject's VIP welcome photo for
         // the roster / export page. Mirrors the avatar GET proxy.
         group.MapGet("/admin/visitors/{id:guid}/vip-photo",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
@@ -208,7 +208,7 @@ internal static partial class AccountEndpoints
             return Results.File(bytes, contentType);
         });
 
-        // V-1 (D-429) — VVIP/VIP welcome roster (موج): JSON feed for the export
+        // VVIP/VIP welcome roster (موج): JSON feed for the export
         // page + the file download. ("vip" never matches the {id:guid} routes.)
         group.MapGet("/admin/visitors/vip/roster",
             async (HttpContext http, SimfAdminClient api) =>
@@ -280,7 +280,7 @@ internal static partial class AccountEndpoints
             return Results.File(bytes, contentType);
         });
 
-        // CS-4 — admin stream-read of the subject's profile photo (avatar) for
+        // Admin stream-read of the subject's profile photo (avatar) for
         // the approve modal. Mirrors the ID-document GET proxy.
         group.MapGet("/admin/visitors/{id:guid}/avatar",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
@@ -433,9 +433,9 @@ internal static partial class AccountEndpoints
         // gets the generic EXPORT only (no generic /import route).
         MapGridExport(group, "organisations");
 
-        // D-118 — D-113 type-scoped bulk proxies for Visitors and Others.
-        // The visitors/others CP list pages (D-114) call these JS endpoints
-        // and they forward to the API's D-113 routes with the access token.
+        // Type-scoped bulk proxies for Visitors and Others. The visitors/others
+        // CP list pages call these JS endpoints and they forward to the API's
+        // bulk routes with the access token.
         group.MapPost("/admin/visitors/bulk-delete",
             async (AdminBulkDeleteRequest body, HttpContext http, SimfAdminClient api) =>
         {

@@ -9,7 +9,7 @@ using SIMF.Contracts.PublicRelations;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/media-partners/export</c> — the D-356 grid export for
+/// <c>POST /api/v1/admin/media-partners/export</c> — the grid export for
 /// media partners. All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass only declares the
 /// route, permission, sheet/file names, the column layout (mirroring the
@@ -43,7 +43,7 @@ public sealed class ExportMediaPartnersEndpoint(IAdminMediaPartnerService servic
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/media-partners/import</c> — the D-356 grid import
+/// <c>POST /api/v1/admin/media-partners/import</c> — the grid import
 /// (insert-only) for media partners. The base does the upload defence, parse and
 /// per-row error aggregation; this subclass binds one row to
 /// <see cref="AdminCreateMediaPartnerRequest"/> and creates it (the service

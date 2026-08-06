@@ -38,7 +38,7 @@ public partial class ProfileTypeForm
 
     // Picker options. "Visitor" is omitted because the backend
     // rejects it (the Visitor app role is computed from UserType, not
-    // assignable per ProfileType row). D-519 added "Exhibitor" (the
+    // assignable per ProfileType row). "Exhibitor" is listed (the
     // العارض app role: Visitor + lead-capture tools); without it an admin
     // could not assign the role AND editing the seeded Exhibitor row would
     // silently downgrade its MobileAppRole.
@@ -80,7 +80,7 @@ public partial class ProfileTypeForm
     private string SubmitLabel =>
         _isEdit ? L["Admin.ProfileTypes.Submit.Update"] : L["Admin.ProfileTypes.Submit.Create"];
 
-    /// <summary>D-125 — localised display string. D-186: after the
+    /// <summary>Localised display string. After the
     /// UserType collapse, every form is under the Visitor scope; the
     /// label now reflects the audience-vs-partner intent the host page
     /// set (Edit reads from Initial.IsVisitor; Create reads from

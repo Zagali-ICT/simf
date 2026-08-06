@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/SignInTests.cs (email-verified sign-in surfaces
 //        AccountStateInfo state=EmailVerified; second-factor + state gates);
-//        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs (#2 / Q1 —
-//        enrolment-first: a Cp-audience password-only sign-in returns an
+//        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs
+//        (enrolment-first: a Cp-audience password-only sign-in returns an
 //        enrolment challenge, never tokens; enrol-then-complete mints amr=mfa)
 using System.Security.Cryptography;
 using System.Text;
@@ -44,7 +44,7 @@ public sealed class SignInService(
     ILogger<SignInService> logger) : ISignInService
 {
     private static readonly TimeSpan TicketLifetime = TimeSpan.FromMinutes(5);
-    // #2 — the mandatory-enrolment ticket is longer-lived than the 5-minute
+    // The mandatory-enrolment ticket is longer-lived than the 5-minute
     // verification ticket because the user has to install an authenticator app
     // and scan a QR before they can produce a code. Still single-use, still
     // attempt-capped, and it authorises nothing except enrolling a second
@@ -54,7 +54,7 @@ public sealed class SignInService(
     private static readonly TimeSpan OtpRequestWindow = TimeSpan.FromHours(1);
     private const int MaxSecondFactorAttempts = 5;
     private const int MaxOtpRequestsPerWindow = 5;
-    // #12 — client resend-button cooldown, 2 minutes (D-695); the hard cap is
+    // Client resend-button cooldown, 2 minutes; the hard cap is
     // MaxOtpRequestsPerWindow.
     private const int ResendCooldownSeconds = 120;
 
@@ -108,7 +108,7 @@ public sealed class SignInService(
         var now = timeProvider.SimfNow();
         var roles = await accounts.GetRolesAsync(user);
 
-        // Audience gate (P2) — runs *after* credentials and account state are
+        // Audience gate — runs *after* credentials and account state are
         // OK so a wrong-surface response can't be used as a credential-
         // existence oracle. Throws 403 with AUTH_WRONG_SURFACE_CP or
         // AUTH_WRONG_SURFACE_WEB and writes one SignIn.WrongSurface audit row.
@@ -119,7 +119,7 @@ public sealed class SignInService(
         // it must replace before any session is minted. This runs *after* the
         // audience gate so a wrong-surface caller hits AUTH_WRONG_SURFACE first
         // and cannot use the forced-change branch as an account-existence
-        // oracle (the D-080 state-block ordering is likewise preserved above).
+        // oracle (the state-block ordering is likewise preserved above).
         //
         // The Control Panel hands the operator a single-use
         // password-change ticket (in place of the old
@@ -131,7 +131,7 @@ public sealed class SignInService(
         // RequirePasswordChangeNotRequired (VerifyTotpAsync /
         // VerifyRecoveryCodeAsync / VerifyOtpAsync / SessionService.RefreshAsync),
         // so no session can be minted until the password is actually changed.
-        // A7-13 (NCA) — enforce the admin-configured maximum password age. When the
+        // NCA — enforce the admin-configured maximum password age. When the
         // password is older than the limit, persist the forced-change flag so the
         // change-ticket completion (which requires the flag in the DB) works and so
         // the gate survives a retry; the existing forced-change branch below then
@@ -179,23 +179,23 @@ public sealed class SignInService(
 
         // The second-factor flavour is the user's own choice, not just their
         // role: anyone with an authenticator key paired (the new
-        // /account/profile → 2FA enrolment, D-040) completes sign-in with
-        // TOTP; everyone else completes with an emailed code
-        // (SIMF-FDS-001 §5.6 — read forward to D-040). The original
+        // /account/profile → 2FA enrolment) completes sign-in with
+        // TOTP; everyone else completes with an emailed code. The original
         // role-only rule (Control Panel → TOTP) is preserved as a fallback
         // for users who have a role but haven't enrolled.
         var authenticatorKey = await accounts.GetAuthenticatorKeyAsync(user);
 
-        // #2 (Q1, 2026-07-30) — ENROLMENT-FIRST. The Control Panel must never
+        // ENROLMENT-FIRST. The Control Panel must never
         // mint a session on the password alone, and nobody may be locked out
         // getting there — including the production super-admin, which is
         // recorded as 2FA-off. So a Cp-audience account with no authenticator
         // secret paired is answered with an enrolment ticket instead of tokens:
         // it enrols at /auth/totp/enrolment/start + /complete, and the
         // completion issues the session (stamped amr=mfa). This runs BEFORE the
-        // !TwoFactorEnabled fast path below, which is the hole #2 reported, and
-        // before the TOTP/EmailOtp split below, which would otherwise challenge
-        // a role-holding admin against a secret that does not exist (#2d).
+        // !TwoFactorEnabled fast path below, which would otherwise mint a
+        // session on the password alone, and before the TOTP/EmailOtp split
+        // below, which would challenge a role-holding admin against a secret
+        // that does not exist.
         // The App and Web audiences are deliberately untouched.
         if (request.Audience == SignInAudience.Cp
             && lifecycleOptions.Value.RequireControlPanelTwoFactorEnrolment
@@ -223,7 +223,7 @@ public sealed class SignInService(
                 false, null, null, null, null, null, enrolmentTicketValue);
         }
 
-        // When 2FA is turned off for the account (myComment #34, D-033), the
+        // When 2FA is turned off for the account, the
         // password step IS the sign-in — issue tokens directly. This applies
         // to both Control Panel users and visitors.
         if (!user.TwoFactorEnabled)
@@ -288,8 +288,8 @@ public sealed class SignInService(
             auditLog: auditLog,
             logger: logger,
             cancellationToken: cancellationToken);
-        // BUG-015 — no in-app notification is written for a sign-in code. The
-        // D-099 trail row fired on EVERY 2FA sign-in, so the notification centre
+        // No in-app notification is written for a sign-in code. The old
+        // trail row fired on EVERY 2FA sign-in, so the notification centre
         // filled with "Sign-in code sent" rows and buried the meaningful ones
         // (account approved + QR, profile submitted). The code itself travels by
         // email, and the security trail is the SignInSecondFactorIssued audit row
@@ -359,7 +359,7 @@ public sealed class SignInService(
         CancellationToken cancellationToken = default)
     {
         // Same ticket the TOTP step uses — the recovery code is an
-        // *alternative* second factor, not a bypass (D-040). A recovery
+        // *alternative* second factor, not a bypass. A recovery
         // attempt counts against the ticket's MaxSecondFactorAttempts so
         // brute-force is bounded the same way as a wrong TOTP code.
         var ticket = await GetValidTicketAsync(
@@ -376,7 +376,7 @@ public sealed class SignInService(
             user.Id, request.Code, cancellationToken);
         if (!accepted)
         {
-            // Round-1 audit #17 — a wrong recovery code is bounded by the ticket's
+            // A wrong recovery code is bounded by the ticket's
             // MaxSecondFactorAttempts only (matching the wrong-TOTP path at
             // VerifyTotpAsync and the wrong-OTP path at VerifyOtpAsync above); it must
             // NOT also drive the account-level lockout counter, or a user mistyping
@@ -419,7 +419,7 @@ public sealed class SignInService(
         StartTwoFactorEnrolmentRequest request,
         CancellationToken cancellationToken = default)
     {
-        // #2 — the ticket is NOT consumed here. Staging a secret is idempotent
+        // The ticket is NOT consumed here. Staging a secret is idempotent
         // (TotpEnrollmentService overwrites the pending slot), so a user who
         // reloads the page or re-scans simply gets a fresh QR; only the confirm
         // step below spends the ticket.
@@ -538,7 +538,7 @@ public sealed class SignInService(
         ResendOtpRequest request,
         CancellationToken cancellationToken = default)
     {
-        // #12 — re-issue the emailed code for an in-progress 2FA ticket without
+        // Re-issue the emailed code for an in-progress 2FA ticket without
         // re-entering the password (the ticket already proved it). GetValidTicket
         // throws on a missing / consumed / attempt-exhausted / expired ticket.
         var ticket = await GetValidTicketAsync(
@@ -578,16 +578,16 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// Enforces the audience gate (P2, rekeyed by P7b). The CP surface
+    /// Enforces the audience gate. The CP surface
     /// is for <see cref="UserType.Admin"/> only; the visitor surfaces
     /// (Web, Flutter app) are for <see cref="UserType.Visitor"/>
-    /// (D-186 collapsed the legacy Other type into Visitor). A
+    /// (the legacy Other type was collapsed into Visitor). A
     /// mismatch audits one <c>SignIn.WrongSurface</c> row and throws 403.
     ///
     /// <para>The <paramref name="roles"/> argument is kept on the
     /// signature so the call site does not have to re-fetch them; the
     /// gate itself does not read roles any more — <c>UserType</c> is
-    /// the authoritative discriminator (decision D-048).</para>
+    /// the authoritative discriminator.</para>
     /// </summary>
     private async Task EnforceAudienceAsync(
         SimfUser user,
@@ -595,7 +595,7 @@ public sealed class SignInService(
         SignInAudience audience,
         CancellationToken cancellationToken)
     {
-        _ = roles; // P7b — no longer read; signature kept stable.
+        _ = roles; // No longer read; signature kept stable.
 
         var isAdmin = user.UserType == UserType.Admin;
         var allowed = audience switch
@@ -624,20 +624,20 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// The account states that **hard-block** sign-in (P10 — D-051). The
+    /// The account states that **hard-block** sign-in. The
     /// only hard block left is <c>Disabled</c> (the operator's "this
     /// account is dead" lever) and <c>Registered</c> (the user has not
     /// verified their email yet). <c>PendingApproval</c> and
     /// <c>Rejected</c> now sign in successfully and receive an
     /// <see cref="AccountStateInfo"/> on the response + the
     /// <c>account_state</c> JWT claim, so the client routes them to the
-    /// pending / rejected page (P11) — they are not granted any access
+    /// pending / rejected page — they are not granted any access
     /// beyond the state-banner surface, but the JWT is the gate the
-    /// authorization handler (P11) checks. <c>EmailVerified</c> and
-    /// <c>Approved</c> may always sign in (D-010 — auth and authz are
+    /// authorization handler checks. <c>EmailVerified</c> and
+    /// <c>Approved</c> may always sign in (auth and authz are
     /// separate concerns).
     /// </summary>
-    /// <summary>A7-13 (NCA) — true when password expiry is configured
+    /// <summary>NCA — true when password expiry is configured
     /// (<see cref="IdentityLifecycleOptions.PasswordMaxAgeDays"/> &gt; 0) and the
     /// password is older than the limit. The baseline is the last set time, or the
     /// account's creation time for accounts whose password predates the column.</summary>
@@ -669,8 +669,8 @@ public sealed class SignInService(
 
     /// <summary>
     /// Builds the <see cref="AccountStateInfo"/> surfaced on a
-    /// non-Approved sign-in response (P10 — D-051; D-198 added the
-    /// EmailVerified case). Null when the user is Approved or in any
+    /// non-Approved sign-in response, including the
+    /// EmailVerified case. Null when the user is Approved or in any
     /// other state that doesn't need to inform the client (the
     /// hard-blocked states never reach this helper — they 403 before
     /// sign-in completes).
@@ -787,7 +787,7 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// #2 — resolves a mandatory-enrolment ticket to its account. Rejects an
+    /// Resolves a mandatory-enrolment ticket to its account. Rejects an
     /// unknown, wrong-kind, consumed, attempt-exhausted or expired ticket with
     /// <see cref="ErrorCodes.AuthTwoFactorEnrolmentRequired"/>: the caller is
     /// still in the "must enrol" state, so the honest instruction is to sign in
@@ -826,12 +826,12 @@ public sealed class SignInService(
         return (ticket, user);
     }
 
-    /// <param name="secondFactorCompleted">Held-item #2c — true on every path
+    /// <param name="secondFactorCompleted">True on every path
     /// that cleared TOTP, a recovery code or an emailed OTP; false only on the
     /// !TwoFactorEnabled fast path. Stated at the call site rather than inferred
     /// here, so a future issuance path has to answer the question consciously.</param>
-    /// <remarks>itokenissuer-extraction — the token contents and the D-443
-    /// lifetime cap now live in <see cref="ITokenIssuer"/>, shared with the
+    /// <remarks>The token contents and the session lifetime cap live in
+    /// <see cref="ITokenIssuer"/>, shared with the
     /// device-key ceremony. What stays here is the sign-in-specific audit row.</remarks>
     private async Task<AuthTokens> IssueTokensAsync(
         SimfUser user, CancellationToken cancellationToken, bool secondFactorCompleted)
@@ -871,7 +871,7 @@ public sealed class SignInService(
             await accountCodeRepository.TryConsumeAsync(previous.Id, now, cancellationToken);
         }
 
-        // M3 (security) — store only the keyed hash; the plaintext is emailed.
+        // Store only the keyed hash; the plaintext is emailed.
         var plaintext = VerificationCodeGenerator.Generate();
         var code = new AccountCode
         {

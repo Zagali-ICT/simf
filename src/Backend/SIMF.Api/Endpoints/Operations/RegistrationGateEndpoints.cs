@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Operations;
 
-/// <summary>D-166 (gap doc G4, PDF §2.3) — admin GET + PUT for the
+/// <summary>Admin GET + PUT for the
 /// registration gate. Reading is admin-only (the public sign-up gates on
 /// the service-side check, no public endpoint needed yet).</summary>
 public sealed class GetRegistrationGateEndpoint(IOperationsToggleService service)

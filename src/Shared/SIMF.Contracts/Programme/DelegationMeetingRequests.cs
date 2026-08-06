@@ -24,10 +24,10 @@ public sealed record DelegationMeetingRequestSubmitted(
     Guid Id, MeetingRequestStatus Status, DateTime CreatedAt);
 
 /// <summary>One row on the admin delegation-meeting desk.
-/// <para>OA-D5 appends the hall check-in stamps, mirroring
-/// <c>AdminSpeakerMeetingRequestRow</c>, so the desk's new XLSX export can report
+/// <para>The hall check-in stamps mirror
+/// <c>AdminSpeakerMeetingRequestRow</c>, so the desk's XLSX export can report
 /// who actually turned up. Appended with defaults, so the shipped wire contract
-/// stays append-only (D-219).</para></summary>
+/// stays append-only.</para></summary>
 public sealed record AdminDelegationMeetingRequestRow(
     Guid Id,
     int RequestingCountryId,
@@ -42,9 +42,9 @@ public sealed record AdminDelegationMeetingRequestRow(
     string? ResponseNote,
     DateTime CreatedAt,
     DateTime? RespondedAt,
-    // OA-D5 — when an operator checked the meeting in at the hall, and who. The
+    // When an operator checked the meeting in at the hall, and who. The
     // operator name is resolved from the Identity DB on read (a bare-Guid logical
-    // FK, D-157); both stay null until the meeting is checked in.
+    // FK); both stay null until the meeting is checked in.
     DateTime? CheckedInAt = null,
     string? CheckedInByName = null);
 
@@ -64,7 +64,7 @@ public sealed record AdminDelegationMeetingRequestDetail(
     DateTime CreatedAt,
     DateTime? RespondedAt);
 
-/// <summary>D-478 + Bi-Meeting rework — the team's respond action, unified with the
+/// <summary>The team's respond action, unified with the
 /// speaker flow. <c>Status = Rejected</c> is <b>Cancel</b> (with a justification note).
 /// <c>Status = Accepted</c> with a bound <see cref="HallId"/> is either <b>Approve</b>
 /// (<see cref="VerbalConfirmed"/> = false → AwaitingSpeaker, awaiting the other party's

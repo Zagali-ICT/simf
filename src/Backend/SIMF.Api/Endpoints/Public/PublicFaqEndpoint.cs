@@ -7,8 +7,8 @@ using SIMF.Contracts.Faq;
 namespace SIMF.Api.Endpoints.Public;
 
 /// <summary>Public, anonymous read of the FAQ for the app's الأسئلة الشائعة
-/// accordion (Figma 1388:7567). Projects only active groups/entries (ordered
-/// server-side) over the D-211 FAQ tables — no schema change. Anonymous like the
+/// accordion. Projects only active groups/entries (ordered
+/// server-side) over the existing FAQ tables — no schema change. Anonymous like the
 /// other public content reads (organization profile, sessions, archive).</summary>
 public sealed class GetPublicFaqEndpoint(IPublicFaqService service)
     : EndpointWithoutRequest<ApiResult<IReadOnlyList<PublicFaqGroup>>>

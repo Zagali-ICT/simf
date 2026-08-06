@@ -1,4 +1,4 @@
-@* Control Panel — real-time log viewer (P6). Lists every project's log
+@* Control Panel — real-time log viewer. Lists every project's log
    files under {Storage:LogDirectory}, tails the chosen file with a 5-second
    poll, and offers a Download button that streams the file to disk.
    Mirrors the IBS pattern: per-project, per-day. *@
@@ -41,7 +41,7 @@
     }
     else
     {
-        @* D-117 — Q-E: two strict rows. Row 1 = filters (Project / File / Lines + Auto-refresh).
+        @* Two strict rows. Row 1 = filters (Project / File / Lines + Auto-refresh).
            Row 2 = action buttons (Refresh / Download). Group-aligned. *@
         <div class="simf-logs__row simf-logs__row--filters">
             <label class="simf-field">

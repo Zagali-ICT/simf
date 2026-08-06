@@ -8,8 +8,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Archive;
 
 /// <summary>Read-only public projection of active archive editions,
-/// ordered newest-first for the Past Editions screen (Mockup screen 24).
-/// Gated by the archive-visibility operations toggle (D-166): when the toggle
+/// ordered newest-first for the Past Editions screen.
+/// Gated by the archive-visibility operations toggle: when the toggle
 /// is off the payload is empty, so the App / Website hide the screen without
 /// a separate visibility round-trip.</summary>
 internal sealed class PublicArchiveService(
@@ -52,7 +52,7 @@ internal sealed class PublicArchiveService(
     public async Task<PublicArchiveEditionDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        // §9 (screen 24-01): same visibility gate as the list — a hidden archive
+        // Same visibility gate as the list — a hidden archive
         // yields 404 at the endpoint (null here), not a leak of one edition.
         var visibility = await operationsToggleService
             .GetArchiveVisibilityAsync(cancellationToken);
@@ -78,7 +78,7 @@ internal sealed class PublicArchiveService(
                 edition.Sessions,
                 edition.Speakers,
                 edition.CoverImageRelativePath,
-                // The rich child lists, each ordered by DisplayOrder. A6 —
+                // The rich child lists, each ordered by DisplayOrder.
                 // AsSplitQuery (below) emits one query per collection; without it
                 // the three sibling collection sub-selects JOIN into a single
                 // Media×SessionTitles×PastSpeakers cartesian rowset.
@@ -96,7 +96,7 @@ internal sealed class PublicArchiveService(
                     .Select(p => new PublicArchivePastSpeaker(
                         p.NameEn, p.NameAr, p.PhotoRelativePath, p.CountryId))
                     .ToList()))
-            // A6 — split the projection's collection sub-selects (see above). Safe:
+            // Split the projection's collection sub-selects (see above). Safe:
             // single-row root (no Skip/Take) + each child carries an explicit
             // OrderBy(DisplayOrder), so every split query is deterministically
             // ordered and the wire output is byte-identical.

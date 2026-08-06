@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminSessionsTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
-// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
+// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (informational live notice)
 // Tests: SIMF.Api.Tests/ArrivalGraceResolutionTests.cs
 using FastEndpoints;
 using SIMF.Api.RequestContext;
@@ -11,8 +11,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>Admin CRUD over <c>Sessions</c>
-/// (SIMF-FDS-004 §5.3 + PDF §2.9). Mirrors the SpeakerEndpoints shape;
+/// <summary>Admin CRUD over <c>Sessions</c>. Mirrors the SpeakerEndpoints shape;
 /// speaker + theme selections ride on the body as M-to-M sets.</summary>
 public sealed class ListSessionsEndpoint(IAdminSessionService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminSessionSummary>>>
@@ -75,11 +74,11 @@ public sealed class CreateSessionEndpoint(IAdminSessionService service)
 }
 
 /// <summary>Binds {id} + body via a derived route that INHERITS the
-/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
-/// D-842 (sessions), D-843 (gates, profile types) and the four before them
-/// silently dropped a field on PUT. Passing the bound request straight through
-/// makes that drop impossible.</summary>
+/// sessions, gates, profile types and the four routes before them each
+/// silently dropped a field on PUT. Passing the bound request straight
+/// through makes that drop impossible.</summary>
 public sealed class UpdateSessionRequest : AdminUpdateSessionRequest
 {
     public Guid Id { get; set; }
@@ -128,7 +127,7 @@ public sealed class DeactivateSessionEndpoint(IAdminSessionService service)
     }
 }
 
-/// <summary>P3.2 — D-231 (Completion Programme §5.2): the Scientific
+/// <summary>The Scientific
 /// Committee moves the session along its broadcast lifecycle. Gated by the
 /// dedicated <c>Sessions.Publish</c> permission (distinct from edit) so the
 /// Committee role can publish without full session-edit rights.</summary>

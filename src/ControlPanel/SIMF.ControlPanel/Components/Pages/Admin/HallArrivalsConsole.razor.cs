@@ -14,8 +14,8 @@ public partial class HallArrivalsConsole
 
     private record Toast(string Variant, string Message);
 
-    // X-3 — how far outside a session's [Start, End] window an ARRIVAL is still
-    // accepted by the server. D-839: the server sends the RESOLVED value per
+    // How far outside a session's [Start, End] window an ARRIVAL is still
+    // accepted by the server. The server sends the RESOLVED value per
     // session (its override, else its hall's, else the global one), so there is
     // no constant here to keep in step with HallAttendanceService.
     private static TimeSpan GraceOf(AdminSessionSummary session) =>
@@ -40,7 +40,7 @@ public partial class HallArrivalsConsole
                 new GridQuery { Top = 200, Sort = "start" });
             if (envelope is { Success: true, Data: not null })
             {
-                // DEF-CHK-003 — the picker used to apply the ARRIVAL window
+                // The picker used to apply the ARRIVAL window
                 // (EnsureSessionLiveNow, ± ArrivalGrace) to BOTH actions, so once a
                 // session had ended the operator could no longer select it — exactly
                 // when a hall has to be checked OUT. RecordQrDepartureAsync

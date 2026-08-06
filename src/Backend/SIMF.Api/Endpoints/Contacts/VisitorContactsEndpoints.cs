@@ -8,7 +8,7 @@ using SIMF.Contracts.Contacts;
 
 namespace SIMF.Api.Endpoints.Contacts;
 
-// SIMF-FDS-014 §5.7 (D-284, Track 2) — visitor-to-visitor contact sharing (app
+// Visitor-to-visitor contact sharing (app
 // audience). App-only, no CP surface and no permission code — these self-service
 // visitor features key off RequireApprovedAccount + the app token (matching
 // Connection), which does NOT violate the new-page-needs-

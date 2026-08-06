@@ -13,10 +13,10 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Configuration;
 
-/// <summary>P2.4 — D-229 (FDS-012 §5.5): admin CRUD over the platform
+/// <summary>Admin CRUD over the platform
 /// system-settings store. Built on <see cref="SimfAppDbContext"/>; mirrors
-/// <c>AdminSessionCategoryService</c>. Ships empty — the team seeds the keys
-/// (FDS-012 OI-2), so nothing is invented here.</summary>
+/// <c>AdminSessionCategoryService</c>. Ships empty — the team seeds the keys,
+/// so nothing is invented here.</summary>
 internal sealed class AdminSystemSettingService(
     SimfAppDbContext db,
     IOrganizationProfileReadService organizationProfileCache,
@@ -31,7 +31,7 @@ internal sealed class AdminSystemSettingService(
 
         var rows = db.SystemSettings.AsNoTracking().AsQueryable();
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -58,7 +58,7 @@ internal sealed class AdminSystemSettingService(
                 || EF.Functions.Like(s.Value, $"%{term}%"));
         }
 
-        // CP grid sortable columns (D-255). Default: Key ascending.
+        // CP grid sortable columns. Default: Key ascending.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("key", true) => rows.OrderByDescending(s => s.Key),
@@ -180,7 +180,7 @@ internal sealed class AdminSystemSettingService(
         // OrganizationProfile (one source of truth). null = leave the field
         // unchanged; a provided value (including an empty string) is applied — an
         // empty string clears it. Social links must be absolute http(s) URLs.
-        // Since D-650 the Site Settings page sends only the registration message
+        // The Site Settings page now sends only the registration message
         // (social is edited on the Organization Profile page), so its unsent social
         // fields stay null → untouched here; partial updates are supported + tested.
         var profile = await db.OrganizationProfile
@@ -205,7 +205,7 @@ internal sealed class AdminSystemSettingService(
             set(CleanSocialUrl(value));
             changed = true;
         }
-        // Build #13 — a nullable bool toggle follows the same partial-update rule:
+        // A nullable bool toggle follows the same partial-update rule:
         // null = leave unchanged, a provided value is applied.
         void SetBool(bool? value, Action<bool> set)
         {

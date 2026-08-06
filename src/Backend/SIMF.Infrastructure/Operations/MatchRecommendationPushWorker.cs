@@ -25,8 +25,8 @@ namespace SIMF.Infrastructure.Operations;
 /// the end. Over a few hours the whole opted-in roster is covered; the cursor is
 /// in-memory on purpose, because losing it on restart costs nothing (see dedup).</para>
 ///
-/// <para><b>Dedup.</b> Once per (caller, candidate) pair, which is exactly the
-/// D-713 dispatcher guard —
+/// <para><b>Dedup.</b> Once per (caller, candidate) pair, which is exactly what the
+/// dispatcher guard gives —
 /// <see cref="NotificationRequest.DeduplicateByRelatedEntity"/> with the
 /// candidate's profile as the related entity. No stamp column, no claim/commit
 /// dance: re-running a batch is a no-op, so a restart mid-pass is harmless.</para>

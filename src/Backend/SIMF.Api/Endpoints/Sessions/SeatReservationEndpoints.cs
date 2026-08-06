@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/SeatReservationsTests.cs
-// Tests: SIMF.Api.Tests/SeatChangeTests.cs (B1 — the change-seat endpoint)
+// Tests: SIMF.Api.Tests/SeatChangeTests.cs (the change-seat endpoint)
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
 using SIMF.Api.RequestContext;
@@ -9,7 +9,7 @@ using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Sessions;
 
-/// <summary>D-175 (gap doc G11, Mockup page 7) — authenticated visitor
+/// <summary>An authenticated visitor
 /// reads the current seat-grid for a session: row labels, the
 /// occupied cells, their own active seat (if any), and the active
 /// reservation count.</summary>
@@ -110,7 +110,7 @@ public sealed class MoveSeatRoute : MoveSeatRequest
     public Guid SessionId { get; set; }
 }
 
-/// <summary>B1 (owner "change seat") — move the caller's already-held seat to a
+/// <summary>Move the caller's already-held seat to a
 /// different seat in the same session in ONE atomic step, so they are never left
 /// seatless by a cancel-then-rebook. 409 <c>SEAT_ALREADY_RESERVED</c> when the
 /// destination was taken first (the original seat stays held), 409
@@ -217,7 +217,7 @@ public sealed class SetHallSeatLayoutEndpoint(ISeatReservationService service)
 
 public sealed class DeleteHallSeatLayoutRoute { public Guid HallId { get; set; } }
 
-/// <summary>B15 — remove a hall's seat layout so the hall reverts to general
+/// <summary>Remove a hall's seat layout so the hall reverts to general
 /// admission. Refused (409 <c>SEAT_LAYOUT_HAS_RESERVATIONS</c>) while any active
 /// seat-specific reservation would be stranded — the same rule the PUT applies to a
 /// shrinking layout change.</summary>
@@ -335,7 +335,7 @@ public sealed class ListSessionSeatReservationsRoute
     public Dictionary<string, string> Filters { get; set; } = new();
 }
 
-/// <summary>DEF-SEA-001 / A11 — the Control Panel seat plan's active reservations.
+/// <summary>The Control Panel seat plan's active reservations.
 /// Returns the ADMIN cell shape (<see cref="SeatPlanCell"/>): it names the holder
 /// so the release confirmation can say whose seat is being taken, and carries the
 /// real booking status + check-in flag. Gated <c>SeatPlans.View</c>; the
@@ -366,9 +366,9 @@ public sealed class ListSessionSeatReservationsEndpoint(ISeatReservationService 
                 }, ct)), ct);
 }
 
-// -- Booking monitor (#6/#17 — owner 2026-07-20) --
+// -- Booking monitor --
 
-/// <summary>#6 — the read-only Control Panel booking monitor: ACTIVE (confirmed,
+/// <summary>The read-only Control Panel booking monitor: ACTIVE (confirmed,
 /// still-held) visitor reservations across all sessions. There is no approval
 /// step (bookings auto-confirm), so this replaced the old approval queue. The
 /// pre-start no-show release runs in the background (ReservationNoShowReleaseWorker),

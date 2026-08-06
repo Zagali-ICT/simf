@@ -14,7 +14,7 @@ public enum EmailTemplateType
     /// <summary>Email-address verification code (sign-up / resend).</summary>
     EmailVerification = 1,
 
-    /// <summary>Heads-up to the owner of an existing account (D-198). No code.</summary>
+    /// <summary>Heads-up to the owner of an existing account. No code.</summary>
     AccountExists = 2,
 
     /// <summary>Password-reset code (forgot password).</summary>
@@ -30,12 +30,12 @@ public enum EmailTemplateType
     /// organiser, carrying the QR badge PNGs as a single ZIP attachment.</summary>
     BulkBadgeDelivery = 6,
 
-    /// <summary>#24 — verification code sent to the NEW address when a signed-in
+    /// <summary>Verification code sent to the NEW address when a signed-in
     /// user changes their login email, proving they control the new inbox before
     /// the change completes. Appended (persisted by name — see the type doc).</summary>
     EmailChangeVerification = 7,
 
-    /// <summary>#24 — security alert sent to the OLD address once a login email
+    /// <summary>Security alert sent to the OLD address once a login email
     /// change completes, so the previous owner is warned out-of-band if the change
     /// was not theirs. Appended (persisted by name — see the type doc).</summary>
     EmailChangedNotice = 8,

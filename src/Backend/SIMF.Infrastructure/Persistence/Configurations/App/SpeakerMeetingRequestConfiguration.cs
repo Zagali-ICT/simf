@@ -5,10 +5,10 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-269 (Mockup page 20) — SpeakerMeetingRequest EF config. Real FK
-/// to Speaker with cascade so a deleted speaker removes its pending requests;
-/// RequestedByUserId is a logical FK to SimfUser on the Identity DB (no cross-DB
-/// relation, D-157).</summary>
+/// <summary>SpeakerMeetingRequest EF config. Real FK
+/// to Speaker with Restrict so a hard speaker delete cannot silently drop its
+/// requests; RequestedByUserId is a logical FK to SimfUser on the Identity DB —
+/// there is no cross-DB relation.</summary>
 internal sealed class SpeakerMeetingRequestConfiguration
     : IEntityTypeConfiguration<SpeakerMeetingRequest>
 {
@@ -55,8 +55,8 @@ internal sealed class SpeakerMeetingRequestConfiguration
         builder.HasIndex(r => new { r.SpeakerId, r.Status, r.CreatedAt });
         builder.HasIndex(r => r.RequestedByUserId);
 
-        // D-611 (Wave B) — at most one LIVE request per (speaker, slot). D-716
-        // widened this from Accepted-only to the slot-holding set
+        // At most one LIVE request per (speaker, slot). This was
+        // widened from Accepted-only to the slot-holding set
         // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker + Done): a
         // hall-bound request in AwaitingSpeaker writes the hall slot into
         // SlotStart and so occupies the speaker's calendar — it must be the DB

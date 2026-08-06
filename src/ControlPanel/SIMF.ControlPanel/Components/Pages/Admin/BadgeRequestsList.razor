@@ -1,4 +1,4 @@
-@* D-500 (Wave 5, الطلبات "طلب تحديث البادج") — admin queue for badge job-title
+@* One of the الطلبات desks — the "طلب تحديث البادج" admin queue for badge job-title
    update requests submitted from the app. On Accept the API applies the requested
    title to the requester's profile. Respond modal accepts / rejects with an
    optional note; Pending → Pending is rejected server-side
@@ -167,9 +167,9 @@
                         OnClick="@(() => _respondOpen = false)">
                 @L["Admin.BadgeRequests.Cancel"]
             </SimfButton>
-            @* D-828 (second pass) - the page gates on BadgeUpdateRequests.View; responding is .Manage. The page-level ratchet missed this
-               because the page already used <AuthorizedAction> elsewhere; the
-               guard is now per-button. *@
+            @* The page gates on BadgeUpdateRequests.View; responding is .Manage.
+               The page-level ratchet missed this because the page already used
+               <AuthorizedAction> elsewhere; the guard is now per-button. *@
             <AuthorizedAction Permission="@PermissionCatalog.BadgeUpdateRequests.Manage">
                 <SimfButton Type="button" OnClick="SendResponseAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.BadgeRequests.Respond.Submit"]

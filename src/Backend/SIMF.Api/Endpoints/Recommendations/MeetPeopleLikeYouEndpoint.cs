@@ -8,7 +8,7 @@ using SIMF.Contracts.Recommendations;
 
 namespace SIMF.Api.Endpoints.Recommendations;
 
-/// <summary>D-170 (gap doc G9, PDF §2.8) — public "Meet People Like
+/// <summary>Public "Meet People Like
 /// You" endpoint. Returns the caller's top N interest-matched peers.
 /// Requires an approved authenticated account.</summary>
 public sealed class MeetPeopleLikeYouRequest

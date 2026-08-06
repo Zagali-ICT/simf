@@ -1,7 +1,7 @@
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// D-168 (gap doc G5, PDF §2.7.3) — lifecycle state of an
+/// Lifecycle state of an
 /// <c>Invitation</c> row. Brand-new enum; no existing wire contract
 /// to preserve. Persisted as the underlying <c>int</c> via the
 /// default EF mapping on <c>InvitationConfiguration</c>.

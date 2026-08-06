@@ -1,6 +1,6 @@
 @* Control Panel — Visitor profile types CRUD.
-   Lookup-table CRUD scoped to UserType=Visitor. Mirrors the canonical D-117
-   pattern: SimfBanner page-top, SimfDataGrid with full toolbar + numbered
+   Lookup-table CRUD scoped to UserType=Visitor. Mirrors the canonical CP
+   list pattern: SimfBanner page-top, SimfDataGrid with full toolbar + numbered
    pager, modal-based Add / Edit / Details / Delete. *@
 @page "/admin/profile-types/visitor"
 @layout CpShellLayout
@@ -96,7 +96,7 @@
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
-            @* D-186: audience-side form — IsPartnerForm=false sends
+            @* Audience-side form — IsPartnerForm=false sends
                IsVisitor=true on Create. *@
             <ProfileTypeForm IsPartnerForm="false"
                              OnSuccess="OnSavedAsync"
@@ -163,7 +163,7 @@
                         OnClick="@(() => _deleteTarget = null)">
                 @L["Admin.ProfileTypes.Delete.Cancel"]
             </SimfButton>
-            @* D-831 - the commit button of the modal this action opened. *@
+            @* The commit button of the modal this action opened. *@
             <AuthorizedAction Permission="@PermissionCatalog.ProfileTypes.Delete">
             <SimfButton Type="button" Variant="primary"
                             Loading="_busy"

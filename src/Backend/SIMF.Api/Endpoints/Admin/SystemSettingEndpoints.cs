@@ -7,9 +7,9 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P2.4 — D-229 (SIMF-FDS-012 §5.5): System Configuration settings
+/// <summary>System Configuration settings
 /// CRUD. Gated by Configuration.*. The store ships empty; the team seeds the
-/// keys (FDS-012 OI-2).</summary>
+/// keys.</summary>
 public sealed class ListSystemSettingsEndpoint(IAdminSystemSettingService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminSystemSettingSummary>>>
 {

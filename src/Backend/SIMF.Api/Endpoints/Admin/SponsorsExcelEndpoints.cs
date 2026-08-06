@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/sponsors/export</c> — the D-356 grid export for
+/// <c>POST /api/v1/admin/sponsors/export</c> — the grid export for
 /// sponsors. All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>;
 /// this subclass only declares the route, permission, sheet/file names, the
 /// column layout (mirroring the Sponsors grid — Tier is exported by its display
@@ -51,7 +51,7 @@ public sealed class ExportSponsorsEndpoint(IAdminSponsorService service, IGridEx
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/sponsors/import</c> — the D-356 grid import
+/// <c>POST /api/v1/admin/sponsors/import</c> — the grid import
 /// (insert-only) for sponsors. The base does the upload defence, parse and
 /// per-row error aggregation; this subclass binds one row to
 /// <see cref="AdminCreateSponsorRequest"/> and creates it. Tier is parsed from
@@ -59,7 +59,7 @@ public sealed class ExportSponsorsEndpoint(IAdminSponsorService service, IGridEx
 /// writes — back to its int value; an unknown tier raises a per-row error
 /// rather than aborting the batch.
 /// <para><b>Omitted column:</b> <c>ContactId</c> (the optional shared-Contact
-/// link, SIMF-FDS-014 / D-283) cannot be expressed as plain text in a bulk
+/// link) cannot be expressed as plain text in a bulk
 /// import — it is a directory FK chosen with the ContactPicker — so import
 /// always leaves it unset; an admin links a contact afterwards via Edit.</para>
 /// </summary>

@@ -38,7 +38,7 @@ public partial class UsersList
     private IReadOnlyList<AdminUserSummary> _bulkDeleteTargets = Array.Empty<AdminUserSummary>();
     private string _bulkDeleteReason = string.Empty;
 
-    // Duplicate modal state (D-045 H1: real email input replaces the @simf.local Guid)
+    // Duplicate modal state (a real email input replaces the @simf.local Guid)
     private bool _duplicateOpen;
     private AdminUserSummary? _duplicateSource;
     private string _duplicateEmail = string.Empty;
@@ -77,7 +77,7 @@ public partial class UsersList
         {
             var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminUserSummary>>>(
                 "simfAccount.postJson", "/account/api/admin/admins/list", _query);
-            // §6.16 (F-U5-002) — a FAILED envelope used to be substituted with an
+            // A FAILED envelope used to be substituted with an
             // empty page, so an API 500 / 403 was indistinguishable from "no rows"
             // and the admin read a working page with no data. Report it instead;
             // the page already renders a toast surface it never used on this path.
@@ -260,7 +260,7 @@ public partial class UsersList
     private async Task OnExportAsync(IReadOnlyList<AdminUserSummary> selected)
     {
         var ids = selected.Select(u => u.Id).ToList();
-        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // A failed export used to return silently, so
         // the Export button was indistinguishable from an unwired one.
         var error = await JS.ExportXlsxAsync(
             "/account/api/admin/admins/export",
@@ -301,7 +301,7 @@ public partial class UsersList
 
     // The admin's profile photo for the identity-cell thumbnail. Only
     // requested when HasAvatar is set (so the grid never issues a 404); the CP BFF
-    // streams the bytes from the central StoredFile avatar (D-568), gated Admins.View.
+    // streams the bytes from the central StoredFile avatar, gated Admins.View.
     // When null, SimfIdentityCell shows an initials tile (never a broken image).
     private static string? AvatarImageUrl(AdminUserSummary row) =>
         row.HasAvatar ? $"/account/api/admin/admins/{row.Id}/avatar" : null;

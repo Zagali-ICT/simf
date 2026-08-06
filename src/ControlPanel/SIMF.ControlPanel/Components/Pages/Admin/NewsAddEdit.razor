@@ -1,4 +1,4 @@
-@* D-353 — reusable News Add/Edit form, hosted by CrudShell (as a popup or a
+@* Reusable News Add/Edit form, hosted by CrudShell (as a popup or a
    full page) from NewsList.razor. Inherits CrudAddEditFormBase so it exposes
    the standard CRUD-form parameter surface (IsEdit / Initial / OnSuccess /
    OnCancel). IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT
@@ -91,7 +91,7 @@
                 @L["Admin.News.Field.IsActive"]
             </SimfCheckbox>
         }
-        @* D-357 — image via the unified media-asset pipeline (edit only; the row
+        @* Image via the unified media-asset pipeline (edit only; the row
            must exist before bytes can be attached). *@
         @if (IsEdit && Initial is not null)
         {

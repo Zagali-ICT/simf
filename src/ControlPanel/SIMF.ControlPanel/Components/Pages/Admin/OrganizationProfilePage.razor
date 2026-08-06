@@ -1,11 +1,11 @@
-﻿@* D-495 — CP "Organization Profile" page: edit the edition-generic forum config
+﻿@* CP "Organization Profile" page: edit the edition-generic forum config
    (name / title / slogan / bio, version + dates, status + year, location + GPS,
    contact, live-stream link, social links, and the about-items + details lists).
    Reads / writes via /admin/organization-profile; the app + website consume it
    through GET /app/organization-profile. View opens it; Manage saves.
    The long field set is grouped into titled SimfFormSection steps with a
    responsive two-column grid (bilingual pairs side by side); the about-items and
-   details lists use the simf-repeater card (index + reorder + remove) — D-762. *@
+   details lists use the simf-repeater card (index + reorder + remove). *@
 @page "/admin/organization-profile"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.OrganizationProfile.View)]
@@ -200,7 +200,7 @@
     </div>
 </div>
 
-@* D-809 — removing the hero video changes the public site landing page. *@
+@* Removing the hero video changes the public site landing page. *@
 <SimfConfirm Open="_confirmingHeroVideoRemove"
              Danger="true"
              Title="@L["Admin.OrganizationProfile.HeroVideoRemove.Confirm.Title"]"

@@ -11,8 +11,8 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/sessions/export</c> — the D-356 grid export for the
-/// programme Sessions (D-165, PDF §2.9). All the work lives in
+/// <c>POST /api/v1/admin/sessions/export</c> — the grid export for the
+/// programme Sessions. All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass declares the route,
 /// permission, sheet/file names, the column layout (mirroring the Sessions grid)
 /// and how to list + identify a session row (the same
@@ -20,8 +20,8 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <para>The two foreign keys are exported by a human-readable natural key so the
 /// workbook round-trips back through import: the Hall as its code and the optional
 /// Category as its English name. The <c>Start</c> / <c>End</c> window writes
-/// a round-trip-safe <b>zone-free</b> ISO-8601 string (the Saudi wall clock, per
-/// Never a trailing <c>Z</c>), the lifecycle <c>Status</c> writes its
+/// a round-trip-safe <b>zone-free</b> ISO-8601 string (the Saudi wall clock,
+/// never a trailing <c>Z</c>), the lifecycle <c>Status</c> writes its
 /// enum name. The hall/category maps are built once per request inside
 /// <see cref="ListAsync"/> (the base reads <see cref="Columns"/> straight after),
 /// so the column selectors resolve a name without an extra round-trip per row.
@@ -29,8 +29,8 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <para><b>Omitted columns:</b> the export leaves out the session's speaker / host
 /// roster and its theme set — the grid summary it iterates does not carry them, and
 /// emitting them would need a per-row detail load. The <b>import</b> deliberately
-/// differs: it accepts an optional Speakers column (comma-separated speaker codes,
-/// #4) so a bulk-created non-Event session can satisfy the min-1-speaker rule; the
+/// differs: it accepts an optional Speakers column (comma-separated speaker
+/// codes) so a bulk-created non-Event session can satisfy the min-1-speaker rule; the
 /// theme set is still managed via Edit either way.</para>
 /// </summary>
 public sealed class ExportSessionsEndpoint(
@@ -58,15 +58,15 @@ public sealed class ExportSessionsEndpoint(
         new("Hall", row => _hallCodes.TryGetValue(row.HallId, out var code) ? code : string.Empty),
         new("Category", row => row.CategoryId is { } id
             && _categoryNames.TryGetValue(id, out var name) ? name : string.Empty),
-        // Zone-free ISO-8601, matching the JSON wire contract (D-813). These
-        // columns used to append a literal 'Z'. Since D-813 the stored value IS
+        // Zone-free ISO-8601, matching the JSON wire contract. These
+        // columns used to append a literal 'Z'. The stored value IS
         // the Saudi wall clock, so the Z was a false claim: a session starting
         // 09:00 in Riyadh exported as "09:00Z", and any tool that honours the Z
         // showed it as 06:00. SIMF's own import round-tripped it correctly, which
         // is exactly why it survived - the damage was only ever visible to
         // whoever opened the workbook. Same reasoning as
         // SaudiDateTimeOffsetJsonConverter, which refuses to write Z for this
-        // reason; the workbook is user-facing data and D-813 admits nothing zoned there.
+        // reason; the workbook is user-facing data and nothing zoned belongs there.
         new("Start", row => row.Start.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)),
         new("End", row => row.End.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)),
         new("Capacity", row => row.Capacity),
@@ -129,7 +129,7 @@ public sealed class ExportSessionsEndpoint(
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/sessions/import</c> — the D-356 grid import (insert-only)
+/// <c>POST /api/v1/admin/sessions/import</c> — the grid import (insert-only)
 /// for the programme Sessions. The base does the upload defence, parse and per-row
 /// error aggregation; this subclass binds one row to
 /// <see cref="AdminCreateSessionRequest"/> and creates it (the service rejects a
@@ -145,7 +145,7 @@ public sealed class ExportSessionsEndpoint(
 /// <para><b>Speakers and themes:</b> the optional <b>Speakers</b> column holds a
 /// comma-separated list of active speaker <c>Code</c>s (position sets the display
 /// order; role defaults to Speaker — Host cannot be expressed in one cell). A blank
-/// cell leaves the roster empty, and the create then enforces the #4 min-1-speaker
+/// cell leaves the roster empty, and the create then enforces the min-1-speaker
 /// rule for non-Event sessions. The theme set stays omitted (an admin sets it
 /// afterwards via Edit). The export still writes neither column.</para>
 /// </summary>
@@ -231,7 +231,7 @@ public sealed class ImportSessionsEndpoint(
             Start = start,
             End = end,
             CapacityOverride = capacityOverride,
-            // #4 — optional Speakers column (comma-separated speaker codes) so a
+            // Optional Speakers column (comma-separated speaker codes) so a
             // bulk-imported non-Event session can satisfy the min-1-speaker rule.
             Speakers = await ResolveSpeakersAsync(
                 row.Cells.GetValueOrDefault("Speakers", string.Empty), ct),
@@ -351,7 +351,7 @@ public sealed class ImportSessionsEndpoint(
     // Resolves the optional Speakers column into an ordered roster. The cell holds
     // active speaker CODES separated by commas (the same natural key the Hall column
     // uses); position sets the display order and every entry takes the default
-    // Speaker role. A blank cell → no speakers (the create then enforces the #4
+    // Speaker role. A blank cell → no speakers (the create then enforces the
     // min-1 rule for non-Event sessions). An unknown/inactive or duplicated code is
     // a per-row error. Codes are resolved one at a time (a roster is only a handful
     // of speakers), mirroring ResolveHallAsync's active-only, case-insensitive match.

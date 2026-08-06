@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب تحديث البادج") — login-required body for
+/// <summary>The الطلبات "طلب تحديث البادج" flow — the login-required body for
 /// <c>POST /app/badge-requests</c>: the requested new badge job title.</summary>
 public sealed class SubmitBadgeUpdateRequestBody
 {
@@ -21,7 +21,8 @@ public sealed record BadgeUpdateRequestSubmitted(
 
 /// <summary>One row in the admin badge-update-requests grid. The
 /// requester display name is resolved from the App-DB profile; the email moves
-/// to the detail (the D-185 bulk-PII pattern).</summary>
+/// to the detail, following the bulk-PII pattern: a grid never carries PII a
+/// reviewer has not opened a row to see.</summary>
 public sealed record AdminBadgeUpdateRequestRow(
     Guid Id,
     Guid RequestedByUserId,
@@ -51,8 +52,8 @@ public sealed record AdminBadgeUpdateRequestDetail(
 
 /// <summary>Admin moves the row off Pending. Status must be Accepted or
 /// Rejected. On Accept the service applies the requested title to the
-/// requester's profile. Open for inheritance (the D-168 route-binding
-/// pattern).</summary>
+/// requester's profile. Open for inheritance so the admin endpoint can bind
+/// {id} + body through a derived route class.</summary>
 public class RespondToBadgeUpdateRequestRequest : RespondToRequest
 {
 }

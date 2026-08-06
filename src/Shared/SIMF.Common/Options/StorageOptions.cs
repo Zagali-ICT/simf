@@ -2,8 +2,8 @@ namespace SIMF.Common.Options;
 
 /// <summary>
 /// Filesystem-storage settings, bound from the <c>Storage</c> configuration
-/// section. Replaces four scattered <c>IConfiguration["Storage:..."]</c>
-/// reads (R1 — D-074) so a key rename is a single change. The values are
+/// section, so a key rename is a single change here rather than a hunt through
+/// scattered <c>IConfiguration["Storage:..."]</c> reads. The values are
 /// supplied through the environment / <c>set-env</c> scripts and the
 /// encryption key is never committed.
 /// </summary>
@@ -12,7 +12,7 @@ public sealed class StorageOptions
     public const string SectionName = "Storage";
 
     // AvatarBase, VipPhotoBase and UserIdDocumentBase were removed on
-    // 2026-08-05. D-568 moved all three stores into the unified StoredFile
+    // 2026-08-05, when all three stores moved into the unified StoredFile
     // store under FileStorage:RootPath - avatars, ID documents and VIP photos
     // are FileService values now, and the bespoke filesystem stores that read
     // these paths no longer exist. Nothing had read them since that cutover
@@ -24,7 +24,7 @@ public sealed class StorageOptions
     /// encryption. Never committed; supplied via environment variable.</summary>
     public string UserIdDocumentEncryptionKey { get; set; } = string.Empty;
 
-    /// <summary>Root directory the per-project log files live in (P6).
+    /// <summary>Root directory the per-project log files live in.
     /// Optional — falls back to <c>"logs"</c> when unset.</summary>
     public string LogDirectory { get; set; } = "logs";
 }

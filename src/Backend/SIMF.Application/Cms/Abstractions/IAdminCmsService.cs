@@ -4,7 +4,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Application.Cms.Abstractions;
 
 /// <summary>
-/// D-173 (gap doc G8, PDF §1, §2.1) — admin CRUD over content blocks +
+/// Admin CRUD over content blocks +
 /// banners. Distinct from the public read surface
 /// (<see cref="IPublicCmsService"/>) which is anonymous + cache-aware.
 /// </summary>

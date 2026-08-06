@@ -29,15 +29,15 @@ using SIMF.Infrastructure.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 // Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
-// variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
+// variables (deploy/set-env-*.ps1). This source strips
 // the prefix, so SIMF_ConnectionStrings__SimfAppDb binds to
 // ConnectionStrings:SimfAppDb. ASPNETCORE_ENVIRONMENT stays un-prefixed (the
 // host reads it before configuration sources load).
 builder.Configuration.AddEnvironmentVariables("SIMF_");
 
-// Structured logging through Serilog (SIMF-SAD-001 section 11).
-// P6 — per-project log files under {Storage:LogDirectory}/SIMF.Api/log-{Date}.log;
-// the CP /admin/logs page reads from the same root.
+// Structured logging through Serilog. Per-project log files live under
+// {Storage:LogDirectory}/SIMF.Api/log-{Date}.log; the CP /admin/logs page reads
+// from the same root.
 builder.Host.UseSerilog((context, configuration) =>
 {
     var logDir = context.Configuration["Storage:LogDirectory"] ?? "logs";
@@ -99,10 +99,11 @@ builder.Host.UseSerilog((context, configuration) =>
 // Database contexts, ASP.NET Core Identity, repositories, email, the audit log.
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// A1-19 (NCA) — daily dormant-account disable sweep (no-op until configured).
+// NCA account-dormancy control — daily dormant-account disable sweep (no-op
+// until configured).
 builder.Services.AddHostedService<SIMF.Api.HostedServices.DormantAccountSweepService>();
 
-// A4 (NCA data-minimisation) — daily retention purge of dead security artifacts.
+// NCA data-minimisation — daily retention purge of dead security artifacts.
 builder.Services.AddHostedService<SIMF.Api.HostedServices.RetentionSweepWorker>();
 
 // The audit log reads the request context; the API supplies it from HttpContext.
@@ -129,14 +130,14 @@ static bool IsOperationalEndpoint(HttpContext httpContext) =>
     httpContext.GetEndpoint()?.Metadata
         .GetMetadata<EnableRateLimitingAttribute>()?.PolicyName
         == RateLimitOptions.OperationalPolicy
-    // D-821 review — the exemption ALSO requires a bearer token on the request.
+    // The exemption ALSO requires a bearer token on the request.
     //
     // UseRateLimiter runs BEFORE UseAuthentication (see the pipeline below), so
     // at this point httpContext.User is empty and the permission gate the
     // exemption's rationale leans on has not run yet. Without this check an
     // ANONYMOUS flood against an operational route bypassed the global per-IP
-    // cap entirely — re-opening the H29 / SEV-2.1 finding the global limiter
-    // exists to close.
+    // cap entirely — re-opening the very hole the global limiter exists to
+    // close.
     //
     // A header check is all that is available this early. It is not
     // authentication: a garbage bearer still reaches the exemption. It does mean
@@ -146,9 +147,8 @@ static bool IsOperationalEndpoint(HttpContext httpContext) =>
 
 builder.Services.AddRateLimiter(rateLimiter =>
 {
-    // Every request gets a per-IP fixed-window cap. Closes
-    // the post-R3 review's Security SEV-2.1 main finding — pre-H29
-    // bearer-protected routes had no per-IP cap, so a malformed-bearer
+    // Every request gets a per-IP fixed-window cap. Bearer-protected
+    // routes previously had no per-IP cap, so a malformed-bearer
     // flood (or any other endpoint hit hard from one IP) could pin a
     // CPU core. The global cap is permissive (600/min/IP by default —
     // way above legitimate traffic) and stacks with the per-route
@@ -233,14 +233,14 @@ builder.Services.AddRateLimiter(rateLimiter =>
             });
     });
 
-    // D-179 (gap doc G12 hardening) — per-admin partition on the AI
+    // Per-admin partition on the AI
     // prompt dry-run endpoint. The existing per-IP "auth" window does
     // not protect against an office shared by multiple admins, or a
     // stolen-credential botnet rotating IPs. Partitioned on the JWT
     // `sub` claim so each admin gets their own bucket regardless of
     // source IP.
     //
-    // D-181 (review-pass hardening): the no-sub partition used to be
+    // The no-sub partition used to be
     // `GetNoLimiter` — fine in normal operation (Administrator policy
     // ensures `sub` is present) but the silent zero-cap behaviour
     // masked any JWT-claim-mapper regression. Replaced with a tight
@@ -332,14 +332,14 @@ builder.Services.AddRateLimiter(rateLimiter =>
     };
 });
 
-// FastEndpoints and the OpenAPI documents. The App↔CP split (D-247) emits
+// FastEndpoints and the OpenAPI documents. The App↔CP split emits
 // TWO OpenAPI documents from the one API so a mobile/App developer reads only
 // the App surface and a CP developer reads only the admin surface. The filter
 // keys off the route segment — every App route is under /app/* and every CP
-// route under /admin/* (SIMF-API-001 §4).
+// route under /admin/*.
 builder.Services.AddFastEndpoints();
 
-// A6d — output caching for the anonymous public read endpoints. The "PublicRead"
+// Output caching for the anonymous public read endpoints. The "PublicRead"
 // policy caches for 45s and varies by ALL query keys ("*") so paged / filtered /
 // ?day= variants never share an entry. Under the Testing environment the policy
 // is a no-op AND the middleware below is not added, so the integration suite
@@ -388,15 +388,16 @@ builder.Services.SwaggerDocument(options =>
         ep.Routes?.Any(route => route.Contains("admin/")) == true;
 });
 
-// Readiness checks (SIMF-OPS-001 Amendment A.4). The "workers" check reports the
+// Readiness checks. The "workers" check reports the
 // background-worker tier's health from the in-process heartbeat registry.
 builder.Services.AddHealthChecks()
     .AddCheck<SIMF.Api.HealthChecks.WorkersHealthCheck>("workers");
 
-// Web-app CORS (D-376). Two origin sources, both explicit allow-lists:
-// - Cors:WebAppOrigins — ANY environment; empty/absent = no CORS at all
-//   (the pre-D-376 production posture). Set it only when the published
-//   Flutter web app is hosted on a different origin than this API.
+// Web-app CORS. Two origin sources, both explicit allow-lists:
+// - Cors:WebAppOrigins — ANY environment; empty/absent = no CORS at all, which
+//   is the posture the API had before web-app CORS was introduced. Set it only
+//   when the published Flutter web app is hosted on a different origin than
+//   this API.
 // - Cors:DevWebOrigins — Development only; defaults to localhost:8080 for
 //   a local `flutter run -d chrome` diagnostics session.
 // Never a wildcard: origins are always named, headers/methods scoped to the
@@ -446,13 +447,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(JwtBearerSetup.StreamScheme,
         options => JwtBearerSetup.ConfigureStream(options, jwtOptions));
 
-// The Administrator-only policy is the gate for the admin-reset endpoint
-// (D-041). Add new role/permission policies here as more admin actions land.
+// The Administrator-only policy is the gate for the admin-reset endpoint.
+// Add new role/permission policies here as more admin actions land.
 builder.Services
     .AddAuthorizationBuilder()
     .AddSimfAuthorization();
 
-// Issue-1 — per-page/per-action permission policies (perm:<code>) are
+// Per-page/per-action permission policies (perm:<code>) are
 // materialised on demand by the dynamic provider, and the handler matches
 // the required code against the caller's `perm` claims (Administrator's
 // wildcard satisfies any code). Registered after the builder so this
@@ -466,14 +467,14 @@ builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHand
 var knownProxies =
     builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [];
 
-// OpenAPI UI exposure (SIMF-API-001 §13). Off in production unless
-// explicitly enabled, and then only behind the Basic-auth gate below.
+// OpenAPI UI exposure. Off in production unless explicitly enabled, and
+// then only behind the Basic-auth gate below.
 var swaggerOptions =
     builder.Configuration.GetSection(SwaggerOptions.SectionName).Get<SwaggerOptions>()
     ?? new SwaggerOptions();
 
-// Bound for the Production boot guard below (security finding H1) — the
-// committed default super-admin password must never be the live credential.
+// Bound for the Production boot guard below — the committed default
+// super-admin password must never be the live credential.
 var superAdminOptions =
     builder.Configuration.GetSection(SuperAdminOptions.SectionName).Get<SuperAdminOptions>()
     ?? new SuperAdminOptions();
@@ -504,7 +505,7 @@ if (app.Environment.IsProduction()
 
 // Refuse to start in Production with the committed default super-admin
 // password — it must be overridden via SIMF_SuperAdmin__TempPassword
-// (docs/security/SIMF-Security-Assessment-2026-06-20.md, finding H1).
+// (docs/security/SIMF-Security-Assessment-2026-06-20.md).
 if (app.Environment.IsProduction()
     && superAdminOptions.TempPassword == "Aa@123456789")
 {
@@ -535,17 +536,17 @@ if (app.Environment.IsProduction()
         + "seed before starting in Production.");
 }
 
-// M4 (security) — refuse to start in Production when the AI prompt-hash HMAC
+// Refuse to start in Production when the AI prompt-hash HMAC
 // secret is unconfigured; the dev-fallback key is publicly derivable.
 SIMF.Infrastructure.DependencyInjection.EnsureAiPromptHashSecretConfigured(
     app.Environment.IsProduction());
 
-// A2-10 (security) — refuse to start in Production without the PII encryption key
+// Refuse to start in Production without the PII encryption key
 // (it encrypts the UserProfile national-ID / Iqama / passport / mobile columns).
 SIMF.Infrastructure.DependencyInjection.EnsurePiiEncryptionConfigured(
     app.Environment.IsProduction(), app.Services);
 
-// D-568 (security) — refuse to start in Production without the centralized
+// Refuse to start in Production without the centralized
 // file-store KEK, with a clear one-line reason (the cipher otherwise fail-fasts
 // deep inside the FastEndpoints/DI stack — the boot crash this guard replaces).
 SIMF.Infrastructure.DependencyInjection.EnsureFileStorageEncryptionConfigured(
@@ -557,9 +558,9 @@ if (!app.Environment.IsEnvironment("Testing"))
 {
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
-    // D-186 review-pass (security H-3): run the App migration BEFORE
-    // Identity. The D-186 migration pair folds UserType='Other' into
-    // 'Visitor' on both contexts. If Identity ran first and App
+    // Run the App migration BEFORE Identity. The migration pair that
+    // folds UserType='Other' into 'Visitor' spans both contexts, so
+    // ordering matters here. If Identity ran first and App
     // failed mid-deploy, partner accounts (AspNetUsers.UserType
     // already 'Visitor' but ProfileTypes still 'Other' + no IsVisitor
     // column yet) would be invisible to both CP queues until the App
@@ -579,7 +580,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     await services.GetRequiredService<SIMF.Infrastructure.Regions.RegionSeeder>().SeedAsync();
     // Default app-update config keys so the CP configuration grid is not
     // empty on a fresh DB. Every environment; idempotent. (The 2026 event CONTENT
-    // this used to seed moved to the by-hand SQL lane — D-718/D-747.)
+    // this used to seed moved to the by-hand SQL lane.)
     await services.GetRequiredService<SIMF.Infrastructure.Seeding.DefaultContentSeeder>().SeedAsync();
 
     // In Development only, seed a few sample organisations so the
@@ -593,13 +594,13 @@ if (!app.Environment.IsEnvironment("Testing"))
         // (docs/migrations/2026/*.sql: speakers, programme, news, sponsors, media
         // partners, archive, org about + the booths/delegations/FAQ/venue-map
         // gaps) so a fresh dev DB renders populated screens. Idempotent. In
-        // production this SQL is run by hand (owner rule D-718); this never runs
-        // outside Development.
+        // production this SQL is run by hand; this never runs outside
+        // Development.
         await services.GetRequiredService<SIMF.Infrastructure.Seeding.SqlContentSeeder>()
             .RunAsync(SIMF.Infrastructure.Seeding.SqlContentSeeder.AllFiles);
     }
 
-    // BUG-023 — the demo OPERATIONAL configuration (gates + the demo staff
+    // The demo OPERATIONAL configuration (gates + the demo staff
     // operator assignment, the demo moderator's per-session grants, and the main
     // hall's seat grid). Runs LAST because it configures the content the SQL seed
     // above creates. Self-gated to Development / Seed:EnableDemoAccounts, so
@@ -630,15 +631,15 @@ app.UseForwardedHeaders(forwardedHeaders);
 // including a failure — carries it.
 app.UseMiddleware<CorrelationIdMiddleware>();
 
-// M7 (security) — baseline security headers on every API response.
+// Baseline security headers on every API response.
 app.UseMiddleware<SecurityHeadersMiddleware>();
 
-// Error handling wraps the rest of the pipeline (SIMF-Sprint1 plan section 7).
+// Error handling wraps the rest of the pipeline.
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 // Apply the web CORS policy before rate-limiting/auth so the browser
 // preflight (OPTIONS) is answered and the cross-origin App-API call succeeds.
-// Active only when origins are configured (D-376) — matching the registration.
+// Active only when origins are configured — matching the registration.
 if (webCorsEnabled)
 {
     app.UseCors(devWebCorsPolicy);
@@ -655,7 +656,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// A6d — output caching runs after CORS/auth and before the endpoints, so a cache
+// Output caching runs after CORS/auth and before the endpoints, so a cache
 // hit on an anonymous public read short-circuits endpoint execution. Disabled
 // entirely under Testing (paired with the no-op policy above) so the suite never
 // serves a stale cached read.
@@ -674,7 +675,7 @@ app.UseFastEndpoints(config =>
     config.Serializer.Options.Converters.Add(
         new SIMF.Api.Serialization.SaudiDateTimeOffsetJsonConverter());
 
-    // Field-validation failures use the standard ApiResult shape (API-001 §6-7).
+    // Field-validation failures use the standard ApiResult shape.
     // Each FluentValidation rule attaches Arabic as its CustomState via the
     // .Bilingual(en, ar) extension.
     config.Errors.ResponseBuilder = (failures, _, _) =>
@@ -696,8 +697,7 @@ app.UseFastEndpoints(config =>
 
 // The OpenAPI UI is served outside production always, and in production only
 // when explicitly enabled (Swagger:AllowSwagger) — and there only behind the
-// Basic-auth gate, because the API is public via the reverse proxy
-// (SAD-001 §10.1). SIMF-API-001 §13 + D-355.
+// Basic-auth gate, because the API is public via the reverse proxy.
 if (!app.Environment.IsProduction() || swaggerOptions.AllowSwagger)
 {
     if (app.Environment.IsProduction())
@@ -708,7 +708,7 @@ if (!app.Environment.IsProduction() || swaggerOptions.AllowSwagger)
     app.UseSwaggerGen();
 }
 
-// The readiness endpoint (SIMF-OPS-001 Amendment A.4).
+// The readiness endpoint.
 app.MapHealthChecks("/health");
 
 app.Run();

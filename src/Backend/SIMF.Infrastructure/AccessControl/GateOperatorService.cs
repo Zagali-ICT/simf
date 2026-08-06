@@ -19,9 +19,9 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.AccessControl;
 
 /// <summary>
-/// Operator surface + 13-step constraint engine (SIMF-FDS-003 §5.6.1). Every
-/// recorded denial emits exactly one <see cref="DenialReasonCode"/> per the
-/// table in §5.6.1; HTTP-level errors (404 / 403 / 409 / 429 / 503) ride on
+/// Operator surface + 13-step constraint engine. Every
+/// recorded denial emits exactly one <see cref="DenialReasonCode"/>;
+/// HTTP-level errors (404 / 403 / 409 / 429 / 503) ride on
 /// <see cref="GateScanResult.Kind"/> for the endpoint to translate.
 /// </summary>
 internal sealed class GateOperatorService(
@@ -41,7 +41,7 @@ internal sealed class GateOperatorService(
     // A normalised QR longer than this would truncate the append-only scan row on
     // insert, so it is denied as QrUnknown rather than stored.
     //
-    // D-819 raised 32 -> 64; D-820 raised it again to 96 when the badge tag went
+    // The limit grew from 32 to 64 and then to 96 when the badge tag went
     // to the full 16 bytes. The bound is NOT removed: it still guards the insert
     // against an over-length mis-scan. It is wide because a badge is no longer
     // only a 12-character serial — an offline event badge is an encrypted payload
@@ -107,7 +107,7 @@ internal sealed class GateOperatorService(
         // to new devices — the lever available if one goes missing, together
         // with rotating the version.
         //
-        // D-821 review — the assignment requirement matters as much as the arming
+        // The assignment requirement matters as much as the arming
         // one. Gates.Operate is held by every Staff and Moderator app account,
         // not just the provisioned scanner tablets, so without this the key would
         // land in unencrypted preferences on every staff phone at the event and
@@ -202,7 +202,7 @@ internal sealed class GateOperatorService(
 
         // Steps 5–9: per-row predicate → denial reason, ordered. Step 9.5
         // (time-window) is still a reserved hook — no row here today. Step 11.5
-        // (booking-required) is implemented as of D-819 and runs after the
+        // (booking-required) is implemented and runs after the
         // allow-list below, because it needs the resolved direction.
         var simpleChecks = new (bool failed, DenialReasonCode reason)[]
         {
@@ -269,7 +269,7 @@ internal sealed class GateOperatorService(
                 requestHash, idempotencyKey, cancellationToken);
         }
 
-        // Step 11.5 — D-819: a SESSION HALL door additionally requires the
+        // Step 11.5 — a SESSION HALL door additionally requires the
         // attendee to be registered for the session running behind it. This is
         // the third of the three access rules (approved at the main gate,
         // profile type allowed at any gate, registered at a session hall) and
@@ -421,7 +421,7 @@ internal sealed class GateOperatorService(
             .Select(s => new GateVisitorListItem(
                 s.Id, s.ScannedAt, s.Direction, s.Outcome,
                 s.UserProfileId, s.QrIdAtScan,
-                // D-158 snapshot columns — no cross-DB JOIN.
+                // Snapshot columns on the scan row — no cross-DB JOIN.
                 s.ScannedDisplayName, s.ScannedProfileTypeName,
                 s.DenialReasonCode))
             .ToListAsync(cancellationToken);
@@ -548,12 +548,12 @@ internal sealed class GateOperatorService(
         });
     }
 
-    /// <summary>#15 — persists a freshly built <see cref="GateScan"/> (with its
+    /// <summary>Persists a freshly built <see cref="GateScan"/> (with its
     /// staged idempotency row) and back-fills the idempotency row's ScanId. A
     /// concurrent same-key retry (both requests clear <see cref="TryReplayAsync"/>
     /// before either commits) or a key reused past the 24h replay window collides on
     /// the append-only <c>UX_GateScan_Idempotency</c> / <c>PK_ScanIdempotency</c>
-    /// uniqueness. The idempotency contract (SIMF-API-GATES-001 §9) is a replay, not
+    /// uniqueness. The idempotency contract is a replay, not
     /// a 500, so that duplicate-key collision is recovered into the prior committed
     /// scan — mirroring <c>HallAttendanceService.OpenOrCreateArrivalAsync</c> and
     /// <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>. Returns the
@@ -587,7 +587,7 @@ internal sealed class GateOperatorService(
         return null;
     }
 
-    /// <summary>#15 — recovers a duplicate-key idempotency collision into a replay:
+    /// <summary>Recovers a duplicate-key idempotency collision into a replay:
     /// detaches the losing scan insert and its staged idempotency row so the context
     /// is clean, then loads and returns the prior committed scan (the byte-identical
     /// replay the idempotency contract promises). The <see cref="TrySaveScanAsync"/>
@@ -656,7 +656,7 @@ internal sealed class GateOperatorService(
             "Allowed scan {ScanId} on gate {GateId} for visitor {ProfileId}",
             scan.Id, context.GateId, resolution.UserProfileId);
 
-        // X-1 (chain design) — a hall-door gate (HallId set) feeds hall attendance
+        // By design, a hall-door gate (HallId set) feeds hall attendance
         // for the session live in that hall. Best-effort: the gate scan is already
         // committed, so a chain failure is logged and swallowed rather than failing
         // the operator's scan (mirrors HallAttendanceService's departure-hook

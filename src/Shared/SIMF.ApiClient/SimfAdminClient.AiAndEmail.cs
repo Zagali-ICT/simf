@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-176 (gap doc G12) — centralised AI module -----------------------
+    // -- Centralised AI module ---------------------------------------------
 
     public Task<ApiCallResult<GridPage<AdminAiPromptSummary>>> ListAiPromptsAsync(
         GridQuery query, string accessToken,
@@ -127,7 +127,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, "ai/dashboard", content: null,
             accessToken, cancellationToken);
 
-    // -- D-735 — transactional email templates (list / read / edit / reset /
+    // -- Transactional email templates (list / read / edit / reset /
     //    preview). The {type} segment is the EmailTemplateType name (the DB holds
     //    only overrides; the catalogue backs every read so the grid shows all six).
 

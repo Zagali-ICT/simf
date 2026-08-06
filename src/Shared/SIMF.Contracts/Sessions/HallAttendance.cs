@@ -2,11 +2,11 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Sessions;
 
-/// <summary>P5.1 — D-241 (FDS-003 §5.4): the attendee's device reports its
+/// <summary>The attendee's device reports its
 /// current GPS position to claim arrival at a session's hall. The server checks
-/// the point against the hall's geofence (D-240) and records a
+/// the point against the hall's geofence and records a
 /// <see cref="AttendanceMethod.Geofence"/> arrival. The raw coordinates are NOT
-/// stored — only the derived enter/leave times (FDS-003 §10, sensitive PII).</summary>
+/// stored — only the derived enter/leave times (sensitive PII).</summary>
 public sealed class RecordArrivalRequest
 {
     public double Lat { get; set; }

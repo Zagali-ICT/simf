@@ -83,12 +83,12 @@ public sealed record BadgeActivationStartResponse(
 /// Verifies the emailed code and sets the account's first password (and confirms
 /// the email). On success the holder signs in normally with email + password.
 ///
-/// <para>#10 phase 4 — a bulk-generated badge is minted against a <b>placeholder</b>
+/// <para>A bulk-generated badge is minted against a <b>placeholder</b>
 /// profile (a generated display name such as "VIP #3", <c>NationalityId = 0</c>, no
 /// interests). Self-claim is the only moment the real holder is at the keyboard, so
 /// the profile fields below are captured here and written onto that placeholder row.
 /// Every one of them is optional and appended with a default, so the shipped wire
-/// contract stays append-only (D-219): a client that sends none still activates
+/// contract stays append-only: a client that sends none still activates
 /// exactly as before, it just leaves the placeholder unfilled.</para>
 /// </summary>
 public sealed class BadgeActivationCompleteRequest

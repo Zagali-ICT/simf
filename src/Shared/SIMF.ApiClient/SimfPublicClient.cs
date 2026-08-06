@@ -16,7 +16,7 @@ namespace SIMF.ApiClient;
 
 /// <summary>
 /// A typed client over the SIMF anonymous public-read endpoints (the public
-/// programme and speakers surface, D-199). Unlike <see cref="SimfAuthClient"/>
+/// programme and speakers surface). Unlike <see cref="SimfAuthClient"/>
 /// and <see cref="SimfAccountClient"/> it carries no bearer token — the public
 /// reads are anonymous. The registered <see cref="HttpClient"/> supplies only
 /// the <c>BaseAddress</c> (same as <see cref="SimfAuthClient"/> and

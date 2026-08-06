@@ -6,7 +6,7 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// R4 — D-209: persistence seam for the Interests CRUD (P9 — D-050). The
+/// Persistence seam for the Interests CRUD. The
 /// Application <see cref="InterestService"/> talks to this contract; the
 /// Infrastructure implementation owns the EF query shapes. Mirrors the
 /// <see cref="Notifications.INotificationRepository"/> idiom — read shapes

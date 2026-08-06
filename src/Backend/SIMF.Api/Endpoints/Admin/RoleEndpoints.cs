@@ -88,11 +88,11 @@ public sealed class CreateRoleEndpoint(IAdminRoleService service)
 }
 
 /// <summary>Binds {id} + body via a derived route that INHERITS the
-/// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
-/// D-842 (sessions), D-843 (gates, profile types) and the four before them
-/// silently dropped a field on PUT. Passing the bound request straight through
-/// makes that drop impossible.</summary>
+/// the sessions, gates and profile-type routes — and the four before them —
+/// each silently dropped a field on PUT. Passing the bound request straight
+/// through makes that drop impossible.</summary>
 public sealed class UpdateRoleRequest : AdminUpdateRoleRequest
 {
     public Guid Id { get; set; }
@@ -126,7 +126,7 @@ public sealed class GetRolePermissionsRequest
     public Guid Id { get; set; }
 }
 
-/// <summary>Issue-1 — the permission codes a role currently grants.</summary>
+/// <summary>The permission codes a role currently grants.</summary>
 public sealed class GetRolePermissionsEndpoint(IAdminRoleService service)
     : Endpoint<GetRolePermissionsRequest, ApiResult<AdminRolePermissionsResponse>>
 {
@@ -158,7 +158,7 @@ public sealed class SetRolePermissionsRequest
     public List<string> Codes { get; set; } = new();
 }
 
-/// <summary>Issue-1 — replaces a custom role's permission grants. Gated by
+/// <summary>Replaces a custom role's permission grants. Gated by
 /// <c>Roles.AssignPermissions</c>.</summary>
 public sealed class SetRolePermissionsEndpoint(IAdminRoleService service)
     : Endpoint<SetRolePermissionsRequest, ApiResult<bool>>

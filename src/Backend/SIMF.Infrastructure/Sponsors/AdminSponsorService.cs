@@ -11,7 +11,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Sponsors;
 
-/// <summary>D-199 (Mockup page 23) — admin CRUD over <see cref="Sponsor"/>.
+/// <summary>Admin CRUD over <see cref="Sponsor"/>.
 /// Mirrors AdminDelegationService structure (validation → mutate → save →
 /// audit). Soft-delete via <see cref="SIMF.Domain.Common.BaseAuditEntity.Deactivate"/>.</summary>
 internal sealed class AdminSponsorService(
@@ -49,7 +49,7 @@ internal sealed class AdminSponsorService(
             rows = rows.Where(sponsor => sponsor.Tier == tier);
         }
 
-        // CP grid per-column text filters (D-255). The grid sends the column
+        // CP grid per-column text filters. The grid sends the column
         // Key as the filter key; unknown columns are ignored. The isActive /
         // tier filters above stay for API callers that pass the structured keys.
         foreach (var (column, raw) in query.Filters)
@@ -67,7 +67,7 @@ internal sealed class AdminSponsorService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default (and any unknown sort):
+        // CP grid sortable columns. Default (and any unknown sort):
         // Tier, then DisplayOrder, then NameAr — the public ordering.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {

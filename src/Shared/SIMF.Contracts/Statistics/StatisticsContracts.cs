@@ -31,8 +31,8 @@ public sealed record StatisticsDashboard(
 /// One forum day of the Control Panel programme dashboard — the figures the
 /// organisers watch per day, keyed to a <c>ProgrammeDay</c> row.
 ///
-/// <para>Every count is bucketed on the <b>Saudi calendar day</b>. Since D-813
-/// instants are persisted as the Saudi wall clock, so the stored value already
+/// <para>Every count is bucketed on the <b>Saudi calendar day</b>. Instants are
+/// persisted as the Saudi wall clock, so the stored value already
 /// falls in the right day and no zone shift is involved; the service still
 /// resolves each day to an explicit half-open window <c>[start, end)</c>,
 /// because a range predicate stays an index-friendly seek where a date-component
@@ -65,7 +65,7 @@ public sealed record ProgrammeDayStats(
 /// <para>Role counts are resolved through <c>UserProfile</c> →
 /// <c>UserProfileType</c>, which both live in the App database — the mapping is
 /// admin-curated data (<c>ProfileType.MobileAppRole</c> / <c>IsForVisitor</c>),
-/// never hardcoded, and never a cross-database join (D-157).</para>
+/// never hardcoded, and never a cross-database join.</para>
 /// </summary>
 public sealed record StatisticsProgramme(
     int CurrentUsers,

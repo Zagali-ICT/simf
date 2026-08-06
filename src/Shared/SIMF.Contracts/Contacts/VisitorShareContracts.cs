@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Contacts;
 
-// SIMF-FDS-014 §5.7 (D-284, Track 2) — visitor-to-visitor contact sharing
+// Visitor-to-visitor contact sharing
 // (app audience). A visitor shares their own card by showing a QR built from
 // their share token; another visitor resolves that token to a live card and
 // can save it to "My Contacts". No Identity-owned data is duplicated — cards

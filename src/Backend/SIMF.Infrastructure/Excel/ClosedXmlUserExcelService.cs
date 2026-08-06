@@ -10,8 +10,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Excel;
 
 /// <summary>
-/// ClosedXML-backed implementation of the user-management Excel workbook
-///.
+/// ClosedXML-backed implementation of the user-management Excel workbook.
 ///
 /// <para>Workbook layout:</para>
 /// <code>
@@ -20,7 +19,7 @@ namespace SIMF.Infrastructure.Excel;
 ///   Row 2…  — one user per row, up to <see cref="MaxImportRows"/>
 /// </code>
 ///
-/// <para>Defence-in-depth (D-045 H1):</para>
+/// <para>Defence-in-depth:</para>
 /// <list type="bullet">
 ///   <item><description>Export sanitises every string cell — values starting with
 ///     <c>=</c> / <c>+</c> / <c>-</c> / <c>@</c> / TAB / CR are prefixed with

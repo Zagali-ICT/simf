@@ -7,8 +7,8 @@ namespace SIMF.Common.Enums;
 /// (it supersedes <see cref="AssetCategory"/> + the seven bespoke stores).
 ///
 /// <para>Persisted as an int; <b>append-only</b> — never rename or reorder an
-/// existing value (the D-110 enum-stability rule, which survives the D-568
-/// freeze-lift for the new table). A new category takes the next free integer.</para></summary>
+/// existing value, per the enum-stability rule. A new category takes the next
+/// free integer.</para></summary>
 public enum FileService
 {
     /// <summary>Account profile picture (owner = SimfUser.Id). Owner-or-admin read; encrypted.</summary>

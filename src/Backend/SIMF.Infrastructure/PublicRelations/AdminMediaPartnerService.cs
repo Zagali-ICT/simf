@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.PublicRelations;
 
-/// <summary>D-199 (Mockup page 31) — admin CRUD over
+/// <summary>Admin CRUD over
 /// <see cref="MediaPartner"/>. Id is a server-assigned Guid. Duplicate
 /// detection is on the English name (case-insensitive) since a media
 /// partner has no separate business code. Mirrors AdminCountryService /
@@ -40,7 +40,7 @@ internal sealed class AdminMediaPartnerService(
                 || EF.Functions.Like(partner.NameArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }

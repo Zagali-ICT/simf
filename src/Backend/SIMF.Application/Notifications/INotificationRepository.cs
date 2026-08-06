@@ -6,8 +6,8 @@ using SIMF.Domain.Notifications;
 namespace SIMF.Application.Notifications;
 
 /// <summary>
-/// Persistence seam for the in-app notification surface (P12 —
-/// D-053). Application services (<c>NotificationDispatcher</c>,
+/// Persistence seam for the in-app notification surface.
+/// Application services (<c>NotificationDispatcher</c>,
 /// <c>NotificationService</c>) talk to this contract; the Infrastructure
 /// implementation owns the EF query shapes.
 ///
@@ -25,9 +25,9 @@ public interface INotificationRepository
     /// <paramref name="userId"/>. Backs the dispatcher's opt-in
     /// <see cref="NotificationRequest.DeduplicateByRelatedEntity"/> guard so the
     /// same (user, kind, entity) is never notified twice — e.g. one session-rating
-    /// prompt per attendee whether it fires on hall departure (GAP-A) or the
-    /// clock-end worker. A single-context query on the Identity DB (D-157: no
-    /// cross-DB join — the entity id is a bare Guid).</summary>
+    /// prompt per attendee whether it fires on hall departure or from the
+    /// clock-end worker. A single-context query on the Identity DB — there is no
+    /// cross-DB join, because the entity id is a bare Guid.</summary>
     Task<bool> ExistsForUserAsync(
         Guid userId,
         NotificationKind kind,

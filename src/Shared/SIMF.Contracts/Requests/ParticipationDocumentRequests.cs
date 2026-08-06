@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب وثيقة المشاركة") — login-required body for
+/// <summary>Login-required body for the الطلبات "طلب وثيقة المشاركة" request,
 /// <c>POST /app/document-requests</c>.</summary>
 public sealed class SubmitParticipationDocumentRequestBody
 {
@@ -22,7 +22,7 @@ public sealed record ParticipationDocumentRequestSubmitted(
 
 /// <summary>One row in the admin participation-document-requests grid.
 /// The requester display name is resolved from the App-DB profile; the email is
-/// deliberately NOT on the list row (it moves to the detail — the D-185
+/// deliberately NOT on the list row (it moves to the detail, following the
 /// bulk-PII pattern).</summary>
 public sealed record AdminParticipationDocumentRequestRow(
     Guid Id,
@@ -52,7 +52,7 @@ public sealed record AdminParticipationDocumentRequestDetail(
 
 /// <summary>Admin moves the row off Pending. Status must be Accepted or
 /// Rejected. Open for inheritance so the route-binding endpoint can carry an
-/// <c>Id</c> field (the D-168 pattern).</summary>
+/// <c>Id</c> field.</summary>
 public class RespondToParticipationDocumentRequestRequest : RespondToRequest
 {
 }

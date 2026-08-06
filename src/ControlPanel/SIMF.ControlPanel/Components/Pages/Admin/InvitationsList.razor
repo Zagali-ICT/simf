@@ -1,11 +1,11 @@
-@* D-168 (gap doc G5, PDF §2.7.3) — public-relations: invitation desk. Lists
-   invitations with a state filter. Centralized dialog/full-page framing D-353:
+@* Public-relations: the invitation desk. Lists
+   invitations with a state filter. Centralized dialog/full-page framing:
    Add / Edit / View / Delete are hosted by CrudShell, which frames the reusable
    InvitationsAddEdit and InvitationsViewDelete forms as a popup or a full page per
    the admin's toolbar choice (persisted in localStorage via CpPreferences). The
    two inline SimfModals (Send + Edit) it used to carry are gone. Gated by
    Administrator OR PublicRelations (the BFF forwards the JWT, the API policy
-   enforces the permission). D-356: Excel EXPORT only (invitations are
+   enforces the permission). Excel EXPORT only (invitations are
    created/edited from the forms — no import). *@
 @page "/admin/invitations"
 @layout CpShellLayout

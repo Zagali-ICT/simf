@@ -4,11 +4,11 @@ using SIMF.Domain.BusinessMeetings;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>R4 (bi-meeting rules, D-767) — DelegationMeetingActionToken EF config.
+/// <summary>DelegationMeetingActionToken EF config.
 /// Real FK to DelegationMeetingRequest with cascade so a deleted request removes its
 /// tokens. Only the keyed-HMAC hash is stored; redemption looks up by that hash, so
 /// it is unique-indexed. Mirrors MeetingActionTokenConfiguration (the speaker token);
-/// a new additive table (D-219 lift) that leaves the frozen speaker table untouched.</summary>
+/// a new additive table that leaves the frozen speaker table untouched.</summary>
 internal sealed class DelegationMeetingActionTokenConfiguration
     : IEntityTypeConfiguration<DelegationMeetingActionToken>
 {

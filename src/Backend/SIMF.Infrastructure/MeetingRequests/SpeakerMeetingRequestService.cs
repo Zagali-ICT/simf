@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/SpeakerMeetingRequestsTests.cs
-//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (QA A25/B12/B20)
-//        SIMF.Api.Tests/SpeakerMeetingLinksUnsetTests.cs (QA A24)
-//        SIMF.Api.Tests/MeetingNoAvailabilityTests.cs (G3)
+//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs
+//        SIMF.Api.Tests/SpeakerMeetingLinksUnsetTests.cs
+//        SIMF.Api.Tests/MeetingNoAvailabilityTests.cs
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -19,11 +19,11 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;
 
-/// <summary>D-269 (Mockup page 20 "Speaker profile") — speaker meeting-request
+/// <summary>Speaker meeting-request
 /// service. Submission validates the speaker is active and opted in
 /// (<c>AllowsMeetingRequests</c>); admin response sets RespondedAt +
 /// RespondedByUserId. Audit-only, no notification (consistent with the
-/// now-removed session-scoped flow, D-278).</summary>
+/// now-removed session-scoped flow).</summary>
 internal sealed class SpeakerMeetingRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
@@ -89,7 +89,7 @@ internal sealed class SpeakerMeetingRequestService(
                 "هذا المتحدّث لا يقبل طلبات المقابلة.");
         }
 
-        // Bi-Meeting rework (was D-729 VIP-only) — requesting a speaker meeting is now
+        // Requesting a speaker meeting is now
         // gated by the per-user UserProfile.AllowsSpeakerMeeting flag (admin-assigned),
         // decoupled from the VIP tier. The app hides the CTA when the flag is false
         // (UserProfileResponse.AllowsSpeakerMeeting); this is the server-side backstop.
@@ -102,7 +102,7 @@ internal sealed class SpeakerMeetingRequestService(
                 "طلب مقابلة المتحدّث غير مُفعَّل لحسابك.");
         }
 
-        // G3 (owner 2026-07-30) — SUPERSEDES the "topic-only request" half of R1:
+        // A topic-only request is no longer enough on its own:
         // a meeting request may no longer be sent when the speaker has nothing left to
         // offer. GetAvailableSlotsAsync returns an empty list for BOTH reasons — the
         // speaker has no active future window at all, and every slot the windows offer is
@@ -122,13 +122,13 @@ internal sealed class SpeakerMeetingRequestService(
         // in-place MOVE of the existing Pending request after the slot is resolved (see
         // below), not a duplicate 409.
 
-        // Slot flow (D-474 #11): validate the picked slot pair (both-or-neither, end >
-        // start). R1 (D-767) still holds for the PICKED slot: it is NOT re-checked for
+        // Slot flow: validate the picked slot pair (both-or-neither, end >
+        // start). The PICKED slot is NOT re-checked for
         // membership at submit — several Pending requests may target the same time; the
         // admin approves only one (Serializable approve guard), and a reserved slot is
-        // already hidden from the picker (R2), so a requester never sees a same-time
-        // error. What R1 no longer permits (G3, above) is a request against a speaker
-        // with NO free slot at all.
+        // already hidden from the picker, so a requester never sees a same-time
+        // error. What is no longer permitted (see the check above) is a request against
+        // a speaker with NO free slot at all.
         DateTime? slotStart = null;
         DateTime? slotEnd = null;
         Guid? availabilityWindowId = null;
@@ -145,7 +145,7 @@ internal sealed class SpeakerMeetingRequestService(
             slotEnd = pickedEnd;
 
             // Persist which availability window the picked slot came from
-            // (the D-611 SpeakerMeetingRequests.AvailabilityWindowId FK, SetNull).
+            // (the SpeakerMeetingRequests.AvailabilityWindowId FK, SetNull).
             // The slot falls inside exactly one active window; resolve it by range.
             availabilityWindowId = await appDbContext.SpeakerAvailabilityWindows.AsNoTracking()
                 .Where(w => w.SpeakerId == speakerId && w.IsActive
@@ -154,7 +154,7 @@ internal sealed class SpeakerMeetingRequestService(
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        // R8 (bi-meeting rules, D-767) — a repeat submission MOVES the existing Pending
+        // A repeat submission MOVES the existing Pending
         // request (new slot / subject / name) rather than duplicating it or 409-ing.
         var openRequest = await appDbContext.SpeakerMeetingRequests
             .SingleOrDefaultAsync(r => r.RequestedByUserId == requesterUserId
@@ -278,13 +278,13 @@ internal sealed class SpeakerMeetingRequestService(
                     r.Id, r.SpeakerId, SpeakerName = s.Name, SpeakerNameArabic = s.NameArabic,
                     r.RequestedByUserId, r.RequesterName, r.Subject,
                     r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt,
-                    // OA-D5 — the hall check-in stamps, so the grid and its export
+                    // The hall check-in stamps, so the grid and its export
                     // report who actually turned up, not only the decision.
                     r.CheckedInAt, r.CheckedInByUserId,
                 })
             .ToListAsync(cancellationToken);
 
-        // OA-D5 — resolve the check-in operators' display names in ONE Identity-DB
+        // Resolve the check-in operators' display names in ONE Identity-DB
         // query for the whole page. CheckedInByUserId is a bare logical FK,
         // so this is a second query merged in memory — never a cross-database JOIN.
         // Rows with no check-in contribute no id.
@@ -396,12 +396,12 @@ internal sealed class SpeakerMeetingRequestService(
         // token pair. Staged ONCE here, before the retryable block, so a serialization
         // retry re-commits the same pair rather than minting a duplicate. Only the
         // email that follows is best-effort.
-        // Bi-Meeting rework — the 3-button model. Approve (bindHall && !VerbalConfirmed)
+        // The 3-button model. Approve (bindHall && !VerbalConfirmed)
         // mints the speaker confirmation link pair. Confirm (bindHall && VerbalConfirmed)
         // means the admin already has the speaker's verbal confirmation, so no link is
         // minted and the meeting goes straight to Accepted (Confirmed) below.
         //
-        // QA A24 / A25 — the Approve path's ONLY exit is the speaker clicking a link in
+        // The Approve path's ONLY exit is the speaker clicking a link in
         // an email. Refuse it UP FRONT (before a token is minted, before the status
         // flips) when that email could never be delivered: an unconfigured public base
         // URL, or a speaker with no contact email on file. Previously both were silent
@@ -417,7 +417,7 @@ internal sealed class SpeakerMeetingRequestService(
             ? meetingActionTokens.StageTokensForRequest(req.Id)
             : null;
 
-        // FIX #22 (R-1 held item) — close the CONCURRENT speaker double-book race. The
+        // Close the CONCURRENT speaker double-book race. The
         // app-level overlap re-check (SpeakerHasOverlappingMeetingAsync) already blocks
         // the sequential case, but two concurrent accepts of overlapping-but-different-
         // start slots can each pass the check before either commits, and the frozen
@@ -429,7 +429,7 @@ internal sealed class SpeakerMeetingRequestService(
         // composes with EnableRetryOnFailure (a bare user transaction throws under the
         // retrying strategy); on the serialization/deadlock failure the strategy re-runs
         // the whole unit and the re-check sees the now-committed rival and raises the
-        // clean 409. Same pattern as BusinessMeetingService (M-5).
+        // clean 409. Same pattern as BusinessMeetingService.
         var strategy = appDbContext.Database.CreateExecutionStrategy();
         try
         {
@@ -445,9 +445,9 @@ internal sealed class SpeakerMeetingRequestService(
                 else if (request.Status == MeetingRequestStatus.Accepted
                     && req.SlotStart is { } slotStart && req.SlotEnd is { } slotEnd)
                 {
-                    // A1 — accepting a slot-bearing request must re-check the slot is
+                    // Accepting a slot-bearing request must re-check the slot is
                     // still free among the speaker's LIVE meetings (Accepted OR
-                    // AwaitingSpeaker, per the shared helper; D-716). Inside the
+                    // AwaitingSpeaker, per the shared helper). Inside the
                     // Serializable transaction this half-open range scan holds the
                     // key-range lock that serializes a concurrent overlapping accept.
                     if (await SpeakerHasOverlappingMeetingAsync(
@@ -459,7 +459,7 @@ internal sealed class SpeakerMeetingRequestService(
                             "لم تعد هذه الفترة متاحة.");
                     }
 
-                    // M-7 — the requester must not already hold another live meeting then.
+                    // The requester must not already hold another live meeting then.
                     if (await RequesterHasOverlappingMeetingAsync(
                             req.RequestedByUserId, req.Id, slotStart, slotEnd, cancellationToken))
                     {
@@ -515,7 +515,7 @@ internal sealed class SpeakerMeetingRequestService(
             }),
             cancellationToken);
 
-        // Mirrors the session flow (D-185): the respond path returns the
+        // Mirrors the session flow: the respond path returns the
         // requester email, so SOC must see one Viewed event for every email
         // disclosure regardless of which endpoint disclosed it.
         await auditLog.WriteSuccessAsync(
@@ -595,7 +595,7 @@ internal sealed class SpeakerMeetingRequestService(
             DetailJson(new { speakerMeetingRequestId = id }),
             cancellationToken);
 
-        // QA B12 — check-in used to be a bare status flip: the requester was told
+        // Check-in used to be a bare status flip: the requester was told
         // nothing and their card still read "accepted". Tell them the attendance was
         // recorded (in-app + email, the same convention the other outcomes use).
         // Best-effort — a notify failure never undoes the committed check-in.
@@ -619,7 +619,7 @@ internal sealed class SpeakerMeetingRequestService(
         return await LoadDetailAsync(id, cancellationToken);
     }
 
-    // QA B20 — a mistaken Decline / a requester's Cancel used to be unrecoverable: the
+    // A mistaken Decline / a requester's Cancel used to be unrecoverable: the
     // row carried no actions at all. Reopening puts it back to a clean Pending (the same
     // shape MeetingAwaitingSpeakerExpiryWorker reverts to) so the admin can decide again.
     // Only the two CLOSED-without-a-meeting states qualify — Accepted / AwaitingSpeaker /
@@ -692,7 +692,7 @@ internal sealed class SpeakerMeetingRequestService(
                 "لا يمكن إعادة الإرسال إلا لطلب بانتظار تأكيد المتحدّث.");
         }
 
-        // QA A24 / A25 — same precondition as Approve: never mint a fresh pair that
+        // Same precondition as Approve: never mint a fresh pair that
         // cannot be delivered. A re-send whose email would be skipped is exactly the
         // silent no-op this action exists to fix.
         await EnsureSpeakerConfirmationIsDeliverableAsync(req.SpeakerId, cancellationToken);
@@ -722,7 +722,7 @@ internal sealed class SpeakerMeetingRequestService(
     private async Task EmailSpeakerConfirmationLinksAsync(
         SpeakerMeetingRequest req, MeetingActionLinks links, CancellationToken cancellationToken)
     {
-        // QA A24 / A25 — both callers (Approve + Resend) now pre-flight these two
+        // Both callers (Approve + Resend) pre-flight these two
         // preconditions via EnsureSpeakerConfirmationIsDeliverableAsync, so reaching
         // either branch means the state changed underneath us. Log at ERROR (it strands
         // an AwaitingSpeaker request) instead of the old warning / silent return.
@@ -758,7 +758,7 @@ internal sealed class SpeakerMeetingRequestService(
             purpose: "SpeakerMeetingConfirm", cancellationToken);
     }
 
-    // QA A24 / A25 — the two preconditions the speaker double-opt-in email needs before
+    // The two preconditions the speaker double-opt-in email needs before
     // the Approve / Resend path is allowed to mint anything. Both are admin-fixable
     // (a configuration key, a missing speaker email), so they surface as precise
     // bilingual 409s that name the fix rather than a log line nobody reads.
@@ -796,9 +796,9 @@ internal sealed class SpeakerMeetingRequestService(
 
     private static string HtmlEnc(string value) => System.Net.WebUtility.HtmlEncode(value);
 
-    // The speaker's contact email — now an inline column on Speaker (D-766 removed
-    // the shared Contact directory). Shared by the accept-outcome email and the
-    // D-717 links email.
+    // The speaker's contact email — an inline column on Speaker, since the shared
+    // Contact directory it used to come from is gone. Shared by the accept-outcome
+    // email and the confirmation-links email.
     private Task<string?> ResolveSpeakerContactEmailAsync(
         Guid speakerId, CancellationToken cancellationToken) =>
         appDbContext.Speakers.AsNoTracking()
@@ -858,7 +858,7 @@ internal sealed class SpeakerMeetingRequestService(
 
         // The picked slot must still be a currently-free slot for the hall — the
         // availability layer already excludes slots taken by a bound meeting
-        // (D-716 taken-filter), so membership is the free check.
+        // (the taken-filter), so membership is the free check.
         var slots = await hallAvailability.GetAvailableSlotsAsync(hallId, cancellationToken);
         if (!slots.Any(s => s.Start == start && s.End == end))
         {
@@ -1014,9 +1014,7 @@ internal sealed class SpeakerMeetingRequestService(
         }
     }
 
-    // Loads the admin detail (speaker name from the App DB + requester email
-    // resolved on read from the Identity DB — no cross-DB JOIN, D-157).
-    /// <summary>OA-D5 — the check-in operator's display name for one row, or null
+    /// <summary>The check-in operator's display name for one row, or null
     /// when the meeting has not been checked in (or the operator account is gone).
     /// The map comes from the single per-page Identity-DB lookup above.</summary>
     private static string? ResolveOperatorName(
@@ -1026,6 +1024,8 @@ internal sealed class SpeakerMeetingRequestService(
         return namesByUserId.TryGetValue(userId, out var name) ? name : null;
     }
 
+    // Loads the admin detail (speaker name from the App DB + requester email
+    // resolved on read from the Identity DB — there is no cross-DB JOIN).
     private async Task<AdminSpeakerMeetingRequestDetail> LoadDetailAsync(
         Guid id, CancellationToken cancellationToken)
     {

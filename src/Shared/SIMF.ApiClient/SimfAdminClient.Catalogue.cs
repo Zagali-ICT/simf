@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- B3 (D-220) — Organisation lookup admin CRUD + gov-Excel import
+    // -- Organisation lookup admin CRUD + gov-Excel import
     //    (SIMF.Contracts.Organisations) ------------------------------------
 
     public Task<ApiCallResult<GridPage<AdminOrganisationSummary>>> ListOrganisationsAsync(
@@ -109,7 +109,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"media-partners/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- B9b (D-226) — Session-category dynamic lookup admin CRUD
+    // -- Session-category dynamic lookup admin CRUD
     //    (SIMF.Contracts.Admin) ---------------------------------------------
 
     public Task<ApiCallResult<GridPage<AdminSessionCategorySummary>>> ListSessionCategoriesAsync(
@@ -150,7 +150,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"session-categories/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-452 — Programme-days admin CRUD (SIMF.Contracts.Admin). Date +
+    // -- Programme-days admin CRUD (SIMF.Contracts.Admin). Date +
     //    bilingual title; the logo rides the generic asset endpoints
     //    (AssetCategory.ProgrammeDayImage). Mirrors the session-category shape.
 
@@ -192,7 +192,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"programme-days/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- #6/#17 — Booking monitor (read-only; SIMF.Contracts.Sessions) --------
+    // -- Booking monitor (read-only; SIMF.Contracts.Sessions) ----------------
     // Bookings auto-confirm (no approval step) and no-shows are released by a
     // background worker, so the CP only reads the active-reservations list.
 
@@ -204,7 +204,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    // -- P2.3 (D-228) — Speaker presentation files (SIMF.Contracts.Admin) ----
+    // -- Speaker presentation files (SIMF.Contracts.Admin) -------------------
 
     public Task<ApiCallResult<IReadOnlyList<AdminSpeakerPresentationRow>>> ListSpeakerPresentationsAsync(
         Guid speakerId, string accessToken,
@@ -233,7 +233,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"speaker-presentations/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>P2.3 — streamed read of a presentation file for the CP download
+    /// <summary>Streamed read of a presentation file for the CP download
     /// proxy. Bypasses the <c>ApiResult</c> envelope (binary body); returns the
     /// status, content type, content-disposition and bytes verbatim.</summary>
     public async Task<(int StatusCode, string? ContentType, string? ContentDisposition, byte[] Bytes)>

@@ -9,10 +9,10 @@ using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Attendance;
 
-/// <summary>FR-506 (SIMF-SRS-001 §3.5; FDS-003 §5.5) — the live top-line for the
+/// <summary>The live top-line for the
 /// Control Panel session-attendance dashboard: people currently inside a hall,
 /// active sessions with attendance, and total arrivals. Read-only aggregate
-/// over the existing HallAttendance records (D-241); no schema, no writes.
+/// over the existing HallAttendance records; no schema, no writes.
 /// Gated by <c>Attendance.View</c> + RequireApprovedAccount.</summary>
 public sealed class GetSessionAttendanceSummaryEndpoint(ISessionAttendanceService service)
     : EndpointWithoutRequest<ApiResult<SessionAttendanceSummary>>
@@ -30,7 +30,7 @@ public sealed class GetSessionAttendanceSummaryEndpoint(ISessionAttendanceServic
             await service.GetSummaryAsync(ct)), ct);
 }
 
-/// <summary>FR-506 — the per-session attendance grid (server-paged): for each
+/// <summary>The per-session attendance grid (server-paged): for each
 /// active session, the distinct attendee count and the live-now count. Filter
 /// on title / code, sort by start time / code / title. Same
 /// <c>Attendance.View</c> gate as the summary.</summary>

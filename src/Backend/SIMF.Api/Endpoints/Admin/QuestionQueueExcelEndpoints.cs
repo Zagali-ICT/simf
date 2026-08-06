@@ -9,8 +9,8 @@ using SIMF.Contracts.Sessions;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/questions/export</c> — the D-356 grid export for the
-/// Scientific-Committee central Q&amp;A queue (P3.3, Mockup page 26). <b>Export
+/// <c>POST /api/v1/admin/questions/export</c> — the grid export for the
+/// Scientific-Committee central Q&amp;A queue. <b>Export
 /// only:</b> questions are submitted by the audience and moderated in place
 /// (approve / hide / escalate), so there is no import path. The CP queue page is
 /// <b>not</b> scoped by a parent picked on the page — it lists the full

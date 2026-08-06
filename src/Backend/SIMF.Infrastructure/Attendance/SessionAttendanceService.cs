@@ -8,16 +8,16 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Attendance;
 
 /// <summary>
-/// FR-506 — computes the Control Panel session-attendance dashboard from the
-/// existing <c>HallAttendance</c> arrival records (D-241). Pure reads: every
+/// Computes the Control Panel session-attendance dashboard from the
+/// existing <c>HallAttendance</c> arrival records. Pure reads: every
 /// query is <c>AsNoTracking</c> and nothing is written, so there is no schema
 /// change and no migration. The live-now count rides the
 /// <c>(HallId, Leave)</c> index and the per-session counts ride
 /// <c>(SessionId, UserId)</c> (both on <c>HallAttendanceConfiguration</c>).
 ///
 /// <para>All data is in the App database; <c>UserId</c> is counted as an opaque
-/// Guid and never resolved against the Identity database (D-157 — no cross-DB
-/// join). "Distinct attendees" is computed as one row per distinct
+/// Guid and never resolved against the Identity database — there is no cross-DB
+/// join. "Distinct attendees" is computed as one row per distinct
 /// <c>(SessionId, UserId)</c> pair so the same person re-entering a hall
 /// (a new row after a departure closed the prior one) counts once.</para>
 /// </summary>
@@ -93,7 +93,7 @@ internal sealed class SessionAttendanceService(
             ("title", false) => sessions.OrderBy(session => session.Title),
             // The key is "start", matching the grid column's Key (AttendanceDashboard
             // .razor) and the column itself. It read "startutc" until 2026-08-01, a
-            // leftover from before D-770 renamed the persisted columns: nothing ever sent
+            // leftover from before the persisted columns were renamed: nothing ever sent
             // that key, so clicking Start a second time silently fell through to the
             // ascending catch-all and the column could not be sorted newest-first at
             // all. The ascending arm is written out rather than left to `_` so the
@@ -173,8 +173,8 @@ internal sealed class SessionAttendanceService(
 
         var userIds = present.Select(a => a.UserId).Distinct().ToList();
 
-        // Profile data — App DB only (D-157: resolved from UserProfile, never from
-        // the Identity database). Admin-typed users carry no profile → null fields.
+        // Profile data — App DB only: resolved from UserProfile, never from
+        // the Identity database. Admin-typed users carry no profile → null fields.
         var profiles = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => userIds.Contains(p.UserId))
             .Select(p => new

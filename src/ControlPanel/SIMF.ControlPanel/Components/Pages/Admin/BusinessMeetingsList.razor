@@ -1,4 +1,4 @@
-@* SIMF-FDS-013 (D-248) — admin-arranged B2B/B2C business meetings. The admin
+@* Admin-arranged B2B / B2C / G2B business meetings. The admin
    schedules a meeting between two or more parties (companies + visitors) at a
    meeting table for a from–to time-slot; meetings are confirmed on save and can
    be cancelled. Mirrors BoothsList / SessionCategoriesList. *@
@@ -149,13 +149,13 @@
                             @onchange="OnTypeChanged" disabled="@_busy">
                         <option value="@((int)BusinessMeetingType.B2B)">B2B</option>
                         <option value="@((int)BusinessMeetingType.B2C)">B2C</option>
-                        @* D-730 (owner item 15B) — government-to-business type. *@
+                        @* Government-to-business type. *@
                         <option value="@((int)BusinessMeetingType.G2B)">G2B</option>
                     </select>
                 </label>
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Start"]</span>
-                    @* D-753 — bound the picker to the forum days (MIN/MAX programme day). *@
+                    @* Bound the picker to the forum days (MIN/MAX programme day). *@
                     <input class="simf-field__input" type="datetime-local"
                            min="@_forumMin" max="@_forumMax"
                            value="@_startText" @onchange="OnStartChanged" disabled="@_busy" />
@@ -238,7 +238,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _scheduleOpen = false)">
                 @L["Admin.BusinessMeetings.Cancel"]
             </SimfButton>
-            @* D-828 (second pass) - page gates on BusinessMeetings.View; scheduling a meeting is .Schedule. *@
+            @* The page gates on BusinessMeetings.View; scheduling a meeting is .Schedule. *@
             <AuthorizedAction Permission="@PermissionCatalog.BusinessMeetings.Schedule">
             <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.BusinessMeetings.Schedule.Submit"]
@@ -269,7 +269,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _cancelOpen = false)">
                 @L["Admin.BusinessMeetings.Cancel.Keep"]
             </SimfButton>
-            @* D-831 - the commit button of the modal this action opened. *@
+            @* The commit button of the modal this action opened. *@
             <AuthorizedAction Permission="@PermissionCatalog.BusinessMeetings.Cancel">
             <SimfButton Type="button" OnClick="ConfirmCancelAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.BusinessMeetings.Cancel.Confirm"]

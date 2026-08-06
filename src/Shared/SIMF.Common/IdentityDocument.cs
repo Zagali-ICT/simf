@@ -7,9 +7,9 @@ namespace SIMF.Common;
 /// number".
 ///
 /// <para>The rule used to live only in <c>UpsertUserProfileRequestValidator</c>,
-/// with the walk-in desk validator calling into it (D-459). Both sit in
+/// with the walk-in desk validator calling into it. Both sit in
 /// <c>SIMF.Api</c>, which <c>SIMF.Infrastructure</c> cannot reference — and the
-/// D-820 offline badge batch runs in Infrastructure and calls
+/// offline badge batch runs in Infrastructure and calls
 /// <c>RegisterOnSiteAsync</c> directly, so no FastEndpoints validator ever
 /// executes on it. Without a shared home the only way to check an uploaded badge
 /// row would have been a third copy of the rule. Same reason
@@ -38,8 +38,8 @@ public static class IdentityDocument
     /// The longest passport / other-document number the desk paths accept,
     /// matching <c>AdminWalkInRegistrationRequestValidator</c> exactly.
     ///
-    /// <para>A LENGTH CAP AND NOTHING ELSE, deliberately. An earlier cut of
-    /// D-824 used the self-service form's <c>[A-Za-z0-9]{6,9}</c> here and it
+    /// <para>A LENGTH CAP AND NOTHING ELSE, deliberately. An earlier cut used
+    /// the self-service form's <c>[A-Za-z0-9]{6,9}</c> here and it
     /// was wrong twice over. The desk classifier files ANY document that is not
     /// a 10-digit Saudi-shaped number into the passport field, so that shape
     /// also had to cover a Kuwaiti Civil ID (12 digits), a Qatari QID (11), an

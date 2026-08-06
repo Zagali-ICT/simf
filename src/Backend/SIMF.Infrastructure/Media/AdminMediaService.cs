@@ -13,13 +13,13 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Media;
 
 /// <summary>
-/// D-199 (Mockup page 30) — admin CRUD over <see cref="MediaItem"/>, built on
+/// Admin CRUD over <see cref="MediaItem"/>, built on
 /// <see cref="SimfAppDbContext"/>. Modelled on <c>AdminSpeakerService</c>:
 /// soft-delete via <c>IsActive</c>, an audit entry per mutation, and the same
 /// validation-then-persist flow. There is no unique business key on a media
 /// item (unlike Speaker.Code), so there is no 409-duplicate path — see
 /// <c>AdminMediaTests</c> and the module notes. Image bytes are written to the
-/// unified <see cref="IFileService"/> store (D-568 Wave C S2), pointed at by
+/// unified <see cref="IFileService"/> store, pointed at by
 /// <c>MediaItem.ImageFileId</c>.
 /// </summary>
 internal sealed class AdminMediaService(
@@ -45,7 +45,7 @@ internal sealed class AdminMediaService(
                 || (item.Album != null && EF.Functions.Like(item.Album, $"%{term}%"))
                 || (item.AlbumArabic != null && EF.Functions.Like(item.AlbumArabic, $"%{term}%")));
         }
-        // CP grid per-column filters (D-256). Keys match the SimfDataGrid
+        // CP grid per-column filters. Keys match the SimfDataGrid
         // column Key values on MediaList.razor; unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
@@ -74,7 +74,7 @@ internal sealed class AdminMediaService(
             }
         }
 
-        // CP grid sortable columns (D-256). Default preserves DisplayOrder,
+        // CP grid sortable columns. Default preserves DisplayOrder,
         // then newest-first by CreatedAt.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {

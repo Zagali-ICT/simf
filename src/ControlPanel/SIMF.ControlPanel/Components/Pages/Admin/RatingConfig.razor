@@ -255,12 +255,12 @@
     </div>
 </div>
 
-@* D-835 - the read affordance for all three grids. The types grid has an ungated
+@* The read affordance for all three grids. The types grid has an ungated
    "Manage" row action, so the ROW could always be opened - but opening is not
    reading: seven fields on AdminRatingTypeSummary have no column at all (Arabic
    name, overall-stars and comment settings with both comment labels, display
-   order, created). The review pass caught that the drill-in was being counted as
-   a read path when it reveals none of them. *@
+   order, created). The drill-in cannot stand in for a read path when it reveals
+   none of them. *@
 <SimfDetails Open="@(_typeDetails is not null)"
              Title="@(_typeDetails?.Name ?? string.Empty)"
              CloseLabel="@L["Grid.Close"]"
@@ -382,7 +382,7 @@
             </div>
         </ChildContent>
         <Footer>
-            @* D-828 - the page gates on RatingConfig.View; saving needs
+            @* The page gates on RatingConfig.View; saving needs
                Create or Edit. Keyed off the modal's own mode so a holder of
                only one keeps the half they are entitled to. *@
             <AuthorizedAction Permission="@(_typeEditId is null

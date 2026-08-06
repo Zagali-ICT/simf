@@ -2,8 +2,8 @@ namespace SIMF.Common.Enums;
 
 /// <summary>The lifecycle state of the current forum edition, shown as a
 /// status badge on the app + website and editable on the CP Organization Profile
-/// page. Brand-new enum (outside the D-110 freeze); persisted as an int —
-/// append-only, never rename or reorder existing values.</summary>
+/// page. A brand-new enum, added outside the enum freeze baseline; persisted
+/// as an int — append-only, never rename or reorder existing values.</summary>
 public enum ForumStatus
 {
     /// <summary>The edition is announced but not yet open ("coming soon").</summary>

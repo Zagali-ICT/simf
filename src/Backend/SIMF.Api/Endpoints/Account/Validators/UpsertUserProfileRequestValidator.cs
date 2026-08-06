@@ -1,5 +1,5 @@
-// Tests: SIMF.Api.Tests/UserProfileTests.cs (DEF-PHN-004 — the mobile is
-//        REQUIRED: no-mobile-at-all and blank-an-existing-number are both 400,
+// Tests: SIMF.Api.Tests/UserProfileTests.cs (the mobile is REQUIRED:
+//        no-mobile-at-all and blank-an-existing-number are both 400,
 //        international-only satisfies the rule for a Saudi national)
 using FastEndpoints;
 using FluentValidation;
@@ -10,17 +10,17 @@ using SIMF.Contracts.UserProfile;
 namespace SIMF.Api.Endpoints.Account.Validators;
 
 /// <summary>
-/// Validates the user-profile upsert (decisions D-046 b, P8 — D-049;
-/// renamed from <c>UpsertVisitorProfileRequestValidator</c>). The
-/// <c>VisitorType</c> string-discriminator rule was dropped in P8 — the
+/// Validates the user-profile upsert (renamed from
+/// <c>UpsertVisitorProfileRequestValidator</c>). The
+/// <c>VisitorType</c> string-discriminator rule was dropped: the
 /// profile-type now flows through the <c>UserProfile.ProfileTypeId</c>
 /// FK assigned by an admin, not a free-text claim by the user. The
-/// phone rules follow the C4 standard (D-371, superseding the permissive
-/// D-046 guidance): Saudi mobile <c>05XXXXXXXX</c> or <c>+9665XXXXXXXX</c>;
+/// phone rules are the strict ones, superseding earlier permissive
+/// guidance: Saudi mobile <c>05XXXXXXXX</c> or <c>+9665XXXXXXXX</c>;
 /// international mobile E.164 (<c>+</c> then 8–15 digits). Spaces and
 /// dashes are stripped before the match, client and server identically.
 ///
-/// <para>D-151 — the nationality code shape is checked here; the
+/// <para>The nationality code shape is checked here; the
 /// existence check (must resolve to a row in the <c>Country</c> table)
 /// runs in <c>UserProfileService</c> against
 /// <c>SimfAppDbContext.Countries</c>, since FluentValidation is sync
@@ -41,20 +41,20 @@ public sealed class UpsertUserProfileRequestValidator
         new(@"^\+[1-9]\d{7,14}$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
 
-    /// <summary>C4 (D-371) Saudi-mobile standard check — shared with the
+    /// <summary>Saudi-mobile standard check — shared with the
     /// walk-in registration validator so the rule lives once. The separator
-    /// stripping is <see cref="MobileNumber.Normalize"/> — DEF-PHN-003 moved it
-    /// to <c>SIMF.Common</c> so the write paths canonicalise with the SAME
+    /// stripping is <see cref="MobileNumber.Normalize"/>, which lives in
+    /// <c>SIMF.Common</c> so the write paths canonicalise with the SAME
     /// normaliser this rule matches against, instead of a second copy.</summary>
     public static bool IsStandardSaudiMobile(string value)
         => SaudiMobileShape.IsMatch(MobileNumber.Normalize(value));
 
-    /// <summary>C4 (D-371) E.164 international-mobile standard check —
-    /// shared with the walk-in registration validator.</summary>
+    /// <summary>E.164 international-mobile standard check — shared with
+    /// the walk-in registration validator.</summary>
     public static bool IsStandardInternationalMobile(string value)
         => E164Shape.IsMatch(MobileNumber.Normalize(value));
 
-    /// <summary>C6 (D-459) Saudi vehicle-plate standard check — restricted to
+    /// <summary>Saudi vehicle-plate standard check — restricted to
     /// the official 17-letter set (Arabic or Latin), 3 letters + 1–4 digits,
     /// either order. Delegates to the shared <see cref="SaudiPlate"/> (one
     /// source of truth, mirrored by the client's <c>plate_validation.dart</c>).</summary>
@@ -64,10 +64,10 @@ public sealed class UpsertUserProfileRequestValidator
     // Owner rule — the Arabic name must be Arabic letters only and the
     // English name Latin letters only (no digits, punctuation or cross-
     // script characters), and each must be a full name of at least 2 parts
-    // (D-683, relaxed from the short-lived D-674 ≥4 rule). The char restriction
+    // (relaxed from a short-lived ≥4 rule). The char restriction
     // guarantees every part is in the field's language.
     //
-    // BUG-021 — the accepted class runs U+0621..U+0652: the Arabic letters and
+    // The accepted class runs U+0621..U+0652: the Arabic letters and
     // tatweel (U+0640) as before, PLUS the tashkeel marks U+064B..U+0652
     // (fathatan … sukun, which includes the SHADDA U+0651). An ordinary Arabic
     // name carries a shadda — the product's own seed data does — and the old
@@ -93,7 +93,7 @@ public sealed class UpsertUserProfileRequestValidator
     public static bool BeEnglishLettersOnly(string? value)
         => string.IsNullOrWhiteSpace(value) || EnglishNameShape.IsMatch(value.Trim());
 
-    /// <summary>Owner rule (D-683, supersedes the D-674 ≥4 rule) — a "full name"
+    /// <summary>Owner rule (superseding an earlier ≥4 rule) — a "full name"
     /// is at least 2 whitespace-separated parts. Splits on any whitespace
     /// (matching the name regex's <c>\s</c> and the client's <c>\s+</c>) so a tab-
     /// or NBSP-separated name counts its parts the same way everywhere. No upper
@@ -192,7 +192,7 @@ public sealed class UpsertUserProfileRequestValidator
         RuleFor(request => request.PlaceOfBirth)
             .MaximumLength(128);
 
-        // D-163 (PDF §2.6) — optional job title, max 100 chars (owner 2026-07-06).
+        // Optional job title, max 100 chars (owner 2026-07-06).
         RuleFor(request => request.JobTitle)
             .MaximumLength(100).When(r => !string.IsNullOrEmpty(r.JobTitle))
             .Bilingual(
@@ -217,9 +217,9 @@ public sealed class UpsertUserProfileRequestValidator
                 "You must be at least 18 years old to register.",
                 "يجب أن يكون عمرك 18 عامًا على الأقل للتسجيل.");
 
-        // Conditional ID fields (P5 hardening — strict national-id prefix
-        // rules per the Saudi numbering plan; D-197 adds the real Luhn
-        // check digit on top of the prefix/length shape):
+        // Conditional ID fields — strict national-id prefix rules per the
+        // Saudi numbering plan, plus the real Luhn check digit on top of
+        // the prefix/length shape:
         //   - Saudi national id is exactly 10 digits, starts with 1, and
         //     passes the standard Luhn mod-10 checksum.
         //   - Iqama (residency permit) is exactly 10 digits, starts with 2,
@@ -266,9 +266,7 @@ public sealed class UpsertUserProfileRequestValidator
                     "يجب إدخال رقم الإقامة أو رقم جواز السفر.");
         });
 
-        // DEF-PHN-004 — the mobile is REQUIRED, closing the D-723 backend
-        // follow-up ("the app now blocks an empty mobile … aligning the server is
-        // a backend follow-up"). It was mandatory on the app form and on the
+        // The mobile is REQUIRED. It was mandatory on the app form and on the
         // walk-in desk but optional here, so a save could still CLEAR the number
         // the app then refuses to let the user submit without. The rule is the
         // walk-in desk's, word for word: at least one mobile, Saudi or
@@ -295,7 +293,7 @@ public sealed class UpsertUserProfileRequestValidator
                 "The international mobile must be in the +<country code><number> (E.164) format.",
                 "يجب أن يكون رقم الجوال الدولي بالصيغة الدولية ‎+‎ يليها رمز الدولة والرقم (E.164).");
 
-        // C6 (D-459, relaxed 2026-07-06) — رقم اللوحة: optional, but when
+        // رقم اللوحة: optional (relaxed 2026-07-06), but when
         // present it must be plate letters from the official 17-letter set
         // (Arabic or Latin) and/or digits — up to 3 letters + up to 4 digits,
         // at least one of them.

@@ -11,7 +11,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-209 (A2 split): the Issue-1 RBAC role-assignment surface of
+/// The RBAC role-assignment surface of
 /// <see cref="AdminAccountService"/> — read + diff-apply an admin user's
 /// roles, with the last-administrator lockout guard. Split into its own
 /// partial-class file for navigability; behaviour and DI are unchanged

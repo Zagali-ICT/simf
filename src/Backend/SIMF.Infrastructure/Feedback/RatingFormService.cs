@@ -234,7 +234,7 @@ internal sealed class RatingFormService(
         }
 
         // Each targeted scope validates against its own table. An unhandled scope
-        // is a programming error (append-only enum, D-110) — fail loud rather than
+        // is a programming error (the enum is append-only) — fail loud rather than
         // silently accepting an unvalidated target.
         var exists = type.Scope switch
         {

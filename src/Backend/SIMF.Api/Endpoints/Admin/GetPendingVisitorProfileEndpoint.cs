@@ -40,7 +40,7 @@ public sealed class GetPendingVisitorProfileEndpoint(IAdminApprovalReadService s
         {
             // Single 404 for missing / wrong-state / wrong-type so an
             // enumerator cannot diff error codes (matches the type-
-            // smuggling stance D-113 took on the bulk endpoints).
+            // smuggling stance the bulk endpoints take).
             throw new ApiException(
                 ErrorCodes.NotFound, 404,
                 "No pending visitor was found for this id.",

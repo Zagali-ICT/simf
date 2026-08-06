@@ -1,4 +1,4 @@
-@* D-134 Sprint A — Operation log viewer. Read-only over the existing
+@* Operation log viewer. Read-only over the existing
    OperationLogEntry table (no schema change). Filter row above the
    grid + per-row Details modal. Different from /admin/logs which is
    the technical Serilog file viewer; this page is for business +
@@ -43,7 +43,7 @@
                         </select>
                     </div>
                 </div>
-                @* P1.6 — date-range filter (inclusive). The service filters
+                @* Date-range filter (inclusive). The service filters
                    OperationLogEntry.Timestamp. *@
                 <div class="simf-field">
                     <label class="simf-field__label" for="op-from">@L["Admin.OperationLog.Filter.From"]</label>
@@ -69,7 +69,7 @@
                 <SimfButton Type="button" Variant="secondary" OnClick="ClearFiltersAsync">
                     @L["Admin.OperationLog.Filter.Clear"]
                 </SimfButton>
-                @* P1.6 — export the filtered result set. Gated by the dedicated
+                @* Export the filtered result set. Gated by the dedicated
                    OperationLog.Export permission (separate from View). *@
                 <AuthorizedAction Permission="@PermissionCatalog.OperationLog.Export">
                     <SimfButton Type="button" Variant="secondary" OnClick="OnExportAsync">

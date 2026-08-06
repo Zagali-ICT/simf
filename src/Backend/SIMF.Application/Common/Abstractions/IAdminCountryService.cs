@@ -25,7 +25,7 @@ public interface IAdminCountryService
         Guid actorUserId, int id,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-499 (الوفود) — the active delegates of a country, offered in the
+    /// <summary>The active delegates (الوفود) of a country, offered in the
     /// CP head-of-delegation picker on the country Edit form.</summary>
     Task<IReadOnlyList<AdminCountryDelegateOption>> ListDelegatesAsync(
         int countryId, CancellationToken cancellationToken = default);

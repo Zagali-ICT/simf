@@ -8,7 +8,7 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Programme;
 
-/// <summary>D-269 (Mockup page 20 "Speaker profile") — an authenticated,
+/// <summary>An authenticated,
 /// approved attendee submits a meeting request to a speaker who has opted in
 /// (<c>Speaker.AllowsMeetingRequests</c>). Login-required (not anonymous like
 /// the speaker reads); 409 when the speaker does not accept meeting
@@ -71,7 +71,7 @@ public sealed class ListAdminSpeakerMeetingRequestsEndpoint(ISpeakerMeetingReque
 }
 
 // Admin fetches one record (with requester email) before the respond modal
-// opens. Audited as SpeakerMeetingRequest.Viewed (mirrors the session D-185
+// opens. Audited as SpeakerMeetingRequest.Viewed (mirrors the session
 // per-record PII access signal).
 public sealed class GetAdminSpeakerMeetingRequestRoute
 {
@@ -122,7 +122,7 @@ public sealed class RespondToSpeakerMeetingRequestEndpoint(ISpeakerMeetingReques
     }
 }
 
-// R-1 — admin re-sends the speaker's Approve/Reject confirmation links for a request
+// An admin re-sends the speaker's Approve/Reject confirmation links for a request
 // still AwaitingSpeaker (the prior 72h token pair expired, or the email was skipped).
 public sealed class ResendSpeakerMeetingConfirmationRoute
 {
@@ -173,7 +173,7 @@ public sealed class CheckInSpeakerMeetingEndpoint(ISpeakerMeetingRequestService 
     }
 }
 
-// QA B20 — an admin reopens a Rejected / Cancelled request back to Pending so a
+// An admin reopens a Rejected / Cancelled request back to Pending so a
 // mistaken decline or cancel is recoverable. Same Manage permission as the other
 // decisions on the page; 409 for any status that still holds a slot.
 public sealed class ReopenSpeakerMeetingRequestRoute

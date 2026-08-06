@@ -13,7 +13,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <summary>
 /// <c>GET /api/v1/admin/profile-types?userType=Other</c> — every active
 /// <c>ProfileType</c> row for the given <see cref="UserType"/>. Drives the
-/// CP create page's subtype dropdown (P7c — D-048). Administrator-only.
+/// CP create page's subtype dropdown. Requires the ProfileTypes.View permission.
 /// </summary>
 public sealed class ListProfileTypesRequest
 {

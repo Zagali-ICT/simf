@@ -7,9 +7,9 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-168 (gap doc G5, PDF §2.7.3) — admin CRUD over
+/// <summary>Admin CRUD over
 /// <c>Invitations</c>. Gated by the per-action <c>Invitations.View</c> /
-/// <c>Invitations.Manage</c> permissions (Issue-1). The PublicRelations role
+/// <c>Invitations.Manage</c> permissions. The PublicRelations role
 /// holds them as seeded baseline grants and Administrator via the wildcard, so
 /// both hit the same surface; the service layer is role-agnostic.</summary>
 public sealed class ListInvitationsEndpoint(IAdminInvitationService service)

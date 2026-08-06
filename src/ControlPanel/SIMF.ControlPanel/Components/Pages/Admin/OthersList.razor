@@ -1,8 +1,8 @@
-@* Control Panel — list Other-typed accounts (P7e — D-055, promoted to the
-   canonical D-117 CRUD pattern in D-114). Administrator-only. Uses
-   SimfDataGrid with the full toolbar wired against the D-113 backend
+@* Control Panel — list Other-typed accounts, on the canonical CRUD page
+   pattern. Administrator-only. Uses
+   SimfDataGrid with the full toolbar wired against the admin-others backend
    (/account/api/admin/others/*) and SimfBanner page-top. Centralized
-   dialog/full-page framing D-353: Add / Edit / Details are hosted by CrudShell,
+   dialog/full-page framing: Add / Edit / Details are hosted by CrudShell,
    which frames the reusable OthersAddEdit (hosts the walk-in CreateOtherForm /
    the shared EditAccountForm) and OthersViewDelete (read-only profile) as a
    popup or a full page per the admin's toolbar choice (persisted in localStorage
@@ -107,7 +107,7 @@
     }
 }
 
-@* D-353 — Add / Edit / Details hosted by CrudShell (popup or full page). *@
+@* Add / Edit / Details hosted by CrudShell (popup or full page). *@
 @if (FormOpen)
 {
     <CrudShell Open="true" Presentation="EffectivePresentation"
@@ -126,7 +126,7 @@
     </CrudShell>
 }
 
-@* D-114 — hidden file input used by Import. *@
+@* Hidden file input used by Import. *@
 <input type="file" id="others-import-input" accept=".xlsx"
        class="simf-hidden-input"
        aria-label="@L["Admin.Users.Import.Picker"]"
@@ -147,7 +147,7 @@
                         OnClick="@(() => _bulkDeleteOpen = false)">
                 @L["Admin.Users.BulkDelete.Cancel"]
             </SimfButton>
-            @* D-831 - the commit button of the modal this action opened. *@
+            @* The commit button of the modal this action opened. *@
             <AuthorizedAction Permission="@PermissionCatalog.Others.Delete">
             <SimfButton Type="button" Variant="primary"
                             Loading="_busy"
@@ -178,7 +178,7 @@
                         OnClick="@(() => _duplicateOpen = false)">
                 @L["Admin.Users.Duplicate.Cancel"]
             </SimfButton>
-            @* D-831 - the commit button of the modal this action opened. *@
+            @* The commit button of the modal this action opened. *@
             <AuthorizedAction Permission="@PermissionCatalog.Others.Create">
             <SimfButton Type="button" Variant="primary"
                             Loading="_busy"

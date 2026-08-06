@@ -11,7 +11,7 @@ namespace SIMF.Api.Endpoints.Account;
 /// <summary>
 /// <c>POST /api/v1/app/account/recovery-codes/regenerate</c> — mints a fresh batch
 /// of 10 single-use recovery codes for the signed-in user, invalidating any
-/// previous batch (D-040). Plaintext codes are returned exactly once.
+/// previous batch. Plaintext codes are returned exactly once.
 /// </summary>
 public sealed class RecoveryCodesRegenerateEndpoint(IAccountService accountService)
     : EndpointWithoutRequest<ApiResult<RecoveryCodesResponse>>

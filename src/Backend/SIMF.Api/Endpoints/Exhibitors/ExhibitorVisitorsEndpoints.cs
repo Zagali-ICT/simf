@@ -12,8 +12,8 @@ namespace SIMF.Api.Endpoints.Exhibitors;
 // Exhibitor lead capture (app audience). App-only, no CP surface and no
 // permission code — like the visitor contact-share feature it keys off
 // RequireApprovedAccount + the app token; the exhibitor check is enforced in the
-// service. DEF-EXH-001: that check is now "the caller's profile type carries
-// MobileAppRole.Exhibitor" (D-519), not the old "any non-visitor type", which let
+// service. That check is "the caller's profile type carries
+// MobileAppRole.Exhibitor", not the old "any non-visitor type", which let
 // Staff / Moderator / Media / Sponsor tokens harvest visitor PII.
 
 /// <summary>POST — scan a visitor's entry-badge QR → capture to My Visitors +
@@ -67,9 +67,9 @@ public sealed class ExhibitorVisitorRoute
     public Guid Id { get; set; }
 }
 
-/// <summary>FR-EXH-002 — DELETE one captured lead from the booth's list
-/// (soft-delete, idempotent). My Contacts has had both a remove and an export
-/// since D-286; the lead list had neither, so a mis-scan or a lead the visitor
+/// <summary>DELETE one captured lead from the booth's list
+/// (soft-delete, idempotent). My Contacts has long had both a remove and an
+/// export; the lead list had neither, so a mis-scan or a lead the visitor
 /// asked to be dropped could not be removed at all. 403 unless the caller is a
 /// current booth officer.</summary>
 public sealed class RemoveCapturedVisitorEndpoint(IExhibitorVisitorService service)

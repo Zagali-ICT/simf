@@ -1,11 +1,11 @@
-@* D-199 (CP UI for D-199 media partners, Mockup page 31 - "Success Partners") -
-   admin CRUD over the public list of media partners. The public list is
+@* CP UI for media partners ("Success Partners") - admin CRUD over the public
+   list of media partners. The public list is
    ordered by DisplayOrder asc, NameArabic asc - admins control name (En/Ar),
    logo, link, display order and the active flag here. Centralized dialog/full-
-   page framing D-353: Add / Edit / View / Delete are hosted by CrudShell, which
+   page framing: Add / Edit / View / Delete are hosted by CrudShell, which
    frames the reusable MediaPartnerAddEdit and MediaPartnerViewDelete forms as a
    popup or a full page per the admin's toolbar choice (persisted in localStorage
-   via CpPreferences). D-740: the raw logo-path text column becomes a real logo
+   via CpPreferences). The logo column renders a real logo
    thumbnail (or initials tile) inside a shared SimfIdentityCell. *@
 @page "/admin/media-partners"
 @layout CpShellLayout

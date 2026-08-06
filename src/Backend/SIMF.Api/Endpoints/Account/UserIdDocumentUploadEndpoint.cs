@@ -18,8 +18,8 @@ public sealed class UserIdDocumentUploadRequest
 
 /// <summary>
 /// <c>POST /api/v1/app/account/user-profile/id-image</c> — uploads the
-/// user's ID-document image attachment (decisions D-046 b, P8 —
-/// D-048; renamed from <c>/account/visitor-profile/id-image</c>). PNG / JPEG /
+/// user's ID-document image attachment (renamed from
+/// <c>/account/visitor-profile/id-image</c>). PNG / JPEG /
 /// WebP, up to 5 MB, content-type + magic-byte verified before the
 /// bytes touch the storage layer. The storage layer then encrypts the
 /// file with AES-GCM under the per-installation key (see
@@ -79,7 +79,7 @@ public sealed class UserIdDocumentUploadEndpoint(
                 "يجب أن تكون صورة الهوية بصيغة PNG أو JPEG أو WebP.");
         }
 
-        // Two-photo split (D-431-follow-up) — the self-service ID upload is now
+        // Two-photo split — the self-service ID upload is now
         // a DOCUMENT picked from the gallery (national-ID / Iqama / passport
         // scan), so the human-face gate that belonged to the old "ID = live
         // selfie" model is removed here. The live face requirement now lives on

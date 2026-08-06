@@ -38,7 +38,7 @@ public abstract class AdminIdDocumentUploadEndpointBase(
         var actorId = User.ActorId();
 
         // Confine this Edit permission to its own family. The service's
-        // guard only compares UserType, and D-186 made BOTH the visitors and the
+        // guard only compares UserType, and BOTH the visitors and the
         // others route pass UserType.Visitor, so without this an admin holding
         // only Visitors.Edit could overwrite a PARTNER's national-ID image
         // through the visitors route (and vice versa). 404, not 403: a subject
@@ -170,7 +170,7 @@ public abstract class AdminIdDocumentFetchEndpointBase(
         // Confine this View permission to its own family, mirroring the
         // avatar endpoints. The national ID / Iqama / passport image is the most
         // sensitive PII in the system, and UserType alone does not separate the
-        // audience tier from the partner tier (D-186 made both Visitor-typed), so
+        // audience tier from the partner tier (both are Visitor-typed), so
         // without this a Visitors.View holder could read a PARTNER's ID image.
         // Checked BEFORE the read so no bytes are decrypted and no PII-disclosure
         // audit row is written for a subject outside the caller's family.

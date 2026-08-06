@@ -35,9 +35,9 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-134 Sprint B — Themes CRUD (D-135 freeze-lift) --------------------
+    // -- Themes CRUD ---------------------------------------------------------
 
-    /// <summary>One page of themes (D-134 Sprint B).</summary>
+    /// <summary>One page of themes.</summary>
     public Task<ApiCallResult<GridPage<AdminThemeSummary>>> ListThemesAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -46,7 +46,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>One theme by id (D-134 Sprint B).</summary>
+    /// <summary>One theme by id.</summary>
     public Task<ApiCallResult<AdminThemeDetail>> GetThemeAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -54,7 +54,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"themes/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>Creates a theme (D-134 Sprint B).</summary>
+    /// <summary>Creates a theme.</summary>
     public Task<ApiCallResult<AdminThemeDetail>> CreateThemeAsync(
         AdminCreateThemeRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -63,7 +63,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Updates a theme (D-134 Sprint B).</summary>
+    /// <summary>Updates a theme.</summary>
     public Task<ApiCallResult<AdminThemeDetail>> UpdateThemeAsync(
         Guid id, AdminUpdateThemeRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -72,7 +72,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Soft-deletes (deactivates) a theme (D-134 Sprint B).</summary>
+    /// <summary>Soft-deletes (deactivates) a theme.</summary>
     public Task<ApiCallResult<bool>> DeactivateThemeAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -80,7 +80,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"themes/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-134 Sprint B — Halls CRUD ----------------------------------------
+    // -- Halls CRUD ----------------------------------------------------------
 
     public Task<ApiCallResult<GridPage<AdminHallSummary>>> ListHallsAsync(
         GridQuery query, string accessToken,
@@ -120,7 +120,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"halls/{id}", content: null,
             accessToken, cancellationToken);
 
-    // QA B16 — the hall's occupancy view: the sessions assigned to this hall.
+    // The hall's occupancy view: the sessions assigned to this hall.
     public Task<ApiCallResult<GridPage<AdminSessionSummary>>> GetHallScheduleAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -128,7 +128,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"halls/{id}/schedule", content: null,
             accessToken, cancellationToken);
 
-    // -- SIMF-FDS-013 (D-248) — meeting tables + hall allocations + meetings -
+    // -- Meeting tables + hall allocations + meetings ------------------------
 
     public Task<ApiCallResult<bool>> SetHallPurposeAsync(
         Guid hallId, SetHallPurposeRequest request, string accessToken,

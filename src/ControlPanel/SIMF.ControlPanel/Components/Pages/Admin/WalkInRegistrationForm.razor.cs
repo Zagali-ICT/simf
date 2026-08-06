@@ -54,7 +54,7 @@ public partial class WalkInRegistrationForm : IDisposable
     private readonly string[] _plateLetters = { string.Empty, string.Empty, string.Empty };
     private string _plateDigits = string.Empty;
 
-    // B3 — D-221 (الجهة): the required organisation typeahead state.
+    // The required organisation (الجهة) typeahead state.
     private string _orgSearch = string.Empty;
     private string? _orgSelectedLabel;
     private string? _orgError;
@@ -66,7 +66,7 @@ public partial class WalkInRegistrationForm : IDisposable
     /// query and the interests section visibility.</summary>
     [Parameter] public string Kind { get; set; } = "Visitor";
 
-    /// <summary>V-1 (D-429) — VIP mode: restrict the profile-type picker to the
+    /// <summary>VIP mode: restrict the profile-type picker to the
     /// VVIP / VIP audience tiers and surface the موج (Mawj) welcome-message
     /// fields (Mawj ID, honorific, preferred language) + a separate VIP welcome
     /// photo. Off by default so the regular walk-in desk is unchanged.</summary>
@@ -96,9 +96,9 @@ public partial class WalkInRegistrationForm : IDisposable
         // Load profile types for this kind + interests + countries +
         // organisations in parallel — the desk shouldn't wait for sequential
         // round-trips.
-        // D-561 — every ProfileType is Visitor-scope post-D-186; "Other" is no
-        // longer a valid UserType, so fetching with userType=Other returned an
-        // EMPTY picker (the Others desk showed "no profile types defined"). Fetch
+        // Every ProfileType is Visitor-scope; "Other" is no longer a valid
+        // UserType, so fetching with userType=Other returned an EMPTY picker
+        // (the Others desk showed "no profile types defined"). Fetch
         // under the valid Visitor scope and split audience vs partner client-side
         // by IsVisitor below; Kind still drives that split + the submit routing.
         var profileTypesTask = JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
@@ -169,11 +169,11 @@ public partial class WalkInRegistrationForm : IDisposable
         var visitorDesk = string.Equals(Kind, "Visitor", StringComparison.OrdinalIgnoreCase);
         _profileTypes = envelope.Data
             .Where(p => p.IsActive && p.IsVisitor == visitorDesk)
-            // V-1 (D-429) — the VIP page only registers VVIP / VIP tiers.
+            // The VIP page only registers VVIP / VIP tiers.
             .Where(p => !VipMode || VipTierNames.Contains(p.Name))
             .OrderBy(p => p.Name).ToArray();
 
-        // V-1 — preselect the tier when the picker is down to a single choice
+        // Preselect the tier when the picker is down to a single choice
         // (e.g. only VIP seeded), so the desk doesn't have to click it.
         if (VipMode && _profileTypes.Length == 1)
         {
@@ -333,7 +333,7 @@ public partial class WalkInRegistrationForm : IDisposable
     private async Task OnAvatarPicked() =>
         _avatarName = await PickedFileNameAsync(_avatarUpload);
 
-    // V-1 (D-429) — VIP welcome photo; same deferred-upload pattern, posted to
+    // VIP welcome photo; same deferred-upload pattern, posted to
     // the dedicated vip-photo endpoint after the account is created.
     private async Task OnVipPhotoPicked() =>
         _vipPhotoName = await PickedFileNameAsync(_vipPhotoUpload);
@@ -343,7 +343,7 @@ public partial class WalkInRegistrationForm : IDisposable
             "eval",
             $"document.getElementById('{upload.ElementId}')?.files?.[0]?.name ?? null");
 
-    // V-1 (D-429) — preferred-language picker (SimfSelect over language codes).
+    // Preferred-language picker (SimfSelect over language codes).
     private void OnPreferredLanguagePicked(string? value) =>
         _model.PreferredLanguage = string.IsNullOrWhiteSpace(value) ? null : value;
 
@@ -381,7 +381,7 @@ public partial class WalkInRegistrationForm : IDisposable
     private static string InterestLabel(InterestDto i) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? i.NameArabic : i.Name;
 
-    // B3 — D-221 (الجهة): organisation typeahead. Prefer the Arabic name in
+    // Organisation (الجهة) typeahead. Prefer the Arabic name in
     // an Arabic UI; fall back to English when the Arabic name is blank.
     private static string OrgLabel(OrganisationPickerItem o) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
@@ -511,7 +511,7 @@ public partial class WalkInRegistrationForm : IDisposable
             _messages.Add(_editContext.Field(nameof(_model.DisplayName)),
                 L["Admin.WalkIn.Error.DisplayNameRequired"]); ok = false;
         }
-        // B3 — D-221 (الجهة): required; inline under the picker.
+        // The organisation (الجهة) is required; the error goes inline under the picker.
         if (_model.OrganisationId is null)
         {
             _orgError = L["Admin.WalkIn.Error.OrganisationRequired"]; ok = false;
@@ -584,7 +584,7 @@ public partial class WalkInRegistrationForm : IDisposable
         EnglishName = _model.EnglishName.Trim(),
         JobTitle = NullIfBlank(_model.JobTitle),
         JobTitleArabic = NullIfBlank(_model.JobTitleArabic),
-        // V-1 (D-429) — VIP موج extras (null unless the VIP page set them).
+        // VIP موج extras (null unless the VIP page set them).
         MawjId = NullIfBlank(_model.MawjId),
         Honorific = NullIfBlank(_model.Honorific),
         HonorificArabic = NullIfBlank(_model.HonorificArabic),
@@ -619,7 +619,7 @@ public partial class WalkInRegistrationForm : IDisposable
         await TryUploadAsync(_idDocumentName, $"{basePath}/{userId}/id-document", _idDocUpload.ElementId);
         // Optional profile photo.
         await TryUploadAsync(_avatarName, $"{basePath}/{userId}/avatar", _avatarUpload.ElementId);
-        // V-1 (D-429) — optional VIP welcome photo (VIP page only).
+        // Optional VIP welcome photo (VIP page only).
         if (VipMode)
         {
             await TryUploadAsync(_vipPhotoName, $"{basePath}/{userId}/vip-photo", _vipPhotoUpload.ElementId);
@@ -657,7 +657,7 @@ public partial class WalkInRegistrationForm : IDisposable
         _model.DisplayName = string.Empty;
         _model.ArabicName = string.Empty;
         _model.EnglishName = string.Empty;
-        // V-1 (D-429) — clear the VIP موج extras between desk registrations.
+        // Clear the VIP موج extras between desk registrations.
         _model.MawjId = null;
         _model.Honorific = null;
         _model.HonorificArabic = null;
@@ -718,7 +718,7 @@ public partial class WalkInRegistrationForm : IDisposable
         public string EnglishName { get; set; } = string.Empty;
         public string? JobTitle { get; set; }
         public string? JobTitleArabic { get; set; }
-        // V-1 (D-429) — VIP موج extras.
+        // VIP موج extras.
         public string? MawjId { get; set; }
         public string? Honorific { get; set; }
         public string? HonorificArabic { get; set; }

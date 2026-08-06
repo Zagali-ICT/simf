@@ -20,7 +20,7 @@ namespace SIMF.Infrastructure.Files;
 /// <see cref="UploadScanVerdict.Skipped"/> rather than throwing — the centralized
 /// file pipeline is <b>fail-closed</b> (it rejects a Skipped verdict in
 /// Production), so an unreachable daemon blocks the upload instead of storing it
-/// unscanned (closes D-494).</para>
+/// unscanned.</para>
 /// </summary>
 internal sealed class ClamAvUploadScanner(
     IOptions<UploadScanningOptions> options,

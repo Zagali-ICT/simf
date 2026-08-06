@@ -1,13 +1,13 @@
-@* D-202 Track-2 (CP UI for the D-202 exhibitors module) — admin CRUD over
+@* CP UI for the exhibitors module — admin CRUD over
    the exhibitors plus a per-exhibitor account-provisioning sub-flow.
-   Exhibitors are created CP-side only (D-199 #3). A provisioned account is a
+   Exhibitors are created CP-side only. A provisioned account is a
    Visitor login tagged to the exhibitor, created in the pending-approval
    state through the existing admin provisioning pipeline.
-   D-353 centralised CRUD framing: Add / Edit / View / Delete are hosted by
+   Centralised CRUD framing: Add / Edit / View / Delete are hosted by
    CrudShell, which frames the reusable ExhibitorsAddEdit / ExhibitorsViewDelete
    forms as a popup or a full page per the admin's toolbar choice (persisted in
-   localStorage via CpPreferences). D-356 adds the generic Excel export/import
-   bar (CrudGridExcel). The account-provisioning sub-flow stays a SimfModal
+   localStorage via CpPreferences). CrudGridExcel adds the generic Excel
+   export/import bar. The account-provisioning sub-flow stays a SimfModal
    overlay, independent of the CRUD shell. *@
 @page "/admin/exhibitors"
 @layout CpShellLayout
@@ -208,7 +208,7 @@
                                Disabled="_provisionBusy" />
             </div>
 
-            @* D-781 — attach an EXISTING account (typically one created on the
+            @* Attach an EXISTING account (typically one created on the
                Others page) to this exhibitor. Without it, an exhibitor-typed
                account created outside this modal has no ExhibitorMembership and is
                403'd on badge scan + My Visitors with no way to fix it. Its own
@@ -244,7 +244,7 @@
             </AuthorizedAction>
         </ChildContent>
         <Footer>
-            @* The modal now runs two async actions (provision + D-781 link), so
+            @* The modal runs two async actions (provision + link), so
                Close stays disabled while either is in flight. *@
             <SimfButton Type="button" Variant="secondary" Disabled="@(_provisionBusy || _linkBusy)" OnClick="@(() => _accountsOpen = false)">
                 @L["Admin.Exhibitors.Accounts.Close"]

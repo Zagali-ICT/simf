@@ -7,7 +7,7 @@ namespace SIMF.Infrastructure.Persistence;
 /// Design-time factory used by the EF Core tools (<c>dotnet ef</c>) to create a
 /// <see cref="SimfIdentityDbContext"/> when generating migrations. It is not
 /// used at run time — the running application registers the context through
-/// dependency injection. D-157: the connection string is read from
+/// dependency injection. The connection string is read from
 /// <c>SIMF_DESIGN_TIME_IDENTITY_CONNECTION</c> (or the legacy
 /// <c>SIMF_DESIGN_TIME_CONNECTION</c>), falling back to the dev
 /// <c>SIMF_Identity</c> database on the local SQL Server default instance.

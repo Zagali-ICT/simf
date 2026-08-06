@@ -10,7 +10,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Recommendations;
 
 /// <summary>
-/// D-170 (gap doc G9, PDF §2.8) — "Meet People Like You" ranker.
+/// The "Meet People Like You" ranker.
 /// In-memory Jaccard pass over the caller's and candidates' interest
 /// sets — fine at SIMF scale (target attendance is in the low
 /// thousands, the interest catalog stays under 100). A 24-hour
@@ -28,7 +28,7 @@ internal sealed class RecommendationService(
     /// Staff meet Staff). Small enough to never override real overlap.</summary>
     private const double SameProfileTypeBonus = 0.05;
 
-    /// <summary>FR-803 — the requirement states a <b>&gt;=80% match</b>. Before this
+    /// <summary>A recommendation requires a <b>&gt;=80% match</b>. Before this
     /// the ranker had no threshold at all: it sorted by score and simply took the
     /// top N, so the weakest possible overlap (one shared interest out of fifty)
     /// ranked as a "recommendation" whenever nothing better existed.</summary>
@@ -39,7 +39,7 @@ internal sealed class RecommendationService(
     /// over.</summary>
     private const int StrongMatchCandidatePool = 100;
 
-    /// <summary>FR-803 — "80%" is a percentage, so it has to be compared against a
+    /// <summary>"80%" is a percentage, so it has to be compared against a
     /// number that cannot exceed 1.0. The raw <c>Score</c> can (a perfect Jaccard
     /// 1.0 plus <see cref="SameProfileTypeBonus"/>), so the threshold is applied to
     /// the score CLAMPED to [0,1]. The same-tier bonus is inside the comparison on
@@ -123,7 +123,7 @@ internal sealed class RecommendationService(
             })
             .ToListAsync(cancellationToken);
 
-        // 3b) Shared-session overlap (D-451): the approved, un-released seats
+        // 3b) Shared-session overlap: the approved, un-released seats
         //     the caller and the candidate pool hold. SeatReservation owners are
         //     Identity user ids (like the pool), so the overlap is keyed on user
         //     id; one query covers the whole pool + the caller.

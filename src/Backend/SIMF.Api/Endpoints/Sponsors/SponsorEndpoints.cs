@@ -9,7 +9,7 @@ using SIMF.Contracts.Sponsors;
 
 namespace SIMF.Api.Endpoints.Sponsors;
 
-/// <summary>D-199 (Mockup page 23) — public anonymous list of active sponsors,
+/// <summary>Public anonymous list of active sponsors,
 /// grouped by tier. Mirrors ListPublicDelegationsEndpoint (AllowAnonymous,
 /// Tags("Public")).</summary>
 public sealed class ListPublicSponsorsEndpoint(IPublicSponsorService service)
@@ -20,7 +20,7 @@ public sealed class ListPublicSponsorsEndpoint(IPublicSponsorService service)
         Get("/app/sponsors");
         AllowAnonymous();
         Tags("Public");
-        Options(b => b.CacheOutput("PublicRead")); // A6d — 45s output cache (no-op under Testing)
+        Options(b => b.CacheOutput("PublicRead")); // 45s output cache (no-op under Testing)
     }
 
     public override async Task HandleAsync(CancellationToken ct) =>
@@ -28,7 +28,7 @@ public sealed class ListPublicSponsorsEndpoint(IPublicSponsorService service)
             await service.ListAsync(ct)), ct);
 }
 
-/// <summary>Wave 3 (Figma 1439:11826 "الراعي") — public anonymous sponsor detail
+/// <summary>Public anonymous sponsor ("الراعي") detail
 /// (about, city, website, tier, country). A 404 when the sponsor is missing /
 /// inactive.</summary>
 public sealed class GetPublicSponsorRequest { public Guid Id { get; set; } }

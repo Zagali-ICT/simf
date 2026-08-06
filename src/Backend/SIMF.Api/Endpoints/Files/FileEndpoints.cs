@@ -36,7 +36,7 @@ internal static class FileEndpointSupport
     public static string SanitizeForHeader(string name) =>
         new(name.Where(c => c is not ('"' or '\r' or '\n') && !char.IsControl(c)).ToArray());
 
-    /// <summary>P1 (D-568 hardening) — an RFC 6266 / RFC 5987 attachment
+    /// <summary>An RFC 6266 / RFC 5987 attachment
     /// Content-Disposition that carries a non-ASCII (e.g. Arabic) file name
     /// safely: an ASCII-only <c>filename="…"</c> fallback for legacy clients plus
     /// <c>filename*=UTF-8''&lt;pct-encoded&gt;</c> for modern ones (browsers prefer
@@ -58,7 +58,7 @@ public sealed class FileUploadRequest
 {
     public FileService Service { get; set; }
 
-    /// <summary>P2 (D-568 hardening) — the owning entity's id (e.g. the speaker /
+    /// <summary>The owning entity's id (e.g. the speaker /
     /// booth an admin is uploading a photo for). The owner *family*
     /// (<c>OwnerEntityType</c>) is NOT accepted from the client: it is forced from
     /// the service's policy in <c>StoredFileService</c>, so a caller cannot
@@ -237,7 +237,7 @@ public sealed class FileDeleteEndpoint(IFileService service)
     }
 }
 
-/// <summary>PDPL right-to-erasure (P7): securely destroy a file's bytes
+/// <summary>PDPL right-to-erasure: securely destroy a file's bytes
 /// even under a retention hold. Gated by the privileged <c>Files.ForceDelete</c>,
 /// held separately from ordinary delete so the elevated action is independently
 /// grantable and audited.</summary>

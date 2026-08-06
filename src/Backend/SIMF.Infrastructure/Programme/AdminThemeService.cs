@@ -12,10 +12,10 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// Admin CRUD over <see cref="Theme"/>. SIMF-FDS-004 §5.1.
-/// Built on the <see cref="SimfAppDbContext"/> (D-135 freeze-lift made this
-/// possible — `Themes` is the first new app-side table). Every mutation
-/// audits one row via the existing <see cref="IAuditLog"/>.
+/// Admin CRUD over <see cref="Theme"/>.
+/// Built on the <see cref="SimfAppDbContext"/> — `Themes` was the first
+/// app-side table. Every mutation audits one row via the existing
+/// <see cref="IAuditLog"/>.
 /// </summary>
 internal sealed class AdminThemeService(
     SimfAppDbContext dbContext,

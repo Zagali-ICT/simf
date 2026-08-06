@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/BadgeAuthTests.cs
-// Tests: SIMF.Api.Tests/BadgeSelfClaimProfileTests.cs (#10 phase 4 — the
-//        placeholder profile is filled from the capture step at complete)
+// Tests: SIMF.Api.Tests/BadgeSelfClaimProfileTests.cs (the placeholder
+//        profile is filled from the capture step at complete)
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -286,7 +286,7 @@ internal sealed class BadgeAuthService(
             }
         }
 
-        // #10 phase 4 — resolve + validate the captured profile fields against the
+        // Resolve + validate the captured profile fields against the
         // live App-DB lookups BEFORE any write, exactly like the pending-email
         // re-check above, so a bad country code or a deactivated interest fails
         // cleanly instead of half-activating the badge.
@@ -295,8 +295,8 @@ internal sealed class BadgeAuthService(
         var interestIds = await ResolveInterestIdsAsync(
             request.InterestIds, cancellationToken);
 
-        // #10 phase 4 — fill the placeholder profile FIRST, in its own App-DB unit of
-        // work (D-157: no transaction spans the two databases). Ordering matters: if
+        // Fill the placeholder profile FIRST, in its own App-DB unit of
+        // work (no transaction spans the two databases). Ordering matters: if
         // the password step below then fails (a policy rejection, an email race), the
         // badge is still unactivated and the holder simply retries — the profile write
         // is idempotent and the retry overwrites it. The reverse order would leave an
@@ -328,7 +328,7 @@ internal sealed class BadgeAuthService(
                             user, ActivationTokenProvider, PendingEmailTokenName, token)
                         .EnsureSuccessAsync();
                 }
-                // #10 phase 4 — a bulk-generated badge account carries a GENERATED
+                // A bulk-generated badge account carries a GENERATED
                 // display name ("VIP #3"). The holder has now identified themselves,
                 // so promote the captured name to the account's display name too —
                 // otherwise the app greets them by the placeholder forever.
@@ -359,7 +359,7 @@ internal sealed class BadgeAuthService(
 
     // -- Helpers --------------------------------------------------------------
 
-    /// <summary>#10 phase 4 — resolves the wire ISO country code to the
+    /// <summary>Resolves the wire ISO country code to the
     /// <c>Country</c> PK, or null when the caller supplied none. An unknown /
     /// inactive code is a 400, matching the profile upsert.</summary>
     private async Task<int?> ResolveNationalityIdAsync(
@@ -375,7 +375,7 @@ internal sealed class BadgeAuthService(
                 $"الجنسية '{code}' غير مدعومة.");
     }
 
-    /// <summary>#10 phase 4 — the distinct picked interest ids, after checking every
+    /// <summary>The distinct picked interest ids, after checking every
     /// one exists and is active. Empty when the caller picked none.</summary>
     private async Task<IReadOnlyList<Guid>> ResolveInterestIdsAsync(
         IReadOnlyCollection<Guid>? requested, CancellationToken cancellationToken)
@@ -395,7 +395,7 @@ internal sealed class BadgeAuthService(
     }
 
     /// <summary>
-    /// #10 phase 4 — writes the captured profile fields onto the badge's placeholder
+    /// Writes the captured profile fields onto the badge's placeholder
     /// <c>UserProfile</c> (App DB). Every field is optional: a blank one leaves the
     /// existing value alone, so a client that sends nothing behaves exactly as it did
     /// before. Creates the row when the badge has none (a badge minted without a
@@ -468,11 +468,11 @@ internal sealed class BadgeAuthService(
     {
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
 
-        // D-821 review — an OFFLINE badge id is never resolvable here.
+        // An OFFLINE badge id is never resolvable here.
         //
         // Every endpoint on this service is AllowAnonymous, and their safety
         // rests on a scanned QR being unguessable: a minted QrId is 12 random
-        // Crockford characters (~59 bits). A D-820 offline id is NOT — it is
+        // Crockford characters (~59 bits). An offline id is NOT — it is
         // 'W' plus a desk sequence, so the live ids at an event are a few
         // thousand consecutive numbers. Left resolvable, this turns
         // resolve-badge into an anonymous roster oracle that returns the

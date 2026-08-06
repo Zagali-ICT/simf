@@ -10,7 +10,7 @@ namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
 /// <c>POST /api/v1/admin/admins/{id:guid}/approve</c> — flip a pending
-/// Admin to Approved + mint the QR id (P4; P7c renamed URL from
+/// Admin to Approved + mint the QR id (the URL was renamed from
 /// <c>/admin/staff</c>). Administrator-only.
 /// </summary>
 public sealed class ApproveAdminEndpoint(IAdminUserApprovalService adminAccountService)
@@ -35,16 +35,16 @@ public sealed class ApproveAdminEndpoint(IAdminUserApprovalService adminAccountS
 
 /// <summary>
 /// <c>POST /api/v1/admin/others/{id:guid}/approve</c> — flip a pending
-/// Other to Approved + mint the QR id (P7c — new).
-/// <para>D-834 — gated on <c>Others.Approve</c>, the code for the subject
+/// Other to Approved + mint the QR id.
+/// <para>Gated on <c>Others.Approve</c>, the code for the subject
 /// being acted on. It was copy-pasted from <see cref="ApproveAdminEndpoint"/>
 /// above with the admin policy line left in, so approving a PARTNER account
-/// demanded the code that exists to approve ADMINS. That contradicted
-/// SIMF-Permission-Catalogue §Others, which has always mapped
+/// demanded the code that exists to approve ADMINS. That contradicted the
+/// permission catalogue, which has always mapped
 /// <c>Others.Approve</c> to both <c>…/{id}/approve</c> and
-/// <c>…/bulk-approve</c>; D-214 fixed the bulk half and recorded that it now
-/// matched "the same code the single ApproveOther endpoint uses", which was
-/// not yet true. The two halves of one action agree from here.</para>
+/// <c>…/bulk-approve</c>; an earlier fix corrected the bulk half and recorded
+/// that it now matched "the same code the single ApproveOther endpoint uses",
+/// which was not yet true. The two halves of one action agree from here.</para>
 /// </summary>
 public sealed class ApproveOtherEndpoint(IAdminUserApprovalService adminAccountService)
     : Endpoint<ApproveRouteRequest, ApiResult<bool>>

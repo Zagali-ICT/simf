@@ -1,4 +1,4 @@
-@* #2 (Q1, 2026-07-30) — Control Panel MANDATORY two-factor enrolment.
+@* Control Panel MANDATORY two-factor enrolment.
 
    Reached only from the sign-in step, when the password was correct but the
    account carries no authenticator secret: the API withholds the session and
@@ -7,7 +7,7 @@
    the Control Panel never mints a token on the password alone — and no admin,
    including the seeded super-admin, is ever locked out reaching that state.
 
-   Distinct from /account/totp-pairing (D-096), which only RE-RENDERS an
+   Distinct from /account/totp-pairing, which only RE-RENDERS an
    already-active secret for a signed-in admin and cannot create one. *@
 @page "/login/enrol-2fa"
 @attribute [AllowAnonymous]
@@ -30,7 +30,7 @@
                     @if (_recoveryCodes is not null)
                     {
                         @* Stage 2 — enrolment succeeded and the session is in hand.
-                           The recovery codes are shown exactly once (D-040), so the
+                           The recovery codes are shown exactly once, so the
                            user must acknowledge before we hand off to the shell. *@
                         <SimfAlert Variant="success">@L["Auth.Enrol2fa.RecoveryShowOnce"]</SimfAlert>
                         <ol class="simf-recovery-codes">

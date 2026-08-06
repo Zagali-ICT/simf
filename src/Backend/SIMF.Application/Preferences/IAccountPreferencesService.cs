@@ -3,10 +3,10 @@ using SIMF.Contracts.Account;
 namespace SIMF.Application.Preferences;
 
 /// <summary>
-/// `accessibility-server-sync` — reads and writes the signed-in account's five
+/// Reads and writes the signed-in account's five
 /// accessibility choices (<c>GET</c> / <c>PUT /app/account/preferences</c>).
 /// The values live on the user's <c>UserProfile</c> row (which already carries
-/// the bare <c>UserId</c> — D-157, no cross-DB FK), so they follow the user to a
+/// the bare <c>UserId</c> — there is no cross-DB FK), so they follow the user to a
 /// second device and survive a reinstall. The device prefs stay as the app's
 /// offline cache.
 /// </summary>

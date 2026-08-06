@@ -86,7 +86,7 @@ internal static class AuthEndpoints
     }
 
     /// <summary>
-    /// Reads named single-value claims (P11 — D-052) from the JWT —
+    /// Reads named single-value claims from the JWT —
     /// <c>account_state</c>, <c>user_type</c>. Same no-signature-validation
     /// shape as <see cref="ExtractRoleClaims"/>; the API already verified
     /// the token. Returns an empty dictionary on a malformed token.
@@ -152,7 +152,7 @@ internal static class AuthEndpoints
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
-            // Issue-1 — copy the per-page/per-action permission codes from the
+            // Copy the per-page/per-action permission codes from the
             // JWT into the cookie so [RequirePermission] page gates + the
             // side-menu filter can read them without an API round-trip.
             // Administrator carries the single wildcard "*".

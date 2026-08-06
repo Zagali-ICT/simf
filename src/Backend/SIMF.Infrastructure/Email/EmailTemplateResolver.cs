@@ -10,7 +10,7 @@ namespace SIMF.Infrastructure.Email;
 /// when one exists, else the code-owned <see cref="EmailTemplateCatalog"/>
 /// default. Never throws: any lookup failure logs a warning and uses the
 /// default, so the email is always built. The template read is a plain,
-/// standalone query on the App context (a "resolve on read" per D-157) — it does
+/// standalone query on the App context (a "resolve on read") — it does
 /// not join or share a transaction with the Identity write that produced the
 /// code.</summary>
 internal sealed class EmailTemplateResolver(

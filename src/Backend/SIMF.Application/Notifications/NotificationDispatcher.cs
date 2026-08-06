@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/NotificationTests.cs (round-trips)
-//        SIMF.Api.Tests/NotificationLifecycleTests.cs (P13 — trigger-by-trigger)
+//        SIMF.Api.Tests/NotificationLifecycleTests.cs (trigger-by-trigger)
 //        SIMF.Api.Tests/NotificationChannelTests.cs (the INotificationChannel seam)
 using Microsoft.Extensions.Logging;
 
@@ -7,17 +7,17 @@ namespace SIMF.Application.Notifications;
 
 /// <summary>
 /// Dispatches one notification across every registered
-/// <see cref="INotificationChannel"/> (P12 — D-053). The in-app row write always
+/// <see cref="INotificationChannel"/>. The in-app row write always
 /// lands first; an email failure never poisons the in-app delivery — they are
 /// independent channels.
 ///
-/// <para>R4 — D-095: moved from <c>SIMF.Infrastructure.Notifications</c> to the
-/// Application layer.</para>
+/// <para>This type lives in the Application layer, not
+/// <c>SIMF.Infrastructure.Notifications</c>.</para>
 ///
-/// <para>`sms-whatsapp-channels` — the two hard-coded deliveries (write the row,
+/// <para>The two hard-coded deliveries (write the row,
 /// then enqueue an email) moved out to <see cref="InAppNotificationChannel"/> and
 /// <see cref="EmailNotificationChannel"/>. What is left here is the only policy
-/// common to every channel: the D-713 dedup guard. A future SMS / WhatsApp
+/// common to every channel: the dedup guard. A future SMS / WhatsApp
 /// transport is one new <see cref="INotificationChannel"/> plus one DI line — this
 /// class does not change again.</para>
 /// </summary>

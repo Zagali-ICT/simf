@@ -16,12 +16,12 @@ namespace SIMF.Api.Endpoints.Staff;
 /// <c>POST /app/staff/visitors/register-onsite</c>. The staff-app twin
 /// of the Control-Panel walk-in desk (<c>RegisterVisitorOnSiteEndpoint</c>):
 /// exhibition staff register a walk-in visitor straight from the mobile/tablet
-/// app (Figma 1467:12357). It reuses the shared on-site provisioning service —
+/// app. It reuses the shared on-site provisioning service —
 /// creating a <see cref="AccountState.PendingApproval"/> visitor with no QR
-/// until an admin approves it (D-425) — and is gated by the SAME
+/// until an admin approves it — and is gated by the SAME
 /// <c>Visitors.RegisterOnsite</c> permission so a person authorised to register
 /// walk-ins has the capability on both surfaces. App tokens carry the JWT
-/// permission claims (same model the gate-operator console uses, D-207/D-208),
+/// permission claims (the same model the gate-operator console uses),
 /// so the gate is the real authority; the app role-gate is only a UX guard.
 /// </summary>
 public sealed class StaffRegisterVisitorEndpoint(IAdminUserProvisioningService service)
@@ -112,8 +112,8 @@ public sealed class StaffUploadVisitorIdDocumentEndpoint(
                 "يجب أن تكون صورة الهوية بصيغة PNG أو JPEG أو WebP.");
         }
 
-        // C7 (D-371) parity — the offline server-side human-face gate; the
-        // staff device runs no on-device pre-check on this path.
+        // The offline server-side human-face gate; the staff device runs
+        // no on-device pre-check on this path.
         if (!await faceDetection.ContainsHumanFaceAsync(bytes, ct))
         {
             throw new ApiException(

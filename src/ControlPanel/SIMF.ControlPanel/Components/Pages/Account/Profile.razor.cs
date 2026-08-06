@@ -304,7 +304,7 @@ public partial class Profile
         finally { _busy = false; }
     }
 
-    // -- Display preferences (D-353) ------------------------------------------
+    // -- Display preferences ---------------------------------------------------
 
     // Clears every saved CP display/layout preference in this browser
     // (the CRUD dialog/full-page choices, and future grid layout). Pure

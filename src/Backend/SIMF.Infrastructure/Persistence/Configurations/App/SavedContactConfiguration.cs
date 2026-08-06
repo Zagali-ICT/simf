@@ -4,10 +4,10 @@ using SIMF.Domain.Contacts;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>SIMF-FDS-014 §5.6 (D-284) — SavedContact EF config. Indexed by
-/// owner (the "My Contacts" list query) and by (owner, subject) for the
-/// idempotent-save lookup. Both refs are bare-Guid logical FKs to
-/// <c>SimfUser.Id</c> on the Identity DB — no DB FK (D-157). Auto-discovered by
+/// <summary>SavedContact EF config. Indexed by owner (the "My Contacts" list
+/// query) and by (owner, subject) for the idempotent-save lookup. Both refs are
+/// bare-Guid logical FKs to <c>SimfUser.Id</c> on the Identity DB — there is no
+/// DB FK across the two databases. Auto-discovered by
 /// <c>ApplyConfigurationsFromAssembly</c> (App namespace).</summary>
 internal sealed class SavedContactConfiguration : IEntityTypeConfiguration<SavedContact>
 {

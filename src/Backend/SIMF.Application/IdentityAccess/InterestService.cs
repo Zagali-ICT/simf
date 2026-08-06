@@ -11,12 +11,12 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// Interests CRUD (P9 — D-050; الاهتمامات). The admin grid is paged +
+/// Interests (الاهتمامات) CRUD. The admin grid is paged +
 /// filtered through <see cref="GridQuery"/>; mutations audit one row
 /// each. The visitor picker (<see cref="ListActiveAsync"/>) hits the
 /// composite filter index <c>(IsActive, DisplayOrder)</c>.
 ///
-/// <para>R4 — D-209: moved from <c>SIMF.Infrastructure.Identity</c>;
+/// <para>Moved here from <c>SIMF.Infrastructure.Identity</c>;
 /// persistence is delegated to <see cref="IInterestRepository"/> so this
 /// service holds only the orchestration (validation, audit, logging).</para>
 /// </summary>

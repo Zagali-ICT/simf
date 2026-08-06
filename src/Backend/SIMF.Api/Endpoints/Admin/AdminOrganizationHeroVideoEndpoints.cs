@@ -16,7 +16,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// OrganizationProfile.Manage. The file rides the multipart form ("file"); the bytes
 /// stream straight to disk and <c>BackgroundVideoUrl</c> is pointed at the served
 /// <c>.mp4</c> route so the Flutter home hero (which cannot render a clipped YouTube
-/// WebView on Android — D-761) and the website hero play it. The body + multipart
+/// WebView on Android) and the website hero play it. The body + multipart
 /// ceilings are raised for THIS request only (before the body is read), so the DoS
 /// posture on every other endpoint is unchanged.</summary>
 public sealed class UploadOrganizationHeroVideoEndpoint(

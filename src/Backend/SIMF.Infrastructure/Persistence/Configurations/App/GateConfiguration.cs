@@ -24,11 +24,11 @@ internal sealed class GateConfiguration : IEntityTypeConfiguration<Gate>
         builder.HasIndex(gate => gate.Code).IsUnique();
         builder.HasIndex(gate => new { gate.IsActive, gate.Name });
 
-        // X-1 (chain design) — optional hall-door binding. Real FK to Hall (same
+        // Optional hall-door binding. Real FK to Hall (same
         // DbContext, App DB — no Identity crossing). Restrict mirrors
         // HallAttendance's Hall FK so a hall cannot be hard-deleted out from under
         // a hall-door gate (halls are soft-deleted). Navigation-less HasOne<Hall>
-        // form (D-716 precedent). Null = perimeter gate. Indexed for the
+        // form, as elsewhere. Null = perimeter gate. Indexed for the
         // "list the door gates of hall X" lookup.
         builder.HasIndex(gate => gate.HallId);
         builder.HasOne<SIMF.Domain.Programme.Hall>()

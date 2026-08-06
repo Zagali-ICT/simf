@@ -10,20 +10,19 @@ using SIMF.Common;
 
 namespace SIMF.Infrastructure.Identity;
 
-/// <summary>A1-19 (NCA) — disables Approved accounts inactive beyond the configured
+/// <summary>NCA dormancy rule — disables Approved accounts inactive beyond the configured
 /// threshold. Inactivity = time since the last successful sign-in, or the account's
 /// creation time if it never signed in.</summary>
 /// <remarks>
-/// PRE-ENABLE GATE (D-494): the <c>LastSuccessfulSignInAt ?? CreatedAt</c>
+/// PRE-ENABLE GATE: the <c>LastSuccessfulSignInAt ?? CreatedAt</c>
 /// fallback below is intentional and unit-tested, but it means the FIRST sweep
-/// after the Wave-6d column shipped — when that column is still NULL for every
+/// after that column shipped — when it is still NULL for every
 /// existing user — would fall back to <c>CreatedAt</c> and disable every
 /// long-standing Approved non-admin at once. The sweep is therefore default-OFF
 /// (<c>DormantAccountDisableDays &lt;= 0</c> returns early) and never touches
 /// administrators. Do NOT set a positive <c>DormantAccountDisableDays</c> in
 /// production until <c>LastSuccessfulSignInAt</c> has been backfilled (e.g.
-/// stamped to deploy-time for existing approved users). See the merge-readiness
-/// doc §5.1 and DECISIONS_LOG D-494.
+/// stamped to deploy-time for existing approved users).
 /// </remarks>
 internal sealed class DormantAccountService(
     SimfIdentityDbContext dbContext,

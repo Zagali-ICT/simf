@@ -3,7 +3,7 @@ using FluentValidation;
 namespace SIMF.Api.Endpoints.Auth.Validators;
 
 /// <summary>
-/// Bilingual-message helpers for FluentValidation rules (D-030). The English
+/// Bilingual-message helpers for FluentValidation rules. The English
 /// message is attached the standard way with <c>WithMessage</c>; the Arabic
 /// message is attached as the rule's <c>CustomState</c> so the response
 /// builder in <c>Program.cs</c> can pair them on the way out.

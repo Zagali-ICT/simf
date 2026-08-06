@@ -9,10 +9,10 @@ using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Sessions;
 
-/// <summary>P5.1 — D-241 (FDS-003 §5.4, FR-305/506): the attendee-facing hall
+/// <summary>The attendee-facing hall
 /// arrival / departure / status endpoints. The attendee's own device reports
-/// its GPS position; the server checks it against the session hall's geofence
-/// (D-240). Self-service for an approved account — no admin permission; the
+/// its GPS position; the server checks it against the session hall's geofence.
+/// Self-service for an approved account — no admin permission; the
 /// actor is the signed-in attendee (the <c>sub</c> claim).</summary>
 public sealed class RecordArrivalEndpoint(IHallAttendanceService service)
     : Endpoint<RecordArrivalRequest, ApiResult<HallAttendanceStatus>>
@@ -21,8 +21,8 @@ public sealed class RecordArrivalEndpoint(IHallAttendanceService service)
     {
         Post("/app/sessions/{sessionId:guid}/arrival");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
-        // D-821 review: deliberately NOT on the operational (unlimited) policy.
-        // D-819 lifted the limits off the STAFF-operated surface, where an
+        // Deliberately NOT on the operational (unlimited) policy.
+        // The rate limits were lifted off the STAFF-operated surface, where an
         // operator holding a named permission is the control. This is attendee
         // SELF-SERVICE — any approved account can call it, and it does a session
         // read plus a Haversine plus attendance writes. Exempting it removed the
@@ -46,8 +46,8 @@ public sealed class RecordDepartureEndpoint(IHallAttendanceService service)
     {
         Post("/app/sessions/{sessionId:guid}/departure");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
-        // D-821 review: deliberately NOT on the operational (unlimited) policy.
-        // D-819 lifted the limits off the STAFF-operated surface, where an
+        // Deliberately NOT on the operational (unlimited) policy.
+        // The rate limits were lifted off the STAFF-operated surface, where an
         // operator holding a named permission is the control. This is attendee
         // SELF-SERVICE — any approved account can call it, and it does a session
         // read plus a Haversine plus attendance writes. Exempting it removed the

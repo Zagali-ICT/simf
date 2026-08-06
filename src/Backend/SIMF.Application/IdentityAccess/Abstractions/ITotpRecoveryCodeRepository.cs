@@ -4,7 +4,7 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
 /// Persistence for the single-use recovery codes that act as a fallback for
-/// TOTP (decision D-040). Plaintext codes are never stored; the repository
+/// TOTP. Plaintext codes are never stored; the repository
 /// only ever sees hashes.
 /// </summary>
 public interface ITotpRecoveryCodeRepository

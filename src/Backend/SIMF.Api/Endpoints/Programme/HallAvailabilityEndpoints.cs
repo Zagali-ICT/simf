@@ -8,10 +8,10 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Programme;
 
-/// <summary>D-715 (item 7, FDS-013 §15 GAP-1) — the team defines hall availability
-/// windows (the "hall time" for meetings); the admin meeting-review flow (GAP-2)
+/// <summary>The team defines hall availability
+/// windows (the "hall time" for meetings); the admin meeting-review flow
 /// binds an accepted request to a free hall slot.
-/// <para>QA A36 — gated by the hall-scoped <c>HallAvailability.Manage</c> /
+/// <para>Gated by the hall-scoped <c>HallAvailability.Manage</c> /
 /// <c>.View</c> pair, NOT by <c>SpeakerMeetingRequests.*</c>: the windows are a
 /// property of the hall and their free slots are read by BOTH meeting desks
 /// (speaker <i>and</i> delegation), so borrowing the speaker desk's code locked a
@@ -76,9 +76,9 @@ public sealed class DeleteHallAvailabilityWindowEndpoint(IHallAvailabilityServic
 }
 
 /// <summary>The free meeting slots for a hall (the admin review flow reads
-/// these before binding an accepted request to a hall slot, GAP-2). Empty when the
+/// these before binding an accepted request to a hall slot). Empty when the
 /// hall has no future windows.
-/// <para>QA A36 — read by the speaker-meeting AND the delegation-meeting Approve
+/// <para>Read by the speaker-meeting AND the delegation-meeting Approve
 /// modals, so it carries the shared <c>HallAvailability.View</c> code: a
 /// meeting-desk role needs that one grant instead of the unrelated
 /// <c>SpeakerMeetingRequests.View</c>.</para></summary>

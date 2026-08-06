@@ -1,4 +1,4 @@
-@* D-353 — reusable Other (partner / event-team account) View form, hosted by
+@* Reusable Other (partner / event-team account) View form, hosted by
    CrudShell (popup or full page) from OthersList. Inherits
    CrudViewDeleteFormBase<AdminUserProfileView> for the standard surface
    (IsDelete / Initial / OnDeleted / OnCancel). This is DETAILS-ONLY: the page's
@@ -7,7 +7,7 @@
    OnDeleteOne dialog and must NOT be reimplemented here — so this form never
    renders a Delete button (IsDelete is ignored) and never calls a delete route.
    The read-only body is the exact same profile + ID-document view the inline
-   Details SimfModal rendered (D-129 / D-126 admin read). *@
+   Details SimfModal rendered. *@
 @inherits CrudViewDeleteFormBase<AdminUserProfileView>
 
 @if (Initial is not null)
@@ -56,14 +56,14 @@
                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
         </div>
     }
-    @* D-727 (owner item 5) — the staff/partner profile photo (avatar), alongside
+    @* The staff/partner profile photo (avatar), alongside
        the ID image, streamed from the admin avatar-fetch route (Others.View). *@
     @if (Initial.HasAvatar)
     {
         <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
                                 Src="@($"/account/api/admin/others/{Initial.Id}/avatar?v={SimfClock.Now.Ticks}")" />
     }
-    @* D-728 (owner item 9) — flip this partner account into a visitor type. *@
+    @* Flip this partner account into a visitor type. *@
     <AuthorizedAction Permission="@PermissionCatalog.Accounts.ChangeType">
         <ChangeAccountTypeBlock AccountId="Initial.Id" IsVisitorScope="false"
                                 OnChanged="OnCancel" />

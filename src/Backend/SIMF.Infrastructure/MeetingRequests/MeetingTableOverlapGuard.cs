@@ -10,8 +10,8 @@ namespace SIMF.Infrastructure.MeetingRequests;
 /// <summary>The single authority for the invariant "a meeting TABLE holds
 /// one meeting at a time". THREE families can occupy a <c>MeetingTable</c>: a
 /// delegation meeting request, a speaker meeting request, and the admin-arranged
-/// <c>BusinessMeeting</c> (FDS-013, the only one with a real FK). A34 (D-771) put the
-/// scan on the delegation bind and D3 (D-772) taught it the business family, but it
+/// <c>BusinessMeeting</c> (the only one with a real FK). The scan started on the
+/// delegation bind and later learned the business family, but it
 /// stayed private to <see cref="DelegationMeetingRequestService"/> — so the guard was
 /// ONE-DIRECTIONAL: a speaker bind assigned <c>MeetingTableId</c> after only an
 /// "active + in this hall" check, and <c>BusinessMeetingService</c> scanned its own

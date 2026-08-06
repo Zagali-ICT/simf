@@ -9,7 +9,7 @@ namespace SIMF.Application.Notifications;
 /// <c>NotificationBroadcastWorker</c>) fans it out as one in-app notification row +
 /// one queued email per recipient. Recipients are either a session's active
 /// seat-holders or a broad audience; they are resolved at send time across the
-/// D-157 DB boundary and are never stored on the job.
+/// Identity/App DB boundary and are never stored on the job.
 /// </summary>
 public interface INotificationBroadcastService
 {

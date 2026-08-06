@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Operations;
 
-/// <summary>D-166 (gap doc G4, PDF §2.4) — public GET so the Flutter
+/// <summary>Public GET so the Flutter
 /// app + Website can decide whether to show the past-events archive
 /// without authenticating first.</summary>
 public sealed class GetArchiveVisibilityPublicEndpoint(IOperationsToggleService service)

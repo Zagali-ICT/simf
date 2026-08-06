@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/others/bulk-delete</c> — D-113. Type-scoped variant
+/// <c>POST /api/v1/admin/others/bulk-delete</c> — type-scoped variant
 /// of <see cref="BulkDeleteUsersEndpoint"/>. Soft-deletes Other accounts
 /// only; admin / self / wrong-type ids are silently skipped per target.
 /// </summary>
@@ -37,7 +37,7 @@ public sealed class BulkDeleteOthersEndpoint(IAdminUserBulkService adminAccountS
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/others/duplicate</c> — D-113. Type-scoped variant of
+/// <c>POST /api/v1/admin/others/duplicate</c> — type-scoped variant of
 /// <see cref="DuplicateUserEndpoint"/>. Refuses any source whose
 /// <see cref="UserType"/> is not Other.
 /// </summary>
@@ -65,7 +65,7 @@ public sealed class DuplicateOtherEndpoint(IAdminUserBulkService adminAccountSer
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/others/export</c> — D-113. Type-scoped variant of
+/// <c>POST /api/v1/admin/others/export</c> — type-scoped variant of
 /// <see cref="ExportUsersEndpoint"/>. Exports Other accounts only.
 /// </summary>
 public sealed class ExportOthersEndpoint(IAdminUserBulkService adminAccountService)
@@ -96,7 +96,7 @@ public sealed class ExportOthersEndpoint(IAdminUserBulkService adminAccountServi
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/others/import</c> — D-113. Type-scoped variant of
+/// <c>POST /api/v1/admin/others/import</c> — type-scoped variant of
 /// <see cref="ImportUsersEndpoint"/>. Every imported row is forced to
 /// <c>UserType = Other</c>; any Role column is ignored. Rows must carry
 /// a parseable <c>ProfileTypeId</c> column — rows missing it land in the

@@ -4,11 +4,11 @@ using SIMF.Domain.BusinessMeetings;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>SIMF-FDS-013 — D-248: BusinessMeetingParticipant EF config. The
+/// <summary>BusinessMeetingParticipant EF config. The
 /// parent meeting FK is configured on <see cref="BusinessMeetingConfiguration"/>
 /// (cascade). <c>ExhibitorId</c> is an optional real FK to Exhibitor (Restrict);
 /// <c>VisitorUserId</c> is a bare logical Guid to the Identity DB — no navigation,
-/// no FK (D-157 / D-246). Lookup indexes back the participant-overlap check.</summary>
+/// no FK. Lookup indexes back the participant-overlap check.</summary>
 internal sealed class BusinessMeetingParticipantConfiguration
     : IEntityTypeConfiguration<BusinessMeetingParticipant>
 {

@@ -92,8 +92,8 @@ internal static partial class AccountEndpoints
 
         // The cookie is SameSite=Lax, so a cross-site multipart POST never
         // carries it — that defeats CSRF without an antiforgery token.
-        // Documented next to /auth/sign-out (D-029); repeated here for the
-        // next reader. If the cookie is ever made SameSite=None, this route
+        // The same note sits next to /auth/sign-out; it is repeated here for
+        // the next reader. If the cookie is ever made SameSite=None, this route
         // and `/auth/sign-out` both need an antiforgery token.
         group.MapPost("/avatar",
             async (HttpContext http, SimfAccountClient api) =>

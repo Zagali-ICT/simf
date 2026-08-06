@@ -3,8 +3,8 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// Admin-driven two-factor reset (R2 — D-075, split out of the
-/// monolithic <c>IAdminAccountService</c> per Architecture SEV-1.2).
+/// Admin-driven two-factor reset, split out of the
+/// monolithic <c>IAdminAccountService</c>.
 /// </summary>
 public interface IAdminTwoFactorService
 {

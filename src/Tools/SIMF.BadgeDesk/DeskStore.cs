@@ -6,7 +6,7 @@ using SIMF.Contracts.Badges;
 namespace SIMF.BadgeDesk;
 
 /// <summary>
-/// D-819 — the desk's local record of everyone it registered.
+/// The desk's local record of everyone it registered.
 ///
 /// <para>Append-only, one encrypted record per line, flushed on every write. A
 /// badge desk runs on venue power at a folding table: the realistic failure is
@@ -15,7 +15,7 @@ namespace SIMF.BadgeDesk;
 /// possible, and it is detectable and skippable. A database file or a rewritten
 /// JSON array would put the whole shift at risk to save nothing.</para>
 ///
-/// <para><b>D-823 — why the lines are encrypted.</b> A record carries the
+/// <para><b>Why the lines are encrypted.</b> A record carries the
 /// holder's name, mobile and national ID / Iqama / passport number. The server
 /// holds those same columns AES-GCM encrypted at rest behind a blind index, so a
 /// plaintext copy of them here was the softest target for that data in the whole
@@ -111,7 +111,7 @@ public sealed class DeskStore
     }
 
     /// <summary>
-    /// D-824 — replaces a registration the server rejected, keeping its
+    /// Replaces a registration the server rejected, keeping its
     /// sequence.
     ///
     /// <para>Appended, not rewritten: the later line supersedes the earlier one
@@ -243,7 +243,7 @@ public sealed class DeskStore
     }
 }
 
-/// <summary>D-819 — one registration as the desk stored it.</summary>
+/// <summary>One registration as the desk stored it.</summary>
 public sealed class StoredRegistration
 {
     public long Sequence { get; set; }

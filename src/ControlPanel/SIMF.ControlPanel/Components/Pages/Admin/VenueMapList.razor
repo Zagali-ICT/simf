@@ -1,12 +1,11 @@
-@* P2.5 (D-230) — 2D venue-map editor (SIMF-FDS-006 §5.3, FR-605). Place nodes
-   (a label + a 2D position + an optional Hall/Booth link). The app renders the
-   nodes on its 2D canvas. Ships empty; the Logistics team places the nodes.
-   Centralized dialog/full-page framing D-353: Add / Edit / View / Delete are
-   hosted by CrudShell, which frames the reusable VenueMapAddEdit and
-   VenueMapViewDelete forms as a popup or a full page per the admin's toolbar
-   choice (persisted in localStorage via CpPreferences). The inline SimfModal
-   form + native confirm() delete it used to carry are gone. D-356: Excel
-   export/import wired through CrudGridExcel. *@
+@* 2D venue-map editor. Place nodes (a label + a 2D position + an optional
+   Hall/Booth link). The app renders the nodes on its 2D canvas. Ships empty;
+   the Logistics team places the nodes.
+   Add / Edit / View / Delete are hosted by CrudShell, which frames the reusable
+   VenueMapAddEdit and VenueMapViewDelete forms as a popup or a full page per
+   the admin's toolbar choice (persisted in localStorage via CpPreferences).
+   The inline SimfModal form + native confirm() delete it used to carry are
+   gone. Excel export/import is wired through CrudGridExcel. *@
 @page "/admin/venue-map"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.VenueMap.View)]

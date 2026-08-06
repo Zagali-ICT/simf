@@ -8,8 +8,8 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/speakers/export</c> — the D-356 grid export for the
-/// programme speakers (SIMF-DAT-001 §5.4). All the work lives in
+/// <c>POST /api/v1/admin/speakers/export</c> — the grid export for the
+/// programme speakers. All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass only declares the
 /// route, permission, sheet/file names, the column layout (mirroring the grid's
 /// visible columns), and how to list + identify a speaker row. The list call
@@ -46,7 +46,7 @@ public sealed class ExportSpeakersEndpoint(IAdminSpeakerService service, IGridEx
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/speakers/import</c> — the D-356 grid import (insert-only).
+/// <c>POST /api/v1/admin/speakers/import</c> — the grid import (insert-only).
 /// The base does the upload defence, parse and per-row error aggregation; this
 /// subclass binds one row to <see cref="AdminCreateSpeakerRequest"/> and creates
 /// it (the service rejects a duplicate code → a per-row error, not a batch abort).

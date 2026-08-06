@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- P2.4 (D-229) — System Configuration settings (SIMF.Contracts.Admin) -
+    // -- System Configuration settings (SIMF.Contracts.Admin) ----------------
 
     public Task<ApiCallResult<GridPage<AdminSystemSettingSummary>>> ListSystemSettingsAsync(
         GridQuery query, string accessToken,
@@ -75,7 +75,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"system-settings/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- P2.5 (D-230) — 2D venue-map node CRUD (SIMF.Contracts.Admin) --------
+    // -- 2D venue-map node CRUD (SIMF.Contracts.Admin) -----------------------
 
     public Task<ApiCallResult<GridPage<AdminVenueMapNodeSummary>>> ListVenueMapNodesAsync(
         GridQuery query, string accessToken,
@@ -115,7 +115,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"venue-map/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-199 — Archive edition admin CRUD (SIMF.Contracts.Archive) --------
+    // -- Archive edition admin CRUD (SIMF.Contracts.Archive) ----------------
 
     public Task<ApiCallResult<GridPage<AdminArchiveEditionSummary>>> ListArchiveEditionsAsync(
         GridQuery query, string accessToken,

@@ -38,7 +38,7 @@ internal static class AvatarBytes
 
 /// <summary>
 /// <c>GET /api/v1/app/account/avatar/{userId:guid}</c> — streams the avatar bytes
-/// for the authenticated caller (myComment #11, D-039). Authentication is
+/// for the authenticated caller. Authentication is
 /// required so the avatar bytes are never enumerable without a token; for the
 /// MVP the only caller is the same signed-in user, so this also acts as an
 /// authorisation check.

@@ -9,7 +9,7 @@ using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P5.1d — D-244 (FDS-003 §5.4): an operator at a hall door scans an
+/// <summary>An operator at a hall door scans an
 /// attendee's badge QR to record their arrival (<c>Method = QrScan</c>). Gated
 /// by <c>HallArrivals.Record</c> + RequireApprovedAccount; the actor (operator)
 /// is the <c>sub</c> claim. The scanned attendee is resolved server-side from
@@ -23,7 +23,7 @@ public sealed class RecordQrArrivalEndpoint(IHallAttendanceService service)
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallArrivals.Record),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         // One call per person through a hall door, so it belongs to the
-        // operational surface D-819 named. See RateLimitOptions.OperationalPolicy.
+        // operational rate-limit surface. See RateLimitOptions.OperationalPolicy.
         Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Admin");
     }

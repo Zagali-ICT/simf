@@ -9,8 +9,8 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/session-moderators/export</c> — the D-356 grid export
-/// for the per-session moderator-grants desk (D-169, gap doc G6). <b>Export only:</b>
+/// <c>POST /api/v1/admin/session-moderators/export</c> — the grid export
+/// for the per-session moderator-grants desk. <b>Export only:</b>
 /// grants are created in place via assign/revoke (composite key SessionId+UserId),
 /// so there is no import path. The list is <b>not parent-scoped</b> — it delegates
 /// to the same <see cref="IAdminSessionModeratorService.ListAllAsync"/> the list

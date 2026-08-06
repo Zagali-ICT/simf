@@ -12,11 +12,11 @@ namespace SIMF.ApiClient;
 
 /// <summary>
 /// A typed client over the SIMF Account API — the profile, the authenticator
-/// enrolment, and the avatar (myComment item #11). Every method takes the
-/// caller's bearer access token explicitly and returns the upstream HTTP
-/// status alongside the <see cref="ApiResult{T}"/> body, so a proxy can
-/// forward the status verbatim (5-agent review SEV-1.3). A transport failure
-/// is mapped to a 503 envelope, so a caller never has to catch.
+/// enrolment, and the avatar. Every method takes the caller's bearer access
+/// token explicitly and returns the upstream HTTP status alongside the
+/// <see cref="ApiResult{T}"/> body, so a proxy can forward the status verbatim.
+/// A transport failure is mapped to a 503 envelope, so a caller never has to
+/// catch.
 /// </summary>
 public sealed class SimfAccountClient(HttpClient http)
 {
@@ -141,15 +141,15 @@ public sealed class SimfAccountClient(HttpClient http)
         }
     }
 
-    /// <summary>Returns the signed-in user's profile (decisions D-046 b,
-    /// P8 — D-049; renamed from <c>GetVisitorProfileAsync</c>).</summary>
+    /// <summary>Returns the signed-in user's profile (renamed from
+    /// <c>GetVisitorProfileAsync</c>).</summary>
     public Task<ApiCallResult<UserProfileResponse>> GetUserProfileAsync(
         string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<UserProfileResponse>(
             HttpMethod.Get, "account/user-profile", null,
             accessToken, cancellationToken);
 
-    /// <summary>Creates / updates the user's profile (D-046 b, P8).</summary>
+    /// <summary>Creates / updates the user's profile.</summary>
     public Task<ApiCallResult<UserProfileResponse>> UpsertUserProfileAsync(
         UpsertUserProfileRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -158,22 +158,22 @@ public sealed class SimfAccountClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Returns the supported nationality picker list (D-046 b, P8).</summary>
+    /// <summary>Returns the supported nationality picker list.</summary>
     public Task<ApiCallResult<CountryListResponse>> GetProfileCountriesAsync(
         string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<CountryListResponse>(
             HttpMethod.Get, "account/user-profile/countries", null,
             accessToken, cancellationToken);
 
-    /// <summary>Returns the active interests for the visitor picker
-    /// (P9 — D-050; الاهتمامات).</summary>
+    /// <summary>Returns the active interests (الاهتمامات) for the visitor
+    /// picker.</summary>
     public Task<ApiCallResult<InterestListResponse>> GetActiveInterestsAsync(
         string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<InterestListResponse>(
             HttpMethod.Get, "account/interests", null,
             accessToken, cancellationToken);
 
-    /// <summary>B3 — D-221 (الجهة): searches the active organisations lookup for
+    /// <summary>Searches the active organisations lookup (الجهة) for
     /// the registration picker. A blank term returns the first <paramref name="top"/>
     /// by Arabic name; otherwise it matches the term across Arabic / English
     /// name and city. Backs the Web profile + CP walk-in organisation picker.</summary>
@@ -190,7 +190,7 @@ public sealed class SimfAccountClient(HttpClient http)
             HttpMethod.Get, query, null, accessToken, cancellationToken);
     }
 
-    // -- P12 — D-053: in-app notifications -----------------------------------
+    // -- In-app notifications ------------------------------------------------
 
     /// <summary>One page of the signed-in user's notifications.</summary>
     public Task<ApiCallResult<GridPage<NotificationDto>>> ListNotificationsAsync(
@@ -231,9 +231,8 @@ public sealed class SimfAccountClient(HttpClient http)
             HttpMethod.Delete, $"account/notifications/{id}", null,
             accessToken, cancellationToken);
 
-    /// <summary>Uploads the user's ID-document image (D-046 b, P8). The
-    /// bytes are magic-byte gated server-side and encrypted-at-rest with
-    /// AES-GCM.</summary>
+    /// <summary>Uploads the user's ID-document image. The bytes are magic-byte
+    /// gated server-side and encrypted-at-rest with AES-GCM.</summary>
     public Task<ApiCallResult<bool>> UploadUserIdDocumentAsync(
         byte[] content, string contentType, string fileName, string accessToken,
         CancellationToken cancellationToken = default)
@@ -247,8 +246,7 @@ public sealed class SimfAccountClient(HttpClient http)
             multipart, accessToken, cancellationToken);
     }
 
-    /// <summary>Streams the user's decrypted ID-document image bytes
-    /// (D-046 b, P8).</summary>
+    /// <summary>Streams the user's decrypted ID-document image bytes.</summary>
     public async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchUserIdDocumentAsync(
         string accessToken, CancellationToken cancellationToken = default)
     {

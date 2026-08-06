@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/MeetingAwaitingSpeakerExpiryWorkerTests.cs
-//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (QA A29 revert notification)
+//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (revert notification)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +15,7 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
-/// R-1 (on-site remediation) — reverts a stuck <see cref="MeetingRequestStatus.AwaitingSpeaker"/>
+/// Reverts a stuck <see cref="MeetingRequestStatus.AwaitingSpeaker"/>
 /// speaker meeting request back to <see cref="MeetingRequestStatus.Pending"/> once its
 /// double-opt-in tokens can no longer be used (all expired or consumed) so the admin queue
 /// never dead-ends when a speaker never clicks the 72h link. Reverting frees the held hall
@@ -24,7 +24,7 @@ namespace SIMF.Infrastructure.Operations;
 /// Pending on the app feed) the whole time, so nothing changes for them. Mirrors
 /// <see cref="SessionReminderWorker"/>'s scoped-poll shape.
 ///
-/// <para>B10 — the same sweep now also covers DELEGATION meeting requests
+/// <para>The same sweep also covers DELEGATION meeting requests
 /// (<see cref="RunDelegationExpiryScanAsync"/>), which hold a hall slot in
 /// AwaitingSpeaker exactly like a speaker request but were never expired.</para>
 /// </summary>
@@ -91,9 +91,9 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
         var auditLog = scope.ServiceProvider.GetRequiredService<IAuditLog>();
         var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
 
-        // MERGE: the speaker scan gained notifications+logger (A29 — tell the requester
-        // when a stale AwaitingSpeaker reverts); the delegation scan (B10) is additive
-        // beside it. Both run each tick.
+        // The speaker scan takes notifications+logger so it can tell the requester
+        // when a stale AwaitingSpeaker reverts; the delegation scan sits beside it
+        // and needs neither. Both run each tick.
         var now = timeProvider.SimfNow();
         var reverted = await RunExpiryScanAsync(
             db, auditLog, notifications, logger, now, cancellationToken);
@@ -132,7 +132,7 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
         {
             // Back to a clean Pending: drop the hall binding (frees the slot) and the
             // response stamp so the admin re-decides from scratch. AvailabilityWindowId
-            // is nulled alongside the slot (D-611/D-612 FK) so a reverted VIP-slot
+            // is nulled alongside the slot so a reverted VIP-slot
             // request is not left pointing at a window with no slot.
             req.Status = MeetingRequestStatus.Pending;
             req.HallId = null;
@@ -154,12 +154,12 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
 
         await db.SaveChangesAsync(cancellationToken);
 
-        // QA A29 — the revert used to be completely silent: the requester's proposed
+        // The revert used to be completely silent: the requester's proposed
         // time was released and nobody was told. Tell them the speaker did not confirm
         // in time and the request is back with the team. Dispatched AFTER the save so a
         // notify failure can never roll back the revert; best-effort (swallow-and-log).
-        // Only the requester is notified — per D-717 owner decision C the CP status flip
-        // back into the Pending queue IS the admin signal.
+        // Only the requester is notified — for the admin, the CP status flip back
+        // into the Pending queue IS the signal.
         foreach (var req in stale)
         {
             await NotifyRequesterRevertedAsync(db, notifications, logger, req, cancellationToken);
@@ -194,11 +194,11 @@ internal sealed class MeetingAwaitingSpeakerExpiryWorker(
     }
 
     /// <summary>
-    /// B10 — the delegation twin of <see cref="RunExpiryScanAsync"/>. An AwaitingSpeaker
+    /// The delegation twin of <see cref="RunExpiryScanAsync"/>. An AwaitingSpeaker
     /// DELEGATION meeting HOLDS its hall slot (<c>MeetingRequestStatuses.SlotHolding</c>)
     /// but nothing ever expired one, so a target delegation that simply never confirmed
     /// held the slot forever and the admin queue dead-ended. Same cadence, same shape and
-    /// the same "no still-usable token" rule as the speaker sweep — the D-767 delegation
+    /// the same "no still-usable token" rule as the speaker sweep — the delegation
     /// confirm token carries the same 72h TTL, so this is time-based via that TTL. Reverts
     /// to a clean Pending (which releases the slot) so the admin can re-decide. Extracted
     /// for direct unit testing; returns the number reverted.

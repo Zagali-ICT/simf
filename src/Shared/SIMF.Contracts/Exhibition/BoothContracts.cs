@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Exhibition;
 
-/// <summary>Public booth list item (Mockup page 22). Only the
+/// <summary>Public booth list item. Only the
 /// fields the visitor-facing exhibition page + 2D map need.</summary>
 public sealed class PublicBoothSummary
 {
@@ -25,18 +25,18 @@ public sealed class PublicBoothSummary
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
 
-    // P6 — D-440 (append-only): the exhibitor's Contact id (Exhibitor.ContactId),
+    // Append-only: the exhibitor's Contact id (Exhibitor.ContactId),
     // the owner of the CompanyLogo asset. The app renders the real booth logo via
-    // GET /app/assets/CompanyLogo/{ExhibitorContactId}/image (D-357), falling back
+    // GET /app/assets/CompanyLogo/{ExhibitorContactId}/image, falling back
     // to initials when the exhibitor has no linked Contact / logo.
     public Guid? ExhibitorContactId { get; set; }
 
-    // D-456 (append-only): the exhibitor company's country (Exhibitor → Contact →
+    // Append-only: the exhibitor company's country (Exhibitor → Contact →
     // CountryId), ISO 3166-1 numeric, for the app's corner flag on the logo. Null
     // when the exhibitor has no linked Contact / country.
     public int? CountryId { get; set; }
 
-    // #9 (append-only): the country NAME resolved from the Country lookup on
+    // Append-only: the country NAME resolved from the Country lookup on
     // CountryId, so the app can show the country, not just the flag. Null when no
     // country / no matching lookup row.
     public string? CountryName { get; set; }
@@ -67,20 +67,20 @@ public sealed class PublicBoothDetail
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
 
-    // P6 — D-440 (append-only): exhibitor's Contact id (CompanyLogo owner); see
+    // Append-only: exhibitor's Contact id (CompanyLogo owner); see
     // PublicBoothSummary.
     public Guid? ExhibitorContactId { get; set; }
 
-    // D-456 (append-only): the exhibitor company's country (Exhibitor → Contact
+    // Append-only: the exhibitor company's country (Exhibitor → Contact
     // → CountryId) for the app's corner flag; see PublicBoothSummary.
     public int? CountryId { get; set; }
 
-    // #9 (append-only): the country NAME resolved from the Country lookup; see
+    // Append-only: the country NAME resolved from the Country lookup; see
     // PublicBoothSummary.
     public string? CountryName { get; set; }
     public string? CountryNameArabic { get; set; }
 
-    // Wave 3 (Figma 1439:11881) — appended (append-only). The exhibitor-detail
+    // Appended (append-only). The exhibitor-detail
     // screen's location line (City، Country), tier pill, about + website.
     // City is resolved Exhibitor → Contact.City; Website from Exhibitor.Website;
     // Tier from Exhibitor.Tier (TierName = the enum name, the app localizes it).
@@ -99,7 +99,7 @@ public sealed class PublicBoothDetail
     public Guid? ExhibitorId { get; set; }
 }
 
-/// <summary>D-199 — admin grid row. B1 — D-222: the exhibitor is now the
+/// <summary>Admin grid row. The exhibitor is the
 /// <see cref="ExhibitorId"/> relation (the CP resolves the name client-side from
 /// the loaded exhibitor list, mirroring <see cref="HallId"/>).</summary>
 public sealed class AdminBoothSummary
@@ -139,7 +139,7 @@ public sealed class AdminBoothDetail
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
 
-    // NEW inline booth-officer identity-card fields (D-766). All optional. The
+    // Inline booth-officer identity-card fields. All optional. The
     // OfficerCountryName* pair is resolved from the Country lookup on read.
     public string? OfficerNameArabic { get; set; }
     public string? OfficerPhoneSecondary { get; set; }
@@ -181,7 +181,7 @@ public sealed class AdminBoothDetail
     public Guid? ExhibitorContactId { get; set; }
 }
 
-/// <summary>D-199 — admin create payload. B1 — D-222: exhibitor =
+/// <summary>Admin create payload. Exhibitor =
 /// <see cref="ExhibitorId"/> relation + booth-officer contact.</summary>
 public sealed class AdminCreateBoothRequest
 {
@@ -193,7 +193,7 @@ public sealed class AdminCreateBoothRequest
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
 
-    // NEW inline booth-officer identity-card fields (D-766). All optional; the
+    // Inline booth-officer identity-card fields. All optional; the
     // officer's nationality is OfficerCountryId (a logical FK to Country.Id).
     public string? OfficerNameArabic { get; set; }
     public string? OfficerPhoneSecondary { get; set; }
@@ -217,10 +217,10 @@ public sealed class AdminCreateBoothRequest
     public double? MapY { get; set; }
 }
 
-/// <summary>D-199 — admin update payload. B1 — D-222: exhibitor =
+/// <summary>Admin update payload. Exhibitor =
 /// <see cref="ExhibitorId"/> relation + booth-officer contact.</summary>
 /// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
-/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+/// route class so it cannot drop a field at bind time.</remarks>
 public class AdminUpdateBoothRequest
 {
     public string Code { get; set; } = string.Empty;
@@ -231,7 +231,7 @@ public class AdminUpdateBoothRequest
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
 
-    // NEW inline booth-officer identity-card fields (D-766). All optional; the
+    // Inline booth-officer identity-card fields. All optional; the
     // officer's nationality is OfficerCountryId (a logical FK to Country.Id).
     public string? OfficerNameArabic { get; set; }
     public string? OfficerPhoneSecondary { get; set; }

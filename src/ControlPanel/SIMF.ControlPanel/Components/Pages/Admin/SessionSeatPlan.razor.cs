@@ -26,7 +26,7 @@ public partial class SessionSeatPlan
     // paint the full grid (free + reserved). Null when the hall has no layout.
     private HallSeatLayoutSnapshot? _layout;
     private string _reserveRowLabel = string.Empty;
-    // D-771 (owner 2026-07-26) — the manual guest note the admin types before
+    // The manual guest note the admin types before
     // blocking a VVIP seat. A VVIP seat has no registration, so this free text IS
     // the occupant record ("هذا المقعد محجوز لمعالي الوزير") the app and the staff
     // seating desk display. Cleared after each successful block.
@@ -37,7 +37,7 @@ public partial class SessionSeatPlan
     private Toast? _toast;
 
     // The tier of row i, read off the layout snapshot. Tolerant of an
-    // absent/short SeatTiers (a pre-D-771 payload) → Normal, matching the server.
+    // absent/short SeatTiers (an older payload) → Normal, matching the server.
     private SeatTier TierOfRow(int rowIndex) =>
         _layout?.SeatTiers is { Count: > 0 } tiers && rowIndex < tiers.Count
             ? tiers[rowIndex]
@@ -65,7 +65,7 @@ public partial class SessionSeatPlan
             ? sc[rowIndex]
             : _layout.SeatsPerRow);
 
-    // P1.4 — fast (row,seat) -> reservation lookup so the grid renders O(1) per seat.
+    // Fast (row,seat) -> reservation lookup so the grid renders O(1) per seat.
     private SeatPlanCell? FindReservation(string rowLabel, int seatNumber) =>
         _reservations.FirstOrDefault(r =>
             string.Equals(r.RowLabel, rowLabel, StringComparison.OrdinalIgnoreCase)
@@ -114,7 +114,7 @@ public partial class SessionSeatPlan
         return string.IsNullOrWhiteSpace(fallback) ? string.Empty : fallback;
     }
 
-    /// <summary>A11 — the seat's live state, now that the projection carries the
+    /// <summary>The seat's live state, now that the projection carries the
     /// real <c>CheckedIn</c> flag instead of the record default. Same three
     /// admin-visible states as the live-hall monitor: an admin block is
     /// "unavailable", a holder who has scanned in at the gate is "confirmed", and a
@@ -144,7 +144,7 @@ public partial class SessionSeatPlan
         {
             return string.Format(L["Admin.SessionSeatPlans.Seat.FreeTitle"], coords);
         }
-        // DEF-SEA-001 — the tooltip names the holder (attendee name, or the D-771
+        // DEF-SEA-001 — the tooltip names the holder (attendee name, or the
         // VVIP guest note) so an admin can tell whose seat this is before clicking.
         return string.Format(
             L["Admin.SessionSeatPlans.Seat.ReservedTitle"],

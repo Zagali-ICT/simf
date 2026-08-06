@@ -30,7 +30,7 @@ public interface ISessionModerationService
     /// <see cref="QuestionStatus.Pending"/>, which is still inside the Scientific
     /// Committee's stage-2 gate) throws a 400 — the moderator desk must not be
     /// able to read a question the Committee has not released.</para>
-    /// <para>D-772 — <see cref="QuestionStatus.Hidden"/> returns only rows hidden
+    /// <para><see cref="QuestionStatus.Hidden"/> returns only rows hidden
     /// FROM the desk, i.e. whose <c>StatusBeforeHidden</c> is
     /// <see cref="QuestionStatus.Approved"/> or <see cref="QuestionStatus.Answered"/>.
     /// A question the Committee rejected while it was still

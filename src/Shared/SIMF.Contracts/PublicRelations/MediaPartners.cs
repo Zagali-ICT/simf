@@ -2,10 +2,10 @@ namespace SIMF.Contracts.PublicRelations;
 
 // -- Public (anonymous) read projection --
 
-/// <summary>D-199 (Mockup page 31) — one item in the public media-partner list.
-/// SIMF-FDS-014 (D-287): the extra contact cluster (phone / email / social / map
+/// <summary>One item in the public media-partner list.
+/// The extra contact cluster (phone / email / social / map
 /// location) is sourced live from the linked <c>Contact</c> when set, null
-/// otherwise; the fields are additive (append-only, D-219).</summary>
+/// otherwise; the fields are additive (append-only).</summary>
 public sealed record PublicMediaPartnerItem(
     Guid Id,
     string Name,
@@ -22,7 +22,7 @@ public sealed record PublicMediaPartnerItem(
     double? Latitude = null,
     double? Longitude = null);
 
-/// <summary>D-199 (Mockup page 31) — the public media-partner list payload
+/// <summary>The public media-partner list payload
 /// (active rows only, ordered by DisplayOrder then NameArabic).</summary>
 public sealed record PublicMediaPartners(IReadOnlyList<PublicMediaPartnerItem> Items);
 

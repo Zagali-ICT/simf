@@ -8,7 +8,7 @@ namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
 /// Generates, persists, verifies and consumes the single-use recovery codes
-/// (decision D-040). The plaintext codes leave the service only at issuance.
+/// for TOTP. The plaintext codes leave the service only at issuance.
 /// </summary>
 internal sealed class RecoveryCodeService(
     ITotpRecoveryCodeRepository repository,

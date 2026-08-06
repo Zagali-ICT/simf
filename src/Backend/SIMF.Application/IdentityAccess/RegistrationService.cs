@@ -47,7 +47,7 @@ public sealed class RegistrationService(
         SignUpRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-166 (gap doc G4, PDF §2.3) — honour the registration gate
+        // Honour the registration gate
         // before touching the Identity DB. Closed gate → 403 with the
         // typed REGISTRATION_CLOSED code; the user is not created, no
         // email is sent.
@@ -85,8 +85,8 @@ public sealed class RegistrationService(
         {
             UserName = request.Email,
             Email = request.Email,
-            // Placeholder until the registrant provides a real name: D-609
-            // (UserProfileService.UpsertMineAsync) replaces this with the profile
+            // Placeholder until the registrant provides a real name.
+            // UserProfileService.UpsertMineAsync replaces this with the profile
             // name at profile completion, overwriting only while it still == Email.
             DisplayName = request.Email,
             AccountState = AccountState.Registered,
@@ -409,7 +409,7 @@ public sealed class RegistrationService(
     /// Sends the verification code by email and drops the in-app "code
     /// sent" trail. Shared by the new-account and unverified-restart paths
     /// TryEnqueueAsync owns the
-    /// failure-audit pattern; D-099: the in-app row is visible after the
+    /// failure-audit pattern; the in-app row is visible after the
     /// user signs in.
     /// </summary>
     private async Task EnqueueVerificationCodeAsync(

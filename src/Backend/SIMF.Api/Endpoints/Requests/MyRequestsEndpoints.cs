@@ -8,7 +8,7 @@ using SIMF.Contracts.Requests;
 
 namespace SIMF.Api.Endpoints.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات 1408:9726) — the mobile unified "My requests"
+/// <summary>The mobile unified "My requests" (الطلبات)
 /// feed: every request the signed-in user submitted (speaker / delegation /
 /// session-attendance / participation-document / badge-update), newest first.
 /// Approved-account only; the user only ever sees their own requests.</summary>

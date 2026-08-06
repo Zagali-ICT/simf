@@ -8,8 +8,8 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/system-settings/export</c> — the D-356 grid export for
-/// System Configuration (P2.4 / D-229). All the work lives in
+/// <c>POST /api/v1/admin/system-settings/export</c> — the grid export for
+/// System Configuration. All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass only declares the
 /// route, permission, sheet/file names, the column layout (mirroring the
 /// Configuration grid), and how to list + identify a system-setting row.
@@ -40,7 +40,7 @@ public sealed class ExportConfigurationEndpoint(IAdminSystemSettingService servi
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/system-settings/import</c> — the D-356 grid import
+/// <c>POST /api/v1/admin/system-settings/import</c> — the grid import
 /// (insert-only) for System Configuration. The base does the upload defence,
 /// parse and per-row error aggregation; this subclass binds one row to
 /// <see cref="AdminCreateSystemSettingRequest"/> and creates it (the service

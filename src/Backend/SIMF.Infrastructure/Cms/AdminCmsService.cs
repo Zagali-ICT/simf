@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Cms;
 
 /// <summary>
-/// D-173 (gap doc G8, PDF §1, §2.1) — admin CRUD over content blocks
+/// Admin CRUD over content blocks
 /// and banners. Both entities live on the App DB; logical FK on
 /// <c>LastUpdatedByUserId</c> to <c>SimfUser</c> on the Identity DB.
 /// </summary>
@@ -37,7 +37,7 @@ internal sealed class AdminCmsService(
                 || EF.Functions.Like(b.ContentArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -59,7 +59,7 @@ internal sealed class AdminCmsService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: Key ascending.
+        // CP grid sortable columns. Default: Key ascending.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("key", true) => rows.OrderByDescending(b => b.Key),
@@ -201,7 +201,7 @@ internal sealed class AdminCmsService(
                 EF.Functions.Like(b.Title, $"%{term}%")
                 || EF.Functions.Like(b.TitleArabic, $"%{term}%"));
         }
-        // CP grid per-column filters (D-256). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -220,14 +220,14 @@ internal sealed class AdminCmsService(
             }
         }
 
-        // CP grid sortable columns (D-256). Default: DisplayOrder, then Start.
+        // CP grid sortable columns. Default: DisplayOrder, then Start.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("title", false) => rows.OrderBy(b => b.Title),
             ("title", true) => rows.OrderByDescending(b => b.Title),
             // "start" / "end" match the grid column Keys in BannersList.razor. They
-            // read "startutc" / "endutc" until 2026-08-01, left behind when D-770
-            // renamed the persisted columns, so neither date column sorted at all: both
+            // used to read "startutc" / "endutc", left behind when the persisted
+            // columns were renamed, so neither date column sorted at all: both
             // fell through to the catch-all and the grid stayed on DisplayOrder.
             ("start", false) => rows.OrderBy(b => b.Start),
             ("start", true) => rows.OrderByDescending(b => b.Start),

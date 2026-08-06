@@ -4,12 +4,12 @@ using System.Text;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// M3 (security) — keyed HMAC of a short verification code, so the
+/// Keyed HMAC of a short verification code, so the
 /// <c>AccountCodes</c> table stores a hash, not the live OTP. The six-digit
 /// code space is only 10^6, so a plain (keyless) hash is brute-forced offline
 /// in milliseconds; the HMAC key — a server secret that never lives in the DB —
 /// is what makes a leaked table useless. Truncated to 16 lowercase-hex chars to
-/// fit the frozen <c>AccountCode.Code</c> column (D-110); 64 bits of a keyed MAC
+/// fit the frozen <c>AccountCode.Code</c> column; 64 bits of a keyed MAC
 /// is ample for a single-use, ~10-minute, attempt-capped code.
 /// </summary>
 public static class AccountCodeHasher

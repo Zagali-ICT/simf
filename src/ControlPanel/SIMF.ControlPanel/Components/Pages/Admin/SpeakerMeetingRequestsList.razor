@@ -1,4 +1,4 @@
-@* D-269 (Mockup page 20 "Speaker profile") — admin queue for meeting requests
+@* Admin queue for meeting requests
    submitted TO a speaker (gated by Speaker.AllowsMeetingRequests). Distinct from
    the session-scoped /admin/meeting-requests queue. Respond modal accepts /
    rejects with an optional note; Pending → Pending is rejected server-side
@@ -112,7 +112,7 @@
                                            OnClick="@(() => ConfirmCheckIn(context))" />
                     </AuthorizedAction>
                 }
-                @* QA B20 — a Rejected / Cancelled row used to carry no actions at all, so a
+                @* A Rejected / Cancelled row used to carry no actions at all, so a
                    mistaken decline or a requester's cancel was unrecoverable. Reopen puts it
                    back to a clean Pending for a fresh decision (audited). *@
                 else if (context.Status is MeetingRequestStatus.Rejected
@@ -232,20 +232,20 @@
                         OnClick="DeclineAsync">
                 @L["Admin.Meetings.Decline"]
             </SimfButton>
-            @* QA B19 — Approve and Confirm both require a free hall slot, so with no hall
+            @* Approve and Confirm both require a free hall slot, so with no hall
                availability configured Decline was the only usable action. Accepting with
                no room booked is a path the service already supports; surface it. *@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy"
                         OnClick="AcceptWithoutHallAsync">
                 @L["Admin.Meetings.AcceptNoHall"]
             </SimfButton>
-            @* D-828 (second pass) - page gates on SpeakerMeetingRequests.View; responding to a request is .Manage. *@
+            @* The page gates on SpeakerMeetingRequests.View; responding to a request is .Manage. *@
             <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
             <SimfButton Type="button" OnClick="ApproveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.Meetings.Approve"]
                 </SimfButton>
             </AuthorizedAction>
-            @* D-831 - the commit button of the modal this action opened. *@
+            @* The commit button of the modal this action opened. *@
             <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
             <SimfButton Type="button" OnClick="ConfirmAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.Meetings.Confirm"]
@@ -255,7 +255,7 @@
     </SimfModal>
 }
 
-@* R10 (D-767) — must-decide guard for the one-click Check-in / Resend row actions. *@
+@* Must-decide guard for the one-click Check-in / Resend row actions. *@
 <SimfConfirm Open="_confirmOpen" Title="@_confirmTitle" Message="@_confirmMessage"
              ConfirmLabel="@_confirmLabel" CancelLabel="@L["Admin.Meetings.Close"]"
              Busy="_busy" OnConfirm="RunConfirmAsync" OnCancel="CancelConfirm" 

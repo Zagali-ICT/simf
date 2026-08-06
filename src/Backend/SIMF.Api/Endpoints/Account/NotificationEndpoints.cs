@@ -10,7 +10,7 @@ namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
 /// <c>POST /api/v1/app/account/notifications/list</c> — one page of the
-/// signed-in user's notifications, newest first (P12 — D-053). The
+/// signed-in user's notifications, newest first. The
 /// optional <c>unreadOnly=true</c> filter is what the bell dropdown
 /// uses.
 /// </summary>

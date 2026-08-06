@@ -84,7 +84,7 @@ internal sealed class StoredFileService(
             Sha256 = sha256,
             IsDeletable = policy.DeletableDefault,
             RetainUntil = policy.Retention is { } retention ? now.Add(retention) : null,
-            // P2 (D-568 hardening) — the owner FAMILY is authoritative from the
+            // The owner FAMILY is authoritative from the
             // policy, never the client, so a caller can't over-post a mismatched
             // owner type. Only the owner id rides the request (server-derived for
             // owner-scoped services by the caller).
@@ -133,7 +133,7 @@ internal sealed class StoredFileService(
                 "This file category requires an owner.", "هذا النوع من الملفات يتطلب مالكًا.");
         }
 
-        // The malware scan is SKIPPED for streamed uploads (P5 size-capped policy): the
+        // The malware scan is SKIPPED for streamed uploads: the
         // caller is an admin-only, extension+MIME-validated video up to 1 GiB, and
         // buffering it whole for a byte[] scan would defeat the streaming pipeline.
         var fileId = Guid.NewGuid();
@@ -304,7 +304,7 @@ internal sealed class StoredFileService(
         var bytes = await storage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
         if (bytes is null) { throw NotFound(); }
 
-        // P4 (D-568 hardening) — integrity verification on a private file (SAMA
+        // Integrity verification on a private file (SAMA
         // H-29/30). FAIL CLOSED: a stored-hash mismatch means the bytes on disk
         // were tampered with (or a decrypt returned garbage) — audit it and refuse
         // to serve, never hand the caller unverified bytes. Only Confidential+
@@ -378,7 +378,7 @@ internal sealed class StoredFileService(
         file.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // P7 (D-568 hardening) — deletion honesty: a soft-deleted file's bytes must
+        // Deletion honesty: a soft-deleted file's bytes must
         // not linger on disk. Unlink the stored blob (Upload only; an ExternalLink
         // holds no bytes). Best-effort after the row commit — the row is the source
         // of truth (IsActive=false already makes the file un-downloadable).
@@ -401,7 +401,7 @@ internal sealed class StoredFileService(
             ?? throw NotFound();
         if (file.SecureDestroyed is not null) { return; } // idempotent
 
-        // P7 — PDPL right-to-erasure. Securely destroy the bytes (crypto-shred the
+        // PDPL right-to-erasure. Securely destroy the bytes (crypto-shred the
         // wrapped DEK for an encrypted file, overwrite the header for a plaintext
         // one), bypassing the retention hold that blocks the ordinary delete.
         if (file.SourceType == FileSourceType.Upload && !string.IsNullOrEmpty(file.StorageKey))
@@ -488,7 +488,7 @@ internal sealed class StoredFileService(
         }
         if (StartsWith(content, [0x50, 0x4B, 0x03, 0x04]))
         {
-            // P3 (D-568 hardening) — a ZIP container is an OOXML Office document.
+            // A ZIP container is an OOXML Office document.
             // The stored MIME is the CANONICAL OOXML type resolved from the
             // declared extension; the client content-type is NEVER echoed (a ZIP
             // could be anything, and trusting the client MIME lets a caller

@@ -6,11 +6,11 @@ namespace SIMF.Common.Enums;
 /// outbound HTTP providers with working implementations:
 /// <see cref="OpenAi"/> (also serves an on-prem OpenAI-compatible
 /// endpoint via a local <c>BaseUrl</c>), <see cref="Anthropic"/>
-/// (D-484) and <see cref="Gemini"/> (the Google Generative Language
+/// and <see cref="Gemini"/> (the Google Generative Language
 /// API). <see cref="AzureOpenAi"/> remains a placeholder the service
 /// registers but throws <c>AI_PROVIDER_NOT_CONFIGURED</c> against
-/// until wired. New values are appended (the D-110 freeze permits
-/// additive enum values that do not reorder existing ones).</summary>
+/// until wired. New values are appended: the enum contract permits
+/// additive values that do not reorder existing ones.</summary>
 public enum AiProvider
 {
     Echo = 0,
@@ -19,8 +19,8 @@ public enum AiProvider
     Anthropic = 3,
 
     /// <summary>Google Gemini via the Generative Language API
-    /// (<c>generativelanguage.googleapis.com</c>). Additive value (D-110
-    /// freeze allows appends). Used for non-sensitive features under the
+    /// (<c>generativelanguage.googleapis.com</c>). An additive value, which
+    /// the enum contract allows. Used for non-sensitive features under the
     /// hybrid policy; sensitive defense content stays on-prem via
     /// <see cref="OpenAi"/> with a local <c>BaseUrl</c>.</summary>
     Gemini = 4,

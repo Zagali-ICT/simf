@@ -35,9 +35,9 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- P9 — Interests CRUD (الاهتمامات) -----------------------------------
+    // -- Interests CRUD (الاهتمامات) ----------------------------------------
 
-    /// <summary>One page of interests for the admin grid (P9 — D-050).</summary>
+    /// <summary>One page of interests for the admin grid.</summary>
     public Task<ApiCallResult<GridPage<AdminInterestSummary>>> ListInterestsAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -46,7 +46,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>One interest by id (P9 — D-050).</summary>
+    /// <summary>One interest by id.</summary>
     public Task<ApiCallResult<AdminInterestSummary>> GetInterestAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -54,7 +54,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"interests/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>Creates an interest (P9 — D-050).</summary>
+    /// <summary>Creates an interest.</summary>
     public Task<ApiCallResult<AdminInterestSummary>> CreateInterestAsync(
         AdminCreateInterestRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -63,7 +63,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Updates an interest (P9 — D-050).</summary>
+    /// <summary>Updates an interest.</summary>
     public Task<ApiCallResult<AdminInterestSummary>> UpdateInterestAsync(
         Guid id, AdminUpdateInterestRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -72,7 +72,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Soft-deletes (deactivates) an interest (P9 — D-050).</summary>
+    /// <summary>Soft-deletes (deactivates) an interest.</summary>
     public Task<ApiCallResult<bool>> DeactivateInterestAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -80,7 +80,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"interests/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- P2.1 (D-211) — FAQ management (two-level group → entry) --
+    // -- FAQ management (two-level group → entry) --
 
     public Task<ApiCallResult<GridPage<AdminFaqGroupSummary>>> ListFaqGroupsAsync(
         GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>

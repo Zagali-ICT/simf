@@ -1,6 +1,6 @@
-// Tests: SIMF.Api.Tests/AdminAccountMobileTests.cs (FR-PHN-002 — the optional
-//        mobile correction, stored canonicalised per DEF-PHN-003)
-// Tests: SIMF.Api.Tests/AdminAccountNationalityTests.cs (B22 — nationality)
+// Tests: SIMF.Api.Tests/AdminAccountMobileTests.cs (the optional mobile
+//        correction, stored canonicalised)
+// Tests: SIMF.Api.Tests/AdminAccountNationalityTests.cs (nationality)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -14,8 +14,8 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// Per-user Edit for Visitor / Other accounts (promotes the
-/// D-114 CP edit stub to a real edit). Mirrors the create path
+/// Per-user Edit for Visitor / Other accounts, replacing what used to be a
+/// CP edit stub. Mirrors the create path
 /// (<c>CreateAccountAsync</c>): same scope guard, same email-uniqueness and
 /// profile-type validation, the same two-context save. Adds the identity-change
 /// protection a create does not need: when the login email changes the security
@@ -99,7 +99,7 @@ internal sealed partial class AdminAccountService
             actorUserId, trimmedEmail, target.Id, profileTypeId,
             expectedIsVisitor, profileTypeRequired, cancellationToken);
 
-        // B22 — resolve the optional nationality correction BEFORE any write, with the
+        // Resolve the optional nationality correction BEFORE any write, with the
         // same rule (an ACTIVE Countries row, matched on the ISO alpha-2 code) and the
         // same error code the self-service upsert uses. Nationality gates delegation
         // -meeting confirm eligibility, so without this an admin had no way to fix a
@@ -107,11 +107,10 @@ internal sealed partial class AdminAccountService
         var resolvedNationalityId = await ResolveEditNationalityAsync(
             actorUserId, trimmedEmail, target.Id, nationalityCode, cancellationToken);
 
-        // FR-PHN-002 — the optional mobile correction. Canonicalised here
-        // (DEF-PHN-003) so a desk-typed "+966-55 598 7654" lands in the column in
-        // the SAME form the app would have written; null = "leave it as it is",
-        // which is also why an admin cannot blank a number (DEF-PHN-004 made the
-        // mobile mandatory).
+        // The optional mobile correction. Canonicalised here so a desk-typed
+        // "+966-55 598 7654" lands in the column in the SAME form the app would
+        // have written; null = "leave it as it is", which is also why an admin
+        // cannot blank a number — the mobile is mandatory.
         var normalisedSaudiMobile = MobileNumber.NormalizeOptional(saudiMobile);
         var normalisedInternationalMobile =
             MobileNumber.NormalizeOptional(internationalMobile);
@@ -140,7 +139,7 @@ internal sealed partial class AdminAccountService
             target.UserName = trimmedEmail;
             target.DisplayName = trimmedName;
             target.UpdatedAt = now;
-            // #24 — an admin correcting a login email (the new-account typo case)
+            // An admin correcting a login email (the new-account typo case)
             // is not the account holder, so the corrected address is unverified
             // until the owner proves it. Mark it unconfirmed: sign-in gates on
             // AccountState (not EmailConfirmed), so this is not a lockout, and the
@@ -191,7 +190,7 @@ internal sealed partial class AdminAccountService
                     + $"profileType={resolvedProfileTypeId}; "
                     + $"nationalityId={resolvedNationalityId?.ToString(
                         System.Globalization.CultureInfo.InvariantCulture) ?? "unchanged"}; "
-                    // FR-PHN-002 — a phone correction is a contact-detail change on
+                    // A phone correction is a contact-detail change on
                     // someone else's account, so the trail records THAT it happened.
                     // The number itself is not written to the audit detail (the
                     // RowAudit interceptor already masks the mobile columns).
@@ -246,7 +245,7 @@ internal sealed partial class AdminAccountService
         return profileType.Id;
     }
 
-    // B22 — resolves the optional nationality code an admin edit may carry.
+    // Resolves the optional nationality code an admin edit may carry.
     // Returns null when the caller omitted it (leave the stored value alone), or the
     // Country PK when it names an active country. An unknown / inactive code is the
     // same 400 (ProfileNationalityUnknown) the self-service upsert raises, so the
@@ -281,7 +280,7 @@ internal sealed partial class AdminAccountService
 
     // Sets the subject's ProfileTypeId, the two Bi-Meeting eligibility flags
     // (AllowsSpeakerMeeting / AllowsDelegationMeeting) and — when the edit supplied
-    // them — the nationality (B22) and the mobile numbers (FR-PHN-002), on the
+    // them — the nationality and the mobile numbers, on the
     // App-DB UserProfile row. The row may not exist yet (a self-signed-up visitor
     // with no admin-assigned type); create a minimal row when a tier OR a meeting
     // flag OR a nationality OR a mobile is set so the assignment sticks. An edit
@@ -327,7 +326,7 @@ internal sealed partial class AdminAccountService
             {
                 profile.NationalityId = resolved;
             }
-            // FR-PHN-002 — an omitted number leaves the stored one alone (the
+            // An omitted number leaves the stored one alone (the
             // same "null = no change" contract as the nationality above), so a
             // desk editing only the email never wipes the contact detail.
             if (saudiMobile is not null)

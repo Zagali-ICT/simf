@@ -6,7 +6,7 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Public;
 
-/// <summary>D-199 (Mockup page 19 "Speakers") — public anonymous list of
+/// <summary>Public anonymous list of
 /// active speakers, ordered by DisplayOrder. Mirrors
 /// ListPublicBoothsEndpoint / ListPublicDelegationsEndpoint's shape.</summary>
 public sealed class ListPublicSpeakersEndpoint(IPublicSpeakerService service)
@@ -17,7 +17,7 @@ public sealed class ListPublicSpeakersEndpoint(IPublicSpeakerService service)
         Get("/app/speakers");
         AllowAnonymous();
         Tags("Public");
-        Options(b => b.CacheOutput("PublicRead")); // A6d — 45s output cache (no-op under Testing)
+        Options(b => b.CacheOutput("PublicRead")); // 45s output cache (no-op under Testing)
     }
 
     public override async Task HandleAsync(CancellationToken ct) =>
@@ -27,7 +27,7 @@ public sealed class ListPublicSpeakersEndpoint(IPublicSpeakerService service)
 
 public sealed class GetPublicSpeakerRoute { public Guid Id { get; set; } }
 
-/// <summary>D-199 (Mockup page 20 "Speaker profile") — public anonymous
+/// <summary>Public anonymous
 /// single active speaker by id, including the speaker's sessions.</summary>
 public sealed class GetPublicSpeakerEndpoint(IPublicSpeakerService service)
     : Endpoint<GetPublicSpeakerRoute, ApiResult<PublicSpeakerDetail>>

@@ -2,12 +2,12 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Programme.Abstractions;
 
-/// <summary>P4.1 — D-238 (Completion Programme §6.4.1, Mockup screen 34): the
+/// <summary>The
 /// Scientific-Committee session-summary / محضر desk. The Committee drafts a
 /// summary — AI-assisted via <see cref="GenerateAsync"/> (routed through the
 /// central AI provider seam) or hand-written via <see cref="SaveAsync"/> —
 /// reviews and edits it, then publishes it for the app to read
-/// (<c>GET /programme/sessions/{id}/summary</c>, D-237). There is one summary
+/// (<c>GET /programme/sessions/{id}/summary</c>). There is one summary
 /// per session; publishing flips its visibility and subsequent edits are live
 /// (the Committee can un-publish to take it offline while editing).</summary>
 public interface IAdminSessionSummaryService
@@ -48,7 +48,7 @@ public interface IAdminSessionSummaryService
     Task<AdminSessionSummaryDetail> UnpublishAsync(
         Guid actorUserId, Guid sessionId, CancellationToken cancellationToken = default);
 
-    // -- D-472 (requirement #9) — the team review/approval workflow -----------
+    // -- The team review/approval workflow ------------------------------------
     // Draft → (SubmitForReview) → InReview → (Approve) → Approved = ready for
     // المحاور. Any content edit (SaveAsync / GenerateAsync) returns it to Draft.
 

@@ -53,7 +53,7 @@ internal sealed class AdminApprovalReadService(
         string qrId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
-        // D-821 review — canonicalise first. A D-820 offline badge arrives as a
+        // Canonicalise first. An offline badge arrives as a
         // ~61-character encrypted blob, not a QrId, so the direct lookup below
         // would miss it and report an unknown badge. A minted serial passes
         // through unchanged.
@@ -93,7 +93,7 @@ internal sealed class AdminApprovalReadService(
     }
 
     /// <summary>Any-state full profile read scoped to the
-    /// audience-vs-partner queue. D-186: every non-admin account is
+    /// audience-vs-partner queue. Every non-admin account is
     /// UserType.Visitor; the audience-vs-partner distinction is the
     /// linked <c>ProfileType.IsVisitor</c> flag (audience when true or
     /// when no profile type is set yet; partner when explicitly false).
@@ -210,7 +210,7 @@ internal sealed class AdminApprovalReadService(
         }
         // The single guarded query — both the state AND the type are
         // filtered before any projection so a wrong-type or
-        // wrong-state id never produces a row. D-186: scope guard
+        // wrong-state id never produces a row. The scope guard
         // (audience vs partner) is enforced upstream by
         // MatchesScopeAsync over the linked ProfileType.IsVisitor.
         var user = await dbContext.Users
@@ -299,9 +299,9 @@ internal sealed class AdminApprovalReadService(
             profile?.PlateNumber,
             profile?.ReferenceNumber,
             profile?.Interests.Select(i => new PendingProfileInterest(i.Name, i.NameArabic)).ToList(),
-            // CS-4 — the avatar (profile photo) lives on SimfUser (Identity); its
-            // AvatarRelativePath is the StoredFile pointer/presence sentinel (D-568
-            // S3). Use IsNullOrEmpty to match every other presence reader.
+            // The avatar (profile photo) lives on SimfUser (Identity); its
+            // AvatarRelativePath is the StoredFile pointer/presence sentinel.
+            // Use IsNullOrEmpty to match every other presence reader.
             HasAvatar: !string.IsNullOrEmpty(user.AvatarRelativePath));
     }
 

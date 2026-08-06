@@ -41,8 +41,8 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
             rows = rows.Where(row => row.ReadAt == null);
         }
 
-        // A8 — optional kind narrow, applied BEFORE the count so Total reflects it.
-        // Kind is string-mapped (D-108), so this translates to WHERE Kind IN (...).
+        // Optional kind narrow, applied BEFORE the count so Total reflects it.
+        // Kind is string-mapped, so this translates to WHERE Kind IN (...).
         if (kinds is { Count: > 0 })
         {
             rows = rows.Where(row => kinds.Contains(row.Kind));

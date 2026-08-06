@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/TokenIssuerParityTests.cs (every sign-in entry point
-//        mints the same claim set and the same D-443 lifetime cap)
+//        mints the same claim set and the same session lifetime cap)
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -45,7 +45,7 @@ public sealed class TokenIssuer(
                 UserId = user.Id,
                 TokenHash = OpaqueToken.Hash(refreshValue),
                 CreatedAt = now,
-                // D-443 (NCA finding): stamp the absolute session deadline
+                // NCA finding: stamp the absolute session deadline
                 // (sign-in + Jwt:SessionLifetimeHours). Rotation carries this
                 // deadline forward instead of sliding, so the session is capped
                 // at 24h from sign-in — on EVERY entry point, which is the cap

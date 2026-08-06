@@ -79,7 +79,7 @@
     /// server-side FluentValidation rule.</summary>
     [Parameter] public int? MaxLength { get; set; }
 
-    /// <summary>Opt-in digit-only mode (B3 — D-221 hardening). When true the
+    /// <summary>Opt-in digit-only mode. When true the
     /// field accepts digits only: a C# strip keeps the bound model clean and a
     /// small JS cleaner removes any pasted / typed non-digit from the DOM in
     /// place. Default false — every existing consumer is unaffected.</summary>

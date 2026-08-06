@@ -11,7 +11,7 @@ namespace SIMF.Infrastructure.Seeding;
 /// Seeds the app-update policy config keys so the CP configuration grid is not
 /// empty on a fresh database.
 ///
-/// <para>D-736 — pre-creates the six <c>AppUpdateSettingKeys</c> rows (empty
+/// <para>Pre-creates the six <c>AppUpdateSettingKeys</c> rows (empty
 /// values) so the CP configuration grid is the menu of app-update policy keys:
 /// an admin edits values in place instead of hand-typing exact key names (a
 /// typo'd key is silently ignored by the whitelist read). Empty = that rule
@@ -19,10 +19,10 @@ namespace SIMF.Infrastructure.Seeding;
 /// resurrected and an edited value never overwritten. Runs in every
 /// environment and is idempotent.</para>
 ///
-/// <para>D-747 — the 2026 event CONTENT this seeder used to create (the main
-/// hall, the programme days + sessions, and the Highlights news item — D-681)
-/// moved out of C# into the by-hand SQL lane (<c>docs/migrations/2026/*.sql</c>,
-/// owner rule D-718). In Development/Testing those files are applied by
+/// <para>The 2026 event CONTENT this seeder used to create (the main
+/// hall, the programme days + sessions, and the Highlights news item)
+/// moved out of C# into the by-hand SQL lane
+/// (<c>docs/migrations/2026/*.sql</c>). In Development/Testing those files are applied by
 /// <see cref="SqlContentSeeder"/>; in production they are run by hand. The org
 /// profile (incl. its social links) is owned by <c>IdentitySeeder</c>.</para>
 /// </summary>

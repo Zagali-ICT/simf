@@ -48,7 +48,7 @@ internal sealed class AdminNewsService(
                 || EF.Functions.Like(news.CategoryArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         // The column keys match the SimfDataGridColumn `Key` values on the page.
         foreach (var (column, raw) in query.Filters)
         {

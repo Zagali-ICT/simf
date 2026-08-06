@@ -1,8 +1,8 @@
-@* D-173 (gap doc G8, PDF §1) — Dynamic CMS: time-windowed banners /
+@* Dynamic CMS: time-windowed banners /
    announcements. Admin CRUD; public read filters by current window.
-   D-256 — migrated from the raw <table> to the owner-mandated
-   SimfDataGrid (server-paged, sortable + filterable, full pager).
-   D-353 — centralized dialog/full-page framing: Add / Edit / View / Delete
+   The list is the owner-mandated
+   SimfDataGrid (server-paged, sortable + filterable, full pager), not a raw <table>.
+   Dialog/full-page framing is centralized: Add / Edit / View / Delete
    are hosted by CrudShell, which frames the reusable BannersAddEdit and
    BannersViewDelete forms as a popup or a full page per the admin's toolbar
    choice (persisted in localStorage via CpPreferences). The inline SimfModal

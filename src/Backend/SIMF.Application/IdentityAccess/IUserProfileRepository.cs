@@ -32,11 +32,11 @@ public interface IUserProfileRepository
     /// <see cref="SaveAppChangesAsync"/>).</summary>
     void Add(UserProfile profile);
 
-    /// <summary>H-1 — true when ANOTHER profile (<c>UserId != excludeUserId</c>)
+    /// <summary>True when ANOTHER profile (<c>UserId != excludeUserId</c>)
     /// already carries one of the supplied non-null identity blind-index hashes
     /// (National ID / Iqama / passport). The self-exclusion lets a user re-save
     /// their OWN id without a false duplicate. Null hashes are ignored. A plain
-    /// single-context read on the App DB — no cross-DB JOIN (D-157).</summary>
+    /// single-context read on the App DB — never a cross-DB JOIN.</summary>
     Task<bool> AnyOtherProfileWithIdentityHashAsync(
         Guid excludeUserId, string? nationalIdHash, string? iqamaNumberHash,
         string? passportNumberHash, CancellationToken cancellationToken = default);
@@ -146,14 +146,14 @@ public interface IUserProfileRepository
 }
 
 /// <summary>Active + scope facts read off a <see cref="UserProfileType"/>.
-/// C5 (D-371) added the audience flag + name so the self-pick lock
+/// The audience flag + name are carried so the self-pick lock
 /// ("Visitor → Normal only") can be enforced in the service.</summary>
 public sealed record ProfileTypeFacts(
     bool IsActive, UserType UserType, bool IsForVisitor, string Name,
-    // D-729 (owner item 15) — the VIP-tier flag (VVIP/VIP), so the app profile
+    // The VIP-tier flag (VVIP/VIP), so the app profile
     // read can report IsVip for the speaker-meeting CTA gate.
     bool AllowsVipMeetingSlots,
-    // R1 audit fix (D-725) — the self-registration picker visibility flag, so the
+    // The self-registration picker visibility flag, so the
     // self-service write path (UpsertMineAsync) can reject a self-picked CP-only
     // (IsAppRegisterable=false) operational type, mirroring the server-side filter
     // on GET /app/account/profile-types instead of trusting the client.
@@ -163,8 +163,8 @@ public sealed record ProfileTypeFacts(
 public sealed record ProfileTypeRole(bool IsVisitor, MobileAppRole MobileAppRole);
 
 /// <summary>The facts the completeness rule reads (names + ≥1
-/// interest + the C7 male-photo rule), projected in one row.
-/// <para>BUG-018 (18-3) — <paramref name="IsVisitorProfileType"/> says whether the
+/// interest + the male-photo rule), projected in one row.
+/// <para><paramref name="IsVisitorProfileType"/> says whether the
 /// row belongs to an AUDIENCE registrant (no profile type yet, or one with
 /// <c>IsForVisitor=true</c>). The interest / ID-document / male-face evidence rules
 /// are a visitor-registration requirement and must not lock an operational

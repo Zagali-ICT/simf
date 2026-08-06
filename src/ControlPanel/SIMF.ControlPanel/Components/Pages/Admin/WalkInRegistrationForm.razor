@@ -1,10 +1,10 @@
-@* D-127 — On-site walk-in registration form. The exhibition staff at the
+@* On-site walk-in registration form. The exhibition staff at the
    registration desk uses this to register a walk-in Visitor or Other
    face-to-face. On submit the server auto-approves and mints the QR badge in
    one transaction. The parent receives the response via OnSuccess and is
    responsible for showing the success modal.
 
-   UI (2026-07-22) — professional redesign. The long record is grouped into
+   The long record is grouped into
    numbered <SimfFormSection> cards laid out with the house responsive
    simf-form__grid (bilingual pairs side by side), matching SpeakersAddEdit —
    replacing the older <fieldset>/<legend> sections + the bespoke 3-column
@@ -14,7 +14,7 @@
    and validation are unchanged; a single wrapping <fieldset disabled> keeps the
    submit-time lockout of every control.
 
-   D-129 rules (unchanged):
+   Form rules:
      - Saudi national ID validated as 10 digits starting with 1.
      - When Saudi: country picker hidden, NationalityCode forced to "SA".
      - When non-Saudi: country picker required; Iqama-or-Passport radio
@@ -134,7 +134,7 @@
                            MaxLength="128"
                            @bind-Value="_model.ArabicName" />
             <div class="simf-form__grid">
-                @* D-163 (PDF §2.6) — optional job title for the badge. *@
+                @* Optional job title for the badge. *@
                 <SimfTextField Label="@L["Admin.WalkIn.Field.JobTitle"]"
                                Helper="@L["Admin.WalkIn.Field.JobTitle.Hint"]"
                                MaxLength="128"
@@ -148,7 +148,7 @@
                                ValueExpression="@(() => _model.JobTitleArabic)" />
             </div>
             <div class="simf-form__grid">
-                @* D-469 / D-547 — birth location: a Saudi walk-in picks one of the
+                @* Birth location: a Saudi walk-in picks one of the
                    13 official regions (keyed on the stable region code); a non-Saudi
                    gets the free-text field "as in passport". *@
                 @if (_model.IsSaudi)
@@ -169,7 +169,7 @@
                                    MaxLength="128"
                                    @bind-Value="_model.PlaceOfBirth" />
                 }
-                @* D-395 — gender picker (enum-name option values). *@
+                @* Gender picker (enum-name option values). *@
                 <SimfSelect TValue="string"
                             Label="@L["Admin.WalkIn.Field.Gender"]"
                             Items="GenderCodes"
@@ -178,7 +178,7 @@
                             Value="@(_model.Gender.ToString())"
                             ValueChanged="OnGenderPicked" />
             </div>
-            @* C6 (D-459) — رقم اللوحة: standard Saudi-plate entry — three
+            @* رقم اللوحة: standard Saudi-plate entry — three
                17-letter dropdowns (Arabic · Latin) + a 1–4 digit field. The picks
                assemble into _model.PlateNumber; the server validates
                SaudiPlate.IsValid and stores the canonical code. *@
@@ -209,7 +209,7 @@
             </div>
         </SimfFormSection>
 
-        @* -- Organisation (الجهة) — required (B3 / D-221). Searchable typeahead
+        @* -- Organisation (الجهة) — required. Searchable typeahead
            over the active organisations lookup; the desk must pick a registered
            organisation. *@
         <SimfFormSection Number="@(++step)" Title="@L["Admin.WalkIn.Section.Organisation"]">
@@ -375,7 +375,7 @@
                             PickedFilename="@_idDocumentName"
                             PickedLabel="@L["Admin.WalkIn.FilePicked"]"
                             OnFilePicked="OnIdDocumentPicked" />
-            @* D-427 (CS-3) — optional profile photo (the visitor's "logo"); shown
+            @* Optional profile photo (the visitor's "logo"); shown
                next to the ID image in the approve modal. Any PNG/JPEG/WebP. *@
             <SimfFileUpload @ref="_avatarUpload"
                             Label="@L["Admin.WalkIn.Field.Photo"]"
@@ -384,7 +384,7 @@
                             PickedFilename="@_avatarName"
                             PickedLabel="@L["Admin.WalkIn.FilePicked"]"
                             OnFilePicked="OnAvatarPicked" />
-            @* V-1 (D-429) — separate VIP welcome photo (موج). A clear high-res
+            @* A separate VIP welcome photo (موج). A clear high-res
                portrait shared with the technical teams. VIP page only. *@
             @if (VipMode)
             {

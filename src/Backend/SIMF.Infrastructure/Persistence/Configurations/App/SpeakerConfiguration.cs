@@ -9,8 +9,8 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <summary>Speaker entity configuration.
 /// <c>CountryId</c> is a real DB-enforced FK to <c>Country.Id</c>
 /// (same DbContext, same physical database — App DB).
-/// <c>UserProfileId</c> became a real DB FK after D-167 moved
-/// <c>UserProfile</c> onto <c>SimfAppDbContext</c>.</summary>
+/// <c>UserProfileId</c> is a real DB FK too, because
+/// <c>UserProfile</c> lives on <c>SimfAppDbContext</c>.</summary>
 internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
 {
     public void Configure(EntityTypeBuilder<Speaker> builder)
@@ -43,8 +43,8 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.Property(speaker => speaker.WebsiteUrl).HasMaxLength(256);
 
         // Contact identity-card fields inlined from the removed shared Contact
-        // directory (supersedes SIMF-FDS-014 / D-260). Latitude/Longitude are
-        // double? and need no length. The Website slot is WebsiteUrl above.
+        // directory. Latitude/Longitude are double? and need no length.
+        // The Website slot is WebsiteUrl above.
         builder.Property(speaker => speaker.Email).HasMaxLength(320);
         builder.Property(speaker => speaker.PhonePrimary).HasMaxLength(32);
         builder.Property(speaker => speaker.PhoneSecondary).HasMaxLength(32);

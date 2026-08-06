@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Admin;
 
-/// <summary>D-168 (gap doc G5, PDF §2.7.3) — one row in the admin
+/// <summary>One row in the admin
 /// Invitations grid. The recipient's display name + profile type are
 /// projected so the grid does not need a second fetch.</summary>
 public sealed record AdminInvitationSummary(

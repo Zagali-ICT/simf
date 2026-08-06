@@ -2,7 +2,7 @@ namespace SIMF.Common.Enums;
 
 /// <summary>
 /// The resolved mobile-app authority a signed-in user carries
-/// into the Flutter app (SIMF-FDS-002 §8.5; SIMF-MAA-001).
+/// into the Flutter app.
 ///
 /// <para>The mapping is data, not code:</para>
 /// <list type="bullet">
@@ -14,7 +14,7 @@ namespace SIMF.Common.Enums;
 ///     Programme Coordinator / Operations Lead → <c>Moderator</c>; admins
 ///     rebalance the mapping at runtime without a code change.</item>
 ///   <item><b>None</b> (0) — explicit "no in-app authority" for
-///     partner-side profile types (D-186: ProfileType.IsVisitor=false
+///     partner-side profile types (ProfileType.IsVisitor=false
 ///     under the unified Visitor UserType) whose mobile-app effect is
 ///     "treated as a Visitor" (Sponsor, Speaker, Press,
 ///     VIP Guest, Government, …).</item>
@@ -32,7 +32,9 @@ public enum MobileAppRole
 {
     /// <summary>Default — the profile type confers no in-app authority;
     /// the holder is treated as a Visitor by the Flutter app even though
-    /// their <see cref="UserType"/> is <c>Other</c>.</summary>
+    /// their <c>ProfileType</c> is partner-side (<c>IsVisitor</c>=false).
+    /// Their <see cref="UserType"/> is still <see cref="UserType.Visitor"/>;
+    /// the separate partner user-type value no longer exists.</summary>
     None = 0,
 
     /// <summary>The holder is a <see cref="UserType.Visitor"/> — assigned

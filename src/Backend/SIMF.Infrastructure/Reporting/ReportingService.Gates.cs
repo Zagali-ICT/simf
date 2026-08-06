@@ -15,7 +15,8 @@ namespace SIMF.Infrastructure.Reporting;
 /// <c>ScannedDisplayName</c> / <c>ScannedProfileTypeName</c> snapshots rather
 /// than from a lookup. <c>GateScan</c> is an append-only audit log and those
 /// columns exist precisely so a historic scan still reads correctly after the
-/// linked account is renamed or removed (D-157). Resolving them live would make
+/// linked account is renamed or removed — and the account itself lives in a
+/// separate database, so there is no join to resolve. Resolving them live would make
 /// the report disagree with the audit trail it is reporting on.</para>
 /// </summary>
 internal sealed partial class ReportingService

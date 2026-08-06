@@ -1,9 +1,9 @@
-@* D-452 — reusable programme-day Add/Edit form, hosted by CrudShell (popup or
+@* Reusable programme-day Add/Edit form, hosted by CrudShell (popup or
    full page) from ProgrammeDaysList. Inherits CrudAddEditFormBase so it exposes
    the standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel).
    IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT against Initial),
    shows the IsActive checkbox, and exposes the logo upload (the day row must
-   exist before bytes can be attached — D-357 ProgrammeDayImage owned by Id). *@
+   exist before bytes can be attached — ProgrammeDayImage is owned by Id). *@
 @inherits CrudAddEditFormBase<AdminProgrammeDayDetail>
 
 @if (_error is not null)
@@ -47,7 +47,7 @@
                 @L["Admin.ProgrammeDays.Field.IsActive"]
             </SimfCheckbox>
         }
-        @* D-357 — logo via the unified media-asset pipeline (edit only; the row
+        @* Logo via the unified media-asset pipeline (edit only; the row
            must exist before bytes can be attached). *@
         @if (IsEdit && Initial is not null)
         {

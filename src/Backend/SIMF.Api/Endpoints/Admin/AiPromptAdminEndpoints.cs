@@ -63,7 +63,7 @@ public sealed class GetAiPromptHistoryEndpoint(IAdminAiPromptService service)
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         // Per-record drill-down on the prompt-edit history is
         // an audit-content read — apply the same auth rate-limit as
-        // the meeting-request detail endpoint (D-185 review-pass) so
+        // the meeting-request detail endpoint, so
         // a compromised admin cannot burst-scrape historical
         // prompt-text without hitting the limiter.
         Options(rb => rb.RequireRateLimiting("auth"));
@@ -200,7 +200,7 @@ public sealed class GetAiDashboardEndpoint(IAdminAiPromptService service)
 /// grid list deliberately omits these for lightness + PII discipline;
 /// this endpoint is the audit-trail read for threat hunting (e.g.
 /// search the input column for jailbreak phrases). Inputs are already
-/// redacted at write time per D-179 (<c>AiAuditDetail.SerialiseAndRedact</c>),
+/// redacted at write time by <c>AiAuditDetail.SerialiseAndRedact</c>,
 /// so SOC sees masked PII/keys; output text is the LLM response
 /// verbatim and should be treated as restricted. Admin-only for now;
 /// when a dedicated SecurityAuditor role lands, swap the policy.</summary>
@@ -216,7 +216,7 @@ public sealed class GetAiInvocationDetailEndpoint(
         Get("/admin/ai/invocations/{id:guid}");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiInvocations.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        // D-179 (review-pass) — same per-admin window as the Test
+        // Same per-admin window as the Test
         // endpoint so an admin can't pull the whole invocation log
         // one row at a time uncapped.
         Options(rb => rb.RequireRateLimiting("ai-test"));
@@ -231,7 +231,7 @@ public sealed class GetAiInvocationDetailEndpoint(
                 "AI invocation not found.",
                 "لم يتم العثور على استدعاء الذكاء الاصطناعي.");
 
-        // D-179 (review-pass) — admin-on-admin surveillance trail.
+        // Admin-on-admin surveillance trail.
         // Without this, "admin reads 50k invocations on Sunday night"
         // is invisible to SOC.
         Guid? viewedBy = User.ActorIdOrNull();

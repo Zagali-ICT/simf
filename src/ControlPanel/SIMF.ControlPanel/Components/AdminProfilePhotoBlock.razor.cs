@@ -2,7 +2,7 @@
 
 namespace SIMF.ControlPanel.Components;
 
-/// <summary>D-727 (owner item 5) — a labelled subject-photo block for the CP
+/// <summary>A labelled subject-photo block for the CP
 /// admin view / pending-review pages. Extracted so the profile photo is
 /// rendered from ONE place across the Others / Visitors view and pending-review
 /// pages instead of a per-page copy.</summary>

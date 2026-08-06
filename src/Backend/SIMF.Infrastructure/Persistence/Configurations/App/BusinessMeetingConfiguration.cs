@@ -4,7 +4,7 @@ using SIMF.Domain.BusinessMeetings;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>SIMF-FDS-013 — D-248: BusinessMeeting EF config. Real FK to
+/// <summary>BusinessMeeting EF config. Real FK to
 /// MeetingTable (Restrict — tables are soft-deleted). Owns its participants
 /// (cascade). Indexes support the per-table overlap check and the list/queue.
 /// Time-overlap is enforced in the service (no SQL range constraint).</summary>

@@ -6,8 +6,9 @@ namespace SIMF.Application.Support.Abstractions;
 /// <summary>
 /// "تواصل معنا / Contact us" inquiries: the public app submit (anonymous or
 /// signed-in) plus the Control Panel inbox read + handled toggle. Built on
-/// <c>SimfAppDbContext</c> (additive table); no cross-DB relation (the submitter
-/// is a bare Guid resolved on read — D-157).
+/// <c>SimfAppDbContext</c> as an additive table; there is no cross-DB
+/// relation — the submitter
+/// is a bare Guid resolved on read.
 /// </summary>
 public interface IContactInquiryService
 {

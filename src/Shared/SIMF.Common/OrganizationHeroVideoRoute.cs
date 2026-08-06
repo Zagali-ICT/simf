@@ -10,7 +10,7 @@ namespace SIMF.Common;
 /// current hero is an uploaded file (offer "Remove") or a pasted external link
 /// (do not).</para>
 ///
-/// <para>D-841 — the Control Panel used to hold its own copy of this string,
+/// <para>The Control Panel used to hold its own copy of this string,
 /// under a comment asking the next person to keep the two equal by hand and
 /// warning that "if the served route changes, the Remove affordance silently
 /// stops appearing". Nothing detected the drift: no build error, no failing

@@ -1,7 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>One row in the admin Halls grid (D-134 Sprint B —
-/// SIMF-FDS-004 §5.2).</summary>
+/// <summary>One row in the admin Halls grid.</summary>
 public sealed record AdminHallSummary(
     Guid Id,
     string Code,
@@ -11,7 +10,7 @@ public sealed record AdminHallSummary(
     string? Floor,
     bool IsActive,
     DateTime CreatedAt,
-    // SIMF-FDS-013 — D-248: the hall's purpose (HallPurpose; 0 = General).
+    // The hall's purpose (HallPurpose; 0 = General).
     // Appended (defaulted) so the wire contract stays append-only.
     int Purpose = 0,
     // Carried so the grid Excel export can round-trip them (not rendered
@@ -22,13 +21,13 @@ public sealed record AdminHallSummary(
     double? GeofenceRadiusMeters = null,
     int SeatSelectionMode = 0,
     // The hall's own arrival grace in minutes; null = inherit the global
-    // WalkInMode value. Carried for the same D-506 reason as the geofence triple:
+    // WalkInMode value. Carried for the same reason as the geofence triple:
     // without it, an Excel round-trip of the halls grid would silently wipe it.
     int? ArrivalGraceMinutes = null);
 
-/// <summary>Full hall detail (Details + Edit modals). P5.1 — D-240: the optional
+/// <summary>Full hall detail (Details + Edit modals). The optional
 /// GPS geofence (centre lat/lon + radius in metres) is appended (all null when
-/// not configured); the wire contract is append-only (D-219).</summary>
+/// not configured); the wire contract is append-only.</summary>
 public sealed record AdminHallDetail(
     Guid Id,
     string Code,
@@ -69,7 +68,7 @@ public sealed class AdminCreateHallRequest
 }
 
 /// <summary>Not sealed: the admin update endpoint binds {id}+body via a derived
-/// route class (D-505, mirroring <c>UpdateExhibitorRoute</c>/<c>UpdateSponsorRoute</c>)
+/// route class (mirroring <c>UpdateExhibitorRoute</c>/<c>UpdateSponsorRoute</c>)
 /// so it cannot drop a field at bind time — the GPS geofence was being wiped on
 /// every edit because the old inline bind model omitted it.</summary>
 public class AdminUpdateHallRequest

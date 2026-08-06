@@ -11,7 +11,6 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <summary>
 /// <c>POST /api/v1/admin/admins/export</c> — returns an XLSX workbook of the
 /// selected users (or the whole grid result if no ids are given).
-/// Decision D-044 b.
 /// </summary>
 public sealed class ExportUsersEndpoint(IAdminUserBulkService adminAccountService)
     : Endpoint<AdminExportUsersRequest>

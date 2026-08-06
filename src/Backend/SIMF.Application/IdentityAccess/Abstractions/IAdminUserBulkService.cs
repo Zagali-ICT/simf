@@ -7,8 +7,8 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
 /// Admin-driven bulk operations on the user collection:
-/// bulk-delete, XLSX export, XLSX import. R2 — D-075: split out of
-/// <c>IAdminAccountService</c> per Architecture SEV-1.2.
+/// bulk-delete, XLSX export, XLSX import. Split out of the once-monolithic
+/// <c>IAdminAccountService</c>.
 /// </summary>
 public interface IAdminUserBulkService
 {
@@ -55,7 +55,7 @@ public interface IAdminUserBulkService
 
     /// <summary>
     /// Like <see cref="BulkDeleteUsersAsync"/> but narrowed to subjects whose
-    /// <see cref="UserType"/> matches <paramref name="kind"/>. D-186:
+    /// <see cref="UserType"/> matches <paramref name="kind"/>.
     /// <paramref name="requirePartnerScope"/> further narrows the Visitor
     /// scope — <c>true</c> means "partner only" (linked ProfileType.IsVisitor
     /// = false), <c>false</c> means "audience only" (no ProfileType or
@@ -76,7 +76,7 @@ public interface IAdminUserBulkService
     /// Like <see cref="IAdminUserProvisioningService.DuplicateUserAsync"/> but refuses any source whose
     /// <see cref="UserType"/> doesn't match <paramref name="kind"/> — returns
     /// 404 (same code as a missing source) so cross-type duplication probes
-    /// don't reveal whether a wrong-type id exists. D-186:
+    /// don't reveal whether a wrong-type id exists.
     /// <paramref name="requirePartnerScope"/> applies the same scope guard
     /// as the bulk delete (see above).
     /// </summary>
@@ -92,7 +92,7 @@ public interface IAdminUserBulkService
     /// <see cref="UserType"/> matches <paramref name="kind"/> — both the
     /// selected-ids path and the whole-result-set path apply the filter
     /// BEFORE projection so a smuggled wrong-type id never appears in the
-    /// workbook. D-186: <paramref name="requirePartnerScope"/> applies the
+    /// workbook. <paramref name="requirePartnerScope"/> applies the
     /// same scope guard as the bulk delete (see above).
     /// </summary>
     Task<byte[]> ExportUsersByKindAsync(
@@ -104,8 +104,8 @@ public interface IAdminUserBulkService
 
     /// <summary>
     /// Like <see cref="ImportUsersAsync"/> but every created user is forced
-    /// to <see cref="UserType.Visitor"/> (D-186 removed the standalone
-    /// Other type). <paramref name="partnerScope"/>: <c>false</c> = audience
+    /// to <see cref="UserType.Visitor"/> (there is no standalone Other
+    /// type). <paramref name="partnerScope"/>: <c>false</c> = audience
     /// import (ProfileTypeId optional, audience-side ProfileType required
     /// when supplied); <c>true</c> = partner import (ProfileTypeId mandatory
     /// per row and the chosen ProfileType must be IsVisitor=false).
@@ -154,7 +154,7 @@ public interface IAdminUserBulkService
     /// Revoke a batch: disable every account it minted
     /// (reusing the type-scoped bulk-delete path) and mark the batch inactive.
     /// Throws 404 for an unknown / already-revoked batch. Not a cross-DB
-    /// transaction (D-157): the member accounts (Identity DB) are disabled first,
+    /// transaction: the member accounts (Identity DB) are disabled first,
     /// then the batch (App DB) is deactivated as a separate unit of work.
     /// </summary>
     Task<AdminRevokeBadgeBatchResponse> RevokeBadgeBatchAsync(

@@ -1,4 +1,4 @@
-@* D-148 — operator console for scanning. SIMF-FDS-003 §5.6 / API-GATES-001 §7.
+@* Operator console for scanning.
    Role-adaptive: auto-selects on a single assignment, picker on multi. *@
 @page "/admin/gates/operator"
 @layout CpShellLayout
@@ -61,7 +61,7 @@
                     </SimfAlert>
                 }
 
-                @* DEF-CHK-004 — the scan was still allowed, but the server flagged
+                @* The scan was still allowed, but the server flagged
                    something the operator has to know (today: a hall-door scan with no
                    session running, so no hall attendance was recorded). The message
                    arrives already localized, like DenialMessage. *@

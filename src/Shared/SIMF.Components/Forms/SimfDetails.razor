@@ -1,18 +1,18 @@
 @namespace SIMF.Components.Forms
 
-@* D-835 - the read-only record view.
+@* The read-only record view.
 
    Six grids across four Control Panel pages offered Edit and Delete as the only
-   ways to open a row. After D-830 gated those buttons, an admin holding View but
-   neither mutating code could no longer read a single record at all, and the
-   actions column rendered as an empty box. Details is the read affordance those
-   grids were missing; it needs no permission of its own, because seeing the row
-   is what the page's View code already bought.
+   ways to open a row. Once those buttons were permission-gated, an admin holding
+   View but neither mutating code could no longer read a single record at all,
+   and the actions column rendered as an empty box. Details is the read
+   affordance those grids were missing; it needs no permission of its own,
+   because seeing the row is what the page's View code already bought.
 
    The ~20 *ViewDelete components hand-write the same dt/dd block and are
    deliberately NOT migrated onto this: they already render inside CrudShell's
    dialog frame, so wrapping them here would nest a SimfModal inside a modal,
-   which SimfModal forbids outright (D-809, "NOT STACKABLE"). They are a separate
+   which SimfModal forbids outright ("NOT STACKABLE"). They are a separate
    mechanism for the same job, not debt this was meant to pay off.
 
    Rendered behind @if (Open) rather than toggling SimfModal's own Open, to match

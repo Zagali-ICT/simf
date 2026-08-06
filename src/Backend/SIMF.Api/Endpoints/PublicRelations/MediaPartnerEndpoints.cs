@@ -9,7 +9,7 @@ using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.Api.Endpoints.PublicRelations;
 
-/// <summary>D-199 (Mockup page 31 — "شركاء النجاح") — public anonymous list
+/// <summary>The "شركاء النجاح" page's public anonymous list
 /// of active media partners, ordered for the app's media grid. Mirrors the
 /// ListPublicDelegationsEndpoint shape (anonymous public read).</summary>
 public sealed class ListPublicMediaPartnersEndpoint(IPublicMediaPartnerService service)

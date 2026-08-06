@@ -8,8 +8,8 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/vips/export</c> — the D-356 grid export for the
-/// public-relations VIP list (D-168, PDF §2.7.3). <b>Export only:</b> the VIP
+/// <c>POST /api/v1/admin/vips/export</c> — the grid export for the
+/// public-relations VIP list. <b>Export only:</b> the VIP
 /// list is a derived view of <c>UserProfile</c> rows (those whose
 /// <c>ProfileType.Name</c> is in {VVIP, VIP, Gold}) — there is nothing to import
 /// here, and the page's only action is the bulk-notify modal. Columns mirror the
@@ -19,7 +19,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <c>UserProfileId</c> (the grid's row key).
 ///
 /// <para><b>Distinct from the موج (Mawj) welcome roster</b>
-/// (<c>GET /admin/visitors/vip/roster</c> + <c>/export</c>, D-429, perm
+/// (<c>GET /admin/visitors/vip/roster</c> + <c>/export</c>, perm
 /// <c>Visitors.ExportVip</c>): that is a complementary export for the Mawj
 /// integration — the same VVIP/VIP people but the welcome-message fields (Mawj
 /// id, honorific, preferred language, the welcome photo) on the dedicated VIP

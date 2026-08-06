@@ -8,7 +8,7 @@ using SIMF.Contracts.Requests;
 
 namespace SIMF.Api.Endpoints.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب تحديث البادج") — an approved attendee
+/// <summary>الطلبات "طلب تحديث البادج" — an approved attendee
 /// submits a badge job-title update request. Login-required.</summary>
 public sealed class SubmitBadgeUpdateRequestEndpoint(IBadgeUpdateRequestService service)
     : Endpoint<SubmitBadgeUpdateRequestBody, ApiResult<BadgeUpdateRequestSubmitted>>

@@ -3,7 +3,7 @@ using SIMF.Contracts.Recommendations;
 namespace SIMF.Application.Recommendations.Abstractions;
 
 /// <summary>
-/// D-170 (gap doc G9, PDF §2.8) — "Meet People Like You" matcher.
+/// The "Meet People Like You" matcher.
 /// Read-only service over the shared <see cref="SIMF.Domain.Profiles.UserProfile.Interests"/>
 /// M-to-M. Ranks candidate profiles by Jaccard similarity over their
 /// interest sets, with a small same-ProfileType bonus to break ties.

@@ -1,11 +1,11 @@
-@* D-199 (CP UI for D-199 Media gallery, Mockup page 30) — admin CRUD
+@* CP UI for the Media gallery — admin CRUD
    over the public media gallery. An item is either an Image (its bitmap
    is uploaded out-of-row via POST /admin/media/{id}/image) or a Video
    (an external playback Url). Image bytes can only be attached once the
    item row exists, so the upload control lives in the Edit form.
-   D-256 — migrated from the raw <table> to the owner-mandated
+   The list migrated from the raw <table> to the owner-mandated
    SimfDataGrid (server-paged, sortable + filterable, full pager).
-   D-353 — centralized dialog/full-page framing: Add / Edit / View / Delete
+   Centralized dialog/full-page framing: Add / Edit / View / Delete
    are hosted by CrudShell, which frames the reusable MediaAddEdit and
    MediaViewDelete forms as a popup or a full page per the admin's toolbar
    choice (persisted in localStorage via CpPreferences). The inline SimfModal

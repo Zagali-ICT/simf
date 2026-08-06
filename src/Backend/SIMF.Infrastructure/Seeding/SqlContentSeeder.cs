@@ -28,9 +28,9 @@ namespace SIMF.Infrastructure.Seeding;
 /// directory; when it is not found (e.g. a published production deployment) the
 /// runner logs and no-ops rather than throwing.</para>
 ///
-/// <para><b>BUG-001 — companion file bytes.</b> A content file that seeds
+/// <para><b>Companion file bytes.</b> A content file that seeds
 /// <c>StoredFile</c> rows (today only <c>SIMF_App_SpeakerPhotos.sql</c>) ships its
-/// bytes as a deployable folder next to it (D-718 file-asset pattern). Production
+/// bytes as a deployable folder next to it, per the file-asset pattern. Production
 /// copies that folder into <c>FileStorage:RootPath</c> by hand; nothing did so in
 /// Development / Testing, so every seeded row pointed at a storage key with no
 /// bytes and the image 404'd behind the UI's placeholder. <see cref="RunAsync"/>
@@ -45,13 +45,13 @@ public sealed class SqlContentSeeder(
     IFileStorageProvider fileStorage,
     ILogger<SqlContentSeeder> logger)
 {
-    /// <summary>BUG-001 — the seeder actor the content SQL stamps on every row it
+    /// <summary>The seeder actor the content SQL stamps on every row it
     /// inserts (<c>@sys</c> in <c>docs/migrations/2026/*.sql</c>). The byte
     /// materialisation only ever touches rows carrying this <c>CreatedBy</c>, so a
     /// real admin upload is never inspected or deactivated.</summary>
     private static readonly Guid SeederActorUserId = Guid.Empty;
 
-    /// <summary>BUG-001 — content file → (the file service whose rows it seeds, the
+    /// <summary>Content file → (the file service whose rows it seeds, the
     /// repo folder holding those rows' bytes, relative to
     /// <c>docs/migrations/2026</c>). The byte file name is the storage key's leaf,
     /// so the folder layout mirrors the on-disk store exactly.</summary>
@@ -143,7 +143,7 @@ public sealed class SqlContentSeeder(
             }
         }
 
-        // BUG-001 — the SQL only wrote the StoredFile ROWS; put their bytes on disk
+        // The SQL only wrote the StoredFile ROWS; put their bytes on disk
         // (and retire any row whose bytes are missing) so no seeded asset reference
         // is left pointing at nothing.
         foreach (var fileName in fileNames)
@@ -154,7 +154,7 @@ public sealed class SqlContentSeeder(
         }
     }
 
-    /// <summary>BUG-001 — copies the repo-shipped bytes of every seeded
+    /// <summary>Copies the repo-shipped bytes of every seeded
     /// <paramref name="service"/> row into the file-storage root, so
     /// <c>AssetService.ResolveAsync</c> streams a real image instead of 404-ing
     /// behind the UI placeholder. Writes through <see cref="IFileStorageProvider"/>,

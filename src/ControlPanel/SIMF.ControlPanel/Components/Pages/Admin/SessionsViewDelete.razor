@@ -1,11 +1,11 @@
-@* D-353 — reusable Session View/Delete form, hosted by CrudShell (popup or full
+@* Reusable Session View/Delete form, hosted by CrudShell (popup or full
    page) from SessionsList. Inherits CrudViewDeleteFormBase so it exposes the
    standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show; when IsDelete=true a Deactivate button appears and a
    SimfConfirm gates the soft-delete (replaces the old one-click delete on the
    list). The former Details-modal extras are preserved here in the View path:
-   the broadcast-lifecycle transitions (P3.2 / D-231) and the recording
-   attach / remove (P3.2b / D-232), both still gated by Sessions.Publish. *@
+   the broadcast-lifecycle transitions and the recording
+   attach / remove, both still gated by Sessions.Publish. *@
 @inherits CrudViewDeleteFormBase<AdminSessionDetail>
 
 @if (_error is not null)
@@ -82,7 +82,7 @@
         </dd>
     </dl>
 
-    @* P3.2b — D-232: the Committee attaches/removes the recording here, gated by
+    @* The Committee attaches/removes the recording here, gated by
        Sessions.Publish (same permission as the lifecycle). *@
     <AuthorizedAction Permission="@PermissionCatalog.Sessions.Publish">
         <div class="simf-form">
@@ -109,7 +109,7 @@
         </div>
     </AuthorizedAction>
 
-    @* P3.2 — D-231: the Committee drives the broadcast lifecycle here, gated by
+    @* The Committee drives the broadcast lifecycle here, gated by
        Sessions.Publish (distinct from session edit). *@
     <AuthorizedAction Permission="@PermissionCatalog.Sessions.Publish">
         <div class="simf-form__actions">

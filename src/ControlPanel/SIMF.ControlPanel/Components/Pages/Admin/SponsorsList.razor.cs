@@ -128,7 +128,7 @@ public partial class SponsorsList
     }
 
     // Edit / View / Delete all work against the full detail — the grid summary
-    // omits ContactId (SIMF-FDS-014 / D-283), so editing from a summary-only
+    // omits ContactId, so editing from a summary-only
     // form would wipe an existing link. Returns null and surfaces a toast on
     // failure.
     private async Task<AdminSponsorDetail?> LoadDetailAsync(Guid id)

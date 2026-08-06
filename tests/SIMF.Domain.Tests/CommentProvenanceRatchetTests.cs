@@ -9,11 +9,11 @@ namespace SIMF.Domain.Tests;
 /// rather than being copied into the code, where it rots because the log is
 /// maintained and the comment is not.
 ///
-/// <para><c>SIMF.Domain</c> was swept to zero and is pinned there. The other layers
-/// carry a recorded count that may only go <b>down</b>: the sweep is incremental, so
-/// this turns "we will get to it" into a number that cannot drift upward unnoticed
-/// and cannot be quietly declared finished either. A prose rule cannot detect the
-/// next token added; this can.</para>
+/// <para>Every layer is swept and pinned at zero. While the sweep was in progress
+/// the unswept layers carried an exact recorded count that could only go down, so
+/// "we will get to it" was a number rather than an intention; that scaffolding is
+/// gone now the count is zero everywhere. A prose rule cannot detect the next
+/// token added; this can.</para>
 /// </summary>
 public sealed class CommentProvenanceRatchetTests
 {
@@ -21,25 +21,20 @@ public sealed class CommentProvenanceRatchetTests
     private static readonly Regex DecisionToken =
         new(@"\bD-[0-9]{3}\b", RegexOptions.Compiled);
 
-    /// <summary>The remaining backlog, measured 2026-08-06. Lower a number in the
-    /// same changeset that sweeps its layer — never raise one. A layer that reaches
-    /// zero should move to <see cref="SweptLayers"/> so it is pinned rather than
-    /// merely bounded.</summary>
-    public static TheoryData<string, int> RemainingLayers => new()
-    {
-        { "src/Shared",                       625 },
-        { "src/Backend/SIMF.Infrastructure",  554 },
-        { "src/ControlPanel",                 531 },
-        { "src/Backend/SIMF.Api",             332 },
-        { "src/Backend/SIMF.Application",     164 },
-    };
-
-    /// <summary>Layers that are swept and must stay at zero.</summary>
-    public static TheoryData<string> SweptLayers => new()
-    {
+    /// <summary>Every layer, swept and pinned at zero.</summary>
+    private static readonly string[] Layers =
+    [
         "src/Backend/SIMF.Domain",
+        "src/Backend/SIMF.Application",
+        "src/Backend/SIMF.Api",
+        "src/Backend/SIMF.Infrastructure",
+        "src/Shared",
+        "src/ControlPanel",
         "src/Website",
-    };
+        "src/Tools",
+    ];
+
+    public static TheoryData<string> SweptLayers => new(Layers);
 
     [Theory]
     [MemberData(nameof(SweptLayers))]
@@ -58,21 +53,31 @@ public sealed class CommentProvenanceRatchetTests
             + string.Join(", ", offenders.Select(o => $"{Relative(o.File)} ({o.Tokens})")));
     }
 
-    [Theory]
-    [MemberData(nameof(RemainingLayers))]
-    public void An_unswept_layer_matches_its_recorded_backlog(string layer, int expected)
+    [Fact]
+    public void The_swept_set_covers_every_source_layer()
     {
-        var actual = SourceFiles(layer)
-            .Sum(file => DecisionToken.Matches(File.ReadAllText(file)).Count);
+        // A layer missing from SweptLayers is not guarded at all, and the gap would
+        // be invisible: the other test would still pass on the layers it does list.
+        var guarded = Layers.ToHashSet(StringComparer.Ordinal);
 
-        // Exact, not "at most": a ceiling nobody lowers stops describing anything.
+        var actual = Directory
+            .EnumerateDirectories(Path.Combine(RepoRoot(), "src"), "*", SearchOption.AllDirectories)
+            .Where(directory => Directory.EnumerateFiles(directory, "*.csproj").Any())
+            .Select(directory => Path.GetRelativePath(RepoRoot(), directory).Replace('\\', '/'))
+            .Where(path => !path.Contains("/bin/") && !path.Contains("/obj/"))
+            .ToList();
+
+        var unguarded = actual
+            .Where(project => !guarded.Any(layer =>
+                project.Equals(layer, StringComparison.Ordinal)
+                || project.StartsWith(layer + "/", StringComparison.Ordinal)))
+            .ToList();
+
         Assert.True(
-            actual == expected,
-            $"{layer} carries {actual} decision id(s) in source, but this test records "
-            + $"{expected}. If you swept the layer, lower the number here in the same "
-            + "changeset (and move it to SweptLayers at zero). If the count went UP, a "
-            + "new comment is carrying provenance that belongs in "
-            + "docs/decisions/DECISIONS_LOG.md.");
+            unguarded.Count == 0,
+            "These source projects are not covered by any entry in SweptLayers, so "
+            + "decision ids could accumulate in them unnoticed: "
+            + string.Join(", ", unguarded));
     }
 
     private static IEnumerable<string> SourceFiles(string layer)

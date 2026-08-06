@@ -24,13 +24,12 @@ public sealed class AdminResetTwoFactorRequest
 }
 
 /// <summary>
-/// The body of <c>POST /api/v1/admin/admins</c> (P7c — renamed from
+/// The body of <c>POST /api/v1/admin/admins</c> (renamed from
 /// <c>/admin/staff</c>). Creates a new Control Panel <b>Admin</b> user
-/// — the only <see cref="SIMF.Common.Enums.UserType"/> that
-/// carries RBAC roles per the P7 model (decision D-048). The new
-/// account lands in <c>PendingApproval</c> with no password; the user
-/// receives a 7-day invitation code (D-042). Approval is
-/// Administrator-only and mints the QR id (D-046a + P4).
+/// — the only <see cref="SIMF.Common.Enums.UserType"/> that carries RBAC
+/// roles. The new account lands in <c>PendingApproval</c> with no password;
+/// the user receives a 7-day invitation code. Approval is Administrator-only
+/// and mints the QR id.
 /// </summary>
 public sealed class AdminCreateAdminRequest
 {
@@ -50,15 +49,15 @@ public sealed class AdminCreateAdminRequest
     public IList<string> Roles { get; set; } = new List<string>();
 }
 
-/// <summary>The response of <c>GET /api/v1/admin/admins/{id}/roles</c>
-/// (Issue-1) — the RBAC role names an admin user currently holds, used to
+/// <summary>The response of <c>GET /api/v1/admin/admins/{id}/roles</c> —
+/// the RBAC role names an admin user currently holds, used to
 /// pre-fill the user-roles editor.</summary>
 public sealed record AdminUserRolesResponse(
     Guid UserId,
     IReadOnlyList<string> Roles);
 
-/// <summary>The body of <c>PUT /api/v1/admin/admins/{id}/roles</c>
-/// (Issue-1) — the complete set of role names the admin user should hold.
+/// <summary>The body of <c>PUT /api/v1/admin/admins/{id}/roles</c> —
+/// the complete set of role names the admin user should hold.
 /// The server replaces the user's roles with exactly this set.</summary>
 public sealed class AdminSetUserRolesRequest
 {
@@ -66,7 +65,7 @@ public sealed class AdminSetUserRolesRequest
 }
 
 /// <summary>
-/// The body of <c>POST /api/v1/admin/others</c> (P7c — new). Creates a
+/// The body of <c>POST /api/v1/admin/others</c>. Creates a
 /// new <b>Other</b> user — an event team / partner who signs in to the
 /// Flutter app, not the CP. The <see cref="ProfileTypeId"/> picks the
 /// Other subtype (Staff / Exhibitor / Sponsor / …) from the
@@ -91,8 +90,7 @@ public sealed class AdminCreateOtherRequest
 }
 
 /// <summary>
-/// The body of <c>POST /api/v1/admin/visitors</c> (P3; P7c added
-/// optional <see cref="ProfileTypeId"/>). Creates a new
+/// The body of <c>POST /api/v1/admin/visitors</c>. Creates a new
 /// <b>Visitor</b> user — an event attendee who signs in to the Flutter
 /// app / Website. The Subtype (VVIP / VIP / Gold / …) is **optional**
 /// at create time because a self-registered visitor has none until
@@ -117,15 +115,14 @@ public sealed class AdminCreateVisitorRequest
 }
 
 /// <summary>
-/// The body of <c>PUT /api/v1/admin/visitors/{id}</c> (P1.3 / D-214 — promotes
-/// the D-114 edit stub to a real edit). Updates an existing <b>Visitor</b>'s
+/// The body of <c>PUT /api/v1/admin/visitors/{id}</c>. Updates an existing <b>Visitor</b>'s
 /// editable fields: login <see cref="Email"/> (re-checked for uniqueness; a
 /// change rolls the security stamp + revokes sessions), <see cref="DisplayName"/>,
 /// and the optional <see cref="ProfileTypeId"/> tier. Approval state is NOT
 /// editable here (use the approve/reject path). Administrator-only.
 /// </summary>
 /// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
-/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+/// route class so it cannot drop a field at bind time.</remarks>
 public class AdminUpdateVisitorRequest
 {
     /// <summary>The visitor's login email; must not collide with another account.</summary>
@@ -147,7 +144,7 @@ public class AdminUpdateVisitorRequest
     /// account request a delegation (وفد) meeting. Independent of the delegate flag.</summary>
     public bool AllowsDelegationMeeting { get; set; }
 
-    /// <summary>B22 — the ISO alpha-2 nationality code (the same wire shape the
+    /// <summary>The ISO alpha-2 nationality code (the same wire shape the
     /// self-service profile upsert and <see cref="AdminUserProfileView.NationalityCode"/>
     /// use). Optional: null / empty leaves the stored nationality untouched, so every
     /// existing caller keeps working. When supplied it must match an ACTIVE
@@ -156,30 +153,30 @@ public class AdminUpdateVisitorRequest
     /// delegation-meeting confirm eligibility.</summary>
     public string? NationalityCode { get; set; }
 
-    /// <summary>FR-PHN-002 — an optional Saudi-mobile correction
+    /// <summary>An optional Saudi-mobile correction
     /// (<c>05XXXXXXXX</c> / <c>+9665XXXXXXXX</c>). Optional: null / empty leaves
     /// the stored number untouched, so every existing caller keeps working. When
     /// supplied it must pass the SAME shape rule as the self-service upsert and
-    /// the walk-in desk, and it is stored canonicalised (DEF-PHN-003). Until this
+    /// the walk-in desk, and it is stored canonicalised. Until this
     /// existed, every admin surface showed the mobile read-only and only the
     /// walk-in CREATE desk could type one — a wrong number could never be
     /// corrected.</summary>
     public string? SaudiMobile { get; set; }
 
-    /// <summary>FR-PHN-002 — an optional international-mobile (E.164) correction.
+    /// <summary>An optional international-mobile (E.164) correction.
     /// Same optional-means-unchanged semantics as <see cref="SaudiMobile"/>.</summary>
     public string? InternationalMobile { get; set; }
 }
 
 /// <summary>
-/// The body of <c>PUT /api/v1/admin/others/{id}</c> (P1.3 / D-214). Updates an
+/// The body of <c>PUT /api/v1/admin/others/{id}</c>. Updates an
 /// existing partner-side (<b>Other</b>) account. Same shape as
 /// <see cref="AdminUpdateVisitorRequest"/> but the partner subtype is
 /// mandatory and must be partner-scope (<c>IsVisitor = false</c>).
 /// Administrator-only.
 /// </summary>
 /// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
-/// route class (D-505 / D-844) so it cannot drop a field at bind time.</remarks>
+/// route class so it cannot drop a field at bind time.</remarks>
 public class AdminUpdateOtherRequest
 {
     /// <summary>The account's login email; must not collide with another account.</summary>
@@ -201,24 +198,23 @@ public class AdminUpdateOtherRequest
     /// (see <see cref="AdminUpdateVisitorRequest.AllowsDelegationMeeting"/>).</summary>
     public bool AllowsDelegationMeeting { get; set; }
 
-    /// <summary>B22 — the ISO alpha-2 nationality code
+    /// <summary>The ISO alpha-2 nationality code
     /// (see <see cref="AdminUpdateVisitorRequest.NationalityCode"/>). Optional.</summary>
     public string? NationalityCode { get; set; }
 
-    /// <summary>FR-PHN-002 — an optional Saudi-mobile correction
+    /// <summary>An optional Saudi-mobile correction
     /// (see <see cref="AdminUpdateVisitorRequest.SaudiMobile"/>). Optional.</summary>
     public string? SaudiMobile { get; set; }
 
-    /// <summary>FR-PHN-002 — an optional international-mobile correction
+    /// <summary>An optional international-mobile correction
     /// (see <see cref="AdminUpdateVisitorRequest.InternationalMobile"/>). Optional.</summary>
     public string? InternationalMobile { get; set; }
 }
 
 /// <summary>
-/// D-728 (owner item 9) — the body of
-/// <c>POST /api/v1/admin/accounts/{id}/change-type</c>. Flips an existing
-/// account between the audience (Visitor) and partner (Other) scope by
-/// reassigning its profile type. <see cref="NewProfileTypeId"/> must be an
+/// The body of <c>POST /api/v1/admin/accounts/{id}/change-type</c>. Flips an
+/// existing account between the audience (Visitor) and partner (Other) scope
+/// by reassigning its profile type. <see cref="NewProfileTypeId"/> must be an
 /// active profile type in the <b>opposite</b> scope to the account's current
 /// one (a same-scope change is an edit, not a type change). Administrator-only.
 /// </summary>
@@ -230,13 +226,13 @@ public sealed class AdminChangeAccountTypeRequest
     public Guid NewProfileTypeId { get; set; }
 }
 
-/// <summary>The body of a successful admin-created account (D-042).</summary>
+/// <summary>The body of a successful admin-created account.</summary>
 public sealed record AdminCreateUserResponse(
     Guid UserId,
     string Email,
     int InviteExpiresInSeconds);
 
-/// <summary>One row in the admin user-list view (D-042, D-044). <c>HasAvatar</c>
+/// <summary>One row in the admin user-list view. <c>HasAvatar</c>
 /// lets the grid render the account's profile-photo thumbnail (streamed from
 /// <c>GET /admin/{visitors,others,admins}/{id}/avatar</c>) or an initials
 /// fallback.</summary>
@@ -249,13 +245,13 @@ public sealed record AdminUserSummary(
     bool IsAdministrator,
     DateTime CreatedAt,
     // Whether the account has a profile photo (avatar) — the StoredFile presence
-    // sentinel SimfUser.AvatarRelativePath (D-568). Trailing-optional (append-only,
+    // sentinel SimfUser.AvatarRelativePath. Trailing-optional (append-only,
     // wire-safe); defaults false for contexts that don't resolve it (bulk export,
     // the optimistic post-save row — both reload from the server anyway).
     bool HasAvatar = false);
 
-/// <summary>The body of <c>POST /api/v1/admin/admins/bulk-delete</c>
-/// (decision D-044 b). One audit row is written per subject so SOC has
+/// <summary>The body of <c>POST /api/v1/admin/admins/bulk-delete</c>.
+/// One audit row is written per subject so SOC has
 /// per-user visibility even on a batch action.</summary>
 public sealed class AdminBulkDeleteRequest
 {
@@ -266,11 +262,10 @@ public sealed class AdminBulkDeleteRequest
     public string Reason { get; set; } = string.Empty;
 }
 
-/// <summary>Result of a bulk-delete (D-044 b).</summary>
+/// <summary>Result of a bulk-delete.</summary>
 public sealed record AdminBulkDeleteResponse(int Deleted, int Skipped);
 
-/// <summary>D-164 (PDF §2.7.1, gap doc G2) — body of
-/// <c>POST /api/v1/admin/visitors/bulk-approve</c> and
+/// <summary>Body of <c>POST /api/v1/admin/visitors/bulk-approve</c> and
 /// <c>POST /api/v1/admin/others/bulk-approve</c>. The security team's
 /// "Select All" affordance: approve every selected pending user in one
 /// request. Per-subject failures are reported in
@@ -348,17 +343,17 @@ public sealed class AdminExportUsersRequest
     public GridQuery? Query { get; set; }
 }
 
-/// <summary>Result of a bulk import — per-row outcome summary (D-044 b).</summary>
+/// <summary>Result of a bulk import — per-row outcome summary.</summary>
 public sealed record AdminImportUsersResponse(
     int Created,
     int Skipped,
     IReadOnlyList<AdminImportError> Errors);
 
-/// <summary>One failed row in an import (D-044 b).</summary>
+/// <summary>One failed row in an import.</summary>
 public sealed record AdminImportError(int Row, string Email, string Reason);
 
 /// <summary>
-/// The body of an approval (P4). Carries no payload today — the user id is
+/// The body of an approval. Carries no payload today — the user id is
 /// in the route, the actor is the bearer token. A class (not a record) so
 /// the FastEndpoints binder accepts the empty JSON body.
 /// </summary>
@@ -367,7 +362,7 @@ public sealed class AdminApproveRequest
 }
 
 /// <summary>
-/// The body of a rejection (P4). The reason is mandatory and audited so a
+/// The body of a rejection. The reason is mandatory and audited so a
 /// SOC reviewer can see why an account was refused.
 /// </summary>
 public sealed class AdminRejectRequest
@@ -381,9 +376,9 @@ public sealed class AdminRejectRequest
 }
 
 /// <summary>
-/// One row in the pending-approval list (P4). A trimmed shape — the
+/// One row in the pending-approval list. A trimmed shape — the
 /// approver only needs to see the identity to decide. <c>HasAvatar</c> drives the
-/// grid profile-photo thumbnail (the D-568 <c>AvatarRelativePath</c> presence
+/// grid profile-photo thumbnail (the <c>AvatarRelativePath</c> presence
 /// sentinel).
 /// </summary>
 public sealed record AdminPendingUserSummary(
@@ -395,7 +390,7 @@ public sealed record AdminPendingUserSummary(
     bool HasAvatar = false);
 
 /// <summary>
-/// One row in the <c>ProfileTypes</c> lookup (P7c). Used by the CP
+/// One row in the <c>ProfileTypes</c> lookup. Used by the CP
 /// create / list pages to populate the subtype picker.
 /// </summary>
 public sealed record AdminProfileTypeSummary(
@@ -423,7 +418,7 @@ public sealed record AdminProfileTypeSummary(
 
 /// <summary>
 /// Body of <c>POST /api/v1/admin/profile-types</c>. Creates a
-/// new ProfileType row. D-186 collapsed UserType to Visitor-only for
+/// new ProfileType row. UserType is Visitor-only for
 /// non-admin profile types; the audience-vs-partner distinction is
 /// expressed via <see cref="IsVisitor"/>. Per-UserType name uniqueness
 /// is enforced server-side (case-insensitive).
@@ -459,12 +454,12 @@ public sealed class AdminCreateProfileTypeRequest
     /// approval queue until an admin explicitly flips it.</summary>
     public bool IsVisitor { get; set; } = true;
 
-    /// <summary>D-725 (owner item 1) — whether the type appears in the app
+    /// <summary>Whether the type appears in the app
     /// sign-up picker. Default true; set false for CP-only operational types
     /// (Staff, Moderator) that an admin assigns rather than a customer picks.</summary>
     public bool IsAppRegisterable { get; set; } = true;
 
-    /// <summary>D-760 (owner request) — whether this type's accounts appear in
+    /// <summary>Whether this type's accounts appear in
     /// the "Meet People (same interests)" networking surfaces. Default true.
     /// Meaningful only for partner (Other) types.</summary>
     public bool ShowInPartnerDirectory { get; set; } = true;
@@ -473,13 +468,13 @@ public sealed class AdminCreateProfileTypeRequest
 /// <summary>
 /// Body of <c>PUT /api/v1/admin/profile-types/{id}</c>. Mutates
 /// every field except <c>UserType</c> — a profile type cannot migrate
-/// between Visitor and Admin scopes after creation. D-186: <see cref="IsVisitor"/>
+/// between Visitor and Admin scopes after creation. <see cref="IsVisitor"/>
 /// can be flipped because it only re-routes the CP approval queue, not
 /// the underlying user account.
 /// </summary>
 /// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
-/// route class (D-505, mirroring <c>UpdateHallRoute</c>) so it cannot drop a field
-/// at bind time — D-843: <c>ShowInPartnerDirectory</c> was being forced back to its
+/// route class (mirroring <c>UpdateHallRoute</c>) so it cannot drop a field
+/// at bind time. <c>ShowInPartnerDirectory</c> was being forced back to its
 /// <c>true</c> default on every edit, because the old inline bind model omitted it
 /// and the drop therefore failed OPEN.</remarks>
 public class AdminUpdateProfileTypeRequest
@@ -494,24 +489,23 @@ public class AdminUpdateProfileTypeRequest
     /// <summary>Audience (true) or partner / staff (false).</summary>
     public bool IsVisitor { get; set; } = true;
 
-    /// <summary>D-725 (owner item 1) — whether the type appears in the app
+    /// <summary>Whether the type appears in the app
     /// sign-up picker. Default true; false = CP-only (Staff, Moderator).</summary>
     public bool IsAppRegisterable { get; set; } = true;
 
-    /// <summary>D-760 (owner request) — whether this type's accounts appear in
+    /// <summary>Whether this type's accounts appear in
     /// the "Meet People (same interests)" networking surfaces. Default true.</summary>
     public bool ShowInPartnerDirectory { get; set; } = true;
 }
 
 /// <summary>
-/// D-127 (amended D-425) — body of
-/// <c>POST /api/v1/admin/{visitors,others}/register-onsite</c>. Walk-in / desk
-/// registration shape — staff at the registration desk fills the full profile
-/// face-to-face. D-425: the account is created <c>PendingApproval</c>; no QR is
-/// minted at the desk — it is issued when an admin approves from the pending
-/// queue. Email is optional (walk-ins frequently
-/// don't have one; the QR badge is the access token); when missing the API
-/// synthesizes <c>walkin-{guid}@simf.local</c> so Identity stays valid.
+/// Body of <c>POST /api/v1/admin/{visitors,others}/register-onsite</c>.
+/// Walk-in / desk registration shape — staff at the registration desk fills
+/// the full profile face-to-face. The account is created
+/// <c>PendingApproval</c>; no QR is minted at the desk — it is issued when an
+/// admin approves from the pending queue. Email is optional (walk-ins
+/// frequently don't have one; the QR badge is the access token); when missing
+/// the API synthesizes <c>walkin-{guid}@simf.local</c> so Identity stays valid.
 /// </summary>
 public sealed class AdminWalkInRegistrationRequest
 {
@@ -527,28 +521,28 @@ public sealed class AdminWalkInRegistrationRequest
     /// <summary>Full name in English — exactly as on the passport / ID.</summary>
     public string EnglishName { get; set; } = string.Empty;
 
-    /// <summary>D-163 (PDF §2.6) — optional job title.</summary>
+    /// <summary>Optional job title.</summary>
     public string? JobTitle { get; set; }
 
-    /// <summary>2026-07-19 (owner) — Arabic job title (twin of <see cref="JobTitle"/>),
+    /// <summary>Arabic job title (twin of <see cref="JobTitle"/>),
     /// so a VIP/delegate title is stored bilingually (used by the delegation head
     /// title). Optional; ≤100 chars.</summary>
     public string? JobTitleArabic { get; set; }
 
-    /// <summary>V-1 (D-429) — the موج (Mawj) system identifier (المعرف في نظام موج).
+    /// <summary>The موج (Mawj) system identifier (المعرف في نظام موج).
     /// Optional everywhere; the dedicated VIP registration page captures it for
     /// VVIP/VIP visitors so the welcome-message export can key on it. ≤64 chars.</summary>
     public string? MawjId { get; set; }
 
-    /// <summary>V-1 (D-429) — honorific / title (اللقب), e.g. "Minister". Optional;
+    /// <summary>Honorific / title (اللقب), e.g. "Minister". Optional;
     /// captured on the VIP page for the موج welcome message. ≤64 chars.</summary>
     public string? Honorific { get; set; }
 
-    /// <summary>2026-07-19 (owner) — Arabic honorific (twin of <see cref="Honorific"/>),
+    /// <summary>Arabic honorific (twin of <see cref="Honorific"/>),
     /// the fallback for a bilingual head-of-delegation title. Optional; ≤64 chars.</summary>
     public string? HonorificArabic { get; set; }
 
-    /// <summary>V-1 (D-429) — preferred language for the موج welcome message
+    /// <summary>Preferred language for the موج welcome message
     /// (اللغة المفضلة), an IETF tag like "ar"/"en". Optional. ≤16 chars.</summary>
     public string? PreferredLanguage { get; set; }
 
@@ -583,16 +577,16 @@ public sealed class AdminWalkInRegistrationRequest
     /// <summary>International mobile (<c>+CC-local</c>).</summary>
     public string? InternationalMobile { get; set; }
 
-    /// <summary>D-395 (الجنس) — the visitor's gender, captured at the desk.
+    /// <summary>The visitor's gender (الجنس), captured at the desk.
     /// <see cref="Gender.Unspecified"/> when not picked. The column already
     /// exists on <c>UserProfile</c>; the walk-in form just didn't capture it.</summary>
     public Gender Gender { get; set; } = Gender.Unspecified;
 
     /// <summary>Optional vehicle plate number (Saudi plate shape, ≤7
-    /// chars). The column already exists on <c>UserProfile</c> (D-371).</summary>
+    /// chars). The column already exists on <c>UserProfile</c>.</summary>
     public string? PlateNumber { get; set; }
 
-    /// <summary>B3 — D-221 (الجهة): the picked <c>Organisation</c> id.
+    /// <summary>The picked <c>Organisation</c> id (الجهة).
     /// Required at the walk-in desk (the validator rejects null / empty); the
     /// service rejects an unknown / inactive id with <c>OrganisationInvalid</c>.</summary>
     public Guid? OrganisationId { get; set; }
@@ -608,7 +602,7 @@ public sealed class AdminWalkInRegistrationRequest
 }
 
 /// <summary>
-/// D-127 (amended D-425) — response from the walk-in endpoint. Carries the data
+/// Response from the walk-in endpoint. Carries the data
 /// the post-submit success modal needs: the chosen profile-type name + colour
 /// and the user id (so a follow-up ID-document upload can reach the right row).
 /// <see cref="QrId"/> is now EMPTY for a freshly created walk-in — the
@@ -651,7 +645,7 @@ public sealed class BulkBadgeBatch
     public int Count { get; set; }
 }
 
-/// <summary>D-473 (#10) — the count of badges generated. D-751: <see
+/// <summary>The count of badges generated. <see
 /// cref="EmailQueued"/> is true when an organiser recipient was supplied and the
 /// ZIP of QR badge PNGs was enqueued for delivery (default false keeps existing
 /// positional callers compiling).</summary>
@@ -659,9 +653,9 @@ public sealed record AdminBulkGenerateBadgesResponse(int Created, bool EmailQueu
 
 /// <summary>
 /// Body returned by the broadened admin profile-read endpoints
-/// (<c>GET /api/v1/admin/{visitors,others}/{id}/profile</c>). Q-G reversed:
-/// any admin can read any visitor's or Other's profile, regardless of state.
-/// Every read fires a row-audit row via the D-109 SaveChanges interceptor
+/// (<c>GET /api/v1/admin/{visitors,others}/{id}/profile</c>). Any admin
+/// can read any visitor's or Other's profile, regardless of state.
+/// Every read fires a row-audit row via the SaveChanges interceptor
 /// on the underlying touch.
 /// </summary>
 public sealed record AdminUserProfileView(
@@ -688,7 +682,7 @@ public sealed record AdminUserProfileView(
     string? SaudiMobile,
     string? InternationalMobile,
     bool HasIdImage,
-    // D-727 (owner item 5) — whether the subject has a profile photo (avatar) so
+    // Whether the subject has a profile photo (avatar) so
     // the CP view / pending-review can render it (streamed from
     // GET /admin/{visitors,others}/{id}/avatar). Mirrors HasIdImage.
     bool HasAvatar,

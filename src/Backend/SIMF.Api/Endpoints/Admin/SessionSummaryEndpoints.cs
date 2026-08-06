@@ -7,8 +7,8 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P4.1 — D-238 (Completion Programme §6.4.1, Mockup screen 34): the
-/// Scientific-Committee session-summary / محضر desk. List + read are gated by
+/// <summary>The Scientific-Committee session-summary / محضر desk.
+/// List + read are gated by
 /// <c>SessionSummaries.View</c>, generate + save by <c>.Edit</c>, publish +
 /// un-publish by <c>.Publish</c> — all on top of RequireApprovedAccount.</summary>
 public sealed class ListSessionSummariesEndpoint(IAdminSessionSummaryService service)
@@ -134,7 +134,7 @@ public sealed class UnpublishSessionSummaryEndpoint(IAdminSessionSummaryService 
     }
 }
 
-// -- D-472 (#9) — the team review/approval workflow ---------------------------
+// -- The team review/approval workflow ----------------------------------------
 // Submit (the editing team, .Edit) → Approve / Return-to-draft (the approving
 // team, .Approve). The approved محضر becomes readable by the host/moderator.
 

@@ -74,8 +74,9 @@ public sealed class WalkInModeOptions
     /// </summary>
     public int ArrivalGraceMinutes { get; set; } = DefaultArrivalGraceMinutes;
 
-    // D-821 review: AdvisoryHallCapacity was declared here, documented in D-819
-    // and shipped in set-env-api.template.ps1 — with NO implementation anywhere.
+    // AdvisoryHallCapacity was declared here and shipped as a settable key in
+    // the API deployment env template (now deploy/set-env.template.ps1) — with
+    // NO implementation anywhere.
     // Arming it did nothing, which is worse than not offering it: an operator
     // would have believed capacity was relaxed. Removed rather than implemented,
     // because the gate-door arrival path already passes enforceCapacity: false
@@ -115,8 +116,8 @@ public sealed class WalkInModeOptions
     /// <summary>The arrival grace the system has always used.</summary>
     public const int DefaultArrivalGraceMinutes = 15;
 
-    /// <summary>The widest arrival grace any layer may set. Public since D-839,
-    /// which gave the same knob a per-hall and per-session home: the bound has to
+    /// <summary>The widest arrival grace any layer may set. Public because the
+    /// same knob also has a per-hall and per-session home: the bound has to
     /// be one number, or the DB check constraint, the request validators and this
     /// clamp could disagree about what is legal.</summary>
     public const int MaxArrivalGraceMinutes = 240;
@@ -171,10 +172,10 @@ public sealed class WalkInModeOptions
     /// <para>Static and free of any option state so the SAME rule serves the
     /// hall door, the admin list projection and the detail read. It previously
     /// existed as three hand-written copies that already disagreed — only the
-    /// door clamped — which is the exact class of divergence D-839 was written
-    /// to end. Clamping here rather than trusting the check constraints keeps it
-    /// true for a row that reaches the database another way (a restore with
-    /// <c>NOCHECK</c>, a direct UPDATE).</para>
+    /// door clamped — which is the exact class of divergence this single
+    /// helper exists to end. Clamping here rather than trusting the check
+    /// constraints keeps it true for a row that reaches the database another
+    /// way (a restore with <c>NOCHECK</c>, a direct UPDATE).</para>
     /// </summary>
     public static int ResolveArrivalGraceMinutes(
         int? sessionOverrideMinutes, int? hallMinutes, int globalMinutes) =>

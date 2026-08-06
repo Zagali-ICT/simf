@@ -354,7 +354,7 @@ public partial class BusinessMeetingsList
         finally { _busy = false; }
     }
 
-    // datetime-local carries no timezone, and under D-813 it does not need one:
+    // datetime-local carries no timezone, and it does not need one:
     // what the admin types IS what gets stored. AssumeUniversal + AdjustToUniversal
     // is the parse that leaves a naked "2026-11-23T09:00" at 09:00 regardless of
     // the server's own timezone; FromSaudiWallClock then only stamps the Kind.

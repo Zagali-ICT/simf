@@ -52,7 +52,7 @@ public partial class ProgrammeTimeline
 
     // Group by the Saudi calendar day of the start time, days ascending,
     // sessions within a day ascending by start time. Start is already the
-    // Saudi wall clock (D-813), so the run-of-show renders it verbatim — there
+    // Saudi wall clock, so the run-of-show renders it verbatim — there
     // is no projection and adding one would shift every row by three hours.
     private void BuildDays(IReadOnlyList<AdminSessionSummary> items)
     {

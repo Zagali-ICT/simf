@@ -1,4 +1,4 @@
-@* D-127 — Post-submit success modal that the walk-in registration desk
+@* Post-submit success modal that the walk-in registration desk
    shows after a successful POST /admin/{visitors,others}/register-onsite.
    Renders the visitor's name + the minted QR id with an SVG QR badge so
    the visitor can scan it with their phone (or the desk can print it).
@@ -23,7 +23,7 @@
                 </div>
                 <div class="simf-walkin-badge__name">@Response.DisplayName</div>
                 <div class="simf-walkin-badge__email">@EmailLabel</div>
-                @* D-425: a pending walk-in has no QR yet — it is minted on
+                @* A pending walk-in has no QR yet — it is minted on
                    approval. Only show the QR badge once the account is approved. *@
                 @if (!Pending)
                 {

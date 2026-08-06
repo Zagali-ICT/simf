@@ -10,7 +10,7 @@ using SIMF.Contracts.Exhibitors;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/exhibitors/export</c> — the D-356 grid export for the
+/// <c>POST /api/v1/admin/exhibitors/export</c> — the grid export for the
 /// exhibitors module. All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>;
 /// this subclass only declares the route, permission, sheet/file names, the
 /// column layout (the grid's visible columns plus the contact fields the
@@ -49,7 +49,7 @@ public sealed class ExportExhibitorsEndpoint(IAdminExhibitorService service, IGr
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/exhibitors/import</c> — the D-356 grid import
+/// <c>POST /api/v1/admin/exhibitors/import</c> — the grid import
 /// (insert-only). The base does the upload defence, parse and per-row error
 /// aggregation; this subclass binds one row to <see cref="CreateExhibitorRequest"/>
 /// and creates it (the service rejects an invalid name → a per-row error, not a

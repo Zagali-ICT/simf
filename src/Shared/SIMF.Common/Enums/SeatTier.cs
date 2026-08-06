@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-771 (owner 2026-07-26) — the seat TIER: real data on the hall seat
+/// <summary>The seat TIER: real data on the hall seat
 /// layout, not a display label. A tier is a property of a whole ROW (the layout
 /// already addresses seats as row + 1-based number, and the row CSVs
 /// <c>RowLabels</c> / <c>SeatCounts</c> are the established shape), so every seat
@@ -20,7 +20,7 @@ namespace SIMF.Common.Enums;
 /// <c>SEAT_TIER_RESERVED</c>.</item>
 /// </list>
 /// Stored as an int inside the layout's <c>SeatTiers</c> CSV. <see cref="Normal"/>
-/// = 0 so a legacy layout written before D-771 (null CSV) reads as an
+/// = 0 so a legacy layout written before tiers existed (null CSV) reads as an
 /// all-Normal grid and keeps its shipped behaviour exactly.</summary>
 public enum SeatTier
 {

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace SIMF.Application.Notifications;
 
 /// <summary>
-/// D-099: mirrors the H23 (D-083) <c>TryEnqueueAsync</c> shape for
+/// Mirrors the <c>TryEnqueueAsync</c> shape for
 /// <see cref="INotificationDispatcher"/>. The credential-flow services
 /// (forgot-password, email-verification, sign-in-OTP) dispatch an in-app
 /// notification ALONGSIDE the existing email so the user has an audit

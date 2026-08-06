@@ -60,15 +60,15 @@ public sealed record RatingFormView(
     RatingExistingSubmission? Existing,
     // The rated target's display context, for the app's
     // "watched at {session} · {date}" header on a per-session rating. Populated
-    // for a per-session target; null for a Global type. Appended (append-only
-    // wire, D-219) so the shipped app decodes unchanged.
+    // for a per-session target; null for a Global type. Appended (the wire
+    // contract is append-only) so the shipped app decodes unchanged.
     string? TargetName = null,
     string? TargetNameArabic = null,
     DateTime? TargetStart = null,
-    // Owner 2026-07-19 — false when the caller has not attended what this type rates,
+    // False when the caller has not attended what this type rates,
     // so the app disables submit and shows an "attend to rate" note. The hard gate is
-    // still on POST /feedback/submit (403 RATING_NOT_ATTENDED). Appended (append-only
-    // wire, D-219); defaults true so the shipped app decodes unchanged.
+    // still on POST /feedback/submit (403 RATING_NOT_ATTENDED). Appended (the wire
+    // contract is append-only); defaults true so the shipped app decodes unchanged.
     bool IsEligible = true);
 
 /// <summary>One per-question score in a submission.</summary>

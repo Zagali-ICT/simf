@@ -35,7 +35,7 @@ namespace SIMF.ApiClient;
 
 public sealed partial class SimfAdminClient
 {
-    // -- D-199 — News admin CRUD (SIMF.Contracts.PublicRelations) -----------
+    // -- News admin CRUD (SIMF.Contracts.PublicRelations) --------------------
 
     public Task<ApiCallResult<GridPage<AdminNewsSummary>>> ListNewsAsync(
         GridQuery query, string accessToken,
@@ -75,7 +75,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"news/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-199 — Media gallery admin CRUD (SIMF.Contracts.Media) ------------
+    // -- Media gallery admin CRUD (SIMF.Contracts.Media) ---------------------
 
     public Task<ApiCallResult<GridPage<AdminMediaSummary>>> ListMediaAsync(
         GridQuery query, string accessToken,
@@ -130,7 +130,7 @@ public sealed partial class SimfAdminClient
             accessToken, cancellationToken);
     }
 
-    // -- D-357 — unified media-asset pipeline (one upload / link / fetch for every entity) --
+    // -- Unified media-asset pipeline (one upload / link / fetch for every entity) --
 
     /// <summary>Upload (or replace) a media asset's file for (category, owner).</summary>
     public Task<ApiCallResult<bool>> UploadAssetImageAsync(
@@ -209,7 +209,7 @@ public sealed partial class SimfAdminClient
         Guid id, string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<bool>(HttpMethod.Post, $"assets/item/{id}/restore", null, accessToken, cancellationToken);
 
-    // -- D-199 — Media-partner admin CRUD (SIMF.Contracts.PublicRelations) --
+    // -- Media-partner admin CRUD (SIMF.Contracts.PublicRelations) ----------
 
     public Task<ApiCallResult<GridPage<AdminMediaPartnerSummary>>> ListMediaPartnersAsync(
         GridQuery query, string accessToken,
@@ -242,7 +242,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"media-partners/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-199 — Sponsor admin CRUD (SIMF.Contracts.Admin) ------------------
+    // -- Sponsor admin CRUD (SIMF.Contracts.Admin) --------------------------
 
     public Task<ApiCallResult<GridPage<AdminSponsorSummary>>> ListSponsorsAsync(
         GridQuery query, string accessToken,
@@ -275,7 +275,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"sponsors/{id}", content: null,
             accessToken, cancellationToken);
 
-    // -- D-199 — Booth admin CRUD (SIMF.Contracts.Exhibition) ---------------
+    // -- Booth admin CRUD (SIMF.Contracts.Exhibition) -----------------------
 
     public Task<ApiCallResult<GridPage<AdminBoothSummary>>> ListBoothsAsync(
         GridQuery query, string accessToken,

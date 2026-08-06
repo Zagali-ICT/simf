@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapUsers(IEndpointRouteBuilder group)
     {
-        // P7c — three-family proxy surface (Admin / Other / Visitor).
+        // Three-family proxy surface (Admin / Other / Visitor).
         group.MapPost("/admin/admins",
             async (AdminCreateAdminRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -82,7 +82,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.ListVisitorsAsync(body, token));
         });
 
-        // P7c — pending-list + approval/reject proxies, one per family.
+        // Pending-list + approval/reject proxies, one per family.
         group.MapPost("/admin/admins/pending/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -139,7 +139,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.RejectOtherAsync(id, body, token));
         });
 
-        // CS-D (D-386) — the approve body may optionally carry a ProfileTypeId
+        // The approve body may optionally carry a ProfileTypeId
         // to set the visitor's tier on approval. An empty body ({}) keeps the
         // tier unchanged (backward-compatible with the bulk / no-tier paths).
         group.MapPost("/admin/visitors/{id:guid}/approve",
@@ -173,7 +173,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.UpdateOtherAsync(id, body, token));
         });
-        // D-728 (owner item 9) — change an account's type (Visitor <-> Other).
+        // Change an account's type (Visitor <-> Other).
         group.MapPost("/admin/accounts/{id:guid}/change-type",
             async (Guid id, AdminChangeAccountTypeRequest body, HttpContext http, SimfAdminClient api) =>
         {

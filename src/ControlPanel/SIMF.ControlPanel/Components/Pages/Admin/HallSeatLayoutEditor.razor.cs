@@ -33,8 +33,8 @@ public partial class HallSeatLayoutEditor
         public SeatTier Tier { get; set; } = DefaultTier;
     }
 
-    // D-771 (owner 2026-07-26) — "the default when defining seats at a session must
-    // be VVIP reserved": a NEWLY defined row starts VVIP-reserved (nobody may
+    // The default when defining seats at a session must be VVIP reserved:
+    // a NEWLY defined row starts VVIP-reserved (nobody may
     // self-book it) and the admin downgrades it to VIP / Normal deliberately.
     private const SeatTier DefaultTier = SeatTier.Vvip;
 
@@ -61,7 +61,7 @@ public partial class HallSeatLayoutEditor
     private bool _confirmingDelete;
     private Toast? _toast;
 
-    // A40 — the server's layout rules, mirrored EXACTLY so the admin sees a refusal
+    // The server's layout rules, mirrored EXACTLY so the admin sees a refusal
     // while typing instead of a 400 after saving. These match SeatReservationService
     // .SetLayoutAsync (rows 1–26, label 1–8 chars, unique, per-row seats 1–80,
     // sum <= Hall.Capacity) and the EF HallSeatLayoutConfiguration max length.
@@ -75,7 +75,7 @@ public partial class HallSeatLayoutEditor
     /// also set as the text input's <c>maxlength</c>.</summary>
     private const int MaxRowLabelsCsvLength = 256;
 
-    // -- Per-row seat model (D-767) + the capacity readout the meter/preview use.
+    // -- Per-row seat model + the capacity readout the meter/preview use.
     // _totalSeats is the layout capacity (the sum of the per-row seat counts).
     private int _totalSeats => _rows.Sum(r => r.Count);
     private int _hallCapacity => _snapshot?.HallCapacity ?? 0;
@@ -244,8 +244,8 @@ public partial class HallSeatLayoutEditor
         for (var i = 0; i < labels.Count; i++)
         {
             var count = counts is not null && i < counts.Count ? counts[i] : fallback;
-            // The server always reads back one tier per row (Normal for a
-            // pre-D-771 layout), so an existing hall keeps exactly what it had; only a
+            // The server always reads back one tier per row (Normal for a layout
+            // saved before tiers existed), so an existing hall keeps exactly what it had; only a
             // row with no stored tier at all falls back to the VVIP authoring default.
             var tier = tiers is not null && i < tiers.Count ? tiers[i] : DefaultTier;
             rows.Add(new RowSeat { Label = labels[i], Count = count, Tier = tier });
@@ -335,7 +335,7 @@ public partial class HallSeatLayoutEditor
         finally { _busy = false; }
     }
 
-    // -- B15: remove the layout (the hall reverts to general admission) --------
+    // -- Remove the layout (the hall reverts to general admission) -------------
 
     private void OpenDeleteConfirm()
     {

@@ -7,7 +7,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <summary>EF mapping for the dynamic, config-driven rating model. Replaces the
 /// old fixed single-row <c>Rating</c> table. Real DB FKs within this DbContext;
 /// <c>RatingResponse.UserId</c> and <c>RatingResponse.TargetId</c> stay bare
-/// Guids (cross-DB to Identity / polymorphic target — the D-157 separation rule).
+/// Guids (cross-DB to Identity / polymorphic target — the App/Identity separation rule).
 /// Mirrors <c>FaqConfiguration</c> for the parent → child cascade shape.</summary>
 internal sealed class RatingTypeConfiguration : IEntityTypeConfiguration<RatingType>
 {

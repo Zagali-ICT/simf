@@ -1,10 +1,10 @@
-@* D-353 — reusable Media Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Media Add/Edit form, hosted by CrudShell (popup or full
    page) from MediaList.razor. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel).
    IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT against Initial).
    Supersedes the inline SimfModal form that lived in MediaList.
 
-   Image upload is preserved exactly (D-90 out-of-row): bytes can only be
+   Image upload is preserved exactly (out-of-row): bytes can only be
    attached once the row exists, so the upload control shows only in Edit mode
    for an Image item. Creating an Image therefore does NOT close the shell — it
    flips the same form into Edit mode in place so the admin can attach the

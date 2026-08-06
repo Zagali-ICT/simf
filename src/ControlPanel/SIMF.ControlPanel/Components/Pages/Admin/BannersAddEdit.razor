@@ -1,4 +1,4 @@
-@* D-353 — reusable Banner Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Banner Add/Edit form, hosted by CrudShell (popup or full
    page) from BannersList. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel).
    IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT against Initial)
@@ -44,7 +44,7 @@
                 @L["Admin.Banners.Field.IsActive"]
             </SimfCheckbox>
         }
-        @* #43 — uploaded hero image via the unified media-asset pipeline (edit
+        @* Uploaded hero image via the unified media-asset pipeline (edit
            only; the banner row must exist before bytes can be attached). Served
            publicly at /app/assets/Banner/{id}/image and rotated on the app home
            hero. The ImageUrl field above stays as an optional link fallback. *@

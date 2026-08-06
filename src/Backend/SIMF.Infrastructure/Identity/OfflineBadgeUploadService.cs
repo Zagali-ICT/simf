@@ -80,7 +80,7 @@ internal sealed class OfflineBadgeUploadService(
                 $"الحد الأقصى للدفعة الواحدة {MaxBatchSize} تسجيل.");
         }
 
-        // D-821 review — the desk captures a reduced field set by its nature (one
+        // The desk captures a reduced field set by its nature (one
         // name, one identity document), which is exactly what QuickRegister
         // permits. Without it every row fails the full-desk nationality check, so
         // the whole batch is rejected one row at a time. Say so once, up front,
@@ -97,7 +97,7 @@ internal sealed class OfflineBadgeUploadService(
         // Profile types are a small, stable lookup — read once rather than once
         // per item, so a 500-badge batch stays at one query for the whole set.
         //
-        // D-821 review — AUDIENCE TYPES ONLY. This endpoint is gated on
+        // AUDIENCE TYPES ONLY. This endpoint is gated on
         // Visitors.RegisterOnsite, which PermissionCatalog grants to the staff
         // mobile app role while deliberately withholding Others.RegisterOnsite.
         // Without this filter a staff token could create partner-tier accounts
@@ -175,7 +175,7 @@ internal sealed class OfflineBadgeUploadService(
                 "The badge carries no name.");
         }
 
-        // D-824 review - the pre-check comes FIRST, ahead of every shape rule.
+        // The pre-check comes FIRST, ahead of every shape rule.
         // A shift can be committed by the server and have its response lost, in
         // which case the desk still holds every row as pending and retries. If a
         // shape rule ran first, a row the server had ALREADY created would come
@@ -293,7 +293,7 @@ internal sealed class OfflineBadgeUploadService(
         }
         catch (Exception ex)
         {
-            // D-821 review — isolation has to be per item for EVERY failure, not
+            // Isolation has to be per item for EVERY failure, not
             // just the expected ones. A deadlock victim, a command timeout or a
             // column truncation used to escape this loop and take the whole
             // response with it, leaving the desk unable to tell which sequences
@@ -314,7 +314,7 @@ internal sealed class OfflineBadgeUploadService(
     /// <c>RegisterOnSiteAsync</c> directly, so no FastEndpoints validator runs on
     /// it, and rejecting a row meant a printed badge in a visitor's hand that
     /// nothing backed and nobody could fix - the desk store was append-only with
-    /// no edit path. D-824 gave the desk a correction action (F3), which is what
+    /// no edit path. The desk now has a correction action, which is what
     /// makes rejecting SAFE: the row comes back named, the operator fixes the
     /// number, the same badge uploads. The paper never changes.</para>
     ///

@@ -4,7 +4,7 @@ using SIMF.Domain.BusinessMeetings;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-715 (item 7, FDS-013 §15 GAP-1) — HallAvailabilityWindow EF config.
+/// <summary>HallAvailabilityWindow EF config.
 /// Real FK to Hall with cascade (a deleted hall removes its windows). Indexed by
 /// (HallId, IsActive, Start) for the slot-derivation read. Mirrors
 /// <see cref="SpeakerAvailabilityWindowConfiguration"/>.</summary>

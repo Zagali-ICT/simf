@@ -51,7 +51,7 @@ internal sealed class AdminOrganisationService(
                 || EF.Functions.Like(org.City, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored; the
+        // CP grid per-column filters. Unknown columns are ignored; the
         // boolean isActive filter is parsed from its text value.
         foreach (var (column, raw) in query.Filters)
         {

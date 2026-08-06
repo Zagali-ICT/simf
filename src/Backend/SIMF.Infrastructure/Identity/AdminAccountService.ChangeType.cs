@@ -9,7 +9,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-728 (owner item 9) — flip an existing account between the audience
+/// Flip an existing account between the audience
 /// (Visitor) and partner (Other) scope. This is <c>UpdateAccountAsync</c>
 /// (<see cref="AdminAccountService.UpdateAccountAsync"/>) minus the two
 /// same-scope guards, plus the requirement that the new type is in the
@@ -18,8 +18,8 @@ namespace SIMF.Infrastructure.Identity;
 /// active + <c>IsForVisitor == expected</c>) and
 /// <see cref="AdminAccountService.UpsertProfileTypeAsync"/> (the App-DB write).
 /// A type flip is ALWAYS a privilege change — the new type's
-/// <c>MobileAppRole</c> re-sources the app's operational permission claims
-/// So it unconditionally rolls the security stamp and revokes the
+/// <c>MobileAppRole</c> re-sources the app's operational permission claims,
+/// so it unconditionally rolls the security stamp and revokes the
 /// subject's sessions. Approval state is left unchanged (owner decision): an
 /// approved account stays approved under the new type and simply re-issues a
 /// token carrying the new perms.
@@ -31,7 +31,7 @@ internal sealed partial class AdminAccountService
         CancellationToken cancellationToken = default)
     {
         // Load the subject. Only non-admin accounts (UserType.Visitor covers
-        // both audience and partner post-D-186) have an audience/partner scope;
+        // both audience and partner) have an audience/partner scope;
         // an Admin or missing id is reported as the same 404 so the desk cannot
         // probe. Mirrors the edit path's not-found shape.
         var target = await accounts.FindByIdAsync(userId, cancellationToken);
@@ -71,7 +71,7 @@ internal sealed partial class AdminAccountService
             newProfileTypeId, expectedIsVisitor: targetIsVisitor,
             profileTypeRequired: true, cancellationToken);
 
-        // Bi-Meeting rework — a scope flip must NOT clobber the two admin-assigned
+        // A scope flip must NOT clobber the two admin-assigned
         // meeting-eligibility flags; read the current values so the upsert below
         // preserves them (defaults false when the subject has no profile row yet).
         var currentFlags = await appDbContext.UserProfiles
@@ -86,12 +86,12 @@ internal sealed partial class AdminAccountService
         // re-sources the app 'perm' claims), so kill the subject's live sessions
         // FIRST — roll the security stamp + revoke the refresh tokens in one
         // Identity transaction — BEFORE the App-DB profile flip. Because the two
-        // databases cannot share a transaction (D-157), ordering the session
+        // databases cannot share a transaction, ordering the session
         // kill first makes a partial failure fail-CLOSED: if the flip below
         // throws, the account is already signed out and keeps its old type, so a
         // live token can never outlive a privilege escalation. (The reused edit
         // path tolerates the reverse order because an edit is only *sometimes* a
-        // privilege change; a type flip always is — D-728 review finding.)
+        // privilege change; a type flip always is.)
         await transactionRunner.ExecuteAsync(async (innerCt) =>
         {
             await accounts.UpdateSecurityStampAsync(target, innerCt);
@@ -105,9 +105,9 @@ internal sealed partial class AdminAccountService
             target.Id, resolvedProfileTypeId,
             currentFlags?.AllowsSpeakerMeeting ?? false,
             currentFlags?.AllowsDelegationMeeting ?? false,
-            // B22 — a scope flip never touches nationality (null = leave it alone).
+            // A scope flip never touches nationality (null = leave it alone).
             nationalityId: null,
-            // FR-PHN-002 — nor the mobile numbers (same "null = no change" rule).
+            // A scope flip leaves the mobile numbers alone too (same "null = no change" rule).
             saudiMobile: null, internationalMobile: null,
             now, cancellationToken);
 

@@ -12,9 +12,9 @@ namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
 /// <c>GET /api/v1/app/account/dashboard</c> — the My-Area (منطقتي) personal
-/// dashboard, App Screen 14 (Page_014): identity card + the two counters +
+/// dashboard: identity card + the two counters +
 /// today's merged schedule. Approved account, own <c>sub</c>; an additive
-/// read-only aggregate over existing App-DB tables. D-249.
+/// read-only aggregate over existing App-DB tables.
 /// </summary>
 public sealed class MyAreaDashboardEndpoint(IMyAreaService service)
     : EndpointWithoutRequest<ApiResult<MyAreaDashboard>>
@@ -38,8 +38,8 @@ public sealed class MyAreaDashboardEndpoint(IMyAreaService service)
 }
 
 /// <summary>
-/// <c>GET /api/v1/app/account/sessions</c> — the "my sessions" list (App
-/// "تفاصيل الجلسات", Figma 1388:9067): the user's booked / joined sessions across
+/// <c>GET /api/v1/app/account/sessions</c> — the "my sessions" list
+/// ("تفاصيل الجلسات"): the user's booked / joined sessions across
 /// all days, each with the per-user heart + attended flag, time-ordered. The app
 /// partitions them into the القادمة / حضرتها / فاتتني / الأرشيف tabs client-side.
 /// Approved account, own <c>sub</c>; an additive read-only aggregate (no schema).
@@ -124,7 +124,7 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
     }
 
     // RFC 5545 §3.3.5 FLOATING local time — no trailing Z, no TZID. A Z would
-    // declare the value zoned, and since D-813 it is the Saudi wall clock, so
+    // declare the value zoned, and it is the Saudi wall clock, so
     // every "add to calendar" landed the session three hours early in Outlook
     // and Google. Floating is right for a fixed-venue event: the calendar shows
     // the wall time the programme is published at, wherever the attendee is.

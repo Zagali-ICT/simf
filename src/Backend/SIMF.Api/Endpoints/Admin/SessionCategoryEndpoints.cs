@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-// B9b — D-226: admin CRUD over the dynamic SessionCategory lookup. Validation
+// Admin CRUD over the dynamic SessionCategory lookup. Validation
 // lives in the service (mirrors AdminOrganisationService); endpoints gate +
 // bind + delegate. The PUT reads the route GUID via Route<Guid>("id") (the
 // Organisation/FAQ pattern); the request carries no id.

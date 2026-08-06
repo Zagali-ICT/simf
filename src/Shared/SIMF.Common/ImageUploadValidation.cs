@@ -1,7 +1,7 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// Shared image-upload content guard (D-430 follow-up) — one place for the
+/// Shared image-upload content guard — one place for the
 /// allowed image MIME types + the magic-byte signature check, replacing the
 /// copies that had drifted across the avatar / ID-document / VIP-photo upload
 /// paths. A value that passes <see cref="IsAllowedImage"/> is a real PNG / JPEG /

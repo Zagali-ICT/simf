@@ -5,7 +5,7 @@ namespace SIMF.Application.Email;
 /// and the raw bytes.</summary>
 public sealed record EmailAttachment(string FileName, string ContentType, byte[] Content);
 
-/// <summary>An email to be sent — the unit handed to the email queue. D-751:
+/// <summary>An email to be sent — the unit handed to the email queue.
 /// <see cref="Attachments"/> is optional and defaults to null, so every existing
 /// caller (which constructs the three-argument message) keeps compiling and stays
 /// attachment-free.</summary>

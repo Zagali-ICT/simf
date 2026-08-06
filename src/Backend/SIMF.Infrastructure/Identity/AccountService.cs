@@ -17,12 +17,12 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// Implements account-management use cases for the signed-in user
-/// (myComment #11): reading the profile, updating and removing the avatar.
+/// Implements account-management use cases for the signed-in user:
+/// reading the profile, updating and removing the avatar.
 /// Avatar bytes now live in the unified <see cref="IFileService"/>
 /// store (App DB, <c>FileService.Avatar</c>, encrypted at rest). The Identity
 /// <c>SimfUser.AvatarRelativePath</c> column is repurposed as the bare-Guid pointer
-/// to that <c>StoredFile</c> (no cross-DB FK — D-157) and doubles as the "has
+/// to that <c>StoredFile</c> (never a cross-DB FK) and doubles as the "has
 /// avatar" presence sentinel that <see cref="BuildAvatarUrl"/> and the profile-
 /// completeness / male-face gates already read; so those Identity-side reads stay
 /// byte-identical and no Identity migration is needed.
@@ -74,7 +74,7 @@ internal sealed class AccountService(
             user.DisplayName,
             MapAppRole(mobileAppRole),
             // The Identity row carries no per-user language today; Arabic is the
-            // primary / default language (SIMF-MAA-001 §10) and the app overrides
+            // primary / default language, and the app overrides
             // it locally. Emitted for wire-shape completeness.
             PreferredLanguageDefault,
             MapRegistrationStatus(user.AccountState),
@@ -244,7 +244,7 @@ internal sealed class AccountService(
         Guid.TryParse(pointer, out var id) ? id : null;
 
     /// <summary>The primary-language default emitted for <c>users/me</c> until
-    /// a per-user language preference is persisted (SIMF-MAA-001 §10).</summary>
+    /// a per-user language preference is persisted.</summary>
     private const string PreferredLanguageDefault = "ar";
 
     /// <summary>

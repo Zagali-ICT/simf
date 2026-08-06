@@ -7,17 +7,17 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// V-1 (D-429) — <c>GET /api/v1/admin/visitors/vip/roster</c>. The JSON feed of
+/// <c>GET /api/v1/admin/visitors/vip/roster</c>. The JSON feed of
 /// the VVIP/VIP welcome roster the موج (Mawj) integration / technical teams
 /// consume. Gated by the dedicated <see cref="PermissionCatalog.Visitors.ExportVip"/>
 /// permission because it exposes VIP PII for external sharing.
 ///
 /// <para><b>Distinct from the PR VIP guest-list export</b>
-/// (<c>POST /admin/vips/export</c>, D-168, perm <c>Vips.Export</c>): that is the
+/// (<c>POST /admin/vips/export</c>, perm <c>Vips.Export</c>): that is the
 /// public-relations "كبار الضيوف" list (basic profile columns). This roster adds
 /// the موج welcome-message fields (Mawj id, honorific, preferred language, the
 /// welcome-photo flag) for the integration. The two are complementary, not
-/// duplicates (D-430 follow-up reconciliation).</para>
+/// duplicates.</para>
 /// </summary>
 public sealed class GetVipRosterEndpoint(IVipRosterService service)
     : EndpointWithoutRequest<ApiResult<IReadOnlyList<VipRosterRow>>>
@@ -39,7 +39,7 @@ public sealed class GetVipRosterEndpoint(IVipRosterService service)
 }
 
 /// <summary>
-/// V-1 (D-429) — <c>POST /api/v1/admin/visitors/vip/roster/list</c>. One page of
+/// <c>POST /api/v1/admin/visitors/vip/roster/list</c>. One page of
 /// the roster for the CP export grid (SimfDataGrid), with the standard
 /// <see cref="GridQuery"/> applied in memory (the roster is small). Same
 /// <see cref="PermissionCatalog.Visitors.ExportVip"/> gate.
@@ -64,7 +64,7 @@ public sealed class ListVipRosterEndpoint(IVipRosterService service)
 }
 
 /// <summary>
-/// V-1 (D-429) — <c>GET /api/v1/admin/visitors/vip/roster/export?format=csv|xlsx</c>.
+/// <c>GET /api/v1/admin/visitors/vip/roster/export?format=csv|xlsx</c>.
 /// Streams the roster as a downloadable CSV (default) or Excel file for the موج
 /// teams. Same <see cref="PermissionCatalog.Visitors.ExportVip"/> gate.
 /// </summary>

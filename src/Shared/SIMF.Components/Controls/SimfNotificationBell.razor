@@ -1,15 +1,15 @@
 @* SimfNotificationBell — top-bar bell with an unread badge and a
-   dropdown of the latest 5 unread notifications (P12 — D-053). Polls
+   dropdown of the latest 5 unread notifications. Polls
    the unread-count endpoint every 60 s; the caller's app provides the
    API path prefix because the CP and Website expose the same proxy
    under the same /account/api root. Click on the bell loads the
    dropdown; "View all" links to /account/notifications.
 
-   H3 — D-058: accessibility hardening. The trigger advertises its
-   popup (aria-haspopup="dialog", aria-controls, aria-expanded). The
-   accessible name folds the unread count in so a screen-reader user
-   gets the same information the visual badge gives. The dropdown is a
-   focus-managed dialog: it gets focus on open, Esc closes it (from
+   Accessibility hardening: the trigger advertises its popup
+   (aria-haspopup="true", aria-controls, aria-expanded). The accessible
+   name folds the unread count in so a screen-reader user gets the same
+   information the visual badge gives. The dropdown is a focus-managed
+   disclosure popover: it gets focus on open, Esc closes it (from
    trigger or dropdown), and a transparent backdrop closes on click
    outside. *@
 @namespace SIMF.Components.Controls
@@ -18,14 +18,14 @@
 @implements IAsyncDisposable
 
 <div class="simf-bell" data-open="@_open">
-    @* H22 — D-081: switched from role="dialog" + focus-trap to the
-       disclosure pattern (aria-expanded + aria-controls only). The
-       dropdown is a flat notification list, not a modal dialog —
+    @* Deliberately migrated away from role="dialog" plus a focus-trap
+       to the disclosure pattern (aria-expanded + aria-controls only).
+       The dropdown is a flat notification list, not a modal dialog —
        Tab naturally flows forward into the list and then onto the
        page, which matches what the user expects from a popover.
        aria-haspopup keeps a hint about the secondary surface
-       (value "true" rather than "dialog" — we no longer claim the
-       popup is a dialog). On close, focus is explicitly restored to
+       (value "true" rather than "dialog", because the popup is not
+       a dialog). On close, focus is explicitly restored to
        the trigger button via _triggerEl.FocusAsync() so a
        keyboard-only user lands back where they invoked the popup. *@
     <button type="button" class="simf-bell__trigger"

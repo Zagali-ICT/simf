@@ -1,12 +1,12 @@
 namespace SIMF.Contracts.Programme;
 
-/// <summary>D-199 (Mockup page 19 "Speakers") — one row in the public
-/// speakers list. Only the fields the visitor-facing list card shows: the
-/// avatar (resolved from <see cref="PhotoRelativePath"/> by the client),
-/// the rank line, and the bilingual name. <see cref="DisplayOrder"/> is
-/// carried so the client can keep a stable order if it re-sorts locally.
-/// Served by <c>GET /api/v1/app/speakers</c>. Mirrors the
-/// <c>PublicBoothSummary</c> public-read shape (D-199).</summary>
+/// <summary>One row in the public speakers list. Only the fields the
+/// visitor-facing list card shows: the avatar (resolved from
+/// <see cref="PhotoRelativePath"/> by the client), the rank line, and the
+/// bilingual name. <see cref="DisplayOrder"/> is carried so the client can keep
+/// a stable order if it re-sorts locally. Served by
+/// <c>GET /api/v1/app/speakers</c>. Mirrors the <c>PublicBoothSummary</c>
+/// public-read shape.</summary>
 public sealed record PublicSpeakerSummary(
     Guid Id,
     string Name,
@@ -27,10 +27,9 @@ public sealed record PublicSpeakerSummary(
 /// <summary>Envelope for the public speakers list.</summary>
 public sealed record PublicSpeakers(IReadOnlyList<PublicSpeakerSummary> Items);
 
-/// <summary>D-199 (Mockup page 20 "Speaker profile") — full public view of
-/// one speaker: the bilingual name + rank, nationality, the four
-/// bilingual rich-text tabs (Bio / Qualifications / Training experience /
-/// Awards — the four tabs on the mockup profile screen), the consent
+/// <summary>Full public view of one speaker: the bilingual name + rank,
+/// nationality, the four bilingual rich-text tabs (Bio / Qualifications /
+/// Training experience / Awards — the four tabs on the profile screen), the consent
 /// toggle the client uses to show/hide the "Request meeting" affordance,
 /// the opted-in social URLs, and the speaker's sessions.
 ///
@@ -77,7 +76,7 @@ public sealed record PublicSpeakerDetail(
 /// seat summary that the full agenda session detail
 /// (<see cref="PublicSessionDetail"/>) carries, so it is not coupled to
 /// that contract. Ordered by <see cref="Start"/>. Times are the <b>Saudi wall
-/// clock</b> (D-813), serialised zone-free; the Flutter client renders them
+/// clock</b>, serialised zone-free; the Flutter client renders them
 /// verbatim and must not convert by the device timezone.</summary>
 public sealed record PublicSpeakerSession(
     Guid Id,
