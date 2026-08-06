@@ -35,7 +35,7 @@ public sealed class GetPublicContentBlockEndpoint(IPublicCmsService service)
                 "لم يتم العثور على المحتوى.");
         }
 
-        // D-173: If-Modified-Since handshake. HTTP date precision is
+        // If-Modified-Since handshake. HTTP date precision is
         // one second, so the server-side LastUpdatedAt is truncated to
         // the second before comparison and before being emitted as
         // Last-Modified — otherwise a millisecond drift makes the very

@@ -7,7 +7,7 @@ using SIMF.Contracts.Email;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
-// D-735 — the email-template list. Mirrors the AiPrompts house pattern
+// The email-template list. Mirrors the AiPrompts house pattern
 // (SimfDataGrid + CrudShell + JS-proxy transport), minus Add / Delete: the
 // template set is a fixed six, so the only row action is Edit.
 public partial class EmailTemplatesList

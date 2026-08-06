@@ -1,7 +1,7 @@
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// D-148 — recorded direction of a single <c>GateScan</c>. Distinct from
+/// Recorded direction of a single <c>GateScan</c>. Distinct from
 /// <see cref="DirectionMode"/> (which is the gate-level policy) because a
 /// Both-mode gate emits both values across the day.
 /// </summary>

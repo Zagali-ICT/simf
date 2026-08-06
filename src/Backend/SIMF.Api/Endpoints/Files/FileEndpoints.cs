@@ -16,7 +16,7 @@ using SIMF.Contracts.Files;
 
 namespace SIMF.Api.Endpoints.Files;
 
-/// <summary>D-568 — shared helpers for the centralized file endpoints.</summary>
+/// <summary>Shared helpers for the centralized file endpoints.</summary>
 internal static class FileEndpointSupport
 {
     /// <summary>Builds the caller identity from the request principal so the
@@ -51,7 +51,7 @@ internal static class FileEndpointSupport
     }
 }
 
-/// <summary>D-568 — the single upload endpoint. Multipart; the service category +
+/// <summary>The single upload endpoint. Multipart; the service category +
 /// owner ride the form; the file is validated, scanned (fail-closed in
 /// Production), encrypted-per-policy and stored. Gated by <c>Files.Upload</c>.</summary>
 public sealed class FileUploadRequest
@@ -114,7 +114,7 @@ public sealed class FileUploadEndpoint(
     }
 }
 
-/// <summary>D-568 (P6) — record an external image link (a logo / cover hosted
+/// <summary>Record an external image link (a logo / cover hosted
 /// elsewhere). Owner-upsert; the download endpoint 302-redirects to it. Gated by
 /// <c>Files.Upload</c>, same as the byte upload.</summary>
 public sealed class FileLinkRequest
@@ -148,7 +148,7 @@ public sealed class FileLinkEndpoint(IFileService service)
     }
 }
 
-/// <summary>D-568 — the single download-by-GUID endpoint. Anonymous at the route
+/// <summary>The single download-by-GUID endpoint. Anonymous at the route
 /// (public files must serve without a token); authorization is resolved IN CODE
 /// from the file's own <see cref="FileService"/> policy, so a guessed GUID for a
 /// private file is rejected with a uniform 404.</summary>
@@ -210,7 +210,7 @@ public sealed class FileDownloadEndpoint(IFileService service)
     }
 }
 
-/// <summary>D-568 — soft-delete a file. Gated by <c>Files.Delete</c>; 409 when the
+/// <summary>Soft-delete a file. Gated by <c>Files.Delete</c>; 409 when the
 /// file is under a retention hold.</summary>
 public sealed class FileDeleteRoute
 {
@@ -237,7 +237,7 @@ public sealed class FileDeleteEndpoint(IFileService service)
     }
 }
 
-/// <summary>D-568 — PDPL right-to-erasure (P7): securely destroy a file's bytes
+/// <summary>PDPL right-to-erasure (P7): securely destroy a file's bytes
 /// even under a retention hold. Gated by the privileged <c>Files.ForceDelete</c>,
 /// held separately from ordinary delete so the elevated action is independently
 /// grantable and audited.</summary>

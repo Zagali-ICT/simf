@@ -6,7 +6,7 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-153 / D-157 / D-167 — Speaker entity configuration.
+/// <summary>Speaker entity configuration.
 /// <c>CountryId</c> is a real DB-enforced FK to <c>Country.Id</c>
 /// (same DbContext, same physical database — App DB).
 /// <c>UserProfileId</c> became a real DB FK after D-167 moved
@@ -54,7 +54,7 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.Property(speaker => speaker.PhotoRelativePath).HasMaxLength(256);
 
         builder.HasIndex(speaker => speaker.Code).IsUnique();
-        // D-159 — real DB FK on the same-DB reference. OnDelete=Restrict
+        // Real DB FK on the same-DB reference. OnDelete=Restrict
         // matches the soft-delete policy (admins deactivate countries via
         // IsActive=false; they never hard-delete a row a speaker points at).
         // The HasForeignKey call creates the FK index automatically, so the
@@ -63,7 +63,7 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
             .WithMany()
             .HasForeignKey(speaker => speaker.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
-        // D-167: real FK to UserProfile (now same-DB). Restrict because
+        // Real FK to UserProfile (now same-DB). Restrict because
         // a speaker keyed to a deactivated user profile should still
         // surface in the public speakers list — admins remove the
         // linkage by clearing the UserProfileId on the speaker, not by

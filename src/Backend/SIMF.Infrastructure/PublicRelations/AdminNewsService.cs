@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.PublicRelations;
 
-/// <summary>D-199 — admin CRUD over <see cref="News"/> (PR / marketing).
+/// <summary>Admin CRUD over <see cref="News"/> (PR / marketing).
 /// Mirrors <c>AdminDelegationService</c>:
 /// built on <see cref="SimfAppDbContext"/>, writes one audit row per mutation,
 /// stamps timestamps via <see cref="TimeProvider"/>, and guards a unique
@@ -126,7 +126,7 @@ internal sealed class AdminNewsService(
                 news.IsActive,
                 imageOwners.Contains(news.Id),
                 news.CreatedAt,
-                // D-506 — append in the same positional order as the record so the
+                // Append in the same positional order as the record so the
                 // Excel export round-trips the bilingual body + excerpt.
                 news.BodyArabic,
                 news.ExcerptArabic))

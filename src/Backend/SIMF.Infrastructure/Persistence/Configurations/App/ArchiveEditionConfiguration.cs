@@ -4,7 +4,7 @@ using SIMF.Domain.Archive;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-199 — ArchiveEdition configuration. Guid PK, bilingual title +
+/// <summary>ArchiveEdition configuration. Guid PK, bilingual title +
 /// optional bilingual summary, optional cover image path, three stat counters,
 /// soft-delete. Year is unique (one edition per year) and indexed for the
 /// default descending sort. Lengths mirror the FluentValidation validators

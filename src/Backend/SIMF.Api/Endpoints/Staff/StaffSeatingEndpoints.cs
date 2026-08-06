@@ -28,7 +28,7 @@ public sealed class StaffSeatByBadgeRoute : StaffSeatBadgeLookupRequest
     public Guid SessionId { get; set; }
 }
 
-/// <summary>D-771 — <c>POST /app/staff/sessions/{sessionId}/seating/by-badge</c>.
+/// <summary><c>POST /app/staff/sessions/{sessionId}/seating/by-badge</c>.
 /// Resolves a scanned badge QR id to where that guest is seated in this session.
 /// <c>Found = false</c> (with the guest's identity still filled in) means the
 /// badge is valid but holds no seat here; an unknown badge is 404
@@ -60,7 +60,7 @@ public sealed class StaffSeatOccupantRoute
     public int SeatNumber { get; set; }
 }
 
-/// <summary>D-771 — <c>GET /app/staff/sessions/{sessionId}/seating/seat</c>.
+/// <summary><c>GET /app/staff/sessions/{sessionId}/seating/seat</c>.
 /// Resolves one seat to its occupant: the reservation reference, the guest's
 /// bilingual name, whether a photo can be streamed, and — for a VVIP protocol
 /// seat, which has no registration — the administrator's manual guest hint.
@@ -86,7 +86,7 @@ public sealed class StaffSeatOccupantEndpoint(ISeatReservationService service)
                 req.SessionId, req.RowLabel, req.SeatNumber, ct)), ct);
 }
 
-/// <summary>D-771 — <c>GET
+/// <summary><c>GET
 /// /app/staff/sessions/{sessionId}/seating/occupant/{userId}/photo</c>. Streams
 /// the seated guest's avatar bytes so the desk can visually confirm the person in
 /// the seat. Reuses the shared <c>AvatarBytes</c> reader (unified StoredFile

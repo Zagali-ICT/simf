@@ -209,7 +209,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    // D-474 (#11) — speaker availability windows.
+    // Speaker availability windows.
     public Task<ApiCallResult<IReadOnlyList<AdminSpeakerAvailabilityWindow>>>
         ListSpeakerAvailabilityWindowsAsync(Guid speakerId, string accessToken,
             CancellationToken cancellationToken = default) =>
@@ -233,7 +233,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"speaker-availability-windows/{windowId}", content: null,
             accessToken, cancellationToken);
 
-    // D-753 — the forum-day window (MIN/MAX over active ProgrammeDay.Date). The CP
+    // The forum-day window (MIN/MAX over active ProgrammeDay.Date). The CP
     // meeting-scheduling pages read it to bound their date pickers to the event days.
     public Task<ApiCallResult<ForumWindowResponse>> GetForumWindowAsync(
         string accessToken, CancellationToken cancellationToken = default) =>
@@ -266,7 +266,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"hall-availability-windows/{windowId}", content: null,
             accessToken, cancellationToken);
 
-    // D-716 (item 7, GAP-2) — the hall's currently-free meeting slots (the
+    // The hall's currently-free meeting slots (the
     // meeting-review flow reads these before binding an accepted request to one).
     public Task<ApiCallResult<IReadOnlyList<HallAvailableSlot>>>
         GetHallAvailableSlotsAsync(Guid hallId, string accessToken,

@@ -16,13 +16,13 @@ public partial class HallsAddEdit
 
     private readonly Model _model = new();
     private string _capacityInput = "0";
-    // D-485 — seat-selection mode ("0" = AssignedSeat, "1" = OpenSeating).
+    // Seat-selection mode ("0" = AssignedSeat, "1" = OpenSeating).
     private string _seatModeInput = "0";
     private static readonly string[] _seatModeOptions = { "0", "1" };
     private string _geoLatInput = string.Empty;
     private string _geoLonInput = string.Empty;
     private string _geoRadiusInput = string.Empty;
-    // D-839 — blank means "inherit the global value", which is what every hall
+    // Blank means "inherit the global value", which is what every hall
     // carried before this field existed.
     private string _arrivalGraceInput = string.Empty;
     private EditContext _editContext = default!;
@@ -50,7 +50,7 @@ public partial class HallsAddEdit
     }
 
 
-    /// <summary>D-839 — the shared 0..240 bound as the input's own `max`, so the
+    /// <summary>The shared 0..240 bound as the input's own `max`, so the
     /// browser refuses out-of-range values before the parser has to.</summary>
     private static string ArrivalGraceMax =>
         WalkInModeOptions.MaxArrivalGraceMinutes.ToString(CultureInfo.InvariantCulture);
@@ -118,7 +118,7 @@ public partial class HallsAddEdit
         finally { _busy = false; }
     }
 
-    // P5.1 — D-240: parse the geofence inputs. All three together (a valid
+    // Parse the geofence inputs. All three together (a valid
     // coordinate + positive radius ≤ 100 km), or all three empty (no geofence).
     private bool TryParseGeofence(out double? lat, out double? lon, out double? radius)
     {
@@ -149,11 +149,11 @@ public partial class HallsAddEdit
         return true;
     }
 
-    // D-839 — blank is legal and means "inherit"; anything else must be a whole
+    // Blank is legal and means "inherit"; anything else must be a whole
     // number of minutes inside the one shared bound. Mirrors the server rule in
     // AdminHallService.ValidateArrivalGrace so the admin is told here rather than
     // by a round-trip.
-    // D-485 — the hall's seat-selection mode select ("0" = assigned, "1" = open).
+    // The hall's seat-selection mode select ("0" = assigned, "1" = open).
     private string SeatModeLabel(string id) => id switch
     {
         "1" => L["Admin.Halls.SeatMode.Open"],

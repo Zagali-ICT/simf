@@ -14,13 +14,13 @@ public sealed record AdminSponsorSummary(
     int DisplayOrder,
     bool IsActive,
     DateTime CreatedAt,
-    // D-502 — carried so the grid Excel export can round-trip them (not rendered
+    // Carried so the grid Excel export can round-trip them (not rendered
     // as grid columns). Optional; blank when unset.
     string? Tagline = null,
     string? TaglineArabic = null,
     string? About = null,
     string? AboutArabic = null,
-    // D-740 — "an active SponsorLogo asset exists" so the grid renders the real
+    // "an active SponsorLogo asset exists" so the grid renders the real
     // logo thumbnail, else an initials tile (set on read via a batched query).
     bool HasLogo = false);
 
@@ -37,7 +37,7 @@ public sealed record AdminSponsorDetail(
     bool IsActive,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    // D-432 — optional bilingual tagline (Figma 922:2824).
+    // Optional bilingual tagline (Figma 922:2824).
     string? Tagline = null,
     string? TaglineArabic = null,
     // Optional bilingual about paragraph (≤2048 chars each).
@@ -73,7 +73,7 @@ public sealed class AdminCreateSponsorRequest
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
 
-    /// <summary>D-432 — optional bilingual tagline (≤256 chars each).</summary>
+    /// <summary>Optional bilingual tagline (≤256 chars each).</summary>
     public string? Tagline { get; set; }
     public string? TaglineArabic { get; set; }
 
@@ -111,7 +111,7 @@ public class AdminUpdateSponsorRequest
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
 
-    /// <summary>D-432 — optional bilingual tagline (≤256 chars each).</summary>
+    /// <summary>Optional bilingual tagline (≤256 chars each).</summary>
     public string? Tagline { get; set; }
     public string? TaglineArabic { get; set; }
 

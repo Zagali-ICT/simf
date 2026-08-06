@@ -11,7 +11,7 @@ using SIMF.Common.Options;
 namespace SIMF.Infrastructure.Files;
 
 /// <summary>
-/// D-568 — a real malware scanner backed by a <c>clamd</c> daemon over TCP using
+/// A real malware scanner backed by a <c>clamd</c> daemon over TCP using
 /// the INSTREAM protocol. Registered as <see cref="IUploadScanner"/> when
 /// <c>UploadScanning:Engine = "ClamAV"</c>; otherwise the EICAR
 /// <c>DefaultUploadScanner</c> is used.

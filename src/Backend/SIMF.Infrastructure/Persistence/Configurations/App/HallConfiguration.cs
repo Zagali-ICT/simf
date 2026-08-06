@@ -5,14 +5,14 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-134 Sprint B — Hall entity configuration (D-135 freeze-lift).
+/// <summary>Hall entity configuration.
 /// Mirrors <see cref="ThemeConfiguration"/>; unique index on <c>Code</c>.</summary>
 internal sealed class HallConfiguration : IEntityTypeConfiguration<Hall>
 {
     public void Configure(EntityTypeBuilder<Hall> builder)
     {
-        // D-611 (Wave B) — geofence columns are all-null together, or all-set with a positive radius.
-        // D-839 — the arrival grace is null (inherit) or within the one shared bound.
+        // Geofence columns are all-null together, or all-set with a positive radius.
+        // The arrival grace is null (inherit) or within the one shared bound.
         builder.ToTable("Halls", table =>
         {
             table.HasCheckConstraint(

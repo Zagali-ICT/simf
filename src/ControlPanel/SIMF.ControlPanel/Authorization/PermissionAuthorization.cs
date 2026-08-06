@@ -46,7 +46,7 @@ public sealed class PermissionPolicyProvider : IAuthorizationPolicyProvider
 {
     private readonly DefaultAuthorizationPolicyProvider fallback;
 
-    /// <summary>D-832 — one built policy per code, for the lifetime of the process.
+    /// <summary>One built policy per code, for the lifetime of the process.
     ///
     /// <para>A permission policy is immutable and there are at most as many of them
     /// as there are catalogue codes, but this provider is asked for one on EVERY

@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-134 Sprint B — admin CRUD over <c>Themes</c>
+/// <summary>Admin CRUD over <c>Themes</c>
 /// (SIMF-FDS-004 §5.1). Mirrors the InterestEndpoints shape.</summary>
 public sealed class ListThemesEndpoint(IAdminThemeService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminThemeSummary>>>
@@ -74,7 +74,7 @@ public sealed class CreateThemeEndpoint(IAdminThemeService service)
     }
 }
 
-/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// <summary>Binds {id} + body via a derived route that INHERITS the
 /// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
 /// D-842 (sessions), D-843 (gates, profile types) and the four before them

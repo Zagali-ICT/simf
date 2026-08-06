@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminSessionsTests.cs
-// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
+// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
 // Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
-// Tests: SIMF.Api.Tests/ArrivalGraceResolutionTests.cs (D-842 — the PUT round-trip)
+// Tests: SIMF.Api.Tests/ArrivalGraceResolutionTests.cs
 using FastEndpoints;
 using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
@@ -11,7 +11,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-165 (gap doc G3) — admin CRUD over <c>Sessions</c>
+/// <summary>Admin CRUD over <c>Sessions</c>
 /// (SIMF-FDS-004 §5.3 + PDF §2.9). Mirrors the SpeakerEndpoints shape;
 /// speaker + theme selections ride on the body as M-to-M sets.</summary>
 public sealed class ListSessionsEndpoint(IAdminSessionService service)
@@ -74,7 +74,7 @@ public sealed class CreateSessionEndpoint(IAdminSessionService service)
     }
 }
 
-/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// <summary>Binds {id} + body via a derived route that INHERITS the
 /// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
 /// D-842 (sessions), D-843 (gates, profile types) and the four before them

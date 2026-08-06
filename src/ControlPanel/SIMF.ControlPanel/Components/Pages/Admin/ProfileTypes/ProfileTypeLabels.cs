@@ -3,7 +3,7 @@ using SIMF.Common.Enums;
 namespace SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes;
 
 /// <summary>
-/// D-125 — shared label helpers for the ProfileTypes CRUD pages and the
+/// Shared label helpers for the ProfileTypes CRUD pages and the
 /// pending-approval modals. Localises the raw <c>UserType</c> string the
 /// API returns ("Visitor", "Other", "Admin") via the existing
 /// <c>ResUserType</c> resources so the form, the grid column, the Details

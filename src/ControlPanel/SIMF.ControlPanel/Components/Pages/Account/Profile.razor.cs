@@ -24,7 +24,7 @@ public partial class Profile
     private string? _avatarError;
     private string? _avatarOk;
     private string? _displayFlash;
-    // D-119 — cropper flow state.
+    // Cropper flow state.
     private bool _cropperOpen;
     private string _cropperImageUrl = string.Empty;
     private string _cropperFileName = "avatar.png";
@@ -87,7 +87,7 @@ public partial class Profile
                 _setup = null;
                 _flashOk = L["Profile.TwoFactor.ConfirmEnabled"];
                 // Surface the fresh recovery-code batch returned by confirm
-                // (D-040) — they're plaintext exactly once.
+                // They're plaintext exactly once.
                 _recoveryCodes = envelope.Data.RecoveryCodes;
                 await LoadProfileAsync();
             }
@@ -201,7 +201,7 @@ public partial class Profile
 
     // -- Avatar ---------------------------------------------------------------
 
-    // D-119 — file pick handler. Reads the file as a base64 data URL and
+    // File pick handler. Reads the file as a base64 data URL and
     // opens the cropper modal. No upload happens yet; the cropper's
     // OnCropped is what actually POSTs to the API.
     private async Task OnAvatarFilePickedAsync()
@@ -227,7 +227,7 @@ public partial class Profile
         }
     }
 
-    // D-119 — cropper confirm handler. Receives the cropped 400×400 PNG as
+    // Cropper confirm handler. Receives the cropped 400×400 PNG as
     // a base64 data URL and uploads it via the existing avatar endpoint.
     private async Task OnAvatarCroppedAsync(string croppedDataUrl)
     {
@@ -255,7 +255,7 @@ public partial class Profile
         {
             _busy = false;
             _cropperImageUrl = string.Empty;
-            // D-119 — clear the file input so picking the same file fires
+            // Clear the file input so picking the same file fires
             // the change event again. Uses clearFileInput (no click) — calling
             // triggerFileInput here would re-open the OS picker.
             await JS.InvokeVoidAsync("simfAccount.clearFileInput", "avatar-input");
@@ -269,10 +269,10 @@ public partial class Profile
         return Task.CompletedTask;
     }
 
-    // D-119 — shape of simfAccount.readFileAsDataUrl's JSON response.
+    // Shape of simfAccount.readFileAsDataUrl's JSON response.
     private sealed record FileReadResult(bool Ok, string? DataUrl, string? FileName, string? MimeType, string? Reason);
 
-    // D-809 — the avatar delete used to fire on the first click.
+    // The avatar delete used to fire on the first click.
     private bool _confirmingAvatarRemove;
 
     private async Task ConfirmRemoveAvatarAsync()

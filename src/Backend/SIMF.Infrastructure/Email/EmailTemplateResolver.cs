@@ -6,7 +6,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Email;
 
-/// <summary>D-735 — resolves a transactional email from the active DB override
+/// <summary>Resolves a transactional email from the active DB override
 /// when one exists, else the code-owned <see cref="EmailTemplateCatalog"/>
 /// default. Never throws: any lookup failure logs a warning and uses the
 /// default, so the email is always built. The template read is a plain,

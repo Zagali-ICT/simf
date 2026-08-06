@@ -119,7 +119,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.GetSessionPresentAttendeesAsync(sessionId, token));
         });
 
-        // D-269 — speaker meeting requests BFF passthroughs.
+        // Speaker meeting requests BFF passthroughs.
         group.MapPost("/admin/speaker-meeting-requests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -227,7 +227,7 @@ internal static partial class AccountEndpoints
                 id, body, token));
         });
 
-        // D-474 (#11) — speaker availability windows passthroughs.
+        // Speaker availability windows passthroughs.
         group.MapGet("/admin/speakers/{speakerId:guid}/availability-windows",
             async (Guid speakerId, HttpContext http, SimfAdminClient api) =>
         {
@@ -274,7 +274,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeleteHallAvailabilityWindowAsync(windowId, token));
         });
-        // D-716 (item 7, GAP-2) — the hall's free meeting slots (read by the
+        // The hall's free meeting slots (read by the
         // speaker-meeting-request review modal before binding an accept to one).
         group.MapGet("/admin/halls/{hallId:guid}/available-slots",
             async (Guid hallId, HttpContext http, SimfAdminClient api) =>
@@ -284,7 +284,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.GetHallAvailableSlotsAsync(hallId, token));
         });
 
-        // D-478 (#11) — delegation meeting requests BFF passthroughs.
+        // Delegation meeting requests BFF passthroughs.
         group.MapPost("/admin/delegation-meeting-requests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {

@@ -81,7 +81,7 @@ public partial class AiInvocationsLog
         finally { _loading = false; }
     }
 
-    // D-179 — SOC drill-down: the full redacted payload for one invocation,
+    // SOC drill-down: the full redacted payload for one invocation,
     // reusing the existing GET /admin/ai/invocations/{id} endpoint (gated on
     // AiInvocations.View, the same permission this page requires).
     private AdminAiInvocationDetail? _detail;

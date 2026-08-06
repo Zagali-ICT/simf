@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Configuration;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-768 — upload (replace) the home/landing hero background video. Gated by
+/// <summary>Upload (replace) the home/landing hero background video. Gated by
 /// OrganizationProfile.Manage. The file rides the multipart form ("file"); the bytes
 /// stream straight to disk and <c>BackgroundVideoUrl</c> is pointed at the served
 /// <c>.mp4</c> route so the Flutter home hero (which cannot render a clipped YouTube
@@ -109,7 +109,7 @@ public sealed class UploadOrganizationHeroVideoEndpoint(
     }
 }
 
-/// <summary>D-768 — remove the uploaded hero background video (reverts the hero to
+/// <summary>Remove the uploaded hero background video (reverts the hero to
 /// the banner image / bundled media). Gated by OrganizationProfile.Manage. Clears
 /// <c>BackgroundVideoUrl</c> only when it still points at our served route, so a
 /// separately-pasted external / YouTube link is left intact.</summary>

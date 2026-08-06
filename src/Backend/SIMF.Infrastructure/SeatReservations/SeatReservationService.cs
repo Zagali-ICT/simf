@@ -52,10 +52,10 @@ internal sealed class SeatReservationService(
             .Select(r => new
             {
                 r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForUserId,
-                // D-572 — carry the booking status so MyCell can drive the app's
+                // Carry the booking status so MyCell can drive the app's
                 // seat-card hint (Pending → await approval / Approved → show badge).
                 r.Status,
-                // D-771 — the admin-typed VVIP guest hint travels with the cell so a
+                // The admin-typed VVIP guest hint travels with the cell so a
                 // protocol seat shows "reserved for the Minister" instead of a bare
                 // blocked square.
                 r.GuestHint, r.GuestHintArabic,
@@ -95,7 +95,7 @@ internal sealed class SeatReservationService(
             .Where(h => h.Id == session.HallId)
             .Select(h => new { h.Capacity, h.SeatSelectionMode })
             .SingleAsync(cancellationToken);
-        // D-706 — a hall/session with no seat layout has no assignable seats, so it
+        // A hall/session with no seat layout has no assignable seats, so it
         // is inherently open seating (a one-tap join); otherwise honour the session
         // override, else the hall's configured mode. Without this, a seeded session
         // (AssignedSeat default, no layout) opened an empty seat picker — the "join
@@ -104,7 +104,7 @@ internal sealed class SeatReservationService(
         var effectiveMode = EffectiveMode(
             session.SeatSelectionModeOverride, hall.SeatSelectionMode, hasLayout);
 
-        // D-767 — emit the per-row counts only for a ragged layout; null (key omitted)
+        // Emit the per-row counts only for a ragged layout; null (key omitted)
         // for a uniform one keeps the shipped wire identical for old and new apps, which
         // then render every row at the still-emitted seatsPerRow (= max for a ragged layout).
         var seatCounts = string.IsNullOrWhiteSpace(layout?.SeatCounts)
@@ -124,17 +124,17 @@ internal sealed class SeatReservationService(
             sessionId, session.HallId, hall.Capacity, session.CapacityOverride,
             rowLabels, layout?.SeatsPerRow ?? 0,
             cells, mine, cells.Count,
-            // D-432 — the session title is already loaded in the snapshot.
+            // The session title is already loaded in the snapshot.
             session.Title, session.TitleArabic,
-            // D-485 — the effective mode drives the app's Join CTA.
+            // The effective mode drives the app's Join CTA.
             effectiveMode,
-            // D-767 — the ragged per-row counts (null = uniform).
+            // The ragged per-row counts (null = uniform).
             seatCounts,
-            // D-771 — the per-row tiers + the caller's own VIP tier.
+            // The per-row tiers + the caller's own VIP tier.
             seatTiers, callerIsVip);
     }
 
-    /// <summary>D-706 — the mode the app branches its Join CTA on. A session with
+    /// <summary>The mode the app branches its Join CTA on. A session with
     /// no seat layout has no assignable seats, so it is inherently
     /// <see cref="SeatSelectionMode.OpenSeating"/> (a one-tap join) whatever the
     /// hall's configured mode says; a laid-out session honours the session override,
@@ -157,7 +157,7 @@ internal sealed class SeatReservationService(
         EnsureSeatPickAllowed(ctx);
         EnsureSessionNotEnded(ctx.End);
         ValidateSeatBounds(ctx, row, seat);
-        // D-771 — the seat TIER gate, enforced on the SERVER (the app only greys the
+        // The seat TIER gate, enforced on the SERVER (the app only greys the
         // ineligible seats out): a VVIP seat is never self-reservable, a VIP seat
         // needs the VIP tier, a Normal seat is open to everyone.
         EnsureTierEligible(
@@ -259,7 +259,7 @@ internal sealed class SeatReservationService(
         // (a deadlock victim re-runs and its re-count sees the committed rival),
         // filling exactly the declared capacity. See InsertHoldWithinCapacityAsync.
         var now = timeProvider.SimfNow();
-        // D-771 — the auto-pick must respect the same tier rule as the self-pick, so
+        // The auto-pick must respect the same tier rule as the self-pick, so
         // resolve the caller's VIP tier ONCE (outside the serializable transaction —
         // it is a read of admin-curated profile data, not of the seat state).
         var callerIsVip = await IsVipVisitorAsync(actorUserId, cancellationToken);
@@ -293,7 +293,7 @@ internal sealed class SeatReservationService(
             .Where(h => h.Id == session.HallId)
             .Select(h => new { h.Capacity, h.SeatSelectionMode })
             .SingleAsync(cancellationToken);
-        // D-706 — resolve the effective mode with the no-layout rule so a session
+        // Resolve the effective mode with the no-layout rule so a session
         // that has no seat layout accepts this open-seating join (there are no
         // seats to pick); a laid-out assigned-seat session still requires a pick.
         var layout = await LoadLayoutAsync(session.HallId, cancellationToken);
@@ -383,7 +383,7 @@ internal sealed class SeatReservationService(
         // move during a live session goes through staff, not the app.
         EnsureSessionNotStarted(ctx.Start);
         ValidateSeatBounds(ctx, row, seat);
-        // D-771 — the DESTINATION seat must pass exactly the same tier gate as a
+        // The DESTINATION seat must pass exactly the same tier gate as a
         // first reservation, via the one shared rule: a VVIP seat is never
         // self-reservable, a VIP seat needs the VIP tier.
         EnsureTierEligible(
@@ -573,14 +573,14 @@ internal sealed class SeatReservationService(
         var layout = await LoadLayoutAsync(hallId, cancellationToken);
         var rowLabels = ParseRowLabels(layout?.RowLabels);
         var seatsPerRow = layout?.SeatsPerRow ?? 0;
-        // D-767 — the expanded per-row counts drive the capacity (sum), matching
+        // The expanded per-row counts drive the capacity (sum), matching
         // rows × seatsPerRow when uniform; the wire field stays null when uniform so the
         // CP editor reads back exactly what it wrote.
         var expanded = layout is null
             ? Array.Empty<int>()
             : ExpandSeatCounts(layout, rowLabels);
         var seatCounts = string.IsNullOrWhiteSpace(layout?.SeatCounts) ? null : expanded;
-        // D-771 — the editor always reads back one tier per row (Normal for a legacy
+        // The editor always reads back one tier per row (Normal for a legacy
         // layout), so the CP tier selects render without a special "unset" case.
         var seatTiers = layout is null
             ? Array.Empty<SeatTier>()
@@ -618,7 +618,7 @@ internal sealed class SeatReservationService(
                 "Row labels must be 1–26 unique entries of 1–8 chars each.",
                 "يجب أن تكون رموز الصفوف بين 1 و 26 إدخالاً فريداً بطول 1 إلى 8 محارف.");
         }
-        // D-767 — resolve the per-row seat counts. When SeatCounts is supplied it is
+        // Resolve the per-row seat counts. When SeatCounts is supplied it is
         // AUTHORITATIVE (a ragged grid, one count per row); when null/empty the layout
         // stays UNIFORM on the frozen SeatsPerRow. Both branches produce one concrete
         // per-row array so capacity, the orphan guard and the persisted CSV agree.
@@ -673,7 +673,7 @@ internal sealed class SeatReservationService(
         var layout = await appDbContext.HallSeatLayouts
             .SingleOrDefaultAsync(l => l.HallId == hallId, cancellationToken);
 
-        // D-771 — resolve the per-row seat TIERS (owner 2026-07-26). Supplied →
+        // Resolve the per-row seat TIERS (owner 2026-07-26). Supplied →
         // AUTHORITATIVE (one defined tier per row). Omitted on an EXISTING layout →
         // keep what is stored, so an older client cannot silently wipe the tiers.
         // Omitted when DEFINING a layout for the first time → every row defaults to
@@ -824,7 +824,7 @@ internal sealed class SeatReservationService(
     {
         var row = (request.RowLabel ?? string.Empty).Trim();
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
-        // D-767 — resolve the row's index so the block fills exactly THIS row's seat
+        // Resolve the row's index so the block fills exactly THIS row's seat
         // count (ctx.SeatCounts[rowIndex]) rather than a single uniform width.
         var rowIndex = RowIndex(ctx.RowLabels, row);
         if (rowIndex < 0)
@@ -859,7 +859,7 @@ internal sealed class SeatReservationService(
                 ReservedForUserId = null,
                 CreatedByUserId = actorUserId,
                 CreatedAt = now,
-                // P2.2 — D-227: an admin block is not a visitor booking; it is
+                // An admin block is not a visitor booking; it is
                 // confirmed immediately and never enters the approval queue.
                 Status = BookingStatus.Approved,
             };
@@ -921,7 +921,7 @@ internal sealed class SeatReservationService(
             CreatedAt = timeProvider.SimfNow(),
             // An admin block is confirmed immediately (never enters the queue).
             Status = BookingStatus.Approved,
-            // D-771 — the manual guest hint. A VVIP seat has no registration, so this
+            // The manual guest hint. A VVIP seat has no registration, so this
             // free text IS the occupant record the app + the staff seating desk read.
             GuestHint = NormaliseHint(request.GuestHint),
             GuestHintArabic = NormaliseHint(request.GuestHintArabic),
@@ -938,7 +938,7 @@ internal sealed class SeatReservationService(
             cancellationToken);
     }
 
-    /// <summary>D-771 — trim the admin-typed guest hint to null-or-content and reject
+    /// <summary>Trim the admin-typed guest hint to null-or-content and reject
     /// anything past the persisted 256-char column, so an over-long hint fails as a
     /// caller error rather than a truncation or a DbUpdateException.</summary>
     private static string? NormaliseHint(string? value)
@@ -1035,7 +1035,7 @@ internal sealed class SeatReservationService(
 
         // DEF-SEA-001 — an admin must see WHOSE seat they are about to release, so
         // resolve the holders' bilingual names in one batch. The names live on the
-        // App-side UserProfile, so there is no cross-database read (D-157).
+        // App-side UserProfile, so there is no cross-database read.
         var holderIds = rows
             .Where(r => r.ReservedForUserId is not null)
             .Select(r => r.ReservedForUserId!.Value)
@@ -1080,7 +1080,7 @@ internal sealed class SeatReservationService(
         // never appear here. The session is joined up-front (before paging) so the
         // session and seat columns are server-filterable/sortable (D-255). The
         // attendee name is resolved cross-DB from Identity afterwards, so that
-        // column stays non-filterable/non-sortable (D-157).
+        // column stays non-filterable/non-sortable.
         var joined = appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.Status == BookingStatus.Approved
                 && r.ReleasedAt == null
@@ -1407,7 +1407,7 @@ internal sealed class SeatReservationService(
             null, SeatReservationKind.UserBooking, BookingStatus.Cancelled,
             null, string.Empty, string.Empty, null, null, false, null, false);
 
-    /// <summary>D-771 — the occupant facts the seating desk shows: bilingual name +
+    /// <summary>The occupant facts the seating desk shows: bilingual name +
     /// badge id (from the App-side <c>UserProfile</c>), whether an avatar exists in
     /// the unified file store, and whether they have already checked into this
     /// session. Everything is on the App DB, so there is no cross-database read and
@@ -1590,7 +1590,7 @@ internal sealed class SeatReservationService(
             : csv.Split(',', StringSplitOptions.RemoveEmptyEntries
                 | StringSplitOptions.TrimEntries);
 
-    /// <summary>D-767 — expand a layout's per-row seat counts into a concrete array
+    /// <summary>Expand a layout's per-row seat counts into a concrete array
     /// parallel to <paramref name="rowLabels"/>. When <c>SeatCounts</c> is null/blank the
     /// layout is uniform, so every row gets <c>SeatsPerRow</c> (unchanged pre-D-767
     /// behaviour); when set it is a CSV of ints, one per row. A stored CSV whose length
@@ -1627,7 +1627,7 @@ internal sealed class SeatReservationService(
         return counts;
     }
 
-    /// <summary>D-771 — expand a layout's per-row seat TIERS into a concrete array
+    /// <summary>Expand a layout's per-row seat TIERS into a concrete array
     /// parallel to <paramref name="rowLabels"/>. A null/blank <c>SeatTiers</c> is a
     /// layout written before D-771, so every row reads
     /// <see cref="SeatTier.Normal"/> — the exact pre-D-771 behaviour, no shipped
@@ -1669,7 +1669,7 @@ internal sealed class SeatReservationService(
         return tiers;
     }
 
-    /// <summary>D-771 — the eligibility rule, in ONE place so the self-pick, the
+    /// <summary>The eligibility rule, in ONE place so the self-pick, the
     /// random pick and the seat map can never disagree (owner 2026-07-26):
     /// <list type="bullet">
     /// <item><see cref="SeatTier.Vvip"/> — never self-reservable by anyone. There is
@@ -1688,7 +1688,7 @@ internal sealed class SeatReservationService(
             _ => true,
         };
 
-    /// <summary>D-771 — throw the caller-facing eligibility error for the seat's
+    /// <summary>Throw the caller-facing eligibility error for the seat's
     /// tier. Two distinct codes so the app can explain the refusal precisely: a VVIP
     /// seat is reserved for protocol (nobody may take it), a VIP seat needs the VIP
     /// tier.</summary>
@@ -1711,7 +1711,7 @@ internal sealed class SeatReservationService(
             "هذا المقعد مخصص لكبار الشخصيات.");
     }
 
-    /// <summary>D-771 — is this visitor a VIP-tier attendee? Reuses the EXISTING
+    /// <summary>Is this visitor a VIP-tier attendee? Reuses the EXISTING
     /// VIP-tier notion rather than inventing a parallel one:
     /// <c>UserProfile.ProfileTypeId → UserProfileType.AllowsVipMeetingSlots</c>, which
     /// the seeder sets on the VVIP + VIP audience tiers (D-611) and the app already
@@ -1725,7 +1725,7 @@ internal sealed class SeatReservationService(
                 p => p.ProfileTypeId, t => (Guid?)t.Id, (p, t) => t.AllowsVipMeetingSlots)
             .FirstOrDefaultAsync(cancellationToken);
 
-    /// <summary>D-767 — index of <paramref name="label"/> within
+    /// <summary>Index of <paramref name="label"/> within
     /// <paramref name="rowLabels"/> (OrdinalIgnoreCase), or -1 when absent. Used to map a
     /// row label onto its per-row seat count in the expanded array.</summary>
     private static int RowIndex(IReadOnlyList<string> rowLabels, string label)
@@ -1742,7 +1742,7 @@ internal sealed class SeatReservationService(
 
     private static void EnsureSeatPickAllowed(SessionContext ctx)
     {
-        // D-485 — the seat-pick paths are only for assigned-seat sessions; an
+        // The seat-pick paths are only for assigned-seat sessions; an
         // open-seating session is joined via JoinOpenSeatingAsync (no seat).
         if (ctx.EffectiveMode == SeatSelectionMode.OpenSeating)
         {
@@ -1756,7 +1756,7 @@ internal sealed class SeatReservationService(
     private static void ValidateSeatBounds(
         SessionContext ctx, string rowLabel, int seatNumber)
     {
-        // D-767 — bound the seat against THIS row's count (ctx.SeatCounts[i]), not a
+        // Bound the seat against THIS row's count (ctx.SeatCounts[i]), not a
         // single uniform width, so a ragged layout accepts/rejects per row.
         var i = RowIndex(ctx.RowLabels, rowLabel ?? string.Empty);
         if (i < 0)
@@ -1824,7 +1824,7 @@ internal sealed class SeatReservationService(
     }
 
     /// <summary>The session's effective place count: the seat-layout total
-    /// (D-767: sum of the per-row seat counts — equal to rows × seatsPerRow when the
+    /// Sum of the per-row seat counts — equal to rows × seatsPerRow when the
     /// layout is uniform) capped by the smaller of Session.CapacityOverride and
     /// Hall.Capacity. One definition shared by the reserve pre-check and the
     /// post-insert backstop so they can never disagree.</summary>
@@ -1946,11 +1946,11 @@ internal sealed class SeatReservationService(
         SessionContext ctx, IReadOnlySet<(string Row, int Seat)> taken,
         Guid actorUserId, DateTime now, bool callerIsVip)
     {
-        // D-767 — index loop so each row's free-seat scan stops at ITS own count
+        // Index loop so each row's free-seat scan stops at ITS own count
         // (ctx.SeatCounts[i]); a ragged layout never yields a phantom seat on a short row.
         for (var i = 0; i < ctx.RowLabels.Count; i++)
         {
-            // D-771 — skip whole rows the caller may not sit in (a VVIP protocol row,
+            // Skip whole rows the caller may not sit in (a VVIP protocol row,
             // or a VIP row for a non-VIP visitor), so an auto-pick can never hand out
             // a seat the self-pick would have refused.
             if (!IsSelfReservable(ctx.SeatTiers[i], callerIsVip))
@@ -2082,11 +2082,11 @@ internal sealed class SeatReservationService(
         string SessionTitle, string SessionTitleArabic,
         DateTime Start, DateTime End,
         SeatSelectionMode EffectiveMode,
-        // D-767 — the expanded per-row seat counts (one per RowLabels entry; a repeat of
+        // The expanded per-row seat counts (one per RowLabels entry; a repeat of
         // SeatsPerRow when the layout is uniform). Every per-seat bound/capacity/random-
         // pick decision reads this array so uniform and variable layouts share one path.
         IReadOnlyList<int> SeatCounts,
-        // D-771 — the expanded per-row seat TIERS (one per RowLabels entry; all Normal
+        // The expanded per-row seat TIERS (one per RowLabels entry; all Normal
         // for a legacy layout that stores none). Every eligibility decision reads this
         // array so the self-pick, the random pick and the seat map can never disagree.
         IReadOnlyList<SeatTier> SeatTiers);

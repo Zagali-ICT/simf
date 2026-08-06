@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapAiAndEmail(IEndpointRouteBuilder group)
     {
-        // D-176 (gap doc G12) — AI module admin CRUD + invocations log.
+        // AI module admin CRUD + invocations log.
         group.MapPost("/admin/ai/prompts/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -92,7 +92,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.ListAiInvocationsAsync(body, token));
         });
 
-        // D-188 — append-only prompt version history (CP Phase-0 history modal).
+        // Append-only prompt version history (CP Phase-0 history modal).
         group.MapGet("/admin/ai/prompts/{id:guid}/history",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
@@ -101,7 +101,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.GetAiPromptHistoryAsync(id, token));
         });
 
-        // D-179 — full redacted invocation payload (CP Phase-0 detail modal).
+        // Full redacted invocation payload (CP Phase-0 detail modal).
         group.MapGet("/admin/ai/invocations/{id:guid}",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
@@ -147,7 +147,7 @@ internal static partial class AccountEndpoints
                 }, token));
         });
 
-        // D-735 — transactional email-template editor (list / read / edit /
+        // Transactional email-template editor (list / read / edit /
         // reset / preview). The {type} segment is the EmailTemplateType name.
         group.MapPost("/admin/email/templates/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

@@ -1,5 +1,5 @@
-// Tests: SIMF.Api.Tests/JwtTokenStampTests.cs (D-848 — nbf/exp are host-independent)
-// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording-stream token)
+// Tests: SIMF.Api.Tests/JwtTokenStampTests.cs
+// Tests: SIMF.Api.Tests/SessionRecordingTests.cs
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -18,7 +18,7 @@ namespace SIMF.Infrastructure.Identity;
 /// <summary>Issues HMAC-SHA256-signed JWT access tokens (SIMF-API-001 section 12.2).</summary>
 internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider timeProvider)    : IJwtTokenService
 {
-    /// <summary>D-443 — the absolute session lifetime read from
+    /// <summary>The absolute session lifetime read from
     /// <c>Jwt:SessionLifetimeHours</c> (default 24h).</summary>
     public TimeSpan RefreshTokenLifetime => TimeSpan.FromHours(options.Value.SessionLifetimeHours);
 
@@ -39,14 +39,14 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             // The security stamp lets a sensitive endpoint detect a revoked
             // session before the token expires (SIMF-FDS-001 Amendment A.6).
             new("security_stamp", user.SecurityStamp ?? string.Empty),
-            // P10 — D-051: account_state + user_type travel in every token
+            // Account_state + user_type travel in every token
             // so an authorization handler (P11) can route a non-approved
             // user to the pending / rejected page without an extra round
             // trip, and the client can switch surfaces (CP vs App) by
             // user_type alone.
             new("account_state", user.AccountState.ToString()),
             new("user_type", user.UserType.ToString()),
-            // D-161 — the resolved mobile-app role the Flutter app uses to
+            // The resolved mobile-app role the Flutter app uses to
             // route screens / show or hide gate-operator surfaces.
             new("mobile_app_role", mobileAppRole.ToString()),
             // Held-item #2c — RFC 8176 `amr`. "mfa" means this token cleared a
@@ -125,7 +125,7 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
     }
 
     /// <summary>
-    /// D-848 — "now" for the <c>nbf</c> / <c>exp</c> stamps, deliberately in UTC
+    /// "now" for the <c>nbf</c> / <c>exp</c> stamps, deliberately in UTC
     /// rather than through <see cref="SimfClockExtensions.SimfNow"/>.
     ///
     /// <para>This is the same exemption the 2026-07-31 Saudi-local cutover

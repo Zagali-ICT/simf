@@ -28,7 +28,7 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasMaxLength(32)
             .IsRequired();
 
-        // D-161 — MobileAppRole persisted as the stringly enum value
+        // MobileAppRole persisted as the stringly enum value
         // (None / Visitor / Staff / Moderator) so a DBA reading the
         // table can interpret the column without an out-of-band
         // mapping table. Default None keeps backfill safe.
@@ -38,14 +38,14 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(MobileAppRole.None)
             .IsRequired();
 
-        // D-186 — audience/partner split inside the Visitor scope.
+        // Audience/partner split inside the Visitor scope.
         // Defaults to true so freshly created profile types are
         // assumed audience-side until an admin toggles them.
         builder.Property(profileType => profileType.IsForVisitor)
             .HasDefaultValue(true)
             .IsRequired();
 
-        // D-611 (Wave B) — VIP meeting-slot eligibility (replaces the Name
+        // VIP meeting-slot eligibility (replaces the Name
         // substring hack). Default false; the seeder flips VVIP/VIP to true.
         builder.Property(profileType => profileType.AllowsVipMeetingSlots)
             .HasDefaultValue(false)
@@ -67,7 +67,7 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(true)
             .IsRequired();
 
-        // D-819 — the small stable number the offline event badge carries in
+        // The small stable number the offline event badge carries in
         // place of the Guid id. Default 0 = unassigned, which no badge can
         // carry. Unique among ACTIVE rows only, mirroring the Name index below,
         // so a soft-deleted type does not permanently reserve its code — but
@@ -81,12 +81,12 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .IsUnique()
             .HasFilter("[IsActive] = 1 AND [Code] <> 0");
 
-        // D-186 — after the UserType collapse every profile type is
+        // After the UserType collapse every profile type is
         // Visitor-scope; the CP picker + approval queues filter by
         // (IsForVisitor, IsActive), so one composite index serves both.
         builder.HasIndex(profileType => new { profileType.IsForVisitor, profileType.IsActive });
 
-        // D-611 (Wave B) — unique profile-type name among the ACTIVE rows (the
+        // Unique profile-type name among the ACTIVE rows (the
         // seeder is idempotent by Name; the filter lets an admin reuse a
         // soft-deleted name).
         builder.HasIndex(profileType => profileType.Name)

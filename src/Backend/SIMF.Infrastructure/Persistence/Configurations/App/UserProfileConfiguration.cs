@@ -21,7 +21,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.ToTable("UserProfiles");
         builder.HasKey(profile => profile.Id);
 
-        // D-167: UserId is a logical FK to SimfUser.Id (Identity DB) —
+        // UserId is a logical FK to SimfUser.Id (Identity DB) —
         // enforced at the service layer, not by SQL. Unique so the
         // second upsert by the same user updates instead of inserting
         // a sibling row.
@@ -31,11 +31,11 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // (D-683, owner 2026-07-07), aligned client + server + EF.
         builder.Property(profile => profile.NameArabic).HasMaxLength(50).IsRequired();
         builder.Property(profile => profile.Name).HasMaxLength(50).IsRequired();
-        // D-163 — PDF §2.6 optional job title (max 100, owner 2026-07-06).
+        // PDF §2.6 optional job title (max 100, owner 2026-07-06).
         builder.Property(profile => profile.JobTitle).HasMaxLength(100);
         // 2026-07-19 (owner) — Arabic twin, same length as JobTitle.
         builder.Property(profile => profile.JobTitleArabic).HasMaxLength(100);
-        // D-151 / D-167: NationalityId is validated at the service layer
+        // NationalityId is validated at the service layer
         // (UserProfileService.ResolveIdAsync rejects unknown ids). We do
         // NOT add a real DB FK here even though Country now lives in the
         // same DB, because the existing data model allows 0 = "no
@@ -69,15 +69,15 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.HasIndex(profile => profile.PassportNumberHash)
             .IsUnique()
             .HasFilter("[PassportNumberHash] IS NOT NULL");
-        // D-736 — "Show in Meet People Like You" visibility toggle.
+        // "Show in Meet People Like You" visibility toggle.
         builder.Property(profile => profile.ShowInMeetLikeYou)
             .HasDefaultValue(true);
 
         builder.Property(profile => profile.SaudiMobile).HasMaxLength(20);
         builder.Property(profile => profile.InternationalMobile).HasMaxLength(24);
-        // C6 — D-371: stored normalized (3 letters + 1–4 digits, no separators).
+        // Stored normalized (3 letters + 1–4 digits, no separators).
         builder.Property(profile => profile.PlateNumber).HasMaxLength(7);
-        // D-373 — SIMF-YYYY-NNNNNNNN is 18 chars; 20 leaves headroom for a
+        // SIMF-YYYY-NNNNNNNN is 18 chars; 20 leaves headroom for a
         // longer sequence. Unique among the rows that have one.
         builder.Property(profile => profile.ReferenceNumber).HasMaxLength(20);
         builder.HasIndex(profile => profile.ReferenceNumber)
@@ -93,7 +93,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.PreferredLanguage).HasMaxLength(16);
         builder.Property(profile => profile.VipPhotoRelativePath).HasMaxLength(260);
 
-        // D-106: QrId on UserProfile. 12-char Crockford base32, unique
+        // QrId on UserProfile. 12-char Crockford base32, unique
         // (only minted for Approved rows so most rows are null —
         // filtered unique index).
         builder.Property(profile => profile.QrId).HasMaxLength(16);
@@ -101,7 +101,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .IsUnique()
             .HasFilter("[QrId] IS NOT NULL");
 
-        // D-106: bilingual rejection-reason text.
+        // Bilingual rejection-reason text.
         builder.Property(profile => profile.RejectionReason).HasMaxLength(500);
         builder.Property(profile => profile.RejectionReasonArabic).HasMaxLength(500);
 
@@ -143,7 +143,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .HasForeignKey(profile => profile.ProfileTypeId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // B3 — D-221: الجهة. Real DB FK to the Organisation lookup; Restrict
+        // الجهة. Real DB FK to the Organisation lookup; Restrict
         // so an organisation cannot be removed while any profile points at it.
         // Nullable, so profile stubs simply leave it null. Gender is stored as
         // its int value by EF's default enum mapping (no explicit conversion).
@@ -153,7 +153,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .HasForeignKey(profile => profile.OrganisationId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // D-611 (Wave B) — الإقليم / region. Real DB FK to the Region lookup,
+        // الإقليم / region. Real DB FK to the Region lookup,
         // same shape as the Organisation FK (nullable + Restrict); persists the
         // region pick that previously had nowhere to live.
         builder.HasIndex(profile => profile.RegionId);
@@ -162,7 +162,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .HasForeignKey(profile => profile.RegionId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // D-758 (#10 Phase 2) — the bulk-badge batch this placeholder profile was
+        // The bulk-badge batch this placeholder profile was
         // minted by. Intra-App-DB FK (nullable + Restrict, same shape as the
         // Organisation / Region FKs) so a batch cannot be hard-deleted while any
         // badge references it — batches are soft-deleted (revoke → IsActive=false).

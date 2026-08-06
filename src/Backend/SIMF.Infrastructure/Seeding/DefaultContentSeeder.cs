@@ -43,7 +43,7 @@ public sealed class DefaultContentSeeder(
         }
     }
 
-    /// <summary>D-736 — pre-creates the app-update policy keys (empty values)
+    /// <summary>Pre-creates the app-update policy keys (empty values)
     /// so they show up on the CP configuration grid ready to edit. Existence is
     /// keyed on <c>Key</c> alone (IsActive ignored): a re-run never overwrites
     /// an admin edit and never resurrects a deliberately deactivated key.</summary>

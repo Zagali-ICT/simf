@@ -7,7 +7,7 @@ namespace SIMF.Common;
 /// a missing account, an invalid code.
 /// </summary>
 /// <remarks>
-/// Every exception carries the message in both English and Arabic (D-030).
+/// Every exception carries the message in both English and Arabic.
 /// </remarks>
 public class ApiException : Exception
 {

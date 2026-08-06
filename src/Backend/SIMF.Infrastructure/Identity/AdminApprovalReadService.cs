@@ -12,7 +12,7 @@ using SIMF.Application.AccessControl.Abstractions;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-124 — Reads a pending-approval subject's profile for the CP's
+/// Reads a pending-approval subject's profile for the CP's
 /// "preview before approve" flow. Only emits a row when the subject
 /// matches BOTH AccountState=PendingApproval AND the expected UserType
 /// — the single 404-for-mismatch policy lives at the endpoint, this
@@ -29,7 +29,7 @@ internal sealed class AdminApprovalReadService(
     IQrResolver qrResolver)
     : IAdminApprovalReadService
 {
-    // D-186: every non-admin account is UserType.Visitor. The
+    // Every non-admin account is UserType.Visitor. The
     // audience-vs-partner queue split routes on the linked
     // ProfileType.IsVisitor flag — true (or no profile yet) lands on
     // the Visitors queue, false lands on the Others queue.
@@ -92,7 +92,7 @@ internal sealed class AdminApprovalReadService(
             row.ProfileTypeColor ?? "#244A77");
     }
 
-    /// <summary>D-126 — any-state full profile read scoped to the
+    /// <summary>Any-state full profile read scoped to the
     /// audience-vs-partner queue. D-186: every non-admin account is
     /// UserType.Visitor; the audience-vs-partner distinction is the
     /// linked <c>ProfileType.IsVisitor</c> flag (audience when true or
@@ -155,7 +155,7 @@ internal sealed class AdminApprovalReadService(
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        // D-151 — translate the logical FK Id back to the ISO code the
+        // Translate the logical FK Id back to the ISO code the
         // wire contract exposes. Cross-context, so a separate query.
         var nationalityCode = profile is null
             ? null
@@ -185,8 +185,8 @@ internal sealed class AdminApprovalReadService(
             profile?.SaudiMobile,
             profile?.InternationalMobile,
             profile?.HasIdImage ?? false,
-            // D-727 — the avatar (profile photo) lives on SimfUser (Identity);
-            // AvatarRelativePath is its StoredFile presence sentinel (D-568 S3).
+            // The avatar (profile photo) lives on SimfUser (Identity);
+            // AvatarRelativePath is its StoredFile presence sentinel.
             !string.IsNullOrEmpty(user.AvatarRelativePath),
             profile?.InterestIds ?? new List<Guid>(),
             profile?.RejectionReason,
@@ -264,7 +264,7 @@ internal sealed class AdminApprovalReadService(
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        // D-151 — translate the logical FK Id back to the wire-side code.
+        // Translate the logical FK Id back to the wire-side code.
         var nationalityCode = profile is null
             ? null
             : await ResolveCodeAsync(profile.NationalityId, cancellationToken);
@@ -305,7 +305,7 @@ internal sealed class AdminApprovalReadService(
             HasAvatar: !string.IsNullOrEmpty(user.AvatarRelativePath));
     }
 
-    // D-151 — Country lookup helper. Cross-context (Country lives in
+    // Country lookup helper. Cross-context (Country lives in
     // SimfAppDbContext, the profile in SimfIdentityDbContext) so this
     // is a separate cheap single-row index query.
     private async Task<string> ResolveCodeAsync(int id, CancellationToken cancellationToken)
@@ -318,7 +318,7 @@ internal sealed class AdminApprovalReadService(
             .SingleOrDefaultAsync(cancellationToken) ?? string.Empty;
     }
 
-    // D-186 — audience-vs-partner scope guard. Audience scope (the
+    // Audience-vs-partner scope guard. Audience scope (the
     // visitors queue) accepts a user with no profile type yet OR a
     // profile type whose IsVisitor flag is true. Partner scope (the
     // others queue) requires an explicitly false IsVisitor — a user

@@ -14,7 +14,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Archive;
 
-/// <summary>D-199 — admin CRUD over <see cref="ArchiveEdition"/>. One edition
+/// <summary>Admin CRUD over <see cref="ArchiveEdition"/>. One edition
 /// per year; year uniqueness is validated and surfaced as a 409. Mirrors
 /// <c>AdminDelegationService</c> / <c>AdminCountryService</c> structure
 /// (inline Validate, audit on every mutation, soft-delete via IsActive).</summary>
@@ -50,7 +50,7 @@ internal sealed class AdminArchiveService(
             rows = rows.Where(edition => edition.IsActive == isActive);
         }
 
-        // D-258 — per-column grid filters (SimfDataGrid). Each filterable
+        // Per-column grid filters (SimfDataGrid). Each filterable
         // column contributes a Contains() narrowing on its mapped property.
         foreach (var filter in query.Filters)
         {
@@ -112,7 +112,7 @@ internal sealed class AdminArchiveService(
     public async Task<AdminArchiveEditionDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        // D-432 — load the rich child lists so the edit form pre-populates them.
+        // Load the rich child lists so the edit form pre-populates them.
         // A6 — AsSplitQuery: three SIBLING collection Includes on one root would
         // otherwise JOIN into a single Media×SessionTitles×PastSpeakers cartesian
         // rowset; split emits one query per collection (each hitting its
@@ -169,7 +169,7 @@ internal sealed class AdminArchiveService(
             DateLabelAr = v.DateLabelAr,
             IsActive = true,
             CreatedAt = now,
-            // D-432 — the rich child lists (cascade-inserted with the edition).
+            // The rich child lists (cascade-inserted with the edition).
             Media = BuildMedia(request.Gallery),
             SessionTitles = BuildSessionTitles(request.SessionTitles),
             PastSpeakers = BuildPastSpeakers(request.PastSpeakers, knownCountryIds),
@@ -196,7 +196,7 @@ internal sealed class AdminArchiveService(
         CancellationToken cancellationToken = default)
     {
         var edition = await appDbContext.ArchiveEditions
-            // D-432 — load the children so replace-all can clear the orphans.
+            // Load the children so replace-all can clear the orphans.
             .Include(e => e.Media)
             .Include(e => e.SessionTitles)
             .Include(e => e.PastSpeakers)
@@ -241,7 +241,7 @@ internal sealed class AdminArchiveService(
         edition.IsActive = request.IsActive;
         edition.UpdatedAt = timeProvider.SimfNow();
 
-        // D-432 — replace-all the rich child lists, but only the ones the caller
+        // Replace-all the rich child lists, but only the ones the caller
         // actually supplied (non-null). Clearing the tracked collection marks the
         // orphans for the cascade delete; null leaves the existing rows untouched.
         if (request.Gallery is not null)
@@ -307,7 +307,7 @@ internal sealed class AdminArchiveService(
         var speakers = await appDbContext.Speakers.AsNoTracking()
             .CountAsync(speaker => speaker.IsActive, cancellationToken);
         // Attendees = distinct people who physically arrived: an allowed CheckIn
-        // gate scan with a resolved profile (owner's "gate-scan arrivals", D-275).
+        // gate scan with a resolved profile.
         var attendees = await appDbContext.GateScans.AsNoTracking()
             .Where(scan => scan.Outcome == ScanOutcome.Allowed
                         && scan.Direction == ScanDirection.CheckIn
@@ -448,7 +448,7 @@ internal sealed class AdminArchiveService(
             edition.CreatedAt, edition.UpdatedAt,
             edition.LocationEn, edition.LocationAr,
             edition.DateLabelEn, edition.DateLabelAr,
-            // D-432 — the rich child lists, ordered (read off the loaded nav
+            // The rich child lists, ordered (read off the loaded nav
             // collections — Create/Update set them, GetAsync Includes them).
             edition.Media.OrderBy(m => m.DisplayOrder).Select(m => new ArchiveMediaItemInput
             {
@@ -467,7 +467,7 @@ internal sealed class AdminArchiveService(
                 DisplayOrder = p.DisplayOrder,
             }).ToList());
 
-    // D-432 — build the child entities from the editable inputs, skipping blank
+    // Build the child entities from the editable inputs, skipping blank
     // rows and re-deriving DisplayOrder from the submitted order. Child string
     // lengths are enforced server-side by RequireChildLength/ChildLengthOrNull
     // below (the CP MaxLength is only a client-side hint; the admin API can be
@@ -553,7 +553,7 @@ internal sealed class AdminArchiveService(
                     "Past speaker name", "اسم المتحدث السابق"),
                 PhotoRelativePath = ChildLengthOrNull(NullIfBlank(i.PhotoRelativePath), 256,
                     "Past speaker photo path", "مسار صورة المتحدث السابق"),
-                // D-456 — drop an unknown/typo'd country code to null (the CP
+                // Drop an unknown/typo'd country code to null (the CP
                 // editor is free-text; an unmatched id would otherwise hit the
                 // Country FK as a 500). Matches the app's "unknown code = no flag".
                 CountryId = i.CountryId is { } cid && knownCountryIds.Contains(cid)
@@ -564,7 +564,7 @@ internal sealed class AdminArchiveService(
             .ToList();
     }
 
-    /// <summary>D-456 — the valid Country lookup ids, used to reject a typo'd
+    /// <summary>The valid Country lookup ids, used to reject a typo'd
     /// country code in the free-text past-speakers editor (drop to null).</summary>
     private async Task<HashSet<int>> LoadCountryIdsAsync(CancellationToken ct) =>
         (await appDbContext.Countries.AsNoTracking()

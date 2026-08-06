@@ -82,7 +82,7 @@ public sealed class ReserveRandomSeatEndpoint(ISeatReservationService service)
 
 public sealed class JoinOpenSeatingRoute { public Guid SessionId { get; set; } }
 
-/// <summary>D-485 — join an OPEN-SEATING session (general admission, no specific
+/// <summary>Join an OPEN-SEATING session (general admission, no specific
 /// seat). The reservation is created Pending and flows through the same Control
 /// Panel approval + notifications as a seat booking. 409 SEAT_SELECTION_REQUIRED
 /// when the session's effective mode is AssignedSeat (the app should show the
@@ -206,10 +206,10 @@ public sealed class SetHallSeatLayoutEndpoint(ISeatReservationService service)
                 {
                     RowLabels = req.RowLabels,
                     SeatsPerRow = req.SeatsPerRow,
-                    // D-767 — carry the optional per-row seat counts through the
+                    // Carry the optional per-row seat counts through the
                     // over-post-safe re-projection.
                     SeatCounts = req.SeatCounts,
-                    // D-771 — and the per-row seat tiers.
+                    // And the per-row seat tiers.
                     SeatTiers = req.SeatTiers,
                 }, ct)), ct);
     }
@@ -289,7 +289,7 @@ public sealed class AdminReserveSeatEndpoint(ISeatReservationService service)
             {
                 RowLabel = req.RowLabel,
                 SeatNumber = req.SeatNumber,
-                // D-771 — carry the manual VVIP guest hint through the over-post-safe
+                // Carry the manual VVIP guest hint through the over-post-safe
                 // re-projection (a VVIP seat has no registration; the hint is the
                 // occupant record).
                 GuestHint = req.GuestHint,

@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapProgramme(IEndpointRouteBuilder group)
     {
-        // D-153 — Speaker admin BFF passthroughs.
+        // Speaker admin BFF passthroughs.
         group.MapPost("/admin/speakers/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -71,7 +71,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateSpeakerAsync(id, token));
         });
 
-        // D-165 (gap doc G3) — Session admin BFF passthroughs.
+        // Session admin BFF passthroughs.
         group.MapPost("/admin/sessions/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -101,7 +101,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.UpdateSessionAsync(id, body, token));
         });
-        // D-578 — subtitle fetch-from-video passthrough (Sessions editor).
+        // Subtitle fetch-from-video passthrough (Sessions editor).
         group.MapPost("/admin/sessions/subtitle/fetch-from-video",
             async (FetchSubtitleRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -116,7 +116,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeactivateSessionAsync(id, token));
         });
-        // P3.2 — D-231: session broadcast-lifecycle transition.
+        // Session broadcast-lifecycle transition.
         group.MapPut("/admin/sessions/{id:guid}/status",
             async (Guid id, SetSessionStatusRequest body,
                    HttpContext http, SimfAdminClient api) =>
@@ -125,7 +125,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.SetSessionStatusAsync(id, body, token));
         });
-        // P3.2b — D-232: session recording upload / delete passthrough. The
+        // Session recording upload / delete passthrough. The
         // per-request body + multipart limits are raised from config (mirrors the
         // API's SessionRecordingStorage:MaxUploadBytes) — scoped to this route, so
         // every other CP endpoint keeps its smaller limit. ReadFormAsync stages a
@@ -174,7 +174,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeleteSessionRecordingAsync(id, token));
         });
 
-        // D-166 (gap doc G4) — registration gate + archive visibility BFF passthroughs.
+        // Registration gate + archive visibility BFF passthroughs.
         group.MapGet("/admin/registration-gate",
             async (HttpContext http, SimfAdminClient api) =>
         {

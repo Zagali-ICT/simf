@@ -13,7 +13,7 @@ public sealed class RecordArrivalRequest
     public double Lon { get; set; }
 }
 
-/// <summary>P5.1 — D-241: the attendee's current attendance state for a session.
+/// <summary>The attendee's current attendance state for a session.
 /// <see cref="Arrived"/> is true while an open attendance row exists (entered,
 /// not yet left). Returned by the arrival, departure, and status endpoints.</summary>
 public sealed record HallAttendanceStatus(
@@ -22,14 +22,14 @@ public sealed record HallAttendanceStatus(
     DateTime? Leave,
     AttendanceMethod? Method);
 
-/// <summary>P5.1d — D-244: the operator's hall-door QR scan — the badge QR id to
+/// <summary>The operator's hall-door QR scan — the badge QR id to
 /// resolve to the attendee.</summary>
 public sealed class RecordQrArrivalRequest
 {
     public string QrId { get; set; } = string.Empty;
 }
 
-/// <summary>P5.1d — D-244: the result of an operator QR-door scan — the resolved
+/// <summary>The result of an operator QR-door scan — the resolved
 /// attendee (so the operator console can confirm WHO was recorded) plus the
 /// resulting attendance state.</summary>
 public sealed record QrArrivalResult(

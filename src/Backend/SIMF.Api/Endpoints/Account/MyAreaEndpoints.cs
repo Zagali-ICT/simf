@@ -170,7 +170,7 @@ public sealed class MyAreaContactCardEndpoint(IMyAreaService service)
 
     private static string BuildVCard(MyAreaContactCard card)
     {
-        // D-470 — requirement #8 ("Name ar, phones"): the Arabic name leads (the
+        // Requirement #8 ("Name ar, phones"): the Arabic name leads (the
         // English name is the fallback), and the mobile numbers become TEL lines.
         // The gate QrId is intentionally NOT emitted — this vCard is encoded in a
         // QR any phone camera can read, so leaking the badge/lead key here would

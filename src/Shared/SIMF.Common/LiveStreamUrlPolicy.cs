@@ -1,7 +1,7 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// D-349 — the single rule that decides which live-broadcast feed URLs SIMF
+/// The single rule that decides which live-broadcast feed URLs SIMF
 /// accepts. The live-video provider is <b>YouTube</b> (proof of concept), with
 /// a direct <b>HLS/MP4</b> stream kept as a fallback. A YouTube URL is accepted
 /// only when a well-formed 11-character video id can be extracted (a channel /
@@ -45,7 +45,7 @@ public static class LiveStreamUrlPolicy
     }
 
     /// <summary>
-    /// D-578 — extracts the 11-character YouTube video id from a watch /
+    /// Extracts the 11-character YouTube video id from a watch /
     /// youtu.be / live / embed / shorts URL. Returns false for a non-YouTube or
     /// id-less link. Public so the server-side subtitle extractor
     /// (<c>YoutubeTranscriptService</c>) reuses the one parsing rule instead of

@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-568 — the data-classification tier of a <c>StoredFile</c>, derived
+/// <summary>The data-classification tier of a <c>StoredFile</c>, derived
 /// from its <see cref="FileService"/> at write time and persisted so the
 /// classification is auditable rather than inferred (SAMA A1-3 / NCA ECC 2-7-2).
 ///

@@ -187,7 +187,7 @@ public partial class SpeakerPresentationsList
             $"/account/api/admin/speaker-presentations/{row.Id}/file", "_blank");
     }
 
-    // D-356 — Excel export (selected rows, or the whole filtered set for the
+    // Excel export (selected rows, or the whole filtered set for the
     // selected speaker). This grid is master-detail: the export endpoint has no
     // GridQuery list, so the chosen speaker id rides Query.Filters["speakerId"]
     // (the endpoint lists that speaker's files, then honours any selected ids).

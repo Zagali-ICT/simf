@@ -17,27 +17,27 @@ public sealed record SessionSeatMap(
     IReadOnlyList<SessionSeatCell> ReservedCells,
     SessionSeatCell? MyCell,
     int ActiveReservedCount,
-    // D-432 — appended (append-only wire): the session's bilingual title so the
+    // Appended (append-only wire): the session's bilingual title so the
     // "my seat" screen can show it without a second /sessions/{id} call. The
     // service already loads the Session, so this adds no query.
     string? SessionTitle = null,
     string? SessionTitleArabic = null,
-    // D-485 — appended (append-only wire): the session's EFFECTIVE seat-selection
+    // Appended (append-only wire): the session's EFFECTIVE seat-selection
     // mode (Session override ?? Hall default). The app branches the "Join" CTA on
     // this — AssignedSeat shows the seat picker, OpenSeating a one-tap join.
     SeatSelectionMode Mode = SeatSelectionMode.AssignedSeat,
-    // D-767 — appended (append-only wire): optional per-row seat counts, PARALLEL to
+    // Appended (append-only wire): optional per-row seat counts, PARALLEL to
     // <see cref="RowLabels"/>, when the hall layout is ragged. Null (key omitted) for a
     // uniform layout — old and new apps render every row at <see cref="SeatsPerRow"/>.
     // When present, row i has SeatCounts[i] seats and SeatsPerRow carries max(SeatCounts).
     IReadOnlyList<int>? SeatCounts = null,
-    // D-771 — appended (append-only wire): the per-row seat TIERS, PARALLEL to
+    // Appended (append-only wire): the per-row seat TIERS, PARALLEL to
     // <see cref="RowLabels"/>. Null (key omitted) only for a degraded/legacy read;
-    // the service always emits one entry per row (Normal for a pre-D-771 layout),
+    // the service always emits one entry per row,
     // so a new app can colour VVIP / VIP / Normal rows and grey out the seats the
     // caller may not book. An older app ignores the key and renders as before.
     IReadOnlyList<SeatTier>? SeatTiers = null,
-    // D-771 — appended: whether the CALLER is a VIP-tier visitor (their
+    // Appended: whether the CALLER is a VIP-tier visitor (their
     // ProfileType.AllowsVipMeetingSlots — the same flag the app reads as isVip).
     // The app uses it to grey out VIP rows for a non-VIP visitor; the server
     // re-checks it on every reserve, so this is a UX hint, never the gate.
@@ -65,7 +65,7 @@ public sealed record SessionSeatCell(
     SeatReservationKind Kind,
     BookingStatus Status = BookingStatus.Pending,
     bool CheckedIn = false,
-    // D-771 — appended (append-only wire): the admin-typed VVIP guest hint. A VVIP
+    // Appended (append-only wire): the admin-typed VVIP guest hint. A VVIP
     // seat has no registration, so the hint is the occupant record the app and the
     // staff seating screen display ("Reserved for the Minister"). Null on every
     // ordinary reservation.
@@ -105,12 +105,12 @@ public sealed record SeatPlanCell(
     // Empty for an admin block / VVIP seat — read the guest hint instead.
     string HolderName,
     string HolderNameArabic,
-    // D-771 — the admin-typed VVIP guest note: the occupant record for a seat that
+    // The admin-typed VVIP guest note: the occupant record for a seat that
     // has no registration. Null on an ordinary attendee reservation.
     string? GuestHint,
     string? GuestHintArabic);
 
-/// <summary>D-175 — visitor self-pick request. Pass row+seat from
+/// <summary>Visitor self-pick request. Pass row+seat from
 /// the grid the app rendered against the <see cref="SessionSeatMap"/>.
 /// Open for inheritance so the route-binding endpoint can carry a
 /// <c>SessionId</c> field (matches the D-168 / D-174 pattern).</summary>
@@ -133,7 +133,7 @@ public class MoveSeatRequest
     public int SeatNumber { get; set; }
 }
 
-/// <summary>D-175 — admin row-block request. The whole row is marked
+/// <summary>Admin row-block request. The whole row is marked
 /// <see cref="SeatReservationKind.AdminReservedRow"/> for this session
 /// (one reservation row per seat). Subsequent visitor picks against
 /// any seat in that row are rejected with
@@ -153,17 +153,17 @@ public class AdminReserveSeatRequest
     public string RowLabel { get; set; } = string.Empty;
     public int SeatNumber { get; set; }
 
-    /// <summary>D-771 — the free-text guest hint for a VVIP seat (there is no
+    /// <summary>The free-text guest hint for a VVIP seat (there is no
     /// registration, so the admin types the guest's name/note here). Optional,
     /// ≤256 chars; bilingual like the surrounding entities.</summary>
     public string? GuestHint { get; set; }
 
-    /// <summary>D-771 — the Arabic twin of <see cref="GuestHint"/>, e.g.
+    /// <summary>The Arabic twin of <see cref="GuestHint"/>, e.g.
     /// "هذا المقعد محجوز لمعالي الوزير". Optional, ≤256 chars.</summary>
     public string? GuestHintArabic { get; set; }
 }
 
-/// <summary>D-175 — admin layout edit. When <see cref="SeatCounts"/> is null/empty the
+/// <summary>Admin layout edit. When <see cref="SeatCounts"/> is null/empty the
 /// grid is UNIFORM: it writes <c>RowLabels.Count * SeatsPerRow</c> seats and is rejected
 /// if that product exceeds <c>Hall.Capacity</c>. D-767: when <see cref="SeatCounts"/> is
 /// non-empty it is AUTHORITATIVE (a per-row override) — its length MUST equal the row
@@ -175,12 +175,12 @@ public class SetHallSeatLayoutRequest
     public IReadOnlyList<string> RowLabels { get; set; } = Array.Empty<string>();
     public int SeatsPerRow { get; set; }
 
-    /// <summary>D-767 — optional per-row seat counts, parallel to <see cref="RowLabels"/>.
+    /// <summary>Optional per-row seat counts, parallel to <see cref="RowLabels"/>.
     /// Null/empty = uniform via <see cref="SeatsPerRow"/>. When non-empty its length must
     /// equal the row count and each value is 1–80.</summary>
     public IReadOnlyList<int>? SeatCounts { get; set; }
 
-    /// <summary>D-771 — the per-row seat TIERS, parallel to <see cref="RowLabels"/>.
+    /// <summary>The per-row seat TIERS, parallel to <see cref="RowLabels"/>.
     /// <list type="bullet">
     /// <item>Non-empty → AUTHORITATIVE: its length must equal the row count and each
     /// value must be a defined <see cref="SeatTier"/>.</item>
@@ -205,11 +205,11 @@ public sealed record HallSeatLayoutSnapshot(
     int LayoutCapacity,
     int HallCapacity,
     IReadOnlyList<int>? SeatCounts = null,
-    // D-771 — appended: the per-row seat tiers the CP editor reads back. Always one
+    // Appended: the per-row seat tiers the CP editor reads back. Always one
     // entry per row (Normal for a legacy layout that carries no stored tiers).
     IReadOnlyList<SeatTier>? SeatTiers = null);
 
-/// <summary>D-175 — what the user sees after a successful reservation.
+/// <summary>What the user sees after a successful reservation.
 /// Returned by both self-pick and random-allocate. <see cref="Status"/>
 /// (P2.2 — D-227) is appended (append-only — the shipped app ignores unknown
 /// JSON keys).
@@ -221,7 +221,7 @@ public sealed record HallSeatLayoutSnapshot(
 public sealed record MySeatReservation(
     Guid ReservationId,
     Guid SessionId,
-    // D-485: null for an OpenSeating join (general admission — no specific seat).
+    // Null for an OpenSeating join (general admission — no specific seat).
     string? RowLabel,
     int? SeatNumber,
     SeatReservationKind Kind,
@@ -240,7 +240,7 @@ public sealed record ActiveBookingRow(
     string SessionTitle,
     string SessionTitleArabic,
     DateTime SessionStart,
-    // D-485: null for an OpenSeating join — the CP renders it as "general admission".
+    // Null for an OpenSeating join — the CP renders it as "general admission".
     string? RowLabel,
     int? SeatNumber,
     SeatReservationKind Kind,
@@ -258,7 +258,7 @@ public class StaffSeatBadgeLookupRequest
     public string QrId { get; set; } = string.Empty;
 }
 
-/// <summary>D-771 — who is in a seat (or where a scanned badge sits). One shape
+/// <summary>Who is in a seat (or where a scanned badge sits). One shape
 /// serves both staff lookups so the tablet renders a single result card.
 /// <para>Cross-DB safe (D-157): the occupant's name/photo are resolved from the
 /// Identity DB in a separate round-trip and returned as plain values — no

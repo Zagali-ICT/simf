@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-176 (gap doc G12) — the AI provider a prompt routes to.
+/// <summary>The AI provider a prompt routes to.
 /// <see cref="Echo"/> is the deterministic offline provider used by
 /// dev + tests; it never makes outbound calls. The others are
 /// outbound HTTP providers with working implementations:

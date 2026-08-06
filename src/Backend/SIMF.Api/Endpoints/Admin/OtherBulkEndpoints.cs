@@ -30,7 +30,7 @@ public sealed class BulkDeleteOthersEndpoint(IAdminUserBulkService adminAccountS
     {
         var actorId = User.ActorId();
         var response = await adminAccountService.BulkDeleteUsersByKindAsync(
-            // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
+            // Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
             actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
         await Send.OkAsync(ApiResult<AdminBulkDeleteResponse>.Ok(response), ct);
     }
@@ -58,7 +58,7 @@ public sealed class DuplicateOtherEndpoint(IAdminUserBulkService adminAccountSer
     {
         var actorId = User.ActorId();
         var created = await adminAccountService.DuplicateUserByKindAsync(
-            // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
+            // Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
             actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(created), ct);
     }
@@ -85,7 +85,7 @@ public sealed class ExportOthersEndpoint(IAdminUserBulkService adminAccountServi
     {
         var actorId = User.ActorId();
         var bytes = await adminAccountService.ExportUsersByKindAsync(
-            // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
+            // Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
             actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
         HttpContext.Response.Headers.ContentDisposition =
             $"attachment; filename=\"simf-others-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";
@@ -151,7 +151,7 @@ public sealed class ImportOthersEndpoint(IAdminUserBulkService adminAccountServi
         }
 
         var response = await adminAccountService.ImportUsersByKindAsync(
-            // D-186: Other import = partner-scope flag.
+            // Other import = partner-scope flag.
             actorId, partnerScope: true, bytes, ct);
         await Send.OkAsync(ApiResult<AdminImportUsersResponse>.Ok(response), ct);
     }

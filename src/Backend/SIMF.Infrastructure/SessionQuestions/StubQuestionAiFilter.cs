@@ -4,7 +4,7 @@ using SIMF.Application.SessionQuestions.Abstractions;
 namespace SIMF.Infrastructure.SessionQuestions;
 
 /// <summary>
-/// P4.2 — D-236: the stub question AI filter shipped in this increment. It does
+/// The stub question AI filter shipped in this increment. It does
 /// NOT call any AI provider — it returns a deterministic "clean" advisory
 /// verdict. The real moderation call (via
 /// the central <c>IAiService</c> prompt catalogue) replaces THIS class behind

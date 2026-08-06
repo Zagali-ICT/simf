@@ -21,7 +21,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// workbook round-trips back through import: the Hall as its code and the optional
 /// Category as its English name. The <c>Start</c> / <c>End</c> window writes
 /// a round-trip-safe <b>zone-free</b> ISO-8601 string (the Saudi wall clock, per
-/// D-813 - never a trailing <c>Z</c>), the lifecycle <c>Status</c> writes its
+/// Never a trailing <c>Z</c>), the lifecycle <c>Status</c> writes its
 /// enum name. The hall/category maps are built once per request inside
 /// <see cref="ListAsync"/> (the base reads <see cref="Columns"/> straight after),
 /// so the column selectors resolve a name without an extra round-trip per row.
@@ -72,7 +72,7 @@ public sealed class ExportSessionsEndpoint(
         new("Capacity", row => row.Capacity),
         new("Status", row => row.Status.ToString()),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the eight fields the IO boundary dropped (appended
+        // Round-trip the eight fields the IO boundary dropped (appended
         // so the existing column order is unchanged; import binds by header name).
         // The two enums write their display name (blank when unset); import reads
         // either the name or the raw int back.
@@ -86,7 +86,7 @@ public sealed class ExportSessionsEndpoint(
         new("LiveCaptionsArabic", row => row.LiveCaptionsArabic),
         new("LiveNotice", row => row.LiveNotice),
         new("LiveNoticeArabic", row => row.LiveNoticeArabic),
-        // D-839 — blank means "inherit the hall", so an empty cell is a real
+        // Blank means "inherit the hall", so an empty cell is a real
         // value here, not a missing one. The RESOLVED value is deliberately not
         // exported: it is derived, and a round-trip would turn what a session
         // merely inherits into an override pinned onto it.
@@ -235,7 +235,7 @@ public sealed class ImportSessionsEndpoint(
             // bulk-imported non-Event session can satisfy the min-1-speaker rule.
             Speakers = await ResolveSpeakersAsync(
                 row.Cells.GetValueOrDefault("Speakers", string.Empty), ct),
-            // D-506 — round-trip the eight fields the import previously dropped
+            // Round-trip the eight fields the import previously dropped
             // (the service trims and length-guards the strings; absent columns
             // simply stay null). The two enums accept the display name or the raw
             // int; blank → null; an unknown non-blank value is a per-row error.
@@ -256,7 +256,7 @@ public sealed class ImportSessionsEndpoint(
         return GridRowApplyKind.Created;
     }
 
-    // D-839 — parses the optional per-session arrival-grace override. Blank stays
+    // Parses the optional per-session arrival-grace override. Blank stays
     // null, which is the real "inherit the hall" value. A non-blank, out-of-range
     // or non-numeric cell is a per-row error rather than a silent 0, which would
     // otherwise close this session's doors the instant it ended.

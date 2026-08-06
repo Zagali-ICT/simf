@@ -27,7 +27,7 @@ public sealed class ListPublicBoothsEndpoint(IPublicBoothService service)
 
 public sealed class GetPublicBoothRoute { public Guid Id { get; set; } }
 
-/// <summary>D-199 — public anonymous single active booth by id.</summary>
+/// <summary>Public anonymous single active booth by id.</summary>
 public sealed class GetPublicBoothEndpoint(IPublicBoothService service)
     : Endpoint<GetPublicBoothRoute, ApiResult<PublicBoothDetail>>
 {

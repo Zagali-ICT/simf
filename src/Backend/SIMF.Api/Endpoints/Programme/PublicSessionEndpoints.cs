@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
-// Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235)
-// Tests: SIMF.Api.Tests/SessionSummaryTests.cs (P4.1a — D-237)
+// Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs
+// Tests: SIMF.Api.Tests/SessionSummaryTests.cs
 using System.Globalization;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
@@ -174,7 +174,7 @@ public sealed class GetSessionSummaryEndpoint(IProgrammeSessionService service)
     }
 }
 
-/// <summary>D-472 (#9): the team-approved محضر for the session's host / moderator
+/// <summary>The team-approved محضر for the session's host / moderator
 /// ("ready for المحاور"). Unlike the anonymous published read, this requires an
 /// approved account and the caller must be the session's moderator or host (the
 /// service enforces it, 403 otherwise); gated on the team approval, so the host

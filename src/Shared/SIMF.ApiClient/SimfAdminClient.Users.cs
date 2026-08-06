@@ -152,7 +152,7 @@ public sealed partial class SimfAdminClient
         PostForBytesAsync("attendees/export", query, accessToken, cancellationToken);
 
 
-    /// <summary>D-356 — generic grid XLSX export by resource slug (e.g. "interests").
+    /// <summary>Generic grid XLSX export by resource slug (e.g. "interests").
     /// Posts the selected ids / grid query and returns the workbook bytes.</summary>
     public Task<(int StatusCode, byte[] Bytes)> ExportGridAsync(
         string resource,
@@ -161,7 +161,7 @@ public sealed partial class SimfAdminClient
         CancellationToken cancellationToken = default) =>
         PostForBytesAsync($"{resource}/export", request, accessToken, cancellationToken);
 
-    /// <summary>D-356 — generic grid XLSX import by resource slug. Multipart
+    /// <summary>Generic grid XLSX import by resource slug. Multipart
     /// upload, single file field "file"; returns the per-row outcome summary.</summary>
     public async Task<ApiCallResult<SIMF.Contracts.Admin.AdminGridImportResult>> ImportGridAsync(
         string resource,
@@ -429,7 +429,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>P1.3 (D-214) — edit a visitor (email, display name, tier).</summary>
+    /// <summary>Edit a visitor (email, display name, tier).</summary>
     public Task<ApiCallResult<bool>> UpdateVisitorAsync(
         Guid id, AdminUpdateVisitorRequest body, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -438,7 +438,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(body, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>P1.3 (D-214) — edit a partner (Other) account.</summary>
+    /// <summary>Edit a partner (Other) account.</summary>
     public Task<ApiCallResult<bool>> UpdateOtherAsync(
         Guid id, AdminUpdateOtherRequest body, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -457,7 +457,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(body, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-164 (gap doc G2) — bulk-approve a batch of pending visitors.
+    /// <summary>Bulk-approve a batch of pending visitors.
     /// Up to 500 ids per request; per-subject failures are reported in
     /// <see cref="AdminBulkApprovalResponse.Failures"/>.</summary>
     public Task<ApiCallResult<AdminBulkApprovalResponse>> BulkApproveVisitorsAsync(
@@ -468,7 +468,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-164 — bulk-approve a batch of pending Other-tier users.</summary>
+    /// <summary>Bulk-approve a batch of pending Other-tier users.</summary>
     public Task<ApiCallResult<AdminBulkApprovalResponse>> BulkApproveOthersAsync(
         AdminBulkApprovalRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -477,7 +477,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>P1.3 (D-214) — bulk-approve a batch of pending admins.</summary>
+    /// <summary>Bulk-approve a batch of pending admins.</summary>
     public Task<ApiCallResult<AdminBulkApprovalResponse>> BulkApproveAdminsAsync(
         AdminBulkApprovalRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -486,7 +486,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-209 — bulk-reject a batch of pending visitors with a shared
+    /// <summary>Bulk-reject a batch of pending visitors with a shared
     /// reason. Per-subject failures are reported in
     /// <see cref="AdminBulkRejectResponse.Failures"/>.</summary>
     public Task<ApiCallResult<AdminBulkRejectResponse>> BulkRejectVisitorsAsync(
@@ -497,7 +497,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-209 — bulk-reject a batch of pending Other-tier users.</summary>
+    /// <summary>Bulk-reject a batch of pending Other-tier users.</summary>
     public Task<ApiCallResult<AdminBulkRejectResponse>> BulkRejectOthersAsync(
         AdminBulkRejectRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -506,7 +506,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>P1.3 (D-214) — bulk-reject a batch of pending admins.</summary>
+    /// <summary>Bulk-reject a batch of pending admins.</summary>
     public Task<ApiCallResult<AdminBulkRejectResponse>> BulkRejectAdminsAsync(
         AdminBulkRejectRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -539,7 +539,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-124 — scoped read of a pending Visitor's full profile.
+    /// <summary>Scoped read of a pending Visitor's full profile.
     /// Returns 404 (not 403) for unknown / approved / wrong-type ids; the
     /// CP approve / reject flow renders this body in a preview modal.</summary>
     public Task<ApiCallResult<PendingProfileResponse>> GetPendingVisitorProfileAsync(
@@ -549,7 +549,7 @@ public sealed partial class SimfAdminClient
             content: null,
             accessToken, cancellationToken);
 
-    /// <summary>D-124 — scoped read of a pending Other's full profile.
+    /// <summary>Scoped read of a pending Other's full profile.
     /// Twin of <see cref="GetPendingVisitorProfileAsync"/>.</summary>
     public Task<ApiCallResult<PendingProfileResponse>> GetPendingOtherProfileAsync(
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
@@ -560,7 +560,7 @@ public sealed partial class SimfAdminClient
 
     // -- D-127 — walk-in registration desk -----------------------------------
 
-    /// <summary>D-127 — on-site walk-in visitor registration. Auto-approves
+    /// <summary>On-site walk-in visitor registration. Auto-approves
     /// and returns the minted QR id for the badge handover.</summary>
     public Task<ApiCallResult<AdminWalkInRegistrationResponse>> RegisterVisitorOnSiteAsync(
         AdminWalkInRegistrationRequest request,
@@ -571,7 +571,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-473 (#10) — bulk-generate placeholder badges by profile type + count.</summary>
+    /// <summary>Bulk-generate placeholder badges by profile type + count.</summary>
     public Task<ApiCallResult<AdminBulkGenerateBadgesResponse>> BulkGenerateBadgesAsync(
         AdminBulkGenerateBadgesRequest request,
         string accessToken,
@@ -581,7 +581,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-758 (#10 Phase 2) — the server-paged list of persisted bulk-badge batches.</summary>
+    /// <summary>The server-paged list of persisted bulk-badge batches.</summary>
     public Task<ApiCallResult<GridPage<AdminBadgeBatchSummary>>> ListBadgeBatchesAsync(
         GridQuery query,
         string accessToken,
@@ -591,7 +591,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-758 (#10 Phase 2) — re-email a batch's QR pack to an organiser.</summary>
+    /// <summary>Re-email a batch's QR pack to an organiser.</summary>
     public Task<ApiCallResult<AdminReEmailBadgeBatchResponse>> ReEmailBadgeBatchAsync(
         AdminReEmailBadgeBatchRequest request,
         string accessToken,
@@ -601,7 +601,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-758 (#10 Phase 2) — revoke a batch (disable its accounts + mark it inactive).</summary>
+    /// <summary>Revoke a batch (disable its accounts + mark it inactive).</summary>
     public Task<ApiCallResult<AdminRevokeBadgeBatchResponse>> RevokeBadgeBatchAsync(
         AdminRevokeBadgeBatchRequest request,
         string accessToken,
@@ -611,7 +611,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-127 — on-site walk-in Other registration.</summary>
+    /// <summary>On-site walk-in Other registration.</summary>
     public Task<ApiCallResult<AdminWalkInRegistrationResponse>> RegisterOtherOnSiteAsync(
         AdminWalkInRegistrationRequest request,
         string accessToken,
@@ -623,7 +623,7 @@ public sealed partial class SimfAdminClient
 
     // -- D-126 — broadened admin profile read (Q-G reversed) -----------------
 
-    /// <summary>D-126 — full visitor profile, any state. 404 for unknown
+    /// <summary>Full visitor profile, any state. 404 for unknown
     /// id or wrong UserType.</summary>
     public Task<ApiCallResult<AdminUserProfileView>> GetVisitorProfileAsync(
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
@@ -632,7 +632,7 @@ public sealed partial class SimfAdminClient
             content: null,
             accessToken, cancellationToken);
 
-    /// <summary>D-126 — full Other profile, any state.</summary>
+    /// <summary>Full Other profile, any state.</summary>
     public Task<ApiCallResult<AdminUserProfileView>> GetOtherProfileAsync(
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<AdminUserProfileView>(
@@ -640,7 +640,7 @@ public sealed partial class SimfAdminClient
             content: null,
             accessToken, cancellationToken);
 
-    /// <summary>D-130 — print-bag station: resolve a QR id to the
+    /// <summary>Print-bag station: resolve a QR id to the
     /// walk-in badge response so the page can render and reprint.</summary>
     public Task<ApiCallResult<AdminWalkInRegistrationResponse>> LookupByQrIdAsync(
         string qrId, string accessToken, CancellationToken cancellationToken = default) =>
@@ -651,7 +651,7 @@ public sealed partial class SimfAdminClient
 
     // -- D-129 — admin ID-document upload + read -----------------------------
 
-    /// <summary>D-129 — admin-side upload of a visitor's ID-document image.</summary>
+    /// <summary>Admin-side upload of a visitor's ID-document image.</summary>
     public Task<ApiCallResult<bool>> UploadVisitorIdDocumentAsync(
         Guid subjectId, byte[] content, string contentType, string fileName,
         string accessToken, CancellationToken cancellationToken = default) =>
@@ -659,7 +659,7 @@ public sealed partial class SimfAdminClient
             $"visitors/{subjectId}/id-document",
             content, contentType, fileName, accessToken, cancellationToken);
 
-    /// <summary>D-129 — admin-side upload of an Other account's ID-document image.</summary>
+    /// <summary>Admin-side upload of an Other account's ID-document image.</summary>
     public Task<ApiCallResult<bool>> UploadOtherIdDocumentAsync(
         Guid subjectId, byte[] content, string contentType, string fileName,
         string accessToken, CancellationToken cancellationToken = default) =>
@@ -688,7 +688,7 @@ public sealed partial class SimfAdminClient
             $"visitors/{subjectId}/vip-photo",
             content, contentType, fileName, accessToken, cancellationToken);
 
-    /// <summary>D-427 (CS-3) — admin-side upload of a visitor's profile photo (avatar).</summary>
+    /// <summary>Admin-side upload of a visitor's profile photo (avatar).</summary>
     public Task<ApiCallResult<AvatarResponse>> UploadVisitorAvatarAsync(
         Guid subjectId, byte[] content, string contentType, string fileName,
         string accessToken, CancellationToken cancellationToken = default) =>
@@ -696,7 +696,7 @@ public sealed partial class SimfAdminClient
             $"visitors/{subjectId}/avatar",
             content, contentType, fileName, accessToken, cancellationToken);
 
-    /// <summary>D-427 (CS-3) — admin-side upload of an Other account's profile photo (avatar).</summary>
+    /// <summary>Admin-side upload of an Other account's profile photo (avatar).</summary>
     public Task<ApiCallResult<AvatarResponse>> UploadOtherAvatarAsync(
         Guid subjectId, byte[] content, string contentType, string fileName,
         string accessToken, CancellationToken cancellationToken = default) =>
@@ -716,12 +716,12 @@ public sealed partial class SimfAdminClient
             HttpMethod.Post, path, multipart, accessToken, cancellationToken);
     }
 
-    /// <summary>D-129 — admin-side streamed read of a visitor's ID-document image.</summary>
+    /// <summary>Admin-side streamed read of a visitor's ID-document image.</summary>
     public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchVisitorIdDocumentAsync(
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
         FetchIdDocumentAsync($"visitors/{subjectId}/id-document", accessToken, cancellationToken);
 
-    /// <summary>D-129 — admin-side streamed read of an Other account's ID-document image.</summary>
+    /// <summary>Admin-side streamed read of an Other account's ID-document image.</summary>
     public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchOtherIdDocumentAsync(
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
         FetchIdDocumentAsync($"others/{subjectId}/id-document", accessToken, cancellationToken);
@@ -737,7 +737,7 @@ public sealed partial class SimfAdminClient
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
         FetchIdDocumentAsync($"others/{subjectId}/avatar", accessToken, cancellationToken);
 
-    /// <summary>D-357 — admin streamed read of an admin account's profile photo
+    /// <summary>Admin streamed read of an admin account's profile photo
     /// (avatar) for the Admins-list thumbnail. Gated by Admins.View.</summary>
     public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchAdminAvatarAsync(
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>

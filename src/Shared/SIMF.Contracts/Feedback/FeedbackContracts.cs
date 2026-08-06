@@ -58,7 +58,7 @@ public sealed record RatingFormView(
     IReadOnlyList<RatingFormGroup> Groups,
     IReadOnlyList<RatingFormQuestion> UngroupedQuestions,
     RatingExistingSubmission? Existing,
-    // D-713 (item 8) — the rated target's display context, for the app's
+    // The rated target's display context, for the app's
     // "watched at {session} · {date}" header on a per-session rating. Populated
     // for a per-session target; null for a Global type. Appended (append-only
     // wire, D-219) so the shipped app decodes unchanged.

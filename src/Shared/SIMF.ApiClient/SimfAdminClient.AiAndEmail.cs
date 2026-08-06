@@ -52,7 +52,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Get, $"ai/prompts/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>D-188 — append-only edit history for one prompt.
+    /// <summary>Append-only edit history for one prompt.
     /// Newest first. Empty list when the prompt has never been
     /// updated past v1.</summary>
     public Task<ApiCallResult<IReadOnlyList<AdminAiPromptHistoryEntry>>> GetAiPromptHistoryAsync(
@@ -112,7 +112,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-179 — full redacted payload for one invocation (SOC drill-down).</summary>
+    /// <summary>Full redacted payload for one invocation (SOC drill-down).</summary>
     public Task<ApiCallResult<AdminAiInvocationDetail>> GetAiInvocationAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>

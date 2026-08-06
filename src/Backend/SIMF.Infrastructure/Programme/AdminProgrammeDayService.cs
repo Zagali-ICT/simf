@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// D-452 — admin CRUD over the <see cref="ProgrammeDay"/> rows (Figma 883:2308
+/// Admin CRUD over the <see cref="ProgrammeDay"/> rows (Figma 883:2308
 /// "تفاصيل اليوم"). Built on <see cref="SimfAppDbContext"/>; mirrors
 /// <c>AdminSessionCategoryService</c> — bilingual title, soft-delete, in-service
 /// validation, one audit row per mutation — plus a <c>Date</c>, a one-active-day
@@ -248,7 +248,7 @@ internal sealed class AdminProgrammeDayService(
         {
             return new HashSet<Guid>();
         }
-        // D-568 (S1) — the day image now lives in the unified StoredFile store.
+        // The day image now lives in the unified StoredFile store.
         return (await db.StoredFiles
                 .AsNoTracking()
                 .Where(f => f.IsActive

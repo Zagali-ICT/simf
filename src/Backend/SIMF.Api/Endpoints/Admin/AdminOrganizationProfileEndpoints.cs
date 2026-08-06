@@ -8,7 +8,7 @@ using SIMF.Contracts.Organization;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-495 — the CP Organization Profile editor: read the full profile
+/// <summary>The CP Organization Profile editor: read the full profile
 /// (incl. child-row ids) for the form. Gated by OrganizationProfile.View.</summary>
 public sealed class GetAdminOrganizationProfileEndpoint(
     IOrganizationProfileAdminService service)
@@ -27,7 +27,7 @@ public sealed class GetAdminOrganizationProfileEndpoint(
             await service.GetAsync(ct)), ct);
 }
 
-/// <summary>D-495 — save the Organization Profile (full-document upsert), then
+/// <summary>Save the Organization Profile (full-document upsert), then
 /// return the re-read effective profile. Gated by OrganizationProfile.Manage.</summary>
 public sealed class SaveAdminOrganizationProfileEndpoint(
     IOrganizationProfileAdminService service)

@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P1.3 (D-214) — <c>POST /api/v1/admin/admins/bulk-approve</c>. The
+/// <summary><c>POST /api/v1/admin/admins/bulk-approve</c>. The
 /// admin-queue counterpart of <see cref="BulkApproveVisitorsEndpoint"/>:
 /// bulk-approve a batch of pending admin (staff) accounts. Each subject is
 /// approved in its own step; per-subject failures are reported and do not block
@@ -43,7 +43,7 @@ public sealed class BulkApproveAdminsEndpoint(IAdminUserApprovalService service)
     }
 }
 
-/// <summary>P1.3 (D-214) — <c>POST /api/v1/admin/admins/bulk-reject</c>. The
+/// <summary><c>POST /api/v1/admin/admins/bulk-reject</c>. The
 /// reject counterpart of <see cref="BulkApproveAdminsEndpoint"/>: bulk-reject
 /// the selected pending admins with a shared reason. Ids + reason are validated
 /// by <c>AdminBulkRejectRequestValidator</c>. Gated by <c>Admins.Reject</c>.</summary>

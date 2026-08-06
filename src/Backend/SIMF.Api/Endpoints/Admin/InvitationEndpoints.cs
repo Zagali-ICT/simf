@@ -72,7 +72,7 @@ public sealed class CreateInvitationEndpoint(IAdminInvitationService service)
     }
 }
 
-/// <summary>D-168 — PUT request that binds Id from the route and
+/// <summary>PUT request that binds Id from the route and
 /// State / Notes from the body. Avoids the duplicate-DTO indirection
 /// the earlier shape carried.</summary>
 public sealed class AdminUpdateInvitationRouteRequest : AdminUpdateInvitationRequest

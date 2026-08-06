@@ -66,7 +66,7 @@ public partial class VipsList
         await LoadAsync();
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — the VIP list is a
     // derived view (no add/edit/import); the page's only action is bulk-notify.
     // The row id is the UserProfileId (the grid's row key).

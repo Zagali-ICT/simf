@@ -4,7 +4,7 @@ using SIMF.Domain.AccessControl;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-148 — operator-to-gate assignment. UserId / AssignedByUserId /
+/// <summary>Operator-to-gate assignment. UserId / AssignedByUserId /
 /// RevokedByUserId are logical FKs to SimfUser (DAT-001 §5.3.1).</summary>
 internal sealed class GateAssignmentConfiguration
     : IEntityTypeConfiguration<GateAssignment>
@@ -17,7 +17,7 @@ internal sealed class GateAssignmentConfiguration
         builder.HasIndex(assignment => new { assignment.UserId, assignment.IsActive });
         builder.HasIndex(assignment => new { assignment.GateId, assignment.IsActive });
 
-        // D-611 (Wave B) — at most one ACTIVE assignment of an operator to a gate.
+        // At most one ACTIVE assignment of an operator to a gate.
         builder.HasIndex(assignment => new { assignment.GateId, assignment.UserId })
             .IsUnique()
             .HasFilter("[IsActive] = 1");

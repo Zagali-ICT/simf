@@ -102,7 +102,7 @@ internal sealed class SpeakerMeetingRequestService(
                 "طلب مقابلة المتحدّث غير مُفعَّل لحسابك.");
         }
 
-        // G3 (owner 2026-07-30) — SUPERSEDES the "topic-only request" half of R1 (D-767):
+        // G3 (owner 2026-07-30) — SUPERSEDES the "topic-only request" half of R1:
         // a meeting request may no longer be sent when the speaker has nothing left to
         // offer. GetAvailableSlotsAsync returns an empty list for BOTH reasons — the
         // speaker has no active future window at all, and every slot the windows offer is
@@ -118,7 +118,7 @@ internal sealed class SpeakerMeetingRequestService(
                 "لا توجد فترات متاحة لدى هذا المتحدّث.");
         }
 
-        // R8 (D-767) — the one-open-request-per-(requester, speaker) rule is applied as an
+        // The one-open-request-per-(requester, speaker) rule is applied as an
         // in-place MOVE of the existing Pending request after the slot is resolved (see
         // below), not a duplicate 409.
 
@@ -144,7 +144,7 @@ internal sealed class SpeakerMeetingRequestService(
             slotStart = pickedStart;
             slotEnd = pickedEnd;
 
-            // D-612 — persist which availability window the picked slot came from
+            // Persist which availability window the picked slot came from
             // (the D-611 SpeakerMeetingRequests.AvailabilityWindowId FK, SetNull).
             // The slot falls inside exactly one active window; resolve it by range.
             availabilityWindowId = await appDbContext.SpeakerAvailabilityWindows.AsNoTracking()
@@ -285,7 +285,7 @@ internal sealed class SpeakerMeetingRequestService(
             .ToListAsync(cancellationToken);
 
         // OA-D5 — resolve the check-in operators' display names in ONE Identity-DB
-        // query for the whole page. CheckedInByUserId is a bare logical FK (D-157),
+        // query for the whole page. CheckedInByUserId is a bare logical FK,
         // so this is a second query merged in memory — never a cross-database JOIN.
         // Rows with no check-in contribute no id.
         var operatorNames = await userDirectory.GetDisplayNamesAsync(
@@ -379,7 +379,7 @@ internal sealed class SpeakerMeetingRequestService(
                 "تمت معالجة طلب المقابلة هذا بالفعل.");
         }
 
-        // D-716 (item 7, GAP-2) — accept-with-hall (Option A): the admin bound the
+        // Accept-with-hall (Option A): the admin bound the
         // meeting to a free hall slot, so the picked hall slot becomes the meeting
         // time and the request moves to AwaitingSpeaker (awaiting the speaker's own
         // confirmation, Slice C). An accept with no HallId keeps the legacy
@@ -389,7 +389,7 @@ internal sealed class SpeakerMeetingRequestService(
 
         var now = timeProvider.SimfNow();
 
-        // D-717 — stage the speaker Approve/Reject tokens into the SAME unit of work
+        // Stage the speaker Approve/Reject tokens into the SAME unit of work
         // as the AwaitingSpeaker transition (they are durable domain state, not a
         // notification): the SaveChanges inside the transaction below commits status +
         // tokens atomically, so the request can never be AwaitingSpeaker without its
@@ -493,7 +493,7 @@ internal sealed class SpeakerMeetingRequestService(
         }
         catch (DbUpdateException)
         {
-            // D-716 — the (hall|speaker, SlotStart) filtered-unique index is the
+            // The (hall|speaker, SlotStart) filtered-unique index is the
             // equal-start backstop: a concurrent accept that won the index race after
             // both passed the app-level re-check surfaces here. It is non-transient, so
             // the execution strategy does not retry it; return the same clean 409 the
@@ -524,8 +524,8 @@ internal sealed class SpeakerMeetingRequestService(
             DetailJson(new { speakerMeetingRequestId = req.Id }),
             cancellationToken);
 
-        // D-474 (#11) — notify the requester in-app, and on Accept email the speaker.
-        // D-717 — an accept-WITH-hall is not a terminal decision: instead of the
+        // Notify the requester in-app, and on Accept email the speaker.
+        // An accept-WITH-hall is not a terminal decision: instead of the
         // outcome notification it emails the SPEAKER a double-opt-in Approve/Reject
         // link (the tokens were already committed atomically above). The requester
         // "confirmed"/"declined" notification fires only when the speaker acts.
@@ -536,7 +536,7 @@ internal sealed class SpeakerMeetingRequestService(
             await meetingActionTokens.AuditMintedAsync(req.Id, cancellationToken);
             await EmailSpeakerConfirmationLinksAsync(req, links, cancellationToken);
 
-            // R3 (D-767) — the requester (sender) is also told, in-app AND by email, that
+            // The requester (sender) is also told, in-app AND by email, that
             // their request was approved and is now awaiting the speaker's confirmation,
             // so they are not left in the dark until the speaker acts on the link.
             var approvedSpeakerName = await appDbContext.Speakers.AsNoTracking()
@@ -715,7 +715,7 @@ internal sealed class SpeakerMeetingRequestService(
         await EmailSpeakerConfirmationLinksAsync(req, links, cancellationToken);
     }
 
-    // D-717 (item 7, GAP-3) — email the speaker the Approve/Reject links (the tokens
+    // Email the speaker the Approve/Reject links (the tokens
     // are already committed). Best-effort (swallow-and-log): an email failure leaves
     // the request AwaitingSpeaker with valid tokens; it never rolls back the accept.
     // A re-send admin action is a future follow-up.
@@ -818,7 +818,7 @@ internal sealed class SpeakerMeetingRequestService(
             subjectUserId: Guid.Empty,
             auditLog, logger, cancellationToken);
 
-    // D-716 (item 7, GAP-2) — bind an accepted meeting to a free hall slot
+    // Bind an accepted meeting to a free hall slot
     // (Option A: the picked hall slot is the meeting time of record). Validates the
     // hall hosts meetings, the slot is still free, the speaker is not already
     // committed at that time, and the optional table belongs to the hall — then
@@ -902,7 +902,7 @@ internal sealed class SpeakerMeetingRequestService(
                     "لم يتم العثور على طاولة الاجتماع في هذه القاعة.");
             }
 
-            // D-773 — a meeting TABLE holds one meeting at a time. "Active + in this
+            // A meeting TABLE holds one meeting at a time. "Active + in this
             // hall" was the only check here, and every other guard on this path is
             // keyed on the HALL or the SPEAKER, so a speaker bind could take a table
             // already held by a delegation meeting or a business meeting (reachable
@@ -923,7 +923,7 @@ internal sealed class SpeakerMeetingRequestService(
         req.SlotEnd = end;
     }
 
-    // D-716 — does the speaker already hold a LIVE meeting (Accepted or
+    // Does the speaker already hold a LIVE meeting (Accepted or
     // AwaitingSpeaker, per MeetingRequestStatuses.SlotHolding) that overlaps
     // [start, end) — excluding this request? Half-open overlap, the same rule the
     // availability layer uses. Shared by the legacy accept re-check and the
@@ -964,7 +964,7 @@ internal sealed class SpeakerMeetingRequestService(
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    // D-474 + R3 (D-767) — notify the requester (sender) of the decision by in-app AND
+    // Notify the requester (sender) of the decision by in-app AND
     // email on every terminal outcome (accept/decline); on Accept also email the speaker
     // (the receiver, resolved via their inline contact email). Both best-effort
     // (swallow-and-log) so a notification/email failure never undoes the committed response.
@@ -1045,7 +1045,7 @@ internal sealed class SpeakerMeetingRequestService(
         var email = await userDirectory.GetEmailAsync(
             req.RequestedByUserId, cancellationToken);
 
-        // D-716 — resolve the bound hall/table names for display (only when bound).
+        // Resolve the bound hall/table names for display (only when bound).
         string? hallName = null;
         if (req.HallId is { } hallId)
         {

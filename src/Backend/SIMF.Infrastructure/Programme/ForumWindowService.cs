@@ -5,7 +5,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
 
-/// <summary>D-753 — the forum-day window, computed as MIN/MAX over the ACTIVE
+/// <summary>The forum-day window, computed as MIN/MAX over the ACTIVE
 /// <c>ProgrammeDay.Date</c> rows on <see cref="SimfAppDbContext"/>. It is the
 /// authoritative source for "which days is the event running", replacing the stale
 /// <c>OrganizationProfile.EventStartDate/EventEndDate</c> placeholder for meeting

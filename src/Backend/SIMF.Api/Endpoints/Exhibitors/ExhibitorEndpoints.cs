@@ -8,7 +8,7 @@ using SIMF.Contracts.Exhibitors;
 
 namespace SIMF.Api.Endpoints.Exhibitors;
 
-/// <summary>D-199 #3 — admin exhibitor list. Mirrors ListSponsorsEndpoint.</summary>
+/// <summary>Admin exhibitor list. Mirrors ListSponsorsEndpoint.</summary>
 public sealed class ListExhibitorsEndpoint(IAdminExhibitorService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminExhibitorSummary>>>
 {
@@ -163,7 +163,7 @@ public sealed class LinkExhibitorAccountRoute : LinkExhibitorAccountRequest
     public Guid Id { get; set; }
 }
 
-/// <summary>D-781 — <c>POST /api/v1/admin/exhibitors/{id}/accounts/link</c>.
+/// <summary><c>POST /api/v1/admin/exhibitors/{id}/accounts/link</c>.
 /// Attaches an EXISTING exhibitor-typed account to the exhibitor, which is the
 /// only way an account created through the generic Others pipeline can ever get
 /// the ExhibitorMembership the lead-capture tools require (DEF-EXH-006). Gated by

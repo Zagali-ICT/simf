@@ -4,7 +4,7 @@ namespace SIMF.Common.Options;
 /// Rate-limit settings for the authentication endpoints, bound from the
 /// <c>RateLimit</c> configuration section.
 ///
-/// <para>Two independent partitions guard the auth surface (H7 — D-062):
+/// <para>Two independent partitions guard the auth surface:
 /// the per-IP partition (<see cref="PermitLimit"/> / <see cref="WindowSeconds"/>)
 /// covers the whole "auth" policy; the per-email partition
 /// (<see cref="EmailPermitLimit"/> / <see cref="EmailWindowSeconds"/>) is
@@ -19,7 +19,7 @@ public sealed class RateLimitOptions
     public const string SectionName = "RateLimit";
 
     /// <summary>
-    /// D-819 — the policy name for the on-site OPERATIONAL endpoints: gate
+    /// The policy name for the on-site OPERATIONAL endpoints: gate
     /// scans, hall arrivals/departures, walk-in registration, approve /
     /// bulk-approve, staff uploads and the offline batch upload. The policy is
     /// deliberately UNLIMITED, and requests carrying it are also exempted from
@@ -59,7 +59,7 @@ public sealed class RateLimitOptions
     public int EmailWindowSeconds { get; set; } = 60;
 
     /// <summary>
-    /// H29 — D-088: per-IP cap applied to EVERY request (not just the
+    /// Per-IP cap applied to EVERY request (not just the
     /// "auth" routes). Closes the post-R3 reviewer's Security SEV-2.1
     /// main finding: the pre-H29 rate limiter only covered <c>/auth/*</c>;
     /// every bearer-protected route had no per-IP rate cap, so a

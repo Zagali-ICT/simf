@@ -3,7 +3,7 @@ using SIMF.Common;
 
 namespace SIMF.Api.Endpoints;
 
-/// <summary>D-768 — absolute-URL helper for the hero background video, used by the
+/// <summary>Absolute-URL helper for the hero background video, used by the
 /// admin upload/delete endpoints to persist the served URL.
 ///
 /// <para>D-841 — the route itself moved to

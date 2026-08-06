@@ -38,7 +38,7 @@ public partial class MeetingTablesList
     private bool _busy;
     private Toast? _toast;
 
-    /// <summary>D-835 - the records being read. Both grids already hold the whole
+    /// <summary>The records being read. Both grids already hold the whole
     /// row, so Details opens with no second fetch and no permission of its own:
     /// seeing the row is what MeetingTables.View already bought.</summary>
     private MeetingTableRow? _tableDetails;
@@ -265,7 +265,7 @@ public partial class MeetingTablesList
         finally { _busy = false; }
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set) of the
+    // Excel export (selected rows, or the current filtered set) of the
     // hall's meeting tables. The grid is hall-scoped, so the hall id rides
     // GridQuery.Filters["hallId"]; the API resolves it back to ListTablesAsync.
     // No hall selected → nothing to export.
@@ -442,7 +442,7 @@ public partial class MeetingTablesList
         return false;
     }
 
-    // R10 (D-767) — the resx key for a hall purpose / allocation mode, so the
+    // The resx key for a hall purpose / allocation mode, so the
     // allocations grid renders the localized label instead of the raw enum name
     // (e.g. "RandomByCount"). Mirrors the option keys the pickers already use.
     private static string PurposeKey(HallPurpose purpose) => purpose switch

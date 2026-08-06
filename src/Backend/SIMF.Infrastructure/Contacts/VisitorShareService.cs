@@ -16,7 +16,7 @@ namespace SIMF.Infrastructure.Contacts;
 /// card projected from the owner's <c>UserProfile</c> (+ Organisation / Country
 /// lookups on the App DB + a permitted email round-trip on the Identity DB,
 /// OI-2), and manages the caller's <em>My Contacts</em>. Cross-DB references are
-/// bare-Guid logical FKs resolved on read — no EF join, no PII snapshot (D-157).
+/// bare-Guid logical FKs resolved on read — no EF join, no PII snapshot.
 /// </summary>
 internal sealed class VisitorShareService(
     SimfAppDbContext appDbContext,
@@ -272,7 +272,7 @@ internal sealed class VisitorShareService(
                 .ToListAsync(cancellationToken))
                 .ToDictionary(c => c.Id, c => (En: c.Name, Ar: c.NameArabic));
 
-        // Email is Identity-owned — one cross-DB round-trip (D-157: no join).
+        // Email is Identity-owned — one cross-DB round-trip.
         var emails = await userDirectory.GetEmailsAsync(userIds, cancellationToken);
 
         foreach (var userId in userIds.Distinct())

@@ -64,7 +64,7 @@ public sealed class SimfAuthClient(HttpClient http)
             "change-password", request, accessToken, cancellationToken);
 
     /// <summary>
-    /// D-206: sets a new password against the single-use ticket the sign-in
+    /// Sets a new password against the single-use ticket the sign-in
     /// step issued for a Control Panel account with a forced-change credential.
     /// Anonymous — the ticket authorises it (no access token).
     /// </summary>

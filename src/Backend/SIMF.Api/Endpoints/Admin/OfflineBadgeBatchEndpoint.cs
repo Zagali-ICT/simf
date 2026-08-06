@@ -9,7 +9,7 @@ using SIMF.Contracts.Badges;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-819 — <c>POST /api/v1/admin/offline/batch</c>. The offline badge desk's
+/// <c>POST /api/v1/admin/offline/batch</c>. The offline badge desk's
 /// reconciliation upload: a desk that registered visitors with no network posts
 /// its whole shift here once it is back on the venue link.
 ///

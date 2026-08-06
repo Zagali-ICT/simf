@@ -12,7 +12,7 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
-/// D-166 (gap doc G4) — admin + public read for the two operations
+/// Admin + public read for the two operations
 /// singletons. Both rows are seeded in EF model data; the service
 /// never creates rows, only updates them.
 /// </summary>

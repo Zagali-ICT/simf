@@ -9,7 +9,7 @@ namespace SIMF.Api.Endpoints.Admin.Validators;
 /// Validates the reject request shape (P4) — applies to both
 /// <c>POST /admin/staff/{id}/reject</c> and <c>POST /admin/visitors/{id}/reject</c>
 /// since they share <see cref="RejectRouteRequest"/>. Same 10–500 char
-/// reason rule as the 2FA-reset validator (D-041).
+/// reason rule as the 2FA-reset validator.
 /// </summary>
 public sealed class RejectRouteRequestValidator : Validator<RejectRouteRequest>
 {

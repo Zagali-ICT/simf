@@ -146,7 +146,7 @@ public partial class InvitationsList
         _target = null;
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — invitations are
     // created/edited from the CP forms, so there is no import path.
     private async Task OnExportAsync(IReadOnlyList<AdminInvitationSummary> selected)

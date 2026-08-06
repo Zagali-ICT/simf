@@ -22,7 +22,7 @@ public partial class SessionSeatPlan
     // DEF-SEA-001 — the reservation the admin has asked to release, held until the
     // SimfConfirm dialog names its holder and they confirm. Null = nothing pending.
     private SeatPlanCell? _releasing;
-    // P1.4 (D-215) — the hall layout for the selected session's hall, used to
+    // The hall layout for the selected session's hall, used to
     // paint the full grid (free + reserved). Null when the hall has no layout.
     private HallSeatLayoutSnapshot? _layout;
     private string _reserveRowLabel = string.Empty;
@@ -36,7 +36,7 @@ public partial class SessionSeatPlan
     private bool _busy;
     private Toast? _toast;
 
-    // D-771 — the tier of row i, read off the layout snapshot. Tolerant of an
+    // The tier of row i, read off the layout snapshot. Tolerant of an
     // absent/short SeatTiers (a pre-D-771 payload) → Normal, matching the server.
     private SeatTier TierOfRow(int rowIndex) =>
         _layout?.SeatTiers is { Count: > 0 } tiers && rowIndex < tiers.Count
@@ -57,7 +57,7 @@ public partial class SessionSeatPlan
         _ => L["Admin.HallSeatLayouts.Tier.Normal"],
     };
 
-    // D-767 — seats in row i: the per-row SeatCounts entry when the layout is
+    // Seats in row i: the per-row SeatCounts entry when the layout is
     // variable (ragged), else the uniform SeatsPerRow. Tolerant of a short/absent
     // SeatCounts so a length-mismatched payload still renders.
     private int SeatsInRow(int rowIndex) => _layout is null ? 0
@@ -94,7 +94,7 @@ public partial class SessionSeatPlan
         {
             return name;
         }
-        // D-771 — a VVIP block has no registration, so the admin's guest note IS the
+        // A VVIP block has no registration, so the admin's guest note IS the
         // occupant record.
         var hint = InCurrentLanguage(cell.GuestHint, cell.GuestHintArabic, arabic);
         return hint.Length > 0 ? hint : L["Admin.SessionSeatPlans.Holder.AdminBlock"];
@@ -225,7 +225,7 @@ public partial class SessionSeatPlan
         finally { _loading = false; }
     }
 
-    // P1.4 (D-215) — fetch the hall layout for the selected session's hall so
+    // Fetch the hall layout for the selected session's hall so
     // the grid can show free seats too. A missing layout (404) is not an error;
     // the page falls back to the reservation list.
     private async Task LoadLayoutForSelectedSessionAsync()
@@ -298,7 +298,7 @@ public partial class SessionSeatPlan
                 {
                     RowLabel = rowLabel,
                     SeatNumber = seatNumber,
-                    // D-771 — the manual guest note typed above the grid.
+                    // The manual guest note typed above the grid.
                     GuestHint = _guestHint,
                     GuestHintArabic = _guestHintArabic,
                 });

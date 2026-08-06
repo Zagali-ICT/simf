@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapGates(IEndpointRouteBuilder group)
     {
-        // D-148 — Gate Module BFF passthroughs (admin + operator).
+        // Gate Module BFF passthroughs (admin + operator).
         group.MapPost("/admin/gates/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {

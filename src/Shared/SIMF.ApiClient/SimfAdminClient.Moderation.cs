@@ -67,7 +67,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"session-moderators/{sessionId}/{userId}", content: null,
             accessToken, cancellationToken);
 
-    // P3.3 — D-234: Scientific-Committee Q&A queue (admin base, /admin/questions/*).
+    // Scientific-Committee Q&A queue (admin base, /admin/questions/*).
     public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>>
         ListQuestionQueueAsync(
             SIMF.Common.Enums.QuestionStatus? status, Guid? sessionId,
@@ -104,7 +104,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    // P4.1 — D-238: AI session-summary / محضر committee desk (/admin/session-summaries/*).
+    // AI session-summary / محضر committee desk (/admin/session-summaries/*).
     public Task<ApiCallResult<IReadOnlyList<AdminSessionSummaryRow>>>
         ListSessionSummariesAsync(string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<IReadOnlyList<AdminSessionSummaryRow>>(
@@ -146,7 +146,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Put, $"session-summaries/{sessionId}/unpublish", content: null,
             accessToken, cancellationToken);
 
-    // D-472 (#9) — the team review/approval workflow.
+    // The team review/approval workflow.
     public Task<ApiCallResult<AdminSessionSummaryDetail>>
         SubmitSessionSummaryForReviewAsync(Guid sessionId, string accessToken,
             CancellationToken cancellationToken = default) =>
@@ -168,7 +168,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Put, $"session-summaries/{sessionId}/return-to-draft", content: null,
             accessToken, cancellationToken);
 
-    // P5.1d — D-244: operator hall-door QR arrival (/admin/sessions/{id}/arrivals).
+    // Operator hall-door QR arrival (/admin/sessions/{id}/arrivals).
     public Task<ApiCallResult<SIMF.Contracts.Sessions.QrArrivalResult>>
         RecordQrArrivalAsync(Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest request,
             string accessToken, CancellationToken cancellationToken = default) =>

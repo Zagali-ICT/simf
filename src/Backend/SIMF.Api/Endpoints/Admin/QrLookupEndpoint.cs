@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-130 — <c>GET /api/v1/admin/qr-lookup/{qrId}</c>. The print-bag
+/// <c>GET /api/v1/admin/qr-lookup/{qrId}</c>. The print-bag
 /// station scans (or hand-types) a 12-character Crockford QR id and
 /// the endpoint returns the same shape the walk-in success modal
 /// renders — name + profile-type + colour + QR id — so the page can

@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-134 Sprint A — read-only attendee roster across Visitors + Others.
+/// Read-only attendee roster across Visitors + Others.
 /// Administrator-only; no rate-limit (read endpoint).
 /// </summary>
 public sealed class ListAttendeesEndpoint(IAdminAttendeeService service)

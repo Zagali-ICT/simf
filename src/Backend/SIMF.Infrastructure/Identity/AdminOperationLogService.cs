@@ -14,7 +14,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-134 Sprint A — admin viewer over the <c>OperationLogEntry</c> table.
+/// Admin viewer over the <c>OperationLogEntry</c> table.
 /// Read-only, AsNoTracking. **No schema change** — uses the existing
 /// <see cref="SimfAppDbContext.OperationLog"/> DbSet. P1.6 added the XLSX
 /// export; list + export share one filter/sort path.

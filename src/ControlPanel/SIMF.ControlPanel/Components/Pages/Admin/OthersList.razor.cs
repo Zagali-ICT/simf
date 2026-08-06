@@ -22,7 +22,7 @@ public partial class OthersList
     private bool _loading;
     private bool _busy;
 
-    // D-353 — centralized Add / Edit / Details framing.
+    // Centralized Add / Edit / Details framing.
     private CrudPresentation _presentation = CrudPresentation.Dialog;
     private FormKind _form = FormKind.None;
     private bool _isEdit;
@@ -41,7 +41,7 @@ public partial class OthersList
     private Toast? _toast;
 
     private bool FormOpen => _form != FormKind.None;
-    // D-393 — the wide Add form (the same WalkInRegistrationForm as visitors)
+    // The wide Add form (the same WalkInRegistrationForm as visitors)
     // opens full-page regardless of the admin's popup/page preference; Edit +
     // Details keep the preference.
     private CrudPresentation EffectivePresentation =>
@@ -332,7 +332,7 @@ public partial class OthersList
 
     // The row's avatar thumbnail URL, or null when the account has no photo so
     // SimfIdentityCell shows an initials tile (never a broken image). Only
-    // requested when HasAvatar is set so the grid never issues a 404 (D-568).
+    // requested when HasAvatar is set so the grid never issues a 404.
     private static string? AvatarImageUrl(AdminUserSummary row) =>
         row.HasAvatar ? $"/account/api/admin/others/{row.Id}/avatar" : null;
 

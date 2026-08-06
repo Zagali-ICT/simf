@@ -3,7 +3,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.ControlPanel.Components;
 
-/// <summary>R10 (D-767) — the shared meeting-lifecycle status chip for the
+/// <summary>The shared meeting-lifecycle status chip for the
 /// speaker + delegation review desks. Maps a MeetingRequestStatus to a DISTINCT
 /// SimfPill variant + a shared localized label, replacing the duplicated
 /// per-page switch.</summary>

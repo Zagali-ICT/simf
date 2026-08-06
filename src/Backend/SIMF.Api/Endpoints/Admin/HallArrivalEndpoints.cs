@@ -22,7 +22,7 @@ public sealed class RecordQrArrivalEndpoint(IHallAttendanceService service)
         Post("/admin/sessions/{sessionId:guid}/arrivals");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallArrivals.Record),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        // D-838 — one call per person through a hall door, so it belongs to the
+        // One call per person through a hall door, so it belongs to the
         // operational surface D-819 named. See RateLimitOptions.OperationalPolicy.
         Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Admin");
@@ -50,7 +50,7 @@ public sealed class RecordQrDepartureEndpoint(IHallAttendanceService service)
         Post("/admin/sessions/{sessionId:guid}/departures");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.HallArrivals.Record),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        // D-838 — the exit side of the same door, emptying a hall in one burst.
+        // The exit side of the same door, emptying a hall in one burst.
         Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Admin");
     }

@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-// D-452 — programme-days admin CRUD (Figma 883:2308 "تفاصيل اليوم"). Mirrors the
+// Programme-days admin CRUD (Figma 883:2308 "تفاصيل اليوم"). Mirrors the
 // session-category lookup shape + a Date and a HasImage flag (the day's logo
 // rides the unified D-357 asset pipeline — AssetCategory.ProgrammeDayImage owned
 // by the day's Id; there is no logo column).

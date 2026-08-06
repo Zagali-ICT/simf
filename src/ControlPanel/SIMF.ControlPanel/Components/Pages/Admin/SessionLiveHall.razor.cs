@@ -221,7 +221,7 @@ public partial class SessionLiveHall : IDisposable
 
     // -- Seat-map rendering (read-only 4-state grid) -------------------------
 
-    // D-767 — seats in row i: the per-row SeatCounts entry when the layout is
+    // Seats in row i: the per-row SeatCounts entry when the layout is
     // variable (ragged), else the uniform SeatsPerRow. Tolerant of a short/absent
     // SeatCounts so a length-mismatched payload still renders.
     private int SeatsInRow(int rowIndex) => _map is null ? 0

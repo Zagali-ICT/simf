@@ -47,22 +47,22 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// <summary>The operation log — the durable audit trail (SIMF-FDS-001 section 9).</summary>
     public DbSet<OperationLogEntry> OperationLog => Set<OperationLogEntry>();
 
-    /// <summary>D-109: row-audit trail for changes against this DbContext.</summary>
+    /// <summary>Row-audit trail for changes against this DbContext.</summary>
     public DbSet<RowAudit> RowAudits => Set<RowAudit>();
 
     /// <summary>D-134 Sprint B (D-135 freeze-lift) — programme themes / pillars.</summary>
     public DbSet<Theme> Themes => Set<Theme>();
 
-    /// <summary>D-134 Sprint B (D-135) — venue halls.</summary>
+    /// <summary>Venue halls.</summary>
     public DbSet<Hall> Halls => Set<Hall>();
 
-    /// <summary>D-151 (D-135) — programme speakers.</summary>
+    /// <summary>Programme speakers.</summary>
     public DbSet<Speaker> Speakers => Set<Speaker>();
 
-    /// <summary>P2.3 — D-228 (FR-407): speaker presentation files.</summary>
+    /// <summary>Speaker presentation files.</summary>
     public DbSet<SpeakerPresentation> SpeakerPresentations => Set<SpeakerPresentation>();
 
-    /// <summary>D-452 — forum programme days (date + bilingual title + logo).</summary>
+    /// <summary>Forum programme days (date + bilingual title + logo).</summary>
     public DbSet<ProgrammeDay> ProgrammeDays => Set<ProgrammeDay>();
 
     /// <summary>D-165 (gap doc G3, PDF §2.9) — scheduled run-of-show talks.</summary>
@@ -71,9 +71,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<SessionTheme> SessionThemes => Set<SessionTheme>();
     // Session key-outcome bullets ("أبرز المخرجات" on the public detail page).
     public DbSet<SessionOutcome> SessionOutcomes => Set<SessionOutcome>();
-    // P4.1 — D-237: AI session summary / محضر (one per session).
+    // AI session summary / محضر (one per session).
     public DbSet<SessionSummary> SessionSummaries => Set<SessionSummary>();
-    // P5.1 — D-241: hall arrival / attendance (GPS geofence or QR door scan).
+    // Hall arrival / attendance (GPS geofence or QR door scan).
     public DbSet<HallAttendance> HallAttendances => Set<HallAttendance>();
     // FR-1103 (Q6): periodic device-position samples — the capture path behind the
     // dwell-per-hall aggregation and the route projection. Inert until a hall is
@@ -86,7 +86,7 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<SIMF.Domain.Configuration.SystemSetting> SystemSettings =>
         Set<SIMF.Domain.Configuration.SystemSetting>();
 
-    /// <summary>P2.5 — D-230 (FR-605): 2D venue-map nodes.</summary>
+    /// <summary>2D venue-map nodes.</summary>
     public DbSet<SIMF.Domain.Venue.VenueMapNode> VenueMapNodes =>
         Set<SIMF.Domain.Venue.VenueMapNode>();
 
@@ -96,34 +96,34 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// <summary>D-166 (gap doc G4, PDF §2.4) — archive visibility switch.</summary>
     public DbSet<ArchiveVisibility> ArchiveVisibility => Set<ArchiveVisibility>();
 
-    /// <summary>D-151 — country lookup (ISO 3166-1 numeric Id; admin-managed
+    /// <summary>Country lookup (ISO 3166-1 numeric Id; admin-managed
     /// CRUD; seeded with ~56 priority countries on first migration).</summary>
     public DbSet<Country> Countries => Set<Country>();
 
-    /// <summary>D-148 (D-135) — venue access gates.</summary>
+    /// <summary>Venue access gates.</summary>
     public DbSet<Gate> Gates => Set<Gate>();
 
-    /// <summary>D-148 — per-gate allowed profile types.</summary>
+    /// <summary>Per-gate allowed profile types.</summary>
     public DbSet<GateProfileTypeAllow> GateProfileTypeAllows => Set<GateProfileTypeAllow>();
 
-    /// <summary>D-148 — operator-to-gate assignments.</summary>
+    /// <summary>Operator-to-gate assignments.</summary>
     public DbSet<GateAssignment> GateAssignments => Set<GateAssignment>();
 
-    /// <summary>D-148 — append-only scan log.</summary>
+    /// <summary>Append-only scan log.</summary>
     public DbSet<GateScan> GateScans => Set<GateScan>();
 
-    /// <summary>D-148 — 24h idempotency replay store.</summary>
+    /// <summary>24h idempotency replay store.</summary>
     public DbSet<ScanIdempotency> ScanIdempotencies => Set<ScanIdempotency>();
 
-    /// <summary>D-167 — visitor / other-user profile (was on Identity DB
+    /// <summary>Visitor / other-user profile (was on Identity DB
     /// until D-167; UserId is now a logical FK to <c>SimfUser.Id</c>).</summary>
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
-    /// <summary>D-167 — admin-managed lookup of profile subtypes
+    /// <summary>Admin-managed lookup of profile subtypes
     /// (Visitor tiers + Other partner kinds).</summary>
     public DbSet<UserProfileType> ProfileTypes => Set<UserProfileType>();
 
-    /// <summary>D-167 — admin-managed lookup of visitor interests.</summary>
+    /// <summary>Admin-managed lookup of visitor interests.</summary>
     public DbSet<UserInterest> Interests => Set<UserInterest>();
 
     /// <summary>D-168 (gap doc G5, PDF §2.7.3) — public-relations invitations.</summary>
@@ -132,7 +132,7 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// <summary>D-169 (gap doc G6, PDF §2.7.2) — audience-submitted session questions.</summary>
     public DbSet<SessionQuestion> SessionQuestions => Set<SessionQuestion>();
 
-    /// <summary>D-169 (gap doc G6) — per-session moderator grants.</summary>
+    /// <summary>Per-session moderator grants.</summary>
     public DbSet<SessionModerator> SessionModerators => Set<SessionModerator>();
 
     /// <summary>D-173 (gap doc G8, PDF §1) — editable public content
@@ -148,14 +148,14 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// feature (D-174) was removed in D-278.</summary>
     public DbSet<SpeakerMeetingRequest> SpeakerMeetingRequests => Set<SpeakerMeetingRequest>();
 
-    // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
+    // Speaker availability windows for the VIP-meeting slots.
     public DbSet<SpeakerAvailabilityWindow> SpeakerAvailabilityWindows => Set<SpeakerAvailabilityWindow>();
 
     // D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows (the "hall time"
     // for business meetings); symmetric with SpeakerAvailabilityWindows.
     public DbSet<HallAvailabilityWindow> HallAvailabilityWindows => Set<HallAvailabilityWindow>();
 
-    // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
+    // Delegation↔delegation (G2G) meeting requests.
     public DbSet<DelegationMeetingRequest> DelegationMeetingRequests => Set<DelegationMeetingRequest>();
 
     // Bi-Meeting rework — delegation availability windows (parity with
@@ -181,7 +181,7 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<SIMF.Domain.Notifications.NotificationBroadcast> NotificationBroadcasts =>
         Set<SIMF.Domain.Notifications.NotificationBroadcast>();
 
-    /// <summary>D-176 (gap doc G12) — centralised AI prompt catalogue.
+    /// <summary>Centralised AI prompt catalogue.
     /// Editable from the CP at runtime; one row per logical key.</summary>
     public DbSet<AiPrompt> AiPrompts => Set<AiPrompt>();
 
@@ -195,11 +195,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// BEFORE the version bump that produced it.</summary>
     public DbSet<AiPromptHistory> AiPromptHistory => Set<AiPromptHistory>();
 
-    /// <summary>D-176 (gap doc G12) — append-only telemetry log of
+    /// <summary>Append-only telemetry log of
     /// every AI invocation (success or failure).</summary>
     public DbSet<AiInvocation> AiInvocations => Set<AiInvocation>();
 
-    /// <summary>D-735 — admin overrides for the transactional identity emails
+    /// <summary>Admin overrides for the transactional identity emails
     /// (sign-in OTP, verification, password reset, activation, biometric
     /// step-up). Editable from the CP at runtime; one row per type. Empty until
     /// an admin customises a template (the resolver falls back to code
@@ -207,7 +207,7 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<SIMF.Domain.Email.EmailTemplate> EmailTemplates =>
         Set<SIMF.Domain.Email.EmailTemplate>();
 
-    // D-199 — event modules (freeze lift): media coverage, exhibition,
+    // Event modules (freeze lift): media coverage, exhibition,
     // sponsors, archive editions, ratings.
     public DbSet<News> News => Set<News>();
     public DbSet<MediaItem> MediaItems => Set<MediaItem>();
@@ -215,7 +215,7 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<Booth> Booths => Set<Booth>();
     public DbSet<Sponsor> Sponsors => Set<Sponsor>();
     public DbSet<ArchiveEdition> ArchiveEditions => Set<ArchiveEdition>();
-    // D-432 — owned snapshot children of an archive edition (gallery / session
+    // Owned snapshot children of an archive edition (gallery / session
     // titles / past speakers).
     public DbSet<ArchiveMediaItem> ArchiveMediaItems => Set<ArchiveMediaItem>();
     public DbSet<ArchiveSessionTitle> ArchiveSessionTitles => Set<ArchiveSessionTitle>();
@@ -229,13 +229,13 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<RatingResponse> RatingResponses => Set<RatingResponse>();
     public DbSet<RatingAnswer> RatingAnswers => Set<RatingAnswer>();
 
-    // D-202 — exhibitors + the accounts provisioned under them (additive
+    // Exhibitors + the accounts provisioned under them (additive
     // tables; account link is a logical Guid FK to SimfUser on the Identity DB
     // — no cross-DB navigation).
     public DbSet<Exhibitor> Exhibitors => Set<Exhibitor>();
     public DbSet<ExhibitorMembership> ExhibitorMemberships => Set<ExhibitorMembership>();
 
-    // B3 (D-220) — Saudi-companies lookup, bulk-loaded from a government Excel
+    // Saudi-companies lookup, bulk-loaded from a government Excel
     // sheet; the visitor الجهة (UserProfile.OrganisationId) picker reads from it.
     public DbSet<Organisation> Organisations => Set<Organisation>();
 
@@ -249,11 +249,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<VisitorShareToken> VisitorShareTokens => Set<VisitorShareToken>();
     public DbSet<SavedContact> SavedContacts => Set<SavedContact>();
 
-    // D-426 — exhibitor ("Other") lead capture: visitors scanned at a booth.
+    // Exhibitor ("Other") lead capture: visitors scanned at a booth.
     // Bare-Guid logical FKs to SimfUser.Id (Identity DB) — no DB FK.
     public DbSet<ExhibitorVisitorScan> ExhibitorVisitorScans => Set<ExhibitorVisitorScan>();
 
-    // P2.1 (D-211) — two-level FAQ: groups own ordered question/answer entries.
+    // Two-level FAQ: groups own ordered question/answer entries.
     public DbSet<FaqGroup> FaqGroups => Set<FaqGroup>();
     public DbSet<FaqEntry> FaqEntries => Set<FaqEntry>();
 
@@ -265,13 +265,13 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // (1388:8392) + my-sessions (1388:9067) screens. One row per (user, session).
     public DbSet<SessionFavourite> SessionFavourites => Set<SessionFavourite>();
 
-    // D-495 — the singleton Organization / About profile + its two child lists
+    // The singleton Organization / About profile + its two child lists
     // (the edition-generic forum config: name/dates/status/social/contact/about).
     public DbSet<OrganizationProfile> OrganizationProfile => Set<OrganizationProfile>();
     public DbSet<OrganizationAboutItem> OrganizationAboutItems => Set<OrganizationAboutItem>();
     public DbSet<OrganizationDetail> OrganizationDetails => Set<OrganizationDetail>();
 
-    // B6 (D-224) — visitor-to-visitor networking connections (request/accept).
+    // Visitor-to-visitor networking connections (request/accept).
     public DbSet<Connection> Connections => Set<Connection>();
 
     // SIMF-FDS-013 — D-248: flexible hall allocation + admin-arranged B2B/B2C
@@ -291,14 +291,14 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<DelegationMeetingActionToken> DelegationMeetingActionTokens =>
         Set<DelegationMeetingActionToken>();
 
-    // D-568 — the single, unified file store: ONE table for every uploaded or
+    // The single, unified file store: ONE table for every uploaded or
     // linked file (avatar, ID document, VIP photo, media gallery, speaker photo /
     // presentation, session recording, all logos, news / archive / banner images).
     // Replaces the seven bespoke filesystem stores + the D-357 Asset table. Bytes
-    // live out-of-row (D-90); owner is a bare polymorphic Guid (D-157).
+    // live out-of-row (D-90); owner is a bare polymorphic Guid.
     public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
 
-    // D-758 (#10 Phase 2) — bulk-badge generation runs, so a minted set of
+    // Bulk-badge generation runs, so a minted set of
     // placeholder badges can be re-emailed / revoked as a unit. Each member
     // UserProfile carries a nullable BadgeBatchId back-reference (intra-App FK).
     public DbSet<BadgeBatch> BadgeBatches => Set<BadgeBatch>();
@@ -310,7 +310,7 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
             typeof(SimfAppDbContext).Assembly,
             type => type.Namespace == "SIMF.Infrastructure.Persistence.Configurations.App");
 
-        // D-373 — the concurrency-safe issuer for the human-quotable
+        // The concurrency-safe issuer for the human-quotable
         // registration reference (SIMF-<year>-<8-digit sequence>), read raw in
         // UserProfileRepository.NextRegistrationReferenceAsync via NEXT VALUE FOR.
         // Declared on the model so `Migrate()` creates it on every fresh DB

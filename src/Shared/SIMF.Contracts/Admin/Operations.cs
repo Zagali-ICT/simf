@@ -8,7 +8,7 @@ public sealed record RegistrationGateState(
     DateTime LastChangedAt,
     Guid? LastChangedByUserId);
 
-/// <summary>D-166 — admin PUT body: toggle <c>IsOpen</c> and optionally
+/// <summary>Admin PUT body: toggle <c>IsOpen</c> and optionally
 /// schedule the auto-close moment.</summary>
 public sealed class UpdateRegistrationGateRequest
 {
@@ -23,7 +23,7 @@ public sealed record ArchiveVisibilityState(
     DateTime LastChangedAt,
     Guid? LastChangedByUserId);
 
-/// <summary>D-166 — admin PUT body for the archive visibility toggle.</summary>
+/// <summary>Admin PUT body for the archive visibility toggle.</summary>
 public sealed class UpdateArchiveVisibilityRequest
 {
     public bool IsVisible { get; set; }

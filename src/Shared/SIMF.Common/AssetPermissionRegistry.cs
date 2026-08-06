@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Common;
 
-/// <summary>D-357 — maps each <see cref="AssetCategory"/> to the existing
+/// <summary>Maps each <see cref="AssetCategory"/> to the existing
 /// per-entity permission codes that gate writing (upload / set-link / remove) and
 /// reading (admin fetch) its asset. The generic asset endpoints resolve the
 /// required permission through this registry and enforce it imperatively, so a

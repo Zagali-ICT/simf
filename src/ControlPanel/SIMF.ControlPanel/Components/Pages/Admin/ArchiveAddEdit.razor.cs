@@ -16,7 +16,7 @@ public partial class ArchiveAddEdit
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
-    // D-432 — true once the rich lists are safe to send (create, or an edit
+    // True once the rich lists are safe to send (create, or an edit
     // whose detail fetch succeeded). False ⇒ send null lists (keep existing).
     private bool _listsLoaded;
 
@@ -64,7 +64,7 @@ public partial class ArchiveAddEdit
             return;
         }
 
-        // D-432 — the grid summary carries no rich lists; fetch the detail to
+        // The grid summary carries no rich lists; fetch the detail to
         // pre-populate the gallery / session-title / past-speaker textareas.
         try
         {
@@ -228,7 +228,7 @@ public partial class ArchiveAddEdit
         public string? LocationAr { get; set; }
         public string? DateLabelEn { get; set; }
         public string? DateLabelAr { get; set; }
-        // D-432 — the rich lists as line-delimited text (parsed on save).
+        // The rich lists as line-delimited text (parsed on save).
         public string GalleryText { get; set; } = string.Empty;
         public string SessionTitlesText { get; set; } = string.Empty;
         public string PastSpeakersText { get; set; } = string.Empty;
@@ -272,7 +272,7 @@ public partial class ArchiveAddEdit
                 NameAr = p[0],
                 NameEn = p.Length > 1 && p[1].Length > 0 ? p[1] : p[0],
                 PhotoRelativePath = p.Length > 2 && p[2].Length > 0 ? p[2] : null,
-                // D-456 — 4th field: the ISO 3166-1 numeric country code (e.g. 682).
+                // 4th field: the ISO 3166-1 numeric country code (e.g. 682).
                 CountryId = p.Length > 3 && int.TryParse(p[3], out var cid)
                     ? cid
                     : (int?)null,
@@ -289,7 +289,7 @@ public partial class ArchiveAddEdit
     private static string FormatPastSpeakers(IReadOnlyList<ArchivePastSpeakerInput>? items) =>
         items is null ? string.Empty : string.Join("\n", items.Select(FormatPastSpeaker));
 
-    // D-456 — grammar: "name-ar | name-en | photo-url | countryId". The photo
+    // Grammar: "name-ar | name-en | photo-url | countryId". The photo
     // slot is emitted (possibly empty) whenever a country follows it, so the
     // country always lands in the 4th position on re-parse.
     private static string FormatPastSpeaker(ArchivePastSpeakerInput i)

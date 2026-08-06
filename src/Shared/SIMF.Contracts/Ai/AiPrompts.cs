@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Ai;
 
-/// <summary>D-176 (gap doc G12) — admin grid row.</summary>
+/// <summary>Admin grid row.</summary>
 public sealed record AdminAiPromptSummary(
     Guid Id,
     string Key,
@@ -18,7 +18,7 @@ public sealed record AdminAiPromptSummary(
     DateTime CreatedAt,
     DateTime? UpdatedAt);
 
-/// <summary>D-176 — full detail row (read).</summary>
+/// <summary>Full detail row (read).</summary>
 public sealed record AdminAiPromptDetail(
     Guid Id,
     string Key,
@@ -38,7 +38,7 @@ public sealed record AdminAiPromptDetail(
     DateTime CreatedAt,
     DateTime? UpdatedAt);
 
-/// <summary>D-188 — one historical snapshot of an
+/// <summary>One historical snapshot of an
 /// <see cref="AdminAiPromptDetail"/> (captured BEFORE the live row
 /// was updated past <see cref="Version"/>). The history endpoint
 /// returns these ordered newest-first.</summary>
@@ -67,7 +67,7 @@ public sealed record AdminAiPromptHistoryEntry(
     /// successor version replaced this one).</summary>
     DateTime CapturedAt);
 
-/// <summary>D-176 — create admin request. Open for inheritance per
+/// <summary>Create admin request. Open for inheritance per
 /// D-168 / D-174 / D-175 pattern.</summary>
 public class CreateAiPromptRequest
 {
@@ -85,7 +85,7 @@ public class CreateAiPromptRequest
     public int MaxOutputTokens { get; set; } = 512;
 }
 
-/// <summary>D-176 — update request (same shape as create, no Key
+/// <summary>Update request (same shape as create, no Key
 /// because Key is immutable once written).</summary>
 public class UpdateAiPromptRequest
 {
@@ -103,13 +103,13 @@ public class UpdateAiPromptRequest
     public bool IsActive { get; set; } = true;
 }
 
-/// <summary>D-176 — admin dry-run a prompt with arbitrary inputs.</summary>
+/// <summary>Admin dry-run a prompt with arbitrary inputs.</summary>
 public class TestAiPromptRequest
 {
     public Dictionary<string, string> Inputs { get; set; } = new();
 }
 
-/// <summary>D-176 — result of an AI call shown to the admin tester
+/// <summary>Result of an AI call shown to the admin tester
 /// + the feature endpoints.
 ///
 /// <para>A18 (2026-07-27) — <c>IsStub</c> is APPENDED (append-only wire
@@ -131,7 +131,7 @@ public sealed record AiCallResult(
     int LatencyMs,
     bool IsStub = false);
 
-/// <summary>D-176 — admin invocations log row.</summary>
+/// <summary>Admin invocations log row.</summary>
 public sealed record AdminAiInvocationRow(
     Guid Id,
     string PromptKey,

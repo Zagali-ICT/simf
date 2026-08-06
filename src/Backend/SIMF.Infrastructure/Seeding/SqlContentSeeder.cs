@@ -12,10 +12,10 @@ using FileSourceType = SIMF.Common.Enums.FileSourceType;
 namespace SIMF.Infrastructure.Seeding;
 
 /// <summary>
-/// D-747 — Development / Testing convenience runner that applies the by-hand
+/// Development / Testing convenience runner that applies the by-hand
 /// 2026 content-seed SQL files (<c>docs/migrations/2026/*.sql</c>) against
 /// <c>SIMF_App</c> so a fresh dev or test database is not empty. The content
-/// lane moved out of the C# seeders into these SQL files (D-718 / owner rule);
+/// lane moved out of the C# seeders into these SQL files;
 /// this runner is the ONLY thing that auto-applies them, and it runs ONLY in
 /// Development and Testing. <b>Production never runs it</b> — production content
 /// is curated and applied by hand (see <c>docs/migrations/2026/README.md</c>).
@@ -190,7 +190,7 @@ public sealed class SqlContentSeeder(
             if (!File.Exists(sourcePath))
             {
                 // No bytes anywhere: retire the row so the surface renders its empty
-                // state instead of a broken image (BUG-001 / root-cause class D-687).
+                // state instead of a broken image.
                 row.Deactivate();
                 retired++;
                 continue;

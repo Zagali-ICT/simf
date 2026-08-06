@@ -46,7 +46,7 @@ internal sealed partial class AdminAccountService
                 "The user was not found.",
                 "لم يتم العثور على المستخدم.");
 
-        // RBAC roles apply only to Admin-typed users (D-048).
+        // RBAC roles apply only to Admin-typed users.
         if (user.UserType != UserType.Admin)
         {
             throw new ApiException(

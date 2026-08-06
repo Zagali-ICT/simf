@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-126 — <c>GET /api/v1/admin/visitors/{id}/profile</c>. Q-G reversed:
+/// <c>GET /api/v1/admin/visitors/{id}/profile</c>. Q-G reversed:
 /// returns the full <see cref="AdminUserProfileView"/> for any visitor
 /// in any account state. Type-match guard preserved (a non-Visitor id
 /// 404s). Every successful read triggers a D-109 row-audit row via the

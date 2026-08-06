@@ -10,7 +10,7 @@ using SIMF.Contracts.Ai;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-176 (gap doc G12) — admin CRUD + dry-run + invocations
+/// <summary>Admin CRUD + dry-run + invocations
 /// log over the AI prompt catalogue.</summary>
 public sealed class ListAiPromptsEndpoint(IAdminAiPromptService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminAiPromptSummary>>>
@@ -50,7 +50,7 @@ public sealed class GetAiPromptEndpoint(IAdminAiPromptService service)
     }
 }
 
-/// <summary>D-188 — <c>GET /admin/ai/prompts/{id}/history</c> returns
+/// <summary><c>GET /admin/ai/prompts/{id}/history</c> returns
 /// the append-only snapshot list (newest first) for the given prompt.
 /// Empty list when the prompt has never been updated.</summary>
 public sealed class GetAiPromptHistoryEndpoint(IAdminAiPromptService service)
@@ -61,7 +61,7 @@ public sealed class GetAiPromptHistoryEndpoint(IAdminAiPromptService service)
         Get("/admin/ai/prompts/{id:guid}/history");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiPrompts.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        // D-188: per-record drill-down on the prompt-edit history is
+        // Per-record drill-down on the prompt-edit history is
         // an audit-content read — apply the same auth rate-limit as
         // the meeting-request detail endpoint (D-185 review-pass) so
         // a compromised admin cannot burst-scrape historical
@@ -147,7 +147,7 @@ public sealed class TestAiPromptEndpoint(IAdminAiPromptService service)
         Post("/admin/ai/prompts/{id:guid}/test");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiPrompts.Test),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        // D-179 — per-admin partition (sub-keyed) on the dry-run
+        // Per-admin partition (sub-keyed) on the dry-run
         // endpoint, not just per-IP "auth", so shared offices and
         // stolen-credential botnets cannot bypass the cap.
         Options(rb => rb.RequireRateLimiting("ai-test"));
@@ -195,7 +195,7 @@ public sealed class GetAiDashboardEndpoint(IAdminAiPromptService service)
             await service.GetDashboardAsync(24, ct)), ct);
 }
 
-/// <summary>D-179 — SOC drill-down: returns the full invocation
+/// <summary>SOC drill-down: returns the full invocation
 /// payload (<c>InputJson</c> + <c>OutputText</c>) for one row. The
 /// grid list deliberately omits these for lightness + PII discipline;
 /// this endpoint is the audit-trail read for threat hunting (e.g.

@@ -13,7 +13,7 @@ public sealed record AdminHallAvailabilityWindow(
     bool IsActive,
     DateTime CreatedAt);
 
-/// <summary>D-715 — create a hall availability window.</summary>
+/// <summary>Create a hall availability window.</summary>
 public sealed class CreateHallAvailabilityWindowRequest
 {
     public DateTime Start { get; set; }
@@ -21,7 +21,7 @@ public sealed class CreateHallAvailabilityWindowRequest
     public int SlotMinutes { get; set; } = 30;
 }
 
-/// <summary>D-715 — one bookable slot derived from a hall's windows: a
+/// <summary>One bookable slot derived from a hall's windows: a
 /// fixed-length time range that is not yet taken by a bound meeting.</summary>
 public sealed record HallAvailableSlot(
     DateTime Start,

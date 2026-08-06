@@ -131,7 +131,7 @@ internal sealed class PartnerDirectoryService(
                 .Where(p => approvedIds.Contains(p.UserId)
                     && p.ShowInMeetLikeYou
                     && p.ProfileType != null && !p.ProfileType.IsForVisitor
-                    // D-760: admin master switch — hiding a partner type drops
+                    // Admin master switch — hiding a partner type drops
                     // ALL its accounts here (AND with the per-user opt-in).
                     && p.ProfileType.ShowInPartnerDirectory)
                 .OrderBy(p => p.NameArabic).ThenBy(p => p.Name)

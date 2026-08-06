@@ -206,7 +206,7 @@ internal sealed class ParticipationDocumentRequestService(
             actorUserId,
             JsonSerializer.Serialize(new { participationDocumentRequestId = req.Id, status = req.Status.ToString() }),
             cancellationToken);
-        // One Viewed event for the email disclosure the respond detail returns (D-185).
+        // One Viewed event for the email disclosure the respond detail returns.
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminParticipationDocumentRequestViewed,
             actorUserId,

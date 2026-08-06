@@ -33,7 +33,7 @@ public sealed class ExportArchiveEndpoint(IAdminArchiveService service, IGridExc
         new("Sessions", row => row.Sessions),
         new("Speakers", row => row.Speakers),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the dropped edition fields (summary, location, date
+        // Round-trip the dropped edition fields (summary, location, date
         // label, cover path; appended so the existing column order is unchanged;
         // import binds by header name).
         new("SummaryEn", row => row.SummaryEn),
@@ -111,7 +111,7 @@ public sealed class ImportArchiveEndpoint(IAdminArchiveService service, IGridExc
                 row.Cells.GetValueOrDefault("Sessions", string.Empty), out var sessions) ? sessions : 0,
             Speakers = int.TryParse(
                 row.Cells.GetValueOrDefault("Speakers", string.Empty), out var speakers) ? speakers : 0,
-            // D-506 — round-trip the remaining dropped edition fields (location,
+            // Round-trip the remaining dropped edition fields (location,
             // date label, cover path; CreateAsync trims + length-guards them,
             // absent columns simply stay null).
             LocationEn = NullIfBlank(row.Cells.GetValueOrDefault("LocationEn", string.Empty)),

@@ -225,7 +225,7 @@ internal sealed class VenueMapService(
         }
     }
 
-    // D-611 (Wave B) — the DB CK_VenueMapNodes_KindArc enforces the weak arc; this
+    // The DB CK_VenueMapNodes_KindArc enforces the weak arc; this
     // guards it at the edge with a clean 400 instead of a SaveChanges 500: a Hall
     // reference requires Kind=Hall, a Booth reference requires Kind=Booth, and a
     // node may not reference both. A Zone / PointOfInterest node carries neither.

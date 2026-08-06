@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Networking;
 
 /// <summary>
-/// B6 — D-224: visitor-to-visitor networking connections over
+/// Visitor-to-visitor networking connections over
 /// <see cref="SimfAppDbContext"/>. Display names are resolved from the
 /// Identity DB in a separate round-trip (no cross-DB JOIN — D-157). In-service
 /// validation throws <see cref="ApiException"/> with bilingual messages
@@ -185,7 +185,7 @@ internal sealed class NetworkingService(
         }
 
         // The "other" party for each row — resolve their display names in one
-        // Identity round-trip (no cross-DB JOIN, D-157).
+        // Identity round-trip.
         var otherIds = rows
             .Select(r => r.RequesterUserId == actorUserId ? r.TargetUserId : r.RequesterUserId)
             .Distinct()

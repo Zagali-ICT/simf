@@ -3,7 +3,7 @@ namespace SIMF.Contracts.Attendance;
 /// <summary>
 /// FR-506 (SIMF-SRS-001 §3.5; SIMF-FDS-003 §5.5) — the live top-line of the
 /// Control Panel session-attendance dashboard. A read-only aggregate computed
-/// on demand over the existing <c>HallAttendance</c> arrival records (D-241);
+/// on demand over the existing <c>HallAttendance</c> arrival records;
 /// no schema, no writes. Served by <c>GET /api/v1/admin/attendance/summary</c>.
 ///
 /// <para><c>LiveAttendeesNow</c> is the distinct count of people currently

@@ -28,7 +28,7 @@ internal sealed class QrResolver(
         var normalised = QrId.Normalise(qrId);
         var now = timeProvider.SimfNow();
 
-        // D-819 — an encrypted offline badge is not a QR id, so translate it to
+        // An encrypted offline badge is not a QR id, so translate it to
         // one before the lookup. Branching on LENGTH rather than trying the
         // database first keeps the online path at exactly one query and byte
         // identical to before: every id the system mints is QrIdLength, and a
@@ -93,7 +93,7 @@ internal sealed class QrResolver(
     }
 
     /// <summary>
-    /// D-819 — decrypts an offline badge and returns the QR id it stands for.
+    /// Decrypts an offline badge and returns the QR id it stands for.
     /// False for anything that is not a badge this server can open, which the
     /// caller turns into the same <c>QR_UNKNOWN</c> denial an unrecognised code
     /// has always produced: a scan is never an oracle for which keys are loaded.

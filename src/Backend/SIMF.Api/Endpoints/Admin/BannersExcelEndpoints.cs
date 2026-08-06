@@ -32,7 +32,7 @@ public sealed class ExportBannersEndpoint(IAdminCmsService service, IGridExcelEx
         new("End", row => row.End),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the bilingual body + image/link (appended so the
+        // Round-trip the bilingual body + image/link (appended so the
         // existing column order is unchanged; import binds by header name and
         // already reads these four columns).
         new("Body", row => row.Body),

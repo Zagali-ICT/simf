@@ -23,7 +23,7 @@ public partial class SignIn
     private string? _error;
     private string? _info;
 
-    // D-206 — forced-change popup state.
+    // Forced-change popup state.
     private bool _mustChangePassword;
     private string? _passwordChangeToken;
     private bool _changeBusy;
@@ -91,7 +91,7 @@ public partial class SignIn
                 return;
             }
 
-            // D-206: a forced-change Control Panel credential comes back with a
+            // A forced-change Control Panel credential comes back with a
             // single-use ticket instead of a session — open the change-password
             // popup instead of routing to the second factor. The ticket
             // authorises the change; the user signs in normally afterwards.
@@ -139,7 +139,7 @@ public partial class SignIn
         }
     }
 
-    // D-206: complete the forced password change against the ticket. On success
+    // Complete the forced password change against the ticket. On success
     // no session is minted — the operator signs in again with the new password,
     // so we close the popup, clear the password field and show a success note.
     private async Task CompletePasswordChangeAsync(ChangePasswordCard.Model model)

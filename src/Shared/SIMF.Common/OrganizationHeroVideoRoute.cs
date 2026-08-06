@@ -1,7 +1,7 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// D-768 — the public route the uploaded hero background video is served from.
+/// The public route the uploaded hero background video is served from.
 ///
 /// <para>It lives in <c>SIMF.Common</c> rather than beside the endpoint because
 /// TWO processes need it and they cannot reference each other: the API registers

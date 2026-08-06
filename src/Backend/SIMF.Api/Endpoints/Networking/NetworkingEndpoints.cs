@@ -8,7 +8,7 @@ using SIMF.Contracts.Networking;
 
 namespace SIMF.Api.Endpoints.Networking;
 
-/// <summary>B6 — D-224: visitor-to-visitor networking connections. All
+/// <summary>Visitor-to-visitor networking connections. All
 /// endpoints are app-facing — gated by RequireApprovedAccount only (no
 /// permission code), under the caller's own <c>/account/connections</c>
 /// resource, mirroring MeetPeopleLikeYou. The caller is the JWT <c>sub</c>.</summary>

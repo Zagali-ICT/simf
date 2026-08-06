@@ -28,14 +28,14 @@ public sealed class JwtOptions
     /// required after it even for an active user. Capped at 24 hours (1 day).</summary>
     public int SessionLifetimeHours { get; set; } = 24;
 
-    /// <summary>P3.2b — D-232 (D-213): the distinct audience for short-lived
+    /// <summary>The distinct audience for short-lived
     /// session-recording streaming tokens. A token minted for streaming
     /// (<c>aud = simf-stream</c>) is rejected by the main user scheme
     /// (<c>aud = SIMF</c>) and vice-versa, so a stream token can never be
     /// replayed as a full session token.</summary>
     public string StreamAudience { get; set; } = "simf-stream";
 
-    /// <summary>P3.2b — D-232: the recording-stream token lifetime, in minutes.
+    /// <summary>The recording-stream token lifetime, in minutes.
     /// Long enough to watch one recording in a sitting, still bounded/expiring
     /// and scoped to a single recording (not a permanent URL). The deferred
     /// upgrade path (per-segment signed URLs / client token refresh) is noted

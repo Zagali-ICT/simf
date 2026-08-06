@@ -1,7 +1,7 @@
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// D-161 — the resolved mobile-app authority a signed-in user carries
+/// The resolved mobile-app authority a signed-in user carries
 /// into the Flutter app (SIMF-FDS-002 §8.5; SIMF-MAA-001).
 ///
 /// <para>The mapping is data, not code:</para>
@@ -51,7 +51,7 @@ public enum MobileAppRole
     /// override certain holds (e.g. force-approve a flagged scan).</summary>
     Moderator = 3,
 
-    /// <summary>D-519 — العارض (exhibitor / booth representative). In the
+    /// <summary>العارض (exhibitor / booth representative). In the
     /// Flutter app an Exhibitor gets the full <b>Visitor</b> experience
     /// <b>plus</b> the lead-capture tools (scan a visitor's QR, "My Visitors")
     /// and add-to-contacts. Assigned via an exhibitor <c>ProfileType</c> whose

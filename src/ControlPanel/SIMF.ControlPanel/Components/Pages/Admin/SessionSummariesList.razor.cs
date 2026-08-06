@@ -73,7 +73,7 @@ public partial class SessionSummariesList
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — summaries are
     // drafted / edited / published from this desk's own actions, so there is no
     // import path. Rows are keyed by SessionId (the desk has no separate Id).
@@ -310,7 +310,7 @@ public partial class SessionSummariesList
             ? $"{L["Admin.SessionSummaries.Field.AiDraft"]} · {at.FormatSaudi("dd-MM-yyyy hh:mm tt")}"
             : L["Admin.SessionSummaries.Field.AiDraft"];
 
-    // D-472 (#9) — the team review/approval workflow actions. Each forwards a PUT
+    // The team review/approval workflow actions. Each forwards a PUT
     // to the matching admin endpoint, toasts, and reloads the desk.
     private Task SubmitReviewAsync(Guid sessionId) =>
         TransitionAsync(sessionId, "submit-review", "Admin.SessionSummaries.Submitted");

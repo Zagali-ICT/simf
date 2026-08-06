@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapCommunications(IEndpointRouteBuilder group)
     {
-        // D-168 (gap doc G5) — public-relations BFF passthroughs.
+        // Public-relations BFF passthroughs.
         group.MapPost("/admin/invitations/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -114,7 +114,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.GetBroadcastAsync(id, token));
         });
 
-        // D-173 (gap doc G8) — Dynamic content CMS BFF passthroughs.
+        // Dynamic content CMS BFF passthroughs.
         group.MapPost("/admin/content-blocks/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {

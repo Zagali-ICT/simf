@@ -13,7 +13,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// <summary>Binds {id} + body via a derived route that INHERITS the
 /// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
 /// D-842 (sessions), D-843 (gates, profile types) and the four before them
@@ -24,7 +24,7 @@ public sealed class UpdateVisitorRouteRequest : AdminUpdateVisitorRequest
     public Guid Id { get; set; }
 }
 
-/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// <summary>Binds {id} + body via a derived route that INHERITS the
 /// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
 /// D-842 (sessions), D-843 (gates, profile types) and the four before them
@@ -128,7 +128,7 @@ public sealed class UpdateOtherRouteRequestValidator : Validator<UpdateOtherRout
     }
 }
 
-/// <summary>P1.3 (D-214) — <c>PUT /api/v1/admin/visitors/{id}</c>. Edits a
+/// <summary><c>PUT /api/v1/admin/visitors/{id}</c>. Edits a
 /// visitor's login email, display name, and optional tier. Gated by
 /// <c>Visitors.Edit</c>. An email change rolls the security stamp + revokes
 /// sessions (handled in the service).</summary>
@@ -155,7 +155,7 @@ public sealed class UpdateVisitorEndpoint(IAdminUserProvisioningService service)
     }
 }
 
-/// <summary>P1.3 (D-214) — <c>PUT /api/v1/admin/others/{id}</c>. Edits a
+/// <summary><c>PUT /api/v1/admin/others/{id}</c>. Edits a
 /// partner-side (Other) account. Gated by <c>Others.Edit</c>.</summary>
 public sealed class UpdateOtherEndpoint(IAdminUserProvisioningService service)
     : Endpoint<UpdateOtherRouteRequest, ApiResult<bool>>

@@ -21,11 +21,11 @@ public sealed record AdminSessionSummary(
     DateTime CreatedAt,
     // B9b — D-226: appended (default) — the CP grid resolves the name client-side.
     Guid? CategoryId = null,
-    // P3.2 — D-231: broadcast lifecycle status (appended, default Scheduled).
+    // Broadcast lifecycle status (appended, default Scheduled).
     SessionStatus Status = SessionStatus.Scheduled,
-    // D-452 — session type (Workshop/Session/Event) for the app type tabs.
+    // Session type (Workshop/Session/Event) for the app type tabs.
     SessionType? Type = null,
-    // D-506 — carried so the grid Excel export can round-trip them (not rendered
+    // Carried so the grid Excel export can round-trip them (not rendered
     // as grid columns). Appended (defaulted) so the wire stays append-only; blank
     // when unset.
     string? Description = null,
@@ -41,18 +41,18 @@ public sealed record AdminSessionSummary(
     // every notice. The Excel lane is the only bulk authoring path there is.
     string? LiveNotice = null,
     string? LiveNoticeArabic = null,
-    // D-839 — the session's own arrival-grace override in minutes; null = inherit
+    // The session's own arrival-grace override in minutes; null = inherit
     // the hall. Carried for the same D-506 Excel round-trip reason as the fields
     // above.
     int? ArrivalGraceMinutesOverride = null,
-    // D-839 — what the server will ACTUALLY use for this session, already
+    // What the server will ACTUALLY use for this session, already
     // resolved (override -> hall -> global -> 15). The Hall-Arrivals console
     // reads this instead of its own hard-coded 15, which could see neither of the
     // two layers above and so disagreed with the server about which sessions are
     // open for arrivals.
     int EffectiveArrivalGraceMinutes = WalkInModeOptions.DefaultArrivalGraceMinutes);
 
-/// <summary>D-165 — full session detail (Details + Edit modals).
+/// <summary>Full session detail (Details + Edit modals).
 /// Includes the speaker and theme join sets so the editor can
 /// pre-populate the multi-pickers without an extra round-trip.</summary>
 public sealed record AdminSessionDetail(
@@ -77,10 +77,10 @@ public sealed record AdminSessionDetail(
     DateTime? UpdatedAt,
     // B9b — D-226: the session's category (dynamic lookup); null when unset.
     Guid? CategoryId = null,
-    // P3.2 — D-231: broadcast lifecycle (appended, defaults preserve the wire).
+    // Broadcast lifecycle (appended, defaults preserve the wire).
     SessionStatus Status = SessionStatus.Scheduled,
     DateTime? PublishedAt = null,
-    // P3.2b — D-232: recording metadata (the bytes live out-of-row on disk).
+    // Recording metadata (the bytes live out-of-row on disk).
     bool HasRecording = false,
     string? RecordingFileName = null,
     long? RecordingSizeBytes = null,
@@ -88,12 +88,12 @@ public sealed record AdminSessionDetail(
     // §8 — live broadcast feed(s); null when the session is not live.
     string? LiveStreamUrl = null,
     string? LiveSignLanguageUrl = null,
-    // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+    // AI live-caption text (manual stub provider, bilingual).
     string? LiveCaptions = null,
     string? LiveCaptionsArabic = null,
-    // D-452 — session type (Workshop/Session/Event) for the app type tabs.
+    // Session type (Workshop/Session/Event) for the app type tabs.
     SessionType? Type = null,
-    // D-485 — per-session override of the hall's seat-selection mode; null =
+    // Per-session override of the hall's seat-selection mode; null =
     // inherit the hall. Appended (defaulted) so the wire stays append-only.
     SeatSelectionMode? SeatSelectionModeOverride = null,
     // Website Session-detail (Figma 5991-85840): the "at a glance" language label
@@ -124,7 +124,7 @@ public sealed record AdminSessionDetail(
     // append-only.
     string? LiveNotice = null,
     string? LiveNoticeArabic = null,
-    // D-839 — the per-session arrival-grace override (null = inherit the hall),
+    // The per-session arrival-grace override (null = inherit the hall),
     // and the number clearing that override would fall back to: the hall's grace,
     // else the global value. Deliberately NOT the resolved-including-override
     // value — the edit form offers this as "leave blank to get this", and the
@@ -133,14 +133,14 @@ public sealed record AdminSessionDetail(
     int? ArrivalGraceMinutesOverride = null,
     int InheritedArrivalGraceMinutes = WalkInModeOptions.DefaultArrivalGraceMinutes);
 
-/// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
+/// <summary>One entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>
 public sealed record AdminSessionSpeakerEntry(
     Guid SpeakerId,
     string Name,
     string NameArabic,
     int DisplayOrder,
-    // B9 — D-225: speaker/host role. Default keeps existing construction sites
+    // Speaker/host role. Default keeps existing construction sites
     // (and old request payloads that omit it) compiling as plain speakers.
     SessionSpeakerRole Role = SessionSpeakerRole.Speaker);
 
@@ -172,18 +172,18 @@ public sealed class AdminCreateSessionRequest
     // shared LiveStreamUrlPolicy validates both).
     public string? LiveStreamUrl { get; set; }
     public string? LiveSignLanguageUrl { get; set; }
-    // P5 — D-439 — optional AI live-caption text (manual stub provider, bilingual).
+    // Optional AI live-caption text (manual stub provider, bilingual).
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }
     // FR-702 (owner 2026-07-31) — optional bilingual notice shown WITH the live
     // stream. Informational only: it restricts nothing and withholds nothing.
     public string? LiveNotice { get; set; }
     public string? LiveNoticeArabic { get; set; }
-    // D-452 — session type (Workshop/Session/Event) for the app type tabs.
+    // Session type (Workshop/Session/Event) for the app type tabs.
     public SessionType? Type { get; set; }
-    // D-485 — optional per-session override of the hall's seat-selection mode.
+    // Optional per-session override of the hall's seat-selection mode.
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
-    // D-839 — optional per-session override of the hall's arrival grace, in
+    // Optional per-session override of the hall's arrival grace, in
     // minutes (0..240). Null = inherit the hall (which may itself inherit the
     // global value).
     public int? ArrivalGraceMinutesOverride { get; set; }
@@ -218,18 +218,18 @@ public class AdminUpdateSessionRequest
     // shared LiveStreamUrlPolicy validates both).
     public string? LiveStreamUrl { get; set; }
     public string? LiveSignLanguageUrl { get; set; }
-    // P5 — D-439 — optional AI live-caption text (manual stub provider, bilingual).
+    // Optional AI live-caption text (manual stub provider, bilingual).
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }
     // FR-702 (owner 2026-07-31) — optional bilingual notice shown WITH the live
     // stream. Informational only: it restricts nothing and withholds nothing.
     public string? LiveNotice { get; set; }
     public string? LiveNoticeArabic { get; set; }
-    // D-452 — session type (Workshop/Session/Event) for the app type tabs.
+    // Session type (Workshop/Session/Event) for the app type tabs.
     public SessionType? Type { get; set; }
-    // D-485 — optional per-session override of the hall's seat-selection mode.
+    // Optional per-session override of the hall's seat-selection mode.
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
-    // D-839 — optional per-session override of the hall's arrival grace, in
+    // Optional per-session override of the hall's arrival grace, in
     // minutes (0..240). Null = inherit the hall (which may itself inherit the
     // global value).
     public int? ArrivalGraceMinutesOverride { get; set; }
@@ -241,7 +241,7 @@ public class AdminUpdateSessionRequest
         = new List<AdminSessionOutcomeEntry>();
 }
 
-/// <summary>P3.2 — D-231: the Committee's lifecycle transition. The service
+/// <summary>The Committee's lifecycle transition. The service
 /// enforces the allowed adjacent moves
 /// (<c>Scheduled ↔ Held ↔ Recorded ↔ Published</c>); an illegal jump is a
 /// 400. Setting the same status is an idempotent no-op.</summary>

@@ -8,7 +8,7 @@ using SIMF.Contracts.Email;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-735 — admin list/read/edit/reset/preview over the transactional
+/// <summary>Admin list/read/edit/reset/preview over the transactional
 /// email templates. The DB holds only overrides; the catalogue backs every read
 /// so the grid always shows all six templates. The <c>{type}</c> route segment is
 /// the <see cref="EmailTemplateType"/> name (case-insensitive).</summary>

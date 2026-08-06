@@ -5,7 +5,7 @@ using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-151 — Country lookup configuration. Id is manually-assigned
+/// <summary>Country lookup configuration. Id is manually-assigned
 /// ISO 3166-1 numeric (not IDENTITY). Seed covers GCC + key naval / partner
 /// countries; admins can add the remaining ISO list via the CP CRUD.</summary>
 internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>

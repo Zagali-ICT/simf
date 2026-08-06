@@ -11,7 +11,7 @@ namespace SIMF.Infrastructure.Excel;
 
 /// <summary>
 /// ClosedXML-backed implementation of the user-management Excel workbook
-/// (decision D-044 b, hardened D-045 H1).
+///.
 ///
 /// <para>Workbook layout:</para>
 /// <code>
@@ -118,7 +118,7 @@ internal sealed class ClosedXmlUserExcelService : IUserExcelService
                     "يجب أن يبدأ رأس المصنف بـ Email ثم DisplayName.");
             }
 
-            // D-113: locate an optional ProfileTypeId column for the
+            // Locate an optional ProfileTypeId column for the
             // Visitor / Other imports; -1 means the workbook has none
             // (e.g. the Admin import, which has never carried it).
             var profileTypeColumn = -1;

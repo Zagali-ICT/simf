@@ -7,7 +7,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Configuration;
 
-/// <summary>D-736 — resolves the mobile app-update policy from the whitelisted
+/// <summary>Resolves the mobile app-update policy from the whitelisted
 /// <c>AppUpdateSettingKeys</c> rows in the system-settings store. Blank/absent
 /// values surface as null ("rule off" — the app fails open); store URLs are
 /// sanitised to absolute http(s)-only on read (D-467 — the value becomes a

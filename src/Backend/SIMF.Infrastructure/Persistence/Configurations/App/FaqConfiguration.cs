@@ -4,7 +4,7 @@ using SIMF.Domain.Faq;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>P2.1 (D-211) — FAQ group + entry configuration. Real DB FK
+/// <summary>FAQ group + entry configuration. Real DB FK
 /// FaqEntry → FaqGroup (same DbContext); deleting a group cascades to its
 /// entries (admins soft-delete, so cascade only guards a hard delete).</summary>
 internal sealed class FaqGroupConfiguration : IEntityTypeConfiguration<FaqGroup>

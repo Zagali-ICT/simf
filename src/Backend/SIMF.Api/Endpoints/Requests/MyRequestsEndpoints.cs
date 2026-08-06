@@ -30,7 +30,7 @@ public sealed class MyRequestsEndpoint(IMyRequestsService service)
     }
 }
 
-/// <summary>D-500 — the requester withdraws one of their own still-pending
+/// <summary>The requester withdraws one of their own still-pending
 /// requests (speaker / document / badge). 404 when not found / not owned; 409
 /// when the kind is not self-cancellable or it is no longer Pending.</summary>
 public sealed class CancelMyRequestEndpoint(IMyRequestsService service)

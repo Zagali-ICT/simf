@@ -11,7 +11,7 @@ public sealed record AdminThemeSummary(
     string PageColor,
     bool IsActive,
     DateTime CreatedAt,
-    // D-506 — carry the bilingual descriptions so the Excel export can surface
+    // Carry the bilingual descriptions so the Excel export can surface
     // them (optional/defaulted so existing positional callers are unaffected).
     string? Description = null,
     string? DescriptionArabic = null);

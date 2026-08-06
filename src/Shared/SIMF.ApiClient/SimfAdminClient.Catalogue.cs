@@ -76,7 +76,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"organisations/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>B3 (D-220) — bulk-import a government Excel sheet of Saudi
+    /// <summary>Bulk-import a government Excel sheet of Saudi
     /// companies (multipart; form field "file"). Idempotent upsert by CR.</summary>
     public Task<ApiCallResult<OrganisationImportResult>> ImportOrganisationsAsync(
         byte[] content, string contentType, string fileName,

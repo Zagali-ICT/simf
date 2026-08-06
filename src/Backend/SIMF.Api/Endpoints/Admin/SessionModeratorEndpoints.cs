@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-169 (gap doc G6) — admin CRUD over per-session moderator
+/// <summary>Admin CRUD over per-session moderator
 /// grants. AdministratorOnly — admins assign, moderators do not
 /// self-promote.</summary>
 public sealed class ListSessionModeratorsEndpoint(IAdminSessionModeratorService service)

@@ -17,7 +17,7 @@ public partial class BoothsAddEdit
 
     private readonly Model _model = new();
 
-    // D-766 — booth-officer country + coordinate inputs kept as raw strings
+    // Booth-officer country + coordinate inputs kept as raw strings
     // (parsed on submit), mirroring SpeakersAddEdit. Nationality is the officer's
     // own country picker.
     private string _officerCountryIdInput = string.Empty;
@@ -118,7 +118,7 @@ public partial class BoothsAddEdit
         }
     }
 
-    // D-766 — active countries for the officer nationality picker. Mirrors
+    // Active countries for the officer nationality picker. Mirrors
     // SpeakersAddEdit's loader. A failure leaves the picker empty (country is
     // optional) rather than blocking the whole form.
     private async Task LoadCountriesAsync()
@@ -167,7 +167,7 @@ public partial class BoothsAddEdit
             _error = L["Admin.Booths.Required"]; return;
         }
 
-        // D-766 — officer country comes from the controlled picker (only valid
+        // Officer country comes from the controlled picker (only valid
         // active ids or empty); the service re-validates it. Lat/long are an
         // all-or-nothing pair; the service enforces the real-world ranges.
         int? officerCountryId = null;

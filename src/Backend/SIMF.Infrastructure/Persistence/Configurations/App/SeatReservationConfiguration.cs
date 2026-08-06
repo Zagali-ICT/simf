@@ -4,7 +4,7 @@ using SIMF.Domain.SeatReservations;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-175 (gap doc G11) — SeatReservation EF config.
+/// <summary>SeatReservation EF config.
 /// Real FK to Session with cascade so a deleted session drops its
 /// reservations; ReservedForUserId / CreatedByUserId are logical
 /// FKs to SimfUser on the Identity DB.
@@ -22,11 +22,11 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
         builder.ToTable("SeatReservations");
         builder.HasKey(x => x.Id);
 
-        // D-485 — RowLabel/SeatNumber are now optional: an OpenSeating join
+        // RowLabel/SeatNumber are now optional: an OpenSeating join
         // carries null for both (general admission, no specific seat).
         builder.Property(x => x.RowLabel).HasMaxLength(8);
 
-        // P2.2 — D-227: booking-approval state. NO model-level default: with
+        // Booking-approval state. NO model-level default: with
         // Pending = 0 = the CLR default, HasDefaultValue would make EF treat
         // every Pending insert as "unset" and apply the store default. The
         // service sets Status explicitly on every create; existing prod rows
@@ -34,11 +34,11 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
         // default (not a persisted model concern).
         builder.Property(x => x.RejectionReason).HasMaxLength(512);
 
-        // D-771 — the admin-typed VVIP guest hint (bilingual, both nullable).
+        // The admin-typed VVIP guest hint (bilingual, both nullable).
         builder.Property(x => x.GuestHint).HasMaxLength(256);
         builder.Property(x => x.GuestHintArabic).HasMaxLength(256);
 
-        // D-611 (Wave B) — Restrict (was Cascade): deleting a Session must not
+        // Restrict (was Cascade): deleting a Session must not
         // silently wipe its seat reservations; release/cancel them explicitly.
         builder.HasOne(x => x.Session)
             .WithMany()
@@ -46,7 +46,7 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
             .OnDelete(DeleteBehavior.Restrict);
 
         // Active-seat uniqueness — a seat can be re-reserved after release.
-        // D-485: only seat-specific rows participate (RowLabel IS NOT NULL), so
+        // Only seat-specific rows participate (RowLabel IS NOT NULL), so
         // multiple OpenSeating joins (null row/seat) don't collide on the NULLs.
         builder.HasIndex(x => new { x.SessionId, x.RowLabel, x.SeatNumber })
             .HasFilter("[ReleasedAt] IS NULL AND [RowLabel] IS NOT NULL")
@@ -61,7 +61,7 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
         builder.HasIndex(x => new { x.ReservedForUserId, x.ReleasedAt });
         builder.HasIndex(x => new { x.SessionId, x.ReleasedAt });
 
-        // P2.2 — D-227: the booking approval queue lists Pending, held bookings.
+        // The booking approval queue lists Pending, held bookings.
         builder.HasIndex(x => new { x.Status, x.ReleasedAt });
 
         // M-6 — the expiry worker scans still-held bookings past their hold

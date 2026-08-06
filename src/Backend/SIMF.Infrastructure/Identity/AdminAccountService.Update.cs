@@ -14,7 +14,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// P1.3 (D-214) — per-user Edit for Visitor / Other accounts (promotes the
+/// Per-user Edit for Visitor / Other accounts (promotes the
 /// D-114 CP edit stub to a real edit). Mirrors the create path
 /// (<c>CreateAccountAsync</c>): same scope guard, same email-uniqueness and
 /// profile-type validation, the same two-context save. Adds the identity-change
@@ -119,7 +119,7 @@ internal sealed partial class AdminAccountService
         var emailChanged = !string.Equals(
             target.Email, trimmedEmail, StringComparison.OrdinalIgnoreCase);
 
-        // D-563 — a ProfileType change is a PRIVILEGE change: the type's
+        // A ProfileType change is a PRIVILEGE change: the type's
         // MobileAppRole now sources the app's operational perm claims, so a
         // demotion (e.g. Moderator → a no-authority type) must invalidate any
         // live access token — otherwise the old perms survive until the token
@@ -163,7 +163,7 @@ internal sealed partial class AdminAccountService
             // privilege change: roll the stamp and revoke sessions so a stale
             // session cannot keep the old identity, and so a demoted user loses
             // their elevated app authority at the next request instead of when
-            // the access token happens to expire (D-563).
+            // the access token happens to expire.
             if (emailChanged || profileTypeChanged)
             {
                 await accounts.UpdateSecurityStampAsync(target);

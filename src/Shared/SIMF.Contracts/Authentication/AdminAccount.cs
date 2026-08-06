@@ -7,7 +7,7 @@ namespace SIMF.Contracts.Authentication;
 /// <summary>
 /// The body of <c>POST /api/v1/admin/admins/reset-two-factor</c>. The actor
 /// must hold the Administrator role; the target may not be the actor and
-/// may not also hold the Administrator role (decision D-041).
+/// may not also hold the Administrator role.
 /// </summary>
 public sealed class AdminResetTwoFactorRequest
 {
@@ -82,7 +82,7 @@ public sealed class AdminCreateOtherRequest
 
     /// <summary>
     /// The <c>ProfileTypes</c> row id that identifies the partner subtype.
-    /// D-186: must reference an active row with
+    /// Must reference an active row with
     /// <c>UserType = Visitor</c> AND <c>IsVisitor = false</c> (partner /
     /// staff scope) — the request is rejected if the chosen ProfileType
     /// is audience-side or admin-scope.
@@ -283,7 +283,7 @@ public sealed class AdminBulkApprovalRequest
     public IList<Guid> Ids { get; set; } = new List<Guid>();
 }
 
-/// <summary>D-164 — outcome of a bulk approve. Per-subject failures
+/// <summary>Outcome of a bulk approve. Per-subject failures
 /// carry the user id, the email at the time of the attempt, and a
 /// typed reason code so the CP can render an inline error list next to
 /// the grid rows that did not flip.</summary>
@@ -292,7 +292,7 @@ public sealed record AdminBulkApprovalResponse(
     int Skipped,
     IReadOnlyList<AdminBulkApprovalFailure> Failures);
 
-/// <summary>D-164 — one failed-subject row in
+/// <summary>One failed-subject row in
 /// <see cref="AdminBulkApprovalResponse.Failures"/>.</summary>
 public sealed record AdminBulkApprovalFailure(
     Guid UserId,
@@ -301,7 +301,7 @@ public sealed record AdminBulkApprovalFailure(
     string Message,
     string MessageArabic);
 
-/// <summary>D-209 — the body of <c>POST /api/v1/admin/{visitors,others}/bulk-reject</c>.
+/// <summary>The body of <c>POST /api/v1/admin/{visitors,others}/bulk-reject</c>.
 /// Rejects a batch of pending users with one shared reason. The reason is
 /// mandatory (10–500 chars — same rule as the single reject) and audited per
 /// subject; empty id arrays / out-of-range reasons are rejected with HTTP 400
@@ -315,7 +315,7 @@ public sealed class AdminBulkRejectRequest
     public string Reason { get; set; } = string.Empty;
 }
 
-/// <summary>D-209 — outcome of a bulk reject. Mirrors
+/// <summary>Outcome of a bulk reject. Mirrors
 /// <see cref="AdminBulkApprovalResponse"/> (reusing
 /// <see cref="AdminBulkApprovalFailure"/> for the per-subject failure rows);
 /// <see cref="Rejected"/> is the count that flipped to Rejected.</summary>
@@ -324,7 +324,7 @@ public sealed record AdminBulkRejectResponse(
     int Skipped,
     IReadOnlyList<AdminBulkApprovalFailure> Failures);
 
-/// <summary>The body of <c>POST /api/v1/admin/admins/duplicate</c> (D-044 b).
+/// <summary>The body of <c>POST /api/v1/admin/admins/duplicate</c>.
 /// Creates a new user as a copy of the source — same display-name pattern,
 /// same Administrator-role membership, no password, fresh invite email.</summary>
 public sealed class AdminDuplicateUserRequest
@@ -336,7 +336,7 @@ public sealed class AdminDuplicateUserRequest
     public string NewEmail { get; set; } = string.Empty;
 }
 
-/// <summary>The body of <c>POST /api/v1/admin/admins/export</c> (D-044 b).
+/// <summary>The body of <c>POST /api/v1/admin/admins/export</c>.
 /// When <see cref="Ids"/> is empty, the endpoint exports every user that
 /// matches the (optional) <see cref="Query"/>.</summary>
 public sealed class AdminExportUsersRequest
@@ -404,25 +404,25 @@ public sealed record AdminProfileTypeSummary(
     string NameArabic,
     string PageColor,
     string UserType,
-    // D-161 — the mobile-app authority any user assigned to this type
+    // The mobile-app authority any user assigned to this type
     // carries into the Flutter app. Serialised as the enum name
     // ("None" / "Staff" / "Moderator").
     string MobileAppRole,
     bool IsActive,
-    // D-186 — audience-vs-partner split inside the Visitor scope.
+    // Audience-vs-partner split inside the Visitor scope.
     // true = audience profile type (VIP, Normal); false = partner /
     // staff profile type (Sponsor, Exhibitor, Media, Staff).
     bool IsVisitor,
-    // D-725 — whether the type is offered in the app sign-up picker.
+    // Whether the type is offered in the app sign-up picker.
     // false = CP-only (admin-assigned), e.g. Staff / Moderator.
     bool IsAppRegisterable,
-    // D-760 — whether accounts of this type appear in the "Meet People"
+    // Whether accounts of this type appear in the "Meet People"
     // networking surfaces (partner directory + recommender). Trailing-optional
     // (append-only, wire-safe); defaults true. Only shown on the Others form.
     bool ShowInPartnerDirectory = true);
 
 /// <summary>
-/// D-115 — body of <c>POST /api/v1/admin/profile-types</c>. Creates a
+/// Body of <c>POST /api/v1/admin/profile-types</c>. Creates a
 /// new ProfileType row. D-186 collapsed UserType to Visitor-only for
 /// non-admin profile types; the audience-vs-partner distinction is
 /// expressed via <see cref="IsVisitor"/>. Per-UserType name uniqueness
@@ -430,7 +430,7 @@ public sealed record AdminProfileTypeSummary(
 /// </summary>
 public sealed class AdminCreateProfileTypeRequest
 {
-    /// <summary>D-186: only "Visitor" is accepted for non-admin profile
+    /// <summary>Only "Visitor" is accepted for non-admin profile
     /// types (Admin-side profile types remain reserved for future use).
     /// The audience-vs-partner split lives on <see cref="IsVisitor"/>.</summary>
     public string UserType { get; set; } = string.Empty;
@@ -444,7 +444,7 @@ public sealed class AdminCreateProfileTypeRequest
     /// <summary>App badge / picker colour — hex like "#FFD700" or a CSS variable (1-32 chars).</summary>
     public string PageColor { get; set; } = string.Empty;
 
-    /// <summary>D-161 — the mobile-app authority any user assigned to this
+    /// <summary>The mobile-app authority any user assigned to this
     /// type carries into the Flutter app. Stringly-typed for forward
     /// compatibility ("None" / "Staff" / "Moderator"). Defaults to "None"
     /// when omitted. <c>UserType=Visitor</c> always resolves to the
@@ -454,7 +454,7 @@ public sealed class AdminCreateProfileTypeRequest
     /// <summary>Whether the row is visible in pickers from the moment of creation. Default true.</summary>
     public bool IsActive { get; set; } = true;
 
-    /// <summary>D-186 — audience (true) or partner / staff (false). Default
+    /// <summary>Audience (true) or partner / staff (false). Default
     /// true so a freshly created profile type lands on the Visitors
     /// approval queue until an admin explicitly flips it.</summary>
     public bool IsVisitor { get; set; } = true;
@@ -471,7 +471,7 @@ public sealed class AdminCreateProfileTypeRequest
 }
 
 /// <summary>
-/// D-115 — body of <c>PUT /api/v1/admin/profile-types/{id}</c>. Mutates
+/// Body of <c>PUT /api/v1/admin/profile-types/{id}</c>. Mutates
 /// every field except <c>UserType</c> — a profile type cannot migrate
 /// between Visitor and Admin scopes after creation. D-186: <see cref="IsVisitor"/>
 /// can be flipped because it only re-routes the CP approval queue, not
@@ -487,11 +487,11 @@ public class AdminUpdateProfileTypeRequest
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
     public string PageColor { get; set; } = string.Empty;
-    /// <summary>D-161 — see <see cref="AdminCreateProfileTypeRequest.MobileAppRole"/>.</summary>
+    /// <summary>See <see cref="AdminCreateProfileTypeRequest.MobileAppRole"/>.</summary>
     public string? MobileAppRole { get; set; }
     public bool IsActive { get; set; } = true;
 
-    /// <summary>D-186 — audience (true) or partner / staff (false).</summary>
+    /// <summary>Audience (true) or partner / staff (false).</summary>
     public bool IsVisitor { get; set; } = true;
 
     /// <summary>D-725 (owner item 1) — whether the type appears in the app
@@ -588,7 +588,7 @@ public sealed class AdminWalkInRegistrationRequest
     /// exists on <c>UserProfile</c>; the walk-in form just didn't capture it.</summary>
     public Gender Gender { get; set; } = Gender.Unspecified;
 
-    /// <summary>D-395 — optional vehicle plate number (Saudi plate shape, ≤7
+    /// <summary>Optional vehicle plate number (Saudi plate shape, ≤7
     /// chars). The column already exists on <c>UserProfile</c> (D-371).</summary>
     public string? PlateNumber { get; set; }
 
@@ -600,7 +600,7 @@ public sealed class AdminWalkInRegistrationRequest
     /// <summary>Picked interest ids (visitor-only; ignored for Other kind).</summary>
     public IList<Guid> InterestIds { get; set; } = new List<Guid>();
 
-    /// <summary>D-473 (#10) — true when the desk is registering a delegation (وفد)
+    /// <summary>True when the desk is registering a delegation (وفد)
     /// member. A delegate is an ordinary visitor with this flag set; the service
     /// then requires the nationality to be an invited country. Defaults false
     /// (a plain visitor walk-in).</summary>
@@ -611,7 +611,7 @@ public sealed class AdminWalkInRegistrationRequest
 /// D-127 (amended D-425) — response from the walk-in endpoint. Carries the data
 /// the post-submit success modal needs: the chosen profile-type name + colour
 /// and the user id (so a follow-up ID-document upload can reach the right row).
-/// D-425: <see cref="QrId"/> is now EMPTY for a freshly created walk-in — the
+/// <see cref="QrId"/> is now EMPTY for a freshly created walk-in — the
 /// account is PendingApproval and the QR is minted only on approval; the modal
 /// treats an empty QrId as the "pending" state and shows no badge.
 /// </summary>
@@ -624,7 +624,7 @@ public sealed record AdminWalkInRegistrationResponse(
     string ProfileTypeNameArabic,
     string ProfileTypeColor);
 
-/// <summary>D-473 (#10) — bulk-generate placeholder badges by profile type +
+/// <summary>Bulk-generate placeholder badges by profile type +
 /// count (e.g. 10 VIP + 500 Normal), each Approved with a minted QR, optionally
 /// flagged as delegation (وفد) members. The badges carry default data (no real
 /// personal details) to be filled in / handed out later.</summary>
@@ -636,7 +636,7 @@ public sealed class AdminBulkGenerateBadgesRequest
     /// <summary>The (profile type, count) batches to generate.</summary>
     public IList<BulkBadgeBatch> Batches { get; set; } = new List<BulkBadgeBatch>();
 
-    /// <summary>D-751 (#10) — optional organiser recipient. When provided, the
+    /// <summary>Optional organiser recipient. When provided, the
     /// generated QR badge PNGs are zipped and emailed to this one address after
     /// generation. Null / empty leaves the badges DB-only (no email). Validated
     /// (trim, length, basic format) BEFORE any account is written, so a bad
@@ -644,7 +644,7 @@ public sealed class AdminBulkGenerateBadgesRequest
     public string? RecipientEmail { get; set; }
 }
 
-/// <summary>D-473 (#10) — one bulk batch: how many badges of one profile type.</summary>
+/// <summary>One bulk batch: how many badges of one profile type.</summary>
 public sealed class BulkBadgeBatch
 {
     public Guid ProfileTypeId { get; set; }
@@ -658,7 +658,7 @@ public sealed class BulkBadgeBatch
 public sealed record AdminBulkGenerateBadgesResponse(int Created, bool EmailQueued = false);
 
 /// <summary>
-/// D-127 / D-126 — body returned by the broadened admin profile-read endpoints
+/// Body returned by the broadened admin profile-read endpoints
 /// (<c>GET /api/v1/admin/{visitors,others}/{id}/profile</c>). Q-G reversed:
 /// any admin can read any visitor's or Other's profile, regardless of state.
 /// Every read fires a row-audit row via the D-109 SaveChanges interceptor

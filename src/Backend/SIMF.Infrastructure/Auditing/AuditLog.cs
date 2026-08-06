@@ -33,11 +33,11 @@ internal sealed class AuditLog(
             Outcome = entry.Outcome,
             SubjectEmail = Clip(entry.SubjectEmail, 256),
             SubjectUserId = entry.SubjectUserId,
-            // D-157 — snapshot the subject name from the caller; null is
+            // Snapshot the subject name from the caller; null is
             // acceptable when the caller doesn't have the name on hand.
             SubjectDisplayName = Clip(entry.SubjectDisplayName, 128),
             ActorUserId = entry.ActorUserId,
-            // D-157 — actor snapshot: prefer the caller's explicit value,
+            // Actor snapshot: prefer the caller's explicit value,
             // fall back to the JWT display_name claim for the typical
             // "actor performed this themselves" case.
             ActorDisplayName = Clip(entry.ActorDisplayName ?? requestContext.ActorDisplayName, 128),

@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-209 — <c>POST /api/v1/admin/visitors/bulk-reject</c>. The reject
+/// <summary><c>POST /api/v1/admin/visitors/bulk-reject</c>. The reject
 /// counterpart of <see cref="BulkApproveVisitorsEndpoint"/>: reject every
 /// selected pending visitor in one request with a shared reason. Each subject
 /// is rejected in its own step; per-subject failures are reported and do not
@@ -37,7 +37,7 @@ public sealed class BulkRejectVisitorsEndpoint(IAdminUserApprovalService service
     }
 }
 
-/// <summary>D-209 — <c>POST /api/v1/admin/others/bulk-reject</c>. Same shape as
+/// <summary><c>POST /api/v1/admin/others/bulk-reject</c>. Same shape as
 /// <see cref="BulkRejectVisitorsEndpoint"/> for the partner-side (Other)
 /// pending list; gated by <c>Others.Reject</c>.</summary>
 public sealed class BulkRejectOthersEndpoint(IAdminUserApprovalService service)

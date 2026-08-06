@@ -8,17 +8,17 @@ public sealed record PublicContentBlock(
     string ContentArabic,
     DateTime LastUpdatedAt);
 
-/// <summary>D-173 — batch read response.</summary>
+/// <summary>Batch read response.</summary>
 public sealed record PublicContentBlockBatch(
     IReadOnlyDictionary<string, PublicContentBlock> Blocks);
 
-/// <summary>D-173 — batch read request body.</summary>
+/// <summary>Batch read request body.</summary>
 public sealed class PublicContentBlockBatchRequest
 {
     public IList<string> Keys { get; set; } = new List<string>();
 }
 
-/// <summary>D-173 — public banner payload (anonymous read).</summary>
+/// <summary>Public banner payload (anonymous read).</summary>
 public sealed record PublicBanner(
     Guid Id,
     string Title,
@@ -31,5 +31,5 @@ public sealed record PublicBanner(
     DateTime End,
     int DisplayOrder);
 
-/// <summary>D-173 — list-of-banners response.</summary>
+/// <summary>List-of-banners response.</summary>
 public sealed record PublicBanners(IReadOnlyList<PublicBanner> Items);

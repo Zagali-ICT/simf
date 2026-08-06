@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
 /// <summary>The pending-visitor approval queue. The shared grid / approve /
-/// reject / bulk logic lives in <see cref="PendingApprovalPageBase"/> (D-641);
+/// reject / bulk logic lives in <see cref="PendingApprovalPageBase"/>;
 /// this partial pins the <c>visitors</c> API segment and adds the richest
 /// profile-review modal — ID + avatar lightboxes (D-387/CS-4) and the approve-tier
 /// picker (D-386/D-392, defaulting to the seeded "Normal" audience type).</summary>
@@ -25,12 +25,12 @@ public partial class PendingVisitors
         _viewTarget is not null && _presentation == CrudPresentation.Page;
 
     // The pending row's avatar thumbnail URL, or null so SimfIdentityCell shows an
-    // initials tile (never a broken image). Only when HasAvatar is set (D-568).
+    // initials tile (never a broken image). Only when HasAvatar is set.
     private static string? AvatarImageUrl(AdminPendingUserSummary row) =>
         row.HasAvatar ? $"/account/api/admin/visitors/{row.Id}/avatar" : null;
 
     // D-125 — View modal state for the D-124 pending-profile preview.
-    // D-128 — _approveMode reuses the same modal for the
+    // _approveMode reuses the same modal for the
     // review-before-approve confirmation flow.
     private AdminPendingUserSummary? _viewTarget;
     private PendingProfileResponse? _viewProfile;

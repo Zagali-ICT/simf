@@ -4,7 +4,7 @@ using SIMF.Domain.Ai;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-176 (gap doc G12) — AiPrompt EF config. Unique on Key.
+/// <summary>AiPrompt EF config. Unique on Key.
 /// Long-text columns use <c>nvarchar(max)</c> so prompt templates can
 /// grow without a schema migration.</summary>
 internal sealed class AiPromptConfiguration : IEntityTypeConfiguration<AiPrompt>

@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// D-134 Sprint B — admin CRUD over <see cref="Theme"/>. SIMF-FDS-004 §5.1.
+/// Admin CRUD over <see cref="Theme"/>. SIMF-FDS-004 §5.1.
 /// Built on the <see cref="SimfAppDbContext"/> (D-135 freeze-lift made this
 /// possible — `Themes` is the first new app-side table). Every mutation
 /// audits one row via the existing <see cref="IAuditLog"/>.
@@ -63,7 +63,7 @@ internal sealed class AdminThemeService(
                 theme.Id, theme.Code, theme.Name, theme.NameArabic,
                 theme.DisplayOrder, theme.PageColor, theme.IsActive,
                 theme.CreatedAt,
-                // D-506 — round-trip the bilingual descriptions through export.
+                // Round-trip the bilingual descriptions through export.
                 theme.Description, theme.DescriptionArabic))
             .ToListAsync(cancellationToken);
 

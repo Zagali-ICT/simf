@@ -91,7 +91,7 @@ public sealed class CreateInterestEndpoint(IInterestService service)
     }
 }
 
-/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// <summary>Binds {id} + body via a derived route that INHERITS the
 /// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
 /// D-842 (sessions), D-843 (gates, profile types) and the four before them

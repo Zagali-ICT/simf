@@ -18,7 +18,7 @@ internal sealed class VisitorShareTokenConfiguration : IEntityTypeConfiguration<
         builder.HasKey(token => token.Id);
         builder.Property(token => token.Token).HasMaxLength(32).IsRequired();
         builder.HasIndex(token => token.Token).IsUnique();
-        // D-611 (Wave B) — one ACTIVE share token per user (the "mint if absent"
+        // One ACTIVE share token per user (the "mint if absent"
         // invariant); a revoked token (IsActive=0) is excluded so a fresh mint
         // after revocation still succeeds.
         builder.HasIndex(token => token.UserId)

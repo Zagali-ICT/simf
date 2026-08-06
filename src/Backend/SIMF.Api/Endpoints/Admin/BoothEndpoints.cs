@@ -7,7 +7,7 @@ using SIMF.Contracts.Exhibition;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-199 — admin CRUD over <c>Booths</c> (Exhibition module).
+/// <summary>Admin CRUD over <c>Booths</c> (Exhibition module).
 /// Mirrors SpeakerEndpoints / HallEndpoints shape.</summary>
 public sealed class ListBoothsEndpoint(IAdminBoothService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminBoothSummary>>>
@@ -69,7 +69,7 @@ public sealed class CreateBoothEndpoint(IAdminBoothService service)
     }
 }
 
-/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// <summary>Binds {id} + body via a derived route that INHERITS the
 /// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
 /// D-842 (sessions), D-843 (gates, profile types) and the four before them

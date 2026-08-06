@@ -20,7 +20,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Exhibitors;
 
 /// <summary>
-/// D-426 — exhibitor lead capture. Resolves a visitor by their entry-badge QR,
+/// Exhibitor lead capture. Resolves a visitor by their entry-badge QR,
 /// records the capture, and projects the visitor's full card live from the
 /// App-DB <c>UserProfile</c> (+ Organisation / Country) and a permitted email
 /// round-trip on the Identity DB (D-157 — bare-Guid logical FKs, no join, no PII
@@ -100,7 +100,7 @@ internal sealed class ExhibitorVisitorService(
                 "رمز البطاقة مطلوب.");
         }
 
-        // D-780 — the SUBJECT must be eligible too, not just the caller: any
+        // The SUBJECT must be eligible too, not just the caller: any
         // ACTIVE badge holder (see IsCapturableSubject). A deactivated account
         // returns the same 404 as an unknown code — the caller never learns
         // whether the code exists.
@@ -383,7 +383,7 @@ internal sealed class ExhibitorVisitorService(
             ["Organisation"] = FirstFilled(card.Organisation, card.OrganisationArabic, NotProvidedEn),
             ["OrganisationArabic"] =
                 FirstFilled(card.OrganisationArabic, card.Organisation, NotProvidedAr),
-            // D-219 — Saudi wall clock, 12-hour. No user-facing zoned stamp.
+            // Saudi wall clock, 12-hour. No user-facing zoned stamp.
             ["ScannedAt"] = scannedAt.FormatSaudi(),
             ["Note"] = string.IsNullOrWhiteSpace(note) ? NoNote : note,
         };

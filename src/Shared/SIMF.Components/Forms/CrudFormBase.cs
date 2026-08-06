@@ -4,7 +4,7 @@ using SIMF.Common;
 
 namespace SIMF.Components.Forms;
 
-// D-353 — the shared parameter surface every CRUD form exposes, so the
+// The shared parameter surface every CRUD form exposes, so the
 // CrudShell can host any of them as a popup or a full page and every list
 // page wires them the same way. Two concrete bases:
 //

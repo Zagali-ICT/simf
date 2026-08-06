@@ -157,7 +157,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.RejectVisitorAsync(id, body, token));
         });
-        // P1.3 (D-214) — visitor edit passthrough.
+        // Visitor edit passthrough.
         group.MapPut("/admin/visitors/{id:guid}",
             async (Guid id, AdminUpdateVisitorRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -165,7 +165,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.UpdateVisitorAsync(id, body, token));
         });
-        // P1.3 (D-214) — Other edit passthrough.
+        // Other edit passthrough.
         group.MapPut("/admin/others/{id:guid}",
             async (Guid id, AdminUpdateOtherRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -182,7 +182,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.ChangeAccountTypeAsync(id, body, token));
         });
 
-        // D-164 (gap doc G2) — bulk approve passthroughs.
+        // Bulk approve passthroughs.
         group.MapPost("/admin/visitors/bulk-approve",
             async (AdminBulkApprovalRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -197,7 +197,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.BulkApproveOthersAsync(body, token));
         });
-        // P1.3 (D-214) — admin-queue bulk approve passthrough.
+        // Admin-queue bulk approve passthrough.
         group.MapPost("/admin/admins/bulk-approve",
             async (AdminBulkApprovalRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -206,7 +206,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.BulkApproveAdminsAsync(body, token));
         });
 
-        // D-209 — bulk reject passthroughs (the reject counterpart of D-164).
+        // Bulk reject passthroughs.
         group.MapPost("/admin/visitors/bulk-reject",
             async (AdminBulkRejectRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -221,7 +221,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.BulkRejectOthersAsync(body, token));
         });
-        // P1.3 (D-214) — admin-queue bulk reject passthrough.
+        // Admin-queue bulk reject passthrough.
         group.MapPost("/admin/admins/bulk-reject",
             async (AdminBulkRejectRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -230,7 +230,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.BulkRejectAdminsAsync(body, token));
         });
 
-        // D-124 — scoped pending-profile reads for the CP "preview before approve"
+        // Scoped pending-profile reads for the CP "preview before approve"
         // modal. 404-for-mismatch is preserved by Forward() since the API returns
         // an ApiResult error envelope with status 404.
         group.MapGet("/admin/visitors/{id:guid}/profile-for-approval",
@@ -249,7 +249,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.GetPendingOtherProfileAsync(id, token));
         });
 
-        // D-127 — on-site walk-in registration desk passthroughs.
+        // On-site walk-in registration desk passthroughs.
         group.MapPost("/admin/visitors/register-onsite",
             async (AdminWalkInRegistrationRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -258,7 +258,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.RegisterVisitorOnSiteAsync(body, token));
         });
 
-        // D-473 (#10) — bulk-generate placeholder badges (visitors / delegates).
+        // Bulk-generate placeholder badges (visitors / delegates).
         group.MapPost("/admin/visitors/bulk-generate",
             async (AdminBulkGenerateBadgesRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -267,7 +267,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.BulkGenerateBadgesAsync(body, token));
         });
 
-        // D-758 (#10 Phase 2) — persisted bulk-badge batches: list / re-email / revoke.
+        // Persisted bulk-badge batches: list / re-email / revoke.
         group.MapPost("/admin/visitors/badge-batches/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -298,7 +298,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.RegisterOtherOnSiteAsync(body, token));
         });
 
-        // D-126 — broadened admin profile-read passthroughs (Q-G reversed).
+        // Broadened admin profile-read passthroughs (Q-G reversed).
         group.MapGet("/admin/visitors/{id:guid}/profile",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {

@@ -7,7 +7,7 @@ using SIMF.Contracts.Email;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
-// D-735 — the email-template editor. Reuses the AiPrompts house transport
+// The email-template editor. Reuses the AiPrompts house transport
 // (the JS proxy → SimfAdminClient → backend) and the CrudFormBase parameter
 // surface, adding the three affordances that make the feature: click-to-insert
 // token chips, a debounced live preview, and reset-to-default.

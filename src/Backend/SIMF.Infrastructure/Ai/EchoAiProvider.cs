@@ -3,7 +3,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>D-176 (gap doc G12) — offline deterministic provider.
+/// <summary>Offline deterministic provider.
 /// Returns a synthetic response derived from the user prompt so dev
 /// + tests never hit the network. Production code paths can leave
 /// <see cref="AiProvider.Echo"/> on a prompt to "mute" it without

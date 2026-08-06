@@ -90,7 +90,7 @@ public sealed record AuthUser(Guid Id, string Email, string DisplayName);
 /// shape the app's <c>CurrentUserDto</c> consumes. Built additively for the
 /// Registration-Status screen (Page 011) so the app can poll the approval
 /// state; available to any signed-in account, including not-yet-approved ones
-/// (D-249).
+///.
 /// <list type="bullet">
 ///   <item><see cref="AppRole"/> is the resolved mobile app-role name —
 ///     <c>"Visitor"</c>, <c>"Staff"</c> or <c>"Moderator"</c> — matching the
@@ -112,7 +112,7 @@ public sealed record CurrentUserResponse(
     string PreferredLanguage,
     string RegistrationStatus,
     string? AvatarUrl,
-    // D-374 — server-computed profile completeness so the app can force the
+    // Server-computed profile completeness so the app can force the
     // add-profile stage right after ANY login path (names + ≥1 interest +
     // the C7 male-photo rule), without a separate profile probe. Additive
     // wire field (append-only contract).

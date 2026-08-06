@@ -7,7 +7,7 @@ using SIMF.Contracts.Faq;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-// P2.1 (D-211) — admin CRUD over the two-level FAQ. Validation lives in the
+// Admin CRUD over the two-level FAQ. Validation lives in the
 // service (mirrors AdminNewsService); endpoints just gate + bind + delegate.
 
 // GridQuery + the contract request records are sealed, so route GUIDs are read

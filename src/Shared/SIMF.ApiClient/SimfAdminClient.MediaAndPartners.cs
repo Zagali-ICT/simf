@@ -115,7 +115,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"media/{id}", content: null,
             accessToken, cancellationToken);
 
-    /// <summary>D-199 — multipart upload of a media item's primary image
+    /// <summary>Multipart upload of a media item's primary image
     /// (models <see cref="UploadVisitorIdDocumentAsync"/>).</summary>
     public Task<ApiCallResult<AdminMediaDetail>> UploadMediaImageAsync(
         Guid id, byte[] content, string contentType, string fileName,

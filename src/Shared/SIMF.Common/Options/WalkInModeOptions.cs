@@ -4,7 +4,7 @@ using SIMF.Common.Badges;
 namespace SIMF.Common.Options;
 
 /// <summary>
-/// D-819 — the standby "walk-in" capability, for an event where a large crowd
+/// The standby "walk-in" capability, for an event where a large crowd
 /// arrives who never installed the app, never registered online, hold no badge
 /// and never booked a session.
 ///
@@ -164,7 +164,7 @@ public sealed class WalkInModeOptions
         TimeSpan.FromMinutes(ResolveArrivalGraceMinutes(now));
 
     /// <summary>
-    /// D-839 — the arrival-grace precedence, in whole minutes:
+    /// The arrival-grace precedence, in whole minutes:
     /// <c>session override → hall → the global value</c>. Null at a layer means
     /// "inherit the one below"; a stored <c>0</c> is a real zero and wins.
     ///
@@ -182,14 +182,14 @@ public sealed class WalkInModeOptions
             ? Math.Clamp(minutes, 0, MaxArrivalGraceMinutes)
             : globalMinutes;
 
-    /// <summary>D-839 — null means "inherit the layer above"; any other value must
+    /// <summary>Null means "inherit the layer above"; any other value must
     /// sit inside the one shared bound, the same bound the DB check constraints
     /// enforce.</summary>
     public static bool IsValidArrivalGrace(int? minutes) =>
         minutes is not { } value || value is >= 0 and <= MaxArrivalGraceMinutes;
 
     /// <summary>
-    /// D-839 — parses a blank-or-bounded arrival-grace input. Blank returns true
+    /// Parses a blank-or-bounded arrival-grace input. Blank returns true
     /// with <paramref name="minutes"/> null, which is the real "inherit" value —
     /// NOT zero, which would slam a hall's doors shut the instant a session ends.
     ///

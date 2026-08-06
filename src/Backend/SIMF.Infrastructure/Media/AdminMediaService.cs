@@ -233,7 +233,7 @@ internal sealed class AdminMediaService(
                 "The media item was not found.",
                 "لم يتم العثور على عنصر الوسائط.");
 
-        // D-568 (S2) — store the bytes in the unified StoredFile store. IFileService
+        // Store the bytes in the unified StoredFile store. IFileService
         // runs the full pipeline (malware scan, magic-byte allow-list, canonical
         // MIME, SHA-256, audit); a non-image is rejected there (400).
         var result = await fileService.UploadAsync(

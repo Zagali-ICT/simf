@@ -6,7 +6,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Exhibition;
 
-/// <summary>D-199 — public, anonymous read over active booths. Mirrors
+/// <summary>Public, anonymous read over active booths. Mirrors
 /// PublicDelegationService: AsNoTracking, IsActive filter, projection to
 /// the public contract.
 ///
@@ -34,7 +34,7 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 Code = b.Code,
                 Name = b.Name,
                 NameArabic = b.NameArabic,
-                // B1 — D-222: the exhibitor name comes from the linked Exhibitor
+                // The exhibitor name comes from the linked Exhibitor
                 // when set (the curated source of truth), falling back to the
                 // legacy free-text.
                 ExhibitorName = b.Exhibitor != null ? b.Exhibitor.Name : b.ExhibitorName,
@@ -45,18 +45,18 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 HallId = b.HallId,
                 MapX = b.MapX,
                 MapY = b.MapY,
-                // D-432 — the hall display name + the booth officer fields
+                // The hall display name + the booth officer fields
                 // (now inlined columns on the Booth row).
                 HallName = b.Hall != null ? b.Hall.Name : null,
                 HallNameArabic = b.Hall != null ? b.Hall.NameArabic : null,
                 OfficerName = b.OfficerName,
                 OfficerPhone = b.OfficerPhone,
                 OfficerEmail = b.OfficerEmail,
-                // P6 — D-440: append-only frozen wire field. The exhibitor's
+                // Append-only frozen wire field. The exhibitor's
                 // Contact id is gone with the shared Contact directory, so it now
                 // emits null.
                 ExhibitorContactId = null,
-                // D-456: the exhibitor company's country (now inlined as
+                // The exhibitor company's country (now inlined as
                 // Exhibitor.CountryId) for the app's corner flag on the booth logo.
                 CountryId = b.Exhibitor != null ? b.Exhibitor.CountryId : null,
                 // #9: the country NAME from the Country lookup on that numeric id
@@ -82,7 +82,7 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 Code = b.Code,
                 Name = b.Name,
                 NameArabic = b.NameArabic,
-                // B1 — D-222: exhibitor name from the linked Exhibitor when set,
+                // Exhibitor name from the linked Exhibitor when set,
                 // else the legacy free-text.
                 ExhibitorName = b.Exhibitor != null ? b.Exhibitor.Name : b.ExhibitorName,
                 ExhibitorNameArabic =
@@ -94,16 +94,16 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 HallId = b.HallId,
                 MapX = b.MapX,
                 MapY = b.MapY,
-                // D-432 — hall name + inlined booth officer fields (see ListAsync).
+                // Hall name + inlined booth officer fields (see ListAsync).
                 HallName = b.Hall != null ? b.Hall.Name : null,
                 HallNameArabic = b.Hall != null ? b.Hall.NameArabic : null,
                 OfficerName = b.OfficerName,
                 OfficerPhone = b.OfficerPhone,
                 OfficerEmail = b.OfficerEmail,
-                // P6 — D-440: append-only frozen wire field; now emits null (the
+                // Append-only frozen wire field; now emits null (the
                 // exhibitor's Contact id is gone). See ListAsync.
                 ExhibitorContactId = null,
-                // D-456: the exhibitor company's country (now inlined as
+                // The exhibitor company's country (now inlined as
                 // Exhibitor.CountryId) for the app's corner flag on the booth logo.
                 CountryId = b.Exhibitor != null ? b.Exhibitor.CountryId : null,
                 // #9: the country NAME from the Country lookup (see ListAsync).

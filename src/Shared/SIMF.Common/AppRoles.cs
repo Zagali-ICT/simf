@@ -27,7 +27,7 @@ public static class AppRoles
 {
     public const string Administrator = "Administrator";
 
-    /// <summary>D-148 — operator role for the Gate Module. Holders carry
+    /// <summary>Operator role for the Gate Module. Holders carry
     /// the <see cref="Permissions.GatesOperate"/> and
     /// <see cref="Permissions.GatesViewOwnReports"/> permissions. Operators
     /// authenticate against the CP surface (they use the operator console).</summary>
@@ -41,7 +41,7 @@ public static class AppRoles
     /// can be split later if the team grows past one shared page set.</summary>
     public const string PublicRelations = "PublicRelations";
 
-    /// <summary>D-752 — the Security team CP permission set. Holders manage the
+    /// <summary>The Security team CP permission set. Holders manage the
     /// access-control surface: the gates (<c>Gates.*</c>), the hall-door arrival
     /// console (<c>HallArrivals.*</c>) and the session-attendance dashboard
     /// (<c>Attendance.View</c>). Its baseline grants sit alongside
@@ -49,7 +49,7 @@ public static class AppRoles
     /// permission set, NOT the removed P4 "Security" reviewer ProfileType.</summary>
     public const string SecurityTeam = "SecurityTeam";
 
-    /// <summary>D-752 — the Scientific team CP permission set. Holders run the
+    /// <summary>The Scientific team CP permission set. Holders run the
     /// scientific-programme surface: sessions (<c>Sessions.*</c>), the Q&amp;A /
     /// moderation queue (<c>Questions.*</c>, <c>SessionModeration.Moderate</c>),
     /// the AI محضر / session-summary desk (<c>SessionSummaries.*</c>), ratings
@@ -65,7 +65,7 @@ public static class AppRoles
         [Administrator, GateOperator, PublicRelations, SecurityTeam, ScientificCommittee];
 }
 
-/// <summary>D-148 — Gate Module permission names. Per the
+/// <summary>Gate Module permission names. Per the
 /// SIMF-RPM-001 model, an Administrator holds every permission; a
 /// <see cref="AppRoles.GateOperator"/> holds only the gate permissions.
 /// D-168 (gap doc G5) added the public-relations triad.</summary>
@@ -75,17 +75,17 @@ public static class Permissions
     public const string GatesOperate = "Gates.Operate";
     public const string GatesViewOwnReports = "Gates.ViewOwnReports";
 
-    /// <summary>D-168 (gap doc G5) — manage invitation rows (create / edit /
+    /// <summary>Manage invitation rows (create / edit /
     /// soft-delete / state override). Granted to Administrator and
     /// <see cref="AppRoles.PublicRelations"/>.</summary>
     public const string InvitationsManage = "Invitations.Manage";
 
-    /// <summary>D-168 (gap doc G5) — view the VIP list (users whose
+    /// <summary>View the VIP list (users whose
     /// <c>ProfileType.Name</c> is in <c>{VVIP, VIP, Gold}</c>). Granted
     /// to Administrator and <see cref="AppRoles.PublicRelations"/>.</summary>
     public const string VipsView = "Vips.View";
 
-    /// <summary>D-168 (gap doc G5) — dispatch guest-targeted notifications
+    /// <summary>Dispatch guest-targeted notifications
     /// (in-app row + queued email) to one or more VIPs. Granted to
     /// Administrator and <see cref="AppRoles.PublicRelations"/>.</summary>
     public const string VipsNotify = "Vips.Notify";

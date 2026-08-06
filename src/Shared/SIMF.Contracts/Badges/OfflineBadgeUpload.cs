@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.Badges;
 
 /// <summary>
-/// D-819 — one batch of registrations taken at an OFFLINE badge desk, uploaded
+/// One batch of registrations taken at an OFFLINE badge desk, uploaded
 /// once the desk is back on the network.
 ///
 /// <para>The desk has already printed and handed over the badges, so this is a
@@ -23,7 +23,7 @@ public sealed class OfflineBadgeBatchRequest
         = new List<OfflineBadgeRegistration>();
 }
 
-/// <summary>D-819 — one badge printed offline.</summary>
+/// <summary>One badge printed offline.</summary>
 public sealed class OfflineBadgeRegistration
 {
     /// <summary>The desk-minted sequence encrypted into the printed QR. This is
@@ -62,7 +62,7 @@ public sealed class OfflineBadgeRegistration
     public DateTime? RegisteredAt { get; set; }
 }
 
-/// <summary>D-819 — what happened to one uploaded registration.</summary>
+/// <summary>What happened to one uploaded registration.</summary>
 public enum OfflineBadgeUploadStatus
 {
     /// <summary>Account created and approved; the printed badge works.</summary>
@@ -83,7 +83,7 @@ public enum OfflineBadgeUploadStatus
     Rejected = 3,
 }
 
-/// <summary>D-819 — per-item outcome, so the desk can reprint or chase exactly
+/// <summary>Per-item outcome, so the desk can reprint or chase exactly
 /// the rows that did not land.</summary>
 public sealed record OfflineBadgeUploadResult(
     long Sequence,
@@ -92,7 +92,7 @@ public sealed record OfflineBadgeUploadResult(
     string? ErrorCode,
     string? Message);
 
-/// <summary>D-819 — the reconciliation report for one uploaded batch.</summary>
+/// <summary>The reconciliation report for one uploaded batch.</summary>
 public sealed record OfflineBadgeBatchResponse(
     int Submitted,
     int Created,

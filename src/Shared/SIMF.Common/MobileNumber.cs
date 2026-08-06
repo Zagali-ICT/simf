@@ -3,7 +3,7 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// C4 (D-371) — the ONE canonical form of a stored mobile number.
+/// The ONE canonical form of a stored mobile number.
 ///
 /// <para>DEF-PHN-003 — the shape rules always stripped separators before
 /// matching, but only for the match: the value itself was persisted exactly as

@@ -30,28 +30,28 @@ public sealed record PublicSessionListItem(
     Guid? CategoryId = null,
     string? CategoryName = null,
     string? CategoryNameArabic = null,
-    // P3.2 — D-231: broadcast lifecycle status (appended; lets the agenda
+    // Broadcast lifecycle status (appended; lets the agenda
     // chip a "Recorded"/"Published" badge). Default preserves the wire.
     SessionStatus Status = SessionStatus.Scheduled,
     // D-252 (Mockup screen 16 "Agenda" + 17 "Session detail"): the agenda payload
     // is fetched once and CACHED, then the UI filters inline (Upcoming/Forum pills,
     // day strip, search) and previews a session without a second fetch — so the
     // list carries the body + the ordered speaker cards too (the category already
-    // carries the "main session"/type tag). Appended (D-219 append-only).
+    // carries the "main session"/type tag). Appended.
     string? Description = null,
     string? DescriptionArabic = null,
     IReadOnlyList<PublicSessionSpeaker>? Speakers = null,
     // D-452 (Figma 883:2308 type tabs): the session's kind (Workshop / Session /
-    // Event). Null = untyped. Appended (append-only, D-219).
+    // Event). Null = untyped. Appended.
     SessionType? Type = null,
-    // A8 (D-237) — true when this session has an ACTIVE SessionSummary carrying a
+    // True when this session has an ACTIVE SessionSummary carrying a
     // PublishedAt stamp (the محضر the app renders), so the agenda can badge
     // "summary available" without a per-session GET /summary probe. This is the
     // summary's OWN editorial publish state, orthogonal to Status. Appended
-    // (append-only, D-219).
+    //.
     bool HasPublishedSummary = false);
 
-/// <summary>D-199 — envelope for the public agenda list.</summary>
+/// <summary>Envelope for the public agenda list.</summary>
 public sealed record PublicSessions(IReadOnlyList<PublicSessionListItem> Items);
 
 /// <summary>D-452 (Figma 883:2308 "تفاصيل اليوم") — one programme day on the
@@ -68,7 +68,7 @@ public sealed record PublicProgrammeDay(
     bool HasImage,
     IReadOnlyList<PublicSessionListItem> Sessions);
 
-/// <summary>D-452 — envelope for the day-grouped public agenda.</summary>
+/// <summary>Envelope for the day-grouped public agenda.</summary>
 public sealed record PublicProgrammeDays(IReadOnlyList<PublicProgrammeDay> Days);
 
 /// <summary>D-199 (Mockup page 17 "Session detail") — full public view
@@ -95,12 +95,12 @@ public sealed record PublicSessionDetail(
     Guid? CategoryId = null,
     string? CategoryName = null,
     string? CategoryNameArabic = null,
-    // P3.2 — D-231: broadcast lifecycle status + publish stamp. The client
+    // Broadcast lifecycle status + publish stamp. The client
     // badges the state; PublishedAt marks when it went live. Appended; defaults
-    // preserve the wire (D-219).
+    // preserve the wire.
     SessionStatus Status = SessionStatus.Scheduled,
     DateTime? PublishedAt = null,
-    // P3.2b — D-232: true when this published session has a recording the app
+    // True when this published session has a recording the app
     // can stream. The app then POSTs the stream-token endpoint and plays the
     // range-streaming URL. The server only surfaces the recording when
     // Status == Published AND a recording exists (the recorded-Q&A read lands
@@ -117,13 +117,13 @@ public sealed record PublicSessionDetail(
     // P5 — D-439 (Mockup screen 25, Figma 934:3613): the AI live-caption text
     // shown under the player. Non-null = the app renders the caption strip with
     // this text; null = the placeholder hint. Bilingual; provider stubbed (manual
-    // CP entry for the POC). Appended (append-only, D-219).
+    // CP entry for the POC). Appended.
     string? LiveCaptions = null,
     string? LiveCaptionsArabic = null,
     // D-567 (Figma 889:2604 gold index badge): the session's 1-based position
     // within its day (sessions ordered by Start), e.g. 2 → the badge shows
     // "02". Computed by the service; 0 = unknown (an older API → the app falls
-    // back to the code on the badge). Appended (append-only, D-219).
+    // back to the code on the badge). Appended.
     int DisplayOrder = 0,
     // Website Session-detail (Figma 5991-85840): the "أبرز المخرجات" key-outcome
     // bullets (ordered) and the "at a glance" card's bilingual language label.
@@ -137,7 +137,7 @@ public sealed record PublicSessionDetail(
     // 2026-07-15) — anonymously downloadable from the website, served by the
     // same-origin route the page builds from each item's Id. Sourced from the
     // active SpeakerPresentation rows for the session. Appended (append-only,
-    // D-219) — the app keeps its own signed-in /app/presentations read.
+    // The app keeps its own signed-in /app/presentations read.
     IReadOnlyList<PublicSessionDownload>? Downloads = null,
     // #29 (owner 2026-07-30): the session's kind, so the app can reduce a
     // WORKSHOP's detail to title + time. PublicSessionItem has carried Type since
@@ -146,7 +146,7 @@ public sealed record PublicSessionDetail(
     // screen could never fire. Appended (append-only, D-219); null = an untyped
     // session, which renders the full detail exactly as before.
     SessionType? Type = null,
-    // D-840 — the arrival grace the SERVER will actually apply to this session,
+    // The arrival grace the SERVER will actually apply to this session,
     // in whole minutes, already resolved (its own override, else its hall's, else
     // the global walk-in value). The app decides from it whether to show the
     // "you can check in now" strip.
@@ -167,7 +167,7 @@ public sealed record PublicSessionDetail(
     // DETAIL only (not on PublicSessionListItem): the live surface reads the detail —
     // the list has no live-feed field at all — so an agenda row cannot render the
     // banner, and putting it there would be paid for on every row of every fetch.
-    // Appended (append-only, D-219).
+    // Appended.
     string? LiveNotice = null,
     string? LiveNoticeArabic = null);
 
@@ -189,7 +189,7 @@ public sealed record PublicSessionDownload(
     string ContentType,
     long SizeBytes);
 
-/// <summary>D-199 — one theme/pillar tag on a public session. Order
+/// <summary>One theme/pillar tag on a public session. Order
 /// follows the session's theme order; the first is the primary pillar
 /// the agenda groups under.</summary>
 public sealed record PublicSessionTheme(
@@ -203,7 +203,7 @@ public sealed record PublicSessionTheme(
     string? Description = null,
     string? DescriptionArabic = null);
 
-/// <summary>D-199 — one speaker on the public session detail card.
+/// <summary>One speaker on the public session detail card.
 /// <see cref="Title"/> is the speaker's rank/role (Mockup "Chief
 /// Scientist"); order follows the session's <c>DisplayOrder</c>
 /// (0 = primary). The speaker's organisation is not part of the frozen
@@ -214,10 +214,10 @@ public sealed record PublicSessionSpeaker(
     string NameArabic,
     string? Title,
     int DisplayOrder,
-    // B9 — D-225: appended (additive — wire contract preserved, D-219).
+    // Appended.
     SessionSpeakerRole Role = SessionSpeakerRole.Speaker,
     // §7 (Mockup screen 17 "المتحدثون"): the speaker shown WITH a session also
-    // carries the country flag + the photo. Appended (append-only, D-219).
+    // carries the country flag + the photo. Appended.
     // CountryId is the ISO 3166-1 numeric the client renders the flag from;
     // the names are the label/fallback; PhotoRelativePath is the avatar. All
     // null when the speaker has no recorded country / photo.
@@ -225,18 +225,18 @@ public sealed record PublicSessionSpeaker(
     string? CountryNameEn = null,
     string? CountryNameAr = null,
     string? PhotoRelativePath = null,
-    // D-357/D-568 — true when the speaker has an active SpeakerPhoto asset in the
+    // True when the speaker has an active SpeakerPhoto asset in the
     // unified StoredFile store; the Website session page then serves it via the
     // same-origin /content/assets/SpeakerPhoto/{id}/image proxy (post-D-357 the
     // photo usually lives there, not in PhotoRelativePath). Appended (append-only,
-    // D-219) — the app keeps using PhotoRelativePath / its own avatar route.
+    // The app keeps using PhotoRelativePath / its own avatar route.
     bool HasPhotoAsset = false,
     // 2026-07-19 (owner) — the Arabic rank/title, mapped from Speaker.RankArabic
     // (the twin of Title = Speaker.Rank). Appended (append-only, D-219) so the app
     // shows the rank in the active locale; older builds ignore it and keep Title.
     string? TitleArabic = null);
 
-/// <summary>D-199 — cheap seat-availability summary for the session
+/// <summary>Cheap seat-availability summary for the session
 /// detail. <see cref="Capacity"/> is the effective capacity
 /// (<c>CapacityOverride ?? Hall.Capacity</c>); <see cref="Reserved"/>
 /// is the count of active (non-released) reservations;
@@ -289,11 +289,11 @@ public sealed record PublicSessionSummary(
     // recording in the POC — NOT a schema addition). SummaryVideoUrl = the team's
     // OPTIONAL short summary cut (the new SessionSummary.SummaryVideoUrl column).
     // Both nullable: the app hides each player when its URL is null. Appended
-    // (defaulted) so the wire stays append-only (D-219).
+    // (defaulted) so the wire stays append-only.
     string? RecordingUrl = null,
     string? SummaryVideoUrl = null);
 
-/// <summary>D-472 (#9) — the approved محضر served to the session host / moderator
+/// <summary>The approved محضر served to the session host / moderator
 /// ("ready for المحاور"). Same content as <see cref="PublicSessionSummary"/> but
 /// gated on the team <c>ApprovedAt</c> stamp rather than the public publish, so a
 /// host / moderator can read it before (or instead of) a public release. Served by
@@ -335,7 +335,7 @@ public sealed record PublicPresentationItem(
 /// (Figma 1388:7621). Time-ordered by session start so the app groups by day.</summary>
 public sealed record PublicPresentations(IReadOnlyList<PublicPresentationItem> Items);
 
-/// <summary>P3.2b — D-232 (D-213): the response from the recording stream-token
+/// <summary>The response from the recording stream-token
 /// endpoint. <see cref="Token"/> is a short-lived JWT scoped to one recording;
 /// the player appends it to <see cref="StreamUrl"/> on the query string
 /// (<c>?access_token=…</c>) since an HTML5 <c>&lt;video&gt;</c> cannot set an

@@ -10,7 +10,7 @@ using SIMF.Contracts.Ai;
 
 namespace SIMF.Api.Endpoints.Ai;
 
-/// <summary>D-176 (gap doc G12) — six AI feature endpoints. Each
+/// <summary>Six AI feature endpoints. Each
 /// resolves to one named prompt key from the AiPrompt catalogue:
 /// `question-filter`, `faq-answer`, `assistance`, `translate`. The
 /// live-stream features (LiveTranslation + LiveSignLanguage) ship

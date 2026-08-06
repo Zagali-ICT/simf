@@ -10,7 +10,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-129 — admin-side ID-document upload + read for the walk-in flow.
+/// Admin-side ID-document upload + read for the walk-in flow.
 /// Two paths per kind (visitor / other). Upload accepts multipart with a
 /// single file field "file"; read streams the decrypted bytes back. Same
 /// MIME + magic-byte gate as the self-service variant; storage layer
@@ -28,7 +28,7 @@ public abstract class AdminIdDocumentUploadEndpointBase(
     public abstract Guid SubjectId { get; }
     public abstract UserType ExpectedKind { get; }
 
-    /// <summary>D-836 — audience (<c>true</c>) vs partner/Other (<c>false</c>)
+    /// <summary>Audience (<c>true</c>) vs partner/Other (<c>false</c>)
     /// for the Visitor family; <c>null</c> for the Admin family. Mirrors the
     /// avatar endpoints.</summary>
     public abstract bool? ExpectedIsVisitor { get; }
@@ -37,7 +37,7 @@ public abstract class AdminIdDocumentUploadEndpointBase(
     {
         var actorId = User.ActorId();
 
-        // D-836 — confine this Edit permission to its own family. The service's
+        // Confine this Edit permission to its own family. The service's
         // guard only compares UserType, and D-186 made BOTH the visitors and the
         // others route pass UserType.Visitor, so without this an admin holding
         // only Visitors.Edit could overwrite a PARTNER's national-ID image
@@ -79,7 +79,7 @@ public abstract class AdminIdDocumentUploadEndpointBase(
                 "يجب أن تكون صورة الهوية بصيغة PNG أو JPEG أو WebP.");
         }
 
-        // C7 (D-371) — server-side human-face gate, parity with the
+        // Server-side human-face gate, parity with the
         // self-service upload. The walk-in operator's device runs no on-device
         // pre-check, so the server is the only face authority on this path.
         // Offline FaceAiSharp ONNX; fails closed on an undecodable image.
@@ -126,9 +126,9 @@ public sealed class UploadOtherIdDocumentEndpoint(
     : AdminIdDocumentUploadEndpointBase(service, faceDetection, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
-    // D-186: Other accounts are Visitor-typed under the hood; the
+    // Other accounts are Visitor-typed under the hood; the
     // partner-vs-audience distinction lives on the linked ProfileType.
-    // D-836 — that is exactly why UserType alone is NOT enough here. This
+    // That is exactly why UserType alone is NOT enough here. This
     // comment used to say the UserType guard was "what matters", which was
     // true only for the upload-to-an-Admin-row concern it was written for;
     // ExpectedIsVisitor is what keeps the two Visitor-family tiers apart.
@@ -156,7 +156,7 @@ public abstract class AdminIdDocumentFetchEndpointBase(
     public abstract Guid SubjectId { get; }
     public abstract UserType ExpectedKind { get; }
 
-    /// <summary>D-836 — audience (<c>true</c>) vs partner/Other (<c>false</c>)
+    /// <summary>Audience (<c>true</c>) vs partner/Other (<c>false</c>)
     /// for the Visitor family; <c>null</c> for the Admin family.</summary>
     public abstract bool? ExpectedIsVisitor { get; }
 
@@ -167,7 +167,7 @@ public abstract class AdminIdDocumentFetchEndpointBase(
         // here; treat its absence as unauthorized rather than write a null actor.
         var actorId = User.ActorId();
 
-        // D-836 — confine this View permission to its own family, mirroring the
+        // Confine this View permission to its own family, mirroring the
         // avatar endpoints. The national ID / Iqama / passport image is the most
         // sensitive PII in the system, and UserType alone does not separate the
         // audience tier from the partner tier (D-186 made both Visitor-typed), so
@@ -219,9 +219,9 @@ public sealed class FetchOtherIdDocumentEndpoint(
     : AdminIdDocumentFetchEndpointBase(service, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
-    // D-186: Other accounts are Visitor-typed under the hood; the
+    // Other accounts are Visitor-typed under the hood; the
     // partner-vs-audience distinction lives on the linked ProfileType,
-    // which is exactly why ExpectedIsVisitor is required here (D-836).
+    // which is exactly why ExpectedIsVisitor is required here.
     public override UserType ExpectedKind => UserType.Visitor;
     public override bool? ExpectedIsVisitor => false;
 

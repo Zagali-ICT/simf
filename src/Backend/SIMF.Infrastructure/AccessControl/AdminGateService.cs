@@ -17,7 +17,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.AccessControl;
 
 /// <summary>
-/// D-148 — admin CRUD over <see cref="Gate"/> + assignments + allow-list +
+/// Admin CRUD over <see cref="Gate"/> + assignments + allow-list +
 /// reports. Mirrors <c>AdminHallService</c>; case-insensitive unique
 /// <see cref="Gate.Code"/> via upper-case normalisation. Logical FKs
 /// (ProfileTypeId, UserId) validated inline against the live tables before
@@ -112,7 +112,7 @@ internal sealed class AdminGateService(
                 gate.AllowedProfileTypes.Count,
                 gate.Assignments.Count(assignment => assignment.IsActive),
                 gate.IsActive, gate.CreatedAt,
-                // D-506 — carried so the grid Excel export round-trips the
+                // Carried so the grid Excel export round-trips the
                 // bilingual description (positional order matches the record).
                 gate.Description, gate.DescriptionArabic))
             .ToListAsync(cancellationToken);
@@ -444,7 +444,7 @@ internal sealed class AdminGateService(
                 (scan, gate) => new { scan, gateCode = gate.Code })
             .ToListAsync(cancellationToken);
 
-        // D-167: UserProfile + SimfUser live in different DbContexts, so
+        // UserProfile + SimfUser live in different DbContexts, so
         // resolving the display name is two round-trips — profile rows
         // first (App), then matching user rows (Identity), merge by id.
         var profileIds = raw
@@ -533,7 +533,7 @@ internal sealed class AdminGateService(
             .Select(g => new { g.Id, g.Code })
             .ToDictionaryAsync(x => x.Id, x => x.Code, cancellationToken);
 
-        // D-167: split cross-context join into App-then-Identity round-trips.
+        // Split cross-context join into App-then-Identity round-trips.
         var profileIds = latest.Select(x => x.UserProfileId).Distinct().ToList();
         var profileRows = await appDbContext.UserProfiles.AsNoTracking()
             .Include(profile => profile.ProfileType)

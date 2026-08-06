@@ -511,14 +511,14 @@
     /// <summary>Delete the selected rows in bulk.</summary>
     [Parameter] public EventCallback<IReadOnlyList<TItem>> OnDeleteSelected { get; set; }
 
-    /// <summary>D-164 (gap doc G2) — approve the selected rows in bulk
+    /// <summary>Approve the selected rows in bulk
     /// ("Select All" affordance for the security team's pending-visitor
     /// list). When the parent supplies this handler, an "Approve selected"
     /// toolbar button appears alongside Delete, enabled only when ≥ 1
     /// row on the current page is selected.</summary>
     [Parameter] public EventCallback<IReadOnlyList<TItem>> OnApproveSelected { get; set; }
 
-    /// <summary>D-209 — bulk reject the selected rows. When set, a "Reject
+    /// <summary>Bulk reject the selected rows. When set, a "Reject
     /// selected" toolbar button appears alongside Approve, enabled only when
     /// ≥ 1 row on the current page is selected. The parent collects the
     /// shared reason before calling the API.</summary>
@@ -617,9 +617,9 @@
     [Parameter] public string EditLabel { get; set; } = "Edit";
     [Parameter] public string DetailsLabel { get; set; } = "Details";
     [Parameter] public string DeleteLabel { get; set; } = "Delete";
-    /// <summary>D-164 — label for the bulk-approve toolbar button.</summary>
+    /// <summary>Label for the bulk-approve toolbar button.</summary>
     [Parameter] public string ApproveSelectedLabel { get; set; } = "Approve selected";
-    /// <summary>D-209 — label for the bulk-reject toolbar button.</summary>
+    /// <summary>Label for the bulk-reject toolbar button.</summary>
     [Parameter] public string RejectSelectedLabel { get; set; } = "Reject selected";
     [Parameter] public string CopyLabel { get; set; } = "Copy";
     [Parameter] public string PasteLabel { get; set; } = "Paste";
@@ -659,7 +659,7 @@
 
     // -- Derived flags ---------------------------------------------------------
 
-    // D-837 — whether the holder may use each gated action, resolved ONCE per
+    // Whether the holder may use each gated action, resolved ONCE per
     // parameter set instead of once per rendered button.
     //
     // Two things depend on it. The containers below decided from the CALLBACKS a
@@ -828,7 +828,7 @@
 
     private string RowSelectionLabel(TItem row)
     {
-        // D-045 H2: every row checkbox gets a distinct accessible name —
+        // Every row checkbox gets a distinct accessible name —
         // by default the row key, but the caller can supply a richer label
         // (e.g. the user's email for the admin grid).
         if (RowLabel is not null) return $"{SelectRowLabel} {RowLabel(row)}";
@@ -862,7 +862,7 @@
     {
         if (Query is null || Page is null) return string.Empty;
         if (Page.Total == 0) return SummaryFormatter(0, 0, 0);
-        // D-255: pass (skip, taken, total) — the page formatters compute the
+        // Pass (skip, taken, total) — the page formatters compute the
         // 1-based range themselves (skip+1 .. skip+taken). Passing a
         // pre-incremented `from` here double-counted ("Showing 2–8 of 7").
         return SummaryFormatter(Query.Skip, Page.Items.Count, Page.Total);
@@ -871,7 +871,7 @@
     private async Task ToggleSortAsync(string key)
     {
         if (Query is null) return;
-        // D-045 H1: a sort/filter/page change drops the selection. The grid
+        // A sort/filter/page change drops the selection. The grid
         // never holds rows it didn't ask for; carrying stale keys across a
         // query change leads to silent partial deletes when the user clicks
         // a toolbar action with a now-invisible selection.
@@ -1037,7 +1037,7 @@
     {
         if (!_anyContextHandlerWired) return;
         _contextRow = row;
-        // D-045 H2 — RTL fix: SimfContextMenu uses `inset-inline-start`,
+        // RTL fix: SimfContextMenu uses `inset-inline-start`,
         // which resolves to the RIGHT edge in RTL. The mouse client X is
         // measured from the viewport's LEFT edge regardless of direction,
         // so in RTL we must mirror the value before passing it in.
@@ -1126,7 +1126,7 @@
     }
 
     // -- Disposal --------------------------------------------------------------
-    // D-045 H1: dispose the filter-debounce CTS so its OS handle is reclaimed
+    // Dispose the filter-debounce CTS so its OS handle is reclaimed
     // when the grid leaves the page. Without this, sustained typing in the
     // filter input leaks a CTS per keystroke until GC notices.
 

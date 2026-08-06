@@ -14,7 +14,7 @@ namespace SIMF.ControlPanel.Components.Pages.Admin;
 /// state, and the toast + pager formatters. Each queue's <c>.razor</c> keeps its
 /// own divergent RowActions and (Others/Visitors) profile-review modal — only the
 /// admin API user-type segment differs, exposed as <see cref="ApiBase"/>. Mirrors
-/// the established <c>CrudAddEditFormBase</c> base-class pattern (D-641).
+/// the established <c>CrudAddEditFormBase</c> base-class pattern.
 /// </summary>
 public abstract class PendingApprovalPageBase : ComponentBase
 {
@@ -46,7 +46,7 @@ public abstract class PendingApprovalPageBase : ComponentBase
     protected IReadOnlyList<AdminPendingUserSummary>? _bulkRejectSelected;
     protected string _bulkRejectReason = string.Empty;
 
-    // D-809 — bulk approve confirms on every queue. (Single-approve confirmation
+    // Bulk approve confirms on every queue. (Single-approve confirmation
     // is the admins queue's alone and lives in PendingStaff: the visitors/others
     // queues stage a single approval through their D-128 profile-review modal.)
     protected IReadOnlyList<AdminPendingUserSummary>? _bulkApproveSelected;

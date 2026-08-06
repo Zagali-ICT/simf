@@ -12,7 +12,7 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Auditing;
 
 /// <summary>
-/// D-109: EF SaveChanges interceptor that writes a <see cref="RowAudit"/> row
+/// EF SaveChanges interceptor that writes a <see cref="RowAudit"/> row
 /// for every INSERT / UPDATE / DELETE performed through the DbContext.
 ///
 /// <para>The audit row is added to the same DbContext as the originating
@@ -47,14 +47,14 @@ internal sealed class RowAuditingSaveChangesInterceptor(
         "AccountCode",
         "SecondFactorToken",
         "TotpRecoveryCode",
-        // D-148 — GateScan is itself an append-only audit log (it carries
+        // GateScan is itself an append-only audit log (it carries
         // ScannedByUserId + CorrelationId + IpAddress + UserAgent already).
         // Auditing the audit log doubles the write volume for zero gain.
         "GateScan",
-        // D-148 — ScanIdempotency is a short-lived replay store, not domain
+        // ScanIdempotency is a short-lived replay store, not domain
         // data. Auditing it would add a RowAudit row per scan.
         "ScanIdempotency",
-        // D-756 — AiChatMessages is append-only, per-user and high-volume (two
+        // AiChatMessages is append-only, per-user and high-volume (two
         // rows per assistant turn), and its Content is raw conversation text (PII)
         // that the AiInvocation path already redacts. Auditing it would double the
         // write volume and store that text unredacted.
@@ -119,7 +119,7 @@ internal sealed class RowAuditingSaveChangesInterceptor(
     {
         var now = timeProvider.SimfNow();
         var actorUserId = requestContext.ActorUserId;
-        // D-157 — snapshot the actor's display name from the JWT claim
+        // Snapshot the actor's display name from the JWT claim
         // so each RowAudit row stands alone without a cross-DB JOIN.
         var actorDisplayName = requestContext.ActorDisplayName;
         var correlationId = requestContext.CorrelationId;
@@ -204,7 +204,7 @@ internal sealed class RowAuditingSaveChangesInterceptor(
             Operation = operation,
             PrimaryKey = primaryKey,
             ActorUserId = actorUserId,
-            // D-157 — clip to the column cap (128) — display names from a
+            // Clip to the column cap (128) — display names from a
             // claim are well-bounded but defence in depth.
             ActorDisplayName = actorDisplayName is null || actorDisplayName.Length <= 128
                 ? actorDisplayName

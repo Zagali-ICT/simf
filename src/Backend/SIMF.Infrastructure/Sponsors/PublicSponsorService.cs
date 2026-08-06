@@ -40,7 +40,7 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 sponsor.LogoRelativePath,
                 sponsor.Url,
                 sponsor.DisplayOrder,
-                // D-432 — the tagline is sponsor-owned.
+                // The tagline is sponsor-owned.
                 sponsor.Tagline,
                 sponsor.TaglineArabic,
                 sponsor.PhonePrimary,

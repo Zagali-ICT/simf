@@ -57,7 +57,7 @@ public static class AuthorizationPolicies
     public const string AdministratorOnly = "AdministratorOnly";
 
     /// <summary>
-    /// Requires the caller's <c>account_state</c> JWT claim (P10 — D-051)
+    /// Requires the caller's <c>account_state</c> JWT claim
     /// to be <c>"Approved"</c>. Defense-in-depth gate available to any
     /// endpoint that should not be reachable by a non-approved (guest)
     /// user. Today (P11 — D-052) no endpoint applies this policy by
@@ -67,18 +67,18 @@ public static class AuthorizationPolicies
     /// </summary>
     public const string RequireApprovedAccount = "RequireApprovedAccount";
 
-    /// <summary>D-148 — admin-only management of gates / assignments /
+    /// <summary>Admin-only management of gates / assignments /
     /// allow-lists / reports (SIMF-API-GATES-001 §4).</summary>
     public const string GatesManage = "GatesManage";
 
-    /// <summary>D-148 — operator-only scan submission and own-assignments
+    /// <summary>Operator-only scan submission and own-assignments
     /// listing (SIMF-API-GATES-001 §4). Administrator inherits.</summary>
     public const string GatesOperate = "GatesOperate";
 
-    /// <summary>D-148 — operator's own-daily-report endpoint.</summary>
+    /// <summary>Operator's own-daily-report endpoint.</summary>
     public const string GatesViewOwnReports = "GatesViewOwnReports";
 
-    /// <summary>D-168 (gap doc G5) — Administrator or
+    /// <summary>Administrator or
     /// <see cref="SIMF.Common.AppRoles.PublicRelations"/>. Used by every
     /// invitation CRUD endpoint and the VIP list + notify endpoints.
     /// PublicRelations cannot reach any other admin surface; the policy
@@ -91,14 +91,14 @@ public static class AuthorizationPolicies
         builder.AddPolicy(AdministratorOnly, policy =>
             policy.RequireRole(SIMF.Common.AppRoles.Administrator));
 
-        // P11 — D-052: gate by the account_state claim minted by
+        // Gate by the account_state claim minted by
         // JwtTokenService (P10). Non-approved users see the state-banner
         // page on the client; this policy is the API's matching guard
         // for any endpoint that opts in.
         builder.AddPolicy(RequireApprovedAccount, policy =>
             policy.RequireClaim("account_state", "Approved"));
 
-        // D-148 — Administrator bypasses the gate permission checks
+        // Administrator bypasses the gate permission checks
         // (an admin can also operate a gate from the CP console for
         // testing); GateOperator holds the operator permissions only.
         builder.AddPolicy(GatesManage, policy =>
@@ -110,7 +110,7 @@ public static class AuthorizationPolicies
             policy.RequireRole(SIMF.Common.AppRoles.Administrator,
                                SIMF.Common.AppRoles.GateOperator));
 
-        // D-168 (gap doc G5) — PublicRelations role gate. Administrator
+        // PublicRelations role gate. Administrator
         // inherits so an admin can also operate the invitation desk from
         // the CP console.
         builder.AddPolicy(PublicRelationsAccess, policy =>

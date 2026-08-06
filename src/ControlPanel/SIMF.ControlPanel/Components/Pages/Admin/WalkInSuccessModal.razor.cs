@@ -11,7 +11,7 @@ public partial class WalkInSuccessModal
 
     private string _qrSvg = string.Empty;
 
-    // D-425 — a pending walk-in carries no QR id yet (minted on approval).
+    // A pending walk-in carries no QR id yet (minted on approval).
     private bool Pending => Response is not null && string.IsNullOrEmpty(Response.QrId);
 
     /// <summary>The walk-in response — when null the modal is hidden.</summary>

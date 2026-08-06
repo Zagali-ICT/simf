@@ -176,7 +176,7 @@ internal sealed class AdminSystemSettingService(
         Guid actorUserId, AdminUpdateSiteSettingsRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-495 — the social links + welcome message live on the singleton
+        // The social links + welcome message live on the singleton
         // OrganizationProfile (one source of truth). null = leave the field
         // unchanged; a provided value (including an empty string) is applied — an
         // empty string clears it. Social links must be absolute http(s) URLs.
@@ -242,7 +242,7 @@ internal sealed class AdminSystemSettingService(
             "Admin {ActorId} saved site settings via the organization profile", actorUserId);
     }
 
-    // D-467 — a social link must be an absolute http(s) URL (rendered as a link
+    // A social link must be an absolute http(s) URL (rendered as a link
     // target on the app + website). A blank value clears the link.
     private static string? CleanSocialUrl(string? value)
     {

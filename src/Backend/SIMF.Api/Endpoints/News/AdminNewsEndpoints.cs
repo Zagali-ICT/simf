@@ -9,7 +9,7 @@ using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.Api.Endpoints.News;
 
-/// <summary>D-199 — admin CRUD over News (PR / marketing). Gated by the
+/// <summary>Admin CRUD over News (PR / marketing). Gated by the
 /// per-action <c>News.*</c> permissions (Issue-1) + <see
 /// cref="AuthorizationPolicies.RequireApprovedAccount"/>. The PublicRelations
 /// role holds <c>News.*</c> as a seeded baseline grant, and Administrator holds

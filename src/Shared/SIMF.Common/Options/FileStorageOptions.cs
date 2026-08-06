@@ -1,6 +1,6 @@
 namespace SIMF.Common.Options;
 
-/// <summary>D-568 — settings for the centralized file store, bound from the
+/// <summary>Settings for the centralized file store, bound from the
 /// <c>FileStorage</c> configuration section. One root directory for every file;
 /// the <see cref="EncryptionKey"/> is the Key-Encryption-Key (KEK) that wraps
 /// each file's per-file Data-Encryption-Key (envelope encryption). The key is

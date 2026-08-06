@@ -7,7 +7,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Archive;
 
-/// <summary>D-199 — read-only public projection of active archive editions,
+/// <summary>Read-only public projection of active archive editions,
 /// ordered newest-first for the Past Editions screen (Mockup screen 24).
 /// Gated by the archive-visibility operations toggle (D-166): when the toggle
 /// is off the payload is empty, so the App / Website hide the screen without
@@ -78,7 +78,7 @@ internal sealed class PublicArchiveService(
                 edition.Sessions,
                 edition.Speakers,
                 edition.CoverImageRelativePath,
-                // D-432 — the rich child lists, each ordered by DisplayOrder. A6 —
+                // The rich child lists, each ordered by DisplayOrder. A6 —
                 // AsSplitQuery (below) emits one query per collection; without it
                 // the three sibling collection sub-selects JOIN into a single
                 // Media×SessionTitles×PastSpeakers cartesian rowset.

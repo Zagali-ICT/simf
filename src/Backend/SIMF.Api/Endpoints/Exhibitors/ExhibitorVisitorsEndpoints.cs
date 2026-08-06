@@ -9,7 +9,7 @@ using SIMF.Contracts.Exhibitors;
 
 namespace SIMF.Api.Endpoints.Exhibitors;
 
-// D-426 — exhibitor lead capture (app audience). App-only, no CP surface and no
+// Exhibitor lead capture (app audience). App-only, no CP surface and no
 // permission code — like the visitor contact-share feature it keys off
 // RequireApprovedAccount + the app token; the exhibitor check is enforced in the
 // service. DEF-EXH-001: that check is now "the caller's profile type carries

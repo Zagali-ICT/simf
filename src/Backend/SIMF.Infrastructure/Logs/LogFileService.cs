@@ -21,7 +21,7 @@ public sealed class LogFileService : ILogFileService
 
     public LogFileService(IOptions<StorageOptions> options)
     {
-        // R1 — D-074: typed options replace the raw IConfiguration[…] read.
+        // Typed options replace the raw IConfiguration[…] read.
         // LogDirectory defaults to "logs" in StorageOptions so the same
         // fallback applies when the config key is unset.
         var configured = options.Value.LogDirectory;

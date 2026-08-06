@@ -60,7 +60,7 @@ public partial class BookingsList
         finally { _loading = false; }
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — bookings are created
     // by visitors in the app and auto-confirm (#6), so there is no import path.
     // The booking's key is ReservationId.

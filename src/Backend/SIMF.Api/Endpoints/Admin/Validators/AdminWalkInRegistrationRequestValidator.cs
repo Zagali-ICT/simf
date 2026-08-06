@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin.Validators;
 
 /// <summary>
-/// D-127 — validates the walk-in registration request. Email is optional
+/// Validates the walk-in registration request. Email is optional
 /// (the desk frequently registers walk-ins without one); the matching
 /// service synthesizes a placeholder.
 ///
@@ -85,7 +85,7 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 .Bilingual(
                     "The Saudi national ID is 10 digits and starts with 1.",
                     "الهوية الوطنية السعودية مكوّنة من 10 أرقام وتبدأ بالرقم 1.")
-                // D-459 — apply the same Luhn checksum the self-service path
+                // Apply the same Luhn checksum the self-service path
                 // uses, so a malformed ID is rejected at the desk too.
                 .Must(id => string.IsNullOrEmpty(id)
                     || UpsertUserProfileRequestValidator.IsValidLuhn(id))
@@ -103,7 +103,7 @@ public sealed class AdminWalkInRegistrationRequestValidator
                     .Matches("^2[0-9]{9}$").Bilingual(
                         "The Iqama number is 10 digits and starts with 2.",
                         "رقم الإقامة مكوّن من 10 أرقام ويبدأ بالرقم 2.")
-                    // D-459 — Luhn checksum, mirroring the self-service path.
+                    // Luhn checksum, mirroring the self-service path.
                     .Must(UpsertUserProfileRequestValidator.IsValidLuhn)
                     .Bilingual(
                         "The Iqama number is not a valid number.",
@@ -118,7 +118,7 @@ public sealed class AdminWalkInRegistrationRequestValidator
             });
         });
 
-        // C4 (D-371) — the same standard phone shapes as the self-service
+        // The same standard phone shapes as the self-service
         // profile upsert (UpsertUserProfileRequestValidator), separators
         // stripped first.
         When(request => !string.IsNullOrWhiteSpace(request.SaudiMobile), () =>
@@ -174,7 +174,7 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "Enter a valid plate: Saudi plate letters and/or digits.",
                 "أدخل رقم لوحة صحيح: حروف لوحات سعودية و/أو أرقام.");
 
-        // D-395 — gender must be a defined enum value.
+        // Gender must be a defined enum value.
         RuleFor(request => request.Gender)
             .IsInEnum().Bilingual(
                 "Select a valid gender.",

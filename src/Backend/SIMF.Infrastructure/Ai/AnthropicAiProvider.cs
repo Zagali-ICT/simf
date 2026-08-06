@@ -10,7 +10,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>D-484 — Anthropic (Claude) Messages-API provider. Reads
+/// <summary>Anthropic (Claude) Messages-API provider. Reads
 /// <c>ApiKey</c> / <c>BaseUrl</c> / <c>DefaultModel</c> / <c>AnthropicVersion</c>
 /// / <c>DefaultMaxTokens</c> from <see cref="AiOptions.Anthropic"/>. An empty key
 /// throws <c>AI_PROVIDER_NOT_CONFIGURED</c> (503). Mirrors

@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapFeedbackAndReports(IEndpointRouteBuilder group)
     {
-        // D-199 — Archive edition admin CRUD BFF passthroughs.
+        // Archive edition admin CRUD BFF passthroughs.
         group.MapPost("/admin/archive/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -69,7 +69,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeleteArchiveEditionAsync(id, token));
         });
-        // D-275 — "make this year history" snapshot.
+        // "make this year history" snapshot.
         group.MapPost("/admin/archive/snapshot-current",
             async (SnapshotCurrentEditionRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -78,7 +78,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.SnapshotCurrentArchiveEditionAsync(body, token));
         });
 
-        // D-199 — Ratings admin read BFF passthrough.
+        // Ratings admin read BFF passthrough.
         group.MapPost("/admin/feedback/ratings",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -201,7 +201,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeleteRatingQuestionAsync(id, token));
         });
 
-        // D-202 Track-2 — Statistics dashboard BFF passthrough.
+        // Statistics dashboard BFF passthrough.
         group.MapGet("/admin/statistics",
             async (HttpContext http, SimfAdminClient api) =>
         {
@@ -335,7 +335,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.ListSessionAttendanceAsync(body, token));
         });
 
-        // D-202 Track-2 — Exhibitor admin CRUD + account-provisioning BFF passthroughs.
+        // Exhibitor admin CRUD + account-provisioning BFF passthroughs.
         group.MapPost("/admin/exhibitors/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -386,7 +386,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ProvisionExhibitorAccountAsync(id, body, token));
         });
-        // D-781 — attach an EXISTING account to the exhibitor (the Others-pipeline
+        // Attach an EXISTING account to the exhibitor (the Others-pipeline
         // lockout fix). The API gates it on Exhibitors.LinkAccount.
         group.MapPost("/admin/exhibitors/{id:guid}/accounts/link",
             async (Guid id, LinkExhibitorAccountRequest body,

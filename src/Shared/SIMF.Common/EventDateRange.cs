@@ -3,7 +3,7 @@ using System.Globalization;
 namespace SIMF.Common;
 
 /// <summary>
-/// D-755 — formats the forum's event date range (the CP-editable
+/// Formats the forum's event date range (the CP-editable
 /// <c>OrganizationProfile.EventStartDate</c> / <c>EventEndDate</c>) as one
 /// bilingual label, so every surface (Website, the seeder-generated hero label,
 /// admin) renders the same config-driven string instead of a hardcoded literal.

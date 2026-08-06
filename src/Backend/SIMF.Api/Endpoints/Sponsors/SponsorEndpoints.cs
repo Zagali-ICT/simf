@@ -114,11 +114,11 @@ public sealed class CreateSponsorEndpoint(IAdminSponsorService service)
     }
 }
 
-// D-504 — bind the route {id} + the JSON body via a derived route class that
+// Bind the route {id} + the JSON body via a derived route class that
 // INHERITS the contract (mirrors UpdateExhibitorRoute). Passing the bound req
 // straight to the service removes the old field-by-field remap, so a future
 // AdminUpdateSponsorRequest field can never again be silently dropped at bind
-// time (the D-432/D-501 tagline-drop class of bug).
+// time.
 public sealed class UpdateSponsorRoute : AdminUpdateSponsorRequest
 {
     public Guid Id { get; set; }

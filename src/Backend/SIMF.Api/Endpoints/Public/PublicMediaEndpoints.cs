@@ -44,7 +44,7 @@ public sealed class ListPublicMediaEndpoint(IPublicMediaService service)
 
 public sealed class PublicMediaImageRoute { public Guid Id { get; set; } }
 
-/// <summary>D-199 — stream an active item's primary image bytes (out-of-row,
+/// <summary>Stream an active item's primary image bytes (out-of-row,
 /// D-90). 404 when the item is missing / inactive / has no stored image.
 /// Anonymous: gallery images are public (matches the anonymous list).</summary>
 public sealed class PublicMediaImageEndpoint(IPublicMediaService service)
@@ -74,7 +74,7 @@ public sealed class PublicMediaImageEndpoint(IPublicMediaService service)
 
 public sealed class PublicMediaThumbnailRoute { public Guid Id { get; set; } }
 
-/// <summary>D-199 — stream an active item's thumbnail / poster bytes
+/// <summary>Stream an active item's thumbnail / poster bytes
 /// (out-of-row). 404 when missing / inactive / no thumbnail.</summary>
 public sealed class PublicMediaThumbnailEndpoint(IPublicMediaService service)
     : Endpoint<PublicMediaThumbnailRoute>

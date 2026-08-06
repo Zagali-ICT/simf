@@ -49,7 +49,7 @@ public partial class RatingConfig
     private string _typeOrder = "0";
     private bool _typeActive = true;
 
-    /// <summary>D-835 - the records being read. Both grids already hold the whole
+    /// <summary>The records being read. Both grids already hold the whole
     /// summary, so Details opens straight from the row: no second fetch, and no
     /// permission of its own, because reading the row is what RatingConfig.View
     /// already bought.</summary>

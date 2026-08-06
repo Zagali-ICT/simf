@@ -22,9 +22,9 @@ public partial class HallSeatLayoutEditor
 
     private record Toast(string Variant, string Message);
 
-    // D-767 — one parsed row: its label + its own seat count. Count is mutable so
+    // One parsed row: its label + its own seat count. Count is mutable so
     // each per-row number input can write straight back to its RowSeat.
-    // D-771 — plus its TIER (Normal / VIP / VVIP), likewise mutable so the per-row
+    // Plus its TIER (Normal / VIP / VVIP), likewise mutable so the per-row
     // select writes straight back.
     private sealed record RowSeat
     {
@@ -51,7 +51,7 @@ public partial class HallSeatLayoutEditor
     private Guid? _selectedHallId;
     private HallSeatLayoutSnapshot? _snapshot;
     private string _rowLabelsCsv = string.Empty;
-    // D-767 — the per-row seat counts, PARALLEL to the RowLabels text input. The
+    // The per-row seat counts, PARALLEL to the RowLabels text input. The
     // labels text is the row-set source; renaming a label keeps that position's count.
     private List<RowSeat> _rows = new();
     // Default count for a NEWLY added row: the loaded uniform SeatsPerRow (else 1).
@@ -244,7 +244,7 @@ public partial class HallSeatLayoutEditor
         for (var i = 0; i < labels.Count; i++)
         {
             var count = counts is not null && i < counts.Count ? counts[i] : fallback;
-            // D-771 — the server always reads back one tier per row (Normal for a
+            // The server always reads back one tier per row (Normal for a
             // pre-D-771 layout), so an existing hall keeps exactly what it had; only a
             // row with no stored tier at all falls back to the VVIP authoring default.
             var tier = tiers is not null && i < tiers.Count ? tiers[i] : DefaultTier;
@@ -263,7 +263,7 @@ public partial class HallSeatLayoutEditor
         for (var i = 0; i < labels.Length; i++)
         {
             var count = i < _rows.Count ? _rows[i].Count : _defaultSeatCount;
-            // D-771 — a renamed label keeps that position's tier; a brand-new position
+            // A renamed label keeps that position's tier; a brand-new position
             // starts at the VVIP authoring default.
             var tier = i < _rows.Count ? _rows[i].Tier : DefaultTier;
             reconciled.Add(new RowSeat { Label = labels[i], Count = count, Tier = tier });
@@ -316,7 +316,7 @@ public partial class HallSeatLayoutEditor
                     // Keep max(counts) as the legacy uniform fallback (empty => 1).
                     SeatsPerRow = counts.Length > 0 ? counts.Max() : 1,
                     SeatCounts = counts,
-                    // D-771 — always explicit, so the editor's tier choices (and the
+                    // Always explicit, so the editor's tier choices (and the
                     // VVIP default on a new row) are what gets persisted.
                     SeatTiers = tiers,
                 });

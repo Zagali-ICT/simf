@@ -176,7 +176,7 @@ public partial class OrganisationsList
         await LoadAsync();
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy; Organisations keeps its bespoke
     // government-Excel import below (a separate hidden input + modal).
     private async Task OnExportAsync(IReadOnlyList<AdminOrganisationSummary> selected)

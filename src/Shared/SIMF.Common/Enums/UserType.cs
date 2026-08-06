@@ -42,7 +42,7 @@ public enum UserType
     [Display(Description = nameof(ResUserType.Visitor), ResourceType = typeof(ResUserType))]
     Visitor = 0,
 
-    // 1 is reserved — used to be `Other` (D-186 removal).
+    // 1 is reserved — used to be `Other`.
 
     /// <summary>Control Panel administrator — RBAC-gated.</summary>
     [Display(Description = nameof(ResUserType.Admin), ResourceType = typeof(ResUserType))]

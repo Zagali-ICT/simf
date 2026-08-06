@@ -1,7 +1,7 @@
 namespace SIMF.Infrastructure.Programme;
 
-/// <summary>P3.2b — D-232 (D-213): upload-size options for session recordings.
-/// D-568 (Wave C S7): the recording bytes moved to the unified <c>StoredFile</c>
+/// <summary>Upload-size options for session recordings.
+/// The recording bytes moved to the unified <c>StoredFile</c>
 /// store, so this class is kept only for <see cref="MaxUploadBytes"/> — the
 /// per-request body/multipart ceiling the recording upload endpoint raises.
 /// The old <c>RootPath</c> is gone with the bespoke recording store; an unknown

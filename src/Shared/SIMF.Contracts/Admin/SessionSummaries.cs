@@ -17,13 +17,13 @@ public sealed record AdminSessionSummaryRow(
     bool IsPublished,
     DateTime? PublishedAt,
     DateTime? UpdatedAt,
-    // D-472 (#9) — the team review/approval state, derived from the timestamps:
+    // The team review/approval state, derived from the timestamps:
     // InReview = submitted but not yet approved; Approved = ready for المحاور.
     bool IsInReview,
     bool IsApproved,
     DateTime? ApprovedAt);
 
-/// <summary>P4.1 — D-238: the full summary detail for the editor. Bilingual
+/// <summary>The full summary detail for the editor. Bilingual
 /// content sections + the session header (read-only context) + provenance and
 /// publish state. <see cref="AiModel"/> is non-null when the draft was AI-
 /// generated. Slice D adds the two read-only AI-transparency sources
@@ -47,7 +47,7 @@ public sealed record AdminSessionSummaryDetail(
     DateTime? PublishedAt,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    // D-472 (#9) — team review/approval state (derived from the timestamps).
+    // Team review/approval state (derived from the timestamps).
     bool IsInReview,
     bool IsApproved,
     DateTime? ApprovedAt,
@@ -66,7 +66,7 @@ public sealed record AdminSessionSummaryDetail(
     // Appended (defaulted) so the wire stays append-only. Null = no summary video.
     string? SummaryVideoUrl = null);
 
-/// <summary>P4.1 — D-238: the Committee's edit (upsert) of a summary's content.
+/// <summary>The Committee's edit (upsert) of a summary's content.
 /// Saving a session that has no summary yet creates a hand-written draft
 /// (<c>AiModel</c> stays null); the lengths align with the EF column limits
 /// (§7). Open class per the D-168 / D-174 admin-request pattern.</summary>

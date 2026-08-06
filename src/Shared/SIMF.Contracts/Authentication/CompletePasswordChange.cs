@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.Authentication;
 
 /// <summary>
-/// D-206: the body of <c>POST /api/v1/app/auth/complete-password-change</c> — a
+/// The body of <c>POST /api/v1/app/auth/complete-password-change</c> — a
 /// Control Panel operator setting a new password against the single-use
 /// password-change ticket the sign-in step issued for a forced-change
 /// credential. The ticket proves the current password was already verified at

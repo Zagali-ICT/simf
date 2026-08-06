@@ -27,10 +27,10 @@ public sealed class CommentProvenanceRatchetTests
     /// merely bounded.</summary>
     public static TheoryData<string, int> RemainingLayers => new()
     {
-        { "src/Backend/SIMF.Infrastructure", 1319 },
-        { "src/Shared",                      1230 },
-        { "src/ControlPanel",                 891 },
-        { "src/Backend/SIMF.Api",             587 },
+        { "src/Shared",                       625 },
+        { "src/Backend/SIMF.Infrastructure",  554 },
+        { "src/ControlPanel",                 531 },
+        { "src/Backend/SIMF.Api",             332 },
         { "src/Backend/SIMF.Application",     164 },
     };
 

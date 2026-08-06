@@ -38,7 +38,7 @@ internal static class AiAuditDetail
     private static byte[]? _hmacKey;
     private static bool _hmacKeyIsDevFallback;
 
-    /// <summary>D-181 — install the HMAC key at startup. Called once
+    /// <summary>Install the HMAC key at startup. Called once
     /// by DI registration. If <paramref name="secret"/> is null/empty,
     /// uses a deterministic per-process derivation so dev + tests
     /// still produce stable hashes (production should always supply
@@ -81,7 +81,7 @@ internal static class AiAuditDetail
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
-    /// <summary>D-181 — HMAC-SHA256 over the prompt text used in
+    /// <summary>HMAC-SHA256 over the prompt text used in
     /// <see cref="SIMF.Application.Auditing.AuditEvents.AiPromptUpdated"/> /
     /// Created details so SOC can detect prompt-content drift across
     /// edits without needing the full text (which may contain
@@ -141,7 +141,7 @@ internal static class AiAuditDetail
     private static readonly Regex PanRegex = new(
         @"(?:\d[ -]?){13,19}", Opts);
 
-    // D-181 — Saudi national ID / Iqama (10 digits starting 1 or 2).
+    // Saudi national ID / Iqama (10 digits starting 1 or 2).
     // D-181 (review-pass): tightened with negative look-around equivalents
     // (NonBacktracking doesn't support look-around, so we use word
     // boundaries + a leading non-digit-or-letter requirement enforced by
@@ -152,23 +152,23 @@ internal static class AiAuditDetail
     private static readonly Regex SaudiNationalIdRegex = new(
         @"\b[12]\d{9}\b", Opts);
 
-    // D-181 — Saudi mobile (05XXXXXXXX or +9665XXXXXXXX or 9665XXXXXXXX).
+    // Saudi mobile (05XXXXXXXX or +9665XXXXXXXX or 9665XXXXXXXX).
     // D-181 (review-pass): added \b on the 9665 branch so a 14-digit run
     // doesn't match the inner 9665XXXXXXXX chunk.
     private static readonly Regex SaudiMobileRegex = new(
         @"(\b\+?9665\d{8}\b|\b05\d{8}\b)", Opts);
 
-    // D-181 — Saudi IBAN (SA + 22 digits, total 24 chars).
+    // Saudi IBAN (SA + 22 digits, total 24 chars).
     // D-181 (review-pass): allow optional whitespace between groups so
     // the printed form `SA03 8000 0000 ...` is also redacted.
     private static readonly Regex SaudiIbanRegex = new(
         @"\bSA(?:\s?\d){22}\b", Opts);
 
-    // D-181 — AWS access keys (AKIA = long-term, ASIA = STS session).
+    // AWS access keys (AKIA = long-term, ASIA = STS session).
     private static readonly Regex AwsAccessKeyRegex = new(
         @"\b(AKIA|ASIA)[0-9A-Z]{16}\b", Opts);
 
-    // D-188 — AWS secret access keys do NOT have a prefix and look
+    // AWS secret access keys do NOT have a prefix and look
     // like an arbitrary 40-char base64-ish string, so a value-only
     // match would catch every random 40-char run (huge false-positive
     // rate). The high-fidelity signal is the surrounding context: the
@@ -183,20 +183,20 @@ internal static class AiAuditDetail
         @"(?i)\baws[_-]?secret[_-]?access[_-]?key\s*[:=]\s*[A-Za-z0-9/+=]{20,}",
         Opts);
 
-    // D-181 — GitHub personal-access tokens (ghp_ / gho_ / ghu_ / ghs_ / ghr_).
+    // GitHub personal-access tokens (ghp_ / gho_ / ghu_ / ghs_ / ghr_).
     private static readonly Regex GithubTokenRegex = new(
         @"\bgh[poshru]_[A-Za-z0-9]{36,}\b", Opts);
 
-    // D-181 — Google API keys (AIza prefix, 35 base64url-ish chars).
+    // Google API keys (AIza prefix, 35 base64url-ish chars).
     private static readonly Regex GoogleApiKeyRegex = new(
         @"\bAIza[A-Za-z0-9_-]{35}\b", Opts);
 
-    // D-181 — Slack tokens (xoxb / xoxa / xoxp / xoxr / xoxs / xoxe / xapp).
+    // Slack tokens (xoxb / xoxa / xoxp / xoxr / xoxs / xoxe / xapp).
     // D-181 (review-pass): added xoxe- (refresh) + xapp- (app-level).
     private static readonly Regex SlackTokenRegex = new(
         @"\b(xox[baprse]-|xapp-)[A-Za-z0-9-]{10,}\b", Opts);
 
-    // D-181 — PEM private-key block (full block, not just BEGIN line).
+    // PEM private-key block (full block, not just BEGIN line).
     // D-181 (review-pass): security review flagged that the BEGIN-only
     // match left the actual key material raw in the audit row. The
     // bounded `{0,9000}?` body keeps NonBacktracking happy and is sized
@@ -230,7 +230,7 @@ internal static class AiAuditDetail
         s = GoogleApiKeyRegex.Replace(s, "[REDACTED_KEY]");
         s = SlackTokenRegex.Replace(s, "[REDACTED_KEY]");
         s = AwsAccessKeyRegex.Replace(s, "[REDACTED_KEY]");
-        // D-188 — AWS secret-key context redaction runs alongside the
+        // AWS secret-key context redaction runs alongside the
         // AKIA / ASIA value match. The two patterns are independent
         // (one matches the public access-key id; the other matches
         // the secret-key value via its surrounding context).
@@ -267,7 +267,7 @@ internal static class AiAuditDetail
         }
     }
 
-    // D-185 — every canonical redaction marker the redactor emits.
+    // Every canonical redaction marker the redactor emits.
     // Keeps the SIEM rule's canonical set (README "Detail JSON shape")
     // in sync with what the producer scans for.
     private static readonly (string Marker, string Kind)[] RedactionMarkers =
@@ -284,7 +284,7 @@ internal static class AiAuditDetail
 
     private const int InputPreviewCapChars = 1024;
 
-    /// <summary>D-185 — redaction summary derived from already-redacted
+    /// <summary>Redaction summary derived from already-redacted
     /// text. Returned as a tuple alongside <see cref="SerialiseAndRedact"/>
     /// so SIEM rules AI-005 / AI-007 / AI-008 / AI-009 can field-extract
     /// <c>redactionKinds</c> (string[]) + <c>redactionCount</c> (int) +
@@ -297,7 +297,7 @@ internal static class AiAuditDetail
         int RedactionCount,
         string InputPreview);
 
-    /// <summary>D-185 — redact + serialise + summarise. SIEM-canonical
+    /// <summary>Redact + serialise + summarise. SIEM-canonical
     /// payload for one invocation. Output text MAY be passed via
     /// <paramref name="extraRedactedText"/> so an LLM completion that
     /// itself contained secrets contributes to the summary.</summary>
@@ -322,7 +322,7 @@ internal static class AiAuditDetail
             }
         }
 
-        // D-185 — preview is the redacted JSON, length-capped. SOC rule
+        // Preview is the redacted JSON, length-capped. SOC rule
         // AI-007 regexes against this snippet for intent verbs co-occurring
         // with the IBAN marker, so it must be the redacted text (no raw
         // secrets) and short enough to ship to the audit Detail column.

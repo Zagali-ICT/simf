@@ -114,7 +114,7 @@ public sealed class ImportVenueMapEndpoint(
     // Import batches can reference any hall/booth by code; page the whole list (the
     // list services clamp Top to 200) up to this bound so a >200-hall/booth venue
     // still resolves. Keep equal to AdminGridExportEndpoint.MaxExportRows — the
-    // import must resolve every FK a matching export could have written (D-644/645).
+    // import must resolve every FK a matching export could have written.
     private const int LookupPageCap = 5_000;
     private Dictionary<string, Guid>? _hallsByCode;
     private Dictionary<string, Guid>? _boothsByCode;

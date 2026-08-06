@@ -159,7 +159,7 @@ internal sealed class GateOperatorService(
 
         var qr = QrId.Normalise(context.Request.Qr ?? string.Empty);
 
-        // #14 (D-820: bound raised to the widened nvarchar(96) column) — a
+        // Bound raised to the widened nvarchar(96) column) — a
         // normalised value longer than the column would truncate the append-only
         // scan row on insert (a 500 for an ordinary over-length mis-scan). Deny it
         // as the documented QrUnknown at HTTP 200, storing a length-capped
@@ -235,7 +235,7 @@ internal sealed class GateOperatorService(
             .OrderByDescending(s => s.ScannedAt)
             .Select(s => new { s.Id, s.Direction, s.ScannedAt })
             .FirstOrDefaultAsync(cancellationToken);
-        // D-509 — on a Both-mode gate the operator can deliberately switch
+        // On a Both-mode gate the operator can deliberately switch
         // دخول/خروج and re-scan the same badge within the window (e.g. a quick
         // correction, or a fast in-then-out). That is an intentional new
         // movement, NOT an accidental duplicate, so it must NOT be absorbed.
@@ -330,7 +330,7 @@ internal sealed class GateOperatorService(
             })
             .ToListAsync(cancellationToken);
 
-        // D-167: split cross-context join into App-then-Identity round-trips.
+        // Split cross-context join into App-then-Identity round-trips.
         var profileIds = rows
             .Where(r => r.UserProfileId != null)
             .Select(r => r.UserProfileId!.Value)
@@ -435,7 +435,7 @@ internal sealed class GateOperatorService(
             new GateVisitorsListResponse(items, nextCursor, timeProvider.SimfNow()));
     }
 
-    // D-160 — opaque cursor encoding for the gate-visitors list. Single
+    // Opaque cursor encoding for the gate-visitors list. Single
     // long-valued cursor (lastSeenScanId); base64 over a tiny JSON blob
     // so the wire format can grow without breaking older clients.
     private static string EncodeCursor(long lastSeenScanId)
@@ -474,7 +474,7 @@ internal sealed class GateOperatorService(
     private static GateScanResponse EmptyResponse(DateTime scannedAt) =>
         new(0, ScanOutcome.Denied, ScanDirection.CheckIn, scannedAt, null, null, null);
 
-    /// <summary>D-509 — resolves the direction a scan records. A fixed In / Out
+    /// <summary>Resolves the direction a scan records. A fixed In / Out
     /// gate always records its configured direction. A <c>Both</c> gate honours
     /// the operator's explicit <paramref name="requested"/> choice (the staff
     /// console's دخول/خروج toggle); when the operator did not pick one it falls
@@ -512,7 +512,7 @@ internal sealed class GateOperatorService(
     }
 
     /// <summary>
-    /// A4 (D-592) — stages the idempotency row for a just-processed scan, to be
+    /// Stages the idempotency row for a just-processed scan, to be
     /// committed in the same SaveChanges as the GateScan. Upserts on the composite
     /// PK (Key, GateId): a returning badge that re-scans with the same key AFTER
     /// the 24h replay window has a stale row that <see cref="TryReplayAsync"/>
@@ -823,7 +823,7 @@ internal sealed class GateOperatorService(
         {
             GateId = context.GateId,
             UserProfileId = userProfileId,
-            // D-157 — snapshot the visitor identity at scan time so the
+            // Snapshot the visitor identity at scan time so the
             // log row survives even if the linked Identity-DB row is
             // later deleted or renamed.
             ScannedDisplayName = scannedDisplayName,
@@ -851,7 +851,7 @@ internal sealed class GateOperatorService(
             .SingleOrDefaultAsync(s => s.Id == prior.ScanId.Value, cancellationToken);
         if (scan is null) { return EmptyResponse(prior.StoredAt); }
 
-        // D-167: split cross-context join into App-then-Identity round-trips.
+        // Split cross-context join into App-then-Identity round-trips.
         GateScanUserProfile? profile = null;
         if (scan.UserProfileId is { } pid)
         {
@@ -917,7 +917,7 @@ internal sealed class GateOperatorService(
             ? ar : en;
     }
 
-    /// <summary>D-167: resolves UserProfile.Id → display name (taken from
+    /// <summary>Resolves UserProfile.Id → display name (taken from
     /// SimfUser.DisplayName on the Identity DB) via App-then-Identity
     /// round-trips since the two entities now live in different
     /// DbContexts.</summary>

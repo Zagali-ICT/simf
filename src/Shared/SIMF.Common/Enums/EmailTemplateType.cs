@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-735 — the fixed set of transactional identity emails whose
+/// <summary>The fixed set of transactional identity emails whose
 /// bilingual subject/body an admin can edit in the Control Panel. Each value
 /// keys one <c>EmailTemplate</c> override row (when customised) and one entry in
 /// the code-owned default catalogue (the always-present fallback). Persisted by
@@ -26,7 +26,7 @@ public enum EmailTemplateType
     /// <summary>Biometric-enrolment step-up confirmation code.</summary>
     BiometricStepUp = 5,
 
-    /// <summary>D-751 — cover note for a bulk-generated badge batch emailed to the
+    /// <summary>Cover note for a bulk-generated badge batch emailed to the
     /// organiser, carrying the QR badge PNGs as a single ZIP attachment.</summary>
     BulkBadgeDelivery = 6,
 

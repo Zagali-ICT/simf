@@ -24,7 +24,7 @@ public partial class ProfileTypeForm
     /// When null, the form is in Create mode.</summary>
     [Parameter] public AdminProfileTypeSummary? Initial { get; set; }
 
-    /// <summary>D-186: true for the partner-side host (OtherProfileTypesList),
+    /// <summary>True for the partner-side host (OtherProfileTypesList),
     /// false for the audience-side host (VisitorProfileTypesList). Drives
     /// the IsVisitor payload on Create and the MobileAppRole picker
     /// visibility. Ignored in Edit mode (uses Initial.IsVisitor).</summary>
@@ -36,7 +36,7 @@ public partial class ProfileTypeForm
     /// <summary>Raised when the user clicks Cancel. If unset, no Cancel button renders.</summary>
     [Parameter] public EventCallback OnCancel { get; set; }
 
-    // D-161 — picker options. "Visitor" is omitted because the backend
+    // Picker options. "Visitor" is omitted because the backend
     // rejects it (the Visitor app role is computed from UserType, not
     // assignable per ProfileType row). D-519 added "Exhibitor" (the
     // العارض app role: Visitor + lead-capture tools); without it an admin
@@ -45,14 +45,14 @@ public partial class ProfileTypeForm
     private static readonly string[] MobileAppRoleOptions =
         new[] { "None", "Staff", "Moderator", "Exhibitor" };
 
-    // D-186: the MobileAppRole picker is only meaningful on the
+    // The MobileAppRole picker is only meaningful on the
     // partner side (audience profile types resolve to MobileAppRole
     // .Visitor at JWT issue time). Edit uses the persisted IsVisitor
     // flag; Create uses the host-provided IsPartnerForm.
     private bool ShowMobileAppRolePicker =>
         _isEdit ? Initial?.IsVisitor == false : IsPartnerForm;
 
-    // D-760 — the "Show in Meet-People" toggle is only meaningful for partner
+    // The "Show in Meet-People" toggle is only meaningful for partner
     // (Other) types, the pool the networking directory + recommender draw from;
     // gated exactly like the app-role picker (Edit reads the persisted
     // IsVisitor flag; Create reads the host page's IsPartnerForm).
@@ -96,7 +96,7 @@ public partial class ProfileTypeForm
         }
     }
 
-    // D-120 — only feed the native colour picker when the model value is a
+    // Only feed the native colour picker when the model value is a
     // canonical #rrggbb hex. CSS variables and 3-digit hex shortcuts stay in
     // the text field as-is; the picker falls back to a brand-neutral default
     // for display purposes (no write happens until the user picks).
@@ -106,7 +106,7 @@ public partial class ProfileTypeForm
     private string PageColorAsHex =>
         HexSixPattern.IsMatch(_model.PageColor) ? _model.PageColor : AdminFormDefaults.PageColor;
 
-    // D-725 — mirror the seeder default in the CP create path: selecting an
+    // Mirror the seeder default in the CP create path: selecting an
     // operational app role (Staff / Moderator) auto-hides the type from the
     // app sign-up picker, so a hand-created CP-only type behaves like the
     // seeded one (which ships IsAppRegisterable=false). The admin can still
@@ -192,7 +192,7 @@ public partial class ProfileTypeForm
         return true;
     }
 
-    /// <summary>D-161 — MobileAppRole is only sent when the picker was shown
+    /// <summary>MobileAppRole is only sent when the picker was shown
     /// (UserType=Other). Sending it for Visitor rows would be wire noise: the
     /// backend defaults to None anyway, and the claim is resolved from UserType
     /// regardless.</summary>
@@ -201,7 +201,7 @@ public partial class ProfileTypeForm
 
     private AdminCreateProfileTypeRequest BuildCreateRequest() => new()
     {
-        // D-186: only the Visitor scope is accepted for non-admin profile types.
+        // Only the Visitor scope is accepted for non-admin profile types.
         // The audience-vs-partner split rides on IsVisitor.
         UserType = "Visitor",
         Name = _model.Name.Trim(),
@@ -210,9 +210,9 @@ public partial class ProfileTypeForm
         MobileAppRole = MobileAppRolePayload,
         IsActive = _model.IsActive,
         IsVisitor = !IsPartnerForm,
-        // D-725: app sign-up picker visibility toggle.
+        // App sign-up picker visibility toggle.
         IsAppRegisterable = _model.IsAppRegisterable,
-        // D-760: Meet-People networking visibility toggle.
+        // Meet-People networking visibility toggle.
         ShowInPartnerDirectory = _model.ShowInPartnerDirectory,
     };
 
@@ -223,12 +223,12 @@ public partial class ProfileTypeForm
         PageColor = _model.PageColor.Trim(),
         MobileAppRole = MobileAppRolePayload,
         IsActive = _model.IsActive,
-        // D-186: IsVisitor is mutable on update — keeps the row's existing
+        // IsVisitor is mutable on update — keeps the row's existing
         // audience/partner flag unless the host explicitly changes it.
         IsVisitor = initial.IsVisitor,
-        // D-725: app sign-up picker visibility toggle.
+        // App sign-up picker visibility toggle.
         IsAppRegisterable = _model.IsAppRegisterable,
-        // D-760: Meet-People networking visibility toggle.
+        // Meet-People networking visibility toggle.
         ShowInPartnerDirectory = _model.ShowInPartnerDirectory,
     };
 
@@ -237,13 +237,13 @@ public partial class ProfileTypeForm
         public string Name { get; set; } = string.Empty;
         public string NameArabic { get; set; } = string.Empty;
         public string PageColor { get; set; } = AdminFormDefaults.PageColor;
-        // D-161 — defaults to "None" (the safe baseline); admin opts in
+        // Defaults to "None" (the safe baseline); admin opts in
         // by picking Staff or Moderator.
         public string MobileAppRole { get; set; } = "None";
         public bool IsActive { get; set; } = true;
-        // D-725 — app sign-up picker visibility; default true (visible).
+        // App sign-up picker visibility; default true (visible).
         public bool IsAppRegisterable { get; set; } = true;
-        // D-760 — "Meet People" networking visibility; default true (shown).
+        // "Meet People" networking visibility; default true (shown).
         public bool ShowInPartnerDirectory { get; set; } = true;
     }
 }

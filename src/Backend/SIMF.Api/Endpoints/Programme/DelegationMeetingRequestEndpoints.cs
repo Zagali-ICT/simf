@@ -8,7 +8,7 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Programme;
 
-/// <summary>D-478 (#11, Group G phase 2) — a delegate submits a request for their
+/// <summary>A delegate submits a request for their
 /// delegation to meet another invited country's delegation ("count X meets country
 /// Y"). Login-required (approved account); 403 when the caller is not a delegate;
 /// 400 when the target country is not an invited delegation.</summary>

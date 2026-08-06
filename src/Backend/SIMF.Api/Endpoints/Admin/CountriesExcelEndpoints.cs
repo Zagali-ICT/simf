@@ -37,7 +37,7 @@ public sealed class ExportCountriesEndpoint(IAdminCountryService service, IGridE
         new("PhonePrefix", row => row.PhonePrefix),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the delegation flag + arrival/departure dates
+        // Round-trip the delegation flag + arrival/departure dates
         // (appended so the existing column order is unchanged; import binds by
         // header name). The dates are blank unless the country is invited.
         new("IsInvited", row => row.IsInvited),
@@ -127,7 +127,7 @@ public sealed class ImportCountriesEndpoint(IAdminCountryService service, IGridE
             PhonePrefix = string.IsNullOrWhiteSpace(phonePrefix) ? null : phonePrefix,
             DisplayOrder = int.TryParse(
                 row.Cells.GetValueOrDefault("DisplayOrder", string.Empty), out var order) ? order : 0,
-            // D-506 — round-trip the delegation flag + arrival/departure dates.
+            // Round-trip the delegation flag + arrival/departure dates.
             // The service clears the dates when IsInvited is false, so a date on a
             // non-invited row is simply dropped (matching the CP Edit form).
             IsInvited = ParseInvited(row.Cells.GetValueOrDefault("IsInvited", string.Empty)),

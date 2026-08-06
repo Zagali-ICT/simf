@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-115 — <c>POST /api/v1/admin/profile-types/list</c>. Paged + filtered
+/// <c>POST /api/v1/admin/profile-types/list</c>. Paged + filtered
 /// grid of every ProfileType row. Mirrors the InterestEndpoints shape so
 /// the CP can use the same SimfDataGrid primitive.
 /// </summary>
@@ -31,7 +31,7 @@ public sealed class ListAdminProfileTypesEndpoint(IAdminProfileTypeCommandServic
     }
 }
 
-/// <summary>D-115 — <c>GET /api/v1/admin/profile-types/{id}</c>.</summary>
+/// <summary><c>GET /api/v1/admin/profile-types/{id}</c>.</summary>
 public sealed class GetAdminProfileTypeRequest
 {
     public Guid Id { get; set; }
@@ -63,7 +63,7 @@ public sealed class GetAdminProfileTypeEndpoint(IAdminProfileTypeCommandService 
     }
 }
 
-/// <summary>D-115 — <c>POST /api/v1/admin/profile-types</c>. Create a new row.
+/// <summary><c>POST /api/v1/admin/profile-types</c>. Create a new row.
 /// UserType is restricted to Visitor or Other; per-UserType name uniqueness
 /// is enforced server-side.</summary>
 public sealed class CreateAdminProfileTypeEndpoint(IAdminProfileTypeCommandService service)
@@ -88,7 +88,7 @@ public sealed class CreateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
     }
 }
 
-/// <summary>D-115 — <c>PUT /api/v1/admin/profile-types/{id}</c>. UserType is NOT
+/// <summary><c>PUT /api/v1/admin/profile-types/{id}</c>. UserType is NOT
 /// updatable post-creation. D-186: IsVisitor IS updatable (audience-vs-partner
 /// queue routing).
 ///
@@ -122,14 +122,14 @@ public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
         UpdateAdminProfileTypeRouteRequest req, CancellationToken ct)
     {
         var actorId = User.ActorId();
-        // D-843 — pass the bound request straight through. No hand-copy, so no
+        // Pass the bound request straight through. No hand-copy, so no
         // field can be dropped from it.
         var summary = await service.UpdateAsync(actorId, req.Id, req, ct);
         await Send.OkAsync(ApiResult<AdminProfileTypeSummary>.Ok(summary), ct);
     }
 }
 
-/// <summary>D-115 — <c>DELETE /api/v1/admin/profile-types/{id}</c>.
+/// <summary><c>DELETE /api/v1/admin/profile-types/{id}</c>.
 /// Soft-delete (Idempotent). 409 if any UserProfile still references the
 /// row.</summary>
 public sealed class DeactivateAdminProfileTypeRequest

@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Programme;
 
-/// <summary>D-478 (#11, Group G phase 2) — a delegate submits a request for their
+/// <summary>A delegate submits a request for their
 /// delegation to meet another country's delegation.</summary>
 public sealed class SubmitDelegationMeetingRequestRequest
 {
@@ -19,11 +19,11 @@ public sealed class SubmitDelegationMeetingRequestRequest
     public DateTime? SlotEnd { get; set; }
 }
 
-/// <summary>D-478 — the receipt after a successful submit.</summary>
+/// <summary>The receipt after a successful submit.</summary>
 public sealed record DelegationMeetingRequestSubmitted(
     Guid Id, MeetingRequestStatus Status, DateTime CreatedAt);
 
-/// <summary>D-478 — one row on the admin delegation-meeting desk.
+/// <summary>One row on the admin delegation-meeting desk.
 /// <para>OA-D5 appends the hall check-in stamps, mirroring
 /// <c>AdminSpeakerMeetingRequestRow</c>, so the desk's new XLSX export can report
 /// who actually turned up. Appended with defaults, so the shipped wire contract
@@ -48,7 +48,7 @@ public sealed record AdminDelegationMeetingRequestRow(
     DateTime? CheckedInAt = null,
     string? CheckedInByName = null);
 
-/// <summary>D-478 — the admin detail (adds the requester email, resolved on read).</summary>
+/// <summary>The admin detail (adds the requester email, resolved on read).</summary>
 public sealed record AdminDelegationMeetingRequestDetail(
     Guid Id,
     string RequestingCountry,

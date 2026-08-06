@@ -8,7 +8,7 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Cms;
 
 /// <summary>
-/// D-173 (gap doc G8) — public read surface. Hot path on every public
+/// Public read surface. Hot path on every public
 /// page render — kept minimal: AsNoTracking, projection straight to
 /// the contract record, single round trip even on the batch path.
 /// </summary>

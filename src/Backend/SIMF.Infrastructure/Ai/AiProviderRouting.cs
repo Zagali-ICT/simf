@@ -3,7 +3,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>D-484 — resolves which provider actually serves a prompt. Each prompt
+/// <summary>Resolves which provider actually serves a prompt. Each prompt
 /// carries its own <see cref="AiProvider"/>, but a prompt left on the offline
 /// <see cref="AiProvider.Echo"/> default is redirected to the operator's
 /// configured <see cref="AiOptions.DefaultProvider"/> when one is set — this is

@@ -6,7 +6,7 @@ using SIMF.Domain.PublicRelations;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
-/// D-168 (gap doc G5) — Invitation entity configuration. Real DB FK to
+/// Invitation entity configuration. Real DB FK to
 /// <see cref="UserProfile"/> on the recipient side (D-167 moved
 /// UserProfile to this DbContext so a real FK is possible). SentByUserId
 /// stays a logical FK because SimfUser lives on the Identity DB; the

@@ -264,7 +264,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    // D-781 — attach an EXISTING account to the exhibitor (the Others-pipeline
+    // Attach an EXISTING account to the exhibitor (the Others-pipeline
     // lockout fix). Permission Exhibitors.LinkAccount.
     public Task<ApiCallResult<ExhibitorAccountSummary>> LinkExhibitorAccountAsync(
         Guid id, LinkExhibitorAccountRequest request, string accessToken,

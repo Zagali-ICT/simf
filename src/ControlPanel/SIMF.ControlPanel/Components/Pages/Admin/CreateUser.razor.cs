@@ -12,7 +12,7 @@ public partial class CreateUser
     private Task OnCreatedAsync(AdminCreateUserResponse _)
     {
         // The child form shows its own success banner; the page leaves
-        // navigation to the admin. (D-042 behaviour preserved.)
+        // navigation to the admin.
         return Task.CompletedTask;
     }
 

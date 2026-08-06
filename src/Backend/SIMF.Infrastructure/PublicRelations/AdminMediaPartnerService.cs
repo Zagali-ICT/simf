@@ -286,7 +286,7 @@ internal sealed class AdminMediaPartnerService(
         return (name, nameArabic, logoRelativePath, url, displayOrderRaw);
     }
 
-    // D-766 — validates the identity-card fields inlined from the removed shared
+    // Validates the identity-card fields inlined from the removed shared
     // Contact directory. Lengths mirror the EF configuration; latitude and
     // longitude are an all-or-nothing pair with real-world ranges.
     private static void ValidateContactFields(

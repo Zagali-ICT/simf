@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Common;
 
-/// <summary>D-151 — admin CRUD over <see cref="Country"/>. Id is the ISO
+/// <summary>Admin CRUD over <see cref="Country"/>. Id is the ISO
 /// 3166-1 numeric code, manually assigned at create time (caller is
 /// responsible for picking a free id; service validates uniqueness).
 /// Mirrors AdminThemeService / AdminHallService structure.</summary>
@@ -96,7 +96,7 @@ internal sealed class AdminCountryService(
                 $"يوجد بلد بالرمز '{code}' بالفعل.");
         }
 
-        // D-499 — delegation data (head + dates) only applies to an invited
+        // Delegation data (head + dates) only applies to an invited
         // country; drop it otherwise so a non-invited row never stores orphaned
         // head/date data that would silently resurface if it were re-invited. The
         // head, when supplied, must be an active delegate of this country (none
@@ -161,7 +161,7 @@ internal sealed class AdminCountryService(
             }
         }
 
-        // D-499 — normalize the delegation data (head + dates cleared when the
+        // Normalize the delegation data (head + dates cleared when the
         // country is not invited) and validate the head before persisting.
         var (headId, arrival, departure) = NormalizeDelegation(request.IsInvited,
             request.HeadOfDelegationUserProfileId,
@@ -270,14 +270,14 @@ internal sealed class AdminCountryService(
                 profile.Id, profile.Name, profile.NameArabic, profile.JobTitle))
             .ToListAsync(cancellationToken);
 
-    /// <summary>D-499 — delegation data (head + arrival/departure dates) is only
+    /// <summary>Delegation data (head + arrival/departure dates) is only
     /// meaningful for an invited country; this clears all three when the country
     /// is not invited so a non-invited row never carries orphaned data.</summary>
     private static (Guid? HeadId, DateOnly? Arrival, DateOnly? Departure) NormalizeDelegation(
         bool invited, Guid? headId, DateOnly? arrival, DateOnly? departure) =>
         invited ? (headId, arrival, departure) : (null, null, null);
 
-    /// <summary>D-499 — guards the head-of-delegation pointer: when supplied it
+    /// <summary>Guards the head-of-delegation pointer: when supplied it
     /// must reference an active delegate (<see cref="UserProfile.IsDelegate"/>)
     /// whose nationality is this country. Keeps a country from pointing at an
     /// arbitrary or non-delegate profile.</summary>

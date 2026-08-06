@@ -10,7 +10,7 @@ using SIMF.Common.Options;
 namespace SIMF.Infrastructure.Files;
 
 /// <summary>
-/// D-568 — filesystem-backed <see cref="IFileStorageProvider"/>. One root with a
+/// Filesystem-backed <see cref="IFileStorageProvider"/>. One root with a
 /// per-<see cref="FileService"/> sub-folder; the file name is always
 /// <c>{id:N}{ext}</c> built from our own GUID + a sanitized extension, never from
 /// client input, so path traversal is impossible by construction. Writes are
@@ -26,7 +26,7 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
     // (fmt + KEK version + wrapped DEK), rendering an encrypted body unrecoverable.
     private const int ShredHeaderBytes = 4096;
 
-    // Copy buffer for the streamed (recording) read/write paths (D-568 S7).
+    // Copy buffer for the streamed (recording) read/write paths.
     private const int StreamBufferSize = 81920;
 
     private readonly string _root;
@@ -106,7 +106,7 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
 
         // Stream source → temp with an incremental SHA-256, then atomic-move (temp +
         // move) so a partial write never replaces a good file. Plaintext only — the
-        // file must stay seekable for Range streaming (D-568 S7).
+        // file must stay seekable for Range streaming.
         var temp = fullPath + ".tmp";
         long total = 0;
         string sha256Hex;

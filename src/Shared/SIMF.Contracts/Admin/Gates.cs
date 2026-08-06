@@ -13,7 +13,7 @@ public sealed record AdminGateSummary(
     int AssignedOperatorCount,
     bool IsActive,
     DateTime CreatedAt,
-    // D-506 — carried so the grid Excel export can round-trip the bilingual
+    // Carried so the grid Excel export can round-trip the bilingual
     // description (not rendered as grid columns). Optional; blank when unset.
     string? Description = null,
     string? DescriptionArabic = null);

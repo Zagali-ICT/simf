@@ -18,13 +18,13 @@ public sealed record PublicSpeakerSummary(
     string? CountryNameAr,
     string? PhotoRelativePath,
     int DisplayOrder,
-    // D-357 — true when the speaker has an active SpeakerPhoto asset in the
+    // True when the speaker has an active SpeakerPhoto asset in the
     // unified media-asset pipeline; the client/website prefers serving that
     // (via /content/assets or /app/assets) over the legacy PhotoRelativePath.
     // Appended with a default so the shipped mobile wire contract is preserved.
     bool HasPhotoAsset = false);
 
-/// <summary>D-199 — envelope for the public speakers list.</summary>
+/// <summary>Envelope for the public speakers list.</summary>
 public sealed record PublicSpeakers(IReadOnlyList<PublicSpeakerSummary> Items);
 
 /// <summary>D-199 (Mockup page 20 "Speaker profile") — full public view of
@@ -64,14 +64,14 @@ public sealed record PublicSpeakerDetail(
     string? FacebookUrl,
     string? LinkedInUrl,
     string? XUrl,
-    // D-544 — opted-in website URL, gated by AllowsDataSharing like the social
+    // Opted-in website URL, gated by AllowsDataSharing like the social
     // URLs. Name-keyed JSON, so older app builds simply ignore it (wire-safe).
     string? WebsiteUrl,
     string? PhotoRelativePath,
     int DisplayOrder,
     IReadOnlyList<PublicSpeakerSession> Sessions);
 
-/// <summary>D-199 — one of the speaker's scheduled sessions, shown on the
+/// <summary>One of the speaker's scheduled sessions, shown on the
 /// speaker profile. A deliberately lean line (bilingual title + hall +
 /// time window) — the speaker profile does not need the theme chip or the
 /// seat summary that the full agenda session detail

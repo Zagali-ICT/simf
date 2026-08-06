@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Exhibition;
 
 /// <summary>
-/// D-199 — admin CRUD over <see cref="Booth"/> (Exhibition module, Mockup
+/// Admin CRUD over <see cref="Booth"/> (Exhibition module, Mockup
 /// page 22 + the 2D venue map). Built on <see cref="SimfAppDbContext"/>.
 /// Mirrors <c>AdminSpeakerService</c>: bilingual (Name/NameArabic), unique
 /// Code (409 on duplicate), soft-delete (IsActive), audited via
@@ -132,7 +132,7 @@ internal sealed class AdminBoothService(
     public async Task<AdminBoothDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        // D-673 — pull the linked exhibitor so the detail can surface the
+        // Pull the linked exhibitor so the detail can surface the
         // exhibitor-owned Website / City / Tier (the fields the app booth detail
         // shows; City is now inlined on the Exhibitor). AsNoTracking → LEFT JOIN,
         // single row. The create/update paths do not load this navigation, so
@@ -437,7 +437,7 @@ internal sealed class AdminBoothService(
         return value;
     }
 
-    // D-766 — validates the NEW inline booth-officer identity-card fields (the
+    // Validates the NEW inline booth-officer identity-card fields (the
     // shared Contact directory was removed). Lengths mirror the EF configuration;
     // latitude and longitude are an all-or-nothing pair with real-world ranges.
     // OfficerName / OfficerPhone / OfficerEmail are validated in
@@ -515,7 +515,7 @@ internal sealed class AdminBoothService(
         }
     }
 
-    // B1 — D-222: the exhibitor must be an active Exhibitor row. Mirrors
+    // The exhibitor must be an active Exhibitor row. Mirrors
     // EnsureHallIsValidAsync. Inactive exhibitors are rejected so a booth never
     // points at a soft-deleted row.
     private async Task EnsureExhibitorIsValidAsync(
@@ -535,7 +535,7 @@ internal sealed class AdminBoothService(
         }
     }
 
-    // D-766 — the booth officer's country is a logical FK to the live Country
+    // The booth officer's country is a logical FK to the live Country
     // table (same App context). Mirrors AdminSpeakerService.EnsureCountryIsValid.
     private async Task EnsureOfficerCountryIsValidAsync(
         int? countryId, CancellationToken cancellationToken)
@@ -601,7 +601,7 @@ internal sealed class AdminBoothService(
         MapX = b.MapX,
         MapY = b.MapY,
         IsActive = b.IsActive,
-        // D-673 — read-only exhibitor-resolved fields (mirrors PublicBoothService):
+        // Read-only exhibitor-resolved fields (mirrors PublicBoothService):
         // Website + Tier from the linked Exhibitor, City/CityArabic now inlined on
         // the Exhibitor. Null when the Exhibitor navigation was not loaded (create /
         // update paths) or the booth has no linked exhibitor. ExhibitorContactId is

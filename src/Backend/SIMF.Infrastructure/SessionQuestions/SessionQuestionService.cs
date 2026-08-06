@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/SessionQuestionsTests.cs
-// Tests: SIMF.Api.Tests/QuestionArrivalGatingTests.cs (P5.1c — D-242 FR-704)
+// Tests: SIMF.Api.Tests/QuestionArrivalGatingTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -61,7 +61,7 @@ internal sealed class SessionQuestionService(
             .Select(s => new
             {
                 s.Id, s.IsActive, s.Start, s.End, s.Code,
-                // P5.1 — D-242 (FR-704): does this session's hall have a geofence
+                // Does this session's hall have a geofence
                 // (D-240)? If so, hall arrival is the authoritative gate; if not,
                 // we fall back to the D-171 self-assert toggle.
                 HasGeofence = s.Hall!.GeofenceRadiusMeters != null,
@@ -93,7 +93,7 @@ internal sealed class SessionQuestionService(
                 "انتهت الجلسة ولم تعد تستقبل الأسئلة.");
         }
 
-        // P5.1 — D-242 (FR-704): questions are gated by hall arrival. When the
+        // Questions are gated by hall arrival. When the
         // hall has a geofence (D-240) the authoritative gate is a HallAttendance
         // arrival record (D-241); when it has none the question is accepted (S-5 —
         // remote Q&A works, the client self-assert is not trusted). The session-end
@@ -146,7 +146,7 @@ internal sealed class SessionQuestionService(
         // it is no longer just a display label.
         //
         //  • PRE (asked before the session goes live): stage 1 is the AI filter
-        //    (P4.2 — D-236, ADVISORY — it tags a verdict for the Committee but
+        // It tags a verdict for the Committee but
         //    never blocks a submit), then the row lands Pending for the
         //    Scientific Committee (stage 2) → the moderator desk (stage 3).
         //  • LIVE (asked once the session has started): owner directive — NO AI,

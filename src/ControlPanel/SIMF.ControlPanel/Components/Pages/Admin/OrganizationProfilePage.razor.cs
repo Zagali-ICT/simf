@@ -22,12 +22,12 @@ public partial class OrganizationProfilePage
     private string _toastVariant = "success";
     private bool _videoBusy;
 
-    // D-768 — the hidden file input the hero-video upload reads, and the served
+    // The hidden file input the hero-video upload reads, and the served
     // route the upload points BackgroundVideoUrl at. HasUploadedHeroVideo shows the
     // "Remove" affordance only when an uploaded video (not a pasted external /
     // YouTube link) is the current hero source.
     private const string HeroVideoInputId = "org-hero-video-input";
-    // D-841 — the SAME constant the API registers its stream route from. This used
+    // The SAME constant the API registers its stream route from. This used
     // to be a hand-copied literal with a comment asking the next person to keep the
     // two equal; nothing detected the drift, and the failure was silent — the
     // "Remove" button simply stops being drawn, so an uploaded hero video becomes
@@ -205,7 +205,7 @@ public partial class OrganizationProfilePage
             }).ToList(),
     };
 
-    // D-768 — upload the picked hero video through the CP proxy (streamed to the
+    // Upload the picked hero video through the CP proxy (streamed to the
     // API), then reload so the served BackgroundVideoUrl + the Remove affordance
     // reflect the new state.
     private async Task UploadHeroVideoAsync()
@@ -228,7 +228,7 @@ public partial class OrganizationProfilePage
         finally { _videoBusy = false; }
     }
 
-    // D-809 — the hero-video delete used to fire on the first click.
+    // The hero-video delete used to fire on the first click.
     private bool _confirmingHeroVideoRemove;
 
     private async Task ConfirmRemoveHeroVideoAsync()

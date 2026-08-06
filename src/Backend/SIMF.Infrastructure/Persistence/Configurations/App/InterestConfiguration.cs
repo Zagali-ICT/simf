@@ -5,7 +5,7 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
-/// EF configuration for the <see cref="UserInterest"/> lookup (P9 — D-050).
+/// EF configuration for the <see cref="UserInterest"/> lookup.
 /// D-167 moved this onto <c>SimfAppDbContext</c>. Length caps line up
 /// with the <c>AdminCreateInterestRequestValidator</c> rules. A composite
 /// filter index on <c>(IsActive, DisplayOrder)</c> matches the

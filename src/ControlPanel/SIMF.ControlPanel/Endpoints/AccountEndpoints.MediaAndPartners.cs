@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapMediaAndPartners(IEndpointRouteBuilder group)
     {
-        // D-199 — News admin CRUD BFF passthroughs.
+        // News admin CRUD BFF passthroughs.
         group.MapPost("/admin/news/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -70,7 +70,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeleteNewsAsync(id, token));
         });
 
-        // D-199 — Media gallery admin CRUD + image upload BFF passthroughs.
+        // Media gallery admin CRUD + image upload BFF passthroughs.
         group.MapPost("/admin/media/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -107,7 +107,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeleteMediaAsync(id, token));
         });
 
-        // D-357 — unified media-asset pipeline BFF passthroughs: per-entity upload /
+        // Unified media-asset pipeline BFF passthroughs: per-entity upload /
         // link / preview-fetch + the central Media Library list / get / deactivate /
         // restore. Reused by every entity form's SimfImageUpload + the Media Library page.
         group.MapPost("/admin/assets/{category}/{ownerId:guid}/image",
@@ -183,7 +183,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.RestoreAssetAsync(id, token));
         });
 
-        // P2.3 (D-228) — speaker presentation files (list / upload / download / delete).
+        // Speaker presentation files (list / upload / download / delete).
         group.MapGet("/admin/speakers/{speakerId:guid}/presentations",
             async (Guid speakerId, HttpContext http, SimfAdminClient api) =>
         {
@@ -241,7 +241,7 @@ internal static partial class AccountEndpoints
             return Results.File(bytes, contentType ?? "application/octet-stream", downloadName);
         });
 
-        // D-199 — Media image upload (multipart; same SameSite=Lax CSRF stance
+        // Media image upload (multipart; same SameSite=Lax CSRF stance
         // as /admin/visitors/{id}/id-document, D-029).
         group.MapPost("/admin/media/{id:guid}/image",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
@@ -266,7 +266,7 @@ internal static partial class AccountEndpoints
                 id, stream.ToArray(), file.ContentType, file.FileName, token));
         }).DisableAntiforgery();
 
-        // D-199 — Media-partner admin CRUD BFF passthroughs.
+        // Media-partner admin CRUD BFF passthroughs.
         group.MapPost("/admin/media-partners/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -296,7 +296,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateMediaPartnerAsync(id, token));
         });
 
-        // D-199 — Sponsor admin CRUD BFF passthroughs.
+        // Sponsor admin CRUD BFF passthroughs.
         group.MapPost("/admin/sponsors/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -326,7 +326,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateSponsorAsync(id, token));
         });
 
-        // D-199 — Booth admin CRUD BFF passthroughs.
+        // Booth admin CRUD BFF passthroughs.
         group.MapPost("/admin/booths/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -363,7 +363,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateBoothAsync(id, token));
         });
 
-        // B3 (D-220) — Organisation lookup admin CRUD + gov-Excel import passthroughs.
+        // Organisation lookup admin CRUD + gov-Excel import passthroughs.
         group.MapPost("/admin/organisations/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {

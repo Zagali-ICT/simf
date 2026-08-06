@@ -106,7 +106,7 @@ public sealed class CreateHallEndpoint(IAdminHallService service)
     }
 }
 
-// D-505 — bind {id} + body via a derived route that INHERITS the contract
+// Bind {id} + body via a derived route that INHERITS the contract
 // (mirrors UpdateExhibitorRoute / UpdateSponsorRoute). The old inline
 // UpdateHallRequest omitted the GPS geofence fields, so FastEndpoints dropped
 // the geofence the CP form sends and UpdateAsync wiped the stored geofence on

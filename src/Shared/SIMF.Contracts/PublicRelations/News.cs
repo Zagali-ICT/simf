@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.PublicRelations;
 
 // ---------------------------------------------------------------------------
-// D-199 — News / Media-Centre contracts (Mockup screen 29 / 29b).
+// News / Media-Centre contracts (Mockup screen 29 / 29b).
 // Public payloads are the app / website shape; admin payloads drive the CP
 // grid + edit modal. Lives in the existing SIMF.Contracts.PublicRelations
 // namespace alongside the Invitation contracts.
@@ -55,11 +55,11 @@ public sealed record AdminNewsSummary(
     DateTime PublishedAt,
     int DisplayOrder,
     bool IsActive,
-    // D-357 — true when an active NewsImage asset exists, so the grid renders the
+    // True when an active NewsImage asset exists, so the grid renders the
     // image thumbnail (SimfIdentityCell), else an initials tile.
     bool HasImage,
     DateTime CreatedAt,
-    // D-506 — carried so the grid Excel export can round-trip them (not rendered
+    // Carried so the grid Excel export can round-trip them (not rendered
     // as grid columns). Optional; the long-form body is required on the entity so
     // BodyArabic is always present, ExcerptArabic is blank when unset.
     string BodyArabic = "",

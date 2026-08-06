@@ -103,7 +103,7 @@ internal sealed class RecommendationService(
             .AsNoTracking()
             .Where(p => approvedIds.Contains(p.UserId))
             .Where(p => p.ShowInMeetLikeYou)
-            // D-760: honour the per-type "Meet People" master switch too, so a
+            // Honour the per-type "Meet People" master switch too, so a
             // partner type an admin hid drops out of the recommender as well.
             .Where(p => p.ProfileType == null || p.ProfileType.ShowInPartnerDirectory)
             .Select(p => new
@@ -215,7 +215,7 @@ internal sealed class RecommendationService(
         return new RecommendationsResponse(top);
     }
 
-    /// <summary>D-451 — the bilingual "why this match" line (KSA frame
+    /// <summary>The bilingual "why this match" line (KSA frame
     /// 1072:13409): the session-overlap segment (when any) then the
     /// shared-interest summary, joined by " · ". A single shared interest names
     /// it ("shared interest in X"); two or more are summarised by count.

@@ -127,7 +127,7 @@ internal sealed class TotpEnrollmentService(
         await accounts.SetTwoFactorEnabledAsync(user, true).EnsureSuccessAsync();
 
         // Mint the user's first batch of recovery codes — shown plaintext
-        // exactly once in the response so the user can save them (D-040).
+        // exactly once in the response so the user can save them.
         var codes = await recoveryCodes.GenerateAsync(user.Id, cancellationToken);
 
         await auditLog.WriteAsync(
@@ -187,7 +187,7 @@ internal sealed class TotpEnrollmentService(
 
         // Turn 2FA off and remove the active secret — a re-enrolment then
         // starts cleanly from a fresh QR. Wipe the recovery-code batch too
-        // (D-040): codes only exist while 2FA is on; leaving them behind would
+        // Codes only exist while 2FA is on; leaving them behind would
         // let a leaked code re-enable bypass after the user thought they were
         // safe.
         await accounts.SetTwoFactorEnabledAsync(user, false).EnsureSuccessAsync();
@@ -216,7 +216,7 @@ internal sealed class TotpEnrollmentService(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        // D-096: re-render the QR for the existing active secret. No rotation,
+        // Re-render the QR for the existing active secret. No rotation,
         // no token writes, no audit row — this is a read-only convenience for
         // an admin re-pairing a lost authenticator. The Sign-in path's TOTP
         // verification still uses the same secret, so a successful re-scan
@@ -238,7 +238,7 @@ internal sealed class TotpEnrollmentService(
         string code,
         CancellationToken cancellationToken = default)
     {
-        // D-102: pure verification — no replay-guard mutation, no flag
+        // Pure verification — no replay-guard mutation, no flag
         // change, no audit row. The user is confirming a scan, not signing
         // in; consuming the time-step here would lock them out of the
         // immediate sign-in attempt.

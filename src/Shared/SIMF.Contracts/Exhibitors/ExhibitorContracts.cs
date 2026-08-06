@@ -3,7 +3,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Contracts.Exhibitors;
 
 /// <summary>
-/// D-199 #3 — admin grid row for an exhibitor.
+/// Admin grid row for an exhibitor.
 /// </summary>
 public sealed record AdminExhibitorSummary(
     Guid Id,
@@ -15,7 +15,7 @@ public sealed record AdminExhibitorSummary(
     int AccountCount,
     bool IsActive,
     DateTime CreatedAt,
-    // D-503 — carried so the grid Excel export can round-trip the tier (the grid
+    // Carried so the grid Excel export can round-trip the tier (the grid
     // does not render it as a column). Optional; null = no tier.
     ExhibitorTier? Tier = null,
     // The exhibitor owns its own ExhibitorLogo (owner = the exhibitor) — true when
@@ -23,7 +23,7 @@ public sealed record AdminExhibitorSummary(
     // (else an initials tile). Appended trailing-optional (wire-safe).
     bool HasExhibitorLogo = false);
 
-/// <summary>D-199 #3 — full admin detail for one exhibitor.</summary>
+/// <summary>Full admin detail for one exhibitor.</summary>
 public sealed record AdminExhibitorDetail(
     Guid Id,
     string NameEn,
@@ -54,7 +54,7 @@ public sealed record AdminExhibitorDetail(
     double? Longitude = null);
 
 /// <summary>
-/// D-199 #3 — body of <c>POST /api/v1/admin/exhibitors</c>. Creates the exhibitor
+/// Body of <c>POST /api/v1/admin/exhibitors</c>. Creates the exhibitor
 /// shell (name); accounts are provisioned afterwards via
 /// <c>POST /api/v1/admin/exhibitors/{id}/accounts</c>.
 /// </summary>
@@ -112,7 +112,7 @@ public sealed class CreateExhibitorRequest
     public double? Longitude { get; init; }
 }
 
-/// <summary>D-199 #3 — body of <c>PUT /api/v1/admin/exhibitors/{id}</c>.
+/// <summary>Body of <c>PUT /api/v1/admin/exhibitors/{id}</c>.
 /// Not sealed: the endpoint binds {id}+body via a derived route class (D-202).</summary>
 public class UpdateExhibitorRequest
 {
@@ -172,7 +172,7 @@ public class UpdateExhibitorRequest
 }
 
 /// <summary>
-/// D-199 #3 — one provisioned login account under an exhibitor. <c>UserId</c> is
+/// One provisioned login account under an exhibitor. <c>UserId</c> is
 /// the SimfUser id on the Identity database (logical FK).
 /// </summary>
 public sealed record ExhibitorAccountSummary(
@@ -185,13 +185,13 @@ public sealed record ExhibitorAccountSummary(
     DateTime CreatedAt);
 
 /// <summary>
-/// D-199 #3 — body of <c>POST /api/v1/admin/exhibitors/{id}/accounts</c>.
+/// Body of <c>POST /api/v1/admin/exhibitors/{id}/accounts</c>.
 /// Provisions a least-privilege login account tagged to the exhibitor. The
 /// account is created through the existing admin provisioning pipeline as a
 /// partner-side account carrying the exhibitor profile type (DEF-EXH-005, so
 /// the booth officer can actually use the lead-capture tools), and an
 /// <c>ExhibitorMembership</c> row links it.
-/// Not sealed: the endpoint binds {id}+body via a derived route class (D-202).
+/// Not sealed: the endpoint binds {id}+body via a derived route class.
 /// </summary>
 public class ProvisionExhibitorAccountRequest
 {
@@ -206,7 +206,7 @@ public class ProvisionExhibitorAccountRequest
 }
 
 /// <summary>
-/// D-781 — body of <c>POST /api/v1/admin/exhibitors/{id}/accounts/link</c>.
+/// Body of <c>POST /api/v1/admin/exhibitors/{id}/accounts/link</c>.
 /// Attaches an <b>existing</b> account to the exhibitor by writing the missing
 /// <c>ExhibitorMembership</c>. <c>ProvisionExhibitorAccountRequest</c> is the only
 /// other writer of that row, so an exhibitor-typed account created through the

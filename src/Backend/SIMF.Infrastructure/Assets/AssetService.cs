@@ -11,7 +11,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Assets;
 
-/// <summary>D-357 / D-568 (Wave C S1) — the unified media-asset service, now
+/// <summary>The unified media-asset service, now
 /// backed by the centralized <see cref="StoredFile"/> store instead of the legacy
 /// <c>Asset</c> table + <c>IImageAssetStorage</c>. The <see cref="IAssetService"/>
 /// contract, every endpoint route and the <see cref="AdminAssetSummary"/> shape are

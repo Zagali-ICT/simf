@@ -9,7 +9,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Configuration;
 
-/// <summary>D-461 / D-495 — the public site-settings read. The social links +
+/// <summary>The public site-settings read. The social links +
 /// registration welcome message now live on the singleton
 /// <see cref="OrganizationProfile"/> (migrated out of the old SystemSetting keys —
 /// one source of truth), but this keeps returning the exact same
@@ -34,7 +34,7 @@ internal sealed class SiteSettingsService(SimfAppDbContext db) : ISiteSettingsSe
         static string Message(string? value, string fallback) =>
             string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
-        // D-467 — a social URL is rendered as a link target, so only an absolute
+        // A social URL is rendered as a link target, so only an absolute
         // http(s) URL is surfaced; anything else drops to an inert null.
         static string? SocialUrl(string? value) =>
             !string.IsNullOrWhiteSpace(value)

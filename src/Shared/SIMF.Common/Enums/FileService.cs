@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-568 — the business category of a <c>StoredFile</c>: the single
+/// <summary>The business category of a <c>StoredFile</c>: the single
 /// dimension that drives access control, encryption-at-rest, the upload
 /// allow-list, retention and disposal (resolved through
 /// <c>FileServicePolicy</c>). This is the centralized file store's "Service"
@@ -65,7 +65,7 @@ public enum FileService
     /// <summary>Exhibitor company logo (owner = Exhibitor.Id). Public read.</summary>
     ExhibitorLogo = 16,
 
-    /// <summary>D-768 — home/landing hero background video
+    /// <summary>Home/landing hero background video
     /// (owner = OrganizationProfile.SingletonId). Public read, range-streamed;
     /// plaintext (kept seekable for HTTP 206, like <see cref="SessionRecording"/>).</summary>
     OrganizationHeroVideo = 17,

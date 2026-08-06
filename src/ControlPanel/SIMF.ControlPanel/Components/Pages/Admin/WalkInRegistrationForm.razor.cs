@@ -26,7 +26,7 @@ public partial class WalkInRegistrationForm : IDisposable
     private AdminProfileTypeSummary[] _profileTypes = Array.Empty<AdminProfileTypeSummary>();
     private CountryDto[] _countries = Array.Empty<CountryDto>();
     private InterestDto[] _interests = Array.Empty<InterestDto>();
-    // D-547 — birth-region options. Loaded from the DB-backed regions lookup
+    // Birth-region options. Loaded from the DB-backed regions lookup
     // (/admin/regions/list, active only) in OnInitializedAsync; seeded up-front
     // from the offline SaudiRegions constant so the picker is never empty and so
     // it stays populated if the fetch fails or returns nothing.
@@ -49,7 +49,7 @@ public partial class WalkInRegistrationForm : IDisposable
     private static readonly string[] GenderCodes = { "Unspecified", "Male", "Female" };
     private static readonly string[] PreferredLanguages = { "ar", "en" };
 
-    // C6 (D-459) — standard plate entry: three 17-letter picks (Latin codes) + a
+    // Standard plate entry: three 17-letter picks (Latin codes) + a
     // digit field, assembled into _model.PlateNumber.
     private readonly string[] _plateLetters = { string.Empty, string.Empty, string.Empty };
     private string _plateDigits = string.Empty;
@@ -72,7 +72,7 @@ public partial class WalkInRegistrationForm : IDisposable
     /// photo. Off by default so the regular walk-in desk is unchanged.</summary>
     [Parameter] public bool VipMode { get; set; }
 
-    /// <summary>D-473 (#10) — when true (the delegates desk), the created visitor
+    /// <summary>When true (the delegates desk), the created visitor
     /// is flagged as a delegation member and the API requires an invited country.</summary>
     [Parameter] public bool IsDelegate { get; set; }
 
@@ -89,7 +89,7 @@ public partial class WalkInRegistrationForm : IDisposable
     protected override async Task OnInitializedAsync()
     {
         _editContext = new EditContext(_model);
-        // D-221 — surface per-field errors inline (the form owns the rules; the
+        // Surface per-field errors inline (the form owns the rules; the
         // ValidationMessageStore lets SimfTextField render them next to the field).
         _messages = new ValidationMessageStore(_editContext);
 
@@ -110,7 +110,7 @@ public partial class WalkInRegistrationForm : IDisposable
         var organisationsTask = JS.InvokeAsync<ApiResult<IReadOnlyList<OrganisationPickerItem>>>(
             "simfAccount.getJson",
             "/account/api/admin/walk-in/organisations?top=20").AsTask();
-        // D-547 — birth-region options from the DB-backed lookup. Active only
+        // Birth-region options from the DB-backed lookup. Active only
         // (isActive filter), a large page (Top=200, well above the 13 regions),
         // ordered by SortOrder server-side — the same source the app picker uses.
         var regionsTask = JS.InvokeAsync<ApiResult<GridPage<AdminRegionSummary>>>(
@@ -156,7 +156,7 @@ public partial class WalkInRegistrationForm : IDisposable
     }
 
     /// <summary>
-    /// D-395 — shows only the profile types valid for this desk: audience types
+    /// Shows only the profile types valid for this desk: audience types
     /// (IsVisitor=true) for the Visitor desk, partner types (IsVisitor=false) for
     /// the Other desk. Mirrors the server rule (expectedIsVisitor) + the approve
     /// modal's own filter, so the picker can no longer offer a type the server
@@ -182,7 +182,7 @@ public partial class WalkInRegistrationForm : IDisposable
     }
 
     /// <summary>
-    /// D-547 — swaps the birth-region options to the DB-backed lookup. Keeps the
+    /// Swaps the birth-region options to the DB-backed lookup. Keeps the
     /// offline SaudiRegions fallback (already seeded into <c>_regions</c>) if the
     /// fetch fails or comes back empty, so the picker is never empty.
     /// </summary>
@@ -258,7 +258,7 @@ public partial class WalkInRegistrationForm : IDisposable
             ? null
             : parsed;
 
-    // D-395 — gender picker (SimfSelect over enum-name option values); falls
+    // Gender picker (SimfSelect over enum-name option values); falls
     // back to Unspecified.
     private void OnGenderPicked(string? value) =>
         _model.Gender = Enum.TryParse<Gender>(value, out var g) ? g : Gender.Unspecified;
@@ -270,7 +270,7 @@ public partial class WalkInRegistrationForm : IDisposable
         _ => L["Admin.WalkIn.Field.Gender.Unspecified"],
     };
 
-    // C6 (D-459) — plate letter dropdowns + digit field assemble into the model;
+    // Plate letter dropdowns + digit field assemble into the model;
     // the server validates SaudiPlate.IsValid and stores the canonical code.
     private void OnPlateLetterChanged(int index, ChangeEventArgs e)
     {
@@ -293,7 +293,7 @@ public partial class WalkInRegistrationForm : IDisposable
             : $"{letters}{_plateDigits}";
     }
 
-    // D-469 / D-547 — birth-location region (Saudi only). The stored value is the
+    // Birth-location region (Saudi only). The stored value is the
     // region's localized name (the existing free-text PlaceOfBirth column). The
     // option list is the DB-backed lookup (RegionOption) with the offline
     // SaudiRegions fallback; the English name can be blank for a DB row, so fall
@@ -328,7 +328,7 @@ public partial class WalkInRegistrationForm : IDisposable
     private async Task OnIdDocumentPicked() =>
         _idDocumentName = await PickedFileNameAsync(_idDocUpload);
 
-    // D-427 (CS-3) — optional profile photo; uploaded after register-onsite
+    // Optional profile photo; uploaded after register-onsite
     // succeeds (same deferred pattern as the ID document — needs the new id).
     private async Task OnAvatarPicked() =>
         _avatarName = await PickedFileNameAsync(_avatarUpload);
@@ -603,7 +603,7 @@ public partial class WalkInRegistrationForm : IDisposable
         InternationalMobile = NullIfBlank(_model.InternationalMobile),
         OrganisationId = _model.OrganisationId,
         InterestIds = _model.InterestIds.ToList(),
-        // D-473 (#10) — when hosted by the delegates page, mark the visitor as a
+        // When hosted by the delegates page, mark the visitor as a
         // delegation member (the API then requires an invited nationality).
         IsDelegate = IsDelegate,
     };
@@ -617,7 +617,7 @@ public partial class WalkInRegistrationForm : IDisposable
     {
         // A failure surfaces as HasIdImage=false in the View modal.
         await TryUploadAsync(_idDocumentName, $"{basePath}/{userId}/id-document", _idDocUpload.ElementId);
-        // D-427 (CS-3) — optional profile photo.
+        // Optional profile photo.
         await TryUploadAsync(_avatarName, $"{basePath}/{userId}/avatar", _avatarUpload.ElementId);
         // V-1 (D-429) — optional VIP welcome photo (VIP page only).
         if (VipMode)
@@ -695,7 +695,7 @@ public partial class WalkInRegistrationForm : IDisposable
         _orgSearchCts?.Dispose();
     }
 
-    // D-547 — one birth-region option. Shared shape for both the DB-backed
+    // One birth-region option. Shared shape for both the DB-backed
     // lookup row (AdminRegionSummary) and the offline SaudiRegions fallback, so
     // the markup and the round-trip helpers don't branch on the source. Code is
     // the stable <option> value; Name (English) may be null for a DB row.

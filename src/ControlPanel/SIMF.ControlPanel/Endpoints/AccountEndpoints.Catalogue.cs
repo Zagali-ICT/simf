@@ -70,7 +70,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateSessionCategoryAsync(id, token));
         });
 
-        // D-452 — programme-days admin CRUD passthroughs (date + bilingual
+        // Programme-days admin CRUD passthroughs (date + bilingual
         // title; the logo rides the generic asset endpoints).
         group.MapPost("/admin/programme-days/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
@@ -108,7 +108,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateProgrammeDayAsync(id, token));
         });
 
-        // D-753 — forum-day window (MIN/MAX over active ProgrammeDay.Date). The CP
+        // Forum-day window (MIN/MAX over active ProgrammeDay.Date). The CP
         // business-meetings + speaker-availability pages read it to bound their
         // datetime-local pickers to the event days. Gated at the backend by the
         // existing BusinessMeetings.View permission (no new permission code).

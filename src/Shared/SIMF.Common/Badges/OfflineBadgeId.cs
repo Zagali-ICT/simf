@@ -3,7 +3,7 @@ using System.Globalization;
 namespace SIMF.Common.Badges;
 
 /// <summary>
-/// D-819 — maps a badge desk's offline <b>sequence</b> onto the 12-character
+/// Maps a badge desk's offline <b>sequence</b> onto the 12-character
 /// <c>UserProfile.QrId</c> the rest of the system already resolves by.
 ///
 /// <para>The encrypted badge (<see cref="EventBadgeCodec"/>) carries two plain

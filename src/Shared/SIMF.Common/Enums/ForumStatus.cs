@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-495 — the lifecycle state of the current forum edition, shown as a
+/// <summary>The lifecycle state of the current forum edition, shown as a
 /// status badge on the app + website and editable on the CP Organization Profile
 /// page. Brand-new enum (outside the D-110 freeze); persisted as an int —
 /// append-only, never rename or reorder existing values.</summary>

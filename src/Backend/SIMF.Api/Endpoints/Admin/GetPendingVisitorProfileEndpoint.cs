@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-124 — <c>GET /api/v1/admin/visitors/{id}/profile-for-approval</c>.
+/// <c>GET /api/v1/admin/visitors/{id}/profile-for-approval</c>.
 /// Returns the full <see cref="PendingProfileResponse"/> when the target
 /// is a Visitor currently in PendingApproval; returns 404 otherwise
 /// (unknown id, wrong state, or wrong UserType all collapse to one

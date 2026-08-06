@@ -14,7 +14,7 @@ internal sealed class OperationLogEntryConfiguration : IEntityTypeConfiguration<
         builder.Property(entry => entry.EventType).HasMaxLength(80).IsRequired();
         builder.Property(entry => entry.Outcome).HasConversion<string>().HasMaxLength(16);
         builder.Property(entry => entry.SubjectEmail).HasMaxLength(256);
-        // D-157 — display-name snapshots so SOC reviews don't need a
+        // Display-name snapshots so SOC reviews don't need a
         // cross-DB JOIN to Identity (which lives in a different physical DB).
         builder.Property(entry => entry.SubjectDisplayName).HasMaxLength(128);
         builder.Property(entry => entry.ActorDisplayName).HasMaxLength(128);
@@ -28,7 +28,7 @@ internal sealed class OperationLogEntryConfiguration : IEntityTypeConfiguration<
         builder.HasIndex(entry => new { entry.EventType, entry.Timestamp });
         builder.HasIndex(entry => entry.SubjectEmail);
 
-        // D-611 (Wave B) — actor-centric audit lookups (who did what, when).
+        // Actor-centric audit lookups (who did what, when).
         builder.HasIndex(entry => new { entry.ActorUserId, entry.Timestamp });
     }
 }

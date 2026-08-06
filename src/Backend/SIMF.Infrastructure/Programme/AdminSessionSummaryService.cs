@@ -219,7 +219,7 @@ internal sealed class AdminSessionSummaryService(
             summary.UpdatedByUserId = actorUserId;
         }
         // A (re)generated draft changes the content, so it returns to the review
-        // workflow's Draft state — any prior submit/approval is cleared (D-472).
+        // workflow's Draft state — any prior submit/approval is cleared.
         // A19 — unless the re-draft produced exactly the stored text, in which
         // case nothing the app serves changed and the محضر stays online.
         if (!string.Equals(previousFullTextArabic, draft, StringComparison.Ordinal))
@@ -292,7 +292,7 @@ internal sealed class AdminSessionSummaryService(
         summary.UpdatedAt = now;
         summary.UpdatedByUserId = actorUserId;
         // A real edit invalidates any prior review/approval — back to Draft
-        // (D-472). A19 — a save that changes nothing does not, so re-opening the
+        // A save that changes nothing does not, so re-opening the
         // editor and pressing Save can no longer unpublish a live محضر.
         if (contentChanged)
         {

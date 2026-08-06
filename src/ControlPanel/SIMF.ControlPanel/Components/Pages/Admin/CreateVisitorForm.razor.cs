@@ -32,7 +32,7 @@ public partial class CreateVisitorForm
 
     private void OnRegistrationSuccessAsync(AdminWalkInRegistrationResponse response)
     {
-        // D-127 — show the success modal BEFORE bubbling to the host so
+        // Show the success modal BEFORE bubbling to the host so
         // the host doesn't close the Add modal (which would unmount this
         // component along with the success modal). The bubble fires when
         // the desk clicks Done / Register another below.

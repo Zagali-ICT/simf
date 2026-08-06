@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapSelfService(IEndpointRouteBuilder group)
     {
-        // P12 — D-053: in-app notifications proxy. The CP bell + page
+        // In-app notifications proxy. The CP bell + page
         // call these via simfAccount.{get,post,delete}Json (cookie auth);
         // they forward to the API with the access token.
         group.MapPost("/notifications/list",
@@ -129,7 +129,7 @@ internal static partial class AccountEndpoints
         // Streams the avatar bytes back to the browser — same-origin so the
         // <img src> the page renders carries the auth cookie automatically.
         // The CP fetches from the API with the cookie's access token and
-        // forwards the bytes verbatim (D-039).
+        // forwards the bytes verbatim.
         group.MapGet("/avatar/{userId:guid}",
             async (Guid userId, HttpContext http, SimfAccountClient api) =>
         {

@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;
 
-/// <summary>D-474 (#11, Group G phase 1) — speaker availability windows + the free
+/// <summary>Speaker availability windows + the free
 /// slots derived from them. Windows are team-defined; a window is chopped into
 /// fixed-length slots, and a slot is offered when it is in the future and not
 /// taken by an accepted meeting (half-open overlap, mirroring the BusinessMeeting
@@ -58,7 +58,7 @@ internal sealed class SpeakerAvailabilityService(
                 "يجب أن تنتهي الفترة بعد بدايتها وأن تتّسع لفترة واحدة على الأقل.");
         }
 
-        // D-753 — forum-day bound: an availability window may only be defined on the
+        // Forum-day bound: an availability window may only be defined on the
         // authored event days (MIN/MAX over active ProgrammeDay.Date — NOT the stale
         // OrganizationProfile placeholder). The window's start and end are converted
         // to the event-local (+03:00) calendar date and both must fall inside

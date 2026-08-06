@@ -11,7 +11,7 @@ public sealed class SubmitSpeakerMeetingRequestRequest
     public string RequesterName { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
 
-    /// <summary>D-474 (#11, Group G phase 1b) — the availability slot the requester
+    /// <summary>The availability slot the requester
     /// picked (from <c>GET /app/speakers/{id}/available-slots</c>). When set, this is
     /// the VIP slot flow: the requester must be a VIP/VVIP and the slot must still be
     /// free. When null it is the legacy topic-only request (any approved attendee).</summary>
@@ -19,7 +19,7 @@ public sealed class SubmitSpeakerMeetingRequestRequest
     public DateTime? SlotEnd { get; set; }
 }
 
-/// <summary>D-269 — response after a successful speaker meeting-request
+/// <summary>Response after a successful speaker meeting-request
 /// submission.</summary>
 public sealed record SpeakerMeetingRequestSubmitted(
     Guid Id,
@@ -27,7 +27,7 @@ public sealed record SpeakerMeetingRequestSubmitted(
     MeetingRequestStatus Status,
     DateTime CreatedAt);
 
-/// <summary>D-269 — one row in the admin speaker-meeting-requests grid. The
+/// <summary>One row in the admin speaker-meeting-requests grid. The
 /// speaker name is joined from the App DB (same context). Followed the
 /// session-scoped admin-row pattern (removed D-278); the requester email is deliberately NOT
 /// on the list row (it moves to <see cref="AdminSpeakerMeetingRequestDetail"/> so
@@ -53,7 +53,7 @@ public sealed record AdminSpeakerMeetingRequestRow(
     DateTime? CheckedInAt = null,
     string? CheckedInByName = null);
 
-/// <summary>D-269 — single-record detail for the admin respond modal. Includes
+/// <summary>Single-record detail for the admin respond modal. Includes
 /// <c>RequesterEmail</c> (resolved on read from the Identity DB) so the admin can
 /// reach out off-modal; fetched on demand and audit-logged as
 /// <c>SpeakerMeetingRequest.Viewed</c>. Followed the session-scoped detail
@@ -73,7 +73,7 @@ public sealed record AdminSpeakerMeetingRequestDetail(
     string? ResponseNote,
     DateTime CreatedAt,
     DateTime? RespondedAt,
-    // D-716 (item 7, GAP-2) — the hall slot the meeting was bound to on accept.
+    // The hall slot the meeting was bound to on accept.
     DateTime? SlotStart = null,
     DateTime? SlotEnd = null,
     Guid? HallId = null,
@@ -81,10 +81,10 @@ public sealed record AdminSpeakerMeetingRequestDetail(
     Guid? MeetingTableId = null,
     string? MeetingTableCode = null);
 
-/// <summary>D-269 — admin moves the row off Pending. Status must be Accepted or
+/// <summary>Admin moves the row off Pending. Status must be Accepted or
 /// Rejected; Pending → Pending is rejected. Open for inheritance so the
-/// route-binding endpoint can carry an <c>Id</c> field (the D-168 pattern).
-/// D-716 (item 7, GAP-2) — an Accept may also bind the meeting to a free hall
+/// route-binding endpoint can carry an <c>Id</c> field.
+/// An Accept may also bind the meeting to a free hall
 /// slot: when <see cref="HallId"/> is set the picked slot
 /// (<see cref="SlotStart"/>/<see cref="SlotEnd"/>, from
 /// <c>GET /admin/halls/{id}/available-slots</c>) becomes the meeting time and the

@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapLookups(IEndpointRouteBuilder group)
     {
-        // D-118 — ProfileTypes CRUD proxy (consumer of D-115).
+        // ProfileTypes CRUD proxy.
         group.MapPost("/admin/profile-types/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -75,7 +75,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateAdminProfileTypeAsync(id, token));
         });
 
-        // P9 — Interests CRUD proxy (D-050; الاهتمامات).
+        // P9 — Interests CRUD proxy.
         group.MapPost("/admin/interests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {

@@ -4,7 +4,7 @@ using SIMF.Domain.PublicRelations;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-199 — EF mapping for <see cref="News"/>. Lives in the
+/// <summary>EF mapping for <see cref="News"/>. Lives in the
 /// <c>SIMF.Infrastructure.Persistence.Configurations.App</c> namespace so it is
 /// picked up automatically by <c>SimfAppDbContext.OnModelCreating</c>'s
 /// <c>ApplyConfigurationsFromAssembly(..., type =&gt; type.Namespace == "...App")</c>

@@ -37,14 +37,14 @@ public sealed partial class SimfAdminClient
 {
     // -- D-495 — Organization / About profile editor --------------------------
 
-    /// <summary>D-495 — read the full Organization Profile (incl. child-row ids)
+    /// <summary>Read the full Organization Profile (incl. child-row ids)
     /// for the CP editor. Gated by OrganizationProfile.View.</summary>
     public Task<ApiCallResult<OrganizationProfileResponse>> GetOrganizationProfileAsync(
         string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<OrganizationProfileResponse>(
             HttpMethod.Get, "organization-profile", null, accessToken, cancellationToken);
 
-    /// <summary>D-495 — save the Organization Profile (full-document upsert).
+    /// <summary>Save the Organization Profile (full-document upsert).
     /// Gated by OrganizationProfile.Manage.</summary>
     public Task<ApiCallResult<OrganizationProfileResponse>> SaveOrganizationProfileAsync(
         AdminUpdateOrganizationProfileRequest request,
@@ -54,7 +54,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>D-768 — upload (replace) the hero background video. STREAMED (not a
+    /// <summary>Upload (replace) the hero background video. STREAMED (not a
     /// byte[]) so a large video is not buffered whole in the CP — the caller's stream
     /// forwards straight to the API. Gated by OrganizationProfile.Manage.</summary>
     public Task<ApiCallResult<OrganizationProfileResponse>> UploadOrganizationHeroVideoAsync(
@@ -70,7 +70,7 @@ public sealed partial class SimfAdminClient
             multipart, accessToken, cancellationToken);
     }
 
-    /// <summary>D-768 — remove the uploaded hero background video (reverts the hero to
+    /// <summary>Remove the uploaded hero background video (reverts the hero to
     /// the banner image). Gated by OrganizationProfile.Manage.</summary>
     public Task<ApiCallResult<OrganizationProfileResponse>> DeleteOrganizationHeroVideoAsync(
         string accessToken, CancellationToken cancellationToken = default) =>

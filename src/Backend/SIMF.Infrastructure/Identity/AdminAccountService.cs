@@ -45,7 +45,7 @@ internal sealed partial class AdminAccountService(
     IRecoveryCodeService recoveryCodes,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
-    // D-751 (#10) — renders the BulkBadgeDelivery cover note (DB override or the
+    // Renders the BulkBadgeDelivery cover note (DB override or the
     // code-owned default) for the emailed bulk-badge ZIP. Never throws.
     IEmailTemplateResolver emailTemplates,
     IAuditLog auditLog,
@@ -60,7 +60,7 @@ internal sealed partial class AdminAccountService(
     IPiiEncryptor pii,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
-    // D-819 — the standby walk-in capability (auto-approve + quick register).
+    // The standby walk-in capability (auto-approve + quick register).
     // IOptionsMonitor so arming it in appsettings / set-env-* takes effect
     // without a restart.
     IOptionsMonitor<WalkInModeOptions> walkInMode,
@@ -74,7 +74,7 @@ internal sealed partial class AdminAccountService(
       IAdminUserBulkService
 {
     /// <summary>
-    /// D-819 — the desk's ORIGINAL presence rules, moved out of
+    /// The desk's ORIGINAL presence rules, moved out of
     /// <c>AdminWalkInRegistrationRequestValidator</c> so they can be skipped when
     /// the quick-register mode is armed. Messages are the validator's word for
     /// word, so with the mode disarmed a caller sees exactly what it saw before.
@@ -127,7 +127,7 @@ internal sealed partial class AdminAccountService(
     }
 
     /// <summary>
-    /// D-819 — the quick-register floor. Everything else the full desk demands is
+    /// The quick-register floor. Everything else the full desk demands is
     /// optional, but two things are not:
     ///
     /// <para>A NAME, because a badge with no name on it is unusable at a gate.
@@ -195,7 +195,7 @@ internal sealed partial class AdminAccountService(
                 "لم يتم العثور على حساب بهذا البريد الإلكتروني.");
         }
 
-        // D-836 — deliberately NOT tier-scoped, and that is a decision rather than
+        // Deliberately NOT tier-scoped, and that is a decision rather than
         // an oversight. The route sits under /admin/admins/ and is gated on
         // Admins.ResetTwoFactor, so it reads like an admins-only action; D-041
         // specifies "an Administrator resets another USER's 2FA", and
@@ -252,7 +252,7 @@ internal sealed partial class AdminAccountService(
         await accounts.UpdateSecurityStampAsync(target);
         await refreshTokenRepository.RevokeAllForUserAsync(target.Id, now, cancellationToken);
 
-        // P13 — D-054: in-app notification + email (replaces the
+        // In-app notification + email (replaces the
         // inline EnqueueNotificationEmail call below). The dispatcher
         // writes the in-app row + queues the rendered email.
         var resetTokens = new Dictionary<string, string>
@@ -306,7 +306,7 @@ internal sealed partial class AdminAccountService(
         Guid actorUserId,
         AdminCreateOtherRequest request,
         CancellationToken cancellationToken = default) =>
-        // D-186: Other accounts are now Visitor-typed under the hood;
+        // Other accounts are now Visitor-typed under the hood;
         // the partner-side ProfileType (IsVisitor=false) carries the
         // queue routing. expectedIsVisitor:false enforces the ProfileType
         // belongs to the partner scope so a request with an audience
@@ -350,7 +350,7 @@ internal sealed partial class AdminAccountService(
         bool? expectedIsVisitor = null,
         string? presetQrId = null)
     {
-        // D-186: walk-in registration always creates a Visitor-typed
+        // Walk-in registration always creates a Visitor-typed
         // account. The `kind` argument stays on the signature for
         // backward-compat at the endpoint layer but only rejects Admin
         // walk-ins. D-186 review-pass HIGH (H-3): `expectedIsVisitor`
@@ -434,7 +434,7 @@ internal sealed partial class AdminAccountService(
                 "بعض الاهتمامات المختارة غير معروفة أو لم تعد مفعّلة.");
         }
 
-        // D-819 — quick register. The desk validator's PRESENCE checks moved here
+        // Quick register. The desk validator's PRESENCE checks moved here
         // so the reduced field set can be allowed only when the mode is armed:
         // FluentValidation is synchronous and FastEndpoints validators are
         // singletons, so the mode cannot be read inside the validator, and a
@@ -457,11 +457,11 @@ internal sealed partial class AdminAccountService(
             EnsureFullDeskFields(request);
         }
 
-        // D-151 — resolve the wire-side ISO code to the Country PK.
+        // Resolve the wire-side ISO code to the Country PK.
         // Rejected here (400) before any Identity row is created so we
         // never leak a dangling SimfUser for a stranger nationality.
         //
-        // D-819 — in quick mode the code may be omitted, in which case
+        // In quick mode the code may be omitted, in which case
         // NationalityId falls back to 0. That is the documented "no nationality
         // chosen" value (UserProfileConfiguration) and is what bulk-badge
         // placeholders already write. A code that IS supplied is still resolved
@@ -486,7 +486,7 @@ internal sealed partial class AdminAccountService(
             nationalityId = nationality.Id;
             nationalityIsInvited = nationality.IsInvited;
         }
-        // D-473 (#10) — a delegate's nationality must be a country invited to
+        // A delegate's nationality must be a country invited to
         // send a delegation (وفد). Unchanged by quick mode: a delegate always
         // needs a nationality, because the invited-country rule is what the
         // delegation programme is built on.
@@ -586,7 +586,7 @@ internal sealed partial class AdminAccountService(
                 "تعذّر إنشاء الحساب.");
         }
 
-        // D-819 — UserProfile.Name and .NameArabic are both NOT NULL, but quick
+        // UserProfile.Name and .NameArabic are both NOT NULL, but quick
         // register accepts a name in ONE script. Mirror whichever was captured
         // into the other column (falling back to the display name) so the row is
         // valid and a gate operator always has something to read off the badge.
@@ -623,7 +623,7 @@ internal sealed partial class AdminAccountService(
             NationalityId = nationalityId,
             DateOfBirth = request.DateOfBirth,
             PlaceOfBirth = (request.PlaceOfBirth ?? string.Empty).Trim(),
-            // D-395 — gender + plate captured at the walk-in desk (columns
+            // Gender + plate captured at the walk-in desk (columns
             // already exist on UserProfile; the form just didn't send them).
             Gender = request.Gender,
             // D-468 (review) — store the canonical Latin plate code, exactly like
@@ -651,7 +651,7 @@ internal sealed partial class AdminAccountService(
                 MobileNumber.NormalizeOptional(request.InternationalMobile),
             // B3 — D-221 (الجهة): the desk-required organisation pick.
             OrganisationId = organisationId,
-            // D-473 (#10) — delegation-member flag (a delegate is a normal visitor).
+            // Delegation-member flag (a delegate is a normal visitor).
             IsDelegate = request.IsDelegate,
             CreatedAt = now,
         };
@@ -663,7 +663,7 @@ internal sealed partial class AdminAccountService(
                 profile.Interests.Add(interest);
             }
         }
-        // D-819 — the offline badge upload path. The desk printed this badge
+        // The offline badge upload path. The desk printed this badge
         // without a network, so its QR id is DERIVED from the sequence already
         // encrypted into the paper rather than minted here. Set before the
         // insert: the minter on the approval path is mint-if-missing, so it
@@ -676,10 +676,10 @@ internal sealed partial class AdminAccountService(
         }
         appDbContext.UserProfiles.Add(profile);
 
-        // D-425: no QR at create — the account is PendingApproval; the approve
+        // No QR at create — the account is PendingApproval; the approve
         // path mints the QR badge (D-386). The QR is the access key, granted on
         // approval, not at the desk.
-        // D-167: UserProfile lives on App DB now; save both contexts.
+        // UserProfile lives on App DB now; save both contexts.
         // FIX E — the H-1 soft guard above is a non-atomic read-then-insert; a
         // concurrent duplicate that slips it hits the filtered UNIQUE identity
         // index here. Translate that race into the same 409 DuplicateIdentity
@@ -698,7 +698,7 @@ internal sealed partial class AdminAccountService(
                 ErrorCodes.DuplicateIdentity, cancellationToken);
             throw ApiException.DuplicateIdentity();
         }
-        // D-819 — two desks uploading the same batch at once. The pre-check in
+        // Two desks uploading the same batch at once. The pre-check in
         // the upload service is a non-atomic read-then-insert, so the loser lands
         // here; translate it into the same "already uploaded" answer the
         // pre-check gives rather than a 500, and the retry stays idempotent.
@@ -716,7 +716,7 @@ internal sealed partial class AdminAccountService(
         }
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // D-819 — record WHICH fields a quick registration omitted, so the
+        // Record WHICH fields a quick registration omitted, so the
         // incomplete profiles can be chased and completed after the event. The
         // CP visitor edit page and the attendee's own profile save already fill
         // them in; this is the list of who to chase.
@@ -748,7 +748,7 @@ internal sealed partial class AdminAccountService(
             }, cancellationToken);
         }
 
-        // D-819 — walk-in auto-approval. Approval is what MINTS THE QR, so
+        // Walk-in auto-approval. Approval is what MINTS THE QR, so
         // without this a walk-in leaves the desk with no badge and the main gate
         // correctly refuses them. This is the switch that makes the offline desk
         // and session walk-in usable.
@@ -1007,11 +1007,11 @@ internal sealed partial class AdminAccountService(
                 ProfileTypeId = chosenProfileTypeId,
                 CreatedAt = now,
             });
-            // D-167: profile-stub lands on the App DB.
+            // Profile-stub lands on the App DB.
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
 
-        // 7-day invite (D-042).
+        // 7-day invite.
         var inviteLifetime = TimeSpan.FromDays(7);
         // M3 (security) — store only the keyed hash; email the plaintext invite.
         var plaintext = VerificationCodeGenerator.Generate();
@@ -1039,7 +1039,7 @@ internal sealed partial class AdminAccountService(
             },
             cancellationToken);
 
-        // D-111: in-app welcome row for the new user — visible the first
+        // In-app welcome row for the new user — visible the first
         // time they sign in. SendEmail=false because the invite email
         // (sent just above) already greets them with the code; a second
         // welcome email would duplicate.
@@ -1061,7 +1061,7 @@ internal sealed partial class AdminAccountService(
                 NotificationKind.AccountWelcome, "en", welcomeTokens),
         }, cancellationToken);
 
-        // D-112: fan-out AdminPendingApproval to every other Approved
+        // Fan-out AdminPendingApproval to every other Approved
         // Administrator — the actor admin who just clicked Create is
         // excluded to avoid self-pinging. Same shape as the visitor
         // self-submit fan-out in UserProfileService.DispatchAdminPendingVisitorAsync.
@@ -1110,14 +1110,14 @@ internal sealed partial class AdminAccountService(
 
     public Task<GridPage<AdminUserSummary>> ListOthersAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        // D-186: Others = Visitor users carrying a partner-side
+        // Others = Visitor users carrying a partner-side
         // ProfileType (IsVisitor=false). The underlying account is the
         // same Visitor pool — only the linked ProfileType distinguishes.
         ListAccountsAsync(query, UserType.Visitor, profileScope: false, cancellationToken);
 
     public Task<GridPage<AdminUserSummary>> ListVisitorsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        // D-186: Visitors = Visitor users carrying an audience-side
+        // Visitors = Visitor users carrying an audience-side
         // ProfileType (IsVisitor=true) OR no ProfileType yet.
         ListAccountsAsync(query, UserType.Visitor, profileScope: true, cancellationToken);
 
@@ -1141,7 +1141,7 @@ internal sealed partial class AdminAccountService(
         // Step 2 (App DB): narrow the Visitor family to audience vs partner by the
         // linked ProfileType, mirroring ResolveProfileScopedUserIdsAsync (partner =
         // a UserProfile linked to a ProfileType with IsForVisitor == false). Two
-        // separate reads across the DB split — never a cross-DB join (D-157).
+        // separate reads across the DB split — never a cross-DB join.
         var isPartner = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.UserId == userId && p.ProfileTypeId != null
@@ -1169,7 +1169,7 @@ internal sealed partial class AdminAccountService(
         // flag. Only Admin-typed users carry RBAC roles per the P7 model.
         var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
 
-        // D-186: cross-context scope guard — fetch the user-id set that
+        // Cross-context scope guard — fetch the user-id set that
         // matches the requested profile scope. SimfUser lives in the
         // Identity DB and UserProfile + ProfileType in the App DB so EF
         // join is not available. The set is small under the current
@@ -1192,7 +1192,7 @@ internal sealed partial class AdminAccountService(
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim();
-            // D-373 — the registration reference (SIMF-YYYY-NNNNNNNN) lives
+            // The registration reference (SIMF-YYYY-NNNNNNNN) lives
             // on the App-DB profile row; cross-DB means resolve the matching
             // user ids first (never a JOIN — D-157). Capped: a reference
             // search is effectively exact, so the set is tiny.
@@ -1243,13 +1243,13 @@ internal sealed partial class AdminAccountService(
             ("state", true) => users.OrderByDescending(u => u.AccountState),
             ("state", false) => users.OrderBy(u => u.AccountState),
             ("createdat", false) => users.OrderBy(u => u.CreatedAt),
-            // Natural order: newest first (matches the pre-D-044 behaviour).
+            // Natural order: newest first.
             _ => users.OrderByDescending(u => u.CreatedAt),
         };
 
         var total = await users.CountAsync(cancellationToken);
 
-        // Per-row role flag — projected inside the EF query (D-045 H1 N+1 fix).
+        // Per-row role flag — projected inside the EF query.
         var rows = await users
             .Skip(skip)
             .Take(top)
@@ -1338,7 +1338,7 @@ internal sealed partial class AdminAccountService(
         CancellationToken cancellationToken = default) =>
         RejectAsync(actorUserId, subjectUserId, request, ApprovalScope.AudienceVisitor, cancellationToken);
 
-    // D-186 — approval queue scope. Audience / Partner both back onto
+    // Approval queue scope. Audience / Partner both back onto
     // UserType.Visitor; only the linked ProfileType.IsVisitor flag
     // distinguishes. Admin is its own queue.
     private enum ApprovalScope { AudienceVisitor, PartnerOther, Admin }
@@ -1356,13 +1356,13 @@ internal sealed partial class AdminAccountService(
         _ => null,
     };
 
-    // D-186 — endpoints still take a legacy UserType parameter
+    // Endpoints still take a legacy UserType parameter
     // (Visitor / Other) for backward-compat URL routing. Map it to
     // the IsVisitor flag the scope guards expect.
     private static bool ProfileScopeFromLegacyKind(UserType kind) =>
         kind == UserType.Visitor;
 
-    // D-186 — fetch the set of SimfUser ids that match the requested
+    // Fetch the set of SimfUser ids that match the requested
     // ProfileType.IsVisitor scope. Returns null when no profile-scope
     // filter is requested (Admin queue). The audience side includes
     // users with no ProfileType yet — a self-signed-up visitor with
@@ -1438,7 +1438,7 @@ internal sealed partial class AdminAccountService(
         ListPendingAsync(query, UserType.Visitor, profileScope: true, cancellationToken);
 
     /// <summary>P7c — pending-approval list narrowed by UserType.
-    /// D-186: <paramref name="profileScope"/> further narrows the
+    /// <paramref name="profileScope"/> further narrows the
     /// Visitor scope into the audience (true) and partner (false)
     /// approval queues; null = no profile-scope filter (Admin queue).</summary>
     private async Task<GridPage<AdminPendingUserSummary>> ListPendingAsync(

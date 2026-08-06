@@ -27,7 +27,7 @@ public partial class ExhibitorsList
         public string RoleLabel { get; set; } = string.Empty;
     }
 
-    // D-781 — the "attach an EXISTING account" form. Only the email is required;
+    // The "attach an EXISTING account" form. Only the email is required;
     // the contact name defaults to the account's display name server-side.
     private sealed class LinkModel
     {
@@ -180,7 +180,7 @@ public partial class ExhibitorsList
         _target = null;
     }
 
-    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    // Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminExhibitorSummary> selected) =>
         _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
 
@@ -281,7 +281,7 @@ public partial class ExhibitorsList
         finally { _provisionBusy = false; }
     }
 
-    // D-781 — attach an EXISTING account to this exhibitor. The account must
+    // Attach an EXISTING account to this exhibitor. The account must
     // already carry an exhibitor profile type (set on the Others page); the API
     // answers 409 EXHIBITOR_ACCOUNT_NOT_ELIGIBLE with a bilingual message if not,
     // which is surfaced verbatim.

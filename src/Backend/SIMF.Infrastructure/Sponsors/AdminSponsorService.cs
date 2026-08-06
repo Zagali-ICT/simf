@@ -354,7 +354,7 @@ internal sealed class AdminSponsorService(
         return (nameEn, nameAr, tier, logoRelativePath, url, displayOrderRaw);
     }
 
-    // D-766 — validates the identity-card fields inlined from the removed
+    // Validates the identity-card fields inlined from the removed
     // shared Contact directory. Lengths mirror the EF configuration; latitude
     // and longitude are an all-or-nothing pair with real-world ranges.
     private static void ValidateContactFields(
@@ -474,7 +474,7 @@ internal sealed class AdminSponsorService(
             sponsor.Latitude,
             sponsor.Longitude);
 
-    // D-432 — trim a tagline to null when blank; enforce the 256-char limit
+    // Trim a tagline to null when blank; enforce the 256-char limit
     // (mirrors SponsorConfiguration.HasMaxLength + the CP MaxLength) so a direct
     // API call gets a clean 400 instead of a DB error.
     private static string? NormaliseTagline(string? value)

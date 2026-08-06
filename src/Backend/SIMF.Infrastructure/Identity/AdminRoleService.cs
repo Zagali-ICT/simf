@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-134 Sprint A — admin CRUD over <c>SimfRole</c>. Built on the existing
+/// Admin CRUD over <c>SimfRole</c>. Built on the existing
 /// Identity infrastructure (uses <see cref="RoleManager{TRole}"/> so the
 /// stamp + normalised-name invariants stay correct), the existing
 /// <c>RolePermission</c> join (read for the per-role permission count),

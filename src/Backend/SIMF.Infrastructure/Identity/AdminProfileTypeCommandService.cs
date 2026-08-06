@@ -14,7 +14,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-115 — admin CRUD over the <c>ProfileTypes</c> table. Read-only
+/// Admin CRUD over the <c>ProfileTypes</c> table. Read-only
 /// listings are still served by <see cref="AdminProfileTypeQueryService"/>;
 /// every mutation here audits one row and respects the per-UserType name
 /// uniqueness rule.
@@ -51,7 +51,7 @@ internal sealed class AdminProfileTypeCommandService(
         {
             rows = rows.Where(profileType => profileType.IsActive == isActive);
         }
-        // D-186: the CP Other-profile-types page filters this server-side.
+        // The CP Other-profile-types page filters this server-side.
         if (query.Filters.TryGetValue("isVisitor", out var isVisitorFilter)
             && bool.TryParse(isVisitorFilter, out var isVisitorValue))
         {
@@ -105,7 +105,7 @@ internal sealed class AdminProfileTypeCommandService(
         AdminCreateProfileTypeRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-186: only the Visitor scope is accepted for non-admin
+        // Only the Visitor scope is accepted for non-admin
         // profile types; the audience-vs-partner split lives on
         // request.IsVisitor (true = audience, false = partner / staff).
         if (!Enum.TryParse<UserType>(request.UserType, ignoreCase: true, out var userType)
@@ -145,18 +145,18 @@ internal sealed class AdminProfileTypeCommandService(
             Name = name,
             NameArabic = nameArabic,
             PageColor = pageColor,
-            // D-186: IsVisitor drives CP queue routing — true = Visitors
+            // IsVisitor drives CP queue routing — true = Visitors
             // approval queue, false = Others approval queue.
             IsForVisitor = request.IsVisitor,
             MobileAppRole = mobileAppRole,
-            // D-725: app sign-up picker visibility (default true; the CP
+            // App sign-up picker visibility (default true; the CP
             // form sends false for CP-only operational types).
             IsAppRegisterable = request.IsAppRegisterable,
-            // D-760: Meet-People networking visibility (default true).
+            // Meet-People networking visibility (default true).
             ShowInPartnerDirectory = request.ShowInPartnerDirectory,
             IsActive = request.IsActive,
             CreatedAt = now,
-            // D-819 — the small number the printed badge carries. Allocated, not
+            // The small number the printed badge carries. Allocated, not
             // entered: it is a wire detail of the QR, not something an
             // administrator should have to pick or keep unique.
             Code = await ProfileTypeCodeAllocator.NextAsync(dbContext, cancellationToken),
@@ -166,7 +166,7 @@ internal sealed class AdminProfileTypeCommandService(
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        // D-823 - ProfileTypeCodeAllocator reads MAX(Code) and adds one, which is
+        // ProfileTypeCodeAllocator reads MAX(Code) and adds one, which is
         // a read-then-insert: two admins creating a type at the same instant both
         // compute the same number and the filtered unique index refuses the
         // loser. The index is doing its job - a reused code would make a retired
@@ -239,14 +239,14 @@ internal sealed class AdminProfileTypeCommandService(
         profileType.PageColor = (request.PageColor ?? string.Empty).Trim();
         profileType.MobileAppRole = ParseMobileAppRole(request.MobileAppRole);
         profileType.IsActive = request.IsActive;
-        // D-186: IsVisitor is mutable — flipping it re-routes the row
+        // IsVisitor is mutable — flipping it re-routes the row
         // between the CP Visitors and Others approval queues. The
         // underlying user accounts already use UserType.Visitor either way.
         profileType.IsForVisitor = request.IsVisitor;
-        // D-725: app sign-up picker visibility — the admin toggles whether a
+        // App sign-up picker visibility — the admin toggles whether a
         // self-registering user may pick this type.
         profileType.IsAppRegisterable = request.IsAppRegisterable;
-        // D-760: Meet-People networking visibility.
+        // Meet-People networking visibility.
         profileType.ShowInPartnerDirectory = request.ShowInPartnerDirectory;
         profileType.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -331,7 +331,7 @@ internal sealed class AdminProfileTypeCommandService(
             profileType.IsAppRegisterable,
             profileType.ShowInPartnerDirectory);
 
-    /// <summary>D-161 — parses the wire-side stringly mobile-app-role,
+    /// <summary>Parses the wire-side stringly mobile-app-role,
     /// rejecting unknown values with a typed 400. Null / empty defaults
     /// to <see cref="MobileAppRole.None"/>. <see cref="MobileAppRole.Visitor"/>
     /// is rejected because the Visitor mapping is resolved from

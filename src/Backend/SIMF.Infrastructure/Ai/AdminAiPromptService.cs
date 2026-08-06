@@ -11,7 +11,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>D-176 (gap doc G12) — admin CRUD over <see cref="AiPrompt"/>
+/// <summary>Admin CRUD over <see cref="AiPrompt"/>
 /// + read-only invocations log. Writes bump <see cref="AiPrompt.Version"/>
 /// and audit; deactivate is soft (<see cref="AiPrompt.IsActive"/> = false).</summary>
 internal sealed class AdminAiPromptService(
@@ -139,7 +139,7 @@ internal sealed class AdminAiPromptService(
         appDbContext.AiPrompts.Add(prompt);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        // D-179 — structured JSON detail with prompt-content hash so
+        // Structured JSON detail with prompt-content hash so
         // SOC can detect prompt drift across edits without storing
         // the raw text (may contain prompt-injection payloads).
         await auditLog.WriteSuccessAsync(
@@ -174,13 +174,13 @@ internal sealed class AdminAiPromptService(
                 "AI prompt not found.",
                 "لم يتم العثور على محفّز الذكاء الاصطناعي.");
 
-        // D-179 — capture old hash BEFORE mutation so the audit row
+        // Capture old hash BEFORE mutation so the audit row
         // carries both old + new content hashes; SOC can flag any
         // prompt-text drift even without raw text access.
         var oldHash = AiAuditDetail.PromptContentHash(
             prompt.SystemPrompt, prompt.UserPromptTemplate);
 
-        // D-188 — snapshot the PRE-mutation state into AiPromptHistory
+        // Snapshot the PRE-mutation state into AiPromptHistory
         // so SOC + the CP history tab can reconstruct any prior
         // version after a drift detection. Captured BEFORE the
         // version bump; uses the current prompt.Version so the
@@ -222,7 +222,7 @@ internal sealed class AdminAiPromptService(
         prompt.Version++;
         prompt.UpdatedAt = now;
         prompt.UpdatedByUserId = actorUserId;
-        // D-188: SaveChangesAsync writes both the snapshot AND the
+        // SaveChangesAsync writes both the snapshot AND the
         // live-row update in one transaction. EF SaveChanges is
         // atomic per call; if the snapshot insert fails (e.g. unique
         // index violation on a duplicate version retry), the live
@@ -538,7 +538,7 @@ internal sealed class AdminAiPromptService(
         p.SystemPrompt, p.UserPromptTemplate, p.Temperature, p.MaxOutputTokens,
         p.IsActive, p.Version, p.CreatedAt, p.UpdatedAt);
 
-    /// <summary>D-188 — read the append-only edit history for one
+    /// <summary>Read the append-only edit history for one
     /// prompt. Newest first. Capped at the natural ceiling of how
     /// many edits a single prompt accumulates over an event
     /// lifetime (single-digit hundreds at most); no paging needed

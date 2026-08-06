@@ -25,11 +25,11 @@ public sealed record PublicSponsor(
     string? InstagramUrl = null,
     double? Latitude = null,
     double? Longitude = null,
-    // D-432 — appended (append-only wire): the optional bilingual tagline shown
+    // Appended (append-only wire): the optional bilingual tagline shown
     // under the sponsor name (Figma 922:2824).
     string? Tagline = null,
     string? TaglineArabic = null,
-    // D-456 — the sponsor's country (from the linked Contact) for the app's
+    // The sponsor's country (from the linked Contact) for the app's
     // corner flag. ISO 3166-1 numeric; the names are the label/fallback. Null
     // when no Contact is linked or it has no country. Appended (append-only).
     int? CountryId = null,

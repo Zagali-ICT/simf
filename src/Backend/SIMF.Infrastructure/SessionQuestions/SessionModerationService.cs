@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/SessionQuestionsTests.cs
-// Tests: SIMF.Api.Tests/SessionQuestionCommitteeTests.cs (P3.3 — D-234 desk = Approved set)
+// Tests: SIMF.Api.Tests/SessionQuestionCommitteeTests.cs
 // Tests: SIMF.Api.Tests/ModeratorDeskStateTests.cs (DEF-MOD-001/002 — answered + rejected recovery;
-//        D-772 — the Hidden tab excludes Committee rejections)
+// The Hidden tab excludes Committee rejections)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -15,7 +15,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.SessionQuestions;
 
 /// <summary>
-/// D-169 (gap doc G6) — moderator surface. Trusts the caller is
+/// Moderator surface. Trusts the caller is
 /// already authorized; the endpoint layer handles the role check.
 /// </summary>
 internal sealed class SessionModerationService(
@@ -30,7 +30,7 @@ internal sealed class SessionModerationService(
         QuestionStatus? status = null,
         CancellationToken cancellationToken = default)
     {
-        // P3.3 — D-212: the desk works the Committee-approved set (stage 3);
+        // The desk works the Committee-approved set (stage 3);
         // Pending questions still await the Committee (stage 2).
         // DEF-MOD-001 — an Answered row stays on the working desk (its own tab)
         // instead of dying in a screen-local Set.
@@ -57,7 +57,7 @@ internal sealed class SessionModerationService(
             .Where(q => q.SessionId == sessionId);
         if (status == QuestionStatus.Hidden)
         {
-            // D-772 — the rejected tab is the DESK's recovery tray, not a window
+            // The rejected tab is the DESK's recovery tray, not a window
             // into the Committee's bin. Allowing ?status=Hidden through verbatim
             // still shipped the full QuestionText of every question the Scientific
             // Committee rejected while it was PENDING — text that never cleared the
@@ -110,7 +110,7 @@ internal sealed class SessionModerationService(
         }
 
         var userIds = rows.Select(r => r.SubmittedByUserId).Distinct().ToList();
-        // A9 (D-185) — the submitter email is PII and is NOT shipped to the
+        // The submitter email is PII and is NOT shipped to the
         // moderator queue (a single grid render must never broadcast bulk PII).
         // Only the display name is projected from the cross-DB Identity lookup.
         var users = await identityDbContext.Users
@@ -127,7 +127,7 @@ internal sealed class SessionModerationService(
                 r.SessionId,
                 r.SubmittedByUserId,
                 user?.DisplayName ?? string.Empty,
-                // A9 (D-185) — email redacted; the nullable DTO field stays for
+                // Email redacted; the nullable DTO field stays for
                 // wire-compat (D-219) but is always null on the moderator queue.
                 null,
                 r.QuestionText,
@@ -151,10 +151,10 @@ internal sealed class SessionModerationService(
     {
         var question = await LoadQuestionAsync(sessionId, questionId, cancellationToken);
 
-        // P3.3 — D-212: Status is the single source of truth for visibility; the
+        // Status is the single source of truth for visibility; the
         // row's IsHidden marker is derived from it. (The persisted IsHidden column
         // is no longer written.)
-        // D-771 — un-hiding RESTORES the status the row held before it was hidden
+        // Un-hiding RESTORES the status the row held before it was hidden
         // instead of promoting everything to Approved: an Answered question keeps
         // its answered mark (the durability DEF-MOD-001 exists for), and a
         // Committee-rejected question goes back to Pending — back into the
@@ -405,7 +405,7 @@ internal sealed class SessionModerationService(
     private async Task<SessionQuestionModeratorRow> ToRowAsync(
         SessionQuestion question, CancellationToken cancellationToken)
     {
-        // A9 (D-185) — submitter email is PII and is NOT shipped to the moderator
+        // Submitter email is PII and is NOT shipped to the moderator
         // desk (parity with ListAsync); only the display name is projected.
         var user = await identityDbContext.Users.AsNoTracking()
             .Where(u => u.Id == question.SubmittedByUserId)
@@ -416,7 +416,7 @@ internal sealed class SessionModerationService(
             question.SessionId,
             question.SubmittedByUserId,
             user?.DisplayName ?? string.Empty,
-            // A9 (D-185) — email redacted; field kept null for wire-compat (D-219).
+            // Email redacted; field kept null for wire-compat.
             null,
             question.QuestionText,
             question.Recipient,

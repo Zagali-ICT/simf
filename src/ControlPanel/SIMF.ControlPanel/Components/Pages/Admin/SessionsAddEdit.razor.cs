@@ -20,12 +20,12 @@ public partial class SessionsAddEdit
     private string _hallIdInput = string.Empty;
     private string _categoryIdInput = string.Empty;
     private string _typeInput = string.Empty;
-    // D-485 — per-session seat-mode override ("" = inherit, "0" = Assigned, "1" = Open).
+    // Per-session seat-mode override ("" = inherit, "0" = Assigned, "1" = Open).
     private string _seatModeInput = string.Empty;
     private string _startInput = string.Empty;
     private string _endInput = string.Empty;
     private string _capacityInput = string.Empty;
-    // D-839 — blank means "inherit the hall" (which may itself inherit the global
+    // Blank means "inherit the hall" (which may itself inherit the global
     // value); the placeholder shows what that currently resolves to.
     private string _arrivalGraceInput = string.Empty;
     private string _speakerPickInput = string.Empty;
@@ -60,10 +60,10 @@ public partial class SessionsAddEdit
     private string[] _categoryIds = Array.Empty<string>();
     private Dictionary<string, AdminSessionCategorySummary> _categoriesById = new();
 
-    // D-452 — fixed session-type options (Workshop=0 / Session=1 / Event=2).
+    // Fixed session-type options (Workshop=0 / Session=1 / Event=2).
     private static readonly string[] _typeOptions = { "0", "1", "2" };
 
-    // D-485 — seat-mode override options ("0" = AssignedSeat, "1" = OpenSeating);
+    // Seat-mode override options ("0" = AssignedSeat, "1" = OpenSeating);
     // the empty placeholder selection inherits the hall's mode.
     private static readonly string[] _seatModeOptions = { "0", "1" };
 
@@ -276,7 +276,7 @@ public partial class SessionsAddEdit
             : c.Name;
     }
 
-    // D-452 — localized label for a session-type option id ("0"/"1"/"2").
+    // Localized label for a session-type option id ("0"/"1"/"2").
     private string TypeLabel(string id) => id switch
     {
         "0" => L["Admin.Sessions.Type.Workshop"],
@@ -285,13 +285,13 @@ public partial class SessionsAddEdit
         _ => id,
     };
 
-    // D-452 — empty selection = unset; otherwise the parsed SessionType.
+    // Empty selection = unset; otherwise the parsed SessionType.
     private static SessionType? ParseType(string raw) =>
         int.TryParse(raw, out var n) && Enum.IsDefined(typeof(SessionType), n)
             ? (SessionType)n
             : null;
 
-    // D-485 — the per-session seat-mode override select ("0"/"1"); empty = inherit.
+    // The per-session seat-mode override select ("0"/"1"); empty = inherit.
     private string SeatModeLabel(string id) => id switch
     {
         "1" => L["Admin.Sessions.SeatMode.Open"],
@@ -390,7 +390,7 @@ public partial class SessionsAddEdit
         RefreshSpeakerOptions();
     }
 
-    // B9 — D-225: set a speaker's per-session role (speaker / host).
+    // Set a speaker's per-session role (speaker / host).
     private void OnSpeakerRoleChanged(int index, ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var raw)
@@ -553,7 +553,7 @@ public partial class SessionsAddEdit
             }
             capacityOverride = parsed;
         }
-        // D-839 — blank = inherit the hall; otherwise a whole number inside the
+        // Blank = inherit the hall; otherwise a whole number inside the
         // shared bound. Same rule object the server validates with.
         if (!WalkInModeOptions.TryParseArrivalGrace(
                 _arrivalGraceInput, out var arrivalGraceOverride))
@@ -670,12 +670,12 @@ public partial class SessionsAddEdit
     };
 
 
-    /// <summary>D-839 — the shared 0..240 bound as the input's own `max`, so the
+    /// <summary>The shared 0..240 bound as the input's own `max`, so the
     /// browser refuses out-of-range values before the parser has to.</summary>
     private static string ArrivalGraceMax =>
         WalkInModeOptions.MaxArrivalGraceMinutes.ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>D-839 — the helper under the arrival-grace box. On edit it names
+    /// <summary>The helper under the arrival-grace box. On edit it names
     /// the number the server would actually use if the box is left blank, so an
     /// admin can see what they are inheriting instead of guessing whether the hall
     /// or the global value is in force.</summary>
@@ -695,7 +695,7 @@ public partial class SessionsAddEdit
         int? CapacityOverride,
         Guid? CategoryId,
         SessionType? Type,
-        // D-839 — null = inherit the hall.
+        // Null = inherit the hall.
         int? ArrivalGraceMinutesOverride);
 
     /// <summary>A1/A6 — true when saving would destroy seats: this is an edit, the
@@ -726,7 +726,7 @@ public partial class SessionsAddEdit
 
     private void CancelRelease() => _confirmRelease = false;
 
-    // D-578 — subtitle import (upload .srt/.vtt parsed server-side, or fetch from the
+    // Subtitle import (upload .srt/.vtt parsed server-side, or fetch from the
     // video) feedback banner. Variant is one of SimfAlert's error/success/info.
     private string? _subtitleMessage;
     private string _subtitleVariant = "info";
@@ -862,7 +862,7 @@ public partial class SessionsAddEdit
         // Blank in both languages = no notice; it never withholds the stream.
         public string LiveNotice { get; set; } = string.Empty;
         public string LiveNoticeArabic { get; set; } = string.Empty;
-        // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+        // AI live-caption text (manual stub provider, bilingual).
         public string LiveCaptions { get; set; } = string.Empty;
         public string LiveCaptionsArabic { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;

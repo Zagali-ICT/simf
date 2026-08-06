@@ -40,7 +40,7 @@ public sealed class UploadVisitorVipPhotoEndpoint(
     {
         var actorId = User.ActorId();
 
-        // D-836 — this route is Visitors.Edit and lives under /admin/visitors/,
+        // This route is Visitors.Edit and lives under /admin/visitors/,
         // so it must act only on the audience tier. The service guard compares
         // UserType alone, which D-186 made identical for both Visitor-family
         // tiers, so a partner id passed here would otherwise be accepted.
@@ -105,7 +105,7 @@ public sealed class FetchVisitorVipPhotoEndpoint(
     {
         var actorId = User.ActorId();
 
-        // D-836 — audience tier only, checked before any byte is read.
+        // Audience tier only, checked before any byte is read.
         if (!await provisioning.IsSubjectInFamilyAsync(
                 Route<Guid>("id"), UserType.Visitor, expectedIsVisitor: true, ct))
         {

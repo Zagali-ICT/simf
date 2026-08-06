@@ -35,7 +35,7 @@ public sealed class ExportSponsorsEndpoint(IAdminSponsorService service, IGridEx
         new("Url", row => row.Url),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
-        // D-502 — round-trip the bilingual tagline + about (appended so the
+        // Round-trip the bilingual tagline + about (appended so the
         // existing column order is unchanged; import binds by header name).
         new("Tagline", row => row.Tagline),
         new("TaglineArabic", row => row.TaglineArabic),
@@ -97,7 +97,7 @@ public sealed class ImportSponsorsEndpoint(IAdminSponsorService service, IGridEx
             Url = NullIfBlank(row.Cells.GetValueOrDefault("Url", string.Empty)),
             DisplayOrder = int.TryParse(
                 row.Cells.GetValueOrDefault("DisplayOrder", string.Empty), out var order) ? order : 0,
-            // D-502 — optional bilingual tagline + about (CreateAsync trims and
+            // Optional bilingual tagline + about (CreateAsync trims and
             // length-guards them; absent columns simply stay null).
             Tagline = NullIfBlank(row.Cells.GetValueOrDefault("Tagline", string.Empty)),
             TaglineArabic = NullIfBlank(row.Cells.GetValueOrDefault("TaglineArabic", string.Empty)),

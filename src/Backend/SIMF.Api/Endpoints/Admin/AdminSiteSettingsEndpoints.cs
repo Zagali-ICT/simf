@@ -8,7 +8,7 @@ using SIMF.Contracts.Configuration;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-464 — the CP "Site Settings" page: read the current branding values
+/// <summary>The CP "Site Settings" page: read the current branding values
 /// (registration welcome message + social links). Reuses the public read-path so
 /// the form prefills with the effective values. Gated by Configuration.View.</summary>
 public sealed class GetAdminSiteSettingsEndpoint(ISiteSettingsService siteSettings)
@@ -27,7 +27,7 @@ public sealed class GetAdminSiteSettingsEndpoint(ISiteSettingsService siteSettin
             await siteSettings.GetAsync(ct)), ct);
 }
 
-/// <summary>D-464 — save the CP "Site Settings" page (upserts the whitelisted
+/// <summary>Save the CP "Site Settings" page (upserts the whitelisted
 /// keys), then returns the re-read effective values. Gated by Configuration.Edit.</summary>
 public sealed class SaveAdminSiteSettingsEndpoint(
     IAdminSystemSettingService admin,

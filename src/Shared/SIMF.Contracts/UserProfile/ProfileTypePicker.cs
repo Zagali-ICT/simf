@@ -12,7 +12,7 @@ public sealed record ProfileTypePickerDto(
     string PageColor,
     bool IsVisitor);
 
-/// <summary>D-190 — response body for
+/// <summary>Response body for
 /// <c>GET /api/v1/app/account/profile-types</c>.</summary>
 public sealed record ProfileTypePickerListResponse(
     IReadOnlyList<ProfileTypePickerDto> Items);

@@ -28,7 +28,7 @@ public sealed record PublicMediaPartners(IReadOnlyList<PublicMediaPartnerItem> I
 
 // -- Admin CRUD projections --
 
-/// <summary>D-199 — admin list-row projection of a media partner.</summary>
+/// <summary>Admin list-row projection of a media partner.</summary>
 public sealed record AdminMediaPartnerSummary(
     Guid Id,
     string Name,
@@ -38,12 +38,12 @@ public sealed record AdminMediaPartnerSummary(
     int DisplayOrder,
     bool IsActive,
     DateTime CreatedAt,
-    // D-740 — "an active MediaPartnerLogo asset exists" so the grid renders the
+    // "an active MediaPartnerLogo asset exists" so the grid renders the
     // real logo thumbnail, else an initials tile (set on read via a batched query).
     bool HasLogo = false);
 
-/// <summary>D-199 — admin detail projection of a media partner.
-/// D-766: the contact identity-card fields (phone / email / social / city /
+/// <summary>Admin detail projection of a media partner.
+/// The contact identity-card fields (phone / email / social / city /
 /// map location / country) are inlined onto the row (all optional).</summary>
 public sealed record AdminMediaPartnerDetail(
     Guid Id,
@@ -55,7 +55,7 @@ public sealed record AdminMediaPartnerDetail(
     bool IsActive,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    // D-766 — inlined contact identity-card fields (all optional).
+    // Inlined contact identity-card fields (all optional).
     string? Email = null,
     string? PhonePrimary = null,
     string? PhoneSecondary = null,
@@ -71,14 +71,14 @@ public sealed record AdminMediaPartnerDetail(
     double? Latitude = null,
     double? Longitude = null);
 
-/// <summary>D-199 — create payload (Id is server-assigned).</summary>
+/// <summary>Create payload (Id is server-assigned).</summary>
 public sealed record AdminCreateMediaPartnerRequest(
     string Name,
     string NameArabic,
     string? LogoRelativePath,
     string? Url,
     int DisplayOrder,
-    // D-766 — inlined contact identity-card fields (all optional).
+    // Inlined contact identity-card fields (all optional).
     string? Email = null,
     string? PhonePrimary = null,
     string? PhoneSecondary = null,
@@ -92,7 +92,7 @@ public sealed record AdminCreateMediaPartnerRequest(
     double? Latitude = null,
     double? Longitude = null);
 
-/// <summary>D-199 — update payload (Id travels in the route).</summary>
+/// <summary>Update payload (Id travels in the route).</summary>
 public sealed record AdminUpdateMediaPartnerRequest
 {
     public string Name { get; set; } = string.Empty;
@@ -103,7 +103,7 @@ public sealed record AdminUpdateMediaPartnerRequest
 
     public bool IsActive { get; set; } = true;
 
-    // D-766 — inlined contact identity-card fields (all optional).
+    // Inlined contact identity-card fields (all optional).
     public string? Email { get; set; }
     public string? PhonePrimary { get; set; }
     public string? PhoneSecondary { get; set; }

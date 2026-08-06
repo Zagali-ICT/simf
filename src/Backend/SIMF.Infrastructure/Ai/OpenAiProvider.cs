@@ -8,7 +8,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>D-176 (gap doc G12) — OpenAI chat-completions provider.
+/// <summary>OpenAI chat-completions provider.
 /// Reads <c>ApiKey</c>, <c>BaseUrl</c>, <c>DefaultModel</c> from
 /// <see cref="AiOptions"/>. If the API key is empty, throws
 /// <c>AI_PROVIDER_NOT_CONFIGURED</c> immediately — the service layer

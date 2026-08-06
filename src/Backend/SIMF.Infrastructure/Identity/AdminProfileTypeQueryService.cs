@@ -10,7 +10,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-100: first slice of the R2 follow-up — extracts the read-only
+/// First slice of the R2 follow-up — extracts the read-only
 /// <see cref="IAdminProfileTypeQueryService.ListProfileTypesAsync"/> method
 /// out of the 1091-line <see cref="AdminAccountService"/> aggregate into
 /// its own focused implementation. The remaining 4 interfaces
@@ -32,7 +32,7 @@ internal sealed class AdminProfileTypeQueryService(
     public async Task<IReadOnlyList<AdminProfileTypeSummary>> ListProfileTypesAsync(
         UserType userType, CancellationToken cancellationToken = default)
     {
-        // D-186: every profile type is Visitor-scope; echo the requested
+        // Every profile type is Visitor-scope; echo the requested
         // scope for the wire-stable UserType field.
         var scope = userType.ToString();
         return await dbContext.ProfileTypes

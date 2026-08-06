@@ -7,7 +7,7 @@ using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Repositories;
 
-/// <summary>R4 — D-209: EF-backed <see cref="IUserProfileRepository"/>. Spans
+/// <summary>EF-backed <see cref="IUserProfileRepository"/>. Spans
 /// both contexts (App DB for the profile + lookups; Identity DB for the
 /// account reads + the transactional save). Query shapes are lifted verbatim
 /// from the pre-move <c>UserProfileService</c>.</summary>
@@ -55,7 +55,7 @@ internal sealed class UserProfileRepository(
     public async Task<long> NextRegistrationReferenceAsync(
         CancellationToken cancellationToken = default)
     {
-        // D-373 — a SQL sequence is the concurrency-safe issuer for the
+        // A SQL sequence is the concurrency-safe issuer for the
         // human-quotable registration reference. Raw ADO because SQL Server
         // forbids NEXT VALUE FOR inside the derived table EF wraps
         // SqlQueryRaw results into.

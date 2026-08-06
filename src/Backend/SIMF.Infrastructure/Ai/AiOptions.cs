@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>D-176 (gap doc G12) — bound to <c>Ai</c> section in
+/// <summary>Bound to <c>Ai</c> section in
 /// <c>appsettings.json</c>. Defaults pick the offline
 /// <see cref="AiProvider.Echo"/> provider so test + dev runs never
 /// reach out to the network. Production overrides with real
@@ -19,17 +19,17 @@ public sealed class AiOptions
 
     public OpenAiOptions OpenAi { get; set; } = new();
 
-    /// <summary>D-484 — the Anthropic (Claude) Messages-API provider settings.</summary>
+    /// <summary>The Anthropic (Claude) Messages-API provider settings.</summary>
     public AnthropicOptions Anthropic { get; set; } = new();
 
     /// <summary>The Google Gemini (Generative Language API) provider settings.</summary>
     public GeminiOptions Gemini { get; set; } = new();
 
-    /// <summary>D-181 — HMAC key for prompt-content drift hashes.</summary>
+    /// <summary>HMAC key for prompt-content drift hashes.</summary>
     public AiPromptHashOptions PromptHash { get; set; } = new();
 }
 
-/// <summary>D-484 — Anthropic (Claude) provider settings. Bound to
+/// <summary>Anthropic (Claude) provider settings. Bound to
 /// <c>Ai:Anthropic</c>; the API key is supplied via env var
 /// <c>SIMF_Ai__Anthropic__ApiKey</c> in production — never committed.</summary>
 public sealed class AnthropicOptions

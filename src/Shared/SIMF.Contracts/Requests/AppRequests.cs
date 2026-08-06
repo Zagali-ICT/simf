@@ -11,7 +11,7 @@ public enum AppRequestKind
     /// <summary>A meeting the user requested with a speaker (D-269/D-475).</summary>
     SpeakerMeeting = 0,
 
-    /// <summary>A delegation↔delegation meeting the user requested (D-478).
+    /// <summary>A delegation↔delegation meeting the user requested.
     /// Read-only in the app — managed on the Control Panel.</summary>
     DelegationMeeting = 1,
 
@@ -49,21 +49,21 @@ public sealed record AppRequestItem(
     /// (their own, still Pending, and a cancellable kind — speaker / document /
     /// badge; never delegation or session-attendance, which cancel elsewhere).</summary>
     bool CanCancel,
-    /// <summary>D-590 — optional secondary descriptor shown under the name on the
+    /// <summary>Optional secondary descriptor shown under the name on the
     /// المقابلات card (Figma 1701:9406). For a speaker meeting this carries the
     /// speaker's <c>Rank</c> (e.g. "باحث بيئي"), the same descriptor the public
     /// speaker profile shows; null for the other kinds, where the app falls back
     /// to the meeting-type headline. Append-only (D-219): the app reads it by
     /// name and older clients ignore it.</summary>
     string? Subtitle = null,
-    /// <summary>D-745 — for a <see cref="AppRequestKind.SpeakerMeeting"/> row, the
+    /// <summary>For a <see cref="AppRequestKind.SpeakerMeeting"/> row, the
     /// speaker's <c>Id</c> so the bilateral-meetings card can render the speaker's
     /// photo from the existing public asset route
     /// (<c>GET /app/assets/SpeakerPhoto/{id}/image</c>). Null for the other kinds
     /// (delegation carries no speaker photo). Append-only (D-219): older clients
     /// ignore it.</summary>
     Guid? SpeakerId = null,
-    /// <summary>D-745 — the ISO 3166-1 numeric country id for the bilateral-meetings
+    /// <summary>The ISO 3166-1 numeric country id for the bilateral-meetings
     /// card's flag: the speaker's nationality on a speaker meeting, the target
     /// country on a delegation meeting. Null for the non-meeting kinds / when unset.
     /// Append-only (D-219): older clients ignore it.</summary>
@@ -85,7 +85,7 @@ public sealed record AppRequestItem(
     /// Append-only (D-219): older clients ignore it.</summary>
     bool CheckedIn = false);
 
-/// <summary>D-500 — body for <c>POST /app/my-requests/cancel</c>: the requester
+/// <summary>Body for <c>POST /app/my-requests/cancel</c>: the requester
 /// withdraws one of their own still-pending requests.</summary>
 public sealed class CancelMyRequestBody
 {

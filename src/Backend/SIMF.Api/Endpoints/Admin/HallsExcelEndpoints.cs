@@ -34,7 +34,7 @@ public sealed class ExportHallsEndpoint(IAdminHallService service, IGridExcelExp
         new("Capacity", row => row.Capacity),
         new("Floor", row => row.Floor),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the fields the grid summary now carries (appended so
+        // Round-trip the fields the grid summary now carries (appended so
         // the existing column order is unchanged; import binds by header name).
         // SeatSelectionMode is exported by its display name (AssignedSeat/
         // OpenSeating); the geofence triple is all-three-or-none.
@@ -43,7 +43,7 @@ public sealed class ExportHallsEndpoint(IAdminHallService service, IGridExcelExp
         new("GeofenceCenterLon", row => row.GeofenceCenterLon),
         new("GeofenceRadiusMeters", row => row.GeofenceRadiusMeters),
         new("SeatSelectionMode", row => ((SeatSelectionMode)row.SeatSelectionMode).ToString()),
-        // D-839 — blank means "inherit the system default", so an empty cell is a
+        // Blank means "inherit the system default", so an empty cell is a
         // real value here, not a missing one.
         new("ArrivalGraceMinutes", row => row.ArrivalGraceMinutes),
     ];
@@ -111,7 +111,7 @@ public sealed class ImportHallsEndpoint(IAdminHallService service, IGridExcelImp
             Floor = row.Cells.GetValueOrDefault("Floor", string.Empty) is { Length: > 0 } floor
                 ? floor
                 : null,
-            // D-506 — optional fields the grid summary now round-trips. The
+            // Optional fields the grid summary now round-trips. The
             // geofence triple is all-three-or-none; a partial geofence row is
             // rejected by CreateAsync as a per-row error (not a batch abort).
             EquipmentNotes = NullIfBlank(row.Cells.GetValueOrDefault("EquipmentNotes", string.Empty)),
@@ -145,7 +145,7 @@ public sealed class ImportHallsEndpoint(IAdminHallService service, IGridExcelImp
             "يجب أن تكون قيم خط العرض وخط الطول ونصف القطر للسياج أرقاماً.");
     }
 
-    // D-839 — parses the optional arrival grace. Blank stays null, which is the
+    // Parses the optional arrival grace. Blank stays null, which is the
     // real "inherit the system default" value. A non-blank, out-of-range or
     // non-numeric cell is a per-row error rather than a silent 0, which would
     // otherwise slam the hall's doors shut the moment a session ends.

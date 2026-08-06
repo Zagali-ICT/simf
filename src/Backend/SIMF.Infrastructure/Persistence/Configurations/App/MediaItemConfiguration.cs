@@ -37,7 +37,7 @@ internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaIte
         // index, with Album appended for the by-album filter).
         builder.HasIndex(item => new { item.IsActive, item.Album, item.DisplayOrder });
 
-        // D-611 (Wave B) — the active gallery read path filtered by media kind.
+        // The active gallery read path filtered by media kind.
         builder.HasIndex(item => new { item.IsActive, item.Kind, item.DisplayOrder });
     }
 }

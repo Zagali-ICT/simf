@@ -6,15 +6,15 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-165 (gap doc G3) — Session entity configuration.
+/// <summary>Session entity configuration.
 /// Real DB FK to Hall (same DbContext). Composite-PK join tables
 /// SessionSpeaker + SessionTheme persist the two M-to-M relations.</summary>
 internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
 {
     public void Configure(EntityTypeBuilder<Session> builder)
     {
-        // D-611 (Wave B) — a session must end after it starts.
-        // D-839 — the arrival-grace override is null (inherit the hall) or within
+        // A session must end after it starts.
+        // The arrival-grace override is null (inherit the hall) or within
         // the one shared bound; same rule as CK_Halls_ArrivalGrace.
         builder.ToTable("Sessions", table =>
         {
@@ -35,7 +35,7 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.Language).HasMaxLength(64);
         builder.Property(s => s.LanguageArabic).HasMaxLength(64);
 
-        // P3.2b — D-232: recording metadata (the bytes live out-of-row on disk).
+        // Recording metadata (the bytes live out-of-row on disk).
         builder.Property(s => s.RecordingStoredFileName).HasMaxLength(64);
         builder.Property(s => s.RecordingFileName).HasMaxLength(260);
         builder.Property(s => s.RecordingContentType).HasMaxLength(128);
@@ -44,7 +44,7 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.LiveStreamUrl).HasMaxLength(1024);
         builder.Property(s => s.LiveSignLanguageUrl).HasMaxLength(1024);
 
-        // P5 — D-439: AI live-caption text (manual stub provider, bilingual). 2048
+        // AI live-caption text (manual stub provider, bilingual). 2048
         // matches the Description column — the SSOT the CP form + service-layer
         // validation align to.
         builder.Property(s => s.LiveCaptions).HasMaxLength(2048);
@@ -79,7 +79,7 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.HasIndex(s => new { s.IsActive, s.Start });
         builder.HasIndex(s => new { s.HallId, s.Start });
 
-        // P3.2 — D-231: the Committee's lifecycle queue lists sessions by
+        // The Committee's lifecycle queue lists sessions by
         // status (e.g. the Recorded ones awaiting publish), most-recent first.
         // Status is stored as int (enum, by convention); no HasDefaultValue —
         // the service always writes an explicit value (avoids the EF "0 looks
@@ -89,7 +89,7 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
     }
 }
 
-/// <summary>P4.1 — D-237: SessionSummary (محضر) configuration. One summary per
+/// <summary>SessionSummary (محضر) configuration. One summary per
 /// session (unique <c>SessionId</c>), cascade-deleted with its session. Every
 /// HasMaxLength here is the single source of truth the edit form + validator
 /// align to (§7); the full-text columns match the News body length (8000).</summary>
@@ -98,7 +98,7 @@ internal sealed class SessionSummaryConfiguration
 {
     public void Configure(EntityTypeBuilder<SessionSummary> builder)
     {
-        // D-611 (Wave B) — approval cannot precede review submission.
+        // Approval cannot precede review submission.
         builder.ToTable("SessionSummaries", table => table.HasCheckConstraint(
             "CK_SessionSummaries_ReviewOrder",
             "[ApprovedAt] IS NULL OR ([ReviewSubmittedAt] IS NOT NULL AND [ApprovedAt] >= [ReviewSubmittedAt])"));
@@ -145,7 +145,7 @@ internal sealed class SessionSpeakerConfiguration
         builder.ToTable("SessionSpeakers");
         builder.HasKey(ss => new { ss.SessionId, ss.SpeakerId });
 
-        // B9 — D-225: speaker/host role on the join (stored as int).
+        // Speaker/host role on the join (stored as int).
         builder.Property(ss => ss.Role);
 
         builder.HasOne(ss => ss.Session)

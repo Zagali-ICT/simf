@@ -45,11 +45,11 @@ public sealed class IdentitySeeder(
     IHostEnvironment hostEnvironment,
     ILogger<IdentitySeeder> logger)
 {
-    // D-585 — Saudi Arabia is the seeded default nationality (Country.Id, the
+    // Saudi Arabia is the seeded default nationality (Country.Id, the
     // ISO-3166 numeric code, seeded via CountryConfiguration.HasData).
     private const int SaudiArabiaCountryId = 682;
 
-    // D-755 — the real edition dates and the single source of truth for the seeded
+    // The real edition dates and the single source of truth for the seeded
     // OrganizationProfile forum dates. The row is CP-editable after seeding; the
     // seeder only writes these when the row still carries the stale placeholder
     // (2026-01-01..04-30) the D-495 migration InsertData baked in, so a CP edit is
@@ -70,7 +70,7 @@ public sealed class IdentitySeeder(
     private const string AuthenticatorKeyProvider = "[AspNetUserStore]";
     private const string AuthenticatorKeyTokenName = "AuthenticatorKey";
 
-    /// <summary>D-585 — the demo account matrix: one account per user type /
+    /// <summary>The demo account matrix: one account per user type /
     /// profile type so every role is testable from a fresh database.
     /// <c>ProfileType == null</c> → an Admin account (Administrator role, no
     /// profile). BUG-022: this is the SINGLE source of truth for the demo set —
@@ -189,7 +189,7 @@ public sealed class IdentitySeeder(
             }
         }
 
-        // D-124: the original seed names redundantly prefixed the UserType
+        // The original seed names redundantly prefixed the UserType
         // ("Visitor — General", "Other — Staff") even though UserType is a
         // separate column on the same row. Rename the rows in place on any
         // DB that still carries the old names — the CP grid now surfaces
@@ -199,16 +199,16 @@ public sealed class IdentitySeeder(
         await RenameProfileTypeIfPresentAsync(
             "Visitor — General", "General", "زائر — عام", "عام",
             UserType.Visitor, cancellationToken);
-        // D-186: legacy "Other — Staff" rows are under UserType.Visitor
+        // Legacy "Other — Staff" rows are under UserType.Visitor
         // after the data migration; rename + audience-vs-partner state
         // is preserved on the row's IsVisitor flag (false for Staff).
         await RenameProfileTypeIfPresentAsync(
             "Other — Staff", "Staff", "أخرى — فريق", "فريق",
             UserType.Visitor, cancellationToken);
 
-        // C5 (D-371) — the owner fixed the visitor self-registration type's
+        // The owner fixed the visitor self-registration type's
         // name as "Normal" (عادي); rename any DB still carrying the P7-era
-        // "General" row in place (same idempotent machinery as D-124 above).
+        // "General" row in place.
         await RenameProfileTypeIfPresentAsync(
             "General", "Normal", "عام", "عادي",
             UserType.Visitor, cancellationToken);
@@ -222,7 +222,7 @@ public sealed class IdentitySeeder(
         await EnsureProfileTypeAsync(
             "Normal", "عادي", "#3B82F6",
             isVisitor: true, MobileAppRole.None, cancellationToken);
-        // D-161 — Staff is the canonical operational partner-side profile
+        // Staff is the canonical operational partner-side profile
         // type; the default mobile-app role is Staff (can perform gate
         // operations, look up attendees, print badges). Admins seed the
         // remaining operational types (Volunteer → Staff,
@@ -232,7 +232,7 @@ public sealed class IdentitySeeder(
         await EnsureProfileTypeAsync(
             "Staff", "فريق", "#10B981",
             isVisitor: false, MobileAppRole.Staff, cancellationToken);
-        // D-562 — seed the canonical Moderator partner profile type alongside
+        // Seed the canonical Moderator partner profile type alongside
         // Staff (MobileAppRole.Moderator = Staff + content/user moderation), so a
         // moderator app account is creatable out of the box. The seeder note above
         // ("Programme Coordinator / Operations Lead → Moderator") still lets admins
@@ -252,7 +252,7 @@ public sealed class IdentitySeeder(
         await EnsureProfileTypeAsync(
             "Sponsor", "راعي", "#8B5CF6", // purple
             isVisitor: false, MobileAppRole.None, cancellationToken);
-        // D-519 — the canonical exhibitor (العارض) partner type. Unlike the
+        // The canonical exhibitor (العارض) partner type. Unlike the
         // display-only Media / Sponsor types, an exhibitor carries the
         // operational Exhibitor app role so the lead-capture tools (scan a
         // visitor's QR + "My Visitors") gate to it. Booth-officer accounts are
@@ -277,7 +277,7 @@ public sealed class IdentitySeeder(
             "VIP", "كبار الشخصيات", "#0E7490", // deep teal
             isVisitor: true, MobileAppRole.None, cancellationToken);
 
-        // D-611 (Wave B) — the VVIP + VIP audience tiers may book VIP
+        // The VVIP + VIP audience tiers may book VIP
         // speaker-meeting slots. AllowsVipMeetingSlots defaults false for every
         // other type; flip these two after seeding (idempotent — runs each boot).
         // This is the source of truth the meeting-request service now reads,
@@ -288,7 +288,7 @@ public sealed class IdentitySeeder(
                 setters => setters.SetProperty(profileType => profileType.AllowsVipMeetingSlots, true),
                 cancellationToken);
 
-        // D-585 — seed one demo user account per user type / profile type
+        // Seed one demo user account per user type / profile type
         // (an extra Admin + a VVIP/VIP/Normal visitor + a Staff/Moderator/
         // Exhibitor/Media/Sponsor partner), so every role is testable from a
         // fresh DB. Runs AFTER the profile types above so the name lookup
@@ -313,7 +313,7 @@ public sealed class IdentitySeeder(
         // missing, matches the existing EnsureProfileTypeAsync pattern.
         await EnsureCybersecurityPolicyContentAsync(admin.Id, cancellationToken);
 
-        // D-755 — set the CP-editable forum dates to the real edition
+        // Set the CP-editable forum dates to the real edition
         // (2026-11-23..25), correcting the stale placeholder the D-495 migration
         // seeded, so every surface that reads OrganizationProfile renders the real
         // range. Idempotent + admin-edit-safe (only rewrites the known placeholder).
@@ -330,7 +330,7 @@ public sealed class IdentitySeeder(
         // instead of the page's hardcoded copy. Idempotent, additive data.
         await EnsureLandingSectionsContentAsync(admin.Id, cancellationToken);
 
-        // D-377 — baseline lookups + core app content. Interests and the
+        // Baseline lookups + core app content. Interests and the
         // organisation lookup are REQUIRED by the visitor profile save
         // (1–10 interests + an organisation pick), so an environment where
         // either table is empty silently makes registration impossible —
@@ -341,7 +341,7 @@ public sealed class IdentitySeeder(
         await EnsureBaselineInterestsAsync(admin.Id, cancellationToken);
         await EnsureBaselineOrganisationsAsync(admin.Id, cancellationToken);
 
-        // D-170 (Meet-People) — give the Approved demo accounts overlapping
+        // Give the Approved demo accounts overlapping
         // interests so "قابل أشخاص مثلك" returns matches on a fresh DB. Runs after
         // the demo accounts (above) + the interest lookup (just now) are seeded.
         // App-DB-only, idempotent (skips a profile that already has interests).
@@ -355,20 +355,20 @@ public sealed class IdentitySeeder(
         // already carries the pointer); a no-op when the demo seed is gated off.
         await EnsureDemoAccountAssetsAsync(cancellationToken);
 
-        // D-377 — the app's terms + about content blocks (Page 009 / Page 037
+        // The app's terms + about content blocks (Page 009 / Page 037
         // render their empty states without them). Insert-when-absent, same
         // shape as the cyber/landing content seeds above.
         await EnsureCoreAppContentAsync(admin.Id, cancellationToken);
 
-        // D-747 — the forum's event CONTENT (org About/Vision/Mission/Themes +
+        // The forum's event CONTENT (org About/Vision/Mission/Themes +
         // social links, the demo speaker roster, sponsors + media partners, and
         // the past-edition archive) moved out of this seeder into the by-hand
         // SQL lane (docs/migrations/2026/*.sql, owner rule D-718). In
         // Development/Testing it is applied by SqlContentSeeder; in production it
         // is run by hand. The OrganizationProfile singleton row itself still
-        // exists via EF HasData (D-495).
+        // exists via EF HasData.
 
-        // D-176 (gap doc G12) — seed the default AI prompt catalogue.
+        // Seed the default AI prompt catalogue.
         // One prompt per feature; admin can edit at runtime via the CP.
         await EnsureDefaultAiPromptsAsync(admin.Id, cancellationToken);
     }
@@ -385,7 +385,7 @@ public sealed class IdentitySeeder(
         }
     }
 
-    /// <summary>D-148 — idempotent seed of the whole Permission catalogue plus
+    /// <summary>Idempotent seed of the whole Permission catalogue plus
     /// its baseline role grants. Batched: read the existing permissions, grants
     /// and roles ONCE, diff the catalogue in memory, and persist any additions
     /// in a single SaveChanges — instead of a SELECT-per-code (plus an AnyAsync
@@ -487,7 +487,7 @@ public sealed class IdentitySeeder(
             stale.Count, grants.Count, string.Join(", ", stale.Select(p => p.Code)));
     }
 
-    /// <summary>D-124 — idempotent rename. When a row with the old Name
+    /// <summary>Idempotent rename. When a row with the old Name
     /// still exists for the given UserType, swap Name + NameArabic in
     /// place so the per-UserType uniqueness rule isn't violated by a
     /// duplicate "General" / "Staff" insert in the follow-up
@@ -523,7 +523,7 @@ public sealed class IdentitySeeder(
             legacy.NameArabic = newNameArabic;
         }
         legacy.UpdatedAt = timeProvider.SimfNow();
-        // D-167: ProfileType lives on App DB.
+        // ProfileType lives on App DB.
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
@@ -534,7 +534,7 @@ public sealed class IdentitySeeder(
     /// <summary>P7 — idempotent ProfileTypes seed (lookup by Name + UserType).
     /// D-161 added the <paramref name="mobileAppRole"/> parameter so seed
     /// rows can ship with the right mobile-app authority out of the box.
-    /// D-186: every seeded profile type now goes under <c>UserType.Visitor</c>;
+    /// Every seeded profile type now goes under <c>UserType.Visitor</c>;
     /// the audience-vs-partner distinction is carried by
     /// <paramref name="isVisitor"/>.</summary>
     private async Task EnsureProfileTypeAsync(
@@ -566,11 +566,11 @@ public sealed class IdentitySeeder(
             IsAppRegisterable = mobileAppRole is not (MobileAppRole.Staff or MobileAppRole.Moderator),
             IsActive = true,
             CreatedAt = timeProvider.SimfNow(),
-            // D-819 — mirrors the migration's backfill so a fresh-seeded database
+            // Mirrors the migration's backfill so a fresh-seeded database
             // carries badge codes exactly as a migrated one does.
             Code = await ProfileTypeCodeAllocator.NextAsync(appDbContext, cancellationToken),
         });
-        // D-167: ProfileType lives on App DB.
+        // ProfileType lives on App DB.
         await appDbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -591,7 +591,7 @@ public sealed class IdentitySeeder(
             // already sets this for the pre-P7 super-admin, but we also set
             // it here so a brand-new install on a clean DB lands correctly.
             UserType = UserType.Admin,
-            // D-059 / H19 / D-206 — the seed credential is normally forced to
+            // The seed credential is normally forced to
             // rotate on first CP login. Config-driven (SuperAdmin:
             // PasswordChangeRequired, default true) so a dev / test box can opt
             // out; keep it true for the production / NCA handover.
@@ -648,7 +648,7 @@ public sealed class IdentitySeeder(
         return admin;
     }
 
-    /// <summary>D-585 — seed one demo account per user type / profile type so
+    /// <summary>Seed one demo account per user type / profile type so
     /// every role is testable from a fresh database. Idempotent by email (an
     /// existing account is skipped). An Admin account carries the Administrator
     /// role and no profile; a visitor/partner account gets an <b>Approved</b>
@@ -733,10 +733,10 @@ public sealed class IdentitySeeder(
                 NationalId = demo.NationalId,
                 CreatedAt = now,
             };
-            // D-585 — Approved accounts carry a QR badge (D-046 minter).
+            // Approved accounts carry a QR badge.
             await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
             appDbContext.UserProfiles.Add(profile);
-            // D-167: UserProfile (with its QrId) lives on the App DB.
+            // UserProfile (with its QrId) lives on the App DB.
             await appDbContext.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation(
@@ -830,7 +830,7 @@ public sealed class IdentitySeeder(
             seed.Length - existingKeys.Count, seed.Length);
     }
 
-    /// <summary>D-755 — correct the singleton OrganizationProfile's forum dates to
+    /// <summary>Correct the singleton OrganizationProfile's forum dates to
     /// the real edition (<see cref="EventStartDate"/>..<see cref="EventEndDate"/>).
     /// The D-495 migration seeds the row with a stale placeholder (2026-01-01..04-30);
     /// this rewrites it in place so the app + Website read the real range. Idempotent
@@ -894,7 +894,7 @@ public sealed class IdentitySeeder(
             (LandingHeroContentKeys.Tagline,
              "A global Saudi platform bringing leaders, decision-makers and experts together to shape the future of maritime security and protect vital corridors amid accelerating geopolitical and technological change.",
              "منصّة سعوديّة عالميّة تجمع القادة وصنّاع القرار والخبراء لاستشراف مستقبل الأمن البحري وحماية الممرّات الحيوية في ظل التحولّات الجيوسياسيّة والتقنيّة المتسارعة."),
-            // D-755 — derived from the seeded event dates (not a literal), so the
+            // Derived from the seeded event dates (not a literal), so the
             // hero label tracks OrganizationProfile.EventStartDate/EventEndDate.
             (LandingHeroContentKeys.MetaDate,
              EventDateRange.Format(EventStartDate, EventEndDate, arabic: false),
@@ -1061,7 +1061,7 @@ public sealed class IdentitySeeder(
             seed.Length - existingKeys.Count, seed.Length);
     }
 
-    /// <summary>D-377 — baseline interests for the visitor profile picker.
+    /// <summary>Baseline interests for the visitor profile picker.
     /// The profile save REQUIRES 1–10 interests, so an empty table blocks
     /// registration outright. Seeds only when the table is empty (admins own
     /// the list at runtime; a deliberate deletion is never re-added).</summary>
@@ -1104,7 +1104,7 @@ public sealed class IdentitySeeder(
             seed.Length);
     }
 
-    /// <summary>D-377 — baseline organisation lookup for the profile's
+    /// <summary>Baseline organisation lookup for the profile's
     /// required الجهة pick (B3 — D-221). Includes an explicit
     /// "Other — not listed" row so a visitor whose organisation is missing
     /// is never blocked. Seeds only when the table is empty.</summary>
@@ -1147,7 +1147,7 @@ public sealed class IdentitySeeder(
             seed.Length);
     }
 
-    /// <summary>D-377 — the app's terms + about content blocks (the same
+    /// <summary>The app's terms + about content blocks (the same
     /// bilingual copy first entered on production by hand). Insert-when-
     /// absent per key; admins edit at runtime via the CP Content Blocks
     /// page. One term per line — the app renders each line as one
@@ -1218,7 +1218,7 @@ public sealed class IdentitySeeder(
             seed.Length - existingKeys.Count, seed.Length);
     }
 
-    /// <summary>D-176 (gap doc G12) — idempotently seeds the default
+    /// <summary>Idempotently seeds the default
     /// AI prompts. One prompt per feature, all on
     /// <see cref="AiProvider.Echo"/> so dev + tests run offline. An
     /// admin can switch any prompt's <c>Provider</c> + edit the
@@ -1256,7 +1256,7 @@ public sealed class IdentitySeeder(
                 "Live Sign-Language Gloss", "ترجمة الإشارة الحيّة",
                 "Convert this in-progress transcript chunk into a glossed sign-language sequence suitable for a downstream avatar renderer. Keep glosses uppercase and space-separated.",
                 "{text}"),
-            // P4.1 — D-238: AI session-summary / محضر drafting (Mockup screen 34).
+            // AI session-summary / محضر drafting (Mockup screen 34).
             ("session-summary", AiFeature.SessionSummary,
                 "Session Minutes (محضر) Drafter", "مُسوّد محضر الجلسة",
                 "You are the rapporteur for the SIMF (Saudi International Maritime Forum). Draft concise, formal minutes (محضر) in Arabic covering the key points discussed, the recommendations, and who took part. Base the minutes primarily on the verbatim session transcript (subtitle) when one is provided; use the abstract only to fill gaps or when no transcript was captured. The Scientific Committee reviews and edits your draft before it is published.",
@@ -1307,7 +1307,7 @@ public sealed class IdentitySeeder(
             toSeed, seed.Length);
     }
 
-    /// <summary>D-170 (Meet-People) — give the seeded, Approved demo accounts a
+    /// <summary>Give the seeded, Approved demo accounts a
     /// couple of OVERLAPPING interests so the "قابل أشخاص مثلك" recommender returns
     /// matches on a fresh database (it needs the caller AND at least one candidate to
     /// each carry an overlapping interest). App-DB-only — it links existing

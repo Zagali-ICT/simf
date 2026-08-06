@@ -1,7 +1,7 @@
-// Tests: SIMF.Api.Tests/AdminSessionsTests.cs (+ D-349 live-URL validation),
+// Tests: SIMF.Api.Tests/AdminSessionsTests.cs,
 //        SIMF.Api.Tests/GridDateSortKeyTests.cs
-// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
-// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording)
+// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
+// Tests: SIMF.Api.Tests/SessionRecordingTests.cs
 // Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -37,7 +37,7 @@ internal sealed class AdminSessionService(
     IOptionsMonitor<WalkInModeOptions> walkInMode,   // D-839 — the grace fallback
     ILogger<AdminSessionService> logger) : IAdminSessionService
 {
-    /// <summary>D-839 — the grace a session inherits when neither it nor its hall
+    /// <summary>The grace a session inherits when neither it nor its hall
     /// sets one. Read per call so arming the walk-in mode needs no restart.</summary>
     private int GlobalArrivalGraceMinutes =>
         walkInMode.CurrentValue.ResolveArrivalGraceMinutes(timeProvider.SimfNow());
@@ -130,7 +130,7 @@ internal sealed class AdminSessionService(
                 session.CategoryId,
                 session.Status,
                 session.Type,
-                // D-506 — carried so the grid Excel export round-trips them.
+                // Carried so the grid Excel export round-trips them.
                 session.Description,
                 session.DescriptionArabic,
                 session.LiveStreamUrl,
@@ -143,7 +143,7 @@ internal sealed class AdminSessionService(
                 // round-trip through it.
                 session.LiveNotice,
                 session.LiveNoticeArabic,
-                // D-839 — the raw override for the Excel round-trip, then the
+                // The raw override for the Excel round-trip, then the
                 // resolved value the Hall-Arrivals console filters its session
                 // picker by. The SAME shared rule the hall door applies, so the
                 // picker and the door cannot disagree about which sessions are
@@ -273,9 +273,9 @@ internal sealed class AdminSessionService(
             LanguageArabic = NullIfBlank(request.LanguageArabic),
             HallId = hall.Id,
             CategoryId = request.CategoryId,
-            // D-452 — session type for the app's type tabs.
+            // Session type for the app's type tabs.
             Type = request.Type,
-            // D-485 — optional per-session seat-selection-mode override.
+            // Optional per-session seat-selection-mode override.
             SeatSelectionModeOverride = request.SeatSelectionModeOverride,
             ArrivalGraceMinutesOverride = request.ArrivalGraceMinutesOverride, // D-839
             Start = request.Start,
@@ -284,7 +284,7 @@ internal sealed class AdminSessionService(
             // §8 — live broadcast stream URLs (manual stub provider).
             LiveStreamUrl = NullIfBlank(request.LiveStreamUrl),
             LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl),
-            // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+            // AI live-caption text (manual stub provider, bilingual).
             LiveCaptions = NullIfBlank(request.LiveCaptions),
             LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic),
             // FR-702 — the informational live notice (bilingual). Blank = no notice;
@@ -519,7 +519,7 @@ internal sealed class AdminSessionService(
         // §8 — live broadcast stream URLs (manual stub provider).
         session.LiveStreamUrl = NullIfBlank(request.LiveStreamUrl);
         session.LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl);
-        // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+        // AI live-caption text (manual stub provider, bilingual).
         session.LiveCaptions = NullIfBlank(request.LiveCaptions);
         session.LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic);
         // FR-702 — the informational live notice (bilingual). Clearing the CP input
@@ -738,7 +738,7 @@ internal sealed class AdminSessionService(
         }
     }
 
-    // P3.2 — D-231: the legal adjacent lifecycle moves. Any pair not listed
+    // The legal adjacent lifecycle moves. Any pair not listed
     // (and not a same-status no-op) is rejected — so the Committee cannot
     // skip a step (e.g. Scheduled → Published) by hand.
     private static readonly HashSet<(SessionStatus From, SessionStatus To)> AllowedTransitions =
@@ -817,7 +817,7 @@ internal sealed class AdminSessionService(
     {
         var session = await LoadFullAsync(id, cancellationToken);
 
-        // D-568 (S7) — stream the bytes into the unified StoredFile store (Internal
+        // Stream the bytes into the unified StoredFile store (Internal
         // tier, plaintext + seekable for Range streaming, owner = the session). The
         // store never buffers the whole video and computes the SHA-256 on the fly;
         // RecordingStoredFileName is repurposed as the bare-Guid pointer + "has
@@ -889,7 +889,7 @@ internal sealed class AdminSessionService(
         return ToDetail(session);
     }
 
-    /// <summary>D-568 (S7) — best-effort retirement of a recording's <c>StoredFile</c>
+    /// <summary>Best-effort retirement of a recording's <c>StoredFile</c>
     /// (soft-delete + byte-unlink). The row is already updated (source of truth), so a
     /// delete failure must not fail the operation — worst case leaves one orphan blob.
     /// No-op when the pointer is absent/unparseable or is the just-uploaded file.</summary>
@@ -1000,7 +1000,7 @@ internal sealed class AdminSessionService(
         }
     }
 
-    /// <summary>D-839 — the per-session arrival-grace override is optional (null =
+    /// <summary>The per-session arrival-grace override is optional (null =
     /// inherit the hall) but, when given, must be inside the one shared bound.
     /// Rejected rather than clamped, for the same reason as the hall's: quietly
     /// storing 240 when an admin typed 2400 would misreport how long the doors are
@@ -1334,7 +1334,7 @@ internal sealed class AdminSessionService(
     {
         var hallSeats = session.Hall?.Capacity ?? 0;
         var effective = session.CapacityOverride ?? hallSeats;
-        // D-839 — what this session would INHERIT if its override were cleared:
+        // What this session would INHERIT if its override were cleared:
         // the hall's grace, else the global value. Deliberately EXCLUDES the
         // override itself, because the edit form offers this as "leave blank to
         // get this" — the resolved-including-override value would tell an admin
@@ -1386,12 +1386,12 @@ internal sealed class AdminSessionService(
             session.RecordingUploadedAt,
             session.LiveStreamUrl,
             session.LiveSignLanguageUrl,
-            // P5 — D-439: AI live-caption text.
+            // AI live-caption text.
             session.LiveCaptions,
             session.LiveCaptionsArabic,
-            // D-452 — session type for the app's type tabs.
+            // Session type for the app's type tabs.
             session.Type,
-            // D-485 — per-session seat-selection-mode override (null = inherit).
+            // Per-session seat-selection-mode override (null = inherit).
             session.SeatSelectionModeOverride,
             // Website Session-detail — language label + outcome bullets.
             session.Language,
@@ -1402,7 +1402,7 @@ internal sealed class AdminSessionService(
             // `with` once the counts are known).
             LiveNotice: session.LiveNotice,
             LiveNoticeArabic: session.LiveNoticeArabic,
-            // D-839 — the stored override (null = inherit the hall) and the number
+            // The stored override (null = inherit the hall) and the number
             // clearing it would fall back to, which is what the edit form names.
             ArrivalGraceMinutesOverride: session.ArrivalGraceMinutesOverride,
             InheritedArrivalGraceMinutes: inheritedGrace);

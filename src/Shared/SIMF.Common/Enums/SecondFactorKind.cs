@@ -20,7 +20,7 @@ public enum SecondFactorKind
     EmailOtp = 1,
 
     /// <summary>
-    /// D-206: a forced-password-change ticket. Issued at the password step (in
+    /// A forced-password-change ticket. Issued at the password step (in
     /// place of the old <c>AUTH_PASSWORD_CHANGE_REQUIRED</c> 403) when a Control
     /// Panel account holds a seeded/admin-rotated credential it must replace
     /// before any session is minted. Exchanged at

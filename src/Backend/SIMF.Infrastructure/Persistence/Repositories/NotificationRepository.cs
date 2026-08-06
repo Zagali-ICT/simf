@@ -6,7 +6,7 @@ using SIMF.Domain.Notifications;
 
 namespace SIMF.Infrastructure.Persistence.Repositories;
 
-/// <summary>R4 — D-095: EF-backed <see cref="INotificationRepository"/>.</summary>
+/// <summary>EF-backed <see cref="INotificationRepository"/>.</summary>
 internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
     : INotificationRepository
 {

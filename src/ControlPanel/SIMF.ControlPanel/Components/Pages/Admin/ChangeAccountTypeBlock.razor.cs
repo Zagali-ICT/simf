@@ -60,7 +60,7 @@ public partial class ChangeAccountTypeBlock
         }
     }
 
-    // D-809 — the scope flip used to commit on the first click.
+    // The scope flip used to commit on the first click.
     private bool _confirming;
 
     private async Task ConfirmChangeAsync()

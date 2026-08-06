@@ -42,7 +42,7 @@ public sealed class BulkApproveVisitorsEndpoint(IAdminUserApprovalService servic
     }
 }
 
-/// <summary>D-164 — <c>POST /api/v1/admin/others/bulk-approve</c>. Same
+/// <summary><c>POST /api/v1/admin/others/bulk-approve</c>. Same
 /// shape as <see cref="BulkApproveVisitorsEndpoint"/> for the Other-tier
 /// pending list.</summary>
 public sealed class BulkApproveOthersEndpoint(IAdminUserApprovalService service)

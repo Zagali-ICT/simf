@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
 // variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
 // the prefix, so SIMF_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT
-// stays un-prefixed (the host reads it before configuration sources load). (D-355)
+// stays un-prefixed (the host reads it before configuration sources load).
 builder.Configuration.AddEnvironmentVariables("SIMF_");
 
 // P6 — per-project log files under {Storage:LogDirectory}/SIMF.ControlPanel/log-{Date}.log.
@@ -43,7 +43,7 @@ builder.Services.AddRazorComponents()
     })
     .AddHubOptions(options =>
     {
-        // D-122 — raised from 256 KB (QR SVG render diff) to 10 MB to match
+        // Raised from 256 KB (QR SVG render diff) to 10 MB to match
         // V10 ERP's cropper image-transfer limit. The D-116 cropper consumes
         // base64 data URLs of the source image (up to the 2 MB avatar policy)
         // through JS interop, which travels over the same SignalR transport.
@@ -88,7 +88,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             context.Response.Redirect(context.RedirectUri);
             return Task.CompletedTask;
         };
-        // D-121 — rotate the cookie's stored access_token using the
+        // Rotate the cookie's stored access_token using the
         // refresh_token before the JWT expires. Without this hook, every
         // /account/api/* BFF call past the 30-minute mark forwards an
         // expired JWT and the API returns 401, even though the cookie is
@@ -123,7 +123,7 @@ builder.Services.AddScoped<SimfAuthSession>();
 // layout (reads to render) and the profile page (writes on load + change).
 builder.Services.AddScoped<SimfUserChrome>();
 
-// D-353 — per-user, per-page CRUD display preferences (dialog vs full page),
+// Per-user, per-page CRUD display preferences (dialog vs full page),
 // persisted in the browser's localStorage. Scoped per circuit (it uses the
 // circuit's IJSRuntime).
 builder.Services.AddScoped<CpPreferences>();
@@ -136,7 +136,7 @@ builder.Services.AddHttpContextAccessor();
 // SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
 // certificate on the server-to-server API calls (the API uses a self-signed
 // cert whose name does not match the host). Default false → normal TLS
-// validation, so dev and any other environment are unaffected. (D-355)
+// validation, so dev and any other environment are unaffected.
 var allowSelfSignedApiCert =
     builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
 Func<HttpMessageHandler> apiPrimaryHandler = () =>

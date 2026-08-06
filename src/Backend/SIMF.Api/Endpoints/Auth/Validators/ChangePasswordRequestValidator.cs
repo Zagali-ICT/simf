@@ -13,7 +13,7 @@ public sealed class ChangePasswordRequestValidator : Validator<ChangePasswordReq
             .NotEmpty().Bilingual(
                 "The current password is required.",
                 "كلمة المرور الحالية مطلوبة.")
-            // H8 — D-063: cap the field at the same 128-character ceiling
+            // Cap the field at the same 128-character ceiling
             // StrongPassword enforces on NewPassword. Without this cap a
             // caller can post a megabyte string and the endpoint hashes
             // it with PBKDF2 inside a transaction — cheap authenticated

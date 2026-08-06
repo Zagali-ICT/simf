@@ -46,7 +46,7 @@ public partial class SessionModeratorsList
         await LoadAsync();
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — grants are managed
     // in place via assign/revoke; the row's UserId is the selectable id.
     private async Task OnExportAsync(IReadOnlyList<AdminSessionModeratorRow> selected)

@@ -106,11 +106,11 @@ public static class PermissionCatalog
         // API + CSV + Excel feed shared with the technical teams.
         public const string ExportVip = "Visitors.ExportVip";
 
-        /// <summary>D-473 (#10) — bulk-generate placeholder badges by profile
+        /// <summary>Bulk-generate placeholder badges by profile
         /// type + count (visitors or delegates).</summary>
         public const string BulkGenerate = "Visitors.BulkGenerate";
 
-        /// <summary>D-758 (#10 Phase 2) — view the persisted bulk-badge batches.</summary>
+        /// <summary>View the persisted bulk-badge batches.</summary>
         public const string ViewBatches = "Visitors.ViewBatches";
 
         /// <summary>Security review (2026-07-24) — the destructive batch actions
@@ -185,7 +185,7 @@ public static class PermissionCatalog
         public const string Delete = "ProfileTypes.Delete";
     }
 
-    /// <summary>B3 (D-220) — Saudi-companies lookup, bulk-loaded from a
+    /// <summary>Saudi-companies lookup, bulk-loaded from a
     /// government Excel sheet; the visitor الجهة picker reads from this
     /// reference table.</summary>
     public static class Organisations
@@ -238,14 +238,14 @@ public static class PermissionCatalog
         public const string Edit = "Sessions.Edit";
         public const string Delete = "Sessions.Delete";
 
-        // P3.2 — D-231: drive the broadcast lifecycle (mark held / recorded,
+        // Drive the broadcast lifecycle (mark held / recorded,
         // publish + un-publish). Held by the Scientific Committee role.
         public const string Publish = "Sessions.Publish";
         public const string Export = "Sessions.Export";
         public const string Import = "Sessions.Import";
     }
 
-    /// <summary>D-452 — the programme-days manager (date + bilingual title +
+    /// <summary>The programme-days manager (date + bilingual title +
     /// logo) backing the app's "تفاصيل اليوم" day banner (Figma 883:2308).</summary>
     public static class ProgrammeDays
     {
@@ -368,7 +368,7 @@ public static class PermissionCatalog
         public const string Export = "SpeakerMeetingRequests.Export";
     }
 
-    /// <summary>D-478 (#11, Group G phase 2) — delegation↔delegation meeting
+    /// <summary>Delegation↔delegation meeting
     /// requests review desk. <c>View</c> lists/opens; <c>Manage</c> accepts/rejects.</summary>
     public static class DelegationMeetings
     {
@@ -410,7 +410,7 @@ public static class PermissionCatalog
         public const string Import = "Speakers.Import";
     }
 
-    /// <summary>D-357 — the centralised media-library page that manages every
+    /// <summary>The centralised media-library page that manages every
     /// unified media <c>Asset</c> across all entities. <c>View</c> lists +
     /// previews; <c>Manage</c> deactivates / restores / edits links.</summary>
     public static class MediaLibrary
@@ -434,7 +434,7 @@ public static class PermissionCatalog
         public const string Moderate = "SessionModeration.Moderate";
     }
 
-    /// <summary>P3.3 — D-212: the Scientific-Committee central Q&amp;A queue
+    /// <summary>The Scientific-Committee central Q&amp;A queue
     /// (stage 2 of the pipeline). The "Scientific Committee" is a role = a
     /// bundle of these + the programme codes, created by the owner in the
     /// grant editor (D-207/D-208) — not new infrastructure.</summary>
@@ -446,7 +446,7 @@ public static class PermissionCatalog
         public const string Export = "Questions.Export";
     }
 
-    /// <summary>P4.1 — D-238: the Scientific-Committee AI session-summary / محضر
+    /// <summary>The Scientific-Committee AI session-summary / محضر
     /// desk (Completion Programme §6.4.1, Mockup screen 34). View the desk +
     /// editor; Edit drafts (AI-generate or hand-write + save); Publish makes the
     /// محضر public to the app (and un-publishes).</summary>
@@ -457,7 +457,7 @@ public static class PermissionCatalog
         public const string Publish = "SessionSummaries.Publish";
         public const string Export = "SessionSummaries.Export";
 
-        /// <summary>D-472 (#9) — approve a submitted محضر (and send one back to
+        /// <summary>Approve a submitted محضر (and send one back to
         /// draft); the approved محضر becomes readable by the session host/moderator.</summary>
         public const string Approve = "SessionSummaries.Approve";
     }
@@ -487,7 +487,7 @@ public static class PermissionCatalog
         public const string Export = "Exhibitors.Export";
         public const string Import = "Exhibitors.Import";
 
-        /// <summary>D-781 — attach an EXISTING account to an exhibitor
+        /// <summary>Attach an EXISTING account to an exhibitor
         /// (<c>POST /admin/exhibitors/{id}/accounts/link</c>). Held separately from
         /// <see cref="Create"/> because it does not create anything: it grants the
         /// booth lead-capture tools (badge scan + the visitors' contact cards) to
@@ -516,7 +516,7 @@ public static class PermissionCatalog
         public const string Import = "Sponsors.Import";
     }
 
-    /// <summary>P2.5 (D-230) — 2D venue map editor (FR-605, FDS-006 §5.3).</summary>
+    /// <summary>2D venue map editor (FR-605, FDS-006 §5.3).</summary>
     public static class VenueMap
     {
         public const string View = "VenueMap.View";
@@ -577,7 +577,7 @@ public static class PermissionCatalog
         public const string Use = "Assistant.Use";
     }
 
-    /// <summary>D-735 — the transactional email-template editor.</summary>
+    /// <summary>The transactional email-template editor.</summary>
     public static class EmailTemplates
     {
         public const string View = "EmailTemplates.View";
@@ -616,7 +616,7 @@ public static class PermissionCatalog
         public const string Import = "Media.Import";
     }
 
-    /// <summary>D-568 — the centralized file store. <see cref="Upload"/> /
+    /// <summary>The centralized file store. <see cref="Upload"/> /
     /// <see cref="Delete"/> gate the single file API; <see cref="View"/> gates the
     /// management grid. The privileged trio (<see cref="ForceDelete"/> /
     /// <see cref="Reclassify"/> / <see cref="BulkExport"/>) is held separately so
@@ -643,7 +643,7 @@ public static class PermissionCatalog
         public const string Import = "News.Import";
     }
 
-    /// <summary>P2.1 (D-211) — FAQ management (two-level group → entry).</summary>
+    /// <summary>FAQ management (two-level group → entry).</summary>
     public static class Faq
     {
         public const string View = "Faq.View";
@@ -736,7 +736,7 @@ public static class PermissionCatalog
         public const string Edit = "Operations.Edit";
     }
 
-    /// <summary>P2.4 (D-229) — System Configuration page (FDS-012 §5.5).</summary>
+    /// <summary>System Configuration page (FDS-012 §5.5).</summary>
     public static class Configuration
     {
         public const string View = "Configuration.View";
@@ -747,7 +747,7 @@ public static class PermissionCatalog
         public const string Import = "Configuration.Import";
     }
 
-    /// <summary>D-495 — the Organization / About profile editor (single-record
+    /// <summary>The Organization / About profile editor (single-record
     /// edition-generic branding config). View opens it; Manage saves changes.</summary>
     public static class OrganizationProfile
     {
@@ -810,7 +810,7 @@ public static class PermissionCatalog
     private static readonly IReadOnlyList<string> GateOperator = [AppRoles.GateOperator];
     private static readonly IReadOnlyList<string> PublicRelations = [AppRoles.PublicRelations];
 
-    // D-752 — the Security + Scientific team CP permission sets.
+    // The Security + Scientific team CP permission sets.
     private static readonly IReadOnlyList<string> SecurityTeam = [AppRoles.SecurityTeam];
     private static readonly IReadOnlyList<string> ScientificCommittee = [AppRoles.ScientificCommittee];
 
@@ -931,18 +931,18 @@ public static class PermissionCatalog
         new(SessionCategories.Export, "SessionCategories", "Export", "Export session categories", AdminOnly),
         new(SessionCategories.Import, "SessionCategories", "Import", "Import session categories", AdminOnly),
 
-        // D-752 — the Scientific team runs the session programme.
+        // The Scientific team runs the session programme.
         new(Sessions.View, "Sessions", "View", "View sessions", ScientificCommittee),
         new(Sessions.Create, "Sessions", "Create", "Create sessions", ScientificCommittee),
         new(Sessions.Edit, "Sessions", "Edit", "Edit sessions", ScientificCommittee),
         new(Sessions.Delete, "Sessions", "Delete", "Delete sessions", ScientificCommittee),
-        // P3.2 — D-231: session broadcast lifecycle (mark held/recorded, publish).
+        // Session broadcast lifecycle (mark held/recorded, publish).
         new(Sessions.Publish, "Sessions", "Publish", "Publish sessions & manage their lifecycle", ScientificCommittee),
         new(Sessions.Export, "Sessions", "Export", "Export sessions", ScientificCommittee),
         new(Sessions.Import, "Sessions", "Import", "Import sessions", ScientificCommittee),
 
-        // D-452 — programme days (date + bilingual title + logo).
-        // D-752 — the Scientific team maintains the programme-day banners.
+        // Programme days (date + bilingual title + logo).
+        // The Scientific team maintains the programme-day banners.
         new(ProgrammeDays.View, "ProgrammeDays", "View", "View programme days", ScientificCommittee),
         new(ProgrammeDays.Create, "ProgrammeDays", "Create", "Create programme days", ScientificCommittee),
         new(ProgrammeDays.Edit, "ProgrammeDays", "Edit", "Edit programme days", ScientificCommittee),
@@ -969,7 +969,7 @@ public static class PermissionCatalog
         new(SeatPlans.View, "SeatPlans", "View", "View session seat plans", AdminOnly),
         new(SeatPlans.Edit, "SeatPlans", "Edit", "Edit session seat plans", AdminOnly),
 
-        // D-771 — the staff seating desk (app-side operational capability; also
+        // The staff seating desk (app-side operational capability; also
         // grantable to a Control-Panel role so a desk supervisor can hold it).
         new(Seating.Assist, "Seating", "Assist", "Assist guests with seating (staff seating desk)", AdminOnly),
 
@@ -1006,7 +1006,7 @@ public static class PermissionCatalog
         new(BadgeUpdateRequests.View, "BadgeUpdateRequests", "View", "View badge update requests", AdminOnly),
         new(BadgeUpdateRequests.Manage, "BadgeUpdateRequests", "Manage", "Manage badge update requests", AdminOnly),
 
-        // D-752 — the Scientific team curates the speaker roster.
+        // The Scientific team curates the speaker roster.
         new(Speakers.View, "Speakers", "View", "View speakers", ScientificCommittee),
         new(Speakers.Create, "Speakers", "Create", "Create speakers", ScientificCommittee),
         new(Speakers.Edit, "Speakers", "Edit", "Edit speakers", ScientificCommittee),
@@ -1019,26 +1019,26 @@ public static class PermissionCatalog
         new(SessionModerators.Revoke, "SessionModerators", "Revoke", "Revoke session moderators", AdminOnly),
         new(SessionModerators.Export, "SessionModerators", "Export", "Export session moderators", AdminOnly),
 
-        // D-752 — the Scientific team runs the live-session moderation desk.
+        // The Scientific team runs the live-session moderation desk.
         new(SessionModeration.Moderate, "SessionModeration", "Moderate", "Moderate a live session", ScientificCommittee),
 
-        // P3.3 — D-212: Scientific-Committee central Q&A queue.
-        // D-752 — the Scientific team now holds this queue as a seeded baseline.
+        // Scientific-Committee central Q&A queue.
+        // The Scientific team now holds this queue as a seeded baseline.
         new(Questions.View, "Questions", "View", "View the question queue", ScientificCommittee),
         new(Questions.Moderate, "Questions", "Moderate", "Approve / hide questions", ScientificCommittee),
         new(Questions.Escalate, "Questions", "Escalate", "Escalate questions to a role", ScientificCommittee),
         new(Questions.Export, "Questions", "Export", "Export the question queue", ScientificCommittee),
 
-        // P4.1 — D-238: AI session-summary / محضر committee desk.
-        // D-752 — the Scientific team owns the محضر / summary desk.
+        // AI session-summary / محضر committee desk.
+        // The Scientific team owns the محضر / summary desk.
         new(SessionSummaries.View, "SessionSummaries", "View", "View session summaries", ScientificCommittee),
         new(SessionSummaries.Edit, "SessionSummaries", "Edit", "Generate / edit session summaries", ScientificCommittee),
         new(SessionSummaries.Publish, "SessionSummaries", "Publish", "Publish / un-publish session summaries", ScientificCommittee),
         new(SessionSummaries.Approve, "SessionSummaries", "Approve", "Approve session summaries (ready for the host/moderator)", ScientificCommittee),
         new(SessionSummaries.Export, "SessionSummaries", "Export", "Export session summaries", ScientificCommittee),
 
-        // P5.1d — D-244: hall-door arrival console (operator QR scan).
-        // D-752 — part of the Security team's access-control surface.
+        // Hall-door arrival console (operator QR scan).
+        // Part of the Security team's access-control surface.
         new(HallArrivals.View, "HallArrivals", "View", "View the hall-arrival console", SecurityTeam),
         // FR-CHK-003 — the one code gates BOTH door actions (the arrivals AND the
         // departures endpoint, and both console buttons); the old wording named only
@@ -1052,7 +1052,7 @@ public static class PermissionCatalog
         new(Exhibitors.Delete, "Exhibitors", "Delete", "Delete exhibitors", AdminOnly),
         new(Exhibitors.Export, "Exhibitors", "Export", "Export exhibitors", AdminOnly),
         new(Exhibitors.Import, "Exhibitors", "Import", "Import exhibitors", AdminOnly),
-        // D-781 — attach an existing account to an exhibitor (grants the booth
+        // Attach an existing account to an exhibitor (grants the booth
         // lead-capture tools to an account the admin did not create here).
         new(Exhibitors.LinkAccount, "Exhibitors", "LinkAccount",
             "Link an existing account to an exhibitor", AdminOnly),
@@ -1071,7 +1071,7 @@ public static class PermissionCatalog
         new(Sponsors.Export, "Sponsors", "Export", "Export sponsors", AdminOnly),
         new(Sponsors.Import, "Sponsors", "Import", "Import sponsors", AdminOnly),
 
-        // P2.5 — D-230: 2D venue map editor.
+        // 2D venue map editor.
         new(VenueMap.View, "VenueMap", "View", "View the venue map", AdminOnly),
         new(VenueMap.Create, "VenueMap", "Create", "Create venue-map nodes", AdminOnly),
         new(VenueMap.Edit, "VenueMap", "Edit", "Edit venue-map nodes", AdminOnly),
@@ -1080,7 +1080,7 @@ public static class PermissionCatalog
         new(VenueMap.Import, "VenueMap", "Import", "Import venue-map nodes", AdminOnly),
 
         // Engagement
-        // D-752 — the Scientific team reviews session ratings + feedback.
+        // The Scientific team reviews session ratings + feedback.
         new(Ratings.View, "Ratings", "View", "View ratings and feedback", ScientificCommittee),
         new(Ratings.Export, "Ratings", "Export", "Export ratings and feedback", ScientificCommittee),
         new(RatingConfig.View, "RatingConfig", "View", "View rating configuration", AdminOnly),
@@ -1155,11 +1155,11 @@ public static class PermissionCatalog
         new(Archive.Edit, "Archive", "Edit", "Edit archive editions", AdminOnly),
         new(Archive.Delete, "Archive", "Delete", "Delete archive editions", AdminOnly),
 
-        // D-357 — centralised media library (manage every unified media asset).
+        // Centralised media library (manage every unified media asset).
         new(MediaLibrary.View, "MediaLibrary", "View", "View the media library", AdminOnly),
         new(MediaLibrary.Manage, "MediaLibrary", "Manage", "Manage media assets (deactivate / restore / edit links)", AdminOnly),
 
-        // D-568 — centralized file store.
+        // Centralized file store.
         new(Files.Upload, "Files", "Upload", "Upload a file to the central store", AdminOnly),
         new(Files.Delete, "Files", "Delete", "Delete a file from the central store", AdminOnly),
         new(Files.View, "Files", "View", "View the central file management grid", AdminOnly),
@@ -1185,10 +1185,10 @@ public static class PermissionCatalog
         new(Reports.Meetings, "Reports", "Meetings", "View the meetings report", AdminOnly),
         new(Reports.Engagement, "Reports", "Engagement", "View the engagement report", AdminOnly),
 
-        // D-752 — the Security team monitors session attendance.
+        // The Security team monitors session attendance.
         new(Attendance.View, "Attendance", "View", "View the session-attendance dashboard", SecurityTeam),
 
-        // D-752 — the Security team owns the gate access-control surface (and
+        // The Security team owns the gate access-control surface (and
         // shares Operate / ViewOwnReports with the existing GateOperator).
         new(Gates.Manage, "Gates", "Manage", "Manage gates", SecurityTeam),
         new(Gates.Operate, "Gates", "Operate", "Operate a gate", GateOperatorOrSecurity),
@@ -1199,7 +1199,7 @@ public static class PermissionCatalog
         new(Operations.View, "Operations", "View", "View operations toggles", AdminOnly),
         new(Operations.Edit, "Operations", "Edit", "Change operations toggles", AdminOnly),
 
-        // P2.4 — D-229: System Configuration settings.
+        // System Configuration settings.
         new(Configuration.View, "Configuration", "View", "View system configuration", AdminOnly),
         new(Configuration.Create, "Configuration", "Create", "Create system settings", AdminOnly),
         new(Configuration.Edit, "Configuration", "Edit", "Edit system settings", AdminOnly),
@@ -1245,7 +1245,7 @@ public static class PermissionCatalog
         Gates.ViewOwnReports,    // /app/gates visitor list + my reports
         Visitors.RegisterOnsite, // /app/staff/visitors/register-onsite
         Seating.Assist,          // D-771 — /app/staff/sessions/{id}/seating/*
-        // D-819 — /admin/sessions/{id}/arrivals + /departures. Missing until
+        // /admin/sessions/{id}/arrivals + /departures. Missing until
         // now, so a staff tablet could scan a badge at a perimeter gate but
         // could not record a hall arrival at all.
         HallArrivals.Record,
@@ -1265,7 +1265,7 @@ public static class PermissionCatalog
     ];
 
     /// <summary>
-    /// D-563 — the operational permission codes an APP user receives purely from
+    /// The operational permission codes an APP user receives purely from
     /// their resolved <see cref="MobileAppRole"/> (set on the user's ProfileType,
     /// never an admin RBAC role). This is how a partner-side Staff / Moderator
     /// attendee gains the on-ground capabilities their app screens need (gate

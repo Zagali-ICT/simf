@@ -1,7 +1,7 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// D-461 — the whitelisted <c>SystemSetting</c> keys exposed publicly through
+/// The whitelisted <c>SystemSetting</c> keys exposed publicly through
 /// the typed site-settings read-path (<c>GET /api/v1/app/site-settings</c>).
 /// Only these keys are served publicly — the raw key/value store stays
 /// admin-only. An admin edits them on the CP configuration page and the value

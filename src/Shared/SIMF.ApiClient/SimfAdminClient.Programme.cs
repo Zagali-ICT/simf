@@ -120,7 +120,7 @@ public sealed partial class SimfAdminClient
             HttpMethod.Delete, $"sessions/{id}", content: null,
             accessToken, cancellationToken);
 
-    // D-578 — server-side subtitle fetch from a session's video (YouTube).
+    // Server-side subtitle fetch from a session's video (YouTube).
     public Task<ApiCallResult<FetchSubtitleResponse>> FetchSessionSubtitleAsync(
         FetchSubtitleRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -129,7 +129,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    // P3.2 — D-231: session broadcast-lifecycle transition.
+    // Session broadcast-lifecycle transition.
     public Task<ApiCallResult<AdminSessionDetail>> SetSessionStatusAsync(
         Guid id, SetSessionStatusRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -138,7 +138,7 @@ public sealed partial class SimfAdminClient
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    // P3.2b — D-232: attach the session recording. The body is STREAMED (not a
+    // Attach the session recording. The body is STREAMED (not a
     // byte[]) so a large video is not buffered whole in the CP — the caller's
     // stream is forwarded straight through to the API.
     public Task<ApiCallResult<AdminSessionDetail>> UploadSessionRecordingAsync(

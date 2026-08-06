@@ -1,7 +1,7 @@
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// D-148 — origin of a single <c>GateScan</c>. Drives both the audit trail
+/// Origin of a single <c>GateScan</c>. Drives both the audit trail
 /// and the rate-limit posture (Simulator is dev-only and gets relaxed
 /// limits; Kiosk authenticates via the future device API-key path).
 /// </summary>

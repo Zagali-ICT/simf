@@ -74,7 +74,7 @@ internal sealed class RatingFormService(
 
         var existing = await LoadExistingAsync(userId, type.Id, targetId, cancellationToken);
 
-        // D-713 (item 8) — the rated session's title + date, for the app's
+        // The rated session's title + date, for the app's
         // "watched at {session} · {date}" header. Session scope only; a one-row
         // projection (Global/Day carry no header).
         string? targetName = null, targetNameArabic = null;

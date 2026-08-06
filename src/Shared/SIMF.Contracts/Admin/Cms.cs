@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>D-173 (gap doc G8) — admin grid row over ContentBlocks.</summary>
+/// <summary>Admin grid row over ContentBlocks.</summary>
 public sealed record AdminContentBlockSummary(
     Guid Id,
     string Key,
@@ -10,7 +10,7 @@ public sealed record AdminContentBlockSummary(
     DateTime LastUpdatedAt,
     Guid LastUpdatedByUserId);
 
-/// <summary>D-173 — upsert request. <see cref="Key"/> identifies the
+/// <summary>Upsert request. <see cref="Key"/> identifies the
 /// row; the row is created if not present, updated in place if so.</summary>
 public sealed class UpsertContentBlockRequest
 {
@@ -20,7 +20,7 @@ public sealed class UpsertContentBlockRequest
     public bool IsActive { get; set; } = true;
 }
 
-/// <summary>D-173 — admin grid row over Banners.</summary>
+/// <summary>Admin grid row over Banners.</summary>
 public sealed record AdminBannerSummary(
     Guid Id,
     string Title,
@@ -30,7 +30,7 @@ public sealed record AdminBannerSummary(
     int DisplayOrder,
     bool IsActive,
     DateTime CreatedAt,
-    // D-506 — carried so the grid Excel export can round-trip them (not rendered
+    // Carried so the grid Excel export can round-trip them (not rendered
     // as grid columns). Body/BodyArabic are required for create; ImageUrl/LinkUrl
     // are optional. Default to empty/null when unset.
     string Body = "",
@@ -66,7 +66,7 @@ public sealed class CreateBannerRequest
     public int DisplayOrder { get; set; }
 }
 
-/// <summary>D-173 — open for inheritance so the route-binding endpoint
+/// <summary>Open for inheritance so the route-binding endpoint
 /// can carry an <c>Id</c> field (matches the D-168 pattern).</summary>
 public class UpdateBannerRequest
 {

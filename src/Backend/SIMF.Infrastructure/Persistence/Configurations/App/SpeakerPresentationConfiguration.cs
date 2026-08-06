@@ -4,7 +4,7 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>P2.3 — D-228: SpeakerPresentation EF config. Real FKs to Speaker
+/// <summary>SpeakerPresentation EF config. Real FKs to Speaker
 /// (cascade — presentations belong to the speaker) and Session (restrict —
 /// avoids a second cascade path; sessions soft-delete anyway). Lookup index on
 /// (SpeakerId, IsActive) for the per-speaker management list.</summary>

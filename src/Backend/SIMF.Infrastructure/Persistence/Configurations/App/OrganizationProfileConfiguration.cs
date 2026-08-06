@@ -6,7 +6,7 @@ using SIMF.Domain.Organization;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-495 — the singleton Organization Profile + its two child lists.
+/// <summary>The singleton Organization Profile + its two child lists.
 /// One profile row (fixed <see cref="OrganizationProfile.SingletonId"/>) seeded via
 /// EF model data so it exists from day-one; the about/detail lists and the social /
 /// welcome values copied from the old SiteSettings keys are seeded in the migration

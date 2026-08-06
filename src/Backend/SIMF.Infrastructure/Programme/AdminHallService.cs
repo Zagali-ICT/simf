@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
 
-/// <summary>D-134 Sprint B — admin CRUD over <see cref="Hall"/>. Mirrors
+/// <summary>Admin CRUD over <see cref="Hall"/>. Mirrors
 /// <see cref="AdminThemeService"/>; case-insensitive unique Code via
 /// upper-case normalisation.</summary>
 internal sealed class AdminHallService(
@@ -85,7 +85,7 @@ internal sealed class AdminHallService(
                 hall.Id, hall.Code, hall.Name, hall.NameArabic,
                 hall.Capacity, hall.Floor, hall.IsActive, hall.CreatedAt,
                 (int)hall.Purpose,
-                // D-506 — appended for the grid Excel round-trip (positional
+                // Appended for the grid Excel round-trip (positional
                 // order must match the AdminHallSummary record exactly).
                 hall.EquipmentNotes,
                 hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
@@ -297,7 +297,7 @@ internal sealed class AdminHallService(
             (int)hall.SeatSelectionMode,
             hall.ArrivalGraceMinutes);
 
-    /// <summary>D-839 — the arrival grace is optional (null = inherit the global
+    /// <summary>The arrival grace is optional (null = inherit the global
     /// value) but, when given, must be inside the one shared bound. Rejected rather
     /// than clamped: silently storing 240 when an admin typed 2400 would tell them
     /// the doors are open four times longer than they are.</summary>
@@ -312,7 +312,7 @@ internal sealed class AdminHallService(
         return minutes;
     }
 
-    /// <summary>D-485 — validate the incoming seat-selection mode int against the
+    /// <summary>Validate the incoming seat-selection mode int against the
     /// defined <see cref="SeatSelectionMode"/> values (the CP dropdown only offers
     /// 0/1, but a hand-crafted request must not store an undefined value).</summary>
     private static SeatSelectionMode ParseSeatSelectionMode(int raw)

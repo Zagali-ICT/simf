@@ -7,7 +7,7 @@ using SIMF.Common;
 
 namespace SIMF.Infrastructure.AccessControl;
 
-/// <summary>D-148 — DB-backed 24h idempotency replay store
+/// <summary>DB-backed 24h idempotency replay store
 /// (SIMF-API-GATES-001 §9).</summary>
 internal sealed class ScanIdempotencyStore(
     SimfAppDbContext appDbContext,

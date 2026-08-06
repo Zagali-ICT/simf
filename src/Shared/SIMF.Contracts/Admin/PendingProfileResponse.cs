@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.Admin;
 
 /// <summary>
-/// D-124 — body returned by the admin scoped pending-profile reads
+/// Body returned by the admin scoped pending-profile reads
 /// (<c>GET /admin/visitors/{id}/profile-for-approval</c> and
 /// <c>GET /admin/others/{id}/profile-for-approval</c>). Carries the
 /// rich profile fields the approving admin needs to verify the

@@ -30,7 +30,7 @@ public partial class BusinessMeetingsList
     private List<AdminExhibitorSummary> _companies = new();
     private List<AdminAttendeeSummary> _visitors = new();
 
-    // D-753 — forum-day bounds for the datetime-local pickers (yyyy-MM-ddTHH:mm),
+    // Forum-day bounds for the datetime-local pickers (yyyy-MM-ddTHH:mm),
     // null when no programme days are seeded (no client bound; the server still
     // enforces the rule once days exist).
     private string? _forumMin;
@@ -100,7 +100,7 @@ public partial class BusinessMeetingsList
         await LoadForumWindowAsync();
     }
 
-    // D-753 — read the forum-day window (MIN/MAX programme day) and translate it into
+    // Read the forum-day window (MIN/MAX programme day) and translate it into
     // datetime-local min/max attributes spanning the whole day. A failed / empty read
     // leaves both null (no client bound); the backend enforces the rule on save.
     private async Task LoadForumWindowAsync()
@@ -124,7 +124,7 @@ public partial class BusinessMeetingsList
         await LoadAsync();
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — scheduling and
     // cancelling stay on the page's bespoke modals. The row id is the grid key.
     private async Task OnExportAsync(IReadOnlyList<BusinessMeetingRow> selected)

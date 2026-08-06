@@ -10,7 +10,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>D-176 (gap doc G12) — Google Gemini provider, speaking the
+/// <summary>Google Gemini provider, speaking the
 /// Generative Language API (<c>{BaseUrl}/v1beta/models/{model}:generateContent</c>).
 /// Reads <c>ApiKey</c> / <c>BaseUrl</c> / <c>DefaultModel</c> / <c>DefaultMaxTokens</c>
 /// from <see cref="AiOptions.Gemini"/>. An empty key throws

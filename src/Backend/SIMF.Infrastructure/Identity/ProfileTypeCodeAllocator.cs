@@ -7,7 +7,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-819 — allocates <see cref="UserProfileType.Code"/>, the small number the
+/// Allocates <see cref="UserProfileType.Code"/>, the small number the
 /// printed badge carries in place of the type's Guid.
 ///
 /// <para>Shared by the two places a profile type is born (the CP create endpoint

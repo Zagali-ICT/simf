@@ -33,7 +33,7 @@ public enum MeetingRequestStatus
     Done = 5,
 }
 
-/// <summary>D-716 (item 7, GAP-2) — the single authority for which
+/// <summary>The single authority for which
 /// <see cref="MeetingRequestStatus"/> values HOLD a booked slot (hall or speaker):
 /// <see cref="MeetingRequestStatus.Accepted"/> or
 /// <see cref="MeetingRequestStatus.AwaitingSpeaker"/> or

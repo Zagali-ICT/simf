@@ -33,7 +33,7 @@ public sealed class ExportGatesEndpoint(IAdminGateService service, IGridExcelExp
         new("AllowedProfileTypeCount", row => row.AllowedProfileTypeCount),
         new("AssignedOperatorCount", row => row.AssignedOperatorCount),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the bilingual description (appended so the existing
+        // Round-trip the bilingual description (appended so the existing
         // column order is unchanged; import binds by header name).
         new("Description", row => row.Description),
         new("DescriptionArabic", row => row.DescriptionArabic),
@@ -96,7 +96,7 @@ public sealed class ImportGatesEndpoint(IAdminGateService service, IGridExcelImp
             Code = code,
             Name = name,
             NameArabic = nameArabic,
-            // D-506 — round-trip the bilingual description (CreateAsync trims and
+            // Round-trip the bilingual description (CreateAsync trims and
             // length-guards them; absent columns simply stay null).
             Description = row.Cells.GetValueOrDefault("Description", string.Empty) is { Length: > 0 } description
                 ? description

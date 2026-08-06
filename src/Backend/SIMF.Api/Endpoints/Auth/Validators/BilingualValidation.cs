@@ -12,7 +12,7 @@ internal static class BilingualValidation
 {
     /// <summary>
     /// Attaches an English message and an Arabic message to the immediately
-    /// preceding validator (D-030 / myComment #14).
+    /// preceding validator.
     /// </summary>
     public static IRuleBuilderOptions<T, TProp> Bilingual<T, TProp>(
         this IRuleBuilderOptions<T, TProp> rule,

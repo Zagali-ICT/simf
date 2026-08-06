@@ -1,6 +1,6 @@
 namespace SIMF.Infrastructure.Configuration;
 
-/// <summary>D-768 — options for the CP-uploaded home/landing hero background video
+/// <summary>Options for the CP-uploaded home/landing hero background video
 /// that SIMF serves from its own API (so the Flutter home hero can play it on
 /// Android, where a clipped YouTube WebView cannot render into the hero band —
 /// D-761).</summary>

@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapModeration(IEndpointRouteBuilder group)
     {
-        // D-169 (gap doc G6) — session-question moderation BFF passthroughs.
+        // Session-question moderation BFF passthroughs.
         group.MapPost("/admin/session-moderators/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -63,7 +63,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.RevokeSessionModeratorAsync(sessionId, userId, token));
         });
-        // P3.3 — D-234: Scientific-Committee Q&A queue passthroughs.
+        // Scientific-Committee Q&A queue passthroughs.
         group.MapGet("/admin/questions/queue",
             async (QuestionStatus? status, Guid? sessionId, HttpContext http, SimfAdminClient api) =>
         {
@@ -127,7 +127,7 @@ internal static partial class AccountEndpoints
                 sessionId, body.OrderedQuestionIds.ToList(), token));
         });
 
-        // P4.1 — D-238: AI session-summary / محضر committee desk passthroughs.
+        // AI session-summary / محضر committee desk passthroughs.
         group.MapGet("/admin/session-summaries",
             async (HttpContext http, SimfAdminClient api) =>
         {
@@ -171,7 +171,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.UnpublishSessionSummaryAsync(sessionId, token));
         });
-        // D-472 (#9) — the team review/approval workflow passthroughs.
+        // The team review/approval workflow passthroughs.
         group.MapPut("/admin/session-summaries/{sessionId:guid}/submit-review",
             async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
         {
@@ -194,7 +194,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.ReturnSessionSummaryToDraftAsync(sessionId, token));
         });
 
-        // P5.1d — D-244: operator hall-door QR arrival passthrough.
+        // Operator hall-door QR arrival passthrough.
         group.MapPost("/admin/sessions/{sessionId:guid}/arrivals",
             async (Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest body,
                    HttpContext http, SimfAdminClient api) =>

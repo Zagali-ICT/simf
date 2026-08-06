@@ -152,14 +152,14 @@ public partial class SessionsList
         _target = null;
     }
 
-    // D-646 — the live Q&A moderation desk is per-session, so it is reached from the
+    // The live Q&A moderation desk is per-session, so it is reached from the
     // Sessions grid rather than the nav (see CpNavigation). The desk page + the API
     // both enforce Questions.Moderate; the row action is wrapped in AuthorizedAction
     // for the same permission, so an admin without it never sees this button.
     private void OpenModeration(AdminSessionSummary row) =>
         Nav.NavigateTo($"/sessions/{row.Id}/moderate");
 
-    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    // Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminSessionSummary> selected) =>
         _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
 

@@ -42,7 +42,7 @@ public partial class VisitorsList
     private Toast? _toast;
 
     private bool FormOpen => _form != FormKind.None;
-    // D-393 — the wide Add-visitor form opens full-page (it needs the room)
+    // The wide Add-visitor form opens full-page (it needs the room)
     // regardless of the admin's popup/page preference; Edit + Details keep the
     // preference.
     private CrudPresentation EffectivePresentation =>

@@ -14,7 +14,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-427 (CS-3) — admin upload of a subject's profile photo (avatar) for the
+/// Admin upload of a subject's profile photo (avatar) for the
 /// walk-in flow. The avatar is the visitor's photo / "logo", distinct from the
 /// ID-document image, and is shown alongside the ID image in the approve modal
 /// (CS-4). Reuses <see cref="IAccountService.SetAvatarAsync"/>, which is
@@ -146,7 +146,7 @@ public abstract class AdminAvatarFetchEndpointBase(
             return;
         }
 
-        // D-568 (S3) — resolve the subject's avatar from the StoredFile store.
+        // Resolve the subject's avatar from the StoredFile store.
         // Authorization is the route's admin View permission (Configure below);
         // this is a raw decrypt read, not IFileService.DownloadAsync (see AvatarBytes).
         var avatar = await AvatarBytes.ReadAsync(appDb, storage, SubjectId, ct);
@@ -201,7 +201,7 @@ public sealed class FetchOtherAvatarEndpoint(
     }
 }
 
-/// <summary>D-357 — <c>GET /api/v1/admin/admins/{id}/avatar</c>. Backs the
+/// <summary><c>GET /api/v1/admin/admins/{id}/avatar</c>. Backs the
 /// Admins-list thumbnail; gated by Admins.View (the Admins page permission),
 /// mirroring the visitors/others avatar reads. Reuses the same id-keyed
 /// StoredFile read (avatars live in the one central file store for every user

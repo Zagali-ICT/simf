@@ -52,7 +52,7 @@ public sealed class EmailRateLimitKeyMiddleware
         await _next(context);
     }
 
-    // H19 — D-080: cap the body buffer at 8 KB so an attacker posting a
+    // Cap the body buffer at 8 KB so an attacker posting a
     // 30 MB JSON body to /auth/sign-in (the Kestrel default
     // MaxRequestBodySize) cannot force a 30 MB MemoryStream allocation
     // per request on the pre-auth path. Real credential bodies are

@@ -8,7 +8,7 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Programme;
 
-/// <summary>D-474 (#11, Group G phase 1) — the team defines speaker availability
+/// <summary>The team defines speaker availability
 /// windows; the VIP-meeting flow reads the free slots derived from them. Admin
 /// window CRUD is gated by <c>SpeakerMeetingRequests.Manage</c>/<c>.View</c>; the
 /// free-slot read needs an approved account.</summary>
@@ -70,7 +70,7 @@ public sealed class DeleteSpeakerAvailabilityWindowEndpoint(ISpeakerAvailability
     }
 }
 
-/// <summary>D-474 — the free meeting slots for a speaker (an approved attendee
+/// <summary>The free meeting slots for a speaker (an approved attendee
 /// reads these before requesting a VIP meeting). Empty when the speaker has no
 /// future windows.</summary>
 public sealed class GetSpeakerAvailableSlotsEndpoint(ISpeakerAvailabilityService service)

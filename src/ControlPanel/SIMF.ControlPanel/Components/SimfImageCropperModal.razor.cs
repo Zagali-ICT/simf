@@ -46,7 +46,7 @@ public partial class SimfImageCropperModal
 
     protected override void OnParametersSet()
     {
-        // Options block byte-identical to V10 UserLogoCropperDialog (D-116),
+        // Options block byte-identical to V10 UserLogoCropperDialog,
         // with AspectRatio / InitialAspectRatio surfaced as a parameter so
         // future surfaces can opt into non-square crops.
         _options = new Options
@@ -103,7 +103,7 @@ public partial class SimfImageCropperModal
 
         try
         {
-            // Canvas-extract logic byte-identical to V10 UserLogoCropperDialog (D-116).
+            // Canvas-extract logic byte-identical to V10 UserLogoCropperDialog.
             var receiver = await _cropper.GetCroppedCanvasDataInBackgroundAsync(
                 new GetCroppedCanvasOptions
                 {

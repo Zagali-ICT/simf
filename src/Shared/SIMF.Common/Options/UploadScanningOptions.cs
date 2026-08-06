@@ -16,12 +16,12 @@ public sealed class UploadScanningOptions
     /// </summary>
     public bool Enabled { get; set; } = true;
 
-    /// <summary>D-568 — which scan engine backs <c>IUploadScanner</c>:
+    /// <summary>Which scan engine backs <c>IUploadScanner</c>:
     /// <c>"Default"</c> (the built-in EICAR detector) or <c>"ClamAV"</c> (a real
     /// clamd daemon over TCP). Case-insensitive.</summary>
     public string Engine { get; set; } = "Default";
 
-    /// <summary>D-568 / D-494 — when true, a <c>Skipped</c> / scanner-unavailable
+    /// <summary>When true, a <c>Skipped</c> / scanner-unavailable
     /// verdict on the centralized file pipeline is rejected (fail-closed) rather
     /// than stored unscanned. The centralized FileService applies this in the
     /// Production environment; dev/test (where scanning may be disabled) pass.</summary>

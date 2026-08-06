@@ -13,7 +13,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Staff;
 
 /// <summary>
-/// D-509 — <c>POST /app/staff/visitors/register-onsite</c>. The staff-app twin
+/// <c>POST /app/staff/visitors/register-onsite</c>. The staff-app twin
 /// of the Control-Panel walk-in desk (<c>RegisterVisitorOnSiteEndpoint</c>):
 /// exhibition staff register a walk-in visitor straight from the mobile/tablet
 /// app (Figma 1467:12357). It reuses the shared on-site provisioning service —
@@ -53,7 +53,7 @@ public sealed class StaffRegisterVisitorEndpoint(IAdminUserProvisioningService s
 }
 
 /// <summary>
-/// D-509 — <c>POST /app/staff/visitors/{id}/id-document</c>. Staff-app twin of
+/// <c>POST /app/staff/visitors/{id}/id-document</c>. Staff-app twin of
 /// <c>UploadVisitorIdDocumentEndpoint</c>: attaches the freshly registered
 /// visitor's ID-document image (national ID / Iqama / passport). Multipart, one
 /// "file" field; same 5 MB + MIME + magic-byte + human-face gate as the CP /
@@ -130,7 +130,7 @@ public sealed class StaffUploadVisitorIdDocumentEndpoint(
 }
 
 /// <summary>
-/// D-509 — <c>POST /app/staff/visitors/{id}/avatar</c>. Staff-app twin of
+/// <c>POST /app/staff/visitors/{id}/avatar</c>. Staff-app twin of
 /// <c>UploadVisitorAvatarEndpoint</c>: attaches the walk-in visitor's profile
 /// photo. Reuses <see cref="IAccountService.SetAvatarAsync"/> (id-parameterised,
 /// 2 MB + MIME + magic-byte gate, no face requirement — it is a profile photo).

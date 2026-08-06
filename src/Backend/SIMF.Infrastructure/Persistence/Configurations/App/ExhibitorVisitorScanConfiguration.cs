@@ -4,7 +4,7 @@ using SIMF.Domain.Exhibitors;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-426 — ExhibitorVisitorScan EF config. Indexed by (booth, visitor)
+/// <summary>ExhibitorVisitorScan EF config. Indexed by (booth, visitor)
 /// for the "My Visitors" list query and the idempotent capture, and by
 /// (officer, visitor) for the legacy un-backfilled rows. The two USER refs are
 /// bare-Guid logical FKs to <c>SimfUser.Id</c> on the Identity DB — no DB FK

@@ -107,7 +107,7 @@ public partial class QuestionQueueList
         value is not null
         && value.Contains(needle, StringComparison.OrdinalIgnoreCase);
 
-    // D-356 — Excel export (selected rows, or the whole Pending queue). Direct
+    // Excel export (selected rows, or the whole Pending queue). Direct
     // download via the generic /export proxy. Export only — questions are
     // audience-submitted and moderated in place (approve / hide / escalate); the
     // queue is not scoped by a parent picked on the page, so an empty selection

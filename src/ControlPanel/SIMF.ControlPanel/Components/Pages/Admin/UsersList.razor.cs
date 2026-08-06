@@ -22,7 +22,7 @@ public partial class UsersList
     private bool _loading;
     private bool _busy;
 
-    // D-353 — presentation toggle + hosted-form state (replaces the inline
+    // Presentation toggle + hosted-form state (replaces the inline
     // Add / Edit-roles / Details SimfModals).
     private CrudPresentation _presentation = CrudPresentation.Dialog;
     private FormKind _form = FormKind.None;
@@ -46,7 +46,7 @@ public partial class UsersList
     // Import result modal state
     private AdminImportUsersResponse? _importResult;
 
-    // Transient toast for clipboard outcomes / error flashes (D-045 H1)
+    // Transient toast for clipboard outcomes / error flashes
     private Toast? _toast;
 
     private string FormTitle => _form switch
@@ -94,7 +94,7 @@ public partial class UsersList
         finally { _loading = false; }
     }
 
-    // D-353 — open the hosted Add form (CreateAdminForm) in the shell.
+    // Open the hosted Add form (CreateAdminForm) in the shell.
     private Task OnAddAsync()
     {
         _form = FormKind.AddEdit;
@@ -103,7 +103,7 @@ public partial class UsersList
         return Task.CompletedTask;
     }
 
-    // D-353 — open the hosted Edit-roles form in the shell.
+    // Open the hosted Edit-roles form in the shell.
     private Task OnEditAsync(AdminUserSummary user)
     {
         _form = FormKind.AddEdit;
@@ -112,7 +112,7 @@ public partial class UsersList
         return Task.CompletedTask;
     }
 
-    // D-353 — open the hosted read-only Details form in the shell (no extra fetch).
+    // Open the hosted read-only Details form in the shell (no extra fetch).
     private Task OnDetailsAsync(AdminUserSummary user)
     {
         _form = FormKind.ViewDelete;
@@ -127,7 +127,7 @@ public partial class UsersList
         _target = null;
     }
 
-    // D-353 — Add success (CreateAdminForm) or roles saved (edit) both land here.
+    // Add success (CreateAdminForm) or roles saved (edit) both land here.
     private async Task OnSavedAsync(AdminUserSummary? saved)
     {
         var wasEdit = _isEdit;
@@ -299,7 +299,7 @@ public partial class UsersList
     private string FormatPage(int current, int total) =>
         string.Format(L["Admin.Users.Pager.Page"], current, total);
 
-    // D-357 — the admin's profile photo for the identity-cell thumbnail. Only
+    // The admin's profile photo for the identity-cell thumbnail. Only
     // requested when HasAvatar is set (so the grid never issues a 404); the CP BFF
     // streams the bytes from the central StoredFile avatar (D-568), gated Admins.View.
     // When null, SimfIdentityCell shows an initials tile (never a broken image).

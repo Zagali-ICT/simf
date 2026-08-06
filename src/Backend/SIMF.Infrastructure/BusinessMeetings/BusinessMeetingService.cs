@@ -872,7 +872,7 @@ internal sealed class BusinessMeetingService(
                 "لا يمكن أن يكون وقت البداية في الماضي.");
         }
 
-        // D-753 — forum-day bound: a meeting / allocation may only be scheduled on
+        // Forum-day bound: a meeting / allocation may only be scheduled on
         // the authored event days. The window is MIN/MAX over the active
         // ProgrammeDay.Date rows (NOT the stale OrganizationProfile placeholder). The
         // slot's start and end are converted to the event-local (+03:00) calendar

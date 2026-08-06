@@ -11,7 +11,7 @@ using SIMF.Infrastructure.Programme;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P3.2b — D-232 (D-213): attach (replace) the session recording.
+/// <summary>Attach (replace) the session recording.
 /// Gated by the Sessions.Publish lifecycle permission. The file rides the
 /// multipart form ("file"); the bytes are streamed straight to disk. The body
 /// + multipart limits are raised for THIS request only (before the body is

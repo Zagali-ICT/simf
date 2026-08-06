@@ -56,14 +56,14 @@ public sealed class SimfPublicClient(HttpClient http)
     public Task<PublicSpeakers?> GetSpeakersAsync(CancellationToken cancellationToken = default) =>
         GetAsync<PublicSpeakers>("speakers", cancellationToken);
 
-    /// <summary>D-466 — the public, CP-editable site settings
+    /// <summary>The public, CP-editable site settings
     /// (<c>GET /api/v1/app/site-settings</c>): the registration welcome message +
     /// the social links. Returns <c>null</c> on a failed envelope or an
     /// unreachable service.</summary>
     public Task<SiteSettingsResponse?> GetSiteSettingsAsync(CancellationToken cancellationToken = default) =>
         GetAsync<SiteSettingsResponse>("site-settings", cancellationToken);
 
-    /// <summary>D-495 — the public Organization / About profile
+    /// <summary>The public Organization / About profile
     /// (<c>GET /api/v1/app/organization-profile</c>): the edition-generic forum
     /// config (name / dates / status / location / contact / social / about / details).
     /// Returns <c>null</c> on a failed envelope or an unreachable service.</summary>
@@ -168,7 +168,7 @@ public sealed class SimfPublicClient(HttpClient http)
         }
     }
 
-    /// <summary>D-357 — fetch a unified media asset's bytes
+    /// <summary>Fetch a unified media asset's bytes
     /// (<c>GET /api/v1/app/assets/{category}/{ownerId}/image</c>) so the Website's
     /// same-origin proxy can re-stream it. An external-link asset is followed
     /// transparently by HttpClient; an unreachable service surfaces as 503.</summary>
@@ -239,7 +239,7 @@ public sealed class SimfPublicClient(HttpClient http)
         }
     }
 
-    /// <summary>D-717 (item 7, GAP-3) — preview a speaker action link WITHOUT
+    /// <summary>Preview a speaker action link WITHOUT
     /// consuming it (<c>GET /api/v1/app/meeting-actions/{token}</c>). Returns
     /// <c>null</c> for an invalid / expired / used token (the neutral "link no
     /// longer valid" case) or an unreachable service.</summary>
@@ -248,7 +248,7 @@ public sealed class SimfPublicClient(HttpClient http)
         GetAsync<MeetingActionPreview>(
             $"meeting-actions/{Uri.EscapeDataString(token)}", cancellationToken);
 
-    /// <summary>D-717 — confirm a speaker action link
+    /// <summary>Confirm a speaker action link
     /// (<c>POST /api/v1/app/meeting-actions/{token}</c>): consumes the token and
     /// applies the decision. Returns <c>null</c> when the token is no longer
     /// usable.</summary>

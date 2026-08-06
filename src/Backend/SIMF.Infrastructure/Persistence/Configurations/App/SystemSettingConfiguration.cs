@@ -4,7 +4,7 @@ using SIMF.Domain.Configuration;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>P2.4 — D-229: SystemSetting EF config. Unique filtered index on
+/// <summary>SystemSetting EF config. Unique filtered index on
 /// Key (active rows) so a deactivated key can be re-created.</summary>
 internal sealed class SystemSettingConfiguration : IEntityTypeConfiguration<SystemSetting>
 {

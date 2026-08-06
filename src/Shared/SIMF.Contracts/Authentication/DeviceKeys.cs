@@ -26,7 +26,7 @@ public sealed record SendBiometricStepUpResponse(
     string MaskedEmail,
     int ExpiresInSeconds);
 
-/// <summary>D-172 — one of the caller's device keys (or one row in the
+/// <summary>One of the caller's device keys (or one row in the
 /// admin list). The public-key field is **not** included to avoid
 /// leaking the key over the wire on every list request — the bytes
 /// the server uses on verify already live server-side.</summary>
@@ -39,7 +39,7 @@ public sealed record DeviceKeyEntry(
     DateTime? LastUsedAt,
     DateTime? RevokedAt);
 
-/// <summary>D-172 — the server-issued challenge for a sign-in attempt.
+/// <summary>The server-issued challenge for a sign-in attempt.
 /// Client signs the challenge bytes (after base64 decode) with its
 /// private key and submits the signature in
 /// <see cref="SignInWithDeviceKeyRequest"/>.</summary>
@@ -47,7 +47,7 @@ public sealed record DeviceKeyChallenge(
     string Challenge,
     int ExpiresInSeconds);
 
-/// <summary>D-172 — sign-in with device key. The client decodes the
+/// <summary>Sign-in with device key. The client decodes the
 /// challenge, signs it with the device's private key, and posts the
 /// signature here. The signature is the raw IEEE-P1363
 /// (r || s, 64 bytes for P-256) format base64-encoded — matches the

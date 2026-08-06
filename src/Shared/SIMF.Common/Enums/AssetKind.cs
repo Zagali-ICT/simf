@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-357 — the media kind a unified <c>Asset</c> carries. <see cref="Video"/>
+/// <summary>The media kind a unified <c>Asset</c> carries. <see cref="Video"/>
 /// assets are external links only (no large binaries are stored on disk).
 /// Persisted as an int; append-only.</summary>
 public enum AssetKind

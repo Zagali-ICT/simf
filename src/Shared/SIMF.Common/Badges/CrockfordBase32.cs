@@ -1,7 +1,7 @@
 namespace SIMF.Common.Badges;
 
 /// <summary>
-/// D-819 — Crockford base32 for the offline event badge payload.
+/// Crockford base32 for the offline event badge payload.
 ///
 /// <para>Base32 rather than base64, for three reasons that all matter on a
 /// printed badge:</para>

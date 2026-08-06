@@ -181,7 +181,7 @@ internal sealed class MyAreaService(
                 Color = p.ProfileType != null ? p.ProfileType.PageColor : null,
                 // Audience types are visitors; partner/exhibitor ("Other")
                 // types are not (UserProfileType.IsForVisitor, D-186). No
-                // ProfileType → treated as a visitor (D-426).
+                // ProfileType → treated as a visitor.
                 IsVisitor = p.ProfileType == null || p.ProfileType.IsForVisitor,
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -210,7 +210,7 @@ internal sealed class MyAreaService(
     {
         var sessions = await appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.ReservedForUserId == userId
-                // D-485 — include OpenSeating joins (general admission) alongside
+                // Include OpenSeating joins (general admission) alongside
                 // the seat-specific kinds so a joined session shows in the user's
                 // schedule + booked-sessions count. AdminReservedRow has a null
                 // ReservedForUserId, so it is already excluded.

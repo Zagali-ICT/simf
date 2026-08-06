@@ -22,7 +22,7 @@ public partial class SpeakerMeetingRequestsList
     private bool _busy;
     private Toast? _toast;
 
-    // R10 (D-767) — a confirm dialog for the one-click, state-changing row actions
+    // A confirm dialog for the one-click, state-changing row actions
     // (Check-in flips Accepted→Done; Resend emails fresh links) so a mis-click cannot
     // fire them silently. The work runs from RunConfirmAsync only after the admin OKs.
     private bool _confirmOpen;
@@ -33,12 +33,12 @@ public partial class SpeakerMeetingRequestsList
 
     private bool _respondOpen;
     // PII (requester email) is fetched on demand into the detail shape; list
-    // rows do not carry email (the D-185 pattern).
+    // rows do not carry email.
     private AdminSpeakerMeetingRequestDetail? _respondTarget;
     private bool _loadingDetail;
     private string _respondNote = string.Empty;
 
-    // D-716 (item 7, GAP-2) — optional hall binding on Accept: pick a meeting hall,
+    // Optional hall binding on Accept: pick a meeting hall,
     // one of its free slots, and (optionally) a table. Binding moves the request to
     // AwaitingSpeaker (double-opt-in). Leaving the hall unset keeps the legacy
     // straight-to-Accepted behaviour.
@@ -81,7 +81,7 @@ public partial class SpeakerMeetingRequestsList
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
 
-    // D-716 — a free hall slot as "2026-07-10 09:00 AM–09:30 AM" (Saudi time).
+    // A free hall slot as "2026-07-10 09:00 AM–09:30 AM" (Saudi time).
     private static string FormatSlot(HallAvailableSlot slot) =>
         $"{slot.Start:dd-MM-yyyy hh:mm tt}–{slot.End:hh:mm tt}";
 
@@ -110,7 +110,7 @@ public partial class SpeakerMeetingRequestsList
         finally { _loading = false; }
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — speaker meeting
     // requests are created from the app + responded to in the CP, so there is
     // no import path.
@@ -132,7 +132,7 @@ public partial class SpeakerMeetingRequestsList
     {
         // Open the modal with what the row carries (no email yet), then fetch
         // the detail (with email) in the background — one audited Viewed event
-        // per click (D-185 pattern).
+        // per click.
         _respondTarget = new AdminSpeakerMeetingRequestDetail(
             row.Id, row.SpeakerId, row.SpeakerName, row.SpeakerNameArabic,
             row.RequestedByUserId, row.RequesterName, RequesterEmail: null,
@@ -230,7 +230,7 @@ public partial class SpeakerMeetingRequestsList
         finally { _busy = false; }
     }
 
-    // R10 (D-767) — open the confirm dialog for a one-click row action; the work runs
+    // Open the confirm dialog for a one-click row action; the work runs
     // from RunConfirmAsync only after the admin confirms.
     private void ConfirmReopen(AdminSpeakerMeetingRequestRow row) =>
         AskConfirm(L["Admin.SpeakerMeetingRequests.Reopen"],
@@ -269,7 +269,7 @@ public partial class SpeakerMeetingRequestsList
 
     private void CancelConfirm() => _confirmOpen = false;
 
-    // D-716 — reset the hall-binding selection (the chosen hall is set separately;
+    // Reset the hall-binding selection (the chosen hall is set separately;
     // this clears the slot/table choice + their loaded lists).
     private void ClearBindSelection()
     {
@@ -279,7 +279,7 @@ public partial class SpeakerMeetingRequestsList
         _hallTables = new();
     }
 
-    // D-716 — pick a hall to bind on Accept; load its free slots + tables. The two
+    // Pick a hall to bind on Accept; load its free slots + tables. The two
     // reads are independent, so they run concurrently (one modal-open round-trip).
     private async Task OnBindHallChangedAsync(ChangeEventArgs e)
     {

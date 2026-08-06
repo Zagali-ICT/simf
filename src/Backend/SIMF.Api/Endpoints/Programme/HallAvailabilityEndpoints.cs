@@ -75,7 +75,7 @@ public sealed class DeleteHallAvailabilityWindowEndpoint(IHallAvailabilityServic
     }
 }
 
-/// <summary>D-715 — the free meeting slots for a hall (the admin review flow reads
+/// <summary>The free meeting slots for a hall (the admin review flow reads
 /// these before binding an accepted request to a hall slot, GAP-2). Empty when the
 /// hall has no future windows.
 /// <para>QA A36 — read by the speaker-meeting AND the delegation-meeting Approve

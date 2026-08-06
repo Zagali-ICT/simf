@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Faq;
 
-// P2.1 (D-211) — FAQ management contracts (two-level: group → entry).
+// FAQ management contracts (two-level: group → entry).
 
 /// <summary>One FAQ group row in the admin grid (with its live entry count).</summary>
 public sealed record AdminFaqGroupSummary(

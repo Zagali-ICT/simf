@@ -19,7 +19,7 @@ public sealed class SubmitSpeakerMeetingRequestRoute
     public string RequesterName { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
 
-    /// <summary>D-474 (#11) — the picked availability slot (VIP slot flow); null for
+    /// <summary>The picked availability slot (VIP slot flow); null for
     /// a legacy topic-only request.</summary>
     public DateTime? SlotStart { get; set; }
     public DateTime? SlotEnd { get; set; }
@@ -86,7 +86,7 @@ public sealed class GetAdminSpeakerMeetingRequestEndpoint(ISpeakerMeetingRequest
         Get("/admin/speaker-meeting-requests/{id:guid}");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SpeakerMeetingRequests.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        // Rate-limit the per-record PII drill-down (mirrors D-185).
+        // Rate-limit the per-record PII drill-down.
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
     }

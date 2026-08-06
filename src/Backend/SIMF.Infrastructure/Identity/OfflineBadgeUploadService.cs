@@ -15,7 +15,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-819 — the offline badge desk's reconciliation upload.
+/// The offline badge desk's reconciliation upload.
 ///
 /// <para>Deliberately a THIN layer over <see cref="IAdminUserProvisioningService
 /// .RegisterOnSiteAsync"/> rather than its own write path. The desk registration
@@ -34,7 +34,7 @@ internal sealed class OfflineBadgeUploadService(
     ILogger<OfflineBadgeUploadService> logger) : IOfflineBadgeUploadService
 {
     /// <summary>
-    /// D-823 - the storage cap that actually bites on this path.
+    /// The storage cap that actually bites on this path.
     /// <c>UserProfile.Name</c> and <c>.NameArabic</c> are both NVARCHAR(50), and
     /// this path mirrors the desk's ONE captured name into both. The desk's name
     /// box has no length limit, so a longer name used to reach SQL Server, raise
@@ -199,7 +199,7 @@ internal sealed class OfflineBadgeUploadService(
         // Shape rules, only for rows this server has not already accepted.
         //
         // These reject values that used to be written, which is safe ONLY
-        // because the desk can now correct a row and keep its sequence (D-824):
+        // because the desk can now correct a row and keep its sequence:
         // the badge in the visitor's hand stays valid and the same row uploads
         // again. Without that path this would strand printed badges.
         if (item.Name.Trim().Length > NameMaxLength
@@ -259,7 +259,7 @@ internal sealed class OfflineBadgeUploadService(
             //
             // Two reads across the two databases, which is the same shape
             // QrResolver uses: a bare id resolved with a second query, never a
-            // cross-database join (D-157).
+            // cross-database join.
             var state = await identityDbContext.Users
                 .AsNoTracking()
                 .Where(user => user.Id == created.UserId)
@@ -308,7 +308,7 @@ internal sealed class OfflineBadgeUploadService(
     }
 
     /// <summary>
-    /// D-824 - the identity-document shape rules, applied per item.
+    /// The identity-document shape rules, applied per item.
     ///
     /// <para>They could not be applied before. The batch calls
     /// <c>RegisterOnSiteAsync</c> directly, so no FastEndpoints validator runs on

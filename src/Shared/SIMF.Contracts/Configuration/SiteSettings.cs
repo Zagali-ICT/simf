@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Configuration;
 
-/// <summary>D-461 — the public, CP-editable site/app branding settings served by
+/// <summary>The public, CP-editable site/app branding settings served by
 /// <c>GET /api/v1/app/site-settings</c>: the registration welcome message
 /// (bilingual) and the social-media links. Absent settings fall back to the
 /// in-code defaults; social links are null when not configured (the client keeps

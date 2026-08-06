@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapGeography(IEndpointRouteBuilder group)
     {
-        // D-151 — Country admin lookup BFF passthroughs.
+        // Country admin lookup BFF passthroughs.
         group.MapPost("/admin/countries/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -71,7 +71,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateCountryAsync(id, token));
         });
 
-        // D-547 — Region admin lookup BFF passthroughs (mirrors countries; Guid key).
+        // Region admin lookup BFF passthroughs (mirrors countries; Guid key).
         group.MapPost("/admin/regions/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -109,7 +109,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateRegionAsync(id, token));
         });
 
-        // D-649 — Contact-inquiries inbox + Site-settings + Country-delegates
+        // Contact-inquiries inbox + Site-settings + Country-delegates
         //         BFF passthroughs (pages + API shipped, wiring was never added).
         group.MapPost("/admin/contact-inquiries/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

@@ -33,12 +33,12 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
     /// sign-in device keys.</summary>
     public DbSet<DeviceKey> DeviceKeys => Set<DeviceKey>();
 
-    // D-167: UserProfile, ProfileType, Interest moved to SimfAppDbContext.
+    // UserProfile, ProfileType, Interest moved to SimfAppDbContext.
 
     public DbSet<SIMF.Domain.Notifications.Notification> Notifications =>
         Set<SIMF.Domain.Notifications.Notification>();
 
-    /// <summary>D-109: row-audit trail for changes against this DbContext.</summary>
+    /// <summary>Row-audit trail for changes against this DbContext.</summary>
     public DbSet<RowAudit> RowAudits => Set<RowAudit>();
 
     /// <summary>A7-20 (NCA) — retired password hashes for reuse prevention.</summary>

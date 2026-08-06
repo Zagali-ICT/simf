@@ -4,7 +4,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Common.Files;
 
-/// <summary>D-568 — how the single download-by-GUID endpoint authorizes a file,
+/// <summary>How the single download-by-GUID endpoint authorizes a file,
 /// derived from the file's own <see cref="FileService"/> (never the URL), so a
 /// guessed/leaked GUID for a private file is still rejected.</summary>
 public enum FileAccessClass
@@ -23,7 +23,7 @@ public enum FileAccessClass
     OwnerOrAdmin = 3,
 }
 
-/// <summary>D-568 — the immutable policy a <see cref="FileService"/> resolves to:
+/// <summary>The immutable policy a <see cref="FileService"/> resolves to:
 /// the single source of every per-file protection (classification, authorization,
 /// encryption-at-rest default, the upload allow-list, retention, deletability and
 /// the owner-entity family). Consumed by both the upload pipeline and the
@@ -55,7 +55,7 @@ public sealed record FileServicePolicy(
     TimeSpan? Retention,
     bool DeletableDefault);
 
-/// <summary>D-568 — the per-<see cref="FileService"/> policy registry. The single
+/// <summary>The per-<see cref="FileService"/> policy registry. The single
 /// source of truth for file authorization, encryption and the upload allow-list.
 /// <see cref="Resolve"/> hard-fails on an unmapped service (default-deny), and the
 /// guard test asserts every enum value is mapped to a deliberate, reviewed policy
@@ -107,7 +107,7 @@ public static class FileServicePolicies
                 OwnerRequired: false, Retention: null, DeletableDefault: true),
 
             // ── Public video (plaintext, seekable) ───────────────────────────
-            // D-768 — the landing/home hero background video. Public-tier (shown to
+            // The landing/home hero background video. Public-tier (shown to
             // anonymous guests on the app home + the website landing) and, like a
             // recording, EncryptAtRest:false so it stays seekable for Range/HTTP-206
             // streaming (AES-GCM is not seekable). It is public branding content,

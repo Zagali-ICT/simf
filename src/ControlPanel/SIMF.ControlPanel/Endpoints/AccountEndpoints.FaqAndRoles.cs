@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapFaqAndRoles(IEndpointRouteBuilder group)
     {
-        // P2.1 (D-211) — FAQ management proxy (two-level group → entry).
+        // FAQ management proxy (two-level group → entry).
         group.MapPost("/admin/faq/groups/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -98,7 +98,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeleteFaqEntryAsync(id, token));
         });
 
-        // D-134 Sprint A — Roles CRUD proxy (existing schema, no migration).
+        // Roles CRUD proxy (existing schema, no migration).
         group.MapPost("/admin/roles/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -176,7 +176,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.SetUserRolesAsync(id, body, token));
         });
 
-        // D-134 Sprint A — Operation log viewer proxy (read-only over
+        // Operation log viewer proxy (read-only over
         // the existing OperationLogEntry table; no schema change).
         group.MapPost("/admin/operation-log/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
@@ -221,7 +221,7 @@ internal static partial class AccountEndpoints
                 $"simf-operation-log-{SimfClock.Now:yyyyMMddHHmmss}.xlsx");
         });
 
-        // D-134 Sprint A — Attendees roster proxy (read-only join over
+        // Attendees roster proxy (read-only join over
         // SimfUser + UserProfile + ProfileType; no schema change).
         group.MapPost("/admin/attendees/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

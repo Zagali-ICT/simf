@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
-// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 public status read)
-// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 published-recording gate)
-// Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235 recorded Q&A archive)
-// Tests: SIMF.Api.Tests/SessionSummaryTests.cs (P4.1a — D-237 published-summary read)
+// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
+// Tests: SIMF.Api.Tests/SessionRecordingTests.cs
+// Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs
+// Tests: SIMF.Api.Tests/SessionSummaryTests.cs
 // Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (FR-702 — informational live notice)
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +21,7 @@ namespace SIMF.Infrastructure.Programme;
 /// the programme <see cref="SIMF.Domain.Programme.Session"/> surface.
 /// Read-only sibling of <see cref="AdminSessionService"/>: only active
 /// sessions are returned (<c>IsActive</c>), times are the Saudi wall clock
-/// (D-813 — nothing zoned is stored or served), and the
+/// Nothing zoned is stored or served), and the
 /// effective capacity is <c>CapacityOverride ?? Hall.Capacity</c>
 /// (PDF §2.9). Seat availability is a single COUNT over active
 /// (non-released) reservations — no per-seat grid (that is the
@@ -84,7 +84,7 @@ internal sealed class ProgrammeSessionService(
                 HallNameArabic = session.Hall!.NameArabic,
                 session.Start,
                 session.End,
-                // P3.2 — D-231: broadcast lifecycle status.
+                // Broadcast lifecycle status.
                 session.Status,
                 // D-452 (Figma 883:2308): the session's type for the app's tabs.
                 session.Type,
@@ -97,7 +97,7 @@ internal sealed class ProgrammeSessionService(
                 // without a second fetch.
                 session.Description,
                 session.DescriptionArabic,
-                // A8 — D-237: does this session have a PUBLISHED محضر? There is no
+                // Does this session have a PUBLISHED محضر? There is no
                 // Session→SessionSummary navigation, so this is a correlated EXISTS
                 // over SessionSummaries (the pattern AdminSessionSummaryService uses).
                 // Gate matches the summary read: an active summary that is BOTH
@@ -201,9 +201,9 @@ internal sealed class ProgrammeSessionService(
                     row.Description,
                     row.DescriptionArabic,
                     speakers,
-                    // D-452: the session's type (Workshop / Session / Event).
+                    // The session's type (Workshop / Session / Event).
                     row.Type,
-                    // A8 — D-237: whether a published محضر exists for this session.
+                    // Whether a published محضر exists for this session.
                     row.HasPublishedSummary);
             })
             .ToList();
@@ -328,7 +328,7 @@ internal sealed class ProgrammeSessionService(
                 // only; it takes part in no filter and gates nothing.
                 session.LiveNotice,
                 session.LiveNoticeArabic,
-                // D-840 — the two layers that can widen this session's door.
+                // The two layers that can widen this session's door.
                 session.ArrivalGraceMinutesOverride,
                 HallArrivalGraceMinutes = session.Hall!.ArrivalGraceMinutes,
                 session.CategoryId,
@@ -412,7 +412,7 @@ internal sealed class ProgrammeSessionService(
                 .Select(speaker => speaker.CountryId!.Value),
             cancellationToken);
 
-        // D-357/D-568 — which of the detail's speakers have an active photo asset
+        // Which of the detail's speakers have an active photo asset
         // (one batched query; OwnerEntityId is the speaker id), so the Website
         // page can serve the portrait via the /content/assets/SpeakerPhoto proxy.
         var speakerIds = row.Speakers.Select(speaker => speaker.Id).ToList();
@@ -515,16 +515,16 @@ internal sealed class ProgrammeSessionService(
             row.CategoryNameArabic,
             row.Status,
             row.PublishedAt,
-            // P3.2b — D-232: the app shows a player only for a published
+            // The app shows a player only for a published
             // session that actually has a recording.
             row.Status == SessionStatus.Published && row.HasRecordingFile,
             // §8: the live broadcast feed(s) — null when the session is not live.
             row.LiveStreamUrl,
             row.LiveSignLanguageUrl,
-            // P5 — D-439: the AI live-caption text (null when none set).
+            // The AI live-caption text (null when none set).
             row.LiveCaptions,
             row.LiveCaptionsArabic,
-            // D-567: the gold-badge ordinal (1-based position within the day).
+            // The gold-badge ordinal (1-based position within the day).
             displayOrder,
             // Website Session-detail (Figma 5991-85840): outcomes + language label.
             outcomes,
@@ -536,7 +536,7 @@ internal sealed class ProgrammeSessionService(
             // title + time. Without it the client read json['type'] as null on
             // every session and the branch could never fire.
             row.Type,
-            // D-840: the grace the door will actually apply, resolved by the SAME
+            // The grace the door will actually apply, resolved by the SAME
             // rule the door uses so the app's check-in hint and the server's answer
             // cannot disagree.
             WalkInModeOptions.ResolveArrivalGraceMinutes(
@@ -618,7 +618,7 @@ internal sealed class ProgrammeSessionService(
             return Array.Empty<PublicRecordedQuestion>();
         }
 
-        // Attribute to the asker via the Identity DB (no cross-DB JOIN, D-157).
+        // Attribute to the asker via the Identity DB.
         var userIds = rows.Select(r => r.SubmittedByUserId).Distinct().ToList();
         var users = await identityDbContext.Users
             .AsNoTracking()

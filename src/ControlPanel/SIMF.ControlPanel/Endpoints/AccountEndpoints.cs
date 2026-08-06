@@ -42,12 +42,12 @@ namespace SIMF.ControlPanel.Endpoints;
 /// </summary>
 internal static partial class AccountEndpoints
 {
-    // P3.2b — D-232: fallback if SessionRecordingStorage:MaxUploadBytes is absent
+    // Fallback if SessionRecordingStorage:MaxUploadBytes is absent
     // from CP config (1 GiB). The live value is read from configuration so it is
     // sourced once, not baked into code — see the recording-upload BFF route.
     private const long DefaultRecordingMaxUploadBytes = 1_073_741_824L;
 
-    // D-768: fallback if OrganizationHeroVideo:MaxUploadBytes is absent from CP
+    // Fallback if OrganizationHeroVideo:MaxUploadBytes is absent from CP
     // config (200 MiB — a hero loop should be short + web-optimised).
     private const long DefaultHeroVideoMaxUploadBytes = 209_715_200L;
 
@@ -85,7 +85,7 @@ internal static partial class AccountEndpoints
         Results.Json(result.Body, statusCode: result.StatusCode);
 
     /// <summary>
-    /// D-356 — registers the generic grid Excel EXPORT proxy for one resource:
+    /// Registers the generic grid Excel EXPORT proxy for one resource:
     /// <c>POST /admin/{slug}/export</c> returns the XLSX bytes for the browser to
     /// save, forwarding to the API with the cookie's access token (the browser
     /// never sees it). Used standalone for a resource that has a bespoke import
@@ -135,7 +135,7 @@ internal static partial class AccountEndpoints
     }
 
     /// <summary>
-    /// D-356 — registers the generic grid Excel proxy PAIR for one resource:
+    /// Registers the generic grid Excel proxy PAIR for one resource:
     /// <see cref="MapGridExport"/> + <c>POST /admin/{slug}/import</c> (multipart
     /// upload, forwards the per-row result).
     /// </summary>
@@ -170,7 +170,7 @@ internal static partial class AccountEndpoints
     /// leaves the visitor's tier unchanged.</summary>
     private sealed record ApproveVisitorBody(Guid? ProfileTypeId);
 
-    /// <summary>D-649 — body for the contact-inquiry handled/reopen toggle
+    /// <summary>Body for the contact-inquiry handled/reopen toggle
     /// passthrough (the CP posts <c>{ handled }</c>).</summary>
     private sealed record SetContactInquiryHandledBody(bool Handled = true);
 }

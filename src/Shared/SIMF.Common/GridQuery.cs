@@ -1,7 +1,7 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// The query shape every server-paged list endpoint accepts (decision D-044).
+/// The query shape every server-paged list endpoint accepts.
 /// Mirrors the IBS-V10 <c>GetListData(Top, Next, Query, Filter)</c> shape so
 /// the rest of the SIMF endpoints can use one client-side primitive
 /// (<c>SimfDataGrid</c>) for every list page.
@@ -39,7 +39,7 @@ public sealed class GridQuery
     /// Per-column filter values keyed by the column key. Empty values are
     /// ignored. The endpoint validates the keys. A JSON request that sends
     /// <c>"filters": null</c> is coerced back to an empty dictionary so the
-    /// endpoint never NREs on <c>Filters.TryGetValue</c> (D-045 H1).
+    /// endpoint never NREs on <c>Filters.TryGetValue</c>.
     /// </summary>
     public Dictionary<string, string> Filters
     {

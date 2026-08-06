@@ -5,7 +5,7 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-478 (#11, Group G phase 2) — DelegationMeetingRequest EF config. Real
+/// <summary>DelegationMeetingRequest EF config. Real
 /// FKs to Country for both the requesting and target countries (Restrict — a
 /// country in use can't be hard-deleted); RequestedByUserId is a logical FK to
 /// SimfUser on the Identity DB (no cross-DB relation, D-157).</summary>
@@ -14,7 +14,7 @@ internal sealed class DelegationMeetingRequestConfiguration
 {
     public void Configure(EntityTypeBuilder<DelegationMeetingRequest> builder)
     {
-        // D-611 (Wave B) — the proposed slot must end after it starts (both nullable).
+        // The proposed slot must end after it starts (both nullable).
         builder.ToTable("DelegationMeetingRequests", table => table.HasCheckConstraint(
             "CK_DelegationMeetingRequests_Slot",
             "[SlotStart] IS NULL OR [SlotEnd] IS NULL OR [SlotEnd] > [SlotStart]"));

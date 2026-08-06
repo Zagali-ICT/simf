@@ -10,7 +10,7 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.AccessControl;
 
 /// <summary>
-/// D-148 — per-gate failure-rate circuit
+/// Per-gate failure-rate circuit
 /// (SIMF-API-GATES-001 §10, SIMF-FDS-003 §5.6.6). Single-process in-memory
 /// state (one process per environment in this increment).
 ///

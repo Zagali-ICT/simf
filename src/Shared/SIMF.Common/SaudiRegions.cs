@@ -1,7 +1,7 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// D-469 — the 13 official Saudi administrative regions, used for the
+/// The 13 official Saudi administrative regions, used for the
 /// birth-location dropdown (FR #4): a Saudi registrant picks a region; everyone
 /// else types their place of birth free-form "as in passport". A fixed constant
 /// (the regions are official and stable), mirrored by the app's

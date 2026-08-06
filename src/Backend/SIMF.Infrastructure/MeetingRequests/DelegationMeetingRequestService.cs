@@ -17,7 +17,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;
 
-/// <summary>D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting
+/// <summary>Delegation↔delegation (G2G) meeting
 /// requests. A delegate requests their delegation meets another invited country's;
 /// the team Accepts/Rejects and the requester is notified (+ emailed on accept via
 /// the dispatcher, since the requester is a SimfUser). Mirrors the speaker flow.</summary>
@@ -122,7 +122,7 @@ internal sealed class DelegationMeetingRequestService(
                 "لا يمكن للوفد طلب اجتماع مع نفسه.");
         }
 
-        // G3 (owner 2026-07-30) — SUPERSEDES the "topic-only request" half of R1 (D-767):
+        // G3 (owner 2026-07-30) — SUPERSEDES the "topic-only request" half of R1:
         // a meeting request may no longer be sent when the target delegation has nothing
         // left to offer. GetAvailableSlotsAsync returns an empty list for BOTH reasons —
         // the delegation has no active future window at all, and every slot the windows
@@ -232,7 +232,7 @@ internal sealed class DelegationMeetingRequestService(
             .ToListAsync(cancellationToken);
 
         // OA-D5 — resolve the check-in operators' display names in ONE Identity-DB
-        // query for the whole page. CheckedInByUserId is a bare logical FK (D-157),
+        // query for the whole page. CheckedInByUserId is a bare logical FK,
         // so this is a second query merged in memory — never a cross-database JOIN.
         var operatorNames = await userDirectory.GetDisplayNamesAsync(
             pageRows.Where(r => r.CheckedInByUserId.HasValue)
@@ -394,7 +394,7 @@ internal sealed class DelegationMeetingRequestService(
         req.RespondedAt = now;
         req.RespondedByUserId = actorUserId;
 
-        // R4 (D-767) — on Approve (→ AwaitingSpeaker) mint the single-use confirm token in
+        // On Approve (→ AwaitingSpeaker) mint the single-use confirm token in
         // THIS unit of work so it commits atomically with the transition; its link is
         // emailed to the target members below. Empty when the public base URL is
         // unconfigured (the members are then emailed without a link, as before).
@@ -415,7 +415,7 @@ internal sealed class DelegationMeetingRequestService(
         // (no separate target-country round-trip).
         var detail = await LoadDetailAsync(id, cancellationToken);
 
-        // D-185: the respond response discloses the requester email, so SOC must see
+        // The respond response discloses the requester email, so SOC must see
         // one Viewed event per disclosure regardless of which endpoint emitted it.
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminDelegationMeetingRequestViewed,
@@ -475,7 +475,7 @@ internal sealed class DelegationMeetingRequestService(
                 $"A meeting request from {detail.RequestingCountry} is awaiting your confirmation.",
                 $"طلب اجتماع من {detail.RequestingCountry} بانتظار تأكيدك.",
                 cancellationToken,
-                // R4 (D-767) — carry the confirm link; each member is emailed it (and the
+                // Carry the confirm link; each member is emailed it (and the
                 // in-app card deep-links to the same tap-confirm).
                 confirmUrl: confirmUrl, requestingCountry: detail.RequestingCountry);
         }
@@ -737,7 +737,7 @@ internal sealed class DelegationMeetingRequestService(
         string? confirmUrl = null, string? requestingCountry = null,
         Guid? excludeUserId = null)
     {
-        // R4 (D-767) — when we have a usable confirm link (the Approve case), the members
+        // When we have a usable confirm link (the Approve case), the members
         // get a clean in-app card (SendEmail=false, it deep-links to tap-confirm) PLUS a
         // dedicated link email; otherwise (retract, or an unconfigured base URL) the
         // dispatcher email carries the notice as before.
@@ -772,7 +772,7 @@ internal sealed class DelegationMeetingRequestService(
         }
     }
 
-    // R4 (D-767) — email one target-delegation member the confirm link (best-effort, like
+    // Email one target-delegation member the confirm link (best-effort, like
     // the speaker links email). The member is a SimfUser, so the address is resolved on
     // Identity; a missing address or a queue failure never rolls back the committed Approve.
     private async Task EmailMemberConfirmLinkAsync(

@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>D-495 — the CP "Organization Profile" editor payload. A single
+/// <summary>The CP "Organization Profile" editor payload. A single
 /// full-document upsert: the scalar branding fields plus the complete desired
 /// about-items + details lists. The admin service updates the scalars and
 /// reconciles each child list by id (update existing, insert new, soft-delete

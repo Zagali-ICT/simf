@@ -21,7 +21,7 @@ public sealed class GateScanRequest
     public string? IdempotencyKey { get; set; }
     public ScanSource Source { get; set; } = ScanSource.MobileApp;
 
-    /// <summary>D-509 — the operator's chosen movement direction (the
+    /// <summary>The operator's chosen movement direction (the
     /// دخول/خروج toggle on the staff console). Honoured ONLY when the gate's
     /// <see cref="DirectionMode"/> is <c>Both</c> (a dual-direction gate the
     /// operator can switch in/out without a CP change); a fixed In / Out gate
@@ -82,7 +82,7 @@ public sealed record OperatorDailyReport(
 
 public sealed record OperatorDailyReportTotals(int Allowed, int Denied);
 
-/// <summary>D-160 — `POST /api/v1/gates/{gateId}/visitors/list` body
+/// <summary>`POST /api/v1/gates/{gateId}/visitors/list` body
 /// (SIMF-API-GATES-001 §7.4). Cursor-paged view of scans recorded at
 /// a single gate. The staff app polls with the previous response's
 /// <see cref="GateVisitorsListResponse.NextCursor"/> to fetch new
@@ -114,7 +114,7 @@ public sealed class GateVisitorsListRequest
     public DateTime? Until { get; set; }
 }
 
-/// <summary>D-160 — one item in <see cref="GateVisitorsListResponse"/>.
+/// <summary>One item in <see cref="GateVisitorsListResponse"/>.
 /// Snapshot fields (<see cref="DisplayName"/>, <see cref="ProfileTypeName"/>)
 /// come from the D-158 frozen columns on <c>GateScan</c>; no cross-DB
 /// JOIN to Identity is needed. PII (email / national-id / phone) is
@@ -131,7 +131,7 @@ public sealed record GateVisitorListItem(
     string? ProfileTypeName,
     DenialReasonCode? DenialReasonCode);
 
-/// <summary>D-160 — response body for
+/// <summary>Response body for
 /// `POST /api/v1/gates/{gateId}/visitors/list`. The cursor is opaque
 /// to the client. <see cref="AsOf"/> is the server clock at query
 /// time — staff apps use it to detect clock skew and to display "last

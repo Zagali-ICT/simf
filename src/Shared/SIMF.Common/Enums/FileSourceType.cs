@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-568 — whether a <c>StoredFile</c> holds uploaded bytes or just
+/// <summary>Whether a <c>StoredFile</c> holds uploaded bytes or just
 /// references an external URL. Preserves the upload-vs-link capability the
 /// unified store inherits from <see cref="AssetSourceType"/> (D-357): an
 /// <see cref="ExternalLink"/> row stores no bytes and the download endpoint

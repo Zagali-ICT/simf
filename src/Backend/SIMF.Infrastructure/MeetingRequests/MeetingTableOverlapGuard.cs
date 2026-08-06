@@ -7,7 +7,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;
 
-/// <summary>D-773 — the single authority for the invariant "a meeting TABLE holds
+/// <summary>The single authority for the invariant "a meeting TABLE holds
 /// one meeting at a time". THREE families can occupy a <c>MeetingTable</c>: a
 /// delegation meeting request, a speaker meeting request, and the admin-arranged
 /// <c>BusinessMeeting</c> (FDS-013, the only one with a real FK). A34 (D-771) put the

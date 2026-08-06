@@ -65,7 +65,7 @@ public sealed class CreateGateEndpoint(IAdminGateService service)
     }
 }
 
-/// <summary>D-843 — bind {id} + body via a derived route that INHERITS the
+/// <summary>Bind {id} + body via a derived route that INHERITS the
 /// contract, per D-505 (see <c>UpdateHallRoute</c>). This class used to re-declare
 /// the contract's fields and the endpoint hand-copied them across; it omitted
 /// <c>HallId</c>, so FastEndpoints dropped the hall the Control Panel's picker
@@ -92,7 +92,7 @@ public sealed class UpdateGateEndpoint(IAdminGateService service)
     public override async Task HandleAsync(UpdateGateRequest req, CancellationToken ct)
     {
         var actorId = User.ActorId();
-        // D-843 — pass the bound request straight through. No hand-copy, so no
+        // Pass the bound request straight through. No hand-copy, so no
         // field can be dropped from it.
         await Send.OkAsync(ApiResult<AdminGateDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);

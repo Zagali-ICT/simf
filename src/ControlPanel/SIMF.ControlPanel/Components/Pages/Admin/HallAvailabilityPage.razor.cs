@@ -25,7 +25,7 @@ public partial class HallAvailabilityPage
     private bool _busy;
     private Toast? _toast;
 
-    // R10 (D-767) — a must-decide guard for the destructive window delete.
+    // A must-decide guard for the destructive window delete.
     private bool _confirmOpen;
     private Guid _confirmWindowId;
 
@@ -103,7 +103,7 @@ public partial class HallAvailabilityPage
         finally { _busy = false; }
     }
 
-    // R10 (D-767) — open the delete confirm; RunDeleteAsync does the work on OK.
+    // Open the delete confirm; RunDeleteAsync does the work on OK.
     private void ConfirmDelete(Guid windowId)
     {
         _confirmWindowId = windowId;

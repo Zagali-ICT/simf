@@ -8,7 +8,7 @@ using SIMF.Common.Options;
 namespace SIMF.Infrastructure.Files;
 
 /// <summary>
-/// D-568 — AES-256-GCM envelope cipher for stored-file bytes.
+/// AES-256-GCM envelope cipher for stored-file bytes.
 ///
 /// <para>On-disk blob (<c>CurrentFormatVersion = 1</c>):</para>
 /// <code>

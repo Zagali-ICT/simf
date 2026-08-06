@@ -4,7 +4,7 @@ using SIMF.Domain.Files;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-568 — the single unified <c>StoredFile</c> table configuration.
+/// <summary>The single unified <c>StoredFile</c> table configuration.
 /// The enums persist as <c>int</c> (the EF default for enum-backed properties);
 /// <see cref="StoredFile.OwnerEntityId"/> / <c>CreatedBy</c> are polymorphic bare
 /// Guids and carry NO FK (D-157). Bytes live out-of-row (D-90); only the metadata

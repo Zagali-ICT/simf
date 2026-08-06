@@ -52,11 +52,11 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             })
             .ToListAsync(cancellationToken);
 
-        // D-357 — which of these speakers have an active SpeakerPhoto asset (one
+        // Which of these speakers have an active SpeakerPhoto asset (one
         // batched query; OwnerId is the speaker id, resolved cross-row with no FK
         // so it cannot fold into the main projection's join).
         var speakerIds = rows.Select(row => row.Id).ToList();
-        // D-568 (S1) — the photo now lives in the unified StoredFile store.
+        // The photo now lives in the unified StoredFile store.
         var withPhotoAsset = (await dbContext.StoredFiles
             .AsNoTracking()
             .Where(file => file.Service == FileService.SpeakerPhoto

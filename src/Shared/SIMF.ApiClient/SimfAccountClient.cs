@@ -38,7 +38,7 @@ public sealed class SimfAccountClient(HttpClient http)
         SendAsync<TotpSetupResponse>(HttpMethod.Post, "auth/totp/setup", null, accessToken, cancellationToken);
 
     /// <summary>
-    /// D-096: returns the QR + otpauth URI for the caller's CURRENT
+    /// Returns the QR + otpauth URI for the caller's CURRENT
     /// authenticator secret without rotating it. Returns a 404
     /// <see cref="ApiCallResult{T}"/> when the account has no active
     /// secret yet — UI should route through <see cref="TotpSetupAsync"/>.
@@ -48,7 +48,7 @@ public sealed class SimfAccountClient(HttpClient http)
         SendAsync<TotpSetupResponse>(HttpMethod.Get, "auth/totp/pairing", null, accessToken, cancellationToken);
 
     /// <summary>
-    /// D-102: verifies a code against the user's active authenticator
+    /// Verifies a code against the user's active authenticator
     /// secret without mutating state (no replay-guard, no flag, no audit).
     /// Used by the <c>/account/totp-pairing</c> page to confirm a scan
     /// succeeded.
@@ -97,7 +97,7 @@ public sealed class SimfAccountClient(HttpClient http)
 
     /// <summary>
     /// Mints a fresh batch of 10 single-use recovery codes — the response
-    /// carries them plaintext exactly once (D-040).
+    /// carries them plaintext exactly once.
     /// </summary>
     public Task<ApiCallResult<RecoveryCodesResponse>> RegenerateRecoveryCodesAsync(
         string accessToken, CancellationToken cancellationToken = default) =>

@@ -98,7 +98,7 @@ public sealed class UpdateMediaPartnerRequest
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
 
-    // Contact identity-card fields inlined from the removed Contact directory (D-766).
+    // Contact identity-card fields inlined from the removed Contact directory.
     public string? Email { get; set; }
     public string? PhonePrimary { get; set; }
     public string? PhoneSecondary { get; set; }

@@ -107,7 +107,7 @@ public sealed class DeleteMediaEndpoint(IAdminMediaService service)
     }
 }
 
-/// <summary>D-199 — upload (or replace) a media item's primary image.
+/// <summary>Upload (or replace) a media item's primary image.
 /// Multipart form upload; bytes persisted out-of-row via
 /// <c>IMediaImageStorage</c> (mirrors <c>AvatarUploadEndpoint</c>). The route
 /// id is bound from the URL; the file rides the form.</summary>

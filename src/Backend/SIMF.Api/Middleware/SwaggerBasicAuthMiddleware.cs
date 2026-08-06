@@ -5,7 +5,7 @@ using SIMF.Common.Options;
 namespace SIMF.Api.Middleware;
 
 /// <summary>
-/// D-355 — HTTP Basic-auth gate for the OpenAPI (Swagger) UI in production.
+/// HTTP Basic-auth gate for the OpenAPI (Swagger) UI in production.
 /// The API is publicly reachable through the reverse proxy (SAD-001 §10.1), so
 /// when Swagger is enabled in production (<see cref="SwaggerOptions.AllowSwagger"/>)
 /// the <c>/swagger</c> surface must not be anonymously enumerable. This

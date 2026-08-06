@@ -18,7 +18,7 @@ public sealed record MeetingActionPreview(
     DateTime? SlotEnd,
     string? HallName);
 
-/// <summary>D-717 — the result of confirming a token
+/// <summary>The result of confirming a token
 /// (<c>POST /app/meeting-actions/{token}</c>): the decision that was applied, so
 /// the landing page can render "you approved / rejected this meeting".</summary>
 public sealed record MeetingActionOutcome(

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace SIMF.Common;
 
 /// <summary>
-/// D-824 — the one place that answers "is this a well-formed identity document
+/// The one place that answers "is this a well-formed identity document
 /// number".
 ///
 /// <para>The rule used to live only in <c>UpsertUserProfileRequestValidator</c>,
@@ -74,7 +74,7 @@ public static class IdentityDocument
         value is { Length: > 0 } && value.Length <= OtherDocumentMaxLength;
 
     /// <summary>
-    /// D-197 — standard Luhn mod-10 over all digits, the last being the check
+    /// Standard Luhn mod-10 over all digits, the last being the check
     /// digit. Saudi national ids and Iqama numbers are Luhn-valid; this is the
     /// real check on top of the prefix/length shape.
     ///

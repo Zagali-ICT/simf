@@ -19,7 +19,7 @@ namespace SIMF.Infrastructure.Identity;
 /// <see cref="AdminAccountService.UpsertProfileTypeAsync"/> (the App-DB write).
 /// A type flip is ALWAYS a privilege change — the new type's
 /// <c>MobileAppRole</c> re-sources the app's operational permission claims
-/// (D-563) — so it unconditionally rolls the security stamp and revokes the
+/// So it unconditionally rolls the security stamp and revokes the
 /// subject's sessions. Approval state is left unchanged (owner decision): an
 /// approved account stays approved under the new type and simply re-issues a
 /// token carrying the new perms.

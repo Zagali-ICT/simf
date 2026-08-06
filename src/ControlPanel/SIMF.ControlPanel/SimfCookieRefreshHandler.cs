@@ -192,7 +192,7 @@ public static class SimfCookieRefreshHandler
             new AuthenticationToken
             {
                 Name = ExpiresAtTokenName,
-                // D-848 — stamped WITH its +03:00 offset. issuedAt comes from
+                // Stamped WITH its +03:00 offset. issuedAt comes from
                 // SimfClock, whose Kind is Unspecified, and "O" on an
                 // Unspecified value emits no "Z" and no offset at all. That
                 // bare string is handed to the browser by /session/status,
@@ -222,7 +222,7 @@ public static class SimfCookieRefreshHandler
 
     private static bool NeedsRefresh(string? expiresAtRaw)
     {
-        // Without a stored expiry (e.g. a cookie minted before D-121 lands)
+        // Without a stored expiry
         // the safest move is to refresh immediately — the alternative is
         // waiting for the next BFF call to 401, which is exactly the bug
         // this hook exists to fix.

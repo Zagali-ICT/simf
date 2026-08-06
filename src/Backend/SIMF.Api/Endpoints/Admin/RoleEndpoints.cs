@@ -10,7 +10,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-134 Sprint A — admin CRUD over the SimfRole table. Built on the
+/// Admin CRUD over the SimfRole table. Built on the
 /// existing Identity schema; this file follows the InterestEndpoints
 /// pattern (one endpoint per file-section, FastEndpoints conventions,
 /// ApiResult envelope, Administrator-only).
@@ -87,7 +87,7 @@ public sealed class CreateRoleEndpoint(IAdminRoleService service)
     }
 }
 
-/// <summary>D-844 — binds {id} + body via a derived route that INHERITS the
+/// <summary>Binds {id} + body via a derived route that INHERITS the
 /// contract, per D-505 (see <c>UpdateHallRoute</c>). It used to re-declare the
 /// contract's fields and the endpoint hand-copied them across, which is how
 /// D-842 (sessions), D-843 (gates, profile types) and the four before them

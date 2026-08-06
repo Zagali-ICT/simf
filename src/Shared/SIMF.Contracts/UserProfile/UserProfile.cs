@@ -42,15 +42,15 @@ public sealed class UserProfileResponse
     /// for the per-script renderings.</summary>
     public string? PlateNumber { get; set; }
 
-    /// <summary>C6 — D-459: the plate rendered in Arabic (Arabic letters +
+    /// <summary>The plate rendered in Arabic (Arabic letters +
     /// Arabic-Indic digits), derived from <see cref="PlateNumber"/>.</summary>
     public string? PlateNumberAr { get; set; }
 
-    /// <summary>C6 — D-459: the plate rendered in English/Latin (the canonical
+    /// <summary>The plate rendered in English/Latin (the canonical
     /// code); same value as <see cref="PlateNumber"/>.</summary>
     public string? PlateNumberEn { get; set; }
 
-    /// <summary>D-373 — the registration reference (<c>SIMF-2026-00000001</c>),
+    /// <summary>The registration reference (<c>SIMF-2026-00000001</c>),
     /// issued once at profile creation. Customer-facing lookup key; NOT the
     /// QR id.</summary>
     public string? ReferenceNumber { get; set; }
@@ -108,7 +108,7 @@ public sealed class UserProfileResponse
     /// Append-only field; defaults false.</summary>
     public bool AllowsDelegationMeeting { get; set; }
 
-    /// <summary>D-736 — whether this profile appears in "Meet People Like You"
+    /// <summary>Whether this profile appears in "Meet People Like You"
     /// recommendations. Defaults to true; the user can opt out via the sign-up
     /// form or profile settings.</summary>
     public bool ShowInMeetLikeYou { get; set; }
@@ -135,7 +135,7 @@ public sealed class UserProfileResponse
 /// self-pick).</para></summary>
 public sealed class UpsertUserProfileRequest
 {
-    /// <summary>D-190 — the user's self-picked
+    /// <summary>The user's self-picked
     /// <see cref="UserProfileResponse.ProfileTypeId"/>. Optional;
     /// admin pre-pick wins on conflict (see
     /// <c>UserProfileService.UpsertMineAsync</c>).</summary>
@@ -183,7 +183,7 @@ public sealed class UpsertUserProfileRequest
     /// <see cref="Gender.Unspecified"/> when not picked.</summary>
     public Gender Gender { get; set; }
 
-    /// <summary>D-736 — whether this profile appears in "Meet People Like You"
+    /// <summary>Whether this profile appears in "Meet People Like You"
     /// recommendations. Null means "no change" (preserves current value on the
     /// server). The default server-side is <c>true</c>.</summary>
     public bool? ShowInMeetLikeYou { get; set; }

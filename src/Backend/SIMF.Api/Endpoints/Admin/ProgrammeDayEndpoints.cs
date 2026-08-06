@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-// D-452 — admin CRUD over the ProgrammeDay rows (date + bilingual title; the
+// Admin CRUD over the ProgrammeDay rows (date + bilingual title; the
 // logo rides the generic asset endpoints, AssetCategory.ProgrammeDayImage).
 // Mirrors SessionCategoryEndpoints: gate + bind + delegate; validation lives in
 // the service. The PUT reads the route GUID via Route<Guid>("id").

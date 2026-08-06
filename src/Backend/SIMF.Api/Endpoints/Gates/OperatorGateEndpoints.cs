@@ -29,7 +29,7 @@ public sealed class MyAssignmentsEndpoint(IGateOperatorService service)
 }
 
 /// <summary>
-/// D-820 — <c>GET /app/gates/offline-config</c>. The snapshot a scanner caches
+/// <c>GET /app/gates/offline-config</c>. The snapshot a scanner caches
 /// so it can judge a badge with no network.
 ///
 /// <para>Its own endpoint rather than a field on <c>my-assignments</c> because
@@ -67,7 +67,7 @@ public sealed class PostScanRequest
     public SIMF.Common.Enums.ScanSource Source { get; set; }
         = SIMF.Common.Enums.ScanSource.MobileApp;
 
-    /// <summary>D-509 — the operator's دخول/خروج choice (honoured only for a
+    /// <summary>The operator's دخول/خروج choice (honoured only for a
     /// Both-mode gate; fixed In/Out gates ignore it). Null = server infers.</summary>
     public SIMF.Common.Enums.ScanDirection? Direction { get; set; }
 }
@@ -148,7 +148,7 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
     }
 }
 
-// D-160 — `POST /gates/{gateId}/visitors/list` request. GateId binds
+// `POST /gates/{gateId}/visitors/list` request. GateId binds
 // from the route; the rest matches the SIMF.Contracts.Gates contract.
 public sealed class PostGateVisitorsListRequest
 {

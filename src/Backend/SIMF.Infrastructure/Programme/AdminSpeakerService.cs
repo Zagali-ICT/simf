@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// D-153 — admin CRUD over <see cref="Speaker"/>. Built on
+/// Admin CRUD over <see cref="Speaker"/>. Built on
 /// <see cref="SimfAppDbContext"/>. <c>CountryId</c> is validated against
 /// the live <c>Country</c> table (same context), and so is
 /// <c>UserProfileId</c>. NOTE: this comment previously said UserProfileId was
@@ -384,7 +384,7 @@ internal sealed class AdminSpeakerService(
         }
     }
 
-    // D-766 — validates the identity-card fields inlined from the removed
+    // Validates the identity-card fields inlined from the removed
     // shared Contact directory. Lengths mirror the EF configuration; latitude
     // and longitude are an all-or-nothing pair with real-world ranges.
     private static void ValidateContactFields(

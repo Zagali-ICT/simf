@@ -4,7 +4,7 @@ using SIMF.Domain.Exhibitors;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-199 #3 — Exhibitor EF config. Mirrors SponsorConfiguration /
+/// <summary>Exhibitor EF config. Mirrors SponsorConfiguration /
 /// DelegationConfiguration. The composite index matches the admin grid order
 /// (active rows, then Arabic name). Auto-discovered by
 /// SimfAppDbContext.OnModelCreating via ApplyConfigurationsFromAssembly.</summary>

@@ -29,5 +29,5 @@ public sealed record AppDelegationItem(
     /// <summary>2026-07-19 (owner) — the Arabic twin of <see cref="HeadTitle"/>
     /// (from the head profile's JobTitleArabic ?? HonorificArabic), so the app
     /// renders the head title in the active locale. Null when unset. Append-only
-    /// (D-219): older clients ignore it and keep <see cref="HeadTitle"/>.</summary>
+    /// Older clients ignore it and keep <see cref="HeadTitle"/>.</summary>
     string? HeadTitleArabic = null);

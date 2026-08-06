@@ -14,7 +14,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.SessionQuestions;
 
 /// <summary>
-/// D-169 (gap doc G6) — admin: assign / revoke per-session moderator
+/// Admin: assign / revoke per-session moderator
 /// grants. Cross-DB merge follows the same pattern as
 /// <c>AdminAttendeeService</c>.
 /// </summary>
@@ -135,7 +135,7 @@ internal sealed class AdminSessionModeratorService(
         // DEF-MOD-005 — the moderator picker: the App-side eligibility fact
         // (profile type carries MobileAppRole.Moderator) intersected with the
         // Identity-side approval fact. Two queries against two databases, joined
-        // in memory — never a cross-DB JOIN (D-157).
+        // in memory — never a cross-DB JOIN.
         var eligibleRows = await EligibleProfiles()
             .Select(p => new
             {
@@ -311,7 +311,7 @@ internal sealed class AdminSessionModeratorService(
     /// exactly the condition <c>UserProfileService.ResolveMobileAppRoleAsync</c>
     /// uses to mint the app's moderator role, so the picker and the server-side
     /// assign check share one rule. The Identity-side approval fact is applied
-    /// separately by the caller — the two databases are never joined (D-157).
+    /// separately by the caller — the two databases are never joined.
     /// Returned UNPROJECTED so the assign path can test ONE user
     /// (<c>AnyAsync</c> over the filter) instead of materialising every eligible
     /// profile — EF cannot translate an <c>Any</c> applied on top of a projection

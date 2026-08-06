@@ -22,7 +22,7 @@ public partial class DelegationMeetingsList
     private bool _busy;
     private Toast? _toast;
 
-    // R10 (D-767) — a confirm dialog for the one-click Check-in row action (flips
+    // A confirm dialog for the one-click Check-in row action (flips
     // Accepted→Done) so a mis-click cannot fire it silently.
     private bool _confirmOpen;
     private string _confirmTitle = string.Empty;
@@ -32,7 +32,7 @@ public partial class DelegationMeetingsList
 
     private bool _respondOpen;
     // PII (requester email) is fetched on demand into the detail shape; list
-    // rows do not carry email (the D-185 pattern).
+    // rows do not carry email.
     private AdminDelegationMeetingRequestDetail? _respondTarget;
     private bool _loadingDetail;
     private string _respondNote = string.Empty;
@@ -111,7 +111,7 @@ public partial class DelegationMeetingsList
     {
         // Open the modal with what the row carries (no email yet), then fetch
         // the detail (with email) in the background — one audited Viewed event
-        // per click (D-185 pattern).
+        // per click.
         _respondTarget = new AdminDelegationMeetingRequestDetail(
             row.Id, row.RequestingCountry, row.TargetCountry,
             row.RequestedByUserId, RequesterEmail: null,
@@ -212,7 +212,7 @@ public partial class DelegationMeetingsList
         finally { _busy = false; }
     }
 
-    // R10 (D-767) — guard the one-click Check-in behind a confirm dialog.
+    // Guard the one-click Check-in behind a confirm dialog.
     private void ConfirmCheckIn(AdminDelegationMeetingRequestRow row) =>
         AskConfirm(L["Admin.Meetings.CheckIn"], L["Admin.Meetings.CheckIn.ConfirmMsg"],
             L["Admin.Meetings.CheckIn"], () => OnCheckInAsync(row));

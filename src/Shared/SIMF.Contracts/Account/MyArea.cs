@@ -88,7 +88,7 @@ public sealed record MyAreaCalendarEvent(
 /// <see cref="MyAreaSessionItem.Start"/> in the future), حضرتها
 /// (<see cref="MyAreaSessionItem.Attended"/>), فاتتني (ended &amp; not attended),
 /// and الأرشيف (recorded / published — <see cref="MyAreaSessionItem.Status"/>).
-/// Read-only aggregate, own <c>sub</c>; no migration (D-249 pattern).
+/// Read-only aggregate, own <c>sub</c>; no migration.
 /// <c>SessionFavourite</c> powers the heart.
 /// </summary>
 public sealed record MyAreaSessions(IReadOnlyList<MyAreaSessionItem> Items);

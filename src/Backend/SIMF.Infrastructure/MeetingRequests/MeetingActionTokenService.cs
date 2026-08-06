@@ -248,7 +248,7 @@ internal sealed class MeetingActionTokenService(
         }, logger, cancellationToken);
     }
 
-    // R4 (D-767) — the delegation confirm-token twin of ValidateAsync. Look up by hash,
+    // The delegation confirm-token twin of ValidateAsync. Look up by hash,
     // confirm it is unused + unexpired, and that its request is still AwaitingSpeaker (an
     // already-confirmed / cancelled request is no longer confirmable). Read-only.
     private async Task<(DelegationMeetingActionToken Token, DelegationMeetingRequest Request)?>

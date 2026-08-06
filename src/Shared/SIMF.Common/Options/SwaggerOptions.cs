@@ -1,7 +1,7 @@
 namespace SIMF.Common.Options;
 
 /// <summary>
-/// D-355 — controls exposure of the OpenAPI (Swagger) UI, bound from the
+/// Controls exposure of the OpenAPI (Swagger) UI, bound from the
 /// <c>Swagger</c> configuration section. Outside production the UI is always
 /// served; in production it is off unless <see cref="AllowSwagger"/> is set,
 /// and then only behind the Basic-auth gate (<see cref="Username"/> /

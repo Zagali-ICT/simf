@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapHalls(IEndpointRouteBuilder group)
     {
-        // D-134 Sprint B — Themes CRUD proxy (D-135 freeze-lift).
+        // Themes CRUD proxy.
         group.MapPost("/admin/themes/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -75,7 +75,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeactivateThemeAsync(id, token));
         });
 
-        // D-134 Sprint B — Halls CRUD proxy (D-135 freeze-lift).
+        // Halls CRUD proxy.
         group.MapPost("/admin/halls/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {

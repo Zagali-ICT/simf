@@ -4,9 +4,9 @@ using SIMF.Contracts.Media;
 
 namespace SIMF.Api.Endpoints.Admin.Validators;
 
-/// <summary>D-199 — FluentValidation for media create/update. Lengths MUST
+/// <summary>FluentValidation for media create/update. Lengths MUST
 /// match the EF <c>HasMaxLength</c> in <c>MediaItemConfiguration</c> and the
-/// service-side guards in <c>AdminMediaService</c> (D-120 alignment rule).
+/// service-side guards in <c>AdminMediaService</c>.
 /// All title/album fields are optional, so they are length-only.</summary>
 public sealed class CreateMediaRequestValidator : Validator<AdminCreateMediaRequest>
 {

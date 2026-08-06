@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-124 — <c>GET /api/v1/admin/others/{id}/profile-for-approval</c>.
+/// <c>GET /api/v1/admin/others/{id}/profile-for-approval</c>.
 /// Twin of <see cref="GetPendingVisitorProfileEndpoint"/>, restricted to
 /// <c>UserType = Other</c>. Same 404-collapses-all-mismatch policy.
 /// </summary>

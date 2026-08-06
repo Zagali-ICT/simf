@@ -4,7 +4,7 @@ using SIMF.Domain.AccessControl;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-148 — EF configuration for <see cref="Gate"/>. Unique index on
+/// <summary>EF configuration for <see cref="Gate"/>. Unique index on
 /// Code (case-insensitive uniqueness is enforced by the service layer via
 /// upper-case normalisation, matching the Hall + Theme pattern).</summary>
 internal sealed class GateConfiguration : IEntityTypeConfiguration<Gate>
@@ -41,7 +41,7 @@ internal sealed class GateConfiguration : IEntityTypeConfiguration<Gate>
             .HasForeignKey(allow => allow.GateId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // D-611 (Wave B) — Restrict (was Cascade): deleting a Gate must not
+        // Restrict (was Cascade): deleting a Gate must not
         // silently delete its operator assignments; deactivate the Gate instead.
         builder.HasMany(gate => gate.Assignments)
             .WithOne(assignment => assignment.Gate!)

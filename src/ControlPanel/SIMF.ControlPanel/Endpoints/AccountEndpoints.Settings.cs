@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapSettings(IEndpointRouteBuilder group)
     {
-        // P2.4 (D-229) — System Configuration settings passthroughs.
+        // System Configuration settings passthroughs.
         group.MapPost("/admin/system-settings/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
@@ -70,7 +70,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeleteSystemSettingAsync(id, token));
         });
 
-        // D-495 — Organization / About profile passthroughs.
+        // Organization / About profile passthroughs.
         group.MapGet("/admin/organization-profile",
             async (HttpContext http, SimfAdminClient api) =>
         {
@@ -85,7 +85,7 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.SaveOrganizationProfileAsync(body, token));
         });
-        // D-768 — hero background video upload / delete passthrough. Mirrors the
+        // Hero background video upload / delete passthrough. Mirrors the
         // recording route: the per-request body + multipart limits are raised from
         // config (scoped to this route), and the file is STREAMED to the API without
         // buffering a byte[] in memory; the API does the authoritative validation.
@@ -131,7 +131,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.DeleteOrganizationHeroVideoAsync(token));
         });
 
-        // P2.5 (D-230) — 2D venue-map node CRUD passthroughs.
+        // 2D venue-map node CRUD passthroughs.
         group.MapPost("/admin/venue-map/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {

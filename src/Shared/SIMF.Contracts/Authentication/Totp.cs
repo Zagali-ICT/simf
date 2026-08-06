@@ -28,7 +28,7 @@ public sealed record TotpConfirmResponse(
     bool TwoFactorEnabled,
     IReadOnlyList<string> RecoveryCodes);
 
-/// <summary>D-102: the body of <c>POST /api/v1/app/auth/totp/pairing/verify</c>.</summary>
+/// <summary>The body of <c>POST /api/v1/app/auth/totp/pairing/verify</c>.</summary>
 public sealed record TotpPairingVerifyResponse(bool Valid);
 
 /// <summary>The body of <c>POST /api/v1/app/auth/totp/disable</c>.</summary>
@@ -65,7 +65,7 @@ public sealed record RecoveryCodesResponse(IReadOnlyList<string> RecoveryCodes);
 /// The number of single-use recovery codes the user still has available.
 /// Zero either means the user never generated codes (legacy 2FA users) or
 /// they have used them all — in both cases the profile UI nudges them to
-/// regenerate (D-040).
+/// regenerate.
 /// </param>
 public sealed record ProfileResponse(
     Guid Id,

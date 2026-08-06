@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace SIMF.Common;
 
 /// <summary>
-/// C6 (D-459) — the official Saudi vehicle-plate letter set: the 17 Arabic
+/// The official Saudi vehicle-plate letter set: the 17 Arabic
 /// letters permitted on KSA plates and their single-character Latin codes
 /// (the Elm / Absher transliteration). A plate is up to 3 letters (all from
 /// this set, one script) and up to 4 digits, in either order, with at least

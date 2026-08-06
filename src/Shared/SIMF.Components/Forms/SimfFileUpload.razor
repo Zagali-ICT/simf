@@ -55,7 +55,7 @@
     {
         get
         {
-            // H14 — D-069: compose every relevant id so screen readers
+            // Compose every relevant id so screen readers
             // announce error (or helper) AND the picked-file status.
             var ids = new List<string>(3);
             if (HasError) ids.Add(_errorId);
@@ -77,13 +77,13 @@
     /// <summary>The MIME / extension filter passed to <c>accept</c>. E.g. <c>image/*,.pdf</c>.</summary>
     [Parameter] public string? Accept { get; set; }
 
-    /// <summary>H14 — D-069: the name of the most-recently-picked file,
+    /// <summary>The name of the most-recently-picked file,
     /// supplied by the parent after reading it via JS interop. Renders
     /// inside an aria-live region so the choice is announced to screen
     /// readers and visible to sighted keyboard users.</summary>
     [Parameter] public string? PickedFilename { get; set; }
 
-    /// <summary>H14 — D-069: localised prefix for the picked-file
+    /// <summary>Localised prefix for the picked-file
     /// status (e.g. "Picked:" / "تم الاختيار:"). Defaults to English so
     /// the component works without a caller-provided label.</summary>
     [Parameter] public string? PickedLabel { get; set; }

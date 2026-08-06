@@ -18,8 +18,8 @@ public sealed class SubmitSessionQuestionRoute
     public Guid SessionId { get; set; }
     public string QuestionText { get; set; } = string.Empty;
 
-    /// <summary>D-171 (gap doc G7) — the venue self-assert flag. Used as the
-    /// gate only when the session's hall has no geofence configured (D-242);
+    /// <summary>The venue self-assert flag. Used as the
+    /// gate only when the session's hall has no geofence configured;
     /// otherwise the authoritative gate is the HallAttendance arrival record.</summary>
     public bool IsAtVenue { get; set; }
 
@@ -55,7 +55,7 @@ public sealed class SubmitSessionQuestionEndpoint(ISessionQuestionService servic
     }
 }
 
-/// <summary>D-169 — small helper for the per-session moderator
+/// <summary>Small helper for the per-session moderator
 /// authorization check. Caller is authorized when they hold the
 /// Administrator role OR they have a row in <c>SessionModerators</c>
 /// for the requested session. Used inline by every moderator endpoint

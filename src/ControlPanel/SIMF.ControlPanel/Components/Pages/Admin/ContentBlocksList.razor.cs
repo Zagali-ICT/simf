@@ -125,7 +125,7 @@ public partial class ContentBlocksList
         _target = null;
     }
 
-    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    // Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminContentBlockSummary> selected) =>
         _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
 

@@ -60,7 +60,7 @@ public partial class CpShellLayout
 
     protected override async Task OnInitializedAsync()
     {
-        // P11 — D-052: guard every CP shell page. A non-Approved user is
+        // Guard every CP shell page. A non-Approved user is
         // routed to the matching state-banner page before any module
         // content renders. The pending / rejected pages use MainLayout
         // (not this layout), so they don't trigger this guard themselves.

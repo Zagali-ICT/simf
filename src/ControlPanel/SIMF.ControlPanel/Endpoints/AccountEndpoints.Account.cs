@@ -47,7 +47,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.TotpSetupAsync(token));
         });
 
-        // D-096: returns the QR for the caller's CURRENT secret (no rotation).
+        // Returns the QR for the caller's CURRENT secret (no rotation).
         // Drives the /account/totp-pairing CP page used to re-pair a lost
         // authenticator without resetting the seeded super-admin's secret.
         group.MapGet("/totp/pairing", async (HttpContext http, SimfAccountClient api) =>
@@ -57,7 +57,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.TotpPairingAsync(token));
         });
 
-        // D-102: verifies a code against the active secret without mutating state.
+        // Verifies a code against the active secret without mutating state.
         group.MapPost("/totp/pairing/verify",
             async (TotpConfirmRequest body, HttpContext http, SimfAccountClient api) =>
         {

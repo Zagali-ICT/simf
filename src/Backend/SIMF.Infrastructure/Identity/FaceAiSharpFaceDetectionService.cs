@@ -26,7 +26,7 @@ public sealed class FaceDetectionOptions
 }
 
 /// <summary>
-/// C7 (D-371) — offline human-face detection over the FaceAiSharp SCRFD
+/// Offline human-face detection over the FaceAiSharp SCRFD
 /// ONNX model (bundled in the <c>FaceAiSharp.Bundle</c> package; no
 /// external service, NCA-compatible). The detector is created lazily once
 /// (the ONNX session is expensive) and guarded by a lock — uploads are

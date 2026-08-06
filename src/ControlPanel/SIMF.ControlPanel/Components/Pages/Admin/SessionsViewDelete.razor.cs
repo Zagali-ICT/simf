@@ -81,7 +81,7 @@ public partial class SessionsViewDelete
         finally { _lifecycleBusy = false; }
     }
 
-    // P3.2b — D-232: attach / remove the session recording. Upload streams the
+    // Attach / remove the session recording. Upload streams the
     // file through the hidden <input> via simfAccount.uploadFile; the returned
     // detail refreshes the view so HasRecording flips immediately.
     private async Task UploadRecordingAsync()

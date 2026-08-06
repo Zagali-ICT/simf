@@ -49,7 +49,7 @@ public sealed class ProfileTypesPickerEndpoint(SimfAppDbContext appDb)
     public override async Task HandleAsync(
         ProfileTypesPickerRequest req, CancellationToken ct)
     {
-        // D-190: only Visitor-scope ProfileTypes are surfaced —
+        // Only Visitor-scope ProfileTypes are surfaced —
         // Admin-scope rows (if any are ever seeded) are never valid
         // for a self-registering user to pick. Combined with the
         // IsActive filter so soft-deleted rows never appear.

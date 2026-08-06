@@ -36,7 +36,7 @@ public sealed class ExportExhibitorsEndpoint(IAdminExhibitorService service, IGr
         new("Website", row => row.Website),
         new("AccountCount", row => row.AccountCount),
         new("IsActive", row => row.IsActive),
-        // D-503 — round-trip the optional tier by display name (Premium/Gold/
+        // Round-trip the optional tier by display name (Premium/Gold/
         // Silver/Bronze); blank when the exhibitor has no tier.
         new("Tier", row => row.Tier?.ToString()),
     ];
@@ -91,7 +91,7 @@ public sealed class ImportExhibitorsEndpoint(IAdminExhibitorService service, IGr
             ContactEmail = NullIfBlank(row.Cells.GetValueOrDefault("ContactEmail", string.Empty)),
             ContactPhone = NullIfBlank(row.Cells.GetValueOrDefault("ContactPhone", string.Empty)),
             Website = NullIfBlank(row.Cells.GetValueOrDefault("Website", string.Empty)),
-            // D-503 — optional tier (blank → null; unknown non-blank → per-row error).
+            // Optional tier (blank → null; unknown non-blank → per-row error).
             Tier = ParseTier(row.Cells.GetValueOrDefault("Tier", string.Empty)),
         }, ct);
         return GridRowApplyKind.Created;

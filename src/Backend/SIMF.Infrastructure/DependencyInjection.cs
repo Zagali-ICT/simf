@@ -61,7 +61,7 @@ public static class DependencyInjection
         }
     }
 
-    /// <summary>D-568 — refuse to start in Production when the centralized
+    /// <summary>Refuse to start in Production when the centralized
     /// file-store KEK (<c>FileStorage:EncryptionKey</c>) is missing. The
     /// <c>AesGcmEnvelopeCipher</c> already fail-fasts on construction, but that
     /// surfaces deep inside the DI / FastEndpoints stack; this guard states the
@@ -84,7 +84,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // D-157 — two physically separate databases: SimfIdentityDb holds
+        // Two physically separate databases: SimfIdentityDb holds
         // auth + user-profile + identity-side audit; SimfAppDb holds the
         // event-data tables (Programme, Gates, Countries, Halls, …). Each
         // context owns its own migration history table inside its own
@@ -104,7 +104,7 @@ public static class DependencyInjection
                 "Connection string 'SimfAppDb' is not configured.");
         }
 
-        // D-109: scoped SaveChanges interceptor that writes a RowAudit row for
+        // Scoped SaveChanges interceptor that writes a RowAudit row for
         // every INSERT/UPDATE/DELETE through either DbContext. Registered as
         // Scoped so each request gets the right IRequestContext (actor user id +
         // correlation id) injected.
@@ -166,7 +166,7 @@ public static class DependencyInjection
             configuration.GetSection(EmailOptions.SectionName));
         services.Configure<SuperAdminOptions>(
             configuration.GetSection(SuperAdminOptions.SectionName));
-        // D-585 — the demo user-account seed shares one password sourced here.
+        // The demo user-account seed shares one password sourced here.
         services.Configure<DemoSeedOptions>(
             configuration.GetSection(DemoSeedOptions.SectionName));
         services.Configure<JwtOptions>(
@@ -194,7 +194,7 @@ public static class DependencyInjection
         // D-717 (item 7, FDS-013 §15 GAP-3) — the speaker email-link base URL + TTL.
         services.Configure<MeetingLinksOptions>(
             configuration.GetSection(MeetingLinksOptions.SectionName));
-        // R1 — D-074: typed Storage settings. What is left of this section is
+        // Typed Storage settings. What is left of this section is
         // the PII encryption key and the log directory; the avatar, VIP-photo
         // and ID-document paths went with the D-568 move to the unified
         // StoredFile store. The AvatarBase boot gate went with them: it made
@@ -204,7 +204,7 @@ public static class DependencyInjection
         services.AddOptions<StorageOptions>()
             .Bind(configuration.GetSection(StorageOptions.SectionName));
 
-        // D-819 — the standby walk-in capability. Bound WITHOUT ValidateOnStart
+        // The standby walk-in capability. Bound WITHOUT ValidateOnStart
         // and with no required values: every switch defaults to off, so an
         // absent section is the normal, correct state and must never block boot.
         // Consumers take IOptionsMonitor so arming it in appsettings /
@@ -212,9 +212,9 @@ public static class DependencyInjection
         services.Configure<WalkInModeOptions>(
             configuration.GetSection(WalkInModeOptions.SectionName));
 
-        // R3 — D-076: Application code asks for SimfUser through this
+        // Application code asks for SimfUser through this
         // repository abstraction; UserManager stays in Infrastructure.
-        // R3.5 — D-094: the 22-method aggregate is split into five role-
+        // The 22-method aggregate is split into five role-
         // cohesive sub-interfaces. One scoped UserAccountRepository instance
         // backs all six registrations (the aggregate + the five
         // sub-interfaces) so the change-tracker scope and per-request state
@@ -237,18 +237,18 @@ public static class DependencyInjection
         services.AddScoped<IRetentionPurgeService, RetentionPurgeService>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         // Phase-6 de-dup (D-636) — resolves Identity-owned user attributes for
-        // App-side services across the DB boundary (D-157: no cross-DB JOIN).
+        // App-side services across the DB boundary.
         services.AddScoped<IIdentityUserDirectory, IdentityUserDirectory>();
         services.AddScoped<ISecondFactorTokenRepository, SecondFactorTokenRepository>();
         services.AddScoped<ITotpRecoveryCodeRepository, TotpRecoveryCodeRepository>();
-        // R4 — D-095: persistence seams for the services that moved from
+        // Persistence seams for the services that moved from
         // Infrastructure → Application. The services no longer inject
         // SimfIdentityDbContext directly.
         services.AddScoped<INotificationRepository, NotificationRepository>();
-        // R4 — D-209: InterestService moved to Application; its EF query
+        // InterestService moved to Application; its EF query
         // shapes live behind IInterestRepository (over SimfAppDbContext).
         services.AddScoped<IInterestRepository, InterestRepository>();
-        // R4 — D-209: UserProfileService moved to Application; it spans both
+        // UserProfileService moved to Application; it spans both
         // DBs (profile + lookups on App, account reads + transactional save on
         // Identity) behind IUserProfileRepository.
         services.AddScoped<IUserProfileRepository, UserProfileRepository>();
@@ -272,7 +272,7 @@ public static class DependencyInjection
         services.AddScoped<ITotpEnrollmentService, TotpEnrollmentService>();
         services.AddScoped<IRecoveryCodeService, RecoveryCodeService>();
         services.AddScoped<IAccountService, AccountService>();
-        // R2 — D-075: AdminAccountService implements the five focused
+        // AdminAccountService implements the five focused
         // interfaces split out of the pre-R2 IAdminAccountService
         // (Architecture SEV-1.2). One scoped instance backs all five
         // registrations so the surrounding shared state (audit log,
@@ -282,71 +282,71 @@ public static class DependencyInjection
         services.AddScoped<IAdminUserApprovalService>(sp => sp.GetRequiredService<AdminAccountService>());
         services.AddScoped<IAdminUserProvisioningService>(sp => sp.GetRequiredService<AdminAccountService>());
         services.AddScoped<IAdminUserBulkService>(sp => sp.GetRequiredService<AdminAccountService>());
-        // D-819 — the offline badge desk's reconciliation upload. Its own class
+        // The offline badge desk's reconciliation upload. Its own class
         // rather than another AdminAccountService facet: it owns no write path,
         // only the sequence-to-QR-id mapping and per-item error isolation.
         services.AddScoped<IOfflineBadgeUploadService, OfflineBadgeUploadService>();
         services.AddScoped<IAdminProfileTypeQueryService, AdminProfileTypeQueryService>();
         services.AddScoped<IAdminProfileTypeCommandService, AdminProfileTypeCommandService>();
-        // D-134 Sprint A — admin CRUD over SimfRole (existing schema, no migration).
+        // Admin CRUD over SimfRole (existing schema, no migration).
         services.AddScoped<IAdminRoleService, AdminRoleService>();
-        // D-134 Sprint A — read-only viewer over the OperationLog table.
+        // Read-only viewer over the OperationLog table.
         services.AddScoped<IAdminOperationLogService, AdminOperationLogService>();
-        // D-134 Sprint A — read-only attendee roster (join over SimfUser +
+        // Read-only attendee roster (join over SimfUser +
         // UserProfile + ProfileType; no schema change).
         services.AddScoped<IAdminAttendeeService, AdminAttendeeService>();
-        // D-134 Sprint B (D-135) — Themes admin CRUD (first new app-side table).
+        // Themes admin CRUD (first new app-side table).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminThemeService,
             SIMF.Infrastructure.Programme.AdminThemeService>();
-        // D-134 Sprint B (D-135) — Halls admin CRUD.
+        // Halls admin CRUD.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminHallService,
             SIMF.Infrastructure.Programme.AdminHallService>();
-        // D-151 — Country admin lookup CRUD (under the lifted freeze).
+        // Country admin lookup CRUD (under the lifted freeze).
         services.AddScoped<SIMF.Application.Common.Abstractions.IAdminCountryService,
             SIMF.Infrastructure.Common.AdminCountryService>();
-        // D-153 — Speaker admin CRUD (enhanced shape: CountryId FK +
+        // Speaker admin CRUD (enhanced shape: CountryId FK +
         // UserProfileId logical FK + bilingual rich text + consent + social).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSpeakerService,
             SIMF.Infrastructure.Programme.AdminSpeakerService>();
-        // P2.3 — D-228 (FR-407): speaker presentation-file management + storage.
+        // Speaker presentation-file management + storage.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSpeakerPresentationService,
             SIMF.Infrastructure.Programme.AdminSpeakerPresentationService>();
         // P2.4 — D-229 (FDS-012 §5.5): System Configuration settings store.
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IAdminSystemSettingService,
             SIMF.Infrastructure.Configuration.AdminSystemSettingService>();
-        // D-461 — public read-path over the whitelisted site-settings keys
+        // Public read-path over the whitelisted site-settings keys
         // (registration welcome message + social links).
         services.AddScoped<SIMF.Application.Configuration.Abstractions.ISiteSettingsService,
             SIMF.Infrastructure.Configuration.SiteSettingsService>();
-        // D-736 — public read-path over the whitelisted app-update version-policy
+        // Public read-path over the whitelisted app-update version-policy
         // keys (per-platform min/latest app version + store URL).
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IAppVersionPolicyService,
             SIMF.Infrastructure.Configuration.AppVersionPolicyService>();
-        // D-495 — the singleton Organization / About profile: cached public read +
+        // The singleton Organization / About profile: cached public read +
         // admin full-document upsert (the edition-generic forum config).
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IOrganizationProfileReadService,
             SIMF.Infrastructure.Configuration.OrganizationProfileReadService>();
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IOrganizationProfileAdminService,
             SIMF.Infrastructure.Configuration.OrganizationProfileAdminService>();
-        // D-768 — the CP-uploaded hero background video, served from our own API
+        // The CP-uploaded hero background video, served from our own API
         // (streamed store + public Range serve) so the Flutter home hero plays it on
-        // Android, where a clipped YouTube WebView cannot render into the band (D-761).
+        // Android, where a clipped YouTube WebView cannot render into the band.
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IOrganizationHeroVideoService,
             SIMF.Infrastructure.Configuration.OrganizationHeroVideoService>();
         services.Configure<SIMF.Infrastructure.Configuration.OrganizationHeroVideoOptions>(
             configuration.GetSection(SIMF.Infrastructure.Configuration.OrganizationHeroVideoOptions.SectionName));
-        // P2.5 — D-230 (FR-605): 2D venue map (admin CRUD + public read).
+        // 2D venue map (admin CRUD + public read).
         services.AddScoped<SIMF.Application.Venue.Abstractions.IVenueMapService,
             SIMF.Infrastructure.Venue.VenueMapService>();
-        // D-165 (gap doc G3) — Session admin CRUD: programme sessions tied
+        // Session admin CRUD: programme sessions tied
         // to a Hall + M-to-M Speakers + M-to-M Themes (PDF §2.9).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionService,
             SIMF.Infrastructure.Programme.AdminSessionService>();
-        // P4.1 — D-238: AI session-summary / محضر committee desk (drafts via
+        // AI session-summary / محضر committee desk (drafts via
         // the central IAiService seam; publishes for the app read in D-237).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionSummaryService,
             SIMF.Infrastructure.Programme.AdminSessionSummaryService>();
-        // P5.1 — D-241: attendee-facing hall arrival/departure via GPS geofence.
+        // Attendee-facing hall arrival/departure via GPS geofence.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IHallAttendanceService,
             SIMF.Infrastructure.Programme.HallAttendanceService>();
         // FR-1103 (Q6): movement / dwell / route tracking — the periodic
@@ -354,12 +354,12 @@ public static class DependencyInjection
         // hall is given a geofence boundary from the CP.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IMovementTrackingService,
             SIMF.Infrastructure.Programme.MovementTrackingService>();
-        // D-568 (Wave C S7): recordings now live in the unified StoredFile store;
+        // Recordings now live in the unified StoredFile store;
         // SessionRecordingStorageOptions is kept only for the upload endpoint's
         // MaxUploadBytes ceiling (the bespoke recording store is gone).
         services.Configure<SIMF.Infrastructure.Programme.SessionRecordingStorageOptions>(
             configuration.GetSection(SIMF.Infrastructure.Programme.SessionRecordingStorageOptions.SectionName));
-        // D-166 (gap doc G4) — registration gate + archive visibility
+        // Registration gate + archive visibility
         // singletons + the auto-close background worker (PDF §2.3, §2.4).
         services.AddScoped<SIMF.Application.Operations.Abstractions.IOperationsToggleService,
             SIMF.Infrastructure.Operations.OperationsToggleService>();
@@ -369,7 +369,7 @@ public static class DependencyInjection
         services.AddSingleton<SIMF.Application.Operations.IWorkerHeartbeatRegistry,
             SIMF.Infrastructure.Operations.WorkerHeartbeatRegistry>();
         services.AddHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
-        // P1.7 (D-217) — automated "session starting soon" reminder worker.
+        // Automated "session starting soon" reminder worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionReminderWorker>();
         // Bi-Meeting rework — 15-min "meeting starting soon" reminder (email + app) for
         // confirmed speaker + delegation meetings.
@@ -390,7 +390,7 @@ public static class DependencyInjection
         services.AddHostedService<SIMF.Infrastructure.Operations.MatchRecommendationPushWorker>();
         // End-of-session "please rate this session" prompt worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionRatingPromptWorker>();
-        // D-679 — end-of-day + end-of-programme rating prompt worker.
+        // End-of-day + end-of-programme rating prompt worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.ProgrammeRatingPromptWorker>();
         // G-2 (chain reconciliation) — closes open hall-attendance rows whose
         // session has ended (In-only hall-door gates never emit a departure).
@@ -399,11 +399,11 @@ public static class DependencyInjection
         // broadcasts (in-app row + email per recipient) to a session's attendees or
         // a broad audience, paced against the bounded email queue.
         services.AddHostedService<SIMF.Infrastructure.Operations.NotificationBroadcastWorker>();
-        // D-168 (gap doc G5) — public-relations team: invitation CRUD +
+        // Public-relations team: invitation CRUD +
         // VIP list + bulk-notify dispatcher (PDF §2.7.3).
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminInvitationService,
             SIMF.Infrastructure.PublicRelations.AdminInvitationService>();
-        // D-169 (gap doc G6) — session-question moderation: public submit
+        // Session-question moderation: public submit
         // + per-session moderator queue + admin assignment of moderators
         // (PDF §2.7.2, distinct from MobileAppRole.Moderator).
         services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.ISessionQuestionService,
@@ -412,18 +412,18 @@ public static class DependencyInjection
             SIMF.Infrastructure.SessionQuestions.SessionModerationService>();
         services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.IAdminSessionModeratorService,
             SIMF.Infrastructure.SessionQuestions.AdminSessionModeratorService>();
-        // P3.3 — D-212/D-234: Scientific-Committee central Q&A queue (stage 2).
+        // Scientific-Committee central Q&A queue (stage 2).
         services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.ISessionQuestionCommitteeService,
             SIMF.Infrastructure.SessionQuestions.SessionQuestionCommitteeService>();
-        // D-170 (gap doc G9) — "Meet People Like You" interest-intersection
+        // "Meet People Like You" interest-intersection
         // ranker (PDF §2.8). Read-only service over UserProfile.Interests.
         services.AddScoped<SIMF.Application.Recommendations.Abstractions.IRecommendationService,
             SIMF.Infrastructure.Recommendations.RecommendationService>();
-        // D-172 (gap doc G10) — Face ID / Touch ID biometric sign-in via
+        // Face ID / Touch ID biometric sign-in via
         // ECDSA P-256 device key (PDF §2.5).
         services.AddScoped<SIMF.Application.IdentityAccess.Abstractions.IDeviceKeyService,
             SIMF.Infrastructure.IdentityAccess.DeviceKeyService>();
-        // D-173 (gap doc G8) — Dynamic content CMS: admin CRUD over
+        // Dynamic content CMS: admin CRUD over
         // ContentBlock + Banner (PDF §1, §2.1), plus the public read
         // surface for the Flutter app + Website.
         services.AddScoped<SIMF.Application.Cms.Abstractions.IAdminCmsService,
@@ -433,7 +433,7 @@ public static class DependencyInjection
         // D-269 (Mockup page 20) — attendee meeting requests to a speaker.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.ISpeakerMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.SpeakerMeetingRequestService>();
-        // D-474 (#11, Group G) — speaker availability windows + free-slot derivation.
+        // Speaker availability windows + free-slot derivation.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.ISpeakerAvailabilityService,
             SIMF.Infrastructure.MeetingRequests.SpeakerAvailabilityService>();
         // Bi-Meeting rework — delegation availability windows + free-slot derivation.
@@ -446,7 +446,7 @@ public static class DependencyInjection
         // D-717 (item 7, FDS-013 §15.7 GAP-3) — speaker double-opt-in action tokens.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IMeetingActionTokenService,
             SIMF.Infrastructure.MeetingRequests.MeetingActionTokenService>();
-        // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests.
+        // Delegation↔delegation meeting requests.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IDelegationMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.DelegationMeetingRequestService>();
         // D-500 (Wave 5, الطلبات) — the unified "My requests" feed (supersedes the
@@ -466,7 +466,7 @@ public static class DependencyInjection
         // business meetings (meeting tables, hall allocations, meetings).
         services.AddScoped<SIMF.Application.BusinessMeetings.Abstractions.IBusinessMeetingService,
             SIMF.Infrastructure.BusinessMeetings.BusinessMeetingService>();
-        // D-249 — App Screen 14 My-Area dashboard (held bookings + accepted
+        // App Screen 14 My-Area dashboard (held bookings + accepted
         // speaker meetings + confirmed business meetings + identity card).
         services.AddScoped<SIMF.Application.MyArea.IMyAreaService,
             SIMF.Infrastructure.MyArea.MyAreaService>();
@@ -475,7 +475,7 @@ public static class DependencyInjection
         // the user to a second device and survive a reinstall.
         services.AddScoped<SIMF.Application.Preferences.IAccountPreferencesService,
             SIMF.Infrastructure.Preferences.AccountPreferencesService>();
-        // D-199 — event modules (freeze lift): programme/speaker public reads,
+        // Event modules (freeze lift): programme/speaker public reads,
         // news, media + media-partners, booths, sponsors, archive, ratings.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IPublicSpeakerService,
             SIMF.Infrastructure.Programme.PublicSpeakerService>();
@@ -485,7 +485,7 @@ public static class DependencyInjection
             SIMF.Infrastructure.PublicRelations.PublicNewsService>();
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminNewsService,
             SIMF.Infrastructure.PublicRelations.AdminNewsService>();
-        // P2.1 (D-211) — FAQ management (two-level group → entry).
+        // FAQ management (two-level group → entry).
         services.AddScoped<SIMF.Application.Faq.Abstractions.IAdminFaqService,
             SIMF.Infrastructure.Faq.AdminFaqService>();
         // Public, anonymous FAQ read for the app accordion (Figma 1388:7567).
@@ -508,7 +508,7 @@ public static class DependencyInjection
             SIMF.Infrastructure.Media.PublicMediaService>();
         services.AddScoped<SIMF.Application.Media.Abstractions.IAdminMediaService,
             SIMF.Infrastructure.Media.AdminMediaService>();
-        // D-568 (Wave C S1/S2): the media-gallery + shared image-asset bytes now live
+        // The media-gallery + shared image-asset bytes now live
         // in the unified StoredFile store; the bespoke MediaImage / ImageAsset stores
         // are gone (AssetService is retained, rewritten onto IFileService).
         services.AddScoped<SIMF.Application.Assets.Abstractions.IAssetService,
@@ -517,14 +517,14 @@ public static class DependencyInjection
             SIMF.Infrastructure.Exhibition.PublicBoothService>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IAdminBoothService,
             SIMF.Infrastructure.Exhibition.AdminBoothService>();
-        // B3 (D-220) — Organisation lookup (gov Excel import) + visitor picker search.
+        // Organisation lookup (gov Excel import) + visitor picker search.
         services.AddScoped<SIMF.Application.Organisations.Abstractions.IAdminOrganisationService,
             SIMF.Infrastructure.Organisations.AdminOrganisationService>();
         services.AddScoped<SIMF.Application.Organisations.Abstractions.IPublicOrganisationService,
             SIMF.Infrastructure.Organisations.PublicOrganisationService>();
         services.AddScoped<SIMF.Application.Organisations.Abstractions.IOrganisationExcelReader,
             SIMF.Infrastructure.Excel.ClosedXmlOrganisationReader>();
-        // B3 — D-221 — dev-only sample-organisation seeder (Program.cs runs it in
+        // Dev-only sample-organisation seeder (Program.cs runs it in
         // Development only; production uses the gov Excel import).
         services.AddScoped<SIMF.Infrastructure.Organisations.OrganisationSeeder>();
         // Region lookup — admin CRUD + public app picker read (the 13 official
@@ -534,11 +534,11 @@ public static class DependencyInjection
         services.AddScoped<SIMF.Application.Regions.Abstractions.IPublicRegionService,
             SIMF.Infrastructure.Regions.PublicRegionService>();
         services.AddScoped<SIMF.Infrastructure.Regions.RegionSeeder>();
-        // D-681 — default app-update config keys so the CP configuration grid
+        // Default app-update config keys so the CP configuration grid
         // is not empty on a fresh DB. Idempotent. (The 2026 event CONTENT it
         // used to seed moved to the by-hand SQL lane — D-718/D-747.)
         services.AddScoped<SIMF.Infrastructure.Seeding.DefaultContentSeeder>();
-        // D-747 — Development/Testing runner for the by-hand 2026 content SQL
+        // Development/Testing runner for the by-hand 2026 content SQL
         // (docs/migrations/2026/*.sql) so a fresh dev/test DB is not empty.
         // Production never invokes it — content is applied by hand there.
         services.AddScoped<SIMF.Infrastructure.Seeding.SqlContentSeeder>();
@@ -559,7 +559,7 @@ public static class DependencyInjection
             SIMF.Infrastructure.Archive.PublicArchiveService>();
         services.AddScoped<SIMF.Application.Archive.Abstractions.IAdminArchiveService,
             SIMF.Infrastructure.Archive.AdminArchiveService>();
-        // P4.2 — D-236 / D-714 (item 12, GAP-1): advisory question AI filter.
+        // Advisory question AI filter.
         // Default = the offline stub (the PoC needs no AI key); set
         // `SessionQuestions:AiFilterEnabled=true` to route through the real
         // IAiService + the seeded `question-filter` prompt (AiQuestionFilter,
@@ -584,7 +584,7 @@ public static class DependencyInjection
         services.AddScoped<SIMF.Application.Feedback.Abstractions.IAdminRatingResponseService,
             SIMF.Infrastructure.Feedback.AdminRatingResponseService>();
         services.AddScoped<SIMF.Infrastructure.Feedback.RatingSeeder>();
-        // B6 — D-224: visitor-to-visitor networking connections (app-facing).
+        // Visitor-to-visitor networking connections (app-facing).
         services.AddScoped<SIMF.Application.Networking.Abstractions.INetworkingService,
             SIMF.Infrastructure.Networking.NetworkingService>();
         // Build #13 — "Meet People Like You" partner directory (app-facing).
@@ -593,32 +593,32 @@ public static class DependencyInjection
         // SIMF-FDS-014 — D-284 (Track 2): visitor-to-visitor contact sharing.
         services.AddScoped<SIMF.Application.Contacts.Abstractions.IVisitorShareService,
             SIMF.Infrastructure.Contacts.VisitorShareService>();
-        // D-426 — exhibitor ("Other") lead capture: scan visitor badge → My Visitors.
+        // Exhibitor ("Other") lead capture: scan visitor badge → My Visitors.
         services.AddScoped<SIMF.Application.Exhibitors.Abstractions.IExhibitorVisitorService,
             SIMF.Infrastructure.Exhibitors.ExhibitorVisitorService>();
         // B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionCategoryService,
             SIMF.Infrastructure.Programme.AdminSessionCategoryService>();
-        // D-452: programme days (date + title + logo).
+        // Programme days (date + title + logo).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminProgrammeDayService,
             SIMF.Infrastructure.Programme.AdminProgrammeDayService>();
-        // D-753 — forum-day window (MIN/MAX over active ProgrammeDay.Date); bounds
+        // Forum-day window (MIN/MAX over active ProgrammeDay.Date); bounds
         // business-meeting + speaker-availability scheduling to the event days.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IForumWindowService,
             SIMF.Infrastructure.Programme.ForumWindowService>();
-        // D-202 — Track-2: Statistics dashboard (read-only aggregate) +
+        // Track-2: Statistics dashboard (read-only aggregate) +
         // Exhibitor provisioning.
         services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,
             SIMF.Infrastructure.Statistics.StatisticsService>();
         // Reporting module — date-ranged read-only reports with XLSX export.
         services.AddScoped<SIMF.Application.Reporting.Abstractions.IReportingService,
             SIMF.Infrastructure.Reporting.ReportingService>();
-        // FR-506 — read-only session-attendance dashboard over HallAttendance (D-241).
+        // FR-506 — read-only session-attendance dashboard over HallAttendance.
         services.AddScoped<SIMF.Application.Attendance.Abstractions.ISessionAttendanceService,
             SIMF.Infrastructure.Attendance.SessionAttendanceService>();
         services.AddScoped<SIMF.Application.Exhibitors.Abstractions.IAdminExhibitorService,
             SIMF.Infrastructure.Exhibitors.AdminExhibitorService>();
-        // D-176 (gap doc G12) — centralised AI module: prompt
+        // Centralised AI module: prompt
         // catalogue + invocation log + Echo (offline) + OpenAI HTTP.
         // HttpClient registered as a singleton (no AddHttpClient since
         // the Infrastructure csproj does not reference
@@ -628,7 +628,7 @@ public static class DependencyInjection
         // client is fine for the current scope).
         services.Configure<SIMF.Infrastructure.Ai.AiOptions>(
             configuration.GetSection(SIMF.Infrastructure.Ai.AiOptions.SectionName));
-        // D-181 — install the HMAC key for prompt-content drift hashes.
+        // Install the HMAC key for prompt-content drift hashes.
         // Reads from `Ai:PromptHash:Secret` (env var
         // `SIMF_Ai__PromptHash__Secret` in production). If empty, the
         // helper uses a deterministic dev-mode derivation so tests pass
@@ -654,7 +654,7 @@ public static class DependencyInjection
         services.AddSingleton<SIMF.Infrastructure.Ai.OpenAiProvider>();
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider>(sp =>
             sp.GetRequiredService<SIMF.Infrastructure.Ai.OpenAiProvider>());
-        // D-484 — Anthropic (Claude) Messages-API provider (shares the singleton HttpClient).
+        // Anthropic (Claude) Messages-API provider (shares the singleton HttpClient).
         services.AddSingleton<SIMF.Infrastructure.Ai.AnthropicAiProvider>();
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider>(sp =>
             sp.GetRequiredService<SIMF.Infrastructure.Ai.AnthropicAiProvider>());
@@ -678,13 +678,13 @@ public static class DependencyInjection
         // survives navigation/restart and the assistant remembers earlier turns.
         services.AddScoped<SIMF.Application.Ai.Abstractions.IAiChatHistoryService,
             SIMF.Infrastructure.Ai.AiChatHistoryService>();
-        // D-735 — transactional-email templates: the resolver (DB override else
+        // Transactional-email templates: the resolver (DB override else
         // code default) and the CP admin service.
         services.AddScoped<SIMF.Application.Email.IEmailTemplateResolver,
             SIMF.Infrastructure.Email.EmailTemplateResolver>();
         services.AddScoped<SIMF.Application.Email.IAdminEmailTemplateService,
             SIMF.Infrastructure.Email.AdminEmailTemplateService>();
-        // D-578 — server-side subtitle fetch from a video (YouTube) for the CP
+        // Server-side subtitle fetch from a video (YouTube) for the CP
         // Sessions editor. Uses a DEDICATED no-redirect HttpClient (not the shared
         // singleton): the caption baseUrl comes from YouTube's response, so following
         // a 3xx into an internal host would be SSRF (D-578 security review #1); with
@@ -700,7 +700,7 @@ public static class DependencyInjection
                 youtubeTranscriptHttp,
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<
                     SIMF.Infrastructure.Programme.YoutubeTranscriptService>>()));
-        // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
+        // Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).
         services.AddScoped<SIMF.Application.AccessControl.Abstractions.IQrResolver,
@@ -721,7 +721,7 @@ public static class DependencyInjection
         services.AddScoped<IVipRosterService, VipRosterService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();
-        // C7 (D-371) — the offline human-face gate on the profile-image
+        // The offline human-face gate on the profile-image
         // upload. Singleton: the ONNX detector session is expensive.
         services.Configure<FaceDetectionOptions>(
             configuration.GetSection(FaceDetectionOptions.SectionName));
@@ -741,11 +741,11 @@ public static class DependencyInjection
         // P1.6 — export-only workbook builders for the read-only admin grids.
         services.AddSingleton<IOperationLogExcelService, ClosedXmlOperationLogExcelService>();
         services.AddSingleton<IAttendeeExcelService, ClosedXmlAttendeeExcelService>();
-        // D-356 — generic grid Excel engine (one hardened exporter/importer for
+        // Generic grid Excel engine (one hardened exporter/importer for
         // every resource's export/import, driven by per-resource column descriptors).
         services.AddSingleton<SIMF.Application.Excel.IGridExcelExporter, ClosedXmlGridExcelExporter>();
         services.AddSingleton<SIMF.Application.Excel.IGridExcelImporter, ClosedXmlGridExcelImporter>();
-        // D-568 (Wave C S3/S4/S5): the avatar, VVIP welcome-photo and ID-document
+        // The avatar, VVIP welcome-photo and ID-document
         // bytes now live in the unified StoredFile store; the bespoke user-keyed
         // stores (FilesystemAvatarStorage / FilesystemVipPhotoStorage /
         // EncryptedUserIdDocumentStorage) are gone.
@@ -753,10 +753,10 @@ public static class DependencyInjection
         // value converter on UserProfile (SimfAppDbContext.OnModelCreating).
         services.AddSingleton<SIMF.Application.Abstractions.IPiiEncryptor, AesGcmPiiEncryptor>();
         // A6-18 — upload malware scanner (EICAR default; swap for ClamAV/Defender).
-        // A6-18 (NCA) / D-568 — the malware-scan engine. "ClamAV" wires the real
+        // The malware-scan engine. "ClamAV" wires the real
         // clamd daemon (production); anything else keeps the built-in EICAR
         // detector. The centralized file pipeline runs whichever is registered
-        // fail-closed in Production (D-494).
+        // fail-closed in Production.
         var scanEngine = configuration.GetSection(UploadScanningOptions.SectionName)["Engine"];
         if (string.Equals(scanEngine, "ClamAV", StringComparison.OrdinalIgnoreCase))
         {
@@ -768,7 +768,7 @@ public static class DependencyInjection
             services.AddSingleton<SIMF.Application.Abstractions.IUploadScanner, DefaultUploadScanner>();
         }
 
-        // D-568 — the centralized file store: one envelope cipher + one storage
+        // The centralized file store: one envelope cipher + one storage
         // provider behind the single StoredFile pipeline. The cipher boot-fails on
         // a missing/invalid KEK the first time it is resolved (same posture as the
         // ID-document key). Both are stateless singletons.

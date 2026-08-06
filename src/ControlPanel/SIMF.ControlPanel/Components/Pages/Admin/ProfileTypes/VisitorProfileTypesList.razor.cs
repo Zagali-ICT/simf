@@ -11,7 +11,7 @@ public partial class VisitorProfileTypesList
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    // D-186: every non-admin profile type lives under UserType.Visitor;
+    // Every non-admin profile type lives under UserType.Visitor;
     // the audience-vs-partner split rides on IsVisitor. This page is
     // the audience queue.
     private GridQuery _query = new()

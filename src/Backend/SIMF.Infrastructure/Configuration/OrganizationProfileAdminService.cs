@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Configuration;
 
-/// <summary>D-495 — the admin write-path for the singleton Organization Profile.
+/// <summary>The admin write-path for the singleton Organization Profile.
 /// A single full-document upsert: updates the scalar branding fields and reconciles
 /// the about-items + details lists by id. Every save touches <c>UpdatedAt</c> (so the
 /// public read's <c>Last-Modified</c> token advances), invalidates the read cache, and

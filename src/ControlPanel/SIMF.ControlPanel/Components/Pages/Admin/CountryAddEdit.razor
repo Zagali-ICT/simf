@@ -2,7 +2,7 @@
    page) from CountriesList. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). The Id
    is the ISO 3166-1 numeric code, manually assigned (e.g. 682 = SA): required
-   and editable on Add, read-only on Edit. Supersedes CountryForm.razor (D-155),
+   and editable on Add, read-only on Edit. Supersedes CountryForm.razor,
    which keyed off Initial==null. *@
 @inherits CrudAddEditFormBase<AdminCountryDetail>
 @using System.Globalization

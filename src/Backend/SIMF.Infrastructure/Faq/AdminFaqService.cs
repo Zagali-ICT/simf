@@ -11,7 +11,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Faq;
 
-/// <summary>P2.1 (D-211) — admin CRUD over the two-level FAQ. Mirrors
+/// <summary>Admin CRUD over the two-level FAQ. Mirrors
 /// <see cref="SIMF.Infrastructure.PublicRelations.AdminNewsService"/>: built on
 /// <see cref="SimfAppDbContext"/>, one audit row per mutation, timestamps via
 /// <see cref="TimeProvider"/>, soft-delete through <c>IsActive</c>. The admin

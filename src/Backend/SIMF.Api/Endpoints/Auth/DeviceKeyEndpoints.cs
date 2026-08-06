@@ -78,7 +78,7 @@ public sealed class IssueDeviceKeyChallengeRoute
     public Guid Id { get; set; }
 }
 
-/// <summary>D-172 — anonymous: anyone with the device-key id can ask
+/// <summary>Anonymous: anyone with the device-key id can ask
 /// for a challenge. The challenge is useless without the matching
 /// private key, so leaking the deviceKeyId does not enable sign-in.</summary>
 public sealed class IssueDeviceKeyChallengeEndpoint(IDeviceKeyService service)
@@ -99,7 +99,7 @@ public sealed class IssueDeviceKeyChallengeEndpoint(IDeviceKeyService service)
     }
 }
 
-/// <summary>D-172 — anonymous: verify signed challenge + mint JWT pair.
+/// <summary>Anonymous: verify signed challenge + mint JWT pair.
 /// On failure returns 401 with the typed code; success returns full
 /// <see cref="AuthTokens"/>.</summary>
 public sealed class SignInWithDeviceKeyEndpoint(IDeviceKeyService service)

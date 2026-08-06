@@ -18,7 +18,7 @@ namespace SIMF.Infrastructure.Requests;
 /// request service. Submission snapshots the requester's current job title; on
 /// Accept the service applies the requested title to the requester's
 /// <c>UserProfile.JobTitle</c> (same App DB — no cross-DB write). Requester name
-/// is resolved from the profile, email on read from the Identity DB (D-157).
+/// is resolved from the profile, email on read from the Identity DB.
 /// Mirrors <c>SpeakerMeetingRequestService</c>.</summary>
 internal sealed class BadgeUpdateRequestService(
     SimfAppDbContext appDbContext,

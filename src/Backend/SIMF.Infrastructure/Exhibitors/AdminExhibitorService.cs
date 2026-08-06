@@ -14,7 +14,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Exhibitors;
 
-/// <summary>D-199 #3 — admin CRUD over exhibitors plus account provisioning.
+/// <summary>Admin CRUD over exhibitors plus account provisioning.
 /// Mirrors AdminDelegationService for the CRUD; account provisioning reuses the
 /// existing admin provisioning pipeline
 /// (<see cref="IAdminUserProvisioningService.CreateOtherAsync"/>) so we never
@@ -331,7 +331,7 @@ internal sealed class AdminExhibitorService(
         // validates the email-already-registered case and throws ApiException on
         // conflict. DEF-EXH-005: the account is provisioned with the EXHIBITOR
         // profile type, not with no profile type at all — the lead-capture
-        // endpoints authorise on ProfileType.MobileAppRole == Exhibitor (D-519),
+        // endpoints authorise on ProfileType.MobileAppRole == Exhibitor,
         // so a type-less account could never scan the booth's own visitors. The
         // exhibitor type is partner-side (IsForVisitor=false), which only the
         // Other pipeline accepts; CreateVisitorAsync enforces audience scope.
@@ -379,7 +379,7 @@ internal sealed class AdminExhibitorService(
             membership.CreatedAt);
     }
 
-    /// <summary>D-781 — attach an EXISTING account to this exhibitor by writing the
+    /// <summary>Attach an EXISTING account to this exhibitor by writing the
     /// <see cref="ExhibitorMembership"/> that <see cref="ProvisionAccountAsync"/>
     /// would otherwise be the only source of.
     ///
@@ -520,7 +520,7 @@ internal sealed class AdminExhibitorService(
             link.CreatedAt);
     }
 
-    /// <summary>D-781 — the membership contact name when the admin leaves the field
+    /// <summary>The membership contact name when the admin leaves the field
     /// blank: the account's display name, else its login email. Capped at the
     /// column's 256 characters so a pathological address cannot fail the insert
     /// (an email may be up to 320).</summary>
@@ -625,7 +625,7 @@ internal sealed class AdminExhibitorService(
         }
     }
 
-    // D-766 — validates the identity-card fields inlined from the removed shared
+    // Validates the identity-card fields inlined from the removed shared
     // Contact directory. The email + primary phone are covered by Validate (they
     // reuse ContactEmail / ContactPhone); this covers the new inline set. Lengths
     // mirror the EF configuration; latitude and longitude are an all-or-nothing
@@ -676,7 +676,7 @@ internal sealed class AdminExhibitorService(
     private static ApiException Invalid(string english, string arabic) =>
         new(ErrorCodes.ExhibitorInvalid, 400, english, arabic);
 
-    // Same-DB country FK — validated against the live Country table (D-766).
+    // Same-DB country FK — validated against the live Country table.
     private async Task EnsureCountryIsValidAsync(
         int? countryId, CancellationToken cancellationToken)
     {

@@ -146,7 +146,7 @@ internal static class AuthEndpoints
             // into the cookie principal so page-level [Authorize(Roles = …)]
             // checks pass for Administrator / future role gates. Without this,
             // the cookie has no role claims and every role-gated page kicks
-            // the user back to /login (D-041, D-042).
+            // the user back to /login.
             foreach (var role in ExtractRoleClaims(tokens.AccessToken))
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
@@ -161,7 +161,7 @@ internal static class AuthEndpoints
                 claims.Add(new Claim(PermissionCatalog.ClaimType, code));
             }
 
-            // P11 — D-052: copy account_state + user_type from the JWT into
+            // Copy account_state + user_type from the JWT into
             // the cookie so layout-level guards + the state-banner pages
             // can read them without an API round-trip. The bilingual
             // rejection reason rides on the cookie too, sourced from the
@@ -189,7 +189,7 @@ internal static class AuthEndpoints
 
             // The API tokens are kept in the (encrypted) cookie for the module
             // pages that will call the API; the shell itself does not use them.
-            // D-121 — also persist expires_at so the cookie-validate refresh
+            // Also persist expires_at so the cookie-validate refresh
             // hook (SimfCookieRefreshHandler) knows when to rotate without
             // round-tripping the API on every request.
             var properties = new AuthenticationProperties { IsPersistent = true };
@@ -198,7 +198,7 @@ internal static class AuthEndpoints
             await http.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
             logger.LogInformation("Control Panel sign-in completed for {UserId}.", tokens.User.Id);
-            // P11 — D-052: route non-Approved users to the matching
+            // Route non-Approved users to the matching
             // state-banner page directly; the layout guard would do the
             // same on the next request but the explicit redirect avoids a
             // flash of the dashboard.
@@ -236,7 +236,7 @@ internal static class AuthEndpoints
             return Results.Redirect("/login");
         }).RequireAuthorization().DisableAntiforgery();
 
-        // D-443 — token-driven session guard. Any authenticated request runs
+        // Token-driven session guard. Any authenticated request runs
         // the cookie-validate hook (SimfCookieRefreshHandler), which silently
         // rotates the API token when it is within the refresh threshold; this
         // endpoint then returns the (possibly refreshed) access-token expiry so

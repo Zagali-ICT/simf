@@ -14,7 +14,7 @@ namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
 /// Background worker for the two coarse rating prompts above the per-session one
-/// (D-679):
+///:
 /// <list type="bullet">
 /// <item><b>End of each programme day</b> — once a day has ended, dispatch a
 /// <see cref="NotificationKind.DayRatingRequest"/> to every attendee who

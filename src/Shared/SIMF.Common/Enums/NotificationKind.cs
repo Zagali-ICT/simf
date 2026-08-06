@@ -46,24 +46,24 @@ public enum NotificationKind
     [Display(Description = nameof(ResNotificationKind.AccountTwoFactorReset), ResourceType = typeof(ResNotificationKind))]
     AccountTwoFactorReset = 14,
 
-    /// <summary>D-111: dispatched on email-verification success OR when an
+    /// <summary>Dispatched on email-verification success OR when an
     /// administrator creates the account — the first warm contact the user
     /// has with SIMF after their identity is proved.</summary>
     [Display(Description = nameof(ResNotificationKind.AccountWelcome), ResourceType = typeof(ResNotificationKind))]
     AccountWelcome = 20,
 
-    /// <summary>D-111: dispatched when the user successfully changes their
+    /// <summary>Dispatched when the user successfully changes their
     /// own password. Security trail visible to the account holder.</summary>
     [Display(Description = nameof(ResNotificationKind.AccountPasswordChanged), ResourceType = typeof(ResNotificationKind))]
     AccountPasswordChanged = 21,
 
-    /// <summary>D-111: dispatched when a forgot-password reset completes
+    /// <summary>Dispatched when a forgot-password reset completes
     /// successfully. Mirrors the bank-style "your password was reset"
     /// security notice.</summary>
     [Display(Description = nameof(ResNotificationKind.AccountPasswordResetCompleted), ResourceType = typeof(ResNotificationKind))]
     AccountPasswordResetCompleted = 22,
 
-    /// <summary>D-112: dispatched to every Approved Administrator (except
+    /// <summary>Dispatched to every Approved Administrator (except
     /// the actor) when a new account lands in PendingApproval — covers
     /// both the admin-create path AND any future automated-create path.
     /// Distinct from <see cref="AdminPendingVisitor"/> which fires
@@ -71,14 +71,14 @@ public enum NotificationKind
     [Display(Description = nameof(ResNotificationKind.AdminPendingApproval), ResourceType = typeof(ResNotificationKind))]
     AdminPendingApproval = 23,
 
-    /// <summary>D-168 (gap doc G5): dispatched to a recipient when the PR
+    /// <summary>Dispatched to a recipient when the PR
     /// team creates an invitation row for them. In-app row only by
     /// default — the PR rep can opt-in to a follow-up email via the
     /// "Notify VIPs" desk.</summary>
     [Display(Description = nameof(ResNotificationKind.InvitationReceived), ResourceType = typeof(ResNotificationKind))]
     InvitationReceived = 30,
 
-    /// <summary>D-168 (gap doc G5): dispatched to one or more VIPs by the
+    /// <summary>Dispatched to one or more VIPs by the
     /// PR team via the "Notify VIPs" desk. Body is the rep's free-text
     /// message; sent as an in-app row + a queued email.</summary>
     [Display(Description = nameof(ResNotificationKind.VipBroadcast), ResourceType = typeof(ResNotificationKind))]
@@ -121,24 +121,24 @@ public enum NotificationKind
     [Display(Description = nameof(ResNotificationKind.SessionRatingRequest), ResourceType = typeof(ResNotificationKind))]
     SessionRatingRequest = 45,
 
-    /// <summary>D-677 — dispatched at the end of a programme day to every user who
+    /// <summary>Dispatched at the end of a programme day to every user who
     /// checked in that day (a GateScan). <c>RelatedEntityId</c> = the ProgrammeDay
     /// id; deep-links to <c>/rate?code=Day</c>. In-app row only. Additive value.</summary>
     [Display(Description = nameof(ResNotificationKind.DayRatingRequest), ResourceType = typeof(ResNotificationKind))]
     DayRatingRequest = 46,
 
-    /// <summary>D-677 — dispatched after the last programme day to every user who
+    /// <summary>Dispatched after the last programme day to every user who
     /// checked in during the event, inviting an overall event rating
     /// (<c>/rate?code=Event</c>). In-app row only. Additive value.</summary>
     [Display(Description = nameof(ResNotificationKind.EventRatingRequest), ResourceType = typeof(ResNotificationKind))]
     EventRatingRequest = 47,
 
-    /// <summary>D-677 — dispatched with the programme-end batch inviting an app
+    /// <summary>Dispatched with the programme-end batch inviting an app
     /// rating (<c>/rate?code=App</c>). In-app row only. Additive value.</summary>
     [Display(Description = nameof(ResNotificationKind.AppRatingRequest), ResourceType = typeof(ResNotificationKind))]
     AppRatingRequest = 48,
 
-    /// <summary>D-677 — dispatched with the programme-end batch inviting an
+    /// <summary>Dispatched with the programme-end batch inviting an
     /// exhibition rating (<c>/rate?code=Exhibition</c>). In-app row only.
     /// Additive value.</summary>
     [Display(Description = nameof(ResNotificationKind.ExhibitionRatingRequest), ResourceType = typeof(ResNotificationKind))]

@@ -12,7 +12,7 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
-/// P1.7 (D-217) — background worker that fires the "session starting soon"
+/// Background worker that fires the "session starting soon"
 /// reminder. Once per minute it finds active sessions whose
 /// <c>Start</c> falls inside the lead window and that have not yet been
 /// reminded, then dispatches an in-app <see cref="NotificationKind.SessionReminder"/>

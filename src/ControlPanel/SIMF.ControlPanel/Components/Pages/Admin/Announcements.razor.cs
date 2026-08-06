@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
-/// <summary>D-132 — the admin broadcast-Notifications desk. Composes a bilingual
+/// <summary>The admin broadcast-Notifications desk. Composes a bilingual
 /// message and queues it (in-app + email) to a session's registered attendees or a
 /// broad audience; the history grid shows past broadcasts + their delivery status.
 /// Calls flow through the same-origin BFF proxy (<c>/account/api/...</c>).</summary>

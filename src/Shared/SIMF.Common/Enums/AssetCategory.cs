@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-357 — which entity family a unified media <c>Asset</c> belongs to.
+/// <summary>Which entity family a unified media <c>Asset</c> belongs to.
 /// One active asset exists per (category, owner). Persisted as an int;
 /// append-only — never rename or reorder existing values (the D-110
 /// enum-stability rule, which survived the D-199 freeze-lift for new tables).</summary>
@@ -14,7 +14,7 @@ public enum AssetCategory
     NewsImage = 5,
     ProgrammeDayImage = 6,
 
-    /// <summary>D-495 — the Organization Profile logo (owner =
+    /// <summary>The Organization Profile logo (owner =
     /// <c>OrganizationProfile.SingletonId</c>).</summary>
     OrganizationLogo = 7,
 

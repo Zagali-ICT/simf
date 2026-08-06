@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-134 Sprint A — read-only viewer over the audit OperationLog table.
+/// Read-only viewer over the audit OperationLog table.
 /// Administrator-only; no rate-limit (read endpoints).
 /// </summary>
 public sealed class ListOperationLogEndpoint(IAdminOperationLogService service)

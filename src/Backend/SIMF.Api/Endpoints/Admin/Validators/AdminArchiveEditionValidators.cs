@@ -5,7 +5,7 @@ using SIMF.Contracts.Archive;
 
 namespace SIMF.Api.Endpoints.Admin.Validators;
 
-/// <summary>D-199 — validators for admin archive-edition CRUD. Lengths +
+/// <summary>Validators for admin archive-edition CRUD. Lengths +
 /// ranges mirror the EF configuration (<c>ArchiveEditionConfiguration</c>) and
 /// the service-side <c>AdminArchiveService.Validate</c> exactly.
 ///

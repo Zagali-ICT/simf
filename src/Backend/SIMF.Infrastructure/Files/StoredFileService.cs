@@ -16,7 +16,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Files;
 
-/// <summary>D-568 — the one service behind the centralized file store. Named
+/// <summary>The one service behind the centralized file store. Named
 /// <c>StoredFileService</c> (not <c>FileService</c>) to avoid colliding with the
 /// <see cref="FileService"/> business-category enum. Upload runs one pipeline for
 /// every file; download authorizes off the stored file's own service policy.</summary>
@@ -58,7 +58,7 @@ internal sealed class StoredFileService(
                 "This file category requires an owner.", "هذا النوع من الملفات يتطلب مالكًا.");
         }
 
-        // A6-18 (NCA) / D-494 — scan before storing; fail-closed in Production.
+        // Scan before storing; fail-closed in Production.
         await scanner.EnsureCleanFailClosedAsync(
             command.Content, command.OriginalFileName ?? "upload", command.FailClosed, cancellationToken);
 
@@ -517,7 +517,7 @@ internal sealed class StoredFileService(
     private static bool StartsWith(ReadOnlySpan<byte> content, ReadOnlySpan<byte> signature) =>
         content.Length >= signature.Length && content[..signature.Length].SequenceEqual(signature);
 
-    // P6 (D-568) — external links are 302-served to anonymous visitors, so the
+    // External links are 302-served to anonymous visitors, so the
     // target must be a real, public https host. Ported from AssetService.ValidateLink:
     // require https (no cleartext) and reject literal IPs / localhost / internal TLDs
     // so the trusted SIMF domain can't become an open redirect to an internal service.

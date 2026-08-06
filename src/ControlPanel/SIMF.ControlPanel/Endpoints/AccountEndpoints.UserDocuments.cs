@@ -33,7 +33,7 @@ internal static partial class AccountEndpoints
 {
     private static void MapUserDocuments(IEndpointRouteBuilder group)
     {
-        // D-127 — countries picker for the walk-in form's nationality dropdown.
+        // Countries picker for the walk-in form's nationality dropdown.
         group.MapGet("/admin/walk-in/countries",
             async (HttpContext http, SimfAccountClient api) =>
         {
@@ -42,7 +42,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.GetProfileCountriesAsync(token));
         });
 
-        // B3 — D-221 — organisations picker for the walk-in form's الجهة field.
+        // Organisations picker for the walk-in form's الجهة field.
         group.MapGet("/admin/walk-in/organisations",
             async (string? search, int? top, HttpContext http, SimfAccountClient api) =>
         {
@@ -51,7 +51,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.SearchOrganisationsAsync(search, top ?? 20, token));
         });
 
-        // D-127 — active interests picker for the visitor walk-in form.
+        // Active interests picker for the visitor walk-in form.
         group.MapGet("/interests",
             async (HttpContext http, SimfAccountClient api) =>
         {
@@ -60,7 +60,7 @@ internal static partial class AccountEndpoints
             return Forward(await api.GetActiveInterestsAsync(token));
         });
 
-        // D-130 — print-bag station: QR-id lookup.
+        // Print-bag station: QR-id lookup.
         group.MapGet("/admin/qr-lookup/{qrId}",
             async (string qrId, HttpContext http, SimfAdminClient api) =>
         {
@@ -69,9 +69,9 @@ internal static partial class AccountEndpoints
             return Forward(await api.LookupByQrIdAsync(qrId, token));
         });
 
-        // D-129 — admin upload of the subject's ID-document image (multipart).
+        // Admin upload of the subject's ID-document image (multipart).
         // The CP page hosts a hidden <input type="file">; simfAccount.uploadFile
-        // sends it here. Same SameSite=Lax CSRF stance as /avatar (D-029).
+        // sends it here. Same SameSite=Lax CSRF stance as /avatar.
         group.MapPost("/admin/visitors/{id:guid}/id-document",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
@@ -118,7 +118,7 @@ internal static partial class AccountEndpoints
                 id, stream.ToArray(), file.ContentType, file.FileName, token));
         }).DisableAntiforgery();
 
-        // D-427 (CS-3) — admin upload of the subject's profile photo (avatar).
+        // Admin upload of the subject's profile photo (avatar).
         // Mirrors the ID-document upload proxy (multipart, SameSite=Lax CSRF).
         group.MapPost("/admin/visitors/{id:guid}/avatar",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
@@ -245,7 +245,7 @@ internal static partial class AccountEndpoints
             return Results.File(bytes, contentType, fileName);
         });
 
-        // D-129 — admin stream-read of the subject's ID-document image. The
+        // Admin stream-read of the subject's ID-document image. The
         // Details / View modals render this via <img src="..."> so the
         // browser refreshes it whenever the modal opens.
         group.MapGet("/admin/visitors/{id:guid}/id-document",
@@ -312,7 +312,7 @@ internal static partial class AccountEndpoints
             return Results.File(bytes, contentType);
         });
 
-        // D-357 — stream an admin account's avatar for the Admins-list thumbnail.
+        // Stream an admin account's avatar for the Admins-list thumbnail.
         // Mirrors the visitors/others avatar GET proxy; API side is gated by Admins.View.
         group.MapGet("/admin/admins/{id:guid}/avatar",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
@@ -371,7 +371,7 @@ internal static partial class AccountEndpoints
                 $"simf-staff-{SimfClock.Now:yyyyMMddHHmmss}.xlsx");
         });
 
-        // Multipart upload — same SameSite=Lax CSRF stance as /avatar (D-029).
+        // Multipart upload — same SameSite=Lax CSRF stance as /avatar.
         group.MapPost("/admin/admins/import",
             async (HttpContext http, SimfAdminClient api) =>
         {
@@ -394,7 +394,7 @@ internal static partial class AccountEndpoints
                 stream.ToArray(), file.FileName, token));
         }).DisableAntiforgery();
 
-        // D-356 — generic grid Excel proxies. One line per resource registers
+        // Generic grid Excel proxies. One line per resource registers
         // both /admin/{slug}/export (binary) and /admin/{slug}/import (multipart),
         // forwarding to the API's generic grid endpoints. Interests is the pilot.
         MapGridExcel(group, "interests");

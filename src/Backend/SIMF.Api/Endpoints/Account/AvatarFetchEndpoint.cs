@@ -8,7 +8,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Api.Endpoints.Account;
 
-/// <summary>D-568 (Wave C S3) — resolves a user's avatar bytes from the unified
+/// <summary>Resolves a user's avatar bytes from the unified
 /// <c>StoredFile</c> store (App DB, encrypted at rest), owner-scoped by the user id.
 /// It is a RAW decrypt read, not <c>IFileService.DownloadAsync</c>: each serve
 /// endpoint enforces its own authorization (self-only for the app fetch, an admin

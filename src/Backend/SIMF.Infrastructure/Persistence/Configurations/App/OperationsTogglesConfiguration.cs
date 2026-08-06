@@ -4,7 +4,7 @@ using SIMF.Domain.Operations;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-166 (gap doc G4) — singleton tables. Both rows are seeded
+/// <summary>Singleton tables. Both rows are seeded
 /// in EF model data so the gate exists from day-one.</summary>
 internal sealed class RegistrationGateConfiguration
     : IEntityTypeConfiguration<RegistrationGate>

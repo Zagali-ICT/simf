@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/HallAttendanceTests.cs
-// Tests: SIMF.Api.Tests/HallArrivalScanTests.cs (P5.1d — D-244 operator QR scan)
+// Tests: SIMF.Api.Tests/HallArrivalScanTests.cs
 // Tests: SIMF.Api.Tests/GateHallDoorChainTests.cs (Both-mode gate → hall-attendance chain)
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -34,7 +34,7 @@ internal sealed class HallAttendanceService(
     INotificationDispatcher notifications,
     TimeProvider timeProvider,
     IOptionsMonitor<WalkInModeOptions> walkInMode,
-    // D-819 — records the walk-in's open-seating hold once they are admitted.
+    // Records the walk-in's open-seating hold once they are admitted.
     ISeatReservationService seats,
     ILogger<HallAttendanceService> logger) : IHallAttendanceService
 {
@@ -42,18 +42,18 @@ internal sealed class HallAttendanceService(
     // still accepted (early arrivals + a brief post-end tail). Mirrors the CP
     // Hall-Arrivals console's live-session picker filter.
     //
-    // D-819 — was a fixed 15 minutes. It is now read from the walk-in mode so a
+    // Was a fixed 15 minutes. It is now read from the walk-in mode so a
     // queue that forms well before a keynote can be pre-scanned; with the mode
     // disarmed this still resolves to exactly 15 minutes, so nothing changes
     // until the capability is deliberately armed. Read per call (rather than
     // cached in a field) so arming it takes effect without a restart.
     //
-    // D-839 — this is now the FALLBACK, not the only answer: a hall may carry its
+    // This is now the FALLBACK, not the only answer: a hall may carry its
     // own grace and a session may override the hall. See ResolveGrace.
     private int GlobalArrivalGraceMinutes =>
         walkInMode.CurrentValue.ResolveArrivalGraceMinutes(timeProvider.SimfNow());
 
-    /// <summary>D-839 — the effective arrival grace for one session, against a
+    /// <summary>The effective arrival grace for one session, against a
     /// caller-supplied global fallback so a whole scan resolves on ONE instant
     /// and one options snapshot. The precedence itself lives in
     /// <see cref="WalkInModeOptions.ResolveArrivalGraceMinutes(int?, int?, int)"/>,
@@ -86,7 +86,7 @@ internal sealed class HallAttendanceService(
                 s.Hall!.GeofenceCenterLat,
                 s.Hall!.GeofenceCenterLon,
                 s.Hall!.GeofenceRadiusMeters,
-                // D-839 — the two layers that can widen this session's door.
+                // The two layers that can widen this session's door.
                 s.ArrivalGraceMinutesOverride,
                 HallArrivalGraceMinutes = s.Hall!.ArrivalGraceMinutes,
             })
@@ -168,7 +168,7 @@ internal sealed class HallAttendanceService(
                 s.Start,
                 s.End,
                 s.HallId,
-                // D-839 — the two layers that can widen this session's door.
+                // The two layers that can widen this session's door.
                 s.ArrivalGraceMinutesOverride,
                 HallArrivalGraceMinutes = s.Hall!.ArrivalGraceMinutes,
             })
@@ -242,7 +242,7 @@ internal sealed class HallAttendanceService(
         Guid attendeeUserId, Guid hallId,
         CancellationToken cancellationToken = default)
     {
-        // D-823 - ask about EVERY session this door is admitting for, not only
+        // Ask about EVERY session this door is admitting for, not only
         // the single one attendance binds to. A hall runs its sessions back to
         // back, so with the arrival grace an attendee holding a 10:00 booking is
         // legitimately at the door at 09:50 while the 09:00 session is still
@@ -313,7 +313,7 @@ internal sealed class HallAttendanceService(
         // runs one session at a time (BookingOverlap prevents overlapping hall
         // bookings), so this candidate set is tiny.
         //
-        // D-839 — the grace is no longer ONE number: it can differ per session
+        // The grace is no longer ONE number: it can differ per session
         // within the same hall. The exact window COULD go in SQL (DATEADD over the
         // coalesced columns), but that computes on the column and gives up the
         // range seek on the `(HallId, Start)` index, so this deliberately
@@ -454,7 +454,7 @@ internal sealed class HallAttendanceService(
                 "Hall arrival (hall-door gate) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
                 attendeeUserId, liveSessionId, operatorUserId);
 
-            // D-819 — a walk-in admitted with no booking still occupies a place,
+            // A walk-in admitted with no booking still occupies a place,
             // so record an open-seating hold: without it the staff seating desk
             // reports "no seat" for a badge standing in front of it and the seat
             // map under-reports who is in the hall.
@@ -748,7 +748,7 @@ internal sealed class HallAttendanceService(
             $"sessionId={sessionId}; hallId={open.HallId}",
             cancellationToken);
 
-        // D-713 (GAP-A) — leaving the hall closes the attendee's session
+        // Leaving the hall closes the attendee's session
         // attendance, so prompt them to rate the session they just left. The
         // dispatcher's DeduplicateByRelatedEntity guard shares one prompt per
         // (session, user) with the clock-end worker, so a re-enter/re-leave or a
@@ -758,7 +758,7 @@ internal sealed class HallAttendanceService(
         return ToStatus(open);
     }
 
-    /// <summary>D-713 (GAP-A) — fires the "please rate this session" prompt when an
+    /// <summary>Fires the "please rate this session" prompt when an
     /// attendee's hall attendance closes on departure. Loads the session title for
     /// the notification body; a dispatch failure is logged and swallowed so it
     /// never fails the departure itself (the leave time is already committed —

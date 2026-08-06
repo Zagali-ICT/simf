@@ -11,7 +11,7 @@ public partial class OtherProfileTypesList
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    // D-186: this page is the partner-side queue. Server-side
+    // This page is the partner-side queue. Server-side
     // contract collapsed UserType into Visitor; the partner/audience
     // split now lives on ProfileType.IsVisitor — we filter on that.
     private GridQuery _query = new()

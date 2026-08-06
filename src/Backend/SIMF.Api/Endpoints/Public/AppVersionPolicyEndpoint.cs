@@ -6,7 +6,7 @@ using SIMF.Contracts.Configuration;
 
 namespace SIMF.Api.Endpoints.Public;
 
-/// <summary>D-736 — public, anonymous read of the mobile app-update policy
+/// <summary>Public, anonymous read of the mobile app-update policy
 /// (per-platform min/latest version + store URL, admin-edited on the CP
 /// configuration page). The app calls this on every launch and from the
 /// About-the-app manual check; it fails open on any error, so this endpoint

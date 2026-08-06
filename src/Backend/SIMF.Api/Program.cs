@@ -32,7 +32,7 @@ var builder = WebApplication.CreateBuilder(args);
 // variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
 // the prefix, so SIMF_ConnectionStrings__SimfAppDb binds to
 // ConnectionStrings:SimfAppDb. ASPNETCORE_ENVIRONMENT stays un-prefixed (the
-// host reads it before configuration sources load). (D-355)
+// host reads it before configuration sources load).
 builder.Configuration.AddEnvironmentVariables("SIMF_");
 
 // Structured logging through Serilog (SIMF-SAD-001 section 11).
@@ -109,7 +109,7 @@ builder.Services.AddHostedService<SIMF.Api.HostedServices.RetentionSweepWorker>(
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
 
-// H26 — D-086: in-memory cache backs the per-IP bearer-rejection
+// In-memory cache backs the per-IP bearer-rejection
 // throttle in JwtBearerSetup.AuditRejectionAsync so an attacker
 // flooding bearer-garbage requests cannot drive synchronous DB
 // audit writes per request.
@@ -120,7 +120,7 @@ var rateLimitOptions =
     builder.Configuration.GetSection(RateLimitOptions.SectionName).Get<RateLimitOptions>()
     ?? new RateLimitOptions();
 
-// D-819 — true when the resolved endpoint declares the operational
+// True when the resolved endpoint declares the operational
 // rate-limit policy. Reads the metadata that RequireRateLimiting(...) attaches,
 // so the global-limiter exemption is derived from the endpoints themselves and
 // cannot drift from them. Returns false when routing has not resolved an
@@ -146,7 +146,7 @@ static bool IsOperationalEndpoint(HttpContext httpContext) =>
 
 builder.Services.AddRateLimiter(rateLimiter =>
 {
-    // H29 — D-088: every request gets a per-IP fixed-window cap. Closes
+    // Every request gets a per-IP fixed-window cap. Closes
     // the post-R3 review's Security SEV-2.1 main finding — pre-H29
     // bearer-protected routes had no per-IP cap, so a malformed-bearer
     // flood (or any other endpoint hit hard from one IP) could pin a
@@ -156,7 +156,7 @@ builder.Services.AddRateLimiter(rateLimiter =>
     rateLimiter.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
         httpContext =>
         {
-            // D-819 — the on-site operational endpoints opt out of the global
+            // The on-site operational endpoints opt out of the global
             // per-IP cap as well as the "auth" cap. Exempting them at the
             // policy level alone would not be enough: the Control Panel is a
             // server-side BFF, so every CP desk shares the CP host's IP and
@@ -180,21 +180,21 @@ builder.Services.AddRateLimiter(rateLimiter =>
                 });
         });
 
-    // D-819 — the on-site operational surface: gate scans, hall arrivals,
+    // The on-site operational surface: gate scans, hall arrivals,
     // walk-in registration, approve / bulk-approve, staff uploads and the
     // offline batch upload. Deliberately unlimited; see
     // RateLimitOptions.OperationalPolicy for the full rationale. Every one of
     // these endpoints is gated on an authenticated operator's permission, which
     // is the real control here — EXCEPT that the permission check runs after
     // this middleware, which is why IsOperationalEndpoint also requires an
-    // Authorization header before granting the exemption (D-821 review).
+    // Authorization header before granting the exemption.
     rateLimiter.AddPolicy(
         RateLimitOptions.OperationalPolicy,
         _ => RateLimitPartition.GetNoLimiter<string>("operational"));
 
     rateLimiter.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            // H7 — D-062: still one shared bucket for null-IP traffic
+            // Still one shared bucket for null-IP traffic
             // (the original `?? "unknown"` behaviour). The reviewer's
             // concern was a misrouted-no-IP flood sharing with legitimate
             // clients; with the per-email partition below, credential
@@ -211,7 +211,7 @@ builder.Services.AddRateLimiter(rateLimiter =>
                 Window = TimeSpan.FromSeconds(rateLimitOptions.WindowSeconds),
             }));
 
-    // H7 — D-062: per-email partition for the credential-touching paths.
+    // Per-email partition for the credential-touching paths.
     // EmailRateLimitKeyMiddleware stashes the normalised email on the
     // HttpContext when the request is on a known credential path; this
     // policy keys its window on that. Other endpoints fall through to a
@@ -255,7 +255,7 @@ builder.Services.AddRateLimiter(rateLimiter =>
                 "ai-test:no-sub",
                 _ => new FixedWindowRateLimiterOptions
                 {
-                    // D-181 — defense-in-depth: tight cap so a claim-mapper
+                    // Defense-in-depth: tight cap so a claim-mapper
                     // regression cannot silently kill the rate-limit guard.
                     PermitLimit = 5,
                     Window = TimeSpan.FromMinutes(1),
@@ -370,7 +370,7 @@ builder.Services.SwaggerDocument(options =>
     };
     // Explicit so a future FastEndpoints default change can't silently drop the
     // "Authorize" (JWT bearer) button — every protected endpoint authenticates
-    // on the default Bearer scheme (D-355; the package default is already true).
+    // on the default Bearer scheme.
     options.EnableJWTBearerAuth = true;
     options.EndpointFilter = ep =>
         ep.Routes?.Any(route => route.Contains("app/") && !route.Contains("admin/")) == true;
@@ -431,7 +431,7 @@ if (Encoding.UTF8.GetByteCount(jwtOptions.SigningKey) < 32)
         "Jwt:SigningKey must be configured and at least 32 bytes long.");
 }
 
-// R1 — D-074: the AvatarBase boot-time gate moved into the StorageOptions
+// The AvatarBase boot-time gate moved into the StorageOptions
 // ValidateOnStart hook inside AddInfrastructure. No raw IConfiguration
 // read here any more. The other Storage keys are validated by each
 // consumer's constructor — see FilesystemAvatarStorage,
@@ -441,7 +441,7 @@ if (Encoding.UTF8.GetByteCount(jwtOptions.SigningKey) < 32)
 // (see JwtBearerSetup for the hardened parameters and the security-stamp check).
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => JwtBearerSetup.Configure(options, jwtOptions))
-    // P3.2b — D-232 (D-213): a second scheme for short-lived recording-stream
+    // A second scheme for short-lived recording-stream
     // tokens (distinct audience, query-string token, no security-stamp check).
     .AddJwtBearer(JwtBearerSetup.StreamScheme,
         options => JwtBearerSetup.ConfigureStream(options, jwtOptions));
@@ -466,7 +466,7 @@ builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHand
 var knownProxies =
     builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [];
 
-// D-355 — OpenAPI UI exposure (SIMF-API-001 §13). Off in production unless
+// OpenAPI UI exposure (SIMF-API-001 §13). Off in production unless
 // explicitly enabled, and then only behind the Basic-auth gate below.
 var swaggerOptions =
     builder.Configuration.GetSection(SwaggerOptions.SectionName).Get<SwaggerOptions>()
@@ -489,7 +489,7 @@ if (!app.Environment.IsDevelopment()
         + "the rate limiter and the audit-log source IP depend on a trusted proxy.");
 }
 
-// D-355 — never expose the OpenAPI UI unauthenticated in production. If it is
+// Never expose the OpenAPI UI unauthenticated in production. If it is
 // enabled there, the Basic-auth credentials must be present, or refuse to start.
 if (app.Environment.IsProduction()
     && swaggerOptions.AllowSwagger
@@ -577,19 +577,19 @@ if (!app.Environment.IsEnvironment("Testing"))
     // required reference data the app's region picker reads, so it must exist in
     // every environment. Idempotent (keyed on Code).
     await services.GetRequiredService<SIMF.Infrastructure.Regions.RegionSeeder>().SeedAsync();
-    // D-736 — default app-update config keys so the CP configuration grid is not
+    // Default app-update config keys so the CP configuration grid is not
     // empty on a fresh DB. Every environment; idempotent. (The 2026 event CONTENT
     // this used to seed moved to the by-hand SQL lane — D-718/D-747.)
     await services.GetRequiredService<SIMF.Infrastructure.Seeding.DefaultContentSeeder>().SeedAsync();
 
-    // B3 — D-221 — in Development only, seed a few sample organisations so the
+    // In Development only, seed a few sample organisations so the
     // registration organisation picker has data before the gov Excel import.
     if (app.Environment.IsDevelopment())
     {
         await services.GetRequiredService<SIMF.Infrastructure.Organisations.OrganisationSeeder>()
             .SeedFakeAsync();
 
-        // D-747 — in Development only, apply the by-hand 2026 content-seed SQL
+        // In Development only, apply the by-hand 2026 content-seed SQL
         // (docs/migrations/2026/*.sql: speakers, programme, news, sponsors, media
         // partners, archive, org about + the booths/delegations/FAQ/venue-map
         // gaps) so a fresh dev DB renders populated screens. Idempotent. In
@@ -644,7 +644,7 @@ if (webCorsEnabled)
     app.UseCors(devWebCorsPolicy);
 }
 
-// H7 — D-062: peek the request body for the email field on credential
+// Peek the request body for the email field on credential
 // paths so the "auth-email" rate-limit policy can key its partition on
 // it. Must run BEFORE UseRateLimiter so the key is set when the limiter
 // reads it.
@@ -676,7 +676,7 @@ app.UseFastEndpoints(config =>
 
     // Field-validation failures use the standard ApiResult shape (API-001 §6-7).
     // Each FluentValidation rule attaches Arabic as its CustomState via the
-    // .Bilingual(en, ar) extension (D-030 / myComment #14).
+    // .Bilingual(en, ar) extension.
     config.Errors.ResponseBuilder = (failures, _, _) =>
         ApiResult<object>.Fail(new ApiError
         {

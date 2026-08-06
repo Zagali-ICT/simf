@@ -26,7 +26,7 @@ public sealed class SubmitSessionQuestionRequest
     public SessionQuestionRecipient Recipient { get; set; } = SessionQuestionRecipient.Speaker;
 }
 
-/// <summary>D-169 — public-facing response after submission. The
+/// <summary>Public-facing response after submission. The
 /// queue position is the submitter's own row only (not the whole
 /// queue) — moderators see the full queue via the moderator surface.</summary>
 public sealed record SessionQuestionSubmitted(
@@ -35,7 +35,7 @@ public sealed record SessionQuestionSubmitted(
     int Order,
     DateTime CreatedAt);
 
-/// <summary>D-169 — one row in the moderator queue view. The submitter
+/// <summary>One row in the moderator queue view. The submitter
 /// display name is projected from the cross-DB lookup so the moderator doesn't
 /// have to issue a second request.
 /// <para>A9 (D-185) — <see cref="SubmittedByEmail"/> is PII and is deliberately
@@ -56,7 +56,7 @@ public sealed record SessionQuestionModeratorRow(
     bool IsPushed,
     DateTime? PushedAt,
     DateTime CreatedAt,
-    // P3.3 — D-212: pipeline phase + status (appended; wire preserved).
+    // Pipeline phase + status (appended; wire preserved).
     QuestionPhase Phase = QuestionPhase.Live,
     QuestionStatus Status = QuestionStatus.Approved);
 
@@ -98,7 +98,7 @@ public sealed record SessionQuestionQueueRow(
     string? AssignedToRole,
     DateTime CreatedAt);
 
-/// <summary>P3.3 — D-212: committee filter for the queue list. Null status =
+/// <summary>Committee filter for the queue list. Null status =
 /// the default Pending queue.</summary>
 public sealed class ListQuestionQueueRequest
 {
@@ -106,7 +106,7 @@ public sealed class ListQuestionQueueRequest
     public Guid? SessionId { get; set; }
 }
 
-/// <summary>P3.3 — D-212: committee action — escalate a question "to a team"
+/// <summary>Committee action — escalate a question "to a team"
 /// (a role, not an individual). The role name is free text matched against the
 /// app's roles by the owner's convention.</summary>
 public sealed class EscalateQuestionRequest
@@ -114,14 +114,14 @@ public sealed class EscalateQuestionRequest
     public string Role { get; set; } = string.Empty;
 }
 
-/// <summary>D-169 — moderator action: hide / unhide one question.
+/// <summary>Moderator action: hide / unhide one question.
 /// <see cref="IsHidden"/> is the target state (idempotent).</summary>
 public sealed class SetQuestionHiddenRequest
 {
     public bool IsHidden { get; set; }
 }
 
-/// <summary>D-169 — moderator action: reorder the queue. The body is
+/// <summary>Moderator action: reorder the queue. The body is
 /// the full ordered list of question ids in their new positions; the
 /// service replays the order column from 0..n-1.</summary>
 public sealed class ReorderQuestionsRequest

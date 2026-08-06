@@ -4,7 +4,7 @@ using SIMF.Domain.Badges;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-758 (#10 Phase 2) — <see cref="BadgeBatch"/> entity configuration.
+/// <summary><see cref="BadgeBatch"/> entity configuration.
 /// Soft-delete via IsActive; the member <c>UserProfile</c> rows own the FK back to
 /// this table (see <c>UserProfileConfiguration</c>). Indexed on
 /// <c>(IsActive, CreatedAt)</c> because the CP batches list orders active batches

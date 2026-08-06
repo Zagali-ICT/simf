@@ -5,7 +5,7 @@ using System.Text;
 namespace SIMF.Common.Badges;
 
 /// <summary>
-/// D-819 — the offline event badge payload: a profile-type number and a
+/// The offline event badge payload: a profile-type number and a
 /// sequence number, encrypted so a gate can validate the badge with NO network.
 /// </summary>
 /// <param name="ProfileTypeCode">
@@ -20,7 +20,7 @@ namespace SIMF.Common.Badges;
 public readonly record struct EventBadgePayload(int ProfileTypeCode, long Sequence);
 
 /// <summary>
-/// D-819 — encodes and decodes the offline event badge.
+/// Encodes and decodes the offline event badge.
 ///
 /// <para>Wire format: <c>{keyVersion}{base32(nonce || ciphertext || tag)}</c>,
 /// where the plaintext is the ASCII string <c>"{profileTypeCode},{sequence}"</c>.

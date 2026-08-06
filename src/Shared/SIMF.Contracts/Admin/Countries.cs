@@ -10,9 +10,9 @@ public sealed record AdminCountrySummary(
     int DisplayOrder,
     bool IsActive,
     DateTime CreatedAt,
-    // D-473 (#10) — invited to send a delegation (وفد).
+    // Invited to send a delegation (وفد).
     bool IsInvited = false,
-    // D-506 — the invited delegation's arrival/departure dates, carried so the
+    // The invited delegation's arrival/departure dates, carried so the
     // grid Excel export can round-trip them (not rendered as grid columns).
     // Optional; null when unset or the country is not invited.
     DateOnly? DelegationArrivalDate = null,
@@ -29,7 +29,7 @@ public sealed record AdminCountryDetail(
     bool IsActive,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    // D-473 (#10) — invited to send a delegation (وفد).
+    // Invited to send a delegation (وفد).
     bool IsInvited = false,
     // D-499 (الوفود) — the invited delegation's arrival/departure dates + the
     // UserProfile id of its head of delegation (رئيس الوفد). All nullable.
@@ -55,7 +55,7 @@ public sealed class AdminCreateCountryRequest
     public string? PhonePrefix { get; set; }
     public int DisplayOrder { get; set; }
 
-    /// <summary>D-473 (#10) — true for a country invited to send a delegation (وفد).</summary>
+    /// <summary>True for a country invited to send a delegation (وفد).</summary>
     public bool IsInvited { get; set; }
 
     /// <summary>D-499 (الوفود) — the invited delegation's arrival date (optional).</summary>
@@ -80,7 +80,7 @@ public class AdminUpdateCountryRequest
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
 
-    /// <summary>D-473 (#10) — true for a country invited to send a delegation (وفد).</summary>
+    /// <summary>True for a country invited to send a delegation (وفد).</summary>
     public bool IsInvited { get; set; }
 
     /// <summary>D-499 (الوفود) — the invited delegation's arrival date (optional).</summary>

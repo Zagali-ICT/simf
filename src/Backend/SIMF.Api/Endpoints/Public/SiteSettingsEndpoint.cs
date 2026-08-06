@@ -6,7 +6,7 @@ using SIMF.Contracts.Configuration;
 
 namespace SIMF.Api.Endpoints.Public;
 
-/// <summary>D-461 — public, anonymous read of the CP-editable site/app branding
+/// <summary>Public, anonymous read of the CP-editable site/app branding
 /// settings (the registration welcome message + the social links). Mirrors the
 /// public-session read shape (anonymous, Tags "Public").</summary>
 public sealed class GetSiteSettingsEndpoint(ISiteSettingsService service)

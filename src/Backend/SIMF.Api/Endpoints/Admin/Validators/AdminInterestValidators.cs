@@ -34,7 +34,7 @@ public sealed class AdminCreateInterestRequestValidator
     }
 }
 
-/// <summary>Validates the admin-update-interest request (P9 — D-050).
+/// <summary>Validates the admin-update-interest request.
 /// Same shape as the create request plus the soft-delete flag.</summary>
 public sealed class AdminUpdateInterestRequestValidator
     : Validator<AdminUpdateInterestRequest>

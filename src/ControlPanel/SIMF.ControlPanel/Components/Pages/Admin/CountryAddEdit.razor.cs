@@ -26,7 +26,7 @@ public partial class CountryAddEdit
     private bool _busy;
     private string? _error;
 
-    // D-499 — the country's active delegates (head picker) + the current selection.
+    // The country's active delegates (head picker) + the current selection.
     private List<AdminCountryDelegateOption> _delegates = new();
     private AdminCountryDelegateOption? _selectedHead;
     private Guid? _initialHeadId;
@@ -52,7 +52,7 @@ public partial class CountryAddEdit
 
     protected override async Task OnInitializedAsync()
     {
-        // D-499 — only the Edit form picks a head (a country has no delegates until
+        // Only the Edit form picks a head (a country has no delegates until
         // it has an id + registrations).
         if (!IsEdit || Initial is null) { return; }
 
@@ -143,7 +143,7 @@ public partial class CountryAddEdit
             return null;
         }
 
-        // D-499 — the optional delegation date range (HTML date inputs post an
+        // The optional delegation date range (HTML date inputs post an
         // invariant yyyy-MM-dd string) and the head pointer.
         var arrival = ParseDate(_model.ArrivalDate);
         var departure = ParseDate(_model.DepartureDate);

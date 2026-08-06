@@ -24,13 +24,13 @@ public sealed record RecommendationEntry(
     string MatchReason,
     string MatchReasonArabic);
 
-/// <summary>D-170 — one interest the two profiles share.</summary>
+/// <summary>One interest the two profiles share.</summary>
 public sealed record MatchedInterest(
     Guid Id,
     string Name,
     string NameArabic);
 
-/// <summary>D-170 — the public response shape for
+/// <summary>The public response shape for
 /// <c>GET /api/v1/app/account/recommendations/meet-like-you</c>.</summary>
 public sealed record RecommendationsResponse(
     IReadOnlyList<RecommendationEntry> Matches);

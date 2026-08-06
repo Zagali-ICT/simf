@@ -29,13 +29,13 @@ namespace SIMF.Api.Endpoints.Account.Validators;
 public sealed class UpsertUserProfileRequestValidator
     : Validator<UpsertUserProfileRequest>
 {
-    // C4 (D-371) — the Saudi mobile standard: local 05XXXXXXXX or the
+    // The Saudi mobile standard: local 05XXXXXXXX or the
     // +9665XXXXXXXX international form of the same plan.
     private static readonly System.Text.RegularExpressions.Regex SaudiMobileShape =
         new(@"^(05\d{8}|\+9665\d{8})$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
 
-    // C4 (D-371) — international mobiles must be E.164: "+", a non-zero
+    // International mobiles must be E.164: "+", a non-zero
     // leading digit, 8–15 digits total.
     private static readonly System.Text.RegularExpressions.Regex E164Shape =
         new(@"^\+[1-9]\d{7,14}$",
@@ -105,7 +105,7 @@ public sealed class UpsertUserProfileRequestValidator
 
     public UpsertUserProfileRequestValidator()
     {
-        // D-190 — ProfileTypeId is optional. Only shape-check here
+        // ProfileTypeId is optional. Only shape-check here
         // (non-empty Guid when supplied); the existence /
         // IsActive / Visitor-scope check runs in the service against
         // the App DB (cross-context, FluentValidation is sync).
@@ -115,7 +115,7 @@ public sealed class UpsertUserProfileRequestValidator
                 "Profile type id is not a valid identifier.",
                 "معرّف نوع الملف الشخصي غير صالح.");
 
-        // B3 — D-221: الجهة. Required for every registrant (owner rule —
+        // الجهة. Required for every registrant (owner rule —
         // org mandatory across Web + App + CP). Shape-check only here
         // (non-null, non-empty Guid); the existence / IsActive check runs in
         // the service against the App DB (cross-context, FluentValidation is
@@ -125,7 +125,7 @@ public sealed class UpsertUserProfileRequestValidator
                 "Organisation is required.",
                 "الجهة مطلوبة.");
 
-        // D-611 (Wave B) — المنطقة is optional. Shape-check only here (non-empty
+        // المنطقة is optional. Shape-check only here (non-empty
         // Guid when supplied); the existence / IsActive check runs in the service
         // against the App DB (cross-context, FluentValidation is sync), exactly
         // like ProfileTypeId.
@@ -134,7 +134,7 @@ public sealed class UpsertUserProfileRequestValidator
                 "Region id is not a valid identifier.",
                 "معرّف المنطقة غير صالح.");
 
-        // B3 — D-221: الجنس. Must be a defined enum value (Unspecified is
+        // الجنس. Must be a defined enum value (Unspecified is
         // allowed — the field is optional).
         RuleFor(request => request.Gender)
             .IsInEnum()
@@ -142,7 +142,7 @@ public sealed class UpsertUserProfileRequestValidator
                 "The gender selection is not valid.",
                 "اختيار الجنس غير صالح.");
 
-        // P9 / D-684 — interests are saved in the SECOND step now (profile-first
+        // Interests are saved in the SECOND step now (profile-first
         // save), so the profile save may legitimately carry 0 interests; the
         // interests screen still requires 1-10 client-side. Server caps at 10 and
         // enforces distinct. Defence-in-depth "every id active" re-checks live on
@@ -206,7 +206,7 @@ public sealed class UpsertUserProfileRequestValidator
                 "Job title (Arabic) must be at most 100 characters.",
                 "يجب ألا يتجاوز المسمى الوظيفي (بالعربية) 100 حرف.");
 
-        // D-197 — date of birth is required, and the registrant must be at
+        // Date of birth is required, and the registrant must be at
         // least 18 years old (owner rule). The age check is leap-safe via
         // DateOnly.AddYears; eligible iff dob is on or before (today − 18y).
         RuleFor(request => request.DateOfBirth)
@@ -282,7 +282,7 @@ public sealed class UpsertUserProfileRequestValidator
                 "A mobile number is required (Saudi or international).",
                 "رقم الجوال مطلوب (سعودي أو دولي).");
 
-        // C4 (D-371) — standard shapes, separators stripped first.
+        // Standard shapes, separators stripped first.
         RuleFor(request => request.SaudiMobile)
             .Must(value => string.IsNullOrEmpty(value) || IsStandardSaudiMobile(value))
             .Bilingual(
@@ -306,7 +306,7 @@ public sealed class UpsertUserProfileRequestValidator
                 "أدخل رقم لوحة صحيح: حروف لوحات سعودية و/أو أرقام.");
     }
 
-    // D-197 — the registrant must be at least 18. "Today" is the SAUDI day: this
+    // The registrant must be at least 18. "Today" is the SAUDI day: this
     // read DateTime.UtcNow until 2026-08-01, and that clock is still on the previous
     // date until 03:00 Riyadh, so anyone registering in those first three hours
     // of their 18th birthday was told they were too young. Returns true for null
@@ -318,12 +318,12 @@ public sealed class UpsertUserProfileRequestValidator
         return dateOfBirth.Value <= today.AddYears(-18);
     }
 
-    // D-197 — standard Luhn mod-10 over all digits (the last is the check
+    // Standard Luhn mod-10 over all digits (the last is the check
     // digit). Saudi national ids and Iqama numbers are Luhn-valid; this is
     // the real check on top of the prefix/length regex. Public so the walk-in
-    // validator reuses the same check (D-459).
+    // validator reuses the same check.
     //
-    // D-824 — the implementation moved to SIMF.Common.IdentityDocument so the
+    // The implementation moved to SIMF.Common.IdentityDocument so the
     // offline badge upload can apply it too: that path runs in
     // SIMF.Infrastructure, which cannot reference SIMF.Api, and it calls the
     // registration service directly so no validator ever executes on it. This

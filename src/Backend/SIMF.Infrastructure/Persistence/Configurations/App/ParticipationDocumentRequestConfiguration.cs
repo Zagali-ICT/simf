@@ -6,7 +6,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>D-500 (Wave 5, الطلبات) — ParticipationDocumentRequest EF config.
 /// No counterparty FK (the document is issued off-band); RequestedByUserId is a
-/// logical FK to SimfUser on the Identity DB (no cross-DB relation, D-157).
+/// logical FK to SimfUser on the Identity DB.
 /// Mirrors <see cref="SpeakerMeetingRequestConfiguration"/>.</summary>
 internal sealed class ParticipationDocumentRequestConfiguration
     : IEntityTypeConfiguration<ParticipationDocumentRequest>

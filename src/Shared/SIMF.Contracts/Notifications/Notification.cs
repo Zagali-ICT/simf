@@ -24,7 +24,7 @@ public sealed record NotificationDto(
     DateTime CreatedAt,
     string? RelatedEntityType,
     Guid? RelatedEntityId,
-    // D-677 — appended at the END (wire contract is append-only); default null
+    // Appended at the END (wire contract is append-only); default null
     // keeps old positional construction + pre-migration rows source-compatible.
     string? ClickUrl = null,
     string? Group = null);

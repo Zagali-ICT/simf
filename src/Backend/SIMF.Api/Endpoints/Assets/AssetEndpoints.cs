@@ -12,7 +12,7 @@ using SIMF.Contracts.Assets;
 
 namespace SIMF.Api.Endpoints.Assets;
 
-/// <summary>D-357 — shared helpers for the generic media-asset endpoints.
+/// <summary>Shared helpers for the generic media-asset endpoints.
 /// Authorization is resolved per category through
 /// <see cref="AssetPermissionRegistry"/> and enforced imperatively (the route
 /// carries the category), so one endpoint family gates every entity by its own
@@ -111,7 +111,7 @@ internal static class AssetAuth
     }
 }
 
-/// <summary>D-357 — upload (or replace) a media asset's file. Multipart; the route
+/// <summary>Upload (or replace) a media asset's file. Multipart; the route
 /// carries the category + owner id; the kind + file ride the form. Gated by the
 /// category's write permission.</summary>
 public sealed class AssetUploadRequest
@@ -168,7 +168,7 @@ public sealed class UploadAssetEndpoint(IAssetService service)
     }
 }
 
-/// <summary>D-357 — set (or replace) a media asset to an external link. The route
+/// <summary>Set (or replace) a media asset to an external link. The route
 /// carries the category + owner id; the kind + URL ride the body.</summary>
 public sealed class SetAssetLinkRoute : SetAssetLinkRequest
 {
@@ -207,14 +207,14 @@ public sealed class SetAssetLinkEndpoint(IAssetService service)
     }
 }
 
-/// <summary>D-357 — route for the admin/public asset fetch endpoints.</summary>
+/// <summary>Route for the admin/public asset fetch endpoints.</summary>
 public sealed class AssetFetchRequest
 {
     public string Category { get; set; } = string.Empty;
     public Guid OwnerId { get; set; }
 }
 
-/// <summary>D-357 — admin preview of an asset (CP form / view / Media Library).
+/// <summary>Admin preview of an asset (CP form / view / Media Library).
 /// Gated by the category's view permission; streams bytes or 302s to the link.</summary>
 public sealed class AdminFetchAssetEndpoint(IAssetService service)
     : Endpoint<AssetFetchRequest>
@@ -245,7 +245,7 @@ public sealed class AdminFetchAssetEndpoint(IAssetService service)
     }
 }
 
-/// <summary>D-357 — public, anonymous asset serve (the Website + app render this).
+/// <summary>Public, anonymous asset serve (the Website + app render this).
 /// Streams the upload bytes or 302s to the external link.</summary>
 public sealed class PublicFetchAssetEndpoint(IAssetService service)
     : Endpoint<AssetFetchRequest>
