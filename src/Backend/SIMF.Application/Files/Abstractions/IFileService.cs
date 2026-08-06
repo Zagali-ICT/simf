@@ -47,6 +47,20 @@ public interface IFileService
     /// allowed (no exists-but-forbidden oracle for private files).</summary>
     Task<FileDownload> DownloadAsync(Guid id, FileAccessContext caller, CancellationToken cancellationToken = default);
 
+    /// <summary>True when <paramref name="id"/> still resolves to content that can
+    /// actually be served: an active row whose bytes are on disk, or an active
+    /// external link. False for an unknown / soft-deleted id, and — the case that
+    /// matters — for a row whose bytes have gone (a storage root that moved, a
+    /// cleaned working folder, a database restored past its files). Authorization is
+    /// NOT applied: this answers "does the content exist", never "may this caller
+    /// have it", so it must not be used to serve bytes. Cheap: no read, no decrypt.
+    ///
+    /// <para>It exists because a pointer column (<c>UserProfile.IdImageRelativePath</c>,
+    /// <c>SimfUser.AvatarRelativePath</c>, …) holding a non-empty id proves only that
+    /// something was uploaded once, which is why repair passes that test the pointer
+    /// for emptiness cannot heal a dangling one.</para></summary>
+    Task<bool> ContentExistsAsync(Guid id, CancellationToken cancellationToken = default);
+
     /// <summary>Soft-deletes a file AND removes the on-disk bytes (P7 — deletion
     /// honesty: a "deleted" file's bytes do not linger on disk). 404 if missing,
     /// 409 if the file is under a retention hold (<c>IsDeletable == false</c>).

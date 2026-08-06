@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.Auditing;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Identity;
@@ -343,6 +344,77 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
             .Select(p => p.IdImageRelativePath)
             .ToListAsync();
         Assert.Equal(pointersBefore, pointersAfter);
+    }
+
+    [Fact]
+    public async Task SeedAsync_repairs_a_demo_image_whose_bytes_have_gone()
+    {
+        // Regression — EnsureDemoAccountAssetsAsync was documented "self-healing" but
+        // skipped any account whose pointer was merely non-empty. A non-empty pointer
+        // proves something was uploaded ONCE, not that it is still there, so the two
+        // ways a store loses bytes underneath a healthy-looking pointer — the storage
+        // root moves / the working folder is cleaned (bytes gone, row intact), and a
+        // database is restored past its file store (row gone too) — both produced a
+        // pointer no re-seed could ever repair. That is the "can't connect store/file"
+        // 404 seen after a deployment reset. Both shapes are exercised here.
+        using var scope = _factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var files = scope.ServiceProvider.GetRequiredService<IFileService>();
+        var storage = scope.ServiceProvider.GetRequiredService<IFileStorageProvider>();
+
+        await seeder.SeedAsync();
+
+        var user = await users.FindByEmailAsync("visitor@simf.local");
+        Assert.NotNull(user);
+        var profile = await database.UserProfiles.SingleAsync(p => p.UserId == user!.Id);
+
+        var avatarBefore = user!.AvatarRelativePath;
+        var idDocumentBefore = profile.IdImageRelativePath;
+        Assert.False(string.IsNullOrEmpty(avatarBefore));
+        Assert.False(string.IsNullOrEmpty(idDocumentBefore));
+
+        // Shape 1 — the avatar's bytes vanish, its row survives (a moved root).
+        var avatarKey = await database.StoredFiles.AsNoTracking()
+            .Where(f => f.Id == Guid.Parse(avatarBefore!))
+            .Select(f => f.StorageKey)
+            .SingleAsync();
+        await storage.DeleteAsync(avatarKey!);
+
+        // Shape 2 — the ID document's row vanishes too (a restore past the store).
+        var orphanedId = Guid.NewGuid();
+        profile.IdImageRelativePath = orphanedId.ToString();
+        await database.SaveChangesAsync();
+
+        // The pre-condition the old guard could not see: both pointers still look
+        // perfectly healthy — non-empty, well-formed — and both resolve to nothing.
+        Assert.False(string.IsNullOrEmpty(user.AvatarRelativePath));
+        Assert.False(await files.ContentExistsAsync(Guid.Parse(avatarBefore!)));
+        Assert.False(await files.ContentExistsAsync(orphanedId));
+
+        await seeder.SeedAsync();
+
+        // Both are re-uploaded and re-pointed, and the new content is really there.
+        var repairedUser = await users.FindByEmailAsync("visitor@simf.local");
+        var repairedProfile = await database.UserProfiles
+            .AsNoTracking().SingleAsync(p => p.UserId == user.Id);
+
+        Assert.NotEqual(avatarBefore, repairedUser!.AvatarRelativePath);
+        Assert.NotEqual(orphanedId.ToString(), repairedProfile.IdImageRelativePath);
+        Assert.True(
+            await files.ContentExistsAsync(Guid.Parse(repairedUser.AvatarRelativePath!)),
+            "the re-seeded avatar must resolve to bytes that exist");
+        Assert.True(
+            await files.ContentExistsAsync(Guid.Parse(repairedProfile.IdImageRelativePath!)),
+            "the re-seeded ID document must resolve to bytes that exist");
+
+        // Still idempotent: a healthy pointer is left alone, so repair never becomes
+        // a re-upload on every restart.
+        await seeder.SeedAsync();
+        var afterThirdSeed = await database.UserProfiles
+            .AsNoTracking().SingleAsync(p => p.UserId == user.Id);
+        Assert.Equal(repairedProfile.IdImageRelativePath, afterThirdSeed.IdImageRelativePath);
     }
 
     [Fact]

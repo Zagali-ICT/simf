@@ -41,6 +41,14 @@ public interface IFileStorageProvider
     Task<FileReadStream?> OpenReadAsync(
         string storageKey, CancellationToken cancellationToken = default);
 
+    /// <summary>True when the bytes for a stored key are actually present. Cheap —
+    /// it never reads or decrypts the content, so it is safe to call on a large
+    /// file. Returns false when the key is missing or escapes the storage root,
+    /// i.e. exactly the cases where <see cref="ReadAsync"/> would return null, so a
+    /// caller can distinguish "the row points at nothing" from "the row is fine"
+    /// without paying for a full read.</summary>
+    Task<bool> ExistsAsync(string storageKey, CancellationToken cancellationToken = default);
+
     /// <summary>Deletes the file for a stored key (idempotent).</summary>
     Task DeleteAsync(string storageKey, CancellationToken cancellationToken = default);
 

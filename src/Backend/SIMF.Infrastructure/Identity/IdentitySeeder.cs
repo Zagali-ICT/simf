@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
 //        idempotency, D-377 baseline lookups + core content,
-//        D-390 2FA-disable-persists-across-reseed, D-585 demo-account matrix);
+//        D-390 2FA-disable-persists-across-reseed, D-585 demo-account matrix,
+//        demo-image repair when the bytes or the row have gone);
 //        SIMF.Api.Tests/DemoAccountSeedGateTests.cs (Round-1 #1 — demo seed is
 //        a no-op outside Development / with Seed:EnableDemoAccounts off);
 //        SIMF.Api.Tests/SuperAdminSeedFailureTests.cs (OP-SUPERADMIN-SEED — a
@@ -1384,11 +1385,16 @@ public sealed class IdentitySeeder(
     /// <c>SimfUser.AvatarRelativePath</c>) are the bare StoredFile ids, exactly as
     /// the upload endpoints write them.</para>
     ///
-    /// <para>Idempotent and self-healing: an account that already carries a pointer
-    /// is skipped, so a re-run never uploads twice and an already-seeded database
-    /// picks up only what is missing. Cross-DB safe — the App-side profile and the
-    /// Identity-side user are saved through their own contexts (D-157), never in one
-    /// transaction.</para></summary>
+    /// <para>Idempotent and self-healing: an account is re-seeded only when its
+    /// pointer is empty <b>or</b> no longer resolves to content, so a re-run never
+    /// uploads twice yet a <i>dangling</i> pointer is repaired. Testing the pointer
+    /// for emptiness alone is not enough — a non-empty pointer proves only that
+    /// something was uploaded once, so a database restored past its file store (or
+    /// a moved storage root) left every demo account permanently broken: the pointer
+    /// looked healthy, the seeder skipped it, and the image 404ed forever.</para>
+    ///
+    /// <para>Cross-DB safe — the App-side profile and the Identity-side user are
+    /// saved through their own contexts (D-157), never in one transaction.</para></summary>
     private async Task EnsureDemoAccountAssetsAsync(CancellationToken cancellationToken)
     {
         var seeded = 0;
@@ -1406,7 +1412,7 @@ public sealed class IdentitySeeder(
                 continue;
             }
 
-            if (string.IsNullOrEmpty(profile.IdImageRelativePath))
+            if (await NeedsReseedAsync(profile.IdImageRelativePath, cancellationToken))
             {
                 var idDocument = await fileService.UploadAsync(
                     new UploadFileCommand(
@@ -1419,7 +1425,7 @@ public sealed class IdentitySeeder(
                 seeded++;
             }
 
-            if (string.IsNullOrEmpty(user.AvatarRelativePath))
+            if (await NeedsReseedAsync(user.AvatarRelativePath, cancellationToken))
             {
                 var avatar = await fileService.UploadAsync(
                     new UploadFileCommand(
@@ -1434,5 +1440,16 @@ public sealed class IdentitySeeder(
 
         logger.LogInformation(
             "Demo account assets ensured (seeded {Count} missing image(s)).", seeded);
+    }
+
+    /// <summary>True when an image pointer needs re-seeding: it is empty, it is not
+    /// a stored-file id at all (a relative path left on a row that predates the
+    /// unified file store), or it is a well-formed id whose content has gone. The
+    /// last case is the one a plain emptiness test misses.</summary>
+    private async Task<bool> NeedsReseedAsync(string? pointer, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(pointer)) { return true; }
+        if (!Guid.TryParse(pointer, out var fileId)) { return true; }
+        return !await fileService.ContentExistsAsync(fileId, cancellationToken);
     }
 }

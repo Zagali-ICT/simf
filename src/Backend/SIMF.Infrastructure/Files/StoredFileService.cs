@@ -1,5 +1,7 @@
 // Tests: SIMF.Api.Tests/Files/FilesEndpointsTests.cs (upload/download/delete),
-//        SIMF.Api.Tests/Files/FileAuthorizationTests.cs (per-service authz + IDOR).
+//        SIMF.Api.Tests/Files/FileAuthorizationTests.cs (per-service authz + IDOR),
+//        SIMF.Api.Tests/IdentitySeederTests.cs (ContentExistsAsync — both the
+//        missing-bytes and the missing-row shapes, via the demo-image repair).
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -339,6 +341,21 @@ internal sealed class StoredFileService(
             ContentType: file.ContentType ?? "application/octet-stream",
             FileName: file.OriginalFileName,
             file.Service, policy.Tier, policy.Access, file.FileType);
+    }
+
+    public async Task<bool> ContentExistsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var file = await dbContext.StoredFiles.AsNoTracking()
+            .Where(f => f.Id == id && f.IsActive)
+            .Select(f => new { f.SourceType, f.StorageKey })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (file is null) { return false; }
+
+        // An external link owns no bytes here, so the row IS the content.
+        if (file.SourceType == FileSourceType.ExternalLink) { return true; }
+
+        return file.StorageKey is { Length: > 0 } key
+            && await storage.ExistsAsync(key, cancellationToken);
     }
 
     public async Task DeleteAsync(Guid id, Guid actorUserId, CancellationToken cancellationToken = default)

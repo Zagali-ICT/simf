@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/Files/FilesystemFileStorageProviderTests.cs
-//        (round-trip, sibling-prefix path guard, encrypt-at-rest, secure-erase).
+//        (round-trip, sibling-prefix path guard, encrypt-at-rest, secure-erase,
+//         ExistsAsync presence + no out-of-store existence oracle).
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Files.Abstractions;
@@ -86,6 +87,12 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
 
         var raw = await File.ReadAllBytesAsync(fullPath, cancellationToken);
         return encrypted ? _cipher.Decrypt(raw) : raw;
+    }
+
+    public Task<bool> ExistsAsync(string storageKey, CancellationToken cancellationToken = default)
+    {
+        var fullPath = ResolveSafe(storageKey);
+        return Task.FromResult(fullPath is not null && File.Exists(fullPath));
     }
 
     public async Task<StreamWriteResult> WriteStreamAsync(
