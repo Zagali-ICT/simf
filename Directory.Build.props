@@ -21,6 +21,27 @@
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditMode>all</NuGetAuditMode>
     <NuGetAuditLevel>low</NuGetAuditLevel>
+    <!--
+      Documentation generation exists here for ONE reason: it is what makes the
+      compiler check <see cref="..."/> targets. With it off, CS1574 can never
+      fire, and it never had - by 2026-08-06 that had accumulated 28 dangling
+      crefs across 21 files, six of them written days earlier by the comment
+      sweep that was supposed to be improving those files. Nothing could see
+      them. TreatWarningsAsErrors above now turns a broken reference into a
+      build failure.
+
+      The cosmetic doc-completeness warnings stay silent, because they are a
+      different question from correctness and there are 106 of them:
+        1591 - undocumented public member (most of the codebase, by design)
+        1573 - some parameters documented, not all
+        1587 - comment not on a language element
+      Removing any of these NoWarn entries is a deliberate cleanup, not a
+      routine change. The ones that catch real breakage - 1574 (unresolved
+      cref), 1580 / 1584 (malformed cref), 0419 (ambiguous cref) - are NOT
+      suppressed and must stay that way.
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;1573;1587</NoWarn>
   </PropertyGroup>
 
 </Project>
