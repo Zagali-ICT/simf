@@ -3,7 +3,7 @@ using SIMF.Contracts.Exhibitors;
 
 namespace SIMF.Application.Exhibitors.Abstractions;
 
-/// <summary>D-199 #3 — admin CRUD over exhibitors plus account provisioning.
+/// <summary>Admin CRUD over exhibitors plus account provisioning.
 /// The owner model: create the exhibitor name first, then provision login
 /// accounts under it.</summary>
 public interface IAdminExhibitorService
@@ -33,7 +33,7 @@ public interface IAdminExhibitorService
         Guid actorUserId, Guid exhibitorId, ProvisionExhibitorAccountRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-781 — attach an EXISTING exhibitor-typed account to this
+    /// <summary>Attach an EXISTING exhibitor-typed account to this
     /// exhibitor. Provisioning is the only other writer of
     /// <c>ExhibitorMembership</c>, so an account created through the generic
     /// Others pipeline had no membership and was locked out of the booth tools

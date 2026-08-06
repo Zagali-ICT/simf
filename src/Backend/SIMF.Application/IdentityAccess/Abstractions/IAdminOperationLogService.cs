@@ -4,7 +4,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// D-134 Sprint A — read-only viewer over the existing <c>OperationLogEntry</c>
+/// Read-only viewer over the existing <c>OperationLogEntry</c>
 /// table. The page reads only; writes are owned by the existing
 /// <c>IAuditLog</c> abstraction.
 ///

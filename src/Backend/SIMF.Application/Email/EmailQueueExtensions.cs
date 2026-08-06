@@ -7,7 +7,7 @@ using SIMF.Domain.Auditing;
 namespace SIMF.Application.Email;
 
 /// <summary>
-/// H23 — D-083: the H10 try / catch + EmailEnqueueFailed audit pattern
+/// The H10 try / catch + EmailEnqueueFailed audit pattern
 /// (D-065) was duplicated verbatim at four sites in
 /// <c>PasswordService</c> / <c>RegistrationService</c> /
 /// <c>SignInService</c>. Each repeat copied the same shape: try the

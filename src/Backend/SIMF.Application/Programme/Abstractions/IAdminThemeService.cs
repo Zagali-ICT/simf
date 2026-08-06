@@ -4,7 +4,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Application.Programme.Abstractions;
 
 /// <summary>
-/// D-134 Sprint B — admin CRUD over <see cref="SIMF.Domain.Programme.Theme"/>.
+/// Admin CRUD over <see cref="SIMF.Domain.Programme.Theme"/>.
 /// SIMF-FDS-004 §5.1. Themes are the top-level grouping the agenda uses;
 /// Sessions reference a theme via <c>ThemeId</c> in Sprint B's later
 /// commits.

@@ -1,6 +1,6 @@
 namespace SIMF.Application.Email;
 
-/// <summary>D-751 — one binary attachment on an outgoing email: the download file
+/// <summary>One binary attachment on an outgoing email: the download file
 /// name the recipient sees, the MIME content type (e.g. <c>application/zip</c>),
 /// and the raw bytes.</summary>
 public sealed record EmailAttachment(string FileName, string ContentType, byte[] Content);

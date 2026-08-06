@@ -3,7 +3,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Common.Abstractions;
 
-/// <summary>D-151 — admin CRUD over <c>Country</c>. Id is the ISO 3166-1
+/// <summary>Admin CRUD over <c>Country</c>. Id is the ISO 3166-1
 /// numeric code, manually assigned at create time (NOT IDENTITY).</summary>
 public interface IAdminCountryService
 {

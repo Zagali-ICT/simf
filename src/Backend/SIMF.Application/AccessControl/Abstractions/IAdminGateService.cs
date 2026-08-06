@@ -3,7 +3,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.AccessControl.Abstractions;
 
-/// <summary>D-148 — admin CRUD over <c>Gate</c> + per-gate assignments
+/// <summary>Admin CRUD over <c>Gate</c> + per-gate assignments
 /// and allowed profile types (SIMF-API-GATES-001 §6). Backed by
 /// <c>AdminGateService</c> in the Infrastructure layer.</summary>
 public interface IAdminGateService

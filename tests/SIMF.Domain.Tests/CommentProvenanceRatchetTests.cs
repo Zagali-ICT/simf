@@ -31,7 +31,7 @@ public sealed class CommentProvenanceRatchetTests
         { "src/Shared",                      1230 },
         { "src/ControlPanel",                 891 },
         { "src/Backend/SIMF.Api",             587 },
-        { "src/Backend/SIMF.Application",     530 },
+        { "src/Backend/SIMF.Application",     164 },
     };
 
     /// <summary>Layers that are swept and must stay at zero.</summary>

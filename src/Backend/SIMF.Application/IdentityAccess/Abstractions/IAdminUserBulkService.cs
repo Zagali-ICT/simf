@@ -6,7 +6,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// Admin-driven bulk operations on the user collection (D-044 b):
+/// Admin-driven bulk operations on the user collection:
 /// bulk-delete, XLSX export, XLSX import. R2 — D-075: split out of
 /// <c>IAdminAccountService</c> per Architecture SEV-1.2.
 /// </summary>
@@ -14,7 +14,7 @@ public interface IAdminUserBulkService
 {
     /// <summary>
     /// Soft-deletes one or many users by setting <c>AccountState = Disabled</c>,
-    /// revoking refresh tokens and rolling the security stamp (D-044 b).
+    /// revoking refresh tokens and rolling the security stamp.
     /// Self-delete and Administrator-vs-Administrator deletes are rejected
     /// silently per target (counted as <c>Skipped</c>) — the batch does not
     /// fail. One audit row per subject so SOC sees every deletion.
@@ -27,7 +27,7 @@ public interface IAdminUserBulkService
     /// <summary>
     /// Returns the bytes of an XLSX workbook with the selected users — when
     /// <c>Ids</c> is empty the export takes every user matching the
-    /// (optional) <see cref="SIMF.Common.GridQuery"/>. Audited (D-044 b).
+    /// (optional) <see cref="SIMF.Common.GridQuery"/>. Audited.
     /// </summary>
     Task<byte[]> ExportUsersAsync(
         Guid actorUserId,
@@ -35,7 +35,7 @@ public interface IAdminUserBulkService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Bulk-creates Admin users from the rows in an XLSX workbook (D-044 b).
+    /// Bulk-creates Admin users from the rows in an XLSX workbook.
     /// Duplicate-email rows are skipped with a per-row error; every other
     /// failure is reported in the response. Each newly-created user gets a
     /// 7-day invite email exactly like the single-add flow.
@@ -46,7 +46,7 @@ public interface IAdminUserBulkService
         CancellationToken cancellationToken = default);
 
     // ---------------------------------------------------------------------
-    // D-113 — type-scoped bulk operations for the Visitor / Other grids.
+    // Type-scoped bulk operations for the Visitor / Other grids.
     // The /admin/admins/* surface above stays untouched; these new methods
     // power /admin/visitors/* and /admin/others/*. The <paramref name="kind"/>
     // filter is the type-smuggling guard — any subject whose
@@ -117,7 +117,7 @@ public interface IAdminUserBulkService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-473 (#10) — bulk-generate placeholder badges by profile type + count
+    /// Bulk-generate placeholder badges by profile type + count
     /// (e.g. 10 VIP + 500 Normal). Each badge is an Approved visitor with default
     /// data (no real personal details) and a freshly minted QR; when
     /// <see cref="AdminBulkGenerateBadgesRequest.IsDelegate"/> is set the badges
@@ -131,7 +131,7 @@ public interface IAdminUserBulkService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-758 (#10 Phase 2) — the server-paged list of persisted bulk-badge batches
+    /// The server-paged list of persisted bulk-badge batches
     /// (<see cref="BulkGenerateBadgesAsync"/> runs), newest first. A revoked batch
     /// stays in the list with <c>IsActive = false</c>.
     /// </summary>
@@ -141,7 +141,7 @@ public interface IAdminUserBulkService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-758 (#10 Phase 2) — re-render the batch's QR pack and email it to the
+    /// Re-render the batch's QR pack and email it to the
     /// supplied organiser address (a fresh copy; the badges are unchanged). Throws
     /// 404 for an unknown batch, 400 for an invalid email or an empty batch.
     /// </summary>
@@ -151,7 +151,7 @@ public interface IAdminUserBulkService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-758 (#10 Phase 2) — revoke a batch: disable every account it minted
+    /// Revoke a batch: disable every account it minted
     /// (reusing the type-scoped bulk-delete path) and mark the batch inactive.
     /// Throws 404 for an unknown / already-revoked batch. Not a cross-DB
     /// transaction (D-157): the member accounts (Identity DB) are disabled first,

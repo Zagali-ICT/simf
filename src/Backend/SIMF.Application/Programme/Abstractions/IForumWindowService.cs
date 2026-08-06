@@ -1,6 +1,6 @@
 namespace SIMF.Application.Programme.Abstractions;
 
-/// <summary>D-753 — the forum's day boundary, derived from the authored
+/// <summary>The forum's day boundary, derived from the authored
 /// <c>ProgrammeDay</c> rows (MIN/MAX over their event-local <c>Date</c>). Meeting
 /// scheduling (admin-arranged business meetings + speaker availability windows) is
 /// bounded to these days so an admin cannot pick a date outside the event. This

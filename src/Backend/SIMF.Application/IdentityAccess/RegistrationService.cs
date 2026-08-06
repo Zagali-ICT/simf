@@ -67,7 +67,7 @@ public sealed class RegistrationService(
         var now = timeProvider.SimfNow();
         var existing = await accounts.FindByEmailAsync(request.Email);
 
-        // D-198 — enumeration-resistant sign-up. A brand-new email, a
+        // Enumeration-resistant sign-up. A brand-new email, a
         // restart of an unverified account, and an attempt against an
         // already-verified account all return the SAME SignUpResponse
         // shape, so sign-up never reveals whether an email is registered
@@ -91,9 +91,9 @@ public sealed class RegistrationService(
             DisplayName = request.Email,
             AccountState = AccountState.Registered,
             CreatedAt = now,
-            // D-373 — the email-OTP second factor is ON for every new visitor
+            // The email-OTP second factor is ON for every new visitor
             // account (owner rule); an admin may disable it per account via
-            // the CP. Previously off by default (D-033).
+            // the CP. Previously off by default.
             TwoFactorEnabled = true,
         };
 
@@ -222,7 +222,7 @@ public sealed class RegistrationService(
             AuditEvents.EmailVerificationSucceeded, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);
 
-        // D-111: welcome the user — in-app row visible the next time they
+        // Welcome the user — in-app row visible the next time they
         // sign in + a separate welcome email. Wrapped in TryDispatchAsync
         // so a notification failure never re-throws after the email is
         // already verified. No PreRenderedEmailHtml — the dispatcher
@@ -280,7 +280,7 @@ public sealed class RegistrationService(
         await EnsureVerificationCodeCapNotReachedAsync(user, now, cancellationToken);
 
         var code = await IssueVerificationCodeAsync(user, now, cancellationToken);
-        // H10 / H23 — D-065 / D-083: same shape as sign-up; helper owns
+        // Same shape as sign-up; helper owns
         // the failure-audit pattern.
         await emailQueue.TryEnqueueAsync(
             await BuildVerificationEmailAsync(user.Email!, code, cancellationToken),
@@ -290,7 +290,7 @@ public sealed class RegistrationService(
             auditLog: auditLog,
             logger: logger,
             cancellationToken: cancellationToken);
-        // D-099: same in-app trail as the initial sign-up dispatch.
+        // Same in-app trail as the initial sign-up dispatch.
         await notifications.TryDispatchAsync(new NotificationRequest
         {
             UserId = user.Id,
@@ -340,7 +340,7 @@ public sealed class RegistrationService(
         DateTime now,
         CancellationToken cancellationToken)
     {
-        // D-198 — the account was never verified, so no one owns it yet:
+        // The account was never verified, so no one owns it yet:
         // treat re-sign-up as "start over". The newly-typed password wins
         // and a fresh verification code is issued. The per-account code cap
         // (shared with resend) still applies so this path can't be abused to
@@ -363,7 +363,7 @@ public sealed class RegistrationService(
                 }
 
                 // Roll the security stamp so any access token minted against
-                // the previous credential is invalidated (H5 — D-060).
+                // the previous credential is invalidated.
                 await accounts.UpdateSecurityStampAsync(user, token);
                 user.UpdatedAt = now;
                 await accounts.UpdateAsync(user).EnsureSuccessAsync();
@@ -384,7 +384,7 @@ public sealed class RegistrationService(
         SimfUser user,
         CancellationToken cancellationToken)
     {
-        // D-198 — the email belongs to a real (already-verified) account.
+        // The email belongs to a real (already-verified) account.
         // We must not reveal that, and must not let a stranger's password or
         // a verification code touch the account. Email the OWNER a heads-up
         // and return the same generic response a fresh sign-up would.
@@ -408,7 +408,7 @@ public sealed class RegistrationService(
     /// <summary>
     /// Sends the verification code by email and drops the in-app "code
     /// sent" trail. Shared by the new-account and unverified-restart paths
-    /// (D-198). H10 / H23 — D-065 / D-083: TryEnqueueAsync owns the
+    /// TryEnqueueAsync owns the
     /// failure-audit pattern; D-099: the in-app row is visible after the
     /// user signs in.
     /// </summary>
@@ -442,7 +442,7 @@ public sealed class RegistrationService(
     /// Maps a failed account-creation / add-password result to the
     /// bilingual <see cref="DataValidationException"/> the sign-up surfaces
     /// shape their 400 from. Shared by the new-account and restart paths
-    /// (D-198).
+    ///.
     /// </summary>
     private static DataValidationException ToAccountCreationException(UserOperationResult result)
     {
@@ -490,7 +490,7 @@ public sealed class RegistrationService(
     }
 
     /// <summary>
-    /// D-735 (was H23 — D-083): resolves the verification email from the
+    /// Resolves the verification email from the
     /// admin-editable template (else the code-owned default) and fills
     /// {Code}/{ExpiryMinutes}. Caller pairs with `IEmailQueue.TryEnqueueAsync`
     /// which owns the failure audit.
@@ -502,7 +502,7 @@ public sealed class RegistrationService(
             EmailTokens.ForCode(code, CodeLifetime), cancellationToken);
 
     /// <summary>
-    /// D-198 — the heads-up sent to the OWNER of an existing verified
+    /// The heads-up sent to the OWNER of an existing verified
     /// account when someone attempts to sign up again with their email. It
     /// deliberately confirms no account detail; it only points a legitimate
     /// owner at sign-in / password-reset.

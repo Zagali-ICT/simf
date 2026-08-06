@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-// R4 — D-095: Infrastructure registers Application-internal use-case
+// Infrastructure registers Application-internal use-case
 // services (NotificationDispatcher, NotificationService, …) in its DI
 // composition root. Each Application service stays `internal sealed`
 // (it is not a public-API surface — the contract is the interface

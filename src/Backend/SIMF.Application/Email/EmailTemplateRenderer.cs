@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace SIMF.Application.Email;
 
-/// <summary>D-735 — the <c>{Token}</c> substitutor + bilingual composer shared by
+/// <summary>The <c>{Token}</c> substitutor + bilingual composer shared by
 /// the email-template resolver and the CP preview. Token syntax is a single
 /// brace pair around a name of letters/digits/underscore: <c>{Code}</c>.
 /// Substituted VALUES are HTML-encoded — the template author is trusted to write

@@ -1,6 +1,6 @@
 namespace SIMF.Application.AccessControl.Abstractions;
 
-/// <summary>D-148 — 24h idempotency replay store (SIMF-API-GATES-001 §9).</summary>
+/// <summary>24h idempotency replay store (SIMF-API-GATES-001 §9).</summary>
 public interface IScanIdempotencyStore
 {
     /// <summary>Look up a prior request under the given key + gate. Returns
@@ -16,7 +16,7 @@ public interface IScanIdempotencyStore
         long? scanId, CancellationToken cancellationToken = default);
 }
 
-/// <summary>D-148 — replay record (SIMF-API-GATES-001 §9).</summary>
+/// <summary>Replay record (SIMF-API-GATES-001 §9).</summary>
 public sealed record ScanIdempotencyRecord(
     string Key,
     Guid GateId,

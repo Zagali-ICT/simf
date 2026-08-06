@@ -4,7 +4,7 @@ using SIMF.Contracts.Programme;
 namespace SIMF.Application.MeetingRequests.Abstractions;
 
 /// <summary>
-/// D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests. A
+/// Delegation↔delegation (G2G) meeting requests. A
 /// delegate submits a request for their delegation to meet another invited
 /// country's delegation; the team reviews + Accepts/Rejects; on accept the
 /// requester is notified + emailed. Mirrors the speaker meeting-request service.

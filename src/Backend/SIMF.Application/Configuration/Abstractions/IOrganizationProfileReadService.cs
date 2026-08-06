@@ -2,7 +2,7 @@ using SIMF.Contracts.Organization;
 
 namespace SIMF.Application.Configuration.Abstractions;
 
-/// <summary>D-495 — the public, cached read-path over the singleton Organization
+/// <summary>The public, cached read-path over the singleton Organization
 /// Profile. Returns the projected public response plus the <c>Last-Modified</c>
 /// revalidation token (the row's last-write instant). Read-only; admin writes go
 /// through <see cref="IOrganizationProfileAdminService"/>, which calls

@@ -46,7 +46,7 @@ public sealed record UserOperationResult
 public sealed record UserOperationError(string Code, string Description);
 
 /// <summary>
-/// H20 — D-082: helpers for <see cref="UserOperationResult"/>. Application
+/// Helpers for <see cref="UserOperationResult"/>. Application
 /// callers that don't have a sensible fallback for a failed operation
 /// (most write-side paths after R3) call <c>.EnsureSuccessAsync()</c>
 /// directly on the repository task — a failure throws and propagates

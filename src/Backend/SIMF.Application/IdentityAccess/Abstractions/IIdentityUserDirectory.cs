@@ -6,7 +6,7 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
 /// Resolves Identity-owned user attributes (email, display name) for App-side
-/// services that must reference a user across the physical DB boundary (D-157).
+/// services that must reference a user across the physical DB boundary.
 /// The implementation queries ONLY <c>SimfIdentityDbContext</c>; callers keep
 /// their own <c>SIMF_App</c> query and merge the result in memory — never a
 /// cross-database JOIN, never a unit of work spanning both contexts.

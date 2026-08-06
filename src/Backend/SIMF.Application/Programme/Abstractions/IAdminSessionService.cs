@@ -3,7 +3,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Programme.Abstractions;
 
-/// <summary>D-165 (gap doc G3) — admin CRUD over <c>Session</c>
+/// <summary>Admin CRUD over <c>Session</c>
 /// (SIMF-FDS-004 §5.3 + PDF §2.9).</summary>
 public interface IAdminSessionService
 {
@@ -37,7 +37,7 @@ public interface IAdminSessionService
         Guid actorUserId, Guid id, SIMF.Common.Enums.SessionStatus status,
         CancellationToken cancellationToken = default);
 
-    /// <summary>P3.2b — D-232 (D-213): attach (or replace) the session's
+    /// <summary>Attach (or replace) the session's
     /// recording. The bytes are streamed to disk via
     /// <c>ISessionRecordingStorage</c>; only the metadata is persisted on the
     /// row. Orthogonal to <c>Status</c> — this does not change the lifecycle.</summary>
@@ -46,7 +46,7 @@ public interface IAdminSessionService
         string contentType, long sizeBytes,
         CancellationToken cancellationToken = default);
 
-    /// <summary>P3.2b — D-232: delete the session's recording (file + metadata).
+    /// <summary>Delete the session's recording (file + metadata).
     /// Idempotent when there is no recording.</summary>
     Task<AdminSessionDetail> DeleteRecordingAsync(
         Guid actorUserId, Guid id,

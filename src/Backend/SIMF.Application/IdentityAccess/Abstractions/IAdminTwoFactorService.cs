@@ -12,7 +12,7 @@ public interface IAdminTwoFactorService
     /// Wipes the target user's authenticator key + recovery codes + flips
     /// <c>TwoFactorEnabled</c> off, rolls the security stamp and revokes
     /// every refresh token. Audited with both actor and subject ids and a
-    /// mandatory free-text reason (D-041).
+    /// mandatory free-text reason.
     /// </summary>
     Task ResetTwoFactorAsync(
         Guid actorUserId,

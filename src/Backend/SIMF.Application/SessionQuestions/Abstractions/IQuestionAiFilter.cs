@@ -28,7 +28,7 @@ public interface IQuestionAiFilter
         CancellationToken cancellationToken = default);
 }
 
-/// <summary>P4.2 — D-236: the advisory verdict. <see cref="Verdict"/> is the
+/// <summary>The advisory verdict. <see cref="Verdict"/> is the
 /// short bucket persisted to <c>SessionQuestion.AiFilterVerdict</c>;
 /// <see cref="Flagged"/> lets the Committee queue highlight questions the
 /// filter is unsure about — advisory only, it never hides anything.</summary>

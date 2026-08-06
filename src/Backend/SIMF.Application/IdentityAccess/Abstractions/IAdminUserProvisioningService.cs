@@ -66,7 +66,7 @@ public interface IAdminUserProvisioningService
         GridQuery query,
         CancellationToken cancellationToken = default);
 
-    // -- P1.3 (D-214) — per-user Edit for Visitor / Other --------------------
+    // Per-user Edit for Visitor / Other --------------------
 
     /// <summary>
     /// Updates an existing Visitor's editable fields: login email,
@@ -121,14 +121,14 @@ public interface IAdminUserProvisioningService
     /// <summary>
     /// Creates a new user as a copy of an existing one — same display name,
     /// same UserType + RBAC roles, no password, fresh 7-day invite email
-    /// (D-044 b).
+    ///.
     /// </summary>
     Task<AdminCreateUserResponse> DuplicateUserAsync(
         Guid actorUserId,
         AdminDuplicateUserRequest request,
         CancellationToken cancellationToken = default);
 
-    // -- D-127 — walk-in / desk registration --------------------------------
+    // Walk-in / desk registration --------------------------------
 
     /// <summary>
     /// On-site walk-in registration for a Visitor or Other (drives the
@@ -153,7 +153,7 @@ public interface IAdminUserProvisioningService
     /// A mismatch rejects with <c>AdminProfileTypeInvalid</c> instead of
     /// silently routing the account to the wrong queue. Null leaves the
     /// guard off (legacy callers).</summary>
-    /// <summary>D-819: <paramref name="presetQrId"/> is the OFFLINE badge upload
+    /// <summary><paramref name="presetQrId"/> is the OFFLINE badge upload
     /// path. A desk that registered without a network already printed the badge,
     /// so the account must be stored under the QR id that badge encodes rather
     /// than a freshly minted one. Supplied only by the offline batch upload;

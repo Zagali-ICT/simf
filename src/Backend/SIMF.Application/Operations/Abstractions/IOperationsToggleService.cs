@@ -2,7 +2,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Operations.Abstractions;
 
-/// <summary>D-166 (gap doc G4) — read + admin-write surface for the
+/// <summary>Read + admin-write surface for the
 /// two singleton operations toggles (RegistrationGate + ArchiveVisibility).</summary>
 public interface IOperationsToggleService
 {

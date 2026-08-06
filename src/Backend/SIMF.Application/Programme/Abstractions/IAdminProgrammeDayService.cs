@@ -3,7 +3,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Programme.Abstractions;
 
-/// <summary>D-452 — admin CRUD over the <c>ProgrammeDay</c> rows (date + bilingual
+/// <summary>Admin CRUD over the <c>ProgrammeDay</c> rows (date + bilingual
 /// title; the logo rides the D-357 asset pipeline). Mirrors
 /// <see cref="IAdminSessionCategoryService"/>.</summary>
 public interface IAdminProgrammeDayService

@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Application.Ai.Abstractions;
 
-/// <summary>D-176 (gap doc G12) — the swappable AI back-end.
+/// <summary>The swappable AI back-end.
 /// Implementations: <c>EchoAiProvider</c> (deterministic offline
 /// stub for dev + tests) and <c>OpenAiProvider</c> (real HTTP
 /// integration; placeholder in this commit). New providers register
@@ -16,7 +16,7 @@ public interface IAiProvider
         AiProviderCall call, CancellationToken cancellationToken = default);
 }
 
-/// <summary>D-176 — provider call args (after template substitution).</summary>
+/// <summary>Provider call args (after template substitution).</summary>
 public sealed record AiProviderCall(
     string Model,
     string SystemPrompt,
@@ -24,7 +24,7 @@ public sealed record AiProviderCall(
     double Temperature,
     int MaxOutputTokens);
 
-/// <summary>D-176 — provider response.
+/// <summary>Provider response.
 ///
 /// <para>A18 (2026-07-27) — <paramref name="IsStub"/> is provider METADATA, not
 /// text: it is <c>true</c> only for the offline stub provider, which does not

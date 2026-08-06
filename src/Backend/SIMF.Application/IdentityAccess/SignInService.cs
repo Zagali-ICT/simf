@@ -92,7 +92,7 @@ public sealed class SignInService(
 
         await accounts.ResetAccessFailedCountAsync(user);
 
-        // H19 — D-080: account-state block fires BEFORE the password-change
+        // Account-state block fires BEFORE the password-change
         // gate (was reversed pre-H19 — Disabled/Registered users with the
         // flag set were getting an enumeration oracle via the more-specific
         // PasswordChangeRequired error, when they should hit the
@@ -114,14 +114,14 @@ public sealed class SignInService(
         // AUTH_WRONG_SURFACE_WEB and writes one SignIn.WrongSurface audit row.
         await EnforceAudienceAsync(user, roles, request.Audience, cancellationToken);
 
-        // H4 — D-059 + H19 — D-080 + D-206: a SimfUser with
+        // A SimfUser with
         // PasswordChangeRequired=true holds a seeded or admin-rotated credential
         // it must replace before any session is minted. This runs *after* the
         // audience gate so a wrong-surface caller hits AUTH_WRONG_SURFACE first
         // and cannot use the forced-change branch as an account-existence
         // oracle (the D-080 state-block ordering is likewise preserved above).
         //
-        // D-206: the Control Panel hands the operator a single-use
+        // The Control Panel hands the operator a single-use
         // password-change ticket (in place of the old
         // AUTH_PASSWORD_CHANGE_REQUIRED 403) so they can set a new password
         // in-flow and then sign in normally. The credential was already proven
@@ -230,7 +230,7 @@ public sealed class SignInService(
         {
             var tokens = await IssueTokensAsync(
                 user, cancellationToken, secondFactorCompleted: false);
-            // P10 — D-051: surface AccountStateInfo on the response when
+            // Surface AccountStateInfo on the response when
             // the user is non-Approved, and audit the guest sign-in
             // separately so SOC can spot it. The JWT itself also carries
             // the account_state claim, so 2FA-completed sign-ins are
@@ -278,7 +278,7 @@ public sealed class SignInService(
             return new SignInResponse(true, ticketValue, null);
         }
 
-        // H10 / H23 — D-065 / D-083: helper owns the failure-audit
+        // Helper owns the failure-audit
         // pattern shared across all four credential-flow dispatch sites.
         await emailQueue.TryEnqueueAsync(
             await BuildSignInOtpEmailAsync(user.Email!, otpCode!, cancellationToken),
@@ -681,7 +681,7 @@ public sealed class SignInService(
         switch (user.AccountState)
         {
             case AccountState.EmailVerified:
-                // D-198 — a verified user who has not yet submitted their
+                // A verified user who has not yet submitted their
                 // profile (EmailVerified only advances to PendingApproval on
                 // the first profile save — UserProfileService.UpsertMineAsync).
                 // Surfacing the state lets the client route them straight to
@@ -702,7 +702,7 @@ public sealed class SignInService(
                     RejectionReasonArabic: null,
                     StateChangedAt: user.StateChangedAt);
             case AccountState.Rejected:
-                // D-106: rejection text lives on UserProfile now. Fetch it
+                // Rejection text lives on UserProfile now. Fetch it
                 // (null when the row or the field is missing — the
                 // state-banner still renders, just without the reason).
                 var rejection = await userProfiles.GetRejectionTextAsync(
@@ -732,7 +732,7 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// H19 — D-080: blocks every token-mint path (second-factor verify,
+    /// Blocks every token-mint path (second-factor verify,
     /// recovery-code verify, OTP verify, refresh) when the user holds
     /// <c>PasswordChangeRequired=true</c>. Pre-H19 only the initial password
     /// step checked this — a holder of an existing MFA ticket or refresh
@@ -887,7 +887,7 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// D-735 (was H23 — D-083): resolves the OTP email from the admin-editable
+    /// Resolves the OTP email from the admin-editable
     /// template (else the code-owned default) and fills {Code}/{ExpiryMinutes}.
     /// Caller pairs it with `IEmailQueue.TryEnqueueAsync`.
     /// </summary>

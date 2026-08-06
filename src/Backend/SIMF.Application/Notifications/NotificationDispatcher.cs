@@ -30,7 +30,7 @@ internal sealed class NotificationDispatcher(
         NotificationRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-713 — opt-in one-per-(user, kind, entity) guard. When the caller asks
+        // Opt-in one-per-(user, kind, entity) guard. When the caller asks
         // to deduplicate and a matching notification already exists, skip the whole
         // dispatch (every channel) so a session-rating prompt never double-fires
         // across the hall-departure hook (GAP-A) and the clock-end worker. It lives

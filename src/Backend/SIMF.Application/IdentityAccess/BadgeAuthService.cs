@@ -43,7 +43,7 @@ internal sealed class BadgeAuthService(
     IAuditLog auditLog,
     ITransactionRunner transactionRunner,
     TimeProvider timeProvider,
-    // D-819 — gates badge activation for walk-in-minted accounts.
+    // Gates badge activation for walk-in-minted accounts.
     IOptionsMonitor<WalkInModeOptions> walkInMode,
     ILogger<BadgeAuthService> logger) : IBadgeAuthService
 {
@@ -51,7 +51,7 @@ internal sealed class BadgeAuthService(
     private const int MaxAttempts = 5;
     private const string PlaceholderEmailSuffix = "@simf.local";
 
-    // D-819 — the local-part the walk-in desk synthesizes when it registers
+    // The local-part the walk-in desk synthesizes when it registers
     // someone with no email (AdminAccountService.RegisterOnSiteAsync). Kept
     // distinct from the bulk-badge "badge-" prefix so the activation block
     // targets walk-ins without changing the shipped bulk-badge flow.
@@ -148,7 +148,7 @@ internal sealed class BadgeAuthService(
         }
         else
         {
-            // D-819 — a walk-in badge grants PHYSICAL ACCESS ONLY by default.
+            // A walk-in badge grants PHYSICAL ACCESS ONLY by default.
             //
             // This branch lets the QR holder nominate the address the code is
             // sent to, which is safe for a controlled bulk-badge batch but not
@@ -554,7 +554,7 @@ internal sealed class BadgeAuthService(
         || email.EndsWith(PlaceholderEmailSuffix, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// D-819 — true for an account minted by the WALK-IN desk with no real email
+    /// True for an account minted by the WALK-IN desk with no real email
     /// (<c>walkin-{guid}@simf.local</c>). Deliberately narrower than
     /// <see cref="IsPlaceholderEmail"/>: the pre-existing bulk-badge path
     /// (<c>badge-{guid}@…</c>) keeps its shipped activation behaviour, because

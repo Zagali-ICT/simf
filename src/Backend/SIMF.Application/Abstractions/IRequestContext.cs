@@ -17,7 +17,7 @@ public interface IRequestContext
     string? CorrelationId { get; }
 
     /// <summary>
-    /// D-109: the signed-in user id from the JWT / cookie claim; null when
+    /// The signed-in user id from the JWT / cookie claim; null when
     /// no user is bound to the request (seeder, background worker,
     /// anonymous request). Used by the row-audit interceptor to stamp
     /// the actor on every captured change without each service having
@@ -25,7 +25,7 @@ public interface IRequestContext
     /// </summary>
     Guid? ActorUserId { get; }
 
-    /// <summary>D-157: the signed-in actor's display name, read from
+    /// <summary>The signed-in actor's display name, read from
     /// the JWT's <c>display_name</c> claim. Null when no user is bound
     /// to the request. The row-audit interceptor and the audit log use
     /// this to snapshot the actor name into each log row so cross-DB

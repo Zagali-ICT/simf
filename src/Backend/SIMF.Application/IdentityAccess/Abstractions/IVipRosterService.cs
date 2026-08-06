@@ -4,7 +4,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// V-1 (D-429) — reads the VVIP/VIP welcome roster for the موج (Mawj)
+/// Reads the VVIP/VIP welcome roster for the موج (Mawj)
 /// integration and renders it as a downloadable CSV / Excel file. The roster is
 /// a cross-DB projection (D-157): VVIP/VIP profiles on SIMF_App joined on read
 /// with their owners on SIMF_Identity. Read-only — the export flows one way
@@ -32,12 +32,12 @@ public interface IVipRosterService
         CancellationToken cancellationToken = default);
 }
 
-/// <summary>V-1 (D-429) — the export formats the روster page offers.</summary>
+/// <summary>The export formats the روster page offers.</summary>
 public enum VipRosterExportFormat
 {
     Csv = 0,
     Xlsx = 1,
 }
 
-/// <summary>V-1 (D-429) — a rendered roster file ready to stream back.</summary>
+/// <summary>A rendered roster file ready to stream back.</summary>
 public sealed record VipRosterFile(byte[] Content, string ContentType, string FileName);

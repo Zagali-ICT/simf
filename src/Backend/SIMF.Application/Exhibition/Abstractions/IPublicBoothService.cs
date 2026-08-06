@@ -2,7 +2,7 @@ using SIMF.Contracts.Exhibition;
 
 namespace SIMF.Application.Exhibition.Abstractions;
 
-/// <summary>D-199 — public, anonymous read access to active booths
+/// <summary>Public, anonymous read access to active booths
 /// (Mockup page 22 + the 2D venue map). Mirrors IPublicDelegationService.</summary>
 public interface IPublicBoothService
 {

@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown,
-//        D-374 Me_profileComplete flip + male-without-photo, D-609
-//        DisplayName-placeholder-replaced + admin-name-preserved, D-611
+//        Me_profileComplete flip + male-without-photo,
+//        DisplayName-placeholder-replaced + admin-name-preserved,
 //        RegionId round-trip + optional + unknown/inactive → 400,
 //        DEF-PHN-003 mobile stored canonicalised [Saudi theory + international],
 //        DEF-PHN-004 mobile required / cannot be blanked / international-only OK)
@@ -26,15 +26,13 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// User self-service profile + encrypted ID-document storage (decisions
-/// D-046 b, P8 — D-049; renamed from <c>VisitorProfileService</c>). The
-/// actor identity is taken from the access token (the endpoint resolves
+/// User self-service profile + encrypted ID-document storage. The actor
+/// identity is taken from the access token (the endpoint resolves
 /// <c>sub</c>); every call operates on the actor's own row, so the
 /// service does not need an admin-vs-self check.
 ///
-/// <para>R4 — D-209: moved from <c>SIMF.Infrastructure.Identity</c>;
-/// persistence is delegated to <see cref="IUserProfileRepository"/> (which
-/// spans both DBs). This service keeps only the orchestration — validation,
+/// <para>Persistence is delegated to <see cref="IUserProfileRepository"/>
+/// (which spans both DBs). This service keeps only the orchestration — validation,
 /// the admin-wins precedence, the interest diff, the two-phase commit
 /// ordering, audit, and notification dispatch.</para>
 /// </summary>
@@ -65,7 +63,7 @@ internal sealed class UserProfileService(
         if (profile is null)
         {
             // Empty response — the user has not filled the form yet. The
-            // QR id lives on the profile now (D-106), so when no profile
+            // QR id lives on the profile, so when no profile
             // row exists yet the QR isn't available either; the page
             // will render the empty form without a QR until the user
             // saves the form.
@@ -83,7 +81,7 @@ internal sealed class UserProfileService(
         UpsertUserProfileRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-151 — resolve the wire-side code to the Country PK. The
+        // Resolve the wire-side code to the Country PK. The
         // validator already checked shape; here we enforce the existence
         // rule against the live Country table (in SimfAppDbContext).
         var nationalityId = await profiles.ResolveCountryIdAsync(request.NationalityCode, cancellationToken)
@@ -98,7 +96,7 @@ internal sealed class UserProfileService(
                 "The acting account was not found.",
                 "لم يتم العثور على الحساب.");
 
-        // D-190 — when the user self-picked a ProfileType on the
+        // When the user self-picked a ProfileType on the
         // sign-up screen, validate it exists, is active, AND belongs
         // to the Visitor scope (UserType=Visitor). Admin-scope rows
         // are never valid for a self-registering user. The
@@ -121,7 +119,7 @@ internal sealed class UserProfileService(
                     "The selected profile type is no longer active.",
                     "نوع الملف الشخصي المحدّد لم يعد مفعّلاً.");
             }
-            // R1 audit fix (D-725) — the sign-up picker
+            // The sign-up picker
             // (GET /app/account/profile-types) only offers rows where
             // IsAppRegisterable=true; the self-service write path MUST mirror
             // that server-side. Otherwise a direct POST could self-assign a
@@ -144,7 +142,7 @@ internal sealed class UserProfileService(
                     "The selected profile type cannot be self-picked.",
                     "لا يمكن اختيار نوع الملف الشخصي هذا ذاتيًا.");
             }
-            // C5 (D-371) — a self-registering visitor (audience side,
+            // A self-registering visitor (audience side,
             // IsForVisitor=true) is locked to the single seeded "Normal"
             // type; richer audience tiers (VVIP/VIP/...) are admin-assigned
             // only. Partner-side ("Other") picks stay free.
@@ -157,7 +155,7 @@ internal sealed class UserProfileService(
             }
         }
 
-        // B3 — D-221: validate the الجهة pick exists and is active. Cross-
+        // Validate the الجهة pick exists and is active. Cross-
         // context existence check (Organisation lives on the App DB), exactly
         // like the nationality / profile-type checks above.
         if (request.OrganisationId is { } organisationId
@@ -169,7 +167,7 @@ internal sealed class UserProfileService(
                 "الجهة المحددة غير صالحة.");
         }
 
-        // D-611 (Wave B): validate the المنطقة pick exists and is active, exactly
+        // Validate the المنطقة pick exists and is active, exactly
         // like the الجهة check above. The App-DB Region table backs the pick.
         if (request.RegionId is { } regionId
             && !await profiles.RegionExistsActiveAsync(regionId, cancellationToken))
@@ -200,11 +198,11 @@ internal sealed class UserProfileService(
         // already set (e.g. via /admin/others). Preserve it.
         profile ??= new UserProfile { UserId = actorUserId, CreatedAt = now };
 
-        // Two-photo split (D-431-follow-up) — the profile carries two distinct
+        // Two-photo split — the profile carries two distinct
         // images, each uploaded BEFORE this save:
         //   • The FACE photo (SimfUser.AvatarRelativePath, live capture) is HARD-
         //     required for MALE registrants here — the direct successor of the
-        //     D-431 male-photo gate that closed the save-then-bounce login loop
+        //     male-photo gate that closed the save-then-bounce login loop
         //     (the loop the owner reported was the male photo). Avatar upload
         //     does NOT seed a profile stub, so this gate does not interfere with
         //     the first-submit account-state transition below.
@@ -236,16 +234,16 @@ internal sealed class UserProfileService(
                 "يلزم التقاط صورة شخصية للوجه قبل حفظ ملف المسجِّل الذكر. التقط الصورة الشخصية ثم حاول مرة أخرى.");
         }
 
-        // D-373 — issue the human-friendly registration reference once
+        // Issue the human-friendly registration reference once
         // (SIMF-<year>-<8-digit sequence>); covers brand-new rows and any
-        // pre-D-373 / admin-stub rows that never received one.
+        // older / admin-stub rows that never received one.
         if (string.IsNullOrEmpty(profile.ReferenceNumber))
         {
             var sequenceValue = await profiles.NextRegistrationReferenceAsync(cancellationToken);
             profile.ReferenceNumber = $"SIMF-{now.Year}-{sequenceValue:D8}";
         }
 
-        // D-190 — admin-wins precedence for ProfileTypeId.
+        // Admin-wins precedence for ProfileTypeId.
         //   • Admin pre-assigned (existing profile.ProfileTypeId != null):
         //       keep the admin's pick; the user's self-pick is silently
         //       ignored on this surface. The admin override path lives
@@ -303,14 +301,14 @@ internal sealed class UserProfileService(
         profile.SaudiMobile = MobileNumber.NormalizeOptional(request.SaudiMobile);
         profile.InternationalMobile =
             MobileNumber.NormalizeOptional(request.InternationalMobile);
-        // C6 — D-371: رقم اللوحة, stored normalized (validator-checked shape;
+        // رقم اللوحة, stored normalized (validator-checked shape;
         // separators stripped so the column holds the canonical ≤7 chars).
         profile.PlateNumber = NormalisePlate(request.PlateNumber);
-        // B3 — D-221: الجهة + الجنس. D-611: المنطقة.
+        // الجهة + الجنس + المنطقة.
         profile.OrganisationId = request.OrganisationId;
         profile.RegionId = request.RegionId;
         profile.Gender = request.Gender;
-        // D-736 — "Show in Meet People Like You" toggle; null = no change.
+        // "Show in Meet People Like You" toggle; null = no change.
         if (request.ShowInMeetLikeYou.HasValue)
         {
             profile.ShowInMeetLikeYou = request.ShowInMeetLikeYou.Value;
@@ -347,8 +345,8 @@ internal sealed class UserProfileService(
             }
         }
 
-        // H2 — D-057: the profile save, the EmailVerified → PendingApproval
-        // auto-transition (P13 — D-054), and the revoke of every live
+        // The profile save, the EmailVerified → PendingApproval
+        // auto-transition, and the revoke of every live
         // refresh token for the user must all commit together. Without
         // the transaction, a crash between the profile save and the state
         // flip would leave the user stuck in EmailVerified (the UI never
@@ -358,7 +356,7 @@ internal sealed class UserProfileService(
         // expiry. Notifications stay outside the transaction (in-app
         // rows + email enqueue are not under this DB scope), so they
         // dispatch only after the commit succeeds.
-        // A9c follow-up (D-609) — decide whether to replace the email-placeholder
+        // Decide whether to replace the email-placeholder
         // DisplayName with the registrant's real name at profile completion. This
         // is the RegistrationService "DisplayName = Email … replaced at profile
         // completion" TODO: both names are validator-required (English preferred,
@@ -375,7 +373,7 @@ internal sealed class UserProfileService(
         var transitioned = false;
         await transactionRunner.ExecuteAsync(async token =>
         {
-            // D-167: the TransactionRunner only wraps the Identity DB
+            // The TransactionRunner only wraps the Identity DB
             // transaction; the App DB save is a separate physical
             // commit. Order: Identity first (state flip + token revoke);
             // App second (profile row + interests). If Identity throws,
@@ -396,7 +394,7 @@ internal sealed class UserProfileService(
             // never re-fires once the account has left EmailVerified.
             var accountDirty = false;
 
-            // A9c follow-up (D-609) — replace the email-placeholder DisplayName
+            // Replace the email-placeholder DisplayName
             // with the real name (set here so it commits with the profile via the
             // same accounts.UpdateAsync used for the state flip; no cross-DB txn).
             if (renameDisplayName)
@@ -434,7 +432,7 @@ internal sealed class UserProfileService(
             }
         }, cancellationToken);
 
-        // D-167: App-DB commit happens AFTER the Identity transaction
+        // App-DB commit happens AFTER the Identity transaction
         // succeeds, so an Identity-side rollback drops the profile
         // changes too (the test in UserProfileRollbackTests asserts
         // this). The window where Identity commits and App fails is
@@ -445,7 +443,7 @@ internal sealed class UserProfileService(
         // that race into a 409 DuplicateIdentity instead of an uncaught 500.
         await profiles.SaveProfileIdentityChangesAsync(cancellationToken);
 
-        // D-190 — the audit Detail now carries the ProfileTypeId so
+        // The audit Detail carries the ProfileTypeId so
         // the CP pending-profile review surface shows the user's
         // self-pick (or "none" when the user submitted without
         // picking and the admin has not yet assigned one).
@@ -477,7 +475,7 @@ internal sealed class UserProfileService(
     }
 
     /// <summary>
-    /// D-106: implements <see cref="IUserProfileService.GetRejectionTextAsync"/>.
+    /// Implements <see cref="IUserProfileService.GetRejectionTextAsync"/>.
     /// Reads the bilingual rejection text directly from UserProfile; the
     /// SignInService uses this for the AccountStateInfo state-banner.
     /// </summary>
@@ -485,9 +483,9 @@ internal sealed class UserProfileService(
         Guid userId, CancellationToken cancellationToken = default) =>
         profiles.GetRejectionTextAsync(userId, cancellationToken);
 
-    /// <summary>D-161 — implements <see cref="IUserProfileService.ResolveMobileAppRoleAsync"/>.
-    /// Admin short-circuits to <see cref="MobileAppRole.None"/>. D-186
-    /// folded Other accounts into Visitor: audience-side Visitors
+    /// <summary>Implements <see cref="IUserProfileService.ResolveMobileAppRoleAsync"/>.
+    /// Admin short-circuits to <see cref="MobileAppRole.None"/>. Other accounts
+    /// were folded into Visitor: audience-side Visitors
     /// (ProfileType.IsVisitor=true or no ProfileType) resolve to
     /// <see cref="MobileAppRole.Visitor"/>; partner-side Visitors
     /// (ProfileType.IsVisitor=false) inherit the assigned profile-type's
@@ -503,7 +501,7 @@ internal sealed class UserProfileService(
             return MobileAppRole.None;
         }
 
-        // D-194 — a partner ProfileType only confers Staff / Moderator
+        // A partner ProfileType only confers Staff / Moderator
         // authority once an admin has APPROVED the account. A self-
         // registering user who self-picks a partner profile type stays
         // PendingApproval (see UpsertMineAsync), so they resolve to the
@@ -533,12 +531,12 @@ internal sealed class UserProfileService(
     public async Task<bool> IsProfileCompleteAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {
-        // D-374 + the two-photo split (D-431-follow-up) — the server-side
+        // The two-photo split — the server-side
         // completeness rule: both names + at least one interest (the validator
         // demands 1–10 on every save) + the ID document (all registrants) + the
         // face photo (men only). The ID-document path lives on the App profile
         // (one projected row); the face photo is the avatar on the Identity user
-        // (D-157 cross-DB), read only when the registrant is male (women are
+        // (cross-DB), read only when the registrant is male (women are
         // exempt, so most reads still touch one DB). Runs on every /users/me
         // hydration (sign-in + app boot).
         var facts = await profiles.GetCompletenessFactsAsync(userId, cancellationToken);
@@ -553,8 +551,8 @@ internal sealed class UserProfileService(
         // VISITOR registration requirement. An operational partner-side account
         // (ProfileType.IsForVisitor=false — a gate operator, a moderator) is created
         // and vetted by an admin, so holding it to the audience rules diverted every
-        // such user to the visitor "Create profile" form on sign-in (routeAfterAuth,
-        // D-374) and they could never reach their own home. Names stay required for
+        // such user to the visitor "Create profile" form on sign-in (routeAfterAuth)
+        // and they could never reach their own home. Names stay required for
         // everyone.
         if (!facts.IsVisitorProfileType)
         {
@@ -639,8 +637,8 @@ internal sealed class UserProfileService(
                 "The acting account was not found.",
                 "لم يتم العثور على الحساب.");
 
-        // ID image follows the avatar contract (D-039): magic-byte and size are
-        // already checked at the endpoint. D-568 (S5): the bytes now land in the
+        // ID image follows the avatar contract: magic-byte and size are
+        // already checked at the endpoint. The bytes land in the
         // unified StoredFile store (App DB, owner = the user, Confidential/encrypted),
         // whose upload pipeline runs the malware scan + magic-byte allow-list +
         // canonical MIME + SHA-256 + audit — so the standalone scanner call is gone.
@@ -666,7 +664,7 @@ internal sealed class UserProfileService(
             cancellationToken);
         profile.IdImageRelativePath = result.Id.ToString();
         profile.UpdatedAt = timeProvider.SimfNow();
-        // D-167: UserProfile is on the App DB now.
+        // UserProfile is on the App DB.
         await profiles.SaveAppChangesAsync(cancellationToken);
 
         // IdDocument is Secret-tier + DeletableDefault:false, so the ordinary delete
@@ -688,7 +686,7 @@ internal sealed class UserProfileService(
     public async Task<UserIdDocumentImage?> ReadIdImageAsync(
         Guid actorUserId, CancellationToken cancellationToken = default)
     {
-        // D-568 (S5) — owner-scoped raw decrypt read from the unified StoredFile
+        // Owner-scoped raw decrypt read from the unified StoredFile
         // store (App DB, owner = the user). Self-read: the sub-claim gate on the
         // endpoint is the authorization; no PII audit (self-access, not a third-party
         // disclosure). AES-GCM integrity is intrinsic (a tampered blob → null).
@@ -714,7 +712,7 @@ internal sealed class UserProfileService(
                 "تعذّر العثور على الحساب المستهدف.");
         if (subject.UserType != expectedKind)
         {
-            // Same 404-on-mismatch policy as D-124 — no cross-kind enumeration.
+            // The same 404-on-mismatch policy used elsewhere — no cross-kind enumeration.
             throw new ApiException(
                 ErrorCodes.AdminUserNotFound, 404,
                 "The target account was not found.",
@@ -732,7 +730,7 @@ internal sealed class UserProfileService(
             profiles.Add(profile);
         }
 
-        // D-568 (S5) — store the bytes in the unified StoredFile store (App DB, owner
+        // Store the bytes in the unified StoredFile store (App DB, owner
         // = the subject, Confidential/encrypted). IFileService runs the full pipeline
         // (malware scan, magic-byte allow-list, canonical MIME, SHA-256, audit), so
         // the standalone scanner call is gone. IdImageRelativePath is the bare-Guid
@@ -744,7 +742,7 @@ internal sealed class UserProfileService(
             cancellationToken);
         profile.IdImageRelativePath = result.Id.ToString();
         profile.UpdatedAt = timeProvider.SimfNow();
-        // D-167: UserProfile is on the App DB now.
+        // UserProfile is on the App DB.
         await profiles.SaveAppChangesAsync(cancellationToken);
 
         // IdDocument is Secret-tier + DeletableDefault:false, so the ordinary delete
@@ -772,7 +770,7 @@ internal sealed class UserProfileService(
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
         if (subject is null || subject.UserType != expectedKind) { return null; }
 
-        // D-568 (S5) — owner-scoped raw decrypt read from the unified StoredFile store
+        // Owner-scoped raw decrypt read from the unified StoredFile store
         // (App DB, owner = the subject). The UserType guard above + the route's
         // Visitors.View gate are the authorization; AES-GCM integrity is intrinsic.
         var locator = await profiles.GetOwnerScopedFileAsync(
@@ -831,7 +829,7 @@ internal sealed class UserProfileService(
             profiles.Add(profile);
         }
 
-        // D-568 (S4) — store the bytes in the unified StoredFile store (App DB,
+        // Store the bytes in the unified StoredFile store (App DB,
         // owner = subject userId, encrypted at rest). IFileService runs the full
         // pipeline (malware scan, magic-byte allow-list, canonical MIME, SHA-256,
         // audit). VipPhotoRelativePath is repurposed as the bare-Guid pointer +
@@ -843,7 +841,7 @@ internal sealed class UserProfileService(
             cancellationToken);
         profile.VipPhotoRelativePath = result.Id.ToString();
         profile.UpdatedAt = timeProvider.SimfNow();
-        // D-167: UserProfile is on the App DB now.
+        // UserProfile is on the App DB.
         await profiles.SaveAppChangesAsync(cancellationToken);
 
         // Retire the prior file (best-effort — see RetirePriorFileAsync). VipPhoto is
@@ -870,7 +868,7 @@ internal sealed class UserProfileService(
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
         if (subject is null || subject.UserType != expectedKind) { return null; }
 
-        // D-568 (S4) — resolve the VIP photo from the unified StoredFile store
+        // Resolve the VIP photo from the unified StoredFile store
         // (App DB, owner-scoped). Raw decrypt read: the ExpectedKind guard above is
         // the authorization; the admin fetch route also gates on Visitors.View. The
         // bytes are AES-GCM encrypted at rest, so a tampered blob fails the auth tag
@@ -881,7 +879,7 @@ internal sealed class UserProfileService(
         var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
         if (bytes is null) { return null; }
 
-        // D-568 (S4, PII) — an admin READ of a VIP welcome photo is a personal-data
+        // PII — an admin READ of a VIP welcome photo is a personal-data
         // disclosure and must leave an audit trail, mirroring the ID-image read
         // (ReadIdImageForSubjectAsync). Only the actual byte disclosure is audited —
         // a 404 for a subject with no photo on file is not.
@@ -898,12 +896,12 @@ internal sealed class UserProfileService(
         return new VipPhotoImage(bytes, file.ContentType ?? "image/png");
     }
 
-    /// <summary>D-568 (S4/S3) — the VIP-photo / avatar / ID-image pointer columns now
+    /// <summary>The VIP-photo / avatar / ID-image pointer columns
     /// hold a StoredFile GUID. Returns it when parseable, else null.</summary>
     private static Guid? ParseFileId(string? pointer) =>
         Guid.TryParse(pointer, out var id) ? id : null;
 
-    /// <summary>D-568 (S4/S5) — best-effort retirement of a replaced owner-scoped
+    /// <summary>Best-effort retirement of a replaced owner-scoped
     /// file so one-active-per-owner holds. The new file is already the committed
     /// source of truth, so a failure here (e.g. a stale pointer whose
     /// <c>StoredFile</c> row is gone → 404) must NOT fail the upload and trigger an
@@ -958,7 +956,7 @@ internal sealed class UserProfileService(
             SaudiMobile = profile.SaudiMobile,
             InternationalMobile = profile.InternationalMobile,
             PlateNumber = profile.PlateNumber,
-            // C6 — D-459: surface both renderings of the stored canonical code.
+            // Surface both renderings of the stored canonical code.
             PlateNumberAr = SaudiPlate.ToArabic(profile.PlateNumber),
             PlateNumberEn = SaudiPlate.ToEnglish(profile.PlateNumber),
             ReferenceNumber = profile.ReferenceNumber,
@@ -978,7 +976,7 @@ internal sealed class UserProfileService(
             IsForVisitor = isForVisitor,
         };
 
-    // D-729 (owner item 15) + Build #13 — the account's ProfileType-derived flags
+    // The account's ProfileType-derived flags
     // for the app: IsVip (AllowsVipMeetingSlots, VVIP/VIP) and IsForVisitor
     // (audience vs "Other" tier). Resolved from the ProfileType in one lookup and
     // passed into ToResponse (like hasAvatar) rather than read off a nav, so a
@@ -1000,7 +998,7 @@ internal sealed class UserProfileService(
     private static string? NormaliseOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    /// <summary>C6 — D-459: the plate is stored as the canonical Latin "code"
+    /// <summary>The plate is stored as the canonical Latin "code"
     /// (Latin letters + Western digits, separators stripped) via the shared
     /// <see cref="SaudiPlate"/>. The Arabic and English renderings are derived
     /// on read (no duplicated persistence) — see <see cref="ToResponse"/>.</summary>

@@ -41,7 +41,7 @@ public sealed record GridImportSheet(IReadOnlyList<GridImportRow> Rows);
 /// (D-356). One hardened implementation (<c>ClosedXmlGridExcelImporter</c>)
 /// enforces the strict sheet name, the required-header check and the row cap —
 /// the size + ZIP-magic gate lives at the endpoint, matching the proven user
-/// import (D-045 H1).
+/// import.
 /// </summary>
 public interface IGridExcelImporter
 {

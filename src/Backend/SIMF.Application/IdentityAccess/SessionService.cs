@@ -93,7 +93,7 @@ public sealed class SessionService(
                 "هذا الحساب غير نشط.");
         }
 
-        // H19 — D-080: a refresh-token holder cannot mint new access tokens
+        // A refresh-token holder cannot mint new access tokens
         // after an admin sets PasswordChangeRequired. Pre-H19 the only check
         // was at the password step, so any live refresh token rotated forever.
         if (user.PasswordChangeRequired)
@@ -171,7 +171,7 @@ public sealed class SessionService(
 
         // Revoke every refresh token and roll the security stamp — this ends all
         // sessions, since the stamp is per-account and every access token carries
-        // it (SIMF-FDS-001 Amendment A.6, decision D-012).
+        // it.
         await refreshTokenRepository.RevokeAllForUserAsync(
             user.Id, timeProvider.SimfNow(), cancellationToken);
         await accounts.UpdateSecurityStampAsync(user);

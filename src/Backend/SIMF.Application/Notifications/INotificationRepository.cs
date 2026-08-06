@@ -6,7 +6,7 @@ using SIMF.Domain.Notifications;
 namespace SIMF.Application.Notifications;
 
 /// <summary>
-/// R4 — D-095: persistence seam for the in-app notification surface (P12 —
+/// Persistence seam for the in-app notification surface (P12 —
 /// D-053). Application services (<c>NotificationDispatcher</c>,
 /// <c>NotificationService</c>) talk to this contract; the Infrastructure
 /// implementation owns the EF query shapes.
@@ -20,7 +20,7 @@ public interface INotificationRepository
 {
     Task AddAsync(Notification notification, CancellationToken cancellationToken = default);
 
-    /// <summary>D-713 — true when a notification of <paramref name="kind"/> for
+    /// <summary>True when a notification of <paramref name="kind"/> for
     /// <paramref name="relatedEntityId"/> already exists for
     /// <paramref name="userId"/>. Backs the dispatcher's opt-in
     /// <see cref="NotificationRequest.DeduplicateByRelatedEntity"/> guard so the

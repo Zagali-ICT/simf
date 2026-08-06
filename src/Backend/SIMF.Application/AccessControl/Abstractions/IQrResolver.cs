@@ -3,7 +3,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Application.AccessControl.Abstractions;
 
 /// <summary>
-/// D-148 — resolves a 12-char QR id to the gate engine's view of the holder
+/// Resolves a 12-char QR id to the gate engine's view of the holder
 /// (SIMF-FDS-003 §5.6 step 3; plan §11.1 reserved seam). The constraint
 /// engine consumes <see cref="QrResolution"/>; the API resolver implementation
 /// queries the existing <c>UserProfile</c> table.
@@ -16,7 +16,7 @@ public interface IQrResolver
     Task<QrResolution?> ResolveAsync(string qrId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-821 — canonicalises a SCANNED code to the <c>UserProfile.QrId</c> the
+    /// Canonicalises a SCANNED code to the <c>UserProfile.QrId</c> the
     /// database actually stores.
     ///
     /// <para>A minted serial is returned normalised and unchanged. An encrypted
@@ -34,7 +34,7 @@ public interface IQrResolver
     string ToStoredQrId(string scanned);
 }
 
-/// <summary>D-148 — domain view of the visitor a QR resolved to. Carries
+/// <summary>Domain view of the visitor a QR resolved to. Carries
 /// every field the constraint engine needs to walk steps 6–11.</summary>
 public sealed record QrResolution(
     Guid UserProfileId,

@@ -3,7 +3,7 @@ using SIMF.Domain.IdentityAccess;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// R3.5 — D-094: TOTP / authenticator-token + 2FA-toggle surface for
+/// TOTP / authenticator-token + 2FA-toggle surface for
 /// the <see cref="SimfUser"/> aggregate. Split out of the 22-method
 /// <see cref="IUserAccountRepository"/> so the TOTP enrolment flow
 /// and the admin 2FA-reset endpoint depend only on the methods they

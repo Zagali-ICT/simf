@@ -30,7 +30,7 @@ public interface IProgrammeSessionService
     Task<PublicSessionDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default);
 
-    /// <summary>P3.2b — D-232 (D-213): the recording reference for a session
+    /// <summary>The recording reference for a session
     /// that is active, <see cref="SIMF.Common.Enums.SessionStatus.Published"/>,
     /// AND has a recording — else null. Used by the stream-token endpoint (to
     /// authorise minting) and the range-streaming endpoint (to locate the
@@ -55,7 +55,7 @@ public interface IProgrammeSessionService
     Task<PublicSessionSummary?> GetSessionSummaryAsync(
         Guid id, CancellationToken cancellationToken = default);
 
-    /// <summary>D-472 (#9) — the team-approved محضر for the session's host /
+    /// <summary>The team-approved محضر for the session's host /
     /// moderator ("ready for المحاور"), gated on <c>ApprovedAt</c> rather than the
     /// public publish. Throws 403 when <paramref name="callerUserId"/> is neither
     /// a moderator of the session (the <c>SessionModerator</c> grant) nor its host
@@ -65,7 +65,7 @@ public interface IProgrammeSessionService
         Guid callerUserId, Guid sessionId, CancellationToken cancellationToken = default);
 }
 
-/// <summary>P3.2b — D-232: a pointer to a published session's recording on
+/// <summary>A pointer to a published session's recording on
 /// disk (not a wire DTO — internal to the streaming endpoints).</summary>
 public sealed record SessionRecordingRef(
     string StoredFileName, string ContentType, string FileName);

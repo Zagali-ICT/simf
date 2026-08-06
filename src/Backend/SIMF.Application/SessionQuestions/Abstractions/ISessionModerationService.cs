@@ -5,7 +5,7 @@ using SIMF.Contracts.Sessions;
 namespace SIMF.Application.SessionQuestions.Abstractions;
 
 /// <summary>
-/// D-169 (gap doc G6) — moderator surface for one session's question
+/// Moderator surface for one session's question
 /// queue. Authorization is layered: the endpoint checks the
 /// <c>SessionModerator</c> table for (sessionId, callerUserId)
 /// existence (or Administrator-role bypass); the service trusts the

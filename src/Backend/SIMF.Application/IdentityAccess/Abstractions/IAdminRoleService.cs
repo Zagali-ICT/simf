@@ -4,7 +4,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// D-134 Sprint A — admin CRUD over the SimfRole table. Built on top of
+/// Admin CRUD over the SimfRole table. Built on top of
 /// the existing <c>SimfRole</c> + <c>Permission</c> + <c>RolePermission</c>
 /// entities — no schema change. The MVP surface covers list + create
 /// (custom only) + rename (custom only) + delete (custom only AND no

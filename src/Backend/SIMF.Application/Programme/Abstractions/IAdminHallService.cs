@@ -4,7 +4,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Application.Programme.Abstractions;
 
 /// <summary>
-/// D-134 Sprint B — admin CRUD over <see cref="SIMF.Domain.Programme.Hall"/>.
+/// Admin CRUD over <see cref="SIMF.Domain.Programme.Hall"/>.
 /// SIMF-FDS-004 §5.2. Halls host sessions; the Sessions module's hall
 /// picker reads from <see cref="ListAllAsync"/> with an
 /// <c>isActive=true</c> filter.

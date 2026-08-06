@@ -113,7 +113,7 @@ public interface IHallAttendanceService
 }
 
 /// <summary>
-/// D-819 — the outcome of the session-hall entry check (gate engine step 11.5).
+/// The outcome of the session-hall entry check (gate engine step 11.5).
 /// </summary>
 public enum HallEntryEligibility
 {

@@ -61,7 +61,7 @@ public sealed class PasswordService(
             if (recentCodes < MaxResetCodesPerWindow)
             {
                 var code = await IssueResetCodeAsync(user, now, cancellationToken);
-                // H10 / H23 — D-065 / D-083: the code row is persisted;
+                // The code row is persisted;
                 // the enqueue is a side-effect on a different scope.
                 // TryEnqueueAsync owns the failure-audit pattern so every
                 // credential-flow email-dispatch site uses the same shape.
@@ -73,7 +73,7 @@ public sealed class PasswordService(
                     auditLog: auditLog,
                     logger: logger,
                     cancellationToken: cancellationToken);
-                // D-099: in-app trail for the credential email — visible
+                // In-app trail for the credential email — visible
                 // after the user signs in.
                 await notifications.TryDispatchAsync(new NotificationRequest
                 {
@@ -178,7 +178,7 @@ public sealed class PasswordService(
         await AuditAsync(AuditEvents.PasswordResetCompleted, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
 
-        // D-111: security notice — in-app row + email confirming the reset.
+        // Security notice — in-app row + email confirming the reset.
         // Wrapped in TryDispatchAsync so a notification failure never
         // re-throws after the password is already changed.
         var resetTime = now.ToString("u",
@@ -222,7 +222,7 @@ public sealed class PasswordService(
                     user, request.CurrentPassword, request.NewPassword);
                 if (!result.Succeeded)
                 {
-                    // H11 — D-066: separate the wrong-current-password
+                    // Separate the wrong-current-password
                     // path from the policy-rejected-new-password path so
                     // SOC can spot brute-force-current attempts vs the
                     // user typing weak new passwords. Detail carries the
@@ -273,7 +273,7 @@ public sealed class PasswordService(
     {
         var now = timeProvider.SimfNow();
 
-        // D-206: the single-use ticket the sign-in password step issued is the
+        // The single-use ticket the sign-in password step issued is the
         // authorisation here — it proves the current password was already
         // verified at sign-in, so no password is re-collected. The checks
         // mirror SignInService.GetValidTicketAsync (kind, consumed, expiry);
@@ -434,7 +434,7 @@ public sealed class PasswordService(
     }
 
     /// <summary>
-    /// D-111 / D-206: the security notice — in-app row + email — confirming a
+    /// The security notice — in-app row + email — confirming a
     /// password change. Shared by the authenticated change path
     /// (<see cref="ChangePasswordAsync"/>) and the forced-change ticket path
     /// (<see cref="CompletePasswordChangeAsync"/>). Wrapped in
@@ -492,7 +492,7 @@ public sealed class PasswordService(
     }
 
     /// <summary>
-    /// H23 — D-083: returns the EmailMessage rather than enqueueing
+    /// Returns the EmailMessage rather than enqueueing
     /// directly so the caller pairs it with `IEmailQueue.TryEnqueueAsync`
     /// — one helper, one failure audit pattern across all four call
     /// sites (password reset, sign-up, resend verification, sign-in OTP).

@@ -3,7 +3,7 @@ using SIMF.Contracts.Ai;
 
 namespace SIMF.Application.Ai.Abstractions;
 
-/// <summary>D-176 (gap doc G12) — admin CRUD over <c>AiPrompt</c>.
+/// <summary>Admin CRUD over <c>AiPrompt</c>.
 /// All writes audit + bump <c>Version</c>.</summary>
 public interface IAdminAiPromptService
 {
@@ -32,13 +32,13 @@ public interface IAdminAiPromptService
     Task<GridPage<AdminAiInvocationRow>> ListInvocationsAsync(
         GridQuery query, CancellationToken cancellationToken = default);
 
-    /// <summary>D-179 — full payload (InputJson + OutputText) for SOC
+    /// <summary>Full payload (InputJson + OutputText) for SOC
     /// drill-down. The grid row deliberately omits these for the
     /// admin grid; this method is the audit-trail read.</summary>
     Task<AdminAiInvocationDetail?> GetInvocationAsync(
         Guid id, CancellationToken cancellationToken = default);
 
-    /// <summary>D-188 — append-only snapshot history for the given
+    /// <summary>Append-only snapshot history for the given
     /// AiPrompt id. Newest-first. Empty list when the prompt has
     /// never been updated past v1. Returns an empty list for an
     /// unknown id (no 404 — the caller already does the existence

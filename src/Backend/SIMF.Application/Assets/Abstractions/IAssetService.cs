@@ -4,7 +4,7 @@ using SIMF.Contracts.Assets;
 
 namespace SIMF.Application.Assets.Abstractions;
 
-/// <summary>D-357 — the one service every entity uses to attach / read / remove a
+/// <summary>The one service every entity uses to attach / read / remove a
 /// unified media <c>Asset</c>. Centralises validation (size / content-type /
 /// kind), out-of-row storage, the (Category, Owner) upsert, soft-delete and
 /// audit in a single place. The generic asset endpoints and the Media Library

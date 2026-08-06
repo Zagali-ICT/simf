@@ -8,7 +8,7 @@ public sealed record AccessToken(string Value, int ExpiresInSeconds);
 /// <summary>Issues the JWT access token for a signed-in user.</summary>
 public interface IJwtTokenService
 {
-    /// <summary>D-161 — the <paramref name="mobileAppRole"/> resolved
+    /// <summary>The <paramref name="mobileAppRole"/> resolved
     /// per <see cref="IUserProfileService.ResolveMobileAppRoleAsync"/>
     /// is carried on the JWT as the <c>mobile_app_role</c> claim so the
     /// Flutter app reads it directly without an extra round-trip.
@@ -32,7 +32,7 @@ public interface IJwtTokenService
         SIMF.Common.Enums.MobileAppRole mobileAppRole,
         bool? secondFactorCompleted = null);
 
-    /// <summary>P3.2b — D-232 (D-213): mints a short-lived token scoped to ONE
+    /// <summary>Mints a short-lived token scoped to ONE
     /// session recording, for the range-streaming endpoint. Distinct audience
     /// (<c>Jwt:StreamAudience</c>) + a <c>recording_session_id</c> claim — it
     /// carries no roles / permissions / security-stamp, so it cannot be replayed

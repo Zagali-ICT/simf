@@ -5,10 +5,10 @@ namespace SIMF.Application.Attendance.Abstractions;
 
 /// <summary>
 /// FR-506 (SIMF-SRS-001 §3.5; SIMF-FDS-003 §5.5) — read-only session-attendance
-/// reporting over the existing <c>HallAttendance</c> arrival records (D-241).
+/// reporting over the existing <c>HallAttendance</c> arrival records.
 /// No schema, no writes — every method is an aggregate read. All data lives in
 /// the App database; the attendee <c>UserId</c> is counted as an opaque Guid,
-/// never resolved against the Identity database (D-157).
+/// never resolved against the Identity database.
 /// </summary>
 public interface ISessionAttendanceService
 {

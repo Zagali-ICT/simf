@@ -4,11 +4,11 @@ using SIMF.Contracts.Exhibitors;
 namespace SIMF.Application.Exhibitors.Abstractions;
 
 /// <summary>
-/// D-426 — exhibitor ("Other" profile type) lead capture. An exhibitor scans a
+/// Exhibitor ("Other" profile type) lead capture. An exhibitor scans a
 /// visitor's entry-badge QR at their booth, captures the visitor to their
 /// "My Visitors" list, and gets the visitor's full card. Visitor-tier callers
 /// are rejected (403). Cards resolve live from the visitor's UserProfile — no
-/// PII snapshot (D-157).
+/// PII snapshot.
 /// </summary>
 public interface IExhibitorVisitorService
 {

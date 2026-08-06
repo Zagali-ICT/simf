@@ -29,7 +29,7 @@ public interface IMeetingActionTokenService
     Task AuditMintedAsync(
         Guid speakerMeetingRequestId, CancellationToken cancellationToken = default);
 
-    /// <summary>R4 (D-767) — stage ONE single-use delegation confirm token for a request
+    /// <summary>Stage ONE single-use delegation confirm token for a request
     /// into the shared DbContext WITHOUT saving, and return its ready-built landing-page
     /// URL (the same public <c>/meeting/confirm</c> page the speaker links use). The
     /// caller commits it in the SAME <c>SaveChanges</c> as the <c>AwaitingSpeaker</c>
@@ -54,7 +54,7 @@ public interface IMeetingActionTokenService
         string tokenSecret, CancellationToken cancellationToken = default);
 }
 
-/// <summary>D-717 — the two email-link URLs a mint produced. Empty when the public
+/// <summary>The two email-link URLs a mint produced. Empty when the public
 /// base URL is unconfigured.</summary>
 public sealed record MeetingActionLinks(string ApproveUrl, string RejectUrl)
 {

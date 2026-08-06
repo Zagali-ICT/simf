@@ -5,7 +5,7 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// R4 — D-209: persistence seam for <see cref="UserProfileService"/>. The
+/// Persistence seam for <see cref="UserProfileService"/>. The
 /// service genuinely spans both databases — the profile + its lookups
 /// (ProfileType, Interest, Country) live on the App DB, while the owning
 /// account + admin recipients live on the Identity DB — so this gateway
@@ -50,13 +50,13 @@ public interface IUserProfileRepository
     Task<string?> GetIdImagePathAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
-    /// <summary>V-1 (D-429) — the relative path of the stored VVIP/VIP welcome
+    /// <summary>The relative path of the stored VVIP/VIP welcome
     /// photo, or null when the profile has none. A one-column projection (no
     /// tracking) for the per-image read path.</summary>
     Task<string?> GetVipPhotoPathAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
-    /// <summary>D-568 (Wave C S4/S5) — the active <c>StoredFile</c>'s storage locator
+    /// <summary>The active <c>StoredFile</c>'s storage locator
     /// (key + content-type + encrypted flag) for a Confidential owner-scoped service
     /// (<see cref="FileService.VipPhoto"/>, <see cref="FileService.IdDocument"/>) + an
     /// owner, or null when none. Owner-scoped (<c>Service=service,
@@ -69,7 +69,7 @@ public interface IUserProfileRepository
     Task<ProfileTypeRole?> GetAssignedProfileTypeRoleAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
-    /// <summary>D-374 — the scalar facts behind the profile-completeness
+    /// <summary>The scalar facts behind the profile-completeness
     /// flag (one projected row, no entity/Interests hydration — this runs on
     /// every <c>/users/me</c> hydration), or null when no profile row exists.</summary>
     Task<ProfileCompletenessFacts?> GetCompletenessFactsAsync(
@@ -82,7 +82,7 @@ public interface IUserProfileRepository
     Task<ProfileTypeFacts?> FindProfileTypeAsync(
         Guid profileTypeId, CancellationToken cancellationToken = default);
 
-    /// <summary>D-373 — the next value of the registration-reference SQL
+    /// <summary>The next value of the registration-reference SQL
     /// sequence (concurrency-safe, monotonic). The service formats it as
     /// <c>SIMF-&lt;year&gt;-&lt;value:D8&gt;</c>.</summary>
     Task<long> NextRegistrationReferenceAsync(
@@ -107,12 +107,12 @@ public interface IUserProfileRepository
     Task<string> ResolveCountryCodeAsync(
         int id, CancellationToken cancellationToken = default);
 
-    /// <summary>B3 — D-221: true when the id is an active <c>Organisation</c>
+    /// <summary>True when the id is an active <c>Organisation</c>
     /// row. Used to validate the profile's الجهة pick at write time.</summary>
     Task<bool> OrganisationExistsActiveAsync(
         Guid id, CancellationToken cancellationToken = default);
 
-    /// <summary>D-611 (Wave B): true when the id is an active <c>Region</c>
+    /// <summary>True when the id is an active <c>Region</c>
     /// row. Used to validate the profile's المنطقة pick at write time.</summary>
     Task<bool> RegionExistsActiveAsync(
         Guid id, CancellationToken cancellationToken = default);
@@ -162,7 +162,7 @@ public sealed record ProfileTypeFacts(
 /// <summary>Audience flag + mobile role read off an assigned profile type.</summary>
 public sealed record ProfileTypeRole(bool IsVisitor, MobileAppRole MobileAppRole);
 
-/// <summary>D-374 — the facts the completeness rule reads (names + ≥1
+/// <summary>The facts the completeness rule reads (names + ≥1
 /// interest + the C7 male-photo rule), projected in one row.
 /// <para>BUG-018 (18-3) — <paramref name="IsVisitorProfileType"/> says whether the
 /// row belongs to an AUDIENCE registrant (no profile type yet, or one with

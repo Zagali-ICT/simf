@@ -2,14 +2,14 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Application.Email;
 
-/// <summary>D-735 — one editable placeholder a template exposes: its
+/// <summary>One editable placeholder a template exposes: its
 /// <see cref="Name"/> (used as <c>{Name}</c>), bilingual display labels for the
 /// CP editor's token chips, and a <see cref="Sample"/> value used to render the
 /// live preview.</summary>
 public sealed record EmailTemplateToken(
     string Name, string DisplayEn, string DisplayAr, string Sample);
 
-/// <summary>D-735 — the code-owned default for one transactional email: subject +
+/// <summary>The code-owned default for one transactional email: subject +
 /// bilingual body templates plus the tokens the body may reference. This is the
 /// always-present fallback the resolver uses when no active DB override exists,
 /// and the source of the CP editor's token chips, preview samples, and
@@ -21,7 +21,7 @@ public sealed record EmailTemplateDefinition(
     string BodyAr,
     IReadOnlyList<EmailTemplateToken> Tokens);
 
-/// <summary>D-735 — the fixed catalogue of transactional-email defaults. Mirrors
+/// <summary>The fixed catalogue of transactional-email defaults. Mirrors
 /// how the AI-prompt catalogue (and the V10 notification-template catalogue)
 /// works: the code owns the defaults, the DB owns only admin overrides. The
 /// subject / body strings reproduce the original hard-coded bilingual copy (the
@@ -38,7 +38,7 @@ public static class EmailTemplateCatalog
     private static readonly IReadOnlyList<EmailTemplateToken> CodeTokens =
         [CodeToken, ExpiryToken];
 
-    // D-751 — tokens for the bulk-badge cover note. No one-time code: the badges
+    // Tokens for the bulk-badge cover note. No one-time code: the badges
     // themselves ride the message as a ZIP attachment.
     private static readonly EmailTemplateToken CountToken =
         new("Count", "Badge count", "عدد الشارات", "8");

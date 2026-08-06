@@ -74,7 +74,7 @@ public interface IAdminUserApprovalService
         AdminBulkApprovalRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>P1.3 (D-214) — bulk approve a batch of pending
+    /// <summary>Bulk approve a batch of pending
     /// <see cref="UserType.Admin"/> (staff) accounts. The admin-queue
     /// counterpart of <see cref="BulkApproveVisitorsAsync"/>; same per-subject
     /// semantics (each via the single-approve path under the Admin scope).</summary>
@@ -83,7 +83,7 @@ public interface IAdminUserApprovalService
         AdminBulkApprovalRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-209 — bulk reject a batch of pending audience-side
+    /// <summary>Bulk reject a batch of pending audience-side
     /// <see cref="UserType.Visitor"/> users with one shared reason. Mirrors
     /// <see cref="BulkApproveVisitorsAsync"/>: each subject is rejected in its
     /// own step via the single-reject path (scope guard + state flip + token
@@ -94,7 +94,7 @@ public interface IAdminUserApprovalService
         AdminBulkRejectRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-209 — bulk reject partner-side (Other) pending accounts
+    /// <summary>Bulk reject partner-side (Other) pending accounts
     /// (Visitor users whose linked ProfileType.IsVisitor is false). Same
     /// shape as the visitor variant.</summary>
     Task<AdminBulkRejectResponse> BulkRejectOthersAsync(
@@ -102,7 +102,7 @@ public interface IAdminUserApprovalService
         AdminBulkRejectRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>P1.3 (D-214) — bulk reject a batch of pending
+    /// <summary>Bulk reject a batch of pending
     /// <see cref="UserType.Admin"/> (staff) accounts with one shared reason.
     /// The admin-queue counterpart of <see cref="BulkRejectVisitorsAsync"/>.</summary>
     Task<AdminBulkRejectResponse> BulkRejectAdminsAsync(

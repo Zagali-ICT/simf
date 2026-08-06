@@ -4,7 +4,7 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// Mints the opaque visitor QR-ID used at event entry (decision D-046).
+/// Mints the opaque visitor QR-ID used at event entry.
 /// One QR per <see cref="UserProfile"/>, generated the moment the
 /// owning account transitions to <c>AccountState.Approved</c>;
 /// idempotent (a second mint on an already-set profile is a no-op).

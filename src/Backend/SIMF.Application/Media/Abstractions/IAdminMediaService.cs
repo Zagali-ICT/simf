@@ -3,7 +3,7 @@ using SIMF.Contracts.Media;
 
 namespace SIMF.Application.Media.Abstractions;
 
-/// <summary>D-199 — admin CRUD over <c>MediaItem</c> (Mockup page 30).
+/// <summary>Admin CRUD over <c>MediaItem</c> (Mockup page 30).
 /// Mirrors <c>IAdminSpeakerService</c>: Guid key, soft-delete via
 /// <c>DeactivateAsync</c>, audit on every mutation.</summary>
 public interface IAdminMediaService

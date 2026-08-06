@@ -3,7 +3,7 @@ using SIMF.Contracts.Archive;
 
 namespace SIMF.Application.Archive.Abstractions;
 
-/// <summary>D-199 — admin CRUD over <c>ArchiveEdition</c>. One edition per
+/// <summary>Admin CRUD over <c>ArchiveEdition</c>. One edition per
 /// year; the service enforces year uniqueness and maps a clash to a 409.</summary>
 public interface IAdminArchiveService
 {

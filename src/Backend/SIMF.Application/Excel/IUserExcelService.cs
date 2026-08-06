@@ -3,7 +3,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Application.Excel;
 
 /// <summary>
-/// Builds and parses the user-management Excel workbook (decision D-044 b).
+/// Builds and parses the user-management Excel workbook.
 /// The workbook has one sheet "Users" with the columns Email, DisplayName,
 /// State, Role, TwoFactor, CreatedAt. Export rounds-trips through Import.
 /// </summary>

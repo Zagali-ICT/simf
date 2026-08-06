@@ -8,7 +8,7 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 /// <summary>
 /// Read-side query for the ProfileType lookup table — admin CP create
 /// pages populate their subtype dropdown from here (P7c — D-048). R2 —
-/// D-075: split out of <c>IAdminAccountService</c> per Architecture
+/// Split out of <c>IAdminAccountService</c> per Architecture
 /// SEV-1.2 (the read-side concern that was the odd one out among the
 /// command-shaped methods).
 /// </summary>

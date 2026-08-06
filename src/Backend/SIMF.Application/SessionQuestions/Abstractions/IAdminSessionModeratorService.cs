@@ -4,7 +4,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Application.SessionQuestions.Abstractions;
 
 /// <summary>
-/// D-169 (gap doc G6) — admin surface for assigning + revoking
+/// Admin surface for assigning + revoking
 /// per-session moderator grants. Distinct from any in-app role; this
 /// is a per-resource permission.
 /// </summary>

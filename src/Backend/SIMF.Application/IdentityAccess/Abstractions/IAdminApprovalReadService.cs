@@ -4,7 +4,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// D-124 — scoped read of a pending-approval user's full profile, used
+/// Scoped read of a pending-approval user's full profile, used
 /// by the Control Panel approve / reject flow to preview the application
 /// before the admin commits. The reads are intentionally narrow:
 ///
@@ -35,7 +35,7 @@ public interface IAdminApprovalReadService
         Guid subjectUserId,
         CancellationToken cancellationToken = default);
 
-    // -- D-126 — Q-G reversal: admin can read any visitor or Other profile -----
+    // Q-G reversal: admin can read any visitor or Other profile -----
     //
     // The walk-in registration desk (D-127) needs to display the full
     // registration for accounts in ANY state (Approved walk-ins, Rejected
@@ -47,18 +47,18 @@ public interface IAdminApprovalReadService
     // call writes a row-audit entry automatically via the D-109 SaveChanges
     // interceptor when the underlying SimfUser row materialises.
 
-    /// <summary>D-126 — any-state visitor profile read. Returns null when
+    /// <summary>Any-state visitor profile read. Returns null when
     /// the id is missing or the target is not a Visitor.</summary>
     Task<AdminUserProfileView?> GetVisitorProfileAsync(
         Guid subjectUserId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-126 — any-state Other profile read.</summary>
+    /// <summary>Any-state Other profile read.</summary>
     Task<AdminUserProfileView?> GetOtherProfileAsync(
         Guid subjectUserId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-130 — resolves a QR id (Crockford-base32, 12 chars) to a
+    /// <summary>Resolves a QR id (Crockford-base32, 12 chars) to a
     /// walk-in-shaped response — name, profile-type label + colour, the
     /// QR id itself — so the print-bag station can render and re-print
     /// the badge without re-typing the visitor's details. Returns null

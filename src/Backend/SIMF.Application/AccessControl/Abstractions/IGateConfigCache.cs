@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Application.AccessControl.Abstractions;
 
-/// <summary>D-148 — read-through cache for active gate configuration
+/// <summary>Read-through cache for active gate configuration
 /// (5-minute TTL per D-148 reasoning). Backed by <c>IMemoryCache</c>.
 /// The CP master-detail invalidates entries on Update / Deactivate.</summary>
 public interface IGateConfigCache
@@ -13,7 +13,7 @@ public interface IGateConfigCache
     void Invalidate(Guid gateId);
 }
 
-/// <summary>D-148 — read-only snapshot of the gate config the engine consumes.
+/// <summary>Read-only snapshot of the gate config the engine consumes.
 /// Allowed-profile-type ids are pre-filtered against active ProfileTypes per
 /// L-15 safe-default rule.</summary>
 public sealed record GateConfigSnapshot(

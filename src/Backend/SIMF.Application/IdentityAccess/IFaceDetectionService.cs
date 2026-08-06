@@ -1,7 +1,7 @@
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// C7 (D-371) — the server-side human-face gate on the profile image
+/// The server-side human-face gate on the profile image
 /// upload. The client runs an on-device check for instant feedback; this
 /// service is the authority (a client-side check is bypassable). The
 /// implementation must run fully offline (NCA posture — no external

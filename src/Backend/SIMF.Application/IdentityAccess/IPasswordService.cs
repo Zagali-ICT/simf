@@ -22,7 +22,7 @@ public interface IPasswordService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-206: completes a forced password change against the single-use ticket
+    /// Completes a forced password change against the single-use ticket
     /// the sign-in step issued for a Control Panel account holding a
     /// seeded/admin-rotated credential. The ticket authorises the change (the
     /// current password was proven at sign-in), so it is not re-collected.

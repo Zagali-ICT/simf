@@ -4,7 +4,7 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Application.Venue.Abstractions;
 
-/// <summary>P2.5 — D-230 (FR-605): the 2D venue map. Admin CRUD over nodes plus
+/// <summary>The 2D venue map. Admin CRUD over nodes plus
 /// the public read the Flutter app renders. Built on SimfAppDbContext.</summary>
 public interface IVenueMapService
 {

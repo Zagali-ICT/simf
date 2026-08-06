@@ -3,7 +3,7 @@ using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.Application.PublicRelations.Abstractions;
 
-/// <summary>D-199 — admin CRUD contract over News articles (PR / marketing).
+/// <summary>Admin CRUD contract over News articles (PR / marketing).
 /// Mirrors <c>IAdminDelegationService</c> / <c>IAdminSpeakerService</c>:
 /// server-paged list, get-by-id, create, update, soft-delete; every mutation
 /// is audited and stamped with the actor user id.</summary>

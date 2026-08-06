@@ -2,14 +2,14 @@ using SIMF.Contracts.Gates;
 
 namespace SIMF.Application.AccessControl.Abstractions;
 
-/// <summary>D-148 — the operator surface (SIMF-API-GATES-001 §7). Hosts
+/// <summary>The operator surface (SIMF-API-GATES-001 §7). Hosts
 /// the 13-step constraint engine for <c>POST /scans</c>.</summary>
 public interface IGateOperatorService
 {
     Task<IReadOnlyList<OperatorGateAssignment>> ListMyAssignmentsAsync(
         Guid operatorUserId, CancellationToken cancellationToken = default);
 
-    /// <summary>D-820 — the snapshot a scanner caches so it can judge a badge
+    /// <summary>The snapshot a scanner caches so it can judge a badge
     /// with no network: this operator's gates, each with the profile-type CODES
     /// it admits, plus the badge key when offline badges are armed. Kept off
     /// <see cref="ListMyAssignmentsAsync"/> deliberately — it carries a secret,
@@ -25,7 +25,7 @@ public interface IGateOperatorService
         Guid operatorUserId, Guid? gateId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-160 — cursor-paged list of scans at a single gate, for
+    /// <summary>Cursor-paged list of scans at a single gate, for
     /// the staff app's "who's at this gate" view (SIMF-API-GATES-001 §7.4).
     /// Returns null when the operator is not assigned to the gate
     /// (handled as 403 at the endpoint).</summary>
@@ -34,7 +34,7 @@ public interface IGateOperatorService
         CancellationToken cancellationToken = default);
 }
 
-/// <summary>D-160 — result envelope for
+/// <summary>Result envelope for
 /// <see cref="IGateOperatorService.ListGateVisitorsAsync"/>.</summary>
 public sealed record GateVisitorsListResult(
     GateVisitorsListResultKind Kind,
@@ -47,7 +47,7 @@ public enum GateVisitorsListResultKind
     NotAssigned = 2,
 }
 
-/// <summary>D-148 — the per-request envelope the engine consumes. Carries
+/// <summary>The per-request envelope the engine consumes. Carries
 /// the operator identity + the scan parameters + the correlation context
 /// the audit row needs.</summary>
 public sealed class GateScanContext
@@ -64,7 +64,7 @@ public sealed class GateScanContext
     public string? HeaderIdempotencyKey { get; init; }
 }
 
-/// <summary>D-148 — the engine's result envelope.</summary>
+/// <summary>The engine's result envelope.</summary>
 public sealed record GateScanResult(
     GateScanResultKind Kind,
     GateScanResponse Response,

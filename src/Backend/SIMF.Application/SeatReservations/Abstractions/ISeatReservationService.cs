@@ -21,7 +21,7 @@ public interface ISeatReservationService
         Guid sessionId, Guid actorUserId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-485 — join an OPEN-SEATING session (general admission): no seat
+    /// <summary>Join an OPEN-SEATING session (general admission): no seat
     /// is chosen, the reservation carries a null row/seat and is created Pending,
     /// just like a seat booking. Rejected with <c>SEAT_SELECTION_REQUIRED</c> if
     /// the session's effective mode is AssignedSeat.</summary>
@@ -109,7 +109,7 @@ public interface ISeatReservationService
 
     // -- Staff seating desk (D-771 — owner 2026-07-26) --
 
-    /// <summary>D-771 — "who sits here?": resolve one seat in a session to its
+    /// <summary>"who sits here?": resolve one seat in a session to its
     /// occupant (reference id, bilingual name, whether a photo can be streamed) or,
     /// for a VVIP protocol seat, to the administrator's manual guest hint.
     /// <c>Found = false</c> means the seat is free — a valid answer, not an
@@ -118,7 +118,7 @@ public interface ISeatReservationService
         Guid sessionId, string rowLabel, int seatNumber,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-771 — "where do I sit?": resolve a scanned badge QR id to the
+    /// <summary>"where do I sit?": resolve a scanned badge QR id to the
     /// holder's seat in this session. <c>Found = false</c> with the holder's identity
     /// filled in means the badge is valid but holds no seat here; an unknown badge
     /// throws <c>ATTENDEE_QR_UNKNOWN</c>.</summary>
@@ -126,7 +126,7 @@ public interface ISeatReservationService
         Guid sessionId, string qrId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-819 — records that a walk-in admitted to a session hall is occupying a
+    /// Records that a walk-in admitted to a session hall is occupying a
     /// place, so the seating desk and the occupancy counts can see them.
     ///
     /// <para>ADVISORY, and deliberately unlike every other reservation path

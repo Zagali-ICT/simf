@@ -3,7 +3,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Application.Notifications;
 
-/// <summary>D-677 — the single source of truth mapping each
+/// <summary>The single source of truth mapping each
 /// <see cref="NotificationKind"/> to its default group code + app-internal
 /// deep-link. <see cref="NotificationDispatcher"/> stamps every row from here
 /// when the dispatch request leaves the values null, so all ~16 existing call
