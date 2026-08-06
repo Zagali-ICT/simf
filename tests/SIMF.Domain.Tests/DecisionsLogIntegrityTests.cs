@@ -10,18 +10,25 @@ namespace SIMF.Domain.Tests;
 /// log's ability to resolve an id to exactly one decision.
 ///
 /// <para>Two real defects motivated this. Rows were twice written so that several
-/// decisions shared one line and only the first kept an ID cell, leaving four ids
-/// resolving to nothing. And three batches were numbered over ranges already in
-/// use, so 55 ids label more than one decision: 52 label two, and D-772, D-774
-/// and D-771 label four, five and seven. A citation of any of them is ambiguous,
-/// not merely untidy, and the date column does not always break the tie — 18 of
-/// the 55 collide on the same day. Both are frozen here as counted baselines:
-/// they may shrink, never grow.</para>
+/// decisions shared one line and only the first kept an ID cell, leaving those ids
+/// resolving to nothing. And batches were numbered over ranges already in use, so
+/// a set of ids each label more than one decision. A citation of one of those is
+/// ambiguous, not merely untidy, and the date column does not always break the tie.
+/// Both are frozen below as baselines: they may shrink, never grow.</para>
+///
+/// <para>The baselines are the only place a count belongs. Prose that restates a
+/// measurement drifts away from it — that is the whole reason source comments no
+/// longer carry decision ids — so the numbers live in the arrays below, where a
+/// change to the log fails the build instead of quietly making a sentence false.</para>
 /// </summary>
 public sealed class DecisionsLogIntegrityTests
 {
+    // Three digits is the usual shape, but two rows carry a letter suffix
+    // (D-509a, D-133b) for a follow-up to an existing decision, and the id space
+    // will reach four digits. Matching only D-\d{3} made those rows invisible to
+    // every assertion here, which is the one thing a guard must never be.
     private static readonly Regex RowStart =
-        new(@"^\|\s*(?<id>D-\d{3})\s*\|\s*(?<date>\d{4}-\d{2}-\d{2})\s*\|", RegexOptions.Compiled);
+        new(@"^\|\s*(?<id>D-\d{3,}[a-z]?)\s*\|\s*(?<date>\d{4}-\d{2}-\d{2})\s*\|", RegexOptions.Compiled);
 
     // A second date cell after the first is the signature of the merged-row
     // defect: two decisions concatenated onto one line, the later one losing its
@@ -30,13 +37,14 @@ public sealed class DecisionsLogIntegrityTests
         new(@"\|\s*\d{4}-\d{2}-\d{2}\s*\|", RegexOptions.Compiled);
 
     /// <summary>Ids that label more than one decision, measured 2026-08-06.
-    /// Renumbering one side would be worse than the ambiguity it removes: 554
-    /// references across 161 tracked files cite one of these ids, plus commit
-    /// messages that cannot be rewritten at all, and every one of them would then
-    /// resolve confidently to the decision it does not mean. An ambiguous citation
+    /// Renumbering one side would be worse than the ambiguity it removes: hundreds
+    /// of references across the tree cite one of these ids, plus commit messages
+    /// that cannot be rewritten at all, and every one of them would then resolve
+    /// confidently to the decision it does not mean. An ambiguous citation
     /// announces itself; a redirected one does not. So the set is recorded rather
-    /// than resolved. Shrinking it is welcome; growing it means a new batch was
-    /// numbered over an existing one.</summary>
+    /// than resolved. Shrinking it is welcome; growing it — a new id, or one of
+    /// these gaining another row — means a batch was numbered over an existing
+    /// range.</summary>
     private static readonly string[] KnownCollidingIds =
     [
         "D-587", "D-588", "D-589", "D-590", "D-591", "D-592", "D-593", "D-594", "D-595",
@@ -47,6 +55,17 @@ public sealed class DecisionsLogIntegrityTests
         "D-644", "D-645", "D-646", "D-647", "D-648", "D-649", "D-650", "D-756",
         "D-760", "D-761", "D-771", "D-772", "D-773", "D-774",
     ];
+
+    /// <summary>Every id above carries two rows except these three. Without a
+    /// per-id count the set comparison alone would let an already-colliding id
+    /// gain an eighth row silently, which is the same defect the set is meant to
+    /// catch — only worse, because the id already looks accounted for.</summary>
+    private static readonly Dictionary<string, int> KnownCollisionRowCounts = new()
+    {
+        ["D-771"] = 7,
+        ["D-772"] = 4,
+        ["D-774"] = 5,
+    };
 
     [Fact]
     public void Every_decision_row_carries_its_own_id_and_date()
@@ -69,15 +88,22 @@ public sealed class DecisionsLogIntegrityTests
     [Fact]
     public void No_new_id_labels_two_different_decisions()
     {
-        var colliding = Rows()
+        var rowCounts = Rows()
             .GroupBy(row => row.Match.Groups["id"].Value)
             .Where(group => group.Count() > 1)
-            .Select(group => group.Key)
-            .OrderBy(id => id, StringComparer.Ordinal)
-            .ToArray();
+            .ToDictionary(group => group.Key, group => group.Count());
 
-        var added = colliding.Except(KnownCollidingIds).ToArray();
-        var resolved = KnownCollidingIds.Except(colliding).ToArray();
+        var added = rowCounts.Keys.Except(KnownCollidingIds)
+            .OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        var resolved = KnownCollidingIds.Except(rowCounts.Keys)
+            .OrderBy(id => id, StringComparer.Ordinal).ToArray();
+
+        var grown = rowCounts
+            .Where(entry => KnownCollidingIds.Contains(entry.Key)
+                            && entry.Value > ExpectedRowCount(entry.Key))
+            .Select(entry => $"{entry.Key} ({ExpectedRowCount(entry.Key)} → {entry.Value})")
+            .OrderBy(text => text, StringComparer.Ordinal)
+            .ToArray();
 
         Assert.True(
             added.Length == 0,
@@ -85,6 +111,14 @@ public sealed class DecisionsLogIntegrityTests
             + "ambiguous: " + string.Join(", ", added)
             + ". A new decision must take the next UNUSED id — check the top of the "
             + "table, not the top of your branch.");
+
+        Assert.True(
+            grown.Length == 0,
+            "These ids already labelled several decisions and have now gained "
+            + "another, so every existing citation of them got harder to resolve: "
+            + string.Join(", ", grown)
+            + ". Being on the known list is a record of past damage, not a licence "
+            + "to add more.");
 
         Assert.True(
             resolved.Length == 0,
@@ -98,13 +132,13 @@ public sealed class DecisionsLogIntegrityTests
     {
         // The table is maintained newest-first, so the first row should also carry
         // the largest id. When it does not, a branch has numbered backwards into
-        // territory another branch already used - which is how the 54 collisions
-        // above were created in the first place.
+        // territory another branch already used - which is how every collision on
+        // the known list above was created in the first place.
         var rows = Rows().ToList();
         Assert.NotEmpty(rows);
 
-        var first = int.Parse(rows[0].Match.Groups["id"].Value[2..]);
-        var highest = rows.Max(row => int.Parse(row.Match.Groups["id"].Value[2..]));
+        var first = NumericId(rows[0].Match.Groups["id"].Value);
+        var highest = rows.Max(row => NumericId(row.Match.Groups["id"].Value));
 
         Assert.True(
             first == highest,
@@ -112,6 +146,23 @@ public sealed class DecisionsLogIntegrityTests
             + $"D-{highest:000}. Newest-first ordering is what makes \"take the next "
             + "id\" a one-glance operation; break it and the next author picks a "
             + "number that is already taken.");
+    }
+
+    private static int ExpectedRowCount(string id) =>
+        KnownCollisionRowCounts.TryGetValue(id, out var count) ? count : 2;
+
+    // "D-509a" → 509. Comparing ids as strings would rank D-999 above D-1000, so
+    // the digits are parsed and any follow-up suffix dropped.
+    private static int NumericId(string id)
+    {
+        var digits = id.AsSpan(2);
+        var length = 0;
+        while (length < digits.Length && char.IsAsciiDigit(digits[length]))
+        {
+            length++;
+        }
+
+        return int.Parse(digits[..length]);
     }
 
     private static IEnumerable<(string Line, int Number, Match Match)> Rows()
