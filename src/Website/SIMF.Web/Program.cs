@@ -7,12 +7,12 @@ using SIMF.Web.Endpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 // Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
-// variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
-// the prefix, so SIMF_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT
-// stays un-prefixed (the host reads it before configuration sources load). (D-355)
+// variables (deploy/set-env.template.ps1). This source strips the prefix, so
+// SIMF_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT stays
+// un-prefixed — the host reads it before configuration sources load.
 builder.Configuration.AddEnvironmentVariables("SIMF_");
 
-// P6 — per-project log files under {Storage:LogDirectory}/SIMF.Web/log-{Date}.log.
+// Per-project log files under {Storage:LogDirectory}/SIMF.Web/log-{Date}.log.
 builder.Host.UseSerilog((context, configuration) =>
 {
     var logDir = context.Configuration["Storage:LogDirectory"] ?? "logs";
@@ -30,7 +30,7 @@ builder.Host.UseSerilog((context, configuration) =>
                 + "[{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
 });
 
-// Razor components — server-side rendered. D-774 — the public Website is
+// Razor components — server-side rendered. The public Website is
 // information-only, so the single interactive Server island left is the
 // anonymous token-addressed /meeting/confirm page. Everything else is SSR.
 builder.Services.AddRazorComponents()
@@ -46,7 +46,7 @@ builder.Services.AddMemoryCache();
 // SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
 // certificate on the server-to-server API calls (the API uses a self-signed
 // cert whose name does not match the host). Default false → normal TLS
-// validation, so dev and any other environment are unaffected. (D-355)
+// validation, so dev and any other environment are unaffected.
 var allowSelfSignedApiCert =
     builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
 Func<HttpMessageHandler> apiPrimaryHandler = () =>
@@ -67,20 +67,20 @@ Func<HttpMessageHandler> apiPrimaryHandler = () =>
 var apiBaseUri = SimfApiBaseAddress.Resolve(
     builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
 
-// The typed client for the SIMF anonymous public-read endpoints (D-199).
+// The typed client for the SIMF anonymous public-read endpoints.
 // Anonymous, so no bearer token; BaseAddress only — the public endpoints do
 // not require an X-App-Key header in this build.
 builder.Services.AddHttpClient<SimfPublicClient>(client => client.BaseAddress = apiBaseUri)
     .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 
-// D-755 — resolves the forum event dates from the public OrganizationProfile
-// (cached) and formats the shared bilingual range for the marketing pages, so the
-// date is driven by CP config instead of a hardcoded resx literal.
+// Resolves the forum event dates from the public OrganizationProfile (cached) and
+// formats the shared bilingual range for the marketing pages, so the date is
+// driven by CP config instead of a hardcoded resx literal.
 builder.Services.AddScoped<ForumDates>();
 
-// D-756 — resolves the hero-section background video from the public
-// OrganizationProfile (cached) so the landing hero plays the CP-configured video
-// instead of the bundled hero-video.mp4 asset.
+// Resolves the hero-section background video from the public OrganizationProfile
+// (cached) so the landing hero plays the CP-configured video instead of the
+// bundled hero-video.mp4 asset.
 builder.Services.AddScoped<HeroMedia>();
 
 // Resolves the public past editions (cached) shared by the /archive page cards and
@@ -117,7 +117,7 @@ app.Use(async (context, next) =>
         + "img-src 'self' data: blob: https:; "
         + "font-src 'self' data:; "
         + "connect-src 'self' ws: wss: https:; "
-        // D-756 — the hero background video may be a YouTube embed (privacy host).
+        // The hero background video may be a YouTube embed (privacy host).
         + "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com; "
         + "object-src 'none'; base-uri 'self'; form-action 'self'; "
         + "frame-ancestors 'none'";

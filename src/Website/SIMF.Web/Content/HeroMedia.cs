@@ -11,7 +11,7 @@ namespace SIMF.Web.Content;
 public sealed record HeroVideoSource(string? YouTubeId, string? FileUrl);
 
 /// <summary>
-/// D-756 — resolves the CP-editable hero-section background video
+/// Resolves the CP-editable hero-section background video
 /// (<c>OrganizationProfile.BackgroundVideoUrl</c>) once per short cache window and
 /// classifies it (YouTube id vs direct file) with the shared
 /// <see cref="LiveStreamUrlPolicy"/>, so the landing hero plays the configured

@@ -51,9 +51,9 @@
 </LandingShell>
 
 @code {
-    // D-755 — the event-date line is driven by OrganizationProfile config
-    // (ForumDate), falling back to the resx label when the profile is unavailable
-    // or carries no dates. Mirrors Landing/Speakers so the public pages never drift.
+    // The event-date line is driven by OrganizationProfile config (ForumDate),
+    // falling back to the resx label when the profile is unavailable or carries no
+    // dates. Mirrors Landing/Speakers so the public pages never drift.
     private string? ForumDate;
 
     protected override async Task OnInitializedAsync()

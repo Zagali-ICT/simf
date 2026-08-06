@@ -19,8 +19,8 @@ public partial class Speakers
 
     private IReadOnlyList<PublicSpeakerSummary> SpeakerList { get; set; } = [];
 
-    // D-755 — the CP-editable forum date range for the page-title band; null falls
-    // back to the Speakers.Band.Date resx label.
+    // The CP-editable forum date range for the page-title band; null falls back to
+    // the Speakers.Band.Date resx label.
     private string? BandDate { get; set; }
 
     protected override async Task OnInitializedAsync()

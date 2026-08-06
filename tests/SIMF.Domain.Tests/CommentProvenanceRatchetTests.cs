@@ -32,11 +32,14 @@ public sealed class CommentProvenanceRatchetTests
         { "src/ControlPanel",                 891 },
         { "src/Backend/SIMF.Api",             587 },
         { "src/Backend/SIMF.Application",     530 },
-        { "src/Website",                       36 },
     };
 
     /// <summary>Layers that are swept and must stay at zero.</summary>
-    public static TheoryData<string> SweptLayers => new() { "src/Backend/SIMF.Domain" };
+    public static TheoryData<string> SweptLayers => new()
+    {
+        "src/Backend/SIMF.Domain",
+        "src/Website",
+    };
 
     [Theory]
     [MemberData(nameof(SweptLayers))]

@@ -77,8 +77,8 @@
                         <div class="ln-glance__row"><dt>@L["SessionDetail.Glance.Capacity"]</dt><dd>@string.Format(L["SessionDetail.Glance.CapacityValue"].Value, s.Seats.Capacity)</dd></div>
                         <div class="ln-glance__row"><dt>@L["SessionDetail.Glance.Live"]</dt><dd>@(string.IsNullOrWhiteSpace(s.LiveStreamUrl) ? L["SessionDetail.Glance.No"] : L["SessionDetail.Glance.Yes"])</dd></div>
                     </dl>
-                    @* FR-702 (owner 2026-07-31): the organiser's free-text notice for this
-                       session's broadcast, shown WITH the live row above. Informational
+                    @* The organiser's free-text notice for this session's
+                       broadcast, shown WITH the live row above. Informational
                        only — nothing on this page restricts, gates or geo-checks the
                        stream. Omitted entirely when the Control Panel left it blank. *@
                     @* Gated on the session actually HAVING a stream, not just on the text

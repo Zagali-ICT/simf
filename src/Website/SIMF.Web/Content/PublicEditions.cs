@@ -37,7 +37,7 @@ public sealed record EditionsView(
 /// Resolves the public past editions once per short cache window. The nav renders
 /// on every page, so an uncached <see cref="SimfPublicClient.GetArchiveAsync"/>
 /// would cost one API read per page view. Live editions when the archive-visibility
-/// toggle (D-166) is on; otherwise the landing's static Milestones — the same
+/// toggle is on; otherwise the landing's static Milestones — the same
 /// graceful fallback the /archive page already used, so the nav dropdown and the
 /// page always show the same list.
 /// </summary>
