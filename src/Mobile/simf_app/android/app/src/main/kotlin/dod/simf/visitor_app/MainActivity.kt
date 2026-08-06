@@ -1,4 +1,4 @@
-package com.example.simf_app
+package dod.simf.visitor_app
 
 import android.os.Bundle
 import android.view.WindowManager
