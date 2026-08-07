@@ -37,6 +37,28 @@ class BuildConfig {
     defaultValue: 'simf-dev-app-key',
   );
 
+  /// Whether the app accepts the API's self-signed certificate on native.
+  ///
+  /// Still `true`, because the API is still served on a self-signed cert and a
+  /// build with this off cannot reach it at all. It exists so that turning the
+  /// bypass off is **one flag, not a code change**: the hosts moved to
+  /// `simrsnf.com` (D-868), which unlike the old underscore names are valid
+  /// public-CA subjects, so a real certificate is now obtainable.
+  ///
+  /// When one is installed, build once with
+  /// `--dart-define=SIMF_ALLOW_SELF_SIGNED_TLS=false` to verify the app still
+  /// reaches the API, then flip the default below to `false` permanently — at
+  /// which point `self_signed_api_tls_io.dart` and the Android
+  /// `network_security_config.xml` can both be deleted outright.
+  ///
+  /// This closes finding **C2** of `SIMF-Security-Assessment-2026-06-20.md`,
+  /// which is an NCA handover blocker: while it is on, the app has no MITM
+  /// protection on any native connection.
+  static const bool allowSelfSignedTls = bool.fromEnvironment(
+    'SIMF_ALLOW_SELF_SIGNED_TLS',
+    defaultValue: true,
+  );
+
   /// Official support contacts for the registration-success screen's
   /// تواصل معانا tiles (D-369). Empty (the default) keeps a tile inert —
   /// never a dead dialer/mail intent — until the real values are supplied

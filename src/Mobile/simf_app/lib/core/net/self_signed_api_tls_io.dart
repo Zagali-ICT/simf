@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:simf_app/core/env/build_config.dart';
+
 /// PoC accommodation (D-394, extended D-444): the SIMF API was served over a
 /// **self-signed** certificate issued for the server's machine name rather than
 /// its public hostname, so the native `HttpClient` rejected every request
@@ -21,6 +23,14 @@ import 'dart:io';
 /// handover** — see `SIMF-Security-Assessment-2026-06-20.md` C2/H2, where it
 /// is the open critical that this rename finally unblocks.
 void installSelfSignedApiTlsBypass() {
+  // One flag, not a code change. Build with
+  // --dart-define=SIMF_ALLOW_SELF_SIGNED_TLS=false to run with normal TLS
+  // validation the moment the API has a real certificate; nothing else here has
+  // to move, and this file can then be deleted outright.
+  if (!BuildConfig.allowSelfSignedTls) {
+    return;
+  }
+
   HttpOverrides.global = _AcceptAnyCertOverrides();
 }
 
