@@ -67,9 +67,20 @@ public sealed class SuperAdminDuplicateSeedTests : IClassFixture<SimfApiFactory>
         Assert.Equal(AuditOutcome.Failure, audit!.Outcome);
 
         // The operator cannot act on "a duplicate exists" — the entry has to name
-        // the account that is now redundant.
-        Assert.False(string.IsNullOrWhiteSpace(audit.Detail));
-        Assert.Contains("Administrator", audit.Detail!, StringComparison.Ordinal);
+        // the account that is now redundant. Asserting on a word from the message
+        // itself would be tautological: an earlier version of this test looked for
+        // "Administrator", which is a literal in the seeder's own format string, so
+        // it passed even if the account list were empty. Assert on the address of
+        // an account that really does already hold the role — the fixture's own
+        // super-admin, seeded into it at host start before either test runs.
+        var identityDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var incumbent = await identityDb.Users
+            .AsNoTracking()
+            .Where(user => user.Email != null && user.Email.Contains("superadmin"))
+            .Select(user => user.Email!)
+            .FirstAsync();
+
+        Assert.Contains(incumbent, audit.Detail!, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>The counterpart: re-seeding the SAME address is the normal boot
@@ -80,20 +91,33 @@ public sealed class SuperAdminDuplicateSeedTests : IClassFixture<SimfApiFactory>
     {
         var email = $"superadmin-stable-{Guid.NewGuid():N}@simf.test";
 
-        // First boot creates it — a duplicate entry here is expected, because
-        // the fixture's own super-admin already holds the Administrator role.
+        // First boot creates it — an entry here is expected, because the
+        // fixture's own super-admin already holds the Administrator role.
         await RunSeedAsync(email);
 
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var before = await appDb.OperationLog
-            .CountAsync(entry => entry.EventType == AuditEvents.SuperAdminDuplicateSeeded);
 
-        // Second boot finds the account by e-mail and must not report anything.
+        // Counted for THIS address, not for the event type as a whole. An
+        // unfiltered count is shared with every other test in the class, so it
+        // would be satisfied by an implementation that never writes anything —
+        // the assertion has to be able to tell "did not fire again" from
+        // "never fires".
+        var before = await appDb.OperationLog.CountAsync(
+            entry => entry.EventType == AuditEvents.SuperAdminDuplicateSeeded
+                     && entry.SubjectEmail == email);
+
+        // Guards the guard: unless the first boot really did write one, the
+        // before/after comparison below proves nothing.
+        Assert.Equal(1, before);
+
+        // Second boot finds the account by e-mail, so no role is granted and
+        // nothing is reported.
         await RunSeedAsync(email);
 
-        var after = await appDb.OperationLog
-            .CountAsync(entry => entry.EventType == AuditEvents.SuperAdminDuplicateSeeded);
+        var after = await appDb.OperationLog.CountAsync(
+            entry => entry.EventType == AuditEvents.SuperAdminDuplicateSeeded
+                     && entry.SubjectEmail == email);
 
         Assert.Equal(before, after);
     }

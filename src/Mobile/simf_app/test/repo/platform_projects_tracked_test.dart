@@ -8,10 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 /// (`android/ ios/ linux/ macos/ windows/ web/`) plus `pubspec.lock`, so a
 /// clean clone had no buildable mobile artefact at all. `flutter create` cannot
 /// restore what that lost: the CAMERA + USE_BIOMETRIC permissions (D-404 /
-/// D-738), the
-/// `android:networkSecurityConfig` + the pinned `res/raw/simf_api_cert.pem`
-/// (D-768), the launcher mipmaps (D-373) and the SIMF-branded web shell. These
-/// tests fail the build the moment any of that stops being tracked again.
+/// D-738), the launcher mipmaps (D-373), the localized launcher name (D-699)
+/// and the SIMF-branded web shell. These tests fail the build the moment any of
+/// that stops being tracked again. The D-768 pinned certificate and its
+/// network-security config were part of that list until D-872 deleted them
+/// along with the TLS bypass they existed to support.
 ///
 /// BUG-009 — a stale DUPLICATE of the two local packages sat at
 /// `src/Mobile/packages/`. The pubspec resolves `packages/simf_{auth,data}_pkg`
@@ -100,20 +101,49 @@ void main() {
       }
     });
 
-    test('the manifest keeps the CAMERA + USE_BIOMETRIC permissions and the '
-        'network-security config', () {
+    test('the manifest keeps the CAMERA + USE_BIOMETRIC permissions', () {
       final manifest =
           File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
 
       expect(manifest, contains('android.permission.CAMERA'));
       expect(manifest, contains('android.permission.USE_BIOMETRIC'));
+    });
+
+    test('no self-signed TLS escape hatch has come back (D-872)', () {
+      // The app once shipped a blanket badCertificateCallback => true, which
+      // removed MITM protection on every native connection (security
+      // assessment C2). It existed only because the old hostname contained an
+      // underscore and no public CA will issue for one; the API now has a real
+      // certificate, so the bypass is gone. This asserts it stays gone: the
+      // easiest way to "fix" a future TLS error is to reintroduce it, and that
+      // would silently undo the control rather than fail loudly.
       expect(
-        manifest,
-        contains(
-          'android:networkSecurityConfig='
-          '"@xml/network_security_config"',
-        ),
+        File('lib/core/net/self_signed_api_tls.dart').existsSync(),
+        isFalse,
+        reason: 'the self-signed TLS bypass was deleted under D-872.',
       );
+      expect(
+        File('lib/core/net/self_signed_api_tls_io.dart').existsSync(),
+        isFalse,
+      );
+
+      // A custom network-security config is how the same hole is reopened on
+      // the Android side, by re-adding a private trust anchor for the API host.
+      final manifest =
+          File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+      expect(manifest, isNot(contains('networkSecurityConfig')));
+
+      final dartSources = Directory('lib')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'));
+      for (final source in dartSources) {
+        expect(
+          source.readAsStringSync(),
+          isNot(contains('badCertificateCallback')),
+          reason: '${source.path} accepts bad certificates — that is C2.',
+        );
+      }
     });
 
     test('the localized launcher name is tracked (D-699)', () {
@@ -133,19 +163,22 @@ void main() {
       expect(arabic.readAsStringSync(), contains('>الملتقى البحري<'));
     });
 
-    test('the D-768 pinned certificate and its trust config are tracked', () {
-      final config =
-          File('android/app/src/main/res/xml/network_security_config.xml');
-      final cert = File('android/app/src/main/res/raw/simf_api_cert.pem');
+    test('no private key has been committed with a certificate', () {
+      // The D-768 trust anchor is gone with the bypass (D-872), but the rule it
+      // carried outlives it: if a .pem is ever added to the app again, it must
+      // be a public certificate and never a key.
+      final pems = Directory('android')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.pem'));
 
-      expect(config.existsSync(), isTrue);
-      expect(cert.existsSync(), isTrue);
-      expect(config.readAsStringSync(), contains('@raw/simf_api_cert'));
-
-      final pem = cert.readAsStringSync();
-      expect(pem, contains('BEGIN CERTIFICATE'));
-      // A private key must never be committed: the anchor is public-only.
-      expect(pem, isNot(contains('PRIVATE KEY')));
+      for (final pem in pems) {
+        expect(
+          pem.readAsStringSync(),
+          isNot(contains('PRIVATE KEY')),
+          reason: '${pem.path} contains a private key.',
+        );
+      }
     });
 
     test('the launcher icons are tracked (D-373)', () {

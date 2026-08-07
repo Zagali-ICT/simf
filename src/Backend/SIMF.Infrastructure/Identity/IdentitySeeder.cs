@@ -6,7 +6,10 @@
 //        a no-op outside Development / with Seed:EnableDemoAccounts off);
 //        SIMF.Api.Tests/SuperAdminSeedFailureTests.cs (a
 //        policy-violating temp password throws in Production, logs-and-skips
-//        in Development)
+//        in Development);
+//        SIMF.Api.Tests/SuperAdminDuplicateSeedTests.cs (granting the
+//        Administrator wildcard while other accounts already hold it is
+//        audited and names them; re-seeding the same address audits nothing)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -138,26 +141,33 @@ public sealed class IdentitySeeder(
         // (the gate triad, the PR/VIP triad) keep their exact strings and grants.
         await SeedPermissionCatalogAsync(cancellationToken);
 
-        // The super-admin is found BY E-MAIL, so changing SuperAdmin:Email against
-        // an existing database does not move the account — it seeds a second one
-        // and leaves the first in place, holding the Administrator wildcard. That
-        // is a silent duplicate of the highest-privilege account in the system, so
-        // it is reported loudly and to the audit trail before the row is created.
-        var admin = await accounts.FindByEmailAsync(settings.Email, cancellationToken);
-        if (admin is null)
-        {
-            await ReportSupersededSuperAdminsAsync(settings.Email, cancellationToken);
-            admin = await CreateSuperAdminAsync(settings, cancellationToken);
-        }
-
+        var admin = await accounts.FindByEmailAsync(settings.Email, cancellationToken)
+            ?? await CreateSuperAdminAsync(settings, cancellationToken);
         if (admin is null)
         {
             return;
         }
 
+        // Everything below hangs off the ROLE GRANT rather than off "the account
+        // did not exist", because the grant is the moment the wildcard is handed
+        // out and it is reached by two different routes: a changed
+        // SuperAdmin:Email creates a second account, and a SuperAdmin:Email
+        // pointed at an existing ordinary user promotes that one. Both end with
+        // more than one account holding `perm:*`; keying on "created" would only
+        // have seen the first.
+        //
+        // Snapshotted BEFORE the grant so the account being granted is not in its
+        // own list, and reported AFTER it succeeds so the audit trail never claims
+        // a privilege change that did not happen.
+        var alreadyAdministrators = await accounts.IsInRoleAsync(admin, AdministratorRole, cancellationToken)
+            ? []
+            : await OtherAdministratorEmailsAsync(admin.Id, cancellationToken);
+
         if (!await accounts.IsInRoleAsync(admin, AdministratorRole, cancellationToken))
         {
             await accounts.AddToRoleAsync(admin, AdministratorRole, cancellationToken).EnsureSuccessAsync();
+            await ReportAdditionalAdministratorAsync(
+                settings.Email, alreadyAdministrators, cancellationToken);
         }
 
         // Every seeded admin must end up with UserType = Admin. This
@@ -584,50 +594,71 @@ public sealed class IdentitySeeder(
     }
 
     /// <summary>
-    /// Reports the Administrator accounts that already exist when the configured
-    /// super-admin e-mail matches none of them.
+    /// The e-mail of every account already holding the Administrator role, other
+    /// than <paramref name="excludedUserId"/>. Ordered so the log line and the
+    /// audit entry are stable between boots and can be diffed.
+    /// </summary>
+    private async Task<List<string>> OtherAdministratorEmailsAsync(
+        Guid excludedUserId,
+        CancellationToken cancellationToken) =>
+        await (
+            from user in dbContext.Users
+            join userRole in dbContext.UserRoles on user.Id equals userRole.UserId
+            join role in dbContext.Roles on userRole.RoleId equals role.Id
+            where role.Name == AdministratorRole && user.Id != excludedUserId
+            orderby user.Email
+            select user.Email!)
+            .ToListAsync(cancellationToken);
+
+    /// <summary>
+    /// Reports that seeding granted the Administrator wildcard to an account while
+    /// other accounts already held it.
     ///
-    /// <para>Seeding resolves the super-admin by e-mail, so pointing
-    /// <c>SuperAdmin:Email</c> at a new address does not rename the account — it
-    /// creates a second one and leaves the first signing in with its old
-    /// credentials. Both carry the Administrator wildcard, which is the highest
-    /// privilege in the system, and nothing else in the boot path mentions it. The
-    /// duplicate is therefore written to the audit trail as well as the log:
-    /// a second unattended super-admin is exactly the kind of thing a security
-    /// review must be able to find after the fact, and a startup line scrolls away.</para>
+    /// <para>Reached two ways, both of which end with more than one account holding
+    /// <c>perm:*</c>: pointing <c>SuperAdmin:Email</c> at a new address creates a
+    /// second super-admin and leaves the first signing in with its old credentials,
+    /// and pointing it at an existing ordinary user promotes that user instead.
+    /// Neither said anything in the boot path before this.</para>
     ///
-    /// <para>This reports; it does not refuse to boot. An Administrator can also be
+    /// <para>It goes to the audit trail and not only the log because a startup line
+    /// scrolls away, while a second unattended super-admin is exactly what a
+    /// security review has to be able to find after the fact. Filed as
+    /// <see cref="AuditOutcome.Failure"/> so it appears in the report a reviewer
+    /// actually runs — the seed step succeeded, but it left the system in a state
+    /// nobody asked for.</para>
+    ///
+    /// <para>It reports; it does not refuse to boot. An Administrator can also be
     /// created legitimately in the Control Panel, so their presence is not proof of
     /// a mistake, and failing startup on a guess would take the API down for a
     /// condition that may be intentional. Resolving it needs an operator decision
     /// either way — see <c>docs/migrations/2026/DEPLOY.md</c>.</para>
     /// </summary>
-    private async Task ReportSupersededSuperAdminsAsync(
+    private async Task ReportAdditionalAdministratorAsync(
         string configuredEmail,
+        IReadOnlyList<string> existingAdministrators,
         CancellationToken cancellationToken)
     {
-        var existing = await (
-            from user in dbContext.Users
-            join userRole in dbContext.UserRoles on user.Id equals userRole.UserId
-            join role in dbContext.Roles on userRole.RoleId equals role.Id
-            where role.Name == AdministratorRole
-            select user.Email)
-            .ToListAsync(cancellationToken);
-
-        if (existing.Count == 0)
+        if (existingAdministrators.Count == 0)
         {
             return;
         }
 
-        var others = string.Join(", ", existing);
+        // Capped because Detail is a single column and an estate with many admins
+        // would otherwise truncate mid-address; the count is always exact, so a
+        // reader can tell the list was shortened rather than being silently misled.
+        const int MaxListed = 10;
+        var listed = string.Join(", ", existingAdministrators.Take(MaxListed));
+        var others = existingAdministrators.Count > MaxListed
+            ? $"{listed}, … (+{existingAdministrators.Count - MaxListed} more)"
+            : listed;
+
         logger.LogWarning(
-            "SuperAdmin:Email is {Configured}, which matches no account, but {Count} "
-            + "Administrator account(s) already exist ({Others}). A SECOND super-admin "
-            + "is about to be created — the existing one keeps the Administrator "
-            + "wildcard and its old credentials. If SuperAdmin:Email was changed "
-            + "deliberately, migrate the existing row instead; see "
-            + "docs/migrations/2026/DEPLOY.md.",
-            configuredEmail, existing.Count, others);
+            "Seeding granted the Administrator role to {Configured}, but {Count} other "
+            + "account(s) already hold it ({Others}). More than one account now carries "
+            + "the perm:* wildcard, and the others keep their existing credentials. If "
+            + "SuperAdmin:Email was changed deliberately, migrate or remove the "
+            + "superseded row; see docs/migrations/2026/DEPLOY.md.",
+            configuredEmail, existingAdministrators.Count, others);
 
         await auditLog.WriteAsync(
             new AuditEntry
@@ -635,7 +666,9 @@ public sealed class IdentitySeeder(
                 EventType = AuditEvents.SuperAdminDuplicateSeeded,
                 Outcome = AuditOutcome.Failure,
                 SubjectEmail = configuredEmail,
-                Detail = $"Existing Administrator account(s): {others}",
+                Detail =
+                    $"{existingAdministrators.Count} other account(s) already hold the "
+                    + $"Administrator wildcard: {others}",
             },
             cancellationToken);
     }

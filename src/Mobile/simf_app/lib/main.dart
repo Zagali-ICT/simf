@@ -9,8 +9,6 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'app/app.dart';
 import 'app/localization/locale_controller.dart';
 import 'core/env/build_config.dart';
-import 'core/net/self_signed_api_tls.dart'
-    if (dart.library.io) 'core/net/self_signed_api_tls_io.dart';
 import 'core/startup/app_version_policy.dart';
 import 'features/accessibility/data/accessibility_controller.dart';
 
@@ -23,11 +21,6 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations(
     const <DeviceOrientation>[DeviceOrientation.portraitUp],
   );
-
-  // D-394 (PoC): the SIMF API is served over a self-signed certificate, so the
-  // native HttpClient would reject it. Accept it for the configured API host
-  // ONLY (no-op on web; every other host keeps full TLS validation).
-  installSelfSignedApiTlsBypass();
 
   // Eagerly resolve the values the providers need at construction time. Prefs
   // and the installed version are independent native round-trips on the

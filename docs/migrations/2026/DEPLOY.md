@@ -9,6 +9,11 @@ A one-page runbook card. **The authoritative document is
 Azure DevOps builds and publishes on every push to `main`. **Its test step is
 disabled**, so verify locally before merging.
 
+> The pipeline definition was silently emptied by a merge on 2026-08-02 and
+> restored under D-871 — for those five days nothing built, published or deployed
+> at all. If a push to `main` produces no run, check `azure-pipelines.yml` is
+> non-empty before looking anywhere else.
+
 | Surface | URL |
 |---|---|
 | API | `https://api.simrsnf.com` (health: `/health`) |
@@ -19,14 +24,17 @@ disabled**, so verify locally before merging.
 The deployed `appsettings.json` is **overwritten by every deploy** — all real
 configuration comes from Machine-scope `SIMF_*` environment variables.
 
-> **TLS action owed.** The hosts moved to `simrsnf.com` (D-868), which — unlike
-> the old underscore hostnames — are valid public-CA subjects, so a real
-> certificate is now obtainable (win-acme / Let's Encrypt). Until one is
-> installed the certificate is still self-signed, and each browser must visit the
-> API `/health` once and accept it or XHR fails with
-> `ERR_CERT_AUTHORITY_INVALID` before CORS is even evaluated. Installing a real
-> cert also clears the app's blanket TLS trust-all, which is an NCA handover
-> blocker — see `SIMF-Security-Assessment-2026-06-20.md` H2/C2.
+> **TLS is real now (D-872).** The hosts moved to `simrsnf.com` (D-868), which —
+> unlike the old underscore hostnames — are valid public-CA subjects, and the
+> server carries a proper certificate. So the old "visit `/health` once and accept
+> the warning" step is **gone**, and so is the app's blanket TLS trust-all, which
+> was finding **C2** and an NCA handover blocker.
+>
+> That makes a certificate problem a real outage rather than a warning: the app no
+> longer accepts an untrusted certificate, so if one expires or a host is added
+> without one, the app stops reaching the API. Renewal is now an operational
+> commitment, and `test/repo/platform_projects_tracked_test.dart` fails the build
+> if anyone reintroduces a bypass to work around it.
 
 ## 2. Migrate — automatic
 
@@ -76,36 +84,15 @@ never in a tracked file.
 | Demo/visitor accounts | App + Website | `SIMF_Seed__DemoPassword` |
 | Everyone else | — | created in the CP, or self sign-up |
 
-> **One-off, on any database created before D-868 (2026-08-07).** The super-admin
-> address changed from `superadmin@zagali-ict.com`. The seeder finds the
-> super-admin **by e-mail** and creates one when it does not find it, so booting
-> the new build against an old database does **not** break sign-in — it leaves
-> **two accounts, both `Administrator`, i.e. both holding the `perm:*` wildcard.**
-> This was reproduced locally, not predicted.
+> **Production starts from an EMPTY database (owner decision, 2026-08-07).**
+> The old databases are dropped and recreated, so the super-admin migration
+> that D-868/D-869 described does not apply: with nothing pre-existing there is
+> no second `Administrator` row to reconcile. The seeder creates exactly one
+> super-admin from `SIMF_SuperAdmin__*` on first boot.
 >
-> Do it **before** the new build boots and you keep one account with its password
-> and 2FA intact:
->
-> ```sql
-> UPDATE SIMF_Identity.dbo.AspNetUsers
->    SET Email='superadmin@simrsnf.com', NormalizedEmail='SUPERADMIN@SIMRSNF.COM',
->        UserName='superadmin@simrsnf.com', NormalizedUserName='SUPERADMIN@SIMRSNF.COM'
->  WHERE NormalizedEmail='SUPERADMIN@ZAGALI-ICT.COM';
-> ```
->
-> **If it has already booted**, that UPDATE hits the unique index because both
-> rows now exist. Delete the superseded one instead — every foreign key into
-> `AspNetUsers` is `ON DELETE CASCADE`, so tokens, roles and device keys go with
-> it:
->
-> ```sql
-> DELETE FROM SIMF_Identity.dbo.AspNetUsers
->  WHERE NormalizedEmail='SUPERADMIN@ZAGALI-ICT.COM';
-> ```
->
-> Then sign in with `SIMF_SuperAdmin__TempPassword`. Verify exactly one row
-> remains: `SELECT Email FROM SIMF_Identity.dbo.AspNetUsers WHERE NormalizedEmail LIKE '%SUPERADMIN%'`.
-> A database created after D-868 is unaffected.
+> The duplicate-detection in `IdentitySeeder` stays regardless — it guards any
+> FUTURE change to `SuperAdmin:Email` against a database that already has one,
+> which is a permanent sharp edge and not specific to this migration.
 
 Setting or rotating the super-admin:
 

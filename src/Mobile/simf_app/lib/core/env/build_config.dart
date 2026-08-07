@@ -37,6 +37,10 @@ class BuildConfig {
     defaultValue: 'simf-dev-app-key',
   );
 
+  // There is deliberately no self-signed-TLS escape hatch here. The API is
+  // served on a real certificate for api.simrsnf.com (D-872), so the app uses
+  // ordinary TLS validation and a bypass would only be a way to lose it.
+
   /// Official support contacts for the registration-success screen's
   /// تواصل معانا tiles (D-369). Empty (the default) keeps a tile inert —
   /// never a dead dialer/mail intent — until the real values are supplied
