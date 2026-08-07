@@ -238,27 +238,60 @@ public sealed class DeploymentEnvTemplateTests
     /// file was fine under pwsh 7 (UTF-8 by default). An operator on Windows
     /// Server therefore ran it and set NOTHING. Pure ASCII is the fix that does
     /// not depend on a BOM surviving an editor round-trip.</summary>
-    [Theory]
-    [InlineData(TemplateName)]
-    [InlineData(RunbookName)]
-    public void The_operator_run_scripts_are_pure_ascii_so_windows_powershell_can_parse_them(
-        string scriptName)
+    // The filled overlays are gitignored: they exist only on a provisioned
+    // machine, so they cannot be held to a repo standard.
+    private static readonly string[] UntrackedOverlays =
     {
-        var script = ReadRepoFile("deploy", scriptName);
+        "set-env.ps1", "set-env-api.ps1", "set-env-prod.ps1",
+    };
 
-        var offenders = script
-            .Select((character, index) => (Character: character, Index: index))
-            .Where(x => x.Character > '\x007F')
-            .Take(10)
-            .Select(x => $"U+{(int)x.Character:X4} at offset {x.Index}")
+    /// <summary>Windows PowerShell 5.1 decodes a BOM-less file as the ANSI
+    /// codepage. An em dash becomes three characters, one of which is a quote -
+    /// and inside a string literal that quote ends the string, so the script
+    /// stops parsing. set-env.template.ps1 carried six and failed with 8 parse
+    /// errors under powershell.exe until 2026-08-07 while parsing fine under
+    /// pwsh 7, so an operator on Windows Server ran it and set NOTHING.
+    /// <para>
+    /// A script is safe either way: pure ASCII, or a BOM telling 5.1 to read
+    /// UTF-8. publish-app-web.ps1 needs the second form because its Arabic is
+    /// content, not decoration. Checked across the whole directory rather than a
+    /// named list, so a NEW deploy script is covered the day it lands.
+    /// </para></summary>
+    [Fact]
+    public void Every_tracked_deploy_script_decodes_under_windows_powershell()
+    {
+        var deployDirectory = Path.Combine(RepoRoot(), "deploy");
+        var scripts = Directory
+            .EnumerateFiles(deployDirectory, "*.ps1", SearchOption.AllDirectories)
+            .Where(path => !UntrackedOverlays.Contains(
+                Path.GetFileName(path), StringComparer.OrdinalIgnoreCase))
+            .Where(path => !Path.GetFileName(path)
+                .EndsWith(".local.ps1", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // Guards the guard: a broken glob would make this vacuously green.
+        Assert.True(
+            scripts.Count >= 5,
+            $"Only {scripts.Count} deploy scripts were found under {deployDirectory}; "
+            + "the enumeration is wrong.");
+
+        var undecodable = scripts
+            .Where(path =>
+            {
+                var bytes = File.ReadAllBytes(path);
+                var hasBom = bytes.Length >= 3
+                             && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+                return !hasBom && File.ReadAllText(path).Any(character => character > '\x007F');
+            })
+            .Select(Path.GetFileName)
             .ToList();
 
         Assert.True(
-            offenders.Count == 0,
-            $"{scriptName} contains non-ASCII characters: {string.Join(", ", offenders)}. "
-            + "Windows PowerShell 5.1 reads this BOM-less file as ANSI, corrupting them and "
-            + "breaking the parse. Use '-' instead of an em dash and '...' instead of an "
-            + "ellipsis.");
+            undecodable.Count == 0,
+            $"BOM-less deploy scripts contain non-ASCII: {string.Join(", ", undecodable)}. "
+            + "Windows PowerShell 5.1 reads them as ANSI, which corrupts the characters and "
+            + "breaks the parse when one lands inside a string literal. Either use ASCII "
+            + "('-' for an em dash, '...' for an ellipsis) or save the file with a UTF-8 BOM.");
     }
 
     [Fact]

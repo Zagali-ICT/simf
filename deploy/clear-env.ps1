@@ -6,7 +6,7 @@
 #
 # By DEFAULT it PRESERVES the non-secret, CP/Website-facing shared config so a
 # clear does not knock the Control Panel / Website offline. The one that matters
-# most is SIMF_Api__BaseUrl — without it the CP falls back to http://localhost:5175
+# most is SIMF_Api__BaseUrl - without it the CP falls back to http://localhost:5175
 # and shows "The SIMF service could not be reached". Use -Full to wipe everything
 # (a true scrub / decommission), which also drops those shared values.
 #
@@ -25,7 +25,7 @@
 param(
     # Wipe EVERY SIMF_* variable, including the non-secret shared config that is
     # normally preserved (SIMF_Api__BaseUrl, CORS origins, AI routing). Use for a
-    # full scrub / decommission — it WILL take the CP + Website offline until
+    # full scrub / decommission - it WILL take the CP + Website offline until
     # set-env is run again.
     [switch]$Full,
 
