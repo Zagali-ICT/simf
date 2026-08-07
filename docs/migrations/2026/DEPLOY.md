@@ -76,6 +76,37 @@ never in a tracked file.
 | Demo/visitor accounts | App + Website | `SIMF_Seed__DemoPassword` |
 | Everyone else | — | created in the CP, or self sign-up |
 
+> **One-off, on any database created before D-868 (2026-08-07).** The super-admin
+> address changed from `superadmin@zagali-ict.com`. The seeder finds the
+> super-admin **by e-mail** and creates one when it does not find it, so booting
+> the new build against an old database does **not** break sign-in — it leaves
+> **two accounts, both `Administrator`, i.e. both holding the `perm:*` wildcard.**
+> This was reproduced locally, not predicted.
+>
+> Do it **before** the new build boots and you keep one account with its password
+> and 2FA intact:
+>
+> ```sql
+> UPDATE SIMF_Identity.dbo.AspNetUsers
+>    SET Email='superadmin@simrsnf.com', NormalizedEmail='SUPERADMIN@SIMRSNF.COM',
+>        UserName='superadmin@simrsnf.com', NormalizedUserName='SUPERADMIN@SIMRSNF.COM'
+>  WHERE NormalizedEmail='SUPERADMIN@ZAGALI-ICT.COM';
+> ```
+>
+> **If it has already booted**, that UPDATE hits the unique index because both
+> rows now exist. Delete the superseded one instead — every foreign key into
+> `AspNetUsers` is `ON DELETE CASCADE`, so tokens, roles and device keys go with
+> it:
+>
+> ```sql
+> DELETE FROM SIMF_Identity.dbo.AspNetUsers
+>  WHERE NormalizedEmail='SUPERADMIN@ZAGALI-ICT.COM';
+> ```
+>
+> Then sign in with `SIMF_SuperAdmin__TempPassword`. Verify exactly one row
+> remains: `SELECT Email FROM SIMF_Identity.dbo.AspNetUsers WHERE NormalizedEmail LIKE '%SUPERADMIN%'`.
+> A database created after D-868 is unaffected.
+
 Setting or rotating the super-admin:
 
 ```powershell
