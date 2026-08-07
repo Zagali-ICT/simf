@@ -83,10 +83,17 @@ never in a tracked file.
 > **two accounts, both `Administrator`, i.e. both holding the `perm:*` wildcard.**
 > This was reproduced locally, not predicted.
 >
+> **`SET QUOTED_IDENTIFIER ON` first.** `AspNetUsers` carries a filtered index, so
+> any write to it fails with *"DELETE failed because the following SET options
+> have incorrect settings: 'QUOTED_IDENTIFIER'"* unless the option is on. SSMS
+> sets it on by default; **`sqlcmd` does not** — pass `-I`, or run the `SET` line
+> shown below. This was hit for real running the statement below, not predicted.
+>
 > Do it **before** the new build boots and you keep one account with its password
 > and 2FA intact:
 >
 > ```sql
+> SET QUOTED_IDENTIFIER ON;
 > UPDATE SIMF_Identity.dbo.AspNetUsers
 >    SET Email='superadmin@simrsnf.com', NormalizedEmail='SUPERADMIN@SIMRSNF.COM',
 >        UserName='superadmin@simrsnf.com', NormalizedUserName='SUPERADMIN@SIMRSNF.COM'
@@ -99,13 +106,21 @@ never in a tracked file.
 > it:
 >
 > ```sql
+> SET QUOTED_IDENTIFIER ON;
 > DELETE FROM SIMF_Identity.dbo.AspNetUsers
 >  WHERE NormalizedEmail='SUPERADMIN@ZAGALI-ICT.COM';
 > ```
 >
 > Then sign in with `SIMF_SuperAdmin__TempPassword`. Verify exactly one row
-> remains: `SELECT Email FROM SIMF_Identity.dbo.AspNetUsers WHERE NormalizedEmail LIKE '%SUPERADMIN%'`.
-> A database created after D-868 is unaffected.
+> remains:
+>
+> ```sql
+> SELECT Email FROM SIMF_Identity.dbo.AspNetUsers WHERE NormalizedEmail LIKE '%SUPERADMIN%';
+> ```
+>
+> Both paths were executed against a real database carrying the duplicate: the
+> DELETE reported `1 rows affected` and left exactly one row. A database created
+> after D-868 is unaffected.
 
 Setting or rotating the super-admin:
 
