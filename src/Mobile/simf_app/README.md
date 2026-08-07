@@ -41,7 +41,7 @@ scaffold. `flutter create` OVERWRITES them and silently destroys:
 | `android.permission.CAMERA` + `<uses-feature …camera[.front] required="false"/>` | `android/app/src/main/AndroidManifest.xml` | `flutter_zxing` QR scanning (Huawei/HMS-safe, D-426) and the live-preview `camera` liveness flow (D-404). Without it the liveness screen degrades to its gallery fallback. |
 | `android.permission.USE_BIOMETRIC` | same manifest | Face-ID / fingerprint device-key sign-in via `local_auth` (D-738). |
 | `android:networkSecurityConfig="@xml/network_security_config"` + `res/raw/simf_api_cert.pem` | `android/app/src/main/res/` | Host-scoped trust anchor for the self-signed API cert so ExoPlayer can stream the hero video (D-768). Delete only once the API has a real CA cert. |
-| `MainActivity : FlutterFragmentActivity` + `FLAG_SECURE` | `android/app/src/main/kotlin/com/example/simf_app/MainActivity.kt` | `local_auth`'s `BiometricPrompt` needs a `FragmentActivity` (a plain `FlutterActivity` throws `no_fragment_activity`); `FLAG_SECURE` blocks screenshots app-wide (NCA A11-6). |
+| `MainActivity : FlutterFragmentActivity` + `FLAG_SECURE` | `android/app/src/main/kotlin/dod/simf/visitor_app/MainActivity.kt` | `local_auth`'s `BiometricPrompt` needs a `FragmentActivity` (a plain `FlutterActivity` throws `no_fragment_activity`); `FLAG_SECURE` blocks screenshots app-wide (NCA A11-6). |
 | Launcher mipmaps + adaptive icon | `android/app/src/main/res/mipmap-*` | The white SIMF mark on navy `#01132D` (D-373/D-388), generated once by `dart run flutter_launcher_icons`. |
 | Release signing + R8 keep rules | `android/app/build.gradle.kts`, `android/app/proguard-rules.pro` | Signs from the git-ignored `android/key.properties` (NCA A11-16) and keeps ML Kit's face-detection classes alive under R8. |
 | SIMF title, description, icons, brand colours | `web/index.html`, `web/manifest.json` | The deployed `simf_app` web shell. |
@@ -52,12 +52,17 @@ still on disk, so re-ignoring or regenerating the folder fails the test suite.
 Never committed (git-ignored, owner-provided): `android/key.properties`, any
 `*.jks` / `*.keystore`, `android/local.properties`.
 
-**Known gap — the launcher NAME (D-699) is not applied.** The tracked manifest
-still carries the scaffold default `android:label="simf_app"`. D-699 calls for
-`android:label="@string/app_name"` plus `res/values/strings.xml`
-(`app_name` = `SIMF`) and `res/values-ar/strings.xml`
-(`app_name` = `الملتقى البحري`), so Android shows the Arabic name on
-Arabic-locale devices. Neither `strings.xml` exists yet.
+**App identity (D-867).** `applicationId` and `namespace` are both
+`dod.simf.visitor_app`, and `MainActivity.kt` lives under the matching
+`kotlin/dod/simf/visitor_app/` path. `applicationId` is immutable once a Play
+listing exists, so it must not be changed again.
+
+**Launcher name (D-699, applied under D-867).** `android:label="@string/app_name"`
+with `res/values/strings.xml` (`app_name` = `SIMF`) and `res/values-ar/strings.xml`
+(`app_name` = `الملتقى البحري`), so Android shows the Arabic name on Arabic-locale
+devices and the English one elsewhere — matching `AppL10n.appName`. This was lost
+once while `android/` was git-ignored, so `test/repo/platform_projects_tracked_test.dart`
+now fails the build if either file or the `@string/app_name` reference goes missing.
 
 ### iOS — not yet on disk
 

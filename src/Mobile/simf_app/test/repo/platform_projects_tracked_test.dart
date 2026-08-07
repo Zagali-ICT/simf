@@ -37,11 +37,67 @@ void main() {
       );
       expect(File('android/settings.gradle.kts').existsSync(), isTrue);
       expect(File('android/app/build.gradle.kts').existsSync(), isTrue);
+    });
+
+    test('the Kotlin package tracks the Gradle namespace', () {
+      // Gradle resolves MainActivity through `namespace`, so the source
+      // directory has to spell the same thing. Asserting a literal path let a
+      // rename land half-done: the id moved off the com.example scaffold
+      // default and this test still pointed at the directory it came from.
+      //
+      // Comment lines are dropped first. The real assignments sit under a
+      // comment block that talks about applicationId, and an unanchored
+      // firstMatch would happily read a commented-out value instead of the
+      // live one — which is precisely the half-rename this guards against.
+      final gradle = File('android/app/build.gradle.kts')
+          .readAsLinesSync()
+          .where((line) => !line.trimLeft().startsWith('//'))
+          .join('\n');
+
+      String? assigned(String key) => RegExp(
+            '^\\s*$key\\s*=\\s*"([\\w.]+)"\\s*\$',
+            multiLine: true,
+          ).firstMatch(gradle)?.group(1);
+
+      final namespace = assigned('namespace');
+      final applicationId = assigned('applicationId');
+
       expect(
-        File('android/app/src/main/kotlin/com/example/simf_app/MainActivity.kt')
-            .existsSync(),
-        isTrue,
+        namespace,
+        isNotNull,
+        reason: 'no live `namespace = "..."` in build.gradle.kts',
       );
+      expect(applicationId, equals(namespace));
+
+      final activity = File(
+        'android/app/src/main/kotlin/'
+        '${namespace!.replaceAll('.', '/')}/MainActivity.kt',
+      );
+      expect(
+        activity.existsSync(),
+        isTrue,
+        reason: 'MainActivity.kt must sit under the namespace directory '
+            '($namespace), or Gradle cannot find it.',
+      );
+      // Anchored: `contains` would also accept a package that merely STARTS
+      // with the namespace, e.g. dod.simf.visitor_app_old.
+      expect(
+        RegExp('^package ${RegExp.escape(namespace)};?\\s*\$', multiLine: true)
+            .hasMatch(activity.readAsStringSync()),
+        isTrue,
+        reason: 'MainActivity.kt must declare exactly `package $namespace`.',
+      );
+
+      // Google Play rejects the scaffold default outright, and applicationId
+      // is immutable once a listing exists — so it must never come back.
+      expect(namespace, isNot(startsWith('com.example')));
+      for (final root in <String>['kotlin', 'java']) {
+        expect(
+          Directory('android/app/src/main/$root/com/example').existsSync(),
+          isFalse,
+          reason: 'a stale com/example tree survives under src/main/$root.',
+        );
+      }
     });
 
     test('the manifest keeps the CAMERA + USE_BIOMETRIC permissions and the '
@@ -58,6 +114,23 @@ void main() {
           '"@xml/network_security_config"',
         ),
       );
+    });
+
+    test('the localized launcher name is tracked (D-699)', () {
+      // This was decided once and then lost, because android/ was git-ignored
+      // at the time and nothing outside a README remembered it. The label came
+      // back as the flutter-create default. Assert the resources, not just the
+      // manifest attribute, or the reference resolves to nothing.
+      final manifest =
+          File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+      expect(manifest, contains('android:label="@string/app_name"'));
+
+      final english = File('android/app/src/main/res/values/strings.xml');
+      final arabic = File('android/app/src/main/res/values-ar/strings.xml');
+      expect(english.existsSync(), isTrue);
+      expect(arabic.existsSync(), isTrue);
+      expect(english.readAsStringSync(), contains('>SIMF<'));
+      expect(arabic.readAsStringSync(), contains('>الملتقى البحري<'));
     });
 
     test('the D-768 pinned certificate and its trust config are tracked', () {
