@@ -52,11 +52,15 @@ deploys with no repackaging step:
     -WebSiteName "SIMF.WEB" -WebPath "D:\SIMF\WEB"
 ```
 
-`publish/` is git-ignored. The Control Panel and Website publish with
-`-p:ErrorOnDuplicatePublishOutputFiles=false` — the same flag the pipeline passes
-for those two Blazor apps; without it their publish fails on duplicate static
-assets. There is no separate Worker output because the background workers run
-in-process inside the API app pool (see below).
+`publish/` is git-ignored. There is no separate Worker output because the
+background workers run in-process inside the API app pool (see below).
+
+The Control Panel and Website need `ErrorOnDuplicatePublishOutputFiles=false` or
+their publish fails on duplicate static assets. That property lives in **their
+`.csproj`**, not in this script or the pipeline: it used to be passed as a
+`-p:` flag by both, which meant any new way of publishing those projects
+inherited the failure until someone remembered the flag. No caller passes it
+now.
 
 The script builds and packages **only**. It applies no configuration and no
 secrets — those remain Machine-scope environment variables set on the server by

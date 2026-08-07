@@ -251,7 +251,10 @@ stages:
         arguments: '--configuration $(buildConfiguration)'
 
     # --- Publish (zips by default; one folder per app under the staging dir).
-    #     Blazor apps (CP + Web) set ErrorOnDuplicatePublishOutputFiles=false. ---
+    #     The Blazor apps (CP + Web) need ErrorOnDuplicatePublishOutputFiles=false;
+    #     that now lives in their .csproj, so every way of publishing them gets it
+    #     (it used to be passed here AND by publish.ps1, which meant a new caller
+    #     silently inherited the failure). ---
     - task: DotNetCoreCLI@2
       displayName: 'Publish API'
       inputs:
@@ -267,7 +270,7 @@ stages:
         command: 'publish'
         publishWebProjects: false
         projects: '$(Build.SourcesDirectory)/src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj'
-        arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/cp -p:ErrorOnDuplicatePublishOutputFiles=false'
+        arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/cp'
         zipAfterPublish: true
 
     - task: DotNetCoreCLI@2
@@ -276,7 +279,7 @@ stages:
         command: 'publish'
         publishWebProjects: false
         projects: '$(Build.SourcesDirectory)/src/Website/SIMF.Web/SIMF.Web.csproj'
-        arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/web -p:ErrorOnDuplicatePublishOutputFiles=false'
+        arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/web'
         zipAfterPublish: true
 
     - task: PublishBuildArtifacts@1

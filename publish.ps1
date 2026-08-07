@@ -27,13 +27,10 @@ $publishBase = Join-Path $root "publish"
 $config = "Release"
 
 # Project -> output folder mapping (publishable web apps only, in deploy order).
-# PublishArgs: the Blazor apps (CP + Web) need ErrorOnDuplicatePublishOutputFiles
-# disabled or the publish fails on duplicate static assets - the CI pipeline
-# passes the same flag for exactly these two projects (azure-pipelines.yml).
 $projects = @(
-    @{ Name = "API";          Csproj = "src\Backend\SIMF.Api\SIMF.Api.csproj";                         Folder = "api"; PublishArgs = @() },
-    @{ Name = "ControlPanel"; Csproj = "src\ControlPanel\SIMF.ControlPanel\SIMF.ControlPanel.csproj";  Folder = "cp";  PublishArgs = @("-p:ErrorOnDuplicatePublishOutputFiles=false") },
-    @{ Name = "Website";      Csproj = "src\Website\SIMF.Web\SIMF.Web.csproj";                         Folder = "web"; PublishArgs = @("-p:ErrorOnDuplicatePublishOutputFiles=false") }
+    @{ Name = "API";          Csproj = "src\Backend\SIMF.Api\SIMF.Api.csproj";                         Folder = "api" },
+    @{ Name = "ControlPanel"; Csproj = "src\ControlPanel\SIMF.ControlPanel\SIMF.ControlPanel.csproj";  Folder = "cp"  },
+    @{ Name = "Website";      Csproj = "src\Website\SIMF.Web\SIMF.Web.csproj";                         Folder = "web" }
 )
 
 Write-Host ""
@@ -91,7 +88,7 @@ foreach ($p in $projects) {
 
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
-    dotnet publish $csprojPath --configuration $config --output $outDir @($p.PublishArgs) 2>&1 | Out-Null
+    dotnet publish $csprojPath --configuration $config --output $outDir 2>&1 | Out-Null
 
     $exitCode = $LASTEXITCODE
     $sw.Stop()
@@ -108,7 +105,7 @@ foreach ($p in $projects) {
         Write-Host "Re-running with verbose output:" -ForegroundColor Yellow
         Write-Host ""
 
-        dotnet publish $csprojPath --configuration $config --output $outDir @($p.PublishArgs)
+        dotnet publish $csprojPath --configuration $config --output $outDir
 
         $failed = $true
         break
