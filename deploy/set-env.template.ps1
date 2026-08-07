@@ -151,12 +151,19 @@ $vars = @(
     # --- Outbound email -------------------------------------------------------
     # Missing => no OTP, verification, password-reset or meeting-confirmation
     # mail is delivered, which blocks visitor sign-up and the whole speaker flow.
-    [pscustomobject]@{ Name = "SIMF_Email__Host"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC: SMTP host" }
-    [pscustomobject]@{ Name = "SIMF_Email__Port"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 587" }
-    [pscustomobject]@{ Name = "SIMF_Email__User"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP user" }
-    [pscustomobject]@{ Name = "SIMF_Email__Password"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP app password" }
-    [pscustomobject]@{ Name = "SIMF_Email__FromAddress"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC: e.g. no-reply@simf.example.sa" }
-    [pscustomobject]@{ Name = "SIMF_Email__FromName"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default SIMF" }
+    [pscustomobject]@{ Name = "SIMF_Email__Host"; Value = "smtp.zoho.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "SMTP host" }
+    [pscustomobject]@{ Name = "SIMF_Email__Port"; Value = "587"; Secret = $false; Gate = $false; Apps = "API"; Note = "STARTTLS submission port" }
+    [pscustomobject]@{ Name = "SIMF_Email__User"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP user — set on the server, never here" }
+    [pscustomobject]@{ Name = "SIMF_Email__Password"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP app password — set on the server, never here" }
+    # The From domain must be a VERIFIED sender on the Zoho account. Tested
+    # 2026-08-07 against the live relay: no-reply@apexium.com.sa was refused with
+    # "Sender is not allowed to relay emails", while no-reply@ammn.com.sa sent
+    # fine on the same credentials. The send FAILS — it does not fall back — and
+    # on this system that stops sign-up codes, password resets and 2FA. So do not
+    # change this until apexium.com.sa is a verified domain in Zoho with its
+    # SPF/DKIM records published, then re-run the same test before committing.
+    [pscustomobject]@{ Name = "SIMF_Email__FromAddress"; Value = "no-reply@ammn.com.sa"; Secret = $false; Gate = $false; Apps = "API"; Note = "sending address — must be a verified Zoho sender (D-873)" }
+    [pscustomobject]@{ Name = "SIMF_Email__FromName"; Value = "SIMF"; Secret = $false; Gate = $false; Apps = "API"; Note = "display name on outbound mail" }
 
     # --- AI providers ---------------------------------------------------------
     # DefaultProvider stays Echo until a real key is supplied; a feature whose
