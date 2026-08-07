@@ -121,14 +121,14 @@ $vars = @(
     # Loopback on purpose: it avoids a NAT hairpin through the public name. The
     # self-signed allowance exists because the loopback certificate cannot match
     # "localhost"; it applies to that hop only, never to a public origin.
-    [pscustomobject]@{ Name = "SIMF_Api__BaseUrl"; Value = "https://localhost:12340/"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "must be HTTPS outside Development" }
+    [pscustomobject]@{ Name = "SIMF_Api__BaseUrl"; Value = "https://api.simrsnf.com/"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "must be HTTPS outside Development" }
     [pscustomobject]@{ Name = "SIMF_Api__AllowSelfSignedCertificate"; Value = "true"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "accepts the API loopback cert only" }
 
     # --- Meeting confirmation links -------------------------------------------
     # Empty => the speaker double-opt-in email cannot be built, and the Approve /
     # Resend actions are refused UP FRONT with a bilingual 409
     # MEETING_LINKS_NOT_CONFIGURED before any action token is minted.
-    [pscustomobject]@{ Name = "SIMF_MeetingLinks__PublicWebBaseUrl"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC: public Website origin, e.g. https://simf.example.sa" }
+    [pscustomobject]@{ Name = "SIMF_MeetingLinks__PublicWebBaseUrl"; Value = "https://web.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "public Website origin (D-868)" }
     [pscustomobject]@{ Name = "SIMF_MeetingLinks__TokenTtlHours"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 72" }
 
     # --- Bootstrap super admin ------------------------------------------------
@@ -170,7 +170,8 @@ $vars = @(
     # KnownProxies missing => the API sees the reverse proxy's IP as the client
     # IP, so rate limiting and every audit row record the wrong address.
     [pscustomobject]@{ Name = "SIMF_ReverseProxy__KnownProxies__0"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC: reverse-proxy IP (repeat __1, __2, ...)" }
-    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__0"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC: browser origin allowed to call the API (repeat __1, ...)" }
+    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__0"; Value = "https://web.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "browser origin allowed to call the API — Website + the Flutter web build (D-868)" }
+    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__1"; Value = "https://cp.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "Control Panel origin. Add __2, __3, … for further origins" }
     [pscustomobject]@{ Name = "SIMF_RateLimit__PermitLimit"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 20" }
     [pscustomobject]@{ Name = "SIMF_RateLimit__WindowSeconds"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 60" }
 
@@ -204,7 +205,7 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_Swagger__Password"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "only if AllowSwagger=true" }
 
     # --- Misc -----------------------------------------------------------------
-    [pscustomobject]@{ Name = "SIMF_OrganizationHeroVideo__PublicApiBaseUrl"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC: public API origin used to build hero-video URLs" }
+    [pscustomobject]@{ Name = "SIMF_OrganizationHeroVideo__PublicApiBaseUrl"; Value = "https://api.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "public API origin used to build hero-video URLs (D-868)" }
     [pscustomobject]@{ Name = "SIMF_UploadScanning__Enabled"; Value = "true"; Secret = $false; Gate = $false; Apps = "API"; Note = "leave ON in Production" }
 )
 
