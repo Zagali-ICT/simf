@@ -30,6 +30,38 @@ Build, Test & Publish ──▶ Deploy to IIS
   [`iis-deploy.ps1`](iis-deploy.ps1) which stops each site + app pool, releases
   file locks, `robocopy /MIR`s the files, and restarts.
 
+## Building a package locally (`publish.ps1`)
+
+[`publish.ps1`](../publish.ps1) at the repository root builds the same three web
+apps outside the pipeline, for a manual release or a handover package. It cleans
+the old output, runs `dotnet clean` on each project (so a stale DLL cannot ship),
+restores, then publishes each sequentially in `Release`, stopping at the first
+failure — and on a failure it re-runs that publish verbosely so the real error is
+visible rather than swallowed.
+
+Output folders are named to match the `iis-deploy.ps1` contract, so the package
+deploys with no repackaging step:
+
+```powershell
+.\publish.ps1
+# -> publish\api  publish\cp  publish\web
+
+.\deploy\iis-deploy.ps1 -ArtifactRoot .\publish `
+    -ApiSiteName "SIMF.API" -ApiPath "D:\SIMF\API" `
+    -CpSiteName  "SIMF.CP"  -CpPath  "D:\SIMF\CP"  `
+    -WebSiteName "SIMF.WEB" -WebPath "D:\SIMF\WEB"
+```
+
+`publish/` is git-ignored. The Control Panel and Website publish with
+`-p:ErrorOnDuplicatePublishOutputFiles=false` — the same flag the pipeline passes
+for those two Blazor apps; without it their publish fails on duplicate static
+assets. There is no separate Worker output because the background workers run
+in-process inside the API app pool (see below).
+
+The script builds and packages **only**. It applies no configuration and no
+secrets — those remain Machine-scope environment variables set on the server by
+`set-env.ps1`, below.
+
 ## Operating the sites (`ops.ps1`)
 
 [`ops.ps1`](ops.ps1) is the single entry point for installing, removing, and
