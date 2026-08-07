@@ -37,7 +37,10 @@
 | E2E-VIPR-008 | List shows the VIP/VVIP guests (name / job title / tier / email) | happy | P0 | _to author_ |
 | E2E-VIPR-009 | New VIP opens the registration wizard section; Cancel returns to the list | happy | P1 | _to author_ |
 | E2E-VIPR-010 | Per-row Edit changes name / email / tier / photo / ID / welcome photo | happy | P0 | _to author_ |
-| E2E-VIPR-011 | Add/Edit affordances gated: no `RegisterOnsite`/`Edit` → buttons hidden | auth | P0 | _to author_ |
+| E2E-VIPR-011 | Add/Edit affordances gated: no `RegisterOnsite`/`Edit` → buttons hidden, Details still shown (D-835) | auth | P0 | _to author_ |
+| E2E-VIPR-012 | Details opens one VIP for a read-only admin, revealing the Arabic name and Arabic job title no column shows (D-835) | auth | P0 | _to author_ |
+| E2E-VIPR-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-VIPR-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -193,6 +196,28 @@ Scenario: An admin lacking the visitor permissions sees no New VIP or Edit
   Then the grid loads normally
   And the toolbar does NOT show the "New VIP" button
   And the rows do NOT show a per-row Edit (pencil) icon
+  And the rows DO still show the "Details" action (D-835)
   # SimfDataGrid renders Add/Edit only when the callback HasDelegate; the page
   # wires them only when Authz.AuthorizeAsync succeeds for the respective policy.
+  # Details is wired unconditionally: reading the row is what the page gate bought.
+  # Before D-835 this admin saw no actions column at all - an empty box - and had
+  # no way to open a single VIP record.
+```
+
+### E2E-VIPR-012 — Details opens the VIP without any mutating permission (D-835)
+
+```gherkin
+Scenario: A read-only admin opens one VIP record
+  Given a signed-in admin who can reach the page but holds neither
+        Visitors.RegisterOnsite nor Visitors.Edit
+  And the list holds a VIP "Fahad Al-Otaibi" whose Arabic name is "فهد العتيبي"
+        and whose Arabic job title is "مدير عام"
+  When I open "/admin/visitors/vip" and click "Details" on that row
+  Then a read-only dialog opens titled with the VIP's display name
+  And it shows Name, Name (AR), Job title, Job title (AR), Profile type and Email
+  And the Arabic name and Arabic job title are visible here and in no grid column
+  And NO request fires - the dialog renders from the row the grid already holds
+  And there is no Save, Delete or any other committing control in the dialog
+  When I close the dialog
+  Then the grid is unchanged and still shows every row
 ```

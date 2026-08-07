@@ -3,37 +3,37 @@ using SIMF.Common.Enums;
 namespace SIMF.Domain.BusinessMeetings;
 
 /// <summary>
-/// D-717 (item 7, FDS-013 §15.7 GAP-3) — a single-use, short-lived, action-bound
-/// token behind a speaker double-opt-in email link. Two are minted per
-/// accept-with-hall request (one <see cref="MeetingActionType.Approve"/>, one
-/// <see cref="MeetingActionType.Reject"/>); the speaker clicking a link is the
-/// final gate. Only the keyed-HMAC <see cref="TokenHash"/> of the high-entropy
-/// secret is persisted — the raw secret lives only in the emailed URL. A token is
-/// dead once <see cref="UsedAt"/> is set, once <see cref="Expires"/> passes, or
-/// once its request leaves <c>AwaitingSpeaker</c> (validated on redemption).
+/// A single-use, short-lived token bound to one decision, sitting behind a
+/// speaker's double-opt-in email link. Two are minted per accept-with-hall
+/// request, one to approve and one to reject, and the speaker's click is the
+/// final gate.
+///
+/// <para>A token is dead once it has been used, once it expires, or once its
+/// request leaves the awaiting-speaker state — all three checked on
+/// redemption.</para>
 /// </summary>
 public sealed class MeetingActionToken
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>The speaker meeting request this token decides. Real FK to
-    /// <see cref="SpeakerMeetingRequest"/> on the App DB (cascade — a deleted
-    /// request removes its tokens).</summary>
+    /// <summary>Cascade-deleted with the request it decides.</summary>
     public Guid SpeakerMeetingRequestId { get; set; }
     public SpeakerMeetingRequest? SpeakerMeetingRequest { get; set; }
 
-    /// <summary>Which decision this token authorises (baked in, §15.7).</summary>
+    /// <summary>Which decision this token authorises, baked in at mint
+    /// time.</summary>
     public MeetingActionType Action { get; set; }
 
-    /// <summary>Keyed-HMAC (SHA-256) hash of the high-entropy secret — the value
-    /// compared on redemption. The raw secret is never stored.</summary>
+    /// <summary>A keyed HMAC of the high-entropy secret, and the value compared
+    /// on redemption. The secret itself is never stored; it exists only in the
+    /// emailed URL.</summary>
     public string TokenHash { get; set; } = string.Empty;
 
-    /// <summary>When the token expires (UTC) — 72h after mint (§15.7 / OI-I).</summary>
-    public DateTimeOffset Expires { get; set; }
+    /// <summary>Saudi local time, at the configured lifetime after mint.</summary>
+    public DateTime Expires { get; set; }
 
-    /// <summary>When the token was consumed (UTC); null while unused. Single-use.</summary>
-    public DateTimeOffset? UsedAt { get; set; }
+    /// <summary>When the token was consumed; null while unused.</summary>
+    public DateTime? UsedAt { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

@@ -40,6 +40,10 @@
 | E2E-MOB029-009 | Card shows thumbnail (NewsImage asset) · gold date · title; no excerpt | happy | P1 | authored ✓ (screen `renders…a news card` + `…thumbnail from the NewsImage asset route`) |
 | E2E-MOB029-010 | No uploaded NewsImage / fetch fails → icon fall-back | edge | P1 | authored ✓ (thumbnail `errorBuilder` → `_NewsImageFallback`) |
 | E2E-MOB029-011 | Arabic/RTL: thumbnail at inline-end (LEFT), text at inline-start (RIGHT) | i18n | P0 | authored ✓ (screen `lays the thumbnail left of the text in Arabic`) |
+| E2E-MOB029-012 | The article opens by **named route** `/news/{newsId}`, not an imperative push — so it deep-links like every other detail screen | happy | P0 | authored (router `RouteNames.newsArticle`; `route_table_test` + `router_role_matrix_test`) |
+| E2E-MOB029-013 | Pull-to-refresh on the article re-reads `GET /app/news/{id}` (owner rule: every data page) | happy | P1 | authored (`SimfPullToRefresh` on the body; short branches in `SimfPullableHost`) |
+| E2E-MOB029-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB029-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -51,9 +55,25 @@ Scenario: News render without a token
 
 Scenario: Tapping a card opens the article
   When the visitor taps a news card
-  Then the article screen pushes and calls GET /api/v1/app/news/{id}
+  Then the app navigates to the named route "newsArticle" at /news/{id}
+  And the article screen calls GET /api/v1/app/news/{id}
   And it renders the category, title and full body
   And a 404 shows the "not found" state
+
+Scenario: The article is reachable by deep link
+  Given the visitor opens /news/2f1c4b8a-0000-4000-8000-000000000001 directly
+  Then the article screen opens on that id without going through the news list
+
+Scenario: Pull-to-refresh re-reads the article
+  Given the article screen is showing a loaded article
+  When the visitor pulls down on the body
+  Then GET /api/v1/app/news/{id} is called again
+  And the gold spinner stays until the re-read completes
+
+Scenario: Pull-to-refresh recovers a failed article read
+  Given GET /api/v1/app/news/{id} failed and the error state is showing
+  When the visitor pulls down on the error state
+  Then the read is re-attempted without leaving the screen
 
 Scenario: Empty → placeholder; failed read → error
   Given no news (or a failed read)

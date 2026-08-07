@@ -1,16 +1,9 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -114,19 +107,24 @@ public partial class QuestionQueueList
         value is not null
         && value.Contains(needle, StringComparison.OrdinalIgnoreCase);
 
-    // D-356 — Excel export (selected rows, or the whole Pending queue). Direct
+    // Excel export (selected rows, or the whole Pending queue). Direct
     // download via the generic /export proxy. Export only — questions are
     // audience-submitted and moderated in place (approve / hide / escalate); the
     // queue is not scoped by a parent picked on the page, so an empty selection
     // exports the full cross-session Pending queue the server already lists.
-    private Task OnExportAsync(IReadOnlyList<SessionQuestionQueueRow> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<SessionQuestionQueueRow> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/questions/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private Task ApproveAsync(Guid id) =>
         ActAsync($"/account/api/admin/questions/{id}/approve", L["Admin.QuestionQueue.Approved"]);

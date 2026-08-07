@@ -5,12 +5,13 @@ using SIMF.Application.Excel;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/halls/export</c> — the D-356 grid export for Halls.
+/// <c>POST /api/v1/admin/halls/export</c> — the grid export for Halls.
 /// All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>; this
 /// subclass only declares the route, permission, sheet/file names, the column
 /// layout (mirroring the CP Halls grid), and how to list + identify a hall row.
@@ -33,7 +34,7 @@ public sealed class ExportHallsEndpoint(IAdminHallService service, IGridExcelExp
         new("Capacity", row => row.Capacity),
         new("Floor", row => row.Floor),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the fields the grid summary now carries (appended so
+        // Round-trip the fields the grid summary now carries (appended so
         // the existing column order is unchanged; import binds by header name).
         // SeatSelectionMode is exported by its display name (AssignedSeat/
         // OpenSeating); the geofence triple is all-three-or-none.
@@ -42,6 +43,9 @@ public sealed class ExportHallsEndpoint(IAdminHallService service, IGridExcelExp
         new("GeofenceCenterLon", row => row.GeofenceCenterLon),
         new("GeofenceRadiusMeters", row => row.GeofenceRadiusMeters),
         new("SeatSelectionMode", row => ((SeatSelectionMode)row.SeatSelectionMode).ToString()),
+        // Blank means "inherit the system default", so an empty cell is a
+        // real value here, not a missing one.
+        new("ArrivalGraceMinutes", row => row.ArrivalGraceMinutes),
     ];
 
     protected override async Task<IReadOnlyList<AdminHallSummary>> ListAsync(
@@ -52,7 +56,7 @@ public sealed class ExportHallsEndpoint(IAdminHallService service, IGridExcelExp
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/halls/import</c> — the D-356 grid import for Halls
+/// <c>POST /api/v1/admin/halls/import</c> — the grid import for Halls
 /// (insert-only). The base does the upload defence, parse and per-row error
 /// aggregation; this subclass binds one row to <see cref="AdminCreateHallRequest"/>
 /// and creates it (the service rejects a duplicate Code → a per-row error, not a
@@ -107,7 +111,7 @@ public sealed class ImportHallsEndpoint(IAdminHallService service, IGridExcelImp
             Floor = row.Cells.GetValueOrDefault("Floor", string.Empty) is { Length: > 0 } floor
                 ? floor
                 : null,
-            // D-506 — optional fields the grid summary now round-trips. The
+            // Optional fields the grid summary now round-trips. The
             // geofence triple is all-three-or-none; a partial geofence row is
             // rejected by CreateAsync as a per-row error (not a batch abort).
             EquipmentNotes = NullIfBlank(row.Cells.GetValueOrDefault("EquipmentNotes", string.Empty)),
@@ -116,6 +120,8 @@ public sealed class ImportHallsEndpoint(IAdminHallService service, IGridExcelImp
             GeofenceRadiusMeters = ParseGeo(row.Cells.GetValueOrDefault("GeofenceRadiusMeters", string.Empty)),
             SeatSelectionMode = ParseSeatSelectionMode(
                 row.Cells.GetValueOrDefault("SeatSelectionMode", string.Empty)),
+            ArrivalGraceMinutes = ParseArrivalGrace(
+                row.Cells.GetValueOrDefault("ArrivalGraceMinutes", string.Empty)),
         }, ct);
         return GridRowApplyKind.Created;
     }
@@ -137,6 +143,21 @@ public sealed class ImportHallsEndpoint(IAdminHallService service, IGridExcelImp
         throw new DataValidationException(
             "The geofence latitude, longitude and radius must be numbers.",
             "يجب أن تكون قيم خط العرض وخط الطول ونصف القطر للسياج أرقاماً.");
+    }
+
+    // Parses the optional arrival grace. Blank stays null, which is the
+    // real "inherit the system default" value. A non-blank, out-of-range or
+    // non-numeric cell is a per-row error rather than a silent 0, which would
+    // otherwise slam the hall's doors shut the moment a session ends.
+    private static int? ParseArrivalGrace(string value)
+    {
+        if (WalkInModeOptions.TryParseArrivalGrace(value, out var minutes))
+        {
+            return minutes;
+        }
+        throw new DataValidationException(
+            $"Arrival grace must be a whole number of minutes between 0 and {WalkInModeOptions.MaxArrivalGraceMinutes}, or blank.",
+            $"يجب أن تكون مهلة الوصول عدداً صحيحاً من الدقائق بين 0 و{WalkInModeOptions.MaxArrivalGraceMinutes}، أو فارغة.");
     }
 
     // Maps a SeatSelectionMode cell to its int value. Accepts the display name

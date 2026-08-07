@@ -1,12 +1,11 @@
-@* D-199 (CP UI for the Exhibition booths, Mockup page 22) — admin CRUD
-   over the public exhibition booth list + 2D venue map. Each booth carries
+@* Admin CRUD over the public exhibition booth list + 2D venue map. Each booth carries
    a bilingual name / exhibitor / sector / description, an optional hall, and
    an optional MapX/MapY position used by the public 2D venue map. Centralized
-   dialog/full-page framing D-353: Add / Edit / View / Delete are hosted by
+   dialog/full-page framing: Add / Edit / View / Delete are hosted by
    CrudShell, which frames the reusable BoothsAddEdit and BoothsViewDelete forms
    as a popup or a full page per the admin's toolbar choice (persisted in
    localStorage via CpPreferences). The inline SimfModal form + native confirm()
-   delete it used to carry are gone. D-356: Excel export/import wired through
+   delete it used to carry are gone. Excel export/import is wired through
    CrudGridExcel. *@
 @page "/admin/booths"
 @layout CpShellLayout
@@ -24,7 +23,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminBoothSummary"
@@ -60,7 +61,12 @@
                           DeleteLabel="@L["Grid.Delete"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Booths.Create"
+                          EditPermission="@PermissionCatalog.Booths.Edit"
+                          DeletePermission="@PermissionCatalog.Booths.Delete"
+                          ImportPermission="@PermissionCatalog.Booths.Import"
+                          ExportPermission="@PermissionCatalog.Booths.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

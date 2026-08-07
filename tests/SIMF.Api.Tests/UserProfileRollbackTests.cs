@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -70,11 +70,11 @@ public sealed class ThrowingRefreshTokenApiFactory : SimfApiFactory
             _db.RefreshTokens.Update(token);
             await _db.SaveChangesAsync(ct);
         }
-        public Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, CancellationToken ct = default) =>
+        public Task RevokeAllForUserAsync(Guid userId, DateTime revokedAt, CancellationToken ct = default) =>
             _db.RefreshTokens
                 .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, revokedAt), ct);
-        public Task<int> RevokeIfActiveAsync(Guid tokenId, DateTimeOffset revokedAt, CancellationToken ct = default) =>
+        public Task<int> RevokeIfActiveAsync(Guid tokenId, DateTime revokedAt, CancellationToken ct = default) =>
             _db.RefreshTokens
                 .Where(rt => rt.Id == tokenId && rt.RevokedAt == null)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, revokedAt), ct);
@@ -91,9 +91,9 @@ public sealed class ThrowingRefreshTokenApiFactory : SimfApiFactory
             _inner.GetByTokenHashAsync(hash, ct);
         public Task UpdateAsync(RefreshToken token, CancellationToken ct = default) =>
             _inner.UpdateAsync(token, ct);
-        public Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, CancellationToken ct = default) =>
+        public Task RevokeAllForUserAsync(Guid userId, DateTime revokedAt, CancellationToken ct = default) =>
             throw new InvalidOperationException("Test: refresh-token revoke fails");
-        public Task<int> RevokeIfActiveAsync(Guid tokenId, DateTimeOffset revokedAt, CancellationToken ct = default) =>
+        public Task<int> RevokeIfActiveAsync(Guid tokenId, DateTime revokedAt, CancellationToken ct = default) =>
             _inner.RevokeIfActiveAsync(tokenId, revokedAt, ct);
     }
 }
@@ -154,7 +154,7 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
                 NameArabic = "اختبار",
                 DisplayOrder = 0,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.Interests.Add(interest);
             var organisation = new SIMF.Domain.Organisations.Organisation
@@ -163,7 +163,7 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
                 NameArabic = "جهة اختبار",
                 Name = $"Rollback Org {Guid.NewGuid():N}",
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.Organisations.Add(organisation);
             await db.SaveChangesAsync();
@@ -190,6 +190,8 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
                 IsSaudi = true,
                 NationalId = "1101798278",
                 OrganisationId = organisationId,
+                // DEF-PHN-004 — the mobile is required on the upsert now.
+                SaudiMobile = "0501234567",
             }),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

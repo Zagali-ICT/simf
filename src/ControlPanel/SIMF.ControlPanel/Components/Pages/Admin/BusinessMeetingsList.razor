@@ -1,4 +1,4 @@
-@* SIMF-FDS-013 (D-248) — admin-arranged B2B/B2C business meetings. The admin
+@* Admin-arranged B2B / B2C / G2B business meetings. The admin
    schedules a meeting between two or more parties (companies + visitors) at a
    meeting table for a from–to time-slot; meetings are confirmed on save and can
    be cancelled. Mirrors BoothsList / SessionCategoriesList. *@
@@ -16,7 +16,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="BusinessMeetingRow"
@@ -46,7 +48,9 @@
                       SelectRowLabel="@L["Grid.SelectRow"]"
                       AddLabel="@L["Admin.BusinessMeetings.New"]"
                       DetailsLabel="@L["Admin.BusinessMeetings.View"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      AddPermission="@PermissionCatalog.BusinessMeetings.Schedule"
+                      ExportPermission="@PermissionCatalog.BusinessMeetings.Export">
             <Columns>
                 <SimfDataGridColumn TItem="BusinessMeetingRow" Key="hall"
                                     Header="@L["Admin.BusinessMeetings.Col.Hall"]"
@@ -113,7 +117,8 @@
 @if (_scheduleOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BusinessMeetings.Schedule.Title"]"
-               OnClose="@(() => _scheduleOpen = false)">
+               OnClose="@(() => _scheduleOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <label class="simf-field">
@@ -144,13 +149,13 @@
                             @onchange="OnTypeChanged" disabled="@_busy">
                         <option value="@((int)BusinessMeetingType.B2B)">B2B</option>
                         <option value="@((int)BusinessMeetingType.B2C)">B2C</option>
-                        @* D-730 (owner item 15B) — government-to-business type. *@
+                        @* Government-to-business type. *@
                         <option value="@((int)BusinessMeetingType.G2B)">G2B</option>
                     </select>
                 </label>
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Start"]</span>
-                    @* D-753 — bound the picker to the forum days (MIN/MAX programme day). *@
+                    @* Bound the picker to the forum days (MIN/MAX programme day). *@
                     <input class="simf-field__input" type="datetime-local"
                            min="@_forumMin" max="@_forumMax"
                            value="@_startText" @onchange="OnStartChanged" disabled="@_busy" />
@@ -162,8 +167,12 @@
                            value="@_endText" @onchange="OnEndChanged" disabled="@_busy" />
                 </label>
 
+                @* §6.16 (LQ-006) — a <fieldset> is named by its <legend>, not by a
+                   <span>: with a span the whole participant group had no accessible
+                   name at all. The three selects below were likewise bare — a screen
+                   reader announced three unlabelled combo boxes in a row. *@
                 <fieldset class="simf-field">
-                    <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Participants"]</span>
+                    <legend class="simf-field__label">@L["Admin.BusinessMeetings.Field.Participants"]</legend>
                     @if (_participants.Count > 0)
                     {
                         <ul class="simf-list">
@@ -183,6 +192,7 @@
                     }
                     <div class="simf-form__inline">
                         <select class="simf-field__input" value="@((int)_addKind)"
+                                aria-label="@L["Admin.BusinessMeetings.Party.KindLabel"]"
                                 @onchange="OnAddKindChanged" disabled="@_busy">
                             <option value="@((int)MeetingPartyKind.Company)">@L["Admin.BusinessMeetings.Party.Company"]</option>
                             <option value="@((int)MeetingPartyKind.Visitor)">@L["Admin.BusinessMeetings.Party.Visitor"]</option>
@@ -190,6 +200,7 @@
                         @if (_addKind == MeetingPartyKind.Company)
                         {
                             <select class="simf-field__input" value="@(_addCompanyId?.ToString() ?? string.Empty)"
+                                    aria-label="@L["Admin.BusinessMeetings.Party.ChooseCompany"]"
                                     @onchange="OnAddCompanyChanged" disabled="@_busy">
                                 <option value="">@L["Admin.BusinessMeetings.Party.ChooseCompany"]</option>
                                 @foreach (var c in _companies)
@@ -201,6 +212,7 @@
                         else
                         {
                             <select class="simf-field__input" value="@(_addVisitorId?.ToString() ?? string.Empty)"
+                                    aria-label="@L["Admin.BusinessMeetings.Party.ChooseVisitor"]"
                                     @onchange="OnAddVisitorChanged" disabled="@_busy">
                                 <option value="">@L["Admin.BusinessMeetings.Party.ChooseVisitor"]</option>
                                 @foreach (var v in _visitors)
@@ -226,9 +238,12 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _scheduleOpen = false)">
                 @L["Admin.BusinessMeetings.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
-                @L["Admin.BusinessMeetings.Schedule.Submit"]
-            </SimfButton>
+            @* The page gates on BusinessMeetings.View; scheduling a meeting is .Schedule. *@
+            <AuthorizedAction Permission="@PermissionCatalog.BusinessMeetings.Schedule">
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.BusinessMeetings.Schedule.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -236,7 +251,8 @@
 @if (_cancelOpen && _cancelTarget is not null)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BusinessMeetings.Cancel.Title"]"
-               OnClose="@(() => _cancelOpen = false)">
+               OnClose="@(() => _cancelOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <p>@string.Format(L["Admin.BusinessMeetings.Cancel.Prompt"],
@@ -253,9 +269,12 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _cancelOpen = false)">
                 @L["Admin.BusinessMeetings.Cancel.Keep"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="ConfirmCancelAsync" Loading="_busy">
-                @L["Admin.BusinessMeetings.Cancel.Confirm"]
-            </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.BusinessMeetings.Cancel">
+            <SimfButton Type="button" OnClick="ConfirmCancelAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.BusinessMeetings.Cancel.Confirm"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -263,7 +282,8 @@
 @if (_detailOpen && _detail is not null)
 {
     <SimfModal Open="true" Title="@L["Admin.BusinessMeetings.Detail.Title"]"
-               OnClose="@(() => _detailOpen = false)">
+               OnClose="@(() => _detailOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <dl class="simf-dl">
                 <dt>@L["Admin.BusinessMeetings.Col.Hall"]</dt><dd>@_detail.HallName</dd>

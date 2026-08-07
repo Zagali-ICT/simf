@@ -11,11 +11,11 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;
 
-/// <summary>D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows + the
+/// <summary>Hall availability windows + the
 /// free slots derived from them. Windows are team-defined; a window is chopped
-/// into fixed-length slots, and a slot is offered when it is in the future (the
-/// taken-by-a-bound-meeting filter lands with the accept-binds-slot flow in
-/// GAP-2). Mirrors <see cref="SpeakerAvailabilityService"/>.</summary>
+/// into fixed-length slots, and a slot is offered when it is in the future and
+/// no bound meeting already holds it.
+/// Mirrors <see cref="SpeakerAvailabilityService"/>.</summary>
 internal sealed class HallAvailabilityService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
@@ -51,7 +51,7 @@ internal sealed class HallAvailabilityService(
                 "يجب أن تنتهي الفترة بعد بدايتها وأن تتّسع لفترة واحدة على الأقل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var window = new HallAvailabilityWindow
         {
             Id = Guid.NewGuid(),
@@ -66,13 +66,11 @@ internal sealed class HallAvailabilityService(
         appDbContext.HallAvailabilityWindows.Add(window);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallAvailabilityWindowCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"windowId={window.Id}; hallId={hallId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallAvailabilityWindowCreated,
+            actorUserId,
+            $"windowId={window.Id}; hallId={hallId}",
+            cancellationToken);
 
         logger.LogInformation(
             "Hall availability window {WindowId} created for hall {HallId} by {Actor}",
@@ -98,22 +96,20 @@ internal sealed class HallAvailabilityService(
             ?? throw new ApiException(ErrorCodes.HallAvailabilityWindowNotFound, 404,
                 "The availability window was not found.", "لم يتم العثور على فترة التوفّر.");
         window.IsActive = false;
-        window.UpdatedAt = timeProvider.GetUtcNow();
+        window.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallAvailabilityWindowDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"windowId={windowId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallAvailabilityWindowDeleted,
+            actorUserId,
+            $"windowId={windowId}",
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<HallAvailableSlot>> GetAvailableSlotsAsync(
         Guid hallId, CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var windows = await appDbContext.HallAvailabilityWindows.AsNoTracking()
             .Where(w => w.HallId == hallId && w.IsActive && w.End > now)
             .OrderBy(w => w.Start)
@@ -123,7 +119,7 @@ internal sealed class HallAvailabilityService(
             return Array.Empty<HallAvailableSlot>();
         }
 
-        // D-716 (GAP-2) — the slots already taken by a bound meeting are removed.
+        // The slots already taken by a bound meeting are removed.
         // "Taken" = a request in the slot-holding live set
         // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker + Done), the
         // single authority the accept re-check + the DB indexes also key off. Load
@@ -136,10 +132,10 @@ internal sealed class HallAvailabilityService(
             .Select(r => new { Start = r.SlotStart!.Value, End = r.SlotEnd!.Value })
             .ToListAsync(cancellationToken);
 
-        // Bi-Meeting rework — a DELEGATION meeting bound to this hall occupies the slot
-        // too. Once delegation meetings bind halls (P3), the hall free-slot read MUST
-        // subtract them as well, or a hall slot held by a delegation meeting is offered
-        // as free and double-booked across a speaker + a delegation meeting.
+        // A DELEGATION meeting bound to this hall occupies the slot too, so the
+        // free-slot read subtracts those as well. Without this a hall slot held by
+        // a delegation meeting is offered as free and double-booked across a
+        // speaker + a delegation meeting.
         var delegationBusy = await appDbContext.DelegationMeetingRequests.AsNoTracking()
             .Where(r => r.HallId == hallId
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)

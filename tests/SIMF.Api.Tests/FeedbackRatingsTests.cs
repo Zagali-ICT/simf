@@ -298,7 +298,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
         Assert.False(form.IsEligible);
 
         await RatingAttendance.SeedGateCheckInAsync(
-            _factory, userId, DateTimeOffset.UtcNow.AddHours(-1));
+            _factory, userId, SimfClock.Now.AddHours(-1));
 
         var after = await GetFormAsync("App", null, visitor);
         Assert.True(after.IsEligible);
@@ -323,7 +323,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
             NameArabic = "قاعة التقييم",
             Capacity = 10,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -333,10 +333,10 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
             Title = "Watched-At Session",
             TitleArabic = "جلسة السياق",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddHours(-2),
-            End = DateTimeOffset.UtcNow.AddHours(-1),
+            Start = SimfClock.Now.AddHours(-2),
+            End = SimfClock.Now.AddHours(-1),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -414,15 +414,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

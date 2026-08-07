@@ -5,7 +5,7 @@ using SIMF.Domain.SessionQuestions;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-169 (gap doc G6) — SessionQuestion entity configuration.
+/// <summary>SessionQuestion entity configuration.
 /// Real FK to Session (same DbContext). SubmittedByUserId is a logical
 /// FK to SimfUser on the Identity DB. Query index supports the
 /// moderator queue scan: `(SessionId, IsHidden, Order)`.</summary>
@@ -18,7 +18,7 @@ internal sealed class SessionQuestionConfiguration : IEntityTypeConfiguration<Se
 
         builder.Property(q => q.QuestionText).HasMaxLength(1000).IsRequired();
 
-        // P3.3 — D-212: Q&A pipeline columns. No HasDefaultValue on Status — the
+        // Q&A pipeline columns. No HasDefaultValue on Status — the
         // service always writes an explicit value (the migration backfills
         // existing rows). Phase/Status stored as int by convention.
         builder.Property(q => q.AiFilterVerdict).HasMaxLength(256);
@@ -34,14 +34,14 @@ internal sealed class SessionQuestionConfiguration : IEntityTypeConfiguration<Se
 
         builder.HasIndex(q => new { q.SessionId, q.IsHidden, q.Order });
         builder.HasIndex(q => q.SubmittedByUserId);
-        // P3.3 — D-212: the moderator desk lists the Committee-approved set per
+        // The moderator desk lists the Committee-approved set per
         // session; the Committee queue scans Pending across sessions.
         builder.HasIndex(q => new { q.SessionId, q.Status, q.Order });
         builder.HasIndex(q => new { q.Status, q.CreatedAt });
     }
 }
 
-/// <summary>D-169 (gap doc G6) — SessionModerator join configuration.
+/// <summary>SessionModerator join configuration.
 /// Composite PK (SessionId, UserId). Cascade from Session so removing
 /// the session drops the grant set; UserId stays a logical FK to
 /// Identity DB (no SQL constraint).</summary>

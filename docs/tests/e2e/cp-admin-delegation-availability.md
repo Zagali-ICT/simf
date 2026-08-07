@@ -54,6 +54,8 @@
 | E2E-DAV-005 | Forum-day bound — a window outside the event days is rejected 400 `VALIDATION_FAILED`; pickers carry the forum min/max | error | P0 | authored ✓ (`Create_window_outside_the_forum_window_is_400`, API) |
 | E2E-DAV-006 | Auth gate — admin lacking `DelegationMeetings.Manage` → `/not-permitted`; nav item hidden; a `View`-only admin can list but sees no Delete action | auth | P0 | _to author_ (gate verified by `CpNavigationPermissionTests` / `PermissionEnforcementTests`) |
 | E2E-DAV-007 | RTL / Arabic render — page + add form mirror; title "أوقات إتاحة الوفود" | i18n | P1 | _to author_ |
+| E2E-DAV-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-DAV-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

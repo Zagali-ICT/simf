@@ -7,15 +7,15 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Sponsors;
 
-/// <summary>D-199 (Mockup page 23) — anonymous public list of active sponsors,
+/// <summary>Anonymous public list of active sponsors,
 /// grouped by tier (highest tier first; Platinum=10 before Bronze=40), then by
 /// DisplayOrder then NameArabic. Mirrors PublicDelegationService.
 ///
 /// <para>The public card's identity-card fields (name / logo / website /
 /// contact / social / location) are sourced from the sponsor's own inlined
-/// columns — superseding the removed shared <c>Contact</c> directory
-/// (SIMF-FDS-014 / D-281). The JSON field names are unchanged, preserving the
-/// shipped mobile/public wire contract (D-219).</para></summary>
+/// columns — superseding the removed shared <c>Contact</c>
+/// directory. The JSON field names are unchanged, preserving the
+/// shipped mobile/public wire contract.</para></summary>
 internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
     : IPublicSponsorService
 {
@@ -40,7 +40,7 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 sponsor.LogoRelativePath,
                 sponsor.Url,
                 sponsor.DisplayOrder,
-                // D-432 — the tagline is sponsor-owned.
+                // The tagline is sponsor-owned.
                 sponsor.Tagline,
                 sponsor.TaglineArabic,
                 sponsor.PhonePrimary,
@@ -108,7 +108,7 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 sponsor.Tier,
                 sponsor.LogoRelativePath,
                 sponsor.Url,
-                // Wave 3 — the about is sponsor-owned (like the tagline).
+                // The about is sponsor-owned (like the tagline).
                 sponsor.About,
                 sponsor.AboutArabic,
                 sponsor.City,

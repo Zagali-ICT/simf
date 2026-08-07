@@ -25,6 +25,8 @@
 | E2E-TZ-004 | datetime-local edit round-trips (Saudi in → UTC stored → Saudi out) | happy | P0 | to author |
 | E2E-TZ-005 | App shows the same Saudi-local time as the CP for one instant | consistency | P0 | to author |
 | E2E-TZ-006 | Missing timezone id never throws (fixed-offset guarantee) | resilience | P2 | authored |
+| E2E-TZ-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-TZ-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

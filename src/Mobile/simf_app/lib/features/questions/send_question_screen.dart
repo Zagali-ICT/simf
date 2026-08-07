@@ -39,12 +39,15 @@ enum QuestionRecipient {
 /// detail / live screens use, no new API). It is **non-blocking context**: a
 /// fetch failure just hides the block and the composer still works.
 ///
-/// The frame shows no recipient selector, so the form submits to the default
-/// recipient (Speaker = 0); the submit API + `recipient` wire field are
-/// preserved (`POST /app/sessions/{id}/questions`, `RequireApprovedAccount`,
-/// D-169/D-174). A 400 (`SESSION_NOT_LIVE_FOR_QUESTIONS`) / 404 maps to the
-/// "questions are only open around the session" toast; any other failure to a
-/// generic error toast.
+/// B7 — the composer carries the D-174 **"إلى من؟"** recipient choice
+/// (المتحدث / المضيف). It was hardcoded to Speaker, so `recipient` was always
+/// 0 and the Host half of `SessionQuestionRecipient` — which the moderator and
+/// committee queues both project — could never be produced; Speaker stays the
+/// default so a user who never taps behaves exactly as before
+/// (`POST /app/sessions/{id}/questions`,
+/// `RequireApprovedAccount`, D-169/D-174). A 400
+/// (`SESSION_NOT_LIVE_FOR_QUESTIONS`) / 404 maps to the "questions are closed"
+/// toast; any other failure to a generic error toast.
 class SendQuestionScreen extends ConsumerStatefulWidget {
   const SendQuestionScreen({this.sessionId, super.key});
 
@@ -57,9 +60,9 @@ class SendQuestionScreen extends ConsumerStatefulWidget {
 
 class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
   final TextEditingController _question = TextEditingController();
-  // The frame carries no recipient selector; the question is submitted to the
-  // default recipient. The wire `recipient` field is preserved (D-169/D-174).
-  static const QuestionRecipient _recipient = QuestionRecipient.speaker;
+  // B7 — the D-174 recipient choice. Speaker is the default (the shipped
+  // behaviour); the picker below lets the asker send to the Host instead.
+  QuestionRecipient _recipient = QuestionRecipient.speaker;
   bool _submitting = false;
   String? _inlineError;
 
@@ -169,9 +172,12 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
   }
 
   Widget _empty(AppL10n l10n) {
-    return SimfEmptyState(
-      icon: Icons.live_help_outlined,
-      message: l10n.sendQuestionNoSession,
+    return SimfRefreshableMessage(
+      onRefresh: _loadDetail,
+      child: SimfEmptyState(
+        icon: Icons.live_help_outlined,
+        message: l10n.sendQuestionNoSession,
+      ),
     );
   }
 
@@ -186,35 +192,52 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
     return Column(
       children: <Widget>[
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              SimfTokens.space4,
-              SimfTokens.space5,
-              SimfTokens.space4,
-              SimfTokens.space4,
-            ),
-            children: <Widget>[
-              // Frame 1049:12590 — the "بيانات الجلسة" session-data block over
-              // the composer. Hidden until the optional detail read lands.
-              if (dataLines.isNotEmpty) ...<Widget>[
-                SessionDataBlock(
-                  label: l10n.sessionDataLabel,
-                  lines: dataLines,
+          child: SimfPullToRefresh(
+            onRefresh: _loadDetail,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                SimfTokens.space4,
+                SimfTokens.space5,
+                SimfTokens.space4,
+                SimfTokens.space4,
+              ),
+              children: <Widget>[
+                // Frame 1049:12590 — the "بيانات الجلسة" session-data block over
+                // the composer. Hidden until the optional detail read lands.
+                if (dataLines.isNotEmpty) ...<Widget>[
+                  SessionDataBlock(
+                    label: l10n.sessionDataLabel,
+                    lines: dataLines,
+                  ),
+                  const SizedBox(height: SimfTokens.space6),
+                ],
+                // B7 — the recipient choice sits above the composer, as in the
+                // D-174 mockup's two pills.
+                SendQuestionRecipientPicker(
+                  label: l10n.sendQuestionRecipientLabel,
+                  speakerLabel: l10n.sendQuestionToSpeaker,
+                  hostLabel: l10n.sendQuestionToHost,
+                  hostSelected: _recipient == QuestionRecipient.host,
+                  onSpeaker: () =>
+                      setState(() => _recipient = QuestionRecipient.speaker),
+                  onHost: () =>
+                      setState(() => _recipient = QuestionRecipient.host),
                 ),
                 const SizedBox(height: SimfTokens.space6),
+                SendQuestionComposer(
+                  sectionLabel: l10n.sendQuestionSectionLabel,
+                  hint: l10n.sendQuestionHint,
+                  controller: _question,
+                  errorText: _inlineError,
+                  onChanged: (_) {
+                    if (_inlineError != null) {
+                      setState(() => _inlineError = null);
+                    }
+                  },
+                ),
               ],
-              SendQuestionComposer(
-                sectionLabel: l10n.sendQuestionSectionLabel,
-                hint: l10n.sendQuestionHint,
-                controller: _question,
-                errorText: _inlineError,
-                onChanged: (_) {
-                  if (_inlineError != null) {
-                    setState(() => _inlineError = null);
-                  }
-                },
-              ),
-            ],
+            ),
           ),
         ),
         // Frame 943:3751 — the bottom-pinned submit + reviewed-before-air note.

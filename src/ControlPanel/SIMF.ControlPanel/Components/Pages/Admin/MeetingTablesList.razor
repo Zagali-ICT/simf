@@ -1,4 +1,4 @@
-@* SIMF-FDS-013 (D-248) — flexible hall configuration: set a hall's purpose,
+@* Flexible hall configuration: set a hall's purpose,
    define / generate meeting tables (random-by-count or by row-column), and
    reserve hall space (whole / random-by-count / row-column) over a time-slot.
    Mirrors BoothsList. *@
@@ -16,7 +16,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <label class="simf-field">
@@ -58,6 +60,7 @@
                           Multiselect="true" RowKey="@(r => r.Id.ToString())" RowLabel="@(r => r.Code)"
                           Caption="@L["Admin.MeetingTables.Tables.Heading"]"
                           OnAdd="OnAddTable" OnEditOne="OnEditTable" OnDeleteOne="OnDeleteTableAsync"
+                          OnDetailsOne="OnTableDetails"
                           OnExport="OnExportTablesAsync"
                           PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
@@ -66,8 +69,13 @@
                           SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.MeetingTables.AddTable"]"
                           EditLabel="@L["Grid.Edit"]" DeleteLabel="@L["Grid.Delete"]"
+                          DetailsLabel="@L["Admin.MeetingTables.Action.Details"]"
                           ExportLabel="@L["Grid.Export"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.MeetingTables.Edit"
+                          EditPermission="@PermissionCatalog.MeetingTables.Edit"
+                          DeletePermission="@PermissionCatalog.MeetingTables.Edit"
+                          ExportPermission="@PermissionCatalog.MeetingTables.Export">
                 <Columns>
                     <SimfDataGridColumn TItem="MeetingTableRow" Key="code" Header="@L["Admin.MeetingTables.Col.Code"]">
                         <CellTemplate>@context.Code</CellTemplate>
@@ -93,12 +101,16 @@
             </SimfDataGrid>
 
             <h3>@L["Admin.MeetingTables.Allocations.Heading"]</h3>
+            @* The allocation grid acts on a DIFFERENT resource from the
+            tables grid above it: both buttons call hall-allocation
+            endpoints, which the API gates on HallAllocations.Edit. *@
             <SimfDataGrid TItem="HallAllocationRow"
                           Query="_allocQuery" Page="_allocPage" Loading="_allocLoading"
                           OnQueryChanged="OnAllocQueryChangedAsync"
                           Multiselect="true" RowKey="@(r => r.Id.ToString())" RowLabel="@(r => r.Purpose.ToString())"
                           Caption="@L["Admin.MeetingTables.Allocations.Heading"]"
                           OnAdd="OnAddAllocation" OnDeleteOne="OnReleaseAllocationAsync"
+                          OnDetailsOne="OnAllocationDetails"
                           PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
                           PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
@@ -106,14 +118,17 @@
                           SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.MeetingTables.AddAllocation"]"
                           DeleteLabel="@L["Admin.MeetingTables.Release"]"
-                          SummaryFormatter="@FormatSummary">
+                          DetailsLabel="@L["Admin.MeetingTables.Action.Details"]"
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.HallAllocations.Edit"
+                          DeletePermission="@PermissionCatalog.HallAllocations.Edit">
                 <Columns>
                     <SimfDataGridColumn TItem="HallAllocationRow" Key="purpose" Header="@L["Admin.MeetingTables.Col.Purpose"]">
-                        @* R10 (D-767) — render the localized purpose, not the raw enum name. *@
+                        @* Render the localized purpose, not the raw enum name. *@
                         <CellTemplate>@(L[PurposeKey(context.Purpose)].Value)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="HallAllocationRow" Key="mode" Header="@L["Admin.MeetingTables.Col.Mode"]">
-                        @* R10 (D-767) — localized mode (was the raw 'RandomByCount' enum name). *@
+                        @* Localized mode, not the raw 'RandomByCount' enum name. *@
                         <CellTemplate>@(L[ModeKey(context.Mode)].Value) @(context.Mode == HallAllocationMode.RandomByCount ? $"({context.UnitCount})" : context.Mode == HallAllocationMode.RowColumn ? $"({context.RowColumnSpec})" : "")</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="HallAllocationRow" Key="start" Header="@L["Admin.MeetingTables.Col.Start"]">
@@ -131,12 +146,56 @@
     </div>
 </div>
 
+@* The read affordance for both grids. The tables grid never shows
+   IsActive, and the allocations grid never shows the notes, so Edit and Release
+   were the only ways to see either. Both open from the row the grid already holds. *@
+<SimfDetails Open="@(_tableDetails is not null)"
+             Title="@(_tableDetails?.Code ?? string.Empty)"
+             CloseLabel="@L["Grid.Close"]"
+             OnClose="@(() => _tableDetails = null)">
+    @if (_tableDetails is not null)
+    {
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Code"]" Value="@_tableDetails.Code" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Row"]" Value="@_tableDetails.RowLabel" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Column"]" Value="@_tableDetails.ColumnNumber?.ToString()" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Capacity"]" Value="@_tableDetails.Capacity.ToString()" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Active"]">
+            <SimfPill Variant="@(_tableDetails.IsActive ? "on" : "off")">
+                @(_tableDetails.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])
+            </SimfPill>
+        </SimfDetailRow>
+    }
+</SimfDetails>
+
+<SimfDetails Open="@(_allocationDetails is not null)"
+             Title="@(_allocationDetails is null ? string.Empty : L[PurposeKey(_allocationDetails.Purpose)].Value)"
+             CloseLabel="@L["Grid.Close"]"
+             OnClose="@(() => _allocationDetails = null)">
+    @if (_allocationDetails is not null)
+    {
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Purpose"]"
+                       Value="@(L[PurposeKey(_allocationDetails.Purpose)].Value)" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Mode"]"
+                       Value="@(L[ModeKey(_allocationDetails.Mode)].Value)" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Units"]"
+                       Value="@_allocationDetails.UnitCount?.ToString()" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.RowColumnSpec"]"
+                       Value="@_allocationDetails.RowColumnSpec" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Start"]"
+                       Value="@_allocationDetails.Start.FormatSaudi("dd-MM-yyyy hh:mm tt")" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.End"]"
+                       Value="@_allocationDetails.End.FormatSaudi("dd-MM-yyyy hh:mm tt")" />
+        <SimfDetailRow Label="@L["Admin.MeetingTables.Col.Notes"]" Value="@_allocationDetails.Notes" />
+    }
+</SimfDetails>
+
 @if (_tableOpen)
 {
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@(_isEditTable ? L["Admin.MeetingTables.EditTable.Title"] : L["Admin.MeetingTables.AddTable.Title"])"
-               OnClose="@(() => _tableOpen = false)">
+               OnClose="@(() => _tableOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.MeetingTables.Col.Code"]"
@@ -165,9 +224,15 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _tableOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SaveTableAsync" Loading="_busy">
-                @L["Admin.MeetingTables.Save"]
-            </SimfButton>
+            @* The page gates on MeetingTables.View, but saving a table needs
+               MeetingTables.Edit. The page-level permission ratchet missed this
+               because the page already used <AuthorizedAction> elsewhere, so
+               the guard is now per-button. *@
+            <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
+                <SimfButton Type="button" OnClick="SaveTableAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.MeetingTables.Save"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -175,7 +240,8 @@
 @if (_generateOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.MeetingTables.Generate.Title"]"
-               OnClose="@(() => _generateOpen = false)">
+               OnClose="@(() => _generateOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <label class="simf-field">
@@ -216,7 +282,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _generateOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="GenerateAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="GenerateAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.MeetingTables.Generate.Submit"]
             </SimfButton>
         </Footer>
@@ -226,7 +292,8 @@
 @if (_allocOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.MeetingTables.AddAllocation.Title"]"
-               OnClose="@(() => _allocOpen = false)">
+               OnClose="@(() => _allocOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <label class="simf-field">
@@ -280,9 +347,13 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _allocOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SaveAllocationAsync" Loading="_busy">
-                @L["Admin.MeetingTables.Save"]
-            </SimfButton>
+            @* The page gates on MeetingTables.View, but saving an allocation
+               needs HallAllocations.Edit, so this button carries its own guard. *@
+            <AuthorizedAction Permission="@PermissionCatalog.HallAllocations.Edit">
+            <SimfButton Type="button" OnClick="SaveAllocationAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.MeetingTables.Save"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }

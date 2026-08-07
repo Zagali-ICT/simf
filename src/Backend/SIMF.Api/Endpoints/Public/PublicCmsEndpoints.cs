@@ -8,7 +8,7 @@ using SIMF.Contracts.Cms;
 
 namespace SIMF.Api.Endpoints.Public;
 
-// -- D-173 (gap doc G8, PDF §1) — public CMS read surface -----------------
+// -- public CMS read surface ----------------------------------------------
 
 public sealed class GetPublicContentBlockRoute
 {
@@ -35,7 +35,7 @@ public sealed class GetPublicContentBlockEndpoint(IPublicCmsService service)
                 "لم يتم العثور على المحتوى.");
         }
 
-        // D-173: If-Modified-Since handshake. HTTP date precision is
+        // If-Modified-Since handshake. HTTP date precision is
         // one second, so the server-side LastUpdatedAt is truncated to
         // the second before comparison and before being emitted as
         // Last-Modified — otherwise a millisecond drift makes the very
@@ -44,7 +44,7 @@ public sealed class GetPublicContentBlockEndpoint(IPublicCmsService service)
             -(block.LastUpdatedAt.Ticks % TimeSpan.TicksPerSecond));
         var ifModifiedSince = HttpContext.Request.Headers.IfModifiedSince;
         if (ifModifiedSince.Count > 0
-            && DateTimeOffset.TryParse(ifModifiedSince.ToString(), out var since)
+            && DateTime.TryParse(ifModifiedSince.ToString(), out var since)
             && since >= lastModifiedSecond)
         {
             await Send.ResultAsync(Results.StatusCode(StatusCodes.Status304NotModified));
@@ -52,7 +52,7 @@ public sealed class GetPublicContentBlockEndpoint(IPublicCmsService service)
         }
 
         HttpContext.Response.Headers.LastModified =
-            lastModifiedSecond.UtcDateTime.ToString("R");
+            lastModifiedSecond.ToString("R");
         await Send.OkAsync(ApiResult<PublicContentBlock>.Ok(block), ct);
     }
 }
@@ -68,7 +68,7 @@ public sealed class BatchPublicContentBlocksEndpoint(IPublicCmsService service)
     }
     public override async Task HandleAsync(PublicContentBlockBatchRequest req, CancellationToken ct)
     {
-        // R1 audit (#28) — a {"keys": null} body overwrites the property
+        // A {"keys": null} body overwrites the property
         // initializer with null on deserialization. The validator rejects a
         // null/empty list with a clean 400; this guard keeps the handler
         // NRE-safe as defense-in-depth if the request ever reaches it.
@@ -78,7 +78,7 @@ public sealed class BatchPublicContentBlocksEndpoint(IPublicCmsService service)
     }
 }
 
-/// <summary>R1 audit (#28) — rejects a null/empty <c>Keys</c> list on the public
+/// <summary>Rejects a null/empty <c>Keys</c> list on the public
 /// batch read with a clean bilingual 400 (validation_failed) instead of letting
 /// a <c>{"keys": null}</c> body fault the handler. Auto-discovered by
 /// FastEndpoints and bound to the endpoint's request type.</summary>

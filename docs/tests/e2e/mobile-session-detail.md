@@ -71,15 +71,27 @@
 > live→live active / future+feed→live inactive); the golden
 > `session_detail_889-2450` renders an upcoming session, so both actions show
 > greyed. Covered by E2E-MOB017-018/019/027.
+>
+> **Hall check-in comes from the GATE SCAN (owner 2026-07-31, replaces the GPS
+> self check-in):** a **read-only** status strip now sits above the scrolling
+> body, reading `GET /app/sessions/{id}/attendance` and reporting what the door
+> recorded — the arrival on the Saudi 12-hour clock, the departure once the
+> attendee has been scanned back out, or a plain instruction to present the badge
+> at the hall door. It posts nothing. It replaced the "أنا هنا / I'm here" button
+> that posted a device position to `POST /app/sessions/{id}/arrival`, and with it
+> the location plugin and the runtime location permission that button needed.
+> The strip is offered only to an attendee role, only off an `upcoming` session,
+> and never on a `Workshop` (#29). Scenarios E2E-MOB017-035..040; the write side
+> of the same data is `cp-admin-gates-operator.md` / `cp-admin-hall-arrivals.md`.
 
 | | |
 |--|--|
 | **Page** | [`Page_017`](../../App/Page_017/README.md) (App page docs) |
-| **Route** | `GET /api/v1/app/programme/sessions/{id}` (detail, anon) · `GET /api/v1/app/sessions/{id}/seats` (my-seat, approved) · app screen #17 `/sessions/:sessionId` |
+| **Route** | `GET /api/v1/app/programme/sessions/{id}` (detail, anon) · `GET /api/v1/app/sessions/{id}/seats` (my-seat, approved) · `GET /api/v1/app/sessions/{id}/attendance` (hall check-in status, approved — read-only) · app screen #17 `/sessions/:sessionId` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Public screen (D-750, reverses D-576)** — the Session-detail screen is open to a signed-out guest; the join/ask sections stay hidden until an **approved Visitor** token is used (the my-seat / reservation card + the Join CTA need a held reservation on an approved account). An **Admin** token only to seed the session + seat layout. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-07-20 (D-750 — screen public again; case-1 register label + registered alert) |
+| **Last reviewed** | 2026-07-31 (gate-scan hall check-in status strip replaces the GPS self check-in) |
 
 ## Coverage matrix
 
@@ -96,24 +108,40 @@
 | E2E-MOB017-009 | `تذكير` — interim notice (real scheduling deferred to the notifications pass) | happy | P2 | authored ✓ (screen — `Reminder shows the deferred-notice toast`, D-300) |
 | E2E-MOB017-010 | Stale tap onto a soft-deleted session → detail 404 → "not found" state | error | P1 | authored ✓ (`ProgrammeSessionsTests` 404 + screen `a 404 shows the not-found state`) |
 | E2E-MOB017-011 | RTL render; the row letter + seat number are LTR inside the Arabic line | i18n | P1 | authored (screen RTL-primary; LTR row/seat deferred to designer) |
-| E2E-MOB017-012 | Header card — gold index badge (code, LTR), title, clock/calendar meta line, action buttons (no tag pills) | happy | P0 | authored ✓ (Figma 889:2716 re-skin) |
+| E2E-MOB017-012 | Header card — gold index badge (code, LTR), title, the category tag pill (PAR-D3, when the session has a category), clock/calendar meta line, action buttons | happy | P0 | authored ✓ (Figma 889:2716 re-skin; pill restored by PAR-D3 — see E2E-MOB017-033) |
 | E2E-MOB017-013 | وصف الجلسة / Description card renders the localized description; hidden when null | happy | P1 | authored ✓ (Figma 889:2719 re-skin) |
 | E2E-MOB017-014 | المتحدثون speaker card → 40×40 photo + country flag beside the name | happy | P0 | authored ✓ (Figma 889:2722 re-skin; photo+flag) |
-| E2E-MOB017-015 | المتحدثون host card → المضيف/Host sub-line (`SessionSpeakerRole.host`) | happy | P0 | authored ✓ (Figma 889:2737 re-skin; real role) |
+| E2E-MOB017-015 | المتحدثون host card → المضيف/Host sub-line (`SessionSpeakerRole.host`), now carrying the gold **star** glyph (PAR-P4a — see E2E-MOB017-034) | happy | P0 | authored ✓ (Figma 889:2737 re-skin; real role) |
 | E2E-MOB017-016 | **Reservation card (D-485)** — a held (provisional) booking shows الصف · مقعد (or "general admission" for an open-seating join) + a "show your badge at the gate" check-in hint + a Cancel action; a seat booking's chevron/marker opens the seat map (18), an open-seating join has no map link | happy | P1 | authored ✓ (widget — reservation card: seat/general-admission + check-in hint + cancel) |
 | E2E-MOB017-017 | CTA row — تذكير (outlined) + أضف إلى تقويمي (gold) order and toasts | happy | P1 | authored ✓ (Figma 897:2872 re-skin) |
 | E2E-MOB017-018 | رابط الجلسة — **state-gated (owner 2026-07-14)**: both header buttons keep their slots, but رابط الجلسة is ACTIVE only while the session is LIVE **and** carries a `liveStreamUrl` (streaming) — greyed/inert otherwise; when active it opens Live (25) | happy | P1 | authored ✓ (`…session link opens the live screen while the session is live + streaming`; body-gate tests future+feed→inactive) |
 | E2E-MOB017-019 | ملخص الجلسة — **state-gated (owner 2026-07-14)**: ACTIVE only once the session has ENDED (a future/live session has no محضر → greyed/inert); when active it opens AI summary (34) | happy | P1 | authored ✓ (`…summary button opens the AI session summary once the session has ended`; body-gate tests future→inactive / ended→active) |
-| E2E-MOB017-020 | اسأل المحاور card — **gated on joining (#3)**: enabled (opens Send question #26) only once the user has **joined** the session (holds a booking, NOT physical check-in); not joined → the card is disabled with a "Join the session to ask a question" hint and the tap is inert | happy/auth | P1 | authored ✓ (Figma 1056:12876; `#3 — a joined user can ask…` + `#3 — pre-ask is gated on joining…`) |
+| E2E-MOB017-020 | اسأل المحاور card — **NO join gate (#7 / D-733 superseded #3)**: enabled (opens Send question #26) for **any approved account** whose seat map has loaded, with or without a booking — the owner dropped the D-485 join/booking requirement for the pre-start ask ("anyone before start"). Only a **guest / pending** account (no seat map) sees it disabled, as the sign-in nudge. The `askHostJoinFirst` ("Join the session to ask a question") string is consequently **unreferenced by design** — see the A21 note below | happy/auth | P1 | authored ✓ (Figma 1056:12876; `#3 — a joined user can ask: the ask card opens send-question` + `#7 — an approved user can ask a FUTURE session without a booking (no join gate)`) |
 | E2E-MOB017-026 | **Pre-session ask label (D-714 GAP-2)** — while the session is **upcoming** (`now < start`) the ask card reads the distinct pre-session label "اطرح سؤالاً قبل الجلسة" / "Ask a question before it starts" (mode B, `Phase=Pre`); once **live/started** it reverts to "اسأل المحاور" / "Ask the host" (mode A). The backend derives the phase + enforces the [start−5min, end] window either way | happy/i18n | P1 | authored ✓ (screen `a live (already started) session shows the "Ask the host" label` + the ask-label tests; golden `session_detail_889-2450` shows the pre-session label) |
 | E2E-MOB017-021 | Speaker country flag — `CountryId` 682 → 🇸🇦 emoji beside the name | happy | P2 | authored ✓ (`…renders its flag emoji`; `core/country_flag.dart`) |
 | E2E-MOB017-022 | **Join CTA (D-485; label + alert D-750)** — an approved user with no reservation sees a Join section, branched by the session's effective mode: assigned-seat → "الانضمام إلى الجلسة" / "Join the session" opens the seat picker; open-seating → the CTA reads "سجل لحضور الجلسة" / "Register to attend the session" and confirms then joins (Approved — confirmed immediately, no CP approval), showing a one-button success **alert** (`joinOpenSuccessBody`: "registering is not a seat reservation … confirmed at check-in") instead of a snackbar | happy | P1 | authored ✓ (widget — assigned→picker / open→register-label+confirm→join+success-alert; `D-750 — signed-in, open-seating …`) |
-| E2E-MOB017-023 | **Cancel booking (D-485)** — the reservation card's Cancel confirms, then releases the held seat (`DELETE …/seats/mine`) and the section returns to the Join CTA | happy | P2 | authored ✓ (widget — `releaseMine`) |
+| E2E-MOB017-023 | **Cancel booking (D-485)** — the cancel line reads **إلغاء الحجز / Cancel booking** (`cancelBookingCta`, A13 — it must match the dialog title إلغاء الحجز, not the bare إلغاء), confirms, then releases the held seat (`DELETE …/seats/mine`) and the section returns to the Join CTA | happy | P2 | authored ✓ (widget — label assertion + `releaseMine`) |
 | E2E-MOB017-024 | **Join is approved-only (D-485)** — a guest / pending account sees no join section (the seat endpoint 401/403s → null) | auth | P1 | authored ✓ (`…a guest sees no join section`) |
 | E2E-MOB017-025 | **No-layout session joins (D-706)** — an assigned-seat session with **no seat layout** (a hall left on the default with no rows laid out) reports its effective mode as **OpenSeating**, so the Join CTA is a one-tap join (not an empty seat picker) and `…/seats/join` is accepted (Approved — confirmed immediately). Fixes "join session not working" | happy | P0 | authored ✓ (API `Join_succeeds_on_an_assigned_seat_session_that_has_no_layout`) |
-| E2E-MOB017-025 | **Public screen (D-750, reverses D-576):** a signed-out guest navigating to `/sessions/{id}` opens the detail (no redirect); the join/ask sections stay hidden for a guest (`seatMap == null`) | auth | P0 | authored ✓ (router-gate `D-750 — a signed-out guest hitting /sessions or a session detail is NOT redirected`; `routePathRequiresAuth('/sessions/:sessionId')` is FALSE) |
+| E2E-MOB017-031 | **Public screen (D-750, reverses D-576):** a signed-out guest navigating to `/sessions/{id}` opens the detail (no redirect); the join/ask sections stay hidden for a guest (`seatMap == null`) | auth | P0 | authored ✓ (router-gate `D-750 — a signed-out guest hitting /sessions or a session detail is NOT redirected`; `routePathRequiresAuth('/sessions/:sessionId')` is FALSE) |
 | E2E-MOB017-027 | **Join gate (owner 2026-07-14):** the Join CTA is only offered while the session has NOT ended — an ended session drops the join section ("open now to join" is a live/upcoming state) | happy | P1 | authored ✓ (body-gate `phase != SessionPhase.ended`; screen join tests unaffected on upcoming fixtures) |
+| E2E-MOB017-029 | **DEF-MOD-003/004 — the attendee-only affordances are not offered to an operational role:** the اسأل المحاور card and the Join / my-seat section open routes gated to Visitor+Exhibitor (#26 send-question, #18 my-seat, #109 seat picker), so a signed-in **Staff / Moderator** is shown neither (their seat map is not even fetched). A **guest** still sees the ask card DISABLED — that is the sign-in nudge, not a dead control. The routing rule is unchanged; the UI now matches it (`routeAllowsRole`) | auth | P0 | authored ✓ (screen `DEF-MOD-003/004: a MODERATOR is offered neither the ask card nor the join CTA`; body `DEF-MOD-003: a role that cannot open send-question is not offered the ask card at all`) |
+| E2E-MOB017-030 | **DEF-MOD-008 — the moderate action reads the ROUTER's effective role:** an **unapproved** moderator (D-666: presents as guest via `effectiveAppRole`) is NOT shown the "إدارة الأسئلة" Q&A-desk action; an approved moderator still is. Previously the screen read the raw `appRole` and the router bounced the tap to Home | auth | P0 | authored ✓ (screen `DEF-MOD-008: an UNAPPROVED moderator is not shown the Q&A desk action`) |
 | E2E-MOB017-028 | **Seat-map load failure retry (#18, owner 2026-07-21):** an **approved** attendee whose seat-map fetch FAILS (transport / 5xx) gets a "seat map failed to load" error + a **Retry** where the Join CTA would be — instead of a silently-absent Join button — and Retry re-runs the load. Distinct from E2E-MOB017-024: an approved account reaches the seat endpoint, so a null map means the fetch failed (not the guest/pending 403 that legitimately hides the join). Not offered on an ENDED session. | error | P1 | authored ✓ (screen `#18 — an approved account whose seat map FAILS…`; body `#18 seat-map load failure` ×2) |
+| E2E-MOB017-032 | **Workshop detail is title + time ONLY (#29, owner Q10 2026-07-30):** when the detail's `type` is `Workshop` the body renders the header card reduced to its title + time meta — no description, no speakers, no اسأل المحاور card, no seat/join section, no CTA row and no ملخص الجلسة / رابط الجلسة actions. Any other type (or a `null` type from an older API) renders the full detail unchanged | happy | P0 | authored ✓ (body `#29 workshop reduction` ×3; header card `titleAndTimeOnly drops the pill and the action row`; model `the session type decodes from the int OR the name wire form`) |
+| E2E-MOB017-033 | **Category tag pill (PAR-D3):** a small gold-hairline pill under the header-card title carrying `localizedCategory(isArabic)`; rendered only when the session carries a category (the `SessionCategory` lookup ships empty pending the client's list, OI-2 / D-226), so an uncategorised session keeps the pre-PAR-D3 layout. Suppressed on the #29 workshop reduction | happy/i18n | P1 | authored ✓ (header card `SessionHeaderCard category pill (PAR-D3)` ×5) |
+| E2E-MOB017-034 | **Host star glyph (PAR-P4a):** a speaker whose per-session role is `Host` shows the gold star glyph beside the المضيف / Host marker on the speaker card's rank line; a plain speaker shows neither. Fulfils the promise the speakers-LIST card's own doc comment already made (D-432: the host star appears on the session detail) | happy | P1 | authored ✓ (`SessionSpeakerCard host marker (PAR-P4a)` ×4) |
+| E2E-MOB017-035 | **Hall check-in status — the GATE SCAN records the arrival (owner 2026-07-31; REPLACES the GPS "أنا هنا" self check-in):** a read-only strip above the body reads `GET /app/sessions/{id}/attendance` and shows "تم تسجيل حضورك في القاعة · 10:30 AM" / "Your hall arrival is recorded · 10:30 AM" on the Saudi 12-hour clock (`formatSaudiTime12`, Latin AM/PM in both locales). It posts **nothing** — no arrival, no departure, no device position | happy | P0 | authored ✓ (widget — `session_arrival_action_test.dart`, `a door scan renders the recorded arrival on the Saudi clock`) |
+| E2E-MOB017-036 | **Checked out again** — once the door scans the attendee back out, the departure line sits under the arrival ("تم تسجيل مغادرتك · 11:45 AM" / "Your departure is recorded · 11:45 AM"); a closed attendance is still an attendance and must never fall back to the "show your badge" instruction | happy | P1 | authored ✓ (widget — `a closed row shows the departure under the arrival`) |
+| E2E-MOB017-037 | **Empty state — not checked in yet** is an instruction, not an error: "لم يُسجَّل حضورك في القاعة بعد. أبرز بطاقتك عند باب القاعة لتسجيل الحضور." / "You are not checked in yet. Show your badge at the hall door to be checked in." — with a badge glyph (not a scanner one), no Retry, and no claimed arrival | happy/edge | P0 | authored ✓ (widget — `no attendance row reads as a calm instruction, not an error`) |
+| E2E-MOB017-038 | **A FAILED read is never collapsed into "not checked in"** — a transport error / 5xx shows "تعذّر تحميل حالة حضورك في القاعة." / "Could not load your hall check-in status." plus **إعادة المحاولة / Retry**; the retry re-reads and renders the recovered state. While the read is in flight nothing is rendered, so nothing is claimed and nothing shifts the page | error/resilience | P0 | authored ✓ (widget — `a FAILED read is never collapsed into "not checked in"` + `retry re-reads the status and renders the recovered state`) |
+| E2E-MOB017-039 | **Where the strip is offered** — attendee roles only (a guest / Staff / Moderator never sees it), never on a `Workshop` detail (#29 reduction), and never on an **upcoming** session (the door cannot scan anyone into a session that has not started). A pull-to-refresh re-reads the status as well as the detail | auth/edge | P0 | authored ✓ (screen `_showArrivalStatus` gate + `_load()` invalidating `hallAttendanceStatusProvider`) |
+| E2E-MOB017-040 | **RTL** — the Arabic card renders the Arabic wording right-to-left, the gold glyph sits at the inline start, and the recorded time reads left-to-right inside the Arabic line (`formatSaudiTime12` emits Latin `10:30 AM` in Arabic too, by design — it matches the backend `SaudiTime.TimeFormat`) | i18n | P1 | authored ✓ (widget — `the Arabic card renders the Arabic wording`) |
+| E2E-MOB017-041 | **D-840** — the check-in strip appears at the grace the SERVER resolved for this session (its override, else its hall's, else the global value), not a hard-coded 15 | happy | P1 | authored ✓ (`session_detail_models_test.dart` — "reads the resolved grace the server sent") |
+| E2E-MOB017-042 | An older API that omits `arrivalGraceMinutes` still yields 15, so the app keeps working against a server that has not shipped D-840 | validation | P1 | authored ✓ (`session_detail_models_test.dart` — "an older API omitting the field still means 15") |
+| E2E-MOB017-043 | A server-sent `arrivalGraceMinutes` of **0** is honoured as zero, not read as absent and replaced by 15 | validation | P1 | authored ✓ (`session_detail_models_test.dart` — "a server-sent 0 is honoured") |
+| E2E-MOB017-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB017-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -386,7 +414,26 @@ Scenario: The ask-the-host card opens send-question for everyone
   When the user taps it
   Then Send question (26) opens at /live/question?sessionId={id}
   And a guest tapping it is routed to sign-in by the auth gate (the route is login-only)
+
+Scenario: No join/booking gate on the pre-start ask (#7 / D-733)
+  Given an APPROVED account on an upcoming session
+  And the account holds NO reservation (the seat map loaded, myCell is null)
+  Then the ask card is ENABLED
+  And no "Join the session to ask a question" hint is shown
 ```
+
+**A21 (2026-07-27) — refuted, no change made.** The QA note read the card's
+`enabled: seatMap != null` as a bug that made the `askHostJoinFirst` hint
+unreachable, and asked for the "join the session first" gate to be restored.
+It is **unreachable by design**: owner batch item **#7 (D-733, 2026-07-10)**
+explicitly dropped the D-485 join/booking requirement for the pre-start ask
+("anyone before start"), and `session_detail_screen_test.dart` guards that with
+`#7 — an approved user can ask a FUTURE session without a booking (no join
+gate)`, which asserts the hint is **not** shown. Re-gating on `seatMap?.myCell`
+reverses D-733 and turns that regression test red. The stale artefact was this
+row's own "gated on joining (#3)" wording, corrected above. The now-unreferenced
+`askHostJoinFirst` string is left in place for the owner to retire or reuse — a
+dead string is not a reason to reverse a shipped decision.
 
 ### E2E-MOB017-021 — Speaker country flag (core/country_flag.dart)
 
@@ -410,6 +457,14 @@ Scenario: An approved attendee with no reservation joins, branched by mode
   When the mode is OpenSeating (general admission)
   Then the Join CTA reads "سجل لحضور الجلسة" / "Register to attend the session" (case-1, D-750)
   And tapping it shows a "Join this session?" confirm dialog
+  And (A8 / DEF-SEA-003) that dialog body describes what actually happens -
+    "سيتم تسجيلك لحضور هذه الجلسة فوراً دون الحاجة إلى موافقة. التسجيل لا يحجز
+    مقعداً محدداً، وسيتم تأكيد دخولك عند تسجيل الدخول للجلسة." / "You will be
+    registered for this session right away - no approval needed. This does not
+    reserve a specific seat; your entry is confirmed at session check-in."
+  # It used to promise "سيتم إرسال طلب انضمامك إلى الإدارة للموافقة" / "Your request
+  # to join will be sent to the organisers for approval", describing the approval
+  # queue the owner removed on 2026-07-18.
   And confirming sends the join (created Approved — confirmed immediately, no
     Control Panel approval step)
   And on success a one-button info alert is shown (not a snackbar) carrying
@@ -431,7 +486,10 @@ Scenario: An approved attendee with no reservation joins, branched by mode
 ```gherkin
 Scenario: Cancelling a held reservation from the session page
   Given an approved visitor whose session detail shows a held reservation card
-  When they tap "Cancel booking" and confirm
+  And the cancel line under the CTA row reads "إلغاء الحجز" / "Cancel booking"
+    (cancelBookingCta — A13: the control and the dialog it opens must agree; the
+    dialog is titled "إلغاء الحجز" / "Cancel booking?")
+  When they tap it and confirm
   Then the held seat is released (DELETE /app/sessions/{id}/seats/mine)
   And the section returns to the Join CTA
 ```
@@ -494,9 +552,127 @@ error + retry`; body `#18 seat-map load failure` (error+retry on upcoming, nothi
 ended). An approved account reaches the seat endpoint, so a null map = a real failure —
 distinct from the guest/pending 403 in E2E-MOB017-024.
 
+### E2E-MOB017-029 / -030 — DEF-MOD-003/004/008 role-gated affordances
+
+```gherkin
+Scenario: A Moderator is offered no attendee-only affordance
+  Given a signed-in APPROVED account whose app role is Moderator
+  When they open /sessions/{id}
+  Then the اسأل المحاور card is NOT rendered
+  And no Join CTA / my-seat card is rendered
+  And the seat map is not even fetched (no GET …/seats)
+  And no "seat map failed to load" retry appears
+  And the "إدارة الأسئلة" Q&A-desk action IS shown (route #104 allows them)
+
+Scenario: A guest still gets the disabled ask nudge
+  Given a signed-out visitor opens /sessions/{id}
+  Then the اسأل المحاور card IS rendered, DISABLED (unchanged behaviour)
+
+Scenario: An unapproved moderator is not offered the desk
+  Given a signed-in moderator whose registration status is Pending
+    (so effectiveAppRole collapses to guest — D-666)
+  When they open /sessions/{id}
+  Then the "إدارة الأسئلة" action is NOT shown
+  # Previously it was shown and the router bounced the tap back to Home.
+```
+
+### E2E-MOB017-032 — A workshop's detail is its title + time only (#29)
+
+```gherkin
+Scenario: A WORKSHOP shows only what it is and when it runs
+  Given the session "ورشة السلامة البحرية" (code W-1) is typed Workshop
+    And it carries a description, two speakers, a live feed and an open seat map
+  When an approved visitor opens /sessions/{id}
+  Then the header card shows the title and the 09:00 — 10:30 · الاثنين · 23 نوفمبر meta
+    And NO "وصف الجلسة / Description" card is shown
+    And NO "المتحدثون / Speakers" section is shown
+    And NO "اسأل المحاور" card is shown
+    And NO Join CTA and no مقعدي card are shown
+    And NO "ملخص الجلسة" / "رابط الجلسة" buttons are shown
+    And NO "أضف إلى تقويمي" / "تذكير" CTA row is shown
+    And a pull-down still re-fetches the session (the short page stays scrollable)
+
+Scenario: A regular session is untouched
+  Given the same session typed Session (or Event)
+  When the visitor opens /sessions/{id}
+  Then the full detail renders exactly as before (description, speakers, join, actions)
+
+Scenario: An older API that sends no type renders the full detail
+  Given the detail payload carries no "type" field
+  When the visitor opens /sessions/{id}
+  Then the full detail renders (the reduction is opt-in on an explicit Workshop)
+```
+
+**Evidence:** `SessionDetailBody.build` returns `_workshopBody()` on
+`detail.type == SessionType.workshop`; `SessionHeaderCard.titleAndTimeOnly` drops the
+pill + the action row. Owner decision Q10 (2026-07-30): the **CP half reuses the
+existing session admin** — no new CP surface, so this is app-only.
+
+### E2E-MOB017-033 — Category tag pill under the title (PAR-D3)
+
+```gherkin
+Scenario: A categorised session shows its category pill
+  Given the session "الجلسة الافتتاحية" is in the category "جلسة رئيسية" / "Main Session"
+  When a visitor opens /sessions/{id} in Arabic
+  Then a small gold-hairline pill reading "جلسة رئيسية" sits under the title
+    And switching the app to English renders "Main Session" in the same pill
+
+Scenario: An uncategorised session shows no pill
+  Given the session has no category (the SessionCategory lookup is empty — OI-2)
+  When a visitor opens /sessions/{id}
+  Then no pill is rendered and the header card keeps its previous layout
+
+Scenario: A workshop never shows the pill
+  Given the session is typed Workshop and carries a category
+  Then no pill is rendered (#29 reduction — see E2E-MOB017-032)
+```
+
+**Evidence:** `SessionHeaderCard` builds `_CategoryPill` from
+`detail.localizedCategory(isArabic)?.trim()`. **Reverses the D-449 re-skin note above**
+("the prior hall/category tag pills are removed") on the parity audit's finding
+(`FIGMA-PARITY-DEFECTS.md` PAR-D3) that the session-type / category tag is missing from
+the detail. Only the **category** pill is restored — the hall name stays off the card.
+
+### E2E-MOB017-034 — Host star glyph on the speaker card (PAR-P4a)
+
+```gherkin
+Scenario: The session host is marked with a star
+  Given the session has a speaker whose per-session role is Host
+  When a visitor opens /sessions/{id}
+  Then that speaker's rank line reads "<rank> · ★ المضيف" with the star in gold
+    And a speaker whose role is Speaker shows neither the star nor المضيف
+
+Scenario: A host with no rank still gets the marker
+  Given the host has no rank/title recorded
+  Then the rank line shows only "★ المضيف"
+```
+
+**Evidence:** `SessionSpeakerCard` renders `Icons.star_rounded` in
+`SimfTokens.accent` before `hostLabel` when
+`speaker.role == SessionSpeakerRole.host`. The speakers-LIST card
+(`speaker_list_card.dart`) keeps the anchor for everyone — D-432: the host/speaker
+distinction is per-session, and its doc comment already promised the star lives here.
+
 ---
 
-_Last reviewed:_ `2026-07-21` by `Apexium` — **#18 (owner 2026-07-21): an APPROVED
+> **Interior review-log fragment, not this file's current status.** A later batch
+> appended scenarios below this block instead of above it, so the chain runs on.
+> The file's live review log is the one at the **end** of the file.
+
+_Reviewed:_ `2026-07-30` by `Claude` — **#29 / PAR-D3 / PAR-P4a: a Workshop's
+detail is reduced to its title + time block (owner Q10 — the CP half reuses the
+existing session admin); the category tag pill is restored under the header-card
+title (reversing the D-449 "tag pills removed" note on the parity audit's finding);
+and the session host now carries the gold star glyph beside المضيف. New
+E2E-MOB017-032/-033/-034; rows 012 + 015 updated. The
+`goldens/session_detail_889-2450.png` fixture is categorised, so it re-locks with the
+new pill.**
+_Prior:_ `2026-07-26` by `Claude` — **DEF-MOD-003/004/008: the ask card and
+the join / my-seat section are gated with `routeAllowsRole` (the router's own table)
+so an operational role is never offered a control that bounces; the screen now reads
+`effectiveAppRole` (the router's role) instead of the raw `appRole`. New
+E2E-MOB017-029/-030.**
+_Prior:_ `2026-07-21` by `Apexium` — **#18 (owner 2026-07-21): an APPROVED
 attendee whose seat-map fetch fails now shows a "seat map failed to load" error +
 Retry where the Join CTA would be, instead of a silently-absent Join button
 (`_seatMapError` on the screen drives a body error branch, reusing `l10n.seatMapError`).
@@ -514,6 +690,183 @@ hall gate on check-in (`CheckedIn`), with a pre-start sweep releasing any hold n
 checked in. No `BookingConfirmed` on reserve; the app shows an inline success message.
 The old CP approval queue is retained but dormant (always empty). Scenarios 016 / 022 /
 025 reworded off the "pending approval" copy.**
+### E2E-MOB017-035..040 — Hall check-in status (the gate scan records the arrival)
+
+**Owner decision, 2026-07-31 — this REPLACES the GPS self check-in.** An
+attendee's arrival at a session is established by the **operator's badge scan at
+the hall door**, never by a position reported from the attendee's own phone. That
+chain already existed end to end: `GateOperatorService.RecordGateDoorScanAsync`
+opens and closes the `HallAttendance` row for the session live in that hall, and
+the CP surfaces it on `/admin/hall-arrivals` (E2E-HAR-*) and
+`/admin/gates/operator` (E2E-GOP-*). The app's job is only to **report** it.
+
+So `SessionArrivalAction` became a read-only status card fed by
+`GET /app/sessions/{id}/attendance`. It replaced the "أنا هنا / I'm here" button
+that posted a device fix to `POST /app/sessions/{id}/arrival` — and with it the
+location plugin and the runtime location permission that button would have
+needed, which is the store-review and NCA-disclosure surface the previous round
+flagged and declined to take on its own authority.
+
+The three states are kept deliberately distinct, because the one mistake that
+keeps being made here is collapsing "we could not read your status" into "you are
+not checked in": they mean different things and only one of them is fixed by
+trying again.
+
+```gherkin
+Feature: Hall check-in status on the session detail
+  As an attendee who has just had my badge scanned at the hall door
+  I want the session page to tell me my arrival was recorded
+  So that I know I am counted without asking the operator
+
+Background:
+  Given "Naval Defence Innovations" is a LIVE session in "القاعة الرئيسية"
+  And a signed-in APPROVED visitor whose role may join sessions
+  And they are on /sessions/{id}
+
+# --- E2E-MOB017-035 — golden path -------------------------------------------
+Scenario: A door scan shows as a recorded arrival
+  Given the gate operator scanned the attendee IN at 10:30 on 23 Nov 2026
+    (HallAttendance enter = 2026-11-23T10:30, leave = null, method = QrScan)
+  When the session detail renders
+  Then GET /app/sessions/{id}/attendance is called exactly once
+  And the strip above the body reads
+    "Your hall arrival is recorded · 10:30 AM"
+    (AR: "تم تسجيل حضورك في القاعة · 10:30 AM")
+  And it carries the how_to_reg glyph in gold
+  And there is NO button on the card
+  And NOTHING is posted — not an arrival, not a departure, not a position
+
+# --- E2E-MOB017-036 — checked out again -------------------------------------
+Scenario: A closed attendance shows both instants
+  Given the same attendee was scanned back OUT at 11:45
+    (enter = 10:30, leave = 11:45, arrived = false)
+  When the session detail renders
+  Then the card shows "Your hall arrival is recorded · 10:30 AM"
+  And under it "Your departure is recorded · 11:45 AM"
+    (AR: "تم تسجيل مغادرتك · 11:45 AM")
+  And it does NOT show "Show your badge at the hall door"
+  # arrived=false means "not currently inside", not "never arrived" — a closed
+  # row must never degrade to the never-checked-in instruction.
+
+# --- E2E-MOB017-037 — empty state -------------------------------------------
+Scenario: No attendance row is an instruction, not an error
+  Given the attendee has not been scanned at the hall door
+    (the endpoint returns arrived = false with enter = null)
+  When the session detail renders
+  Then the card reads
+    "You are not checked in yet. Show your badge at the hall door to be checked in."
+    (AR: "لم يُسجَّل حضورك في القاعة بعد. أبرز بطاقتك عند باب القاعة لتسجيل الحضور.")
+  And it carries the BADGE glyph, not a scanner glyph
+    # the attendee presents the badge, the operator scans — the card is not a control
+  And NO "Retry" is offered
+  And no arrival is claimed
+
+# --- E2E-MOB017-038 — the read itself fails ---------------------------------
+Scenario: A failed read says so, and offers a retry
+  Given GET /app/sessions/{id}/attendance fails (transport error or 5xx)
+  When the session detail renders
+  Then the card reads "Could not load your hall check-in status."
+    (AR: "تعذّر تحميل حالة حضورك في القاعة.")
+  And a "Retry" (AR "إعادة المحاولة") action is offered
+  And the "Show your badge at the hall door" wording is NOT shown
+  When the attendee taps Retry
+  Then the status is read a second time
+  And the recovered state renders ("Your hall arrival is recorded · 10:30 AM")
+  And the Retry disappears
+
+Scenario: Nothing is claimed while the read is in flight
+  Given the status read has not completed
+  Then the strip renders nothing at all
+  # rendering "not checked in yet" here would be the same collapse the error
+  # branch avoids, and it would shift the page under the reader when it resolved
+
+# --- E2E-MOB017-039 — where the strip is offered ----------------------------
+Scenario Outline: The strip is offered only where an attendance can exist
+  When "<who>" opens a "<type>" session that is "<phase>"
+  Then the hall check-in strip is "<shown>"
+
+  Examples:
+    | who                  | type     | phase    | shown     |
+    | approved visitor     | Session  | live     | shown     |
+    | approved visitor     | Session  | ended    | shown     |
+    | approved visitor     | Session  | upcoming | not shown |
+    | approved visitor     | Workshop | live     | not shown |
+    | signed-out guest     | Session  | live     | not shown |
+    | Staff / Moderator    | Session  | live     | not shown |
+    | PENDING moderator    | Session  | live     | not shown |
+
+  # upcoming  → the door cannot scan anyone into a session that has not started,
+  #             so there is no attendance to report (same phase gate the summary
+  #             / live / join affordances already use, owner 2026-07-14)
+  # Workshop  → #29 reduces the detail to title + time only
+  # guest / operational role → the read is bearer-gated and attendee-scoped
+  #             (D-576/D-577; D-666 presents an unapproved account as a guest),
+  #             so they would only ever see the failed-read state
+
+Scenario: Pull-to-refresh re-reads the check-in state too
+  Given the strip shows "You are not checked in yet"
+  And the operator then scans the attendee in
+  When the attendee pulls the session detail down to refresh
+  Then hallAttendanceStatusProvider is invalidated alongside the detail fetch
+  And the strip re-reads and shows the recorded arrival
+  # owner rule: a pull refreshes the WHOLE page. The strip feeds off its own
+  # provider, so without the explicit invalidate it would keep a stale answer.
+
+# --- E2E-MOB017-040 — RTL ----------------------------------------------------
+Scenario: The Arabic card renders right-to-left
+  Given the device locale is Arabic
+  When the strip renders the not-checked-in state
+  Then the text reads "…أبرز بطاقتك عند باب القاعة…" right-to-left
+  And the gold glyph sits at the inline start (physical right)
+  And a recorded time renders left-to-right as "10:30 AM"
+    # formatSaudiTime12 emits Latin AM/PM in both locales, matching the backend
+    # SaudiTime.TimeFormat and the app's other 12-hour rows
+```
+
+**Evidence:** `test/features/sessions/widgets/session_arrival_action_test.dart` —
+six widget cases (recorded arrival on the Saudi clock; the closed row showing the
+departure and NOT the instruction; the calm not-checked-in instruction; the
+failed read kept distinct from it; retry re-reading and recovering; the Arabic
+wording) plus three `HallAttendanceStatus` wire-decode cases (method as int, as
+name, absent/unknown → null). The fake repository **throws** from `recordArrival`
+and `recordDeparture`, so a regression that gives the card a write path fails the
+suite rather than shipping quietly. The offering rules in E2E-MOB017-039 are the
+`_showArrivalStatus(detail)` gate on `session_detail_screen.dart`, and the
+pull-to-refresh case is the `ref.invalidate(hallAttendanceStatusProvider(...))`
+at the top of `_load()`.
+
+**Cross-surface:** the write side of this data is the gate operator's scan —
+`cp-admin-gates-operator.md` (E2E-GOP-*) for the desk, `cp-admin-hall-arrivals.md`
+(E2E-HAR-*) for the resulting arrivals report. This card only reads it back.
+
+**What is deliberately NOT here any more.** `HallAttendanceRepository` keeps
+`recordArrival` / `recordDeparture` and the `HALL_GEOFENCE_NOT_CONFIGURED` /
+`NOT_AT_VENUE` / `SESSION_NOT_LIVE` codes, and the server keeps
+`POST /app/sessions/{id}/arrival` and `…/departure` — the geofence path is
+retained for the deferred FR-1103 movement work (G-OI-2), but **no app screen
+calls it**. Nothing in the app now needs a location permission for check-in.
+
+---
+
+_Last reviewed:_ `2026-07-31` by `SIMF Team` — **owner decision: session arrival
+is established by the GATE SCAN at the hall door, not by GPS.
+`SessionArrivalAction` is now a read-only status card fed by
+`GET /app/sessions/{id}/attendance` and wired into the screen above the body
+(where the previous round left it unrendered), the "أنا هنا" self check-in and
+its device-position post are gone, and no location permission is required. This
+closes the `geofence-self-checkin` register item. E2E-MOB017-035 rewritten off
+the GPS behaviour; E2E-MOB017-036..040 added (departure line, the calm empty
+state, the failed-read/retry distinction, the offering rules + pull-to-refresh,
+RTL).**
+_Prior:_ `2026-07-30` by `SIMF Team` — **`geofence-self-checkin`: the
+attendee-facing arrival/departure half of D-241 is built (repository + action
+widget + tests); added E2E-MOB017-035.**
+_Prior:_ `2026-07-27` by `Claude` — **A8 / DEF-SEA-003: the join confirm
+dialog no longer promises an approval step. `joinConfirmBody` (AR + EN) now says the
+registration is immediate, does not reserve a specific seat, and is confirmed at
+check-in — matching `joinOpenSuccessBody` and the as-built auto-confirm behaviour.
+Covered by `session_detail_screen_test.dart` (the open-seating join case asserts the
+new copy and the absence of the old one). E2E-MOB017-022 reworded.**
 _Prior:_ `2026-07-14` by `SIMF Team` — **owner state-gating: the two
 header actions (ملخص الجلسة / رابط الجلسة) and the Join CTA now gate on the
 session phase (upcoming/live/ended); a future session's summary button is
@@ -526,3 +879,40 @@ session is live or ended (asking during a live session moves to the
 live-broadcast screen; a past session's view is a recording, not a live
 broadcast). Widget tests: approved-user-can-ask-future / live-hides / past-hides.**
 _Prior:_ `2026-07-08`.
+
+
+## D-840 — the arrival grace comes from the server
+
+```gherkin
+Feature: The check-in strip follows the hall's configured arrival window
+  As an attendee arriving early for a keynote
+  I want the "you can check in now" strip to appear when the doors actually open
+  So that the app does not tell me to wait while the gate is already scanning
+
+  # This gates NOTHING — the door is enforced server-side. It decides whether a
+  # hint renders. Before D-840 the app hard-coded 15 minutes; D-839 made the real
+  # grace configurable per hall and per session, so there was no single server
+  # constant left for the app to mirror.
+
+  Scenario: the hall opens an hour early
+    Given the hall "GR-KEYNOTE" has an arrival grace of 60 minutes
+    And its session "GRS-OPENING" starts in 40 minutes
+    When I open the session detail
+    Then GET /app/programme/sessions/{id} returns arrivalGraceMinutes = 60
+    And the check-in status strip is shown
+    # At the app's old hard-coded 15 the strip would still be hidden here.
+
+  Scenario: an older server says nothing
+    Given the API predates D-840 and omits arrivalGraceMinutes
+    When I open any session detail
+    Then the app uses 15 minutes, exactly as it did before D-840
+
+  Scenario: a hall that closes on time
+    Given the session's own override is 0
+    When I open the session detail
+    Then the app uses 0 minutes
+    And the strip appears only once the session has actually started
+```
+
+_Last reviewed:_ 2026-08-04 by Claude (D-840 — the resolved arrival grace rides
+`PublicSessionDetail`; E2E-MOB017-041..043).

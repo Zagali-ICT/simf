@@ -3,7 +3,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Programme.Abstractions;
 
-/// <summary>B9b — D-226: admin CRUD over the dynamic <c>SessionCategory</c>
+/// <summary>Admin CRUD over the dynamic <c>SessionCategory</c>
 /// lookup (FDS-004 §5.4). Mirrors IAdminOrganisationService (minus import).</summary>
 public interface IAdminSessionCategoryService
 {

@@ -1,4 +1,4 @@
-@* D-728 (owner item 9) — shared "change account type" block. Reused by
+﻿@* Shared "change account type" block. Reused by
    VisitorsViewDelete + OthersViewDelete so both desks flip an account into the
    OPPOSITE scope (Visitor <-> Other) from one control. The host gates it with
    <AuthorizedAction Permission="Accounts.ChangeType">. Loads the opposite
@@ -17,7 +17,7 @@
     else if (_targetTypes.Count == 0)
     {
         @* Either a load failure (_error set) or genuinely no opposite-scope
-           types — show ONE alert, never both (D-728 review finding). *@
+           types — show ONE alert, never both. *@
         <SimfAlert Variant="@(_error is not null ? "error" : "info")">
             @(_error ?? L["Admin.ChangeType.NoTargets"].Value)
         </SimfAlert>
@@ -44,9 +44,21 @@
             <SimfButton Type="button" Loading="_busy"
                         LoadingLabel="@L["Admin.ChangeType.Working"]"
                         Disabled="@(_selected is null || _busy)"
-                        OnClick="ChangeAsync">
+                        OnClick="@(() => _confirming = true)">
                 @L["Admin.ChangeType.Action"]
             </SimfButton>
         </div>
     }
 </div>
+
+@* Flipping the scope moves the account between the Visitor and Other
+   desks and changes what the holder can do; confirm the target first. *@
+<SimfConfirm Open="_confirming"
+             Title="@L["Admin.ChangeType.Confirm.Title"]"
+             Message="@(_selected is null ? string.Empty
+                        : string.Format(L["Admin.ChangeType.Confirm.Message"], _selected.Name))"
+             ConfirmLabel="@L["Admin.ChangeType.Action"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmChangeAsync"
+             OnCancel="@(() => _confirming = false)" 
+             Permission="@PermissionCatalog.Accounts.ChangeType"/>

@@ -1,6 +1,6 @@
 namespace SIMF.Application.AccessControl.Abstractions;
 
-/// <summary>D-148 — per-gate failure-rate circuit
+/// <summary>Per-gate failure-rate circuit
 /// (SIMF-API-GATES-001 §10, SIMF-FDS-003 §5.6.6). ≥ 10 denials within a
 /// rolling 60-second window for the same gate → 5-minute lockout. The
 /// circuit emits one <c>GateFailureCircuitOpened</c> OperationLog row on

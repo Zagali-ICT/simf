@@ -1,18 +1,18 @@
-@* D-173 (gap doc G8, PDF Â§1, Â§2.1) â€” Dynamic CMS: editable content
+@* Dynamic CMS: editable content
    blocks (welcome message, page copy, labels). Admin upserts by Key.
-   D-255 â€” migrated from a raw table to the standard SimfDataGrid.
-   D-353 â€” centralized dialog/full-page framing: Add / Edit / View / Delete are
+   Migrated from a raw table to the standard SimfDataGrid.
+   Centralized dialog/full-page framing: Add / Edit / View / Delete are
    hosted by CrudShell, which frames the reusable ContentBlockAddEdit and
    ContentBlockViewDelete forms as a popup or a full page per the admin's toolbar
    choice (persisted in localStorage via CpPreferences). The inline SimfModal
    form + one-click delete it used to carry are gone. The grid summary carries
-   every field the forms need, so the row is bound straight through â€” no
+   every field the forms need, so the row is bound straight through — no
    detail-fetch. *@
 @page "/admin/content-blocks"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.ContentBlocks.View)]
 
-<PageTitle>@L["Admin.ContentBlocks.Title"] Â· SIMF</PageTitle>
+<PageTitle>@L["Admin.ContentBlocks.Title"] · SIMF</PageTitle>
 
 @if (!GridHidden)
 {
@@ -22,7 +22,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminContentBlockSummary"
@@ -58,7 +60,12 @@
                           DeleteLabel="@L["Grid.Delete"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.ContentBlocks.Edit"
+                          EditPermission="@PermissionCatalog.ContentBlocks.Edit"
+                          DeletePermission="@PermissionCatalog.ContentBlocks.Delete"
+                          ImportPermission="@PermissionCatalog.ContentBlocks.Import"
+                          ExportPermission="@PermissionCatalog.ContentBlocks.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/interests/export</c> — the reference D-356 grid export.
+/// <c>POST /api/v1/admin/interests/export</c> — the reference grid export.
 /// All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>; this
 /// subclass only declares the route, permission, sheet/file names, the column
 /// layout, and how to list + identify an interest row.
@@ -39,7 +39,7 @@ public sealed class ExportInterestsEndpoint(IInterestService service, IGridExcel
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/interests/import</c> — the reference D-356 grid import
+/// <c>POST /api/v1/admin/interests/import</c> — the reference grid import
 /// (insert-only). The base does the upload defence, parse and per-row error
 /// aggregation; this subclass binds one row to <see cref="AdminCreateInterestRequest"/>
 /// and creates it (the service rejects duplicates → a per-row error, not a

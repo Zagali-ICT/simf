@@ -247,7 +247,7 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
             NationalityId = countryId,
             PlaceOfBirth = string.Empty,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }
@@ -262,7 +262,7 @@ public sealed class VisitorContactSharingTests : IClassFixture<SimfApiFactory>
             Name = nameEn,
             NameArabic = nameAr,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(org);
         await appDb.SaveChangesAsync();

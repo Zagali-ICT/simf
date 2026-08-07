@@ -1,6 +1,6 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-568 — the media kind of a <c>StoredFile</c>. Drives the
+/// <summary>The media kind of a <c>StoredFile</c>. Drives the
 /// per-type upload allow-list (extension + magic-byte signature + size cap)
 /// enforced once on the single upload path. This is the centralized file
 /// store's "Type" (Img, PDF, …).

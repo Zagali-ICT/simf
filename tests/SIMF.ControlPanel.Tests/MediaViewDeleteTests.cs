@@ -12,6 +12,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class MediaViewDeleteTests : CpComponentTestBase
 {
+    public MediaViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Media.Delete);
+    }
+
     private static AdminMediaDetail Detail(MediaKind kind = MediaKind.Image) => new(
         Guid.Parse("22222222-2222-2222-2222-222222222222"),
         kind,
@@ -20,7 +27,7 @@ public sealed class MediaViewDeleteTests : CpComponentTestBase
         HasImage: true, HasThumbnail: false,
         Url: kind == MediaKind.Video ? "https://youtu.be/abc" : null,
         DisplayOrder: 3, IsActive: true,
-        CreatedAt: DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        CreatedAt: DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()

@@ -7,7 +7,7 @@ namespace SIMF.Infrastructure.Excel;
 /// <summary>
 /// ClosedXML-backed reader for the government-supplied Saudi-companies
 /// lookup workbook (bilingual Arabic / English). <b>Parse-only</b> — it never
-/// touches the database; <see cref="AdminOrganisationService"/> owns the
+/// touches the database; <see cref="SIMF.Infrastructure.Organisations.AdminOrganisationService"/> owns the
 /// insert/update decisions over the rows this reader returns.
 ///
 /// <para>Workbook layout:</para>

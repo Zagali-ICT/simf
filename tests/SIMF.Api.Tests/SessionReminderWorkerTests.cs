@@ -10,6 +10,7 @@ using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Operations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -32,7 +33,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Scan_reminds_attendees_of_a_session_in_the_lead_window_exactly_once()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         var sessionId = await SeedSessionWithSeatAsync(now.AddMinutes(10), visitorId);
 
@@ -71,7 +72,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Scan_ignores_a_session_beyond_the_lead_window()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         // Starts in two hours — well beyond the 30-minute lead window.
         var sessionId = await SeedSessionWithSeatAsync(now.AddHours(2), visitorId);
@@ -93,7 +94,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
         // already claimed and never re-sends. The probe reads the session row
         // from a SEPARATE committed context at the moment of the first dispatch:
         // under the old stamp-after-loop code it would still be null there.
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var visitorId = await SeedVisitorAsync();
         await SeedSessionWithSeatAsync(now.AddMinutes(10), visitorId);
 
@@ -141,7 +142,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
         }
     }
 
-    private async Task<int> RunScanAsync(DateTimeOffset now)
+    private async Task<int> RunScanAsync(DateTime now)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -169,7 +170,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
         return user.Id;
     }
 
-    private async Task<Guid> SeedSessionWithSeatAsync(DateTimeOffset start, Guid visitorId)
+    private async Task<Guid> SeedSessionWithSeatAsync(DateTime start, Guid visitorId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -181,7 +182,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             NameArabic = "قاعة",
             Capacity = 10,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -194,7 +195,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             Start = start,
             End = start.AddHours(1),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         db.SeatReservations.Add(new SeatReservation
@@ -206,7 +207,7 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
             Kind = SeatReservationKind.UserBooking,
             ReservedForUserId = visitorId,
             CreatedByUserId = visitorId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return session.Id;

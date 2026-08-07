@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminApprovalTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -21,16 +21,12 @@ public sealed class RejectVisitorEndpoint(IAdminUserApprovalService adminAccount
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Reject), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
-            "Reject a pending visitor. Requires the Administrator role (P7b).");
+            "Reject a pending visitor. Requires the Visitors.Reject permission.");
     }
 
     public override async Task HandleAsync(RejectRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await adminAccountService.RejectVisitorAsync(actorId, req.Id,
             new AdminRejectRequest { Reason = req.Reason }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);

@@ -12,10 +12,10 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// D-134 Sprint B — admin CRUD over <see cref="Theme"/>. SIMF-FDS-004 §5.1.
-/// Built on the <see cref="SimfAppDbContext"/> (D-135 freeze-lift made this
-/// possible — `Themes` is the first new app-side table). Every mutation
-/// audits one row via the existing <see cref="IAuditLog"/>.
+/// Admin CRUD over <see cref="Theme"/>.
+/// Built on the <see cref="SimfAppDbContext"/> — `Themes` was the first
+/// app-side table. Every mutation audits one row via the existing
+/// <see cref="IAuditLog"/>.
 /// </summary>
 internal sealed class AdminThemeService(
     SimfAppDbContext dbContext,
@@ -63,7 +63,7 @@ internal sealed class AdminThemeService(
                 theme.Id, theme.Code, theme.Name, theme.NameArabic,
                 theme.DisplayOrder, theme.PageColor, theme.IsActive,
                 theme.CreatedAt,
-                // D-506 — round-trip the bilingual descriptions through export.
+                // Round-trip the bilingual descriptions through export.
                 theme.Description, theme.DescriptionArabic))
             .ToListAsync(cancellationToken);
 
@@ -107,7 +107,7 @@ internal sealed class AdminThemeService(
                 $"يوجد محور بالرمز '{code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var theme = new Theme
         {
             Id = Guid.NewGuid(),
@@ -124,13 +124,11 @@ internal sealed class AdminThemeService(
         dbContext.Themes.Add(theme);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ThemeCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={theme.Id}; code={code}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ThemeCreated,
+            actorUserId,
+            $"id={theme.Id}; code={code}; name={name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Theme {Code} ({Id})",
@@ -184,16 +182,14 @@ internal sealed class AdminThemeService(
         theme.DisplayOrder = request.DisplayOrder;
         theme.PageColor = pageColor;
         theme.IsActive = request.IsActive;
-        theme.UpdatedAt = timeProvider.GetUtcNow();
+        theme.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ThemeUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={theme.Id}; code={code}; active={theme.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ThemeUpdated,
+            actorUserId,
+            $"id={theme.Id}; code={code}; active={theme.IsActive}",
+            cancellationToken);
 
         return ToDetail(theme);
     }
@@ -216,16 +212,14 @@ internal sealed class AdminThemeService(
         }
 
         theme.IsActive = false;
-        theme.UpdatedAt = timeProvider.GetUtcNow();
+        theme.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ThemeDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={theme.Id}; code={theme.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ThemeDeactivated,
+            actorUserId,
+            $"id={theme.Id}; code={theme.Code}",
+            cancellationToken);
     }
 
     private static (string code, string name, string nameArabic, string pageColor)

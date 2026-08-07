@@ -1,8 +1,8 @@
-@* FR-506 (SIMF-SRS-001 §3.5; FDS-003 §5.5) — session-attendance dashboard.
+@* The session-attendance dashboard.
    Read-only: a live top-line (people currently inside a hall, active sessions
    with attendance, total arrivals) plus a server-paged per-session grid of
    distinct-attendee / live-now counts. Every value is an on-demand aggregate
-   over the existing HallAttendance arrival records (D-241) — no create / edit /
+   over the existing HallAttendance arrival records — no create / edit /
    delete, so the grid carries no row actions (filter + sort + pager only). *@
 @page "/admin/attendance"
 @layout CpShellLayout

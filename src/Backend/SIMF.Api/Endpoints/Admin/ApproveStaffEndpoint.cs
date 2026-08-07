@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminApprovalTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -10,7 +10,7 @@ namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
 /// <c>POST /api/v1/admin/admins/{id:guid}/approve</c> — flip a pending
-/// Admin to Approved + mint the QR id (P4; P7c renamed URL from
+/// Admin to Approved + mint the QR id (the URL was renamed from
 /// <c>/admin/staff</c>). Administrator-only.
 /// </summary>
 public sealed class ApproveAdminEndpoint(IAdminUserApprovalService adminAccountService)
@@ -27,11 +27,7 @@ public sealed class ApproveAdminEndpoint(IAdminUserApprovalService adminAccountS
 
     public override async Task HandleAsync(ApproveRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await adminAccountService.ApproveAdminAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -39,7 +35,16 @@ public sealed class ApproveAdminEndpoint(IAdminUserApprovalService adminAccountS
 
 /// <summary>
 /// <c>POST /api/v1/admin/others/{id:guid}/approve</c> — flip a pending
-/// Other to Approved + mint the QR id (P7c — new). Administrator-only.
+/// Other to Approved + mint the QR id.
+/// <para>Gated on <c>Others.Approve</c>, the code for the subject
+/// being acted on. It was copy-pasted from <see cref="ApproveAdminEndpoint"/>
+/// above with the admin policy line left in, so approving a PARTNER account
+/// demanded the code that exists to approve ADMINS. That contradicted the
+/// permission catalogue, which has always mapped
+/// <c>Others.Approve</c> to both <c>…/{id}/approve</c> and
+/// <c>…/bulk-approve</c>; an earlier fix corrected the bulk half and recorded
+/// that it now matched "the same code the single ApproveOther endpoint uses",
+/// which was not yet true. The two halves of one action agree from here.</para>
 /// </summary>
 public sealed class ApproveOtherEndpoint(IAdminUserApprovalService adminAccountService)
     : Endpoint<ApproveRouteRequest, ApiResult<bool>>
@@ -47,7 +52,7 @@ public sealed class ApproveOtherEndpoint(IAdminUserApprovalService adminAccountS
     public override void Configure()
     {
         Post("/admin/others/{id:guid}/approve");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.Approve), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.Approve), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Approve a pending Other. Requires Administrator role.");
@@ -55,11 +60,7 @@ public sealed class ApproveOtherEndpoint(IAdminUserApprovalService adminAccountS
 
     public override async Task HandleAsync(ApproveRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await adminAccountService.ApproveOtherAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

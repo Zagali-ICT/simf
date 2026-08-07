@@ -48,6 +48,7 @@ class SimfTokens {
   static const Color navyFill80 = Color(0xCC01132D); // navy #01132D @ 80% — reference-number card fill (registration success 505:1525)
   static const Color navyFill70 = Color(0xB301132D); // navy #01132D @ 70% — gallery video play-circle fill (Figma 949:4059)
   static const Color navyFill90 = Color(0xE601132D); // navy #01132D @ 90% — onboarding photo overlay (Figma 148:22)
+  static const Color navyFill60 = Color(0x9901132D); // navy #01132D @ 60% — onboarding VIDEO scrim (owner 2026-07-26: the 90% photo overlay hid the moving footage; 60% keeps white/beige copy legible)
   static const Color chipBorderNavy = Color(0xFF2A4066); // muted navy border on unselected pills (interests grid, Figma 505:1222)
   static const Color tileBorderNavy = Color(0xFF253660); // contact-tile border (registration success, Figma 522:2223)
   static const Color scannerCard = Color(0xFF0F2044); // QR-scanner card fill (Figma 758:4566)
@@ -118,6 +119,39 @@ class SimfTokens {
   // Framework colour alias — the design token for a fully-transparent fill so
   // widgets never reference `Colors.transparent` directly (#16 sweep).
   static const Color transparent = Color(0x00000000);
+
+  // Opaque black — the letterbox behind video/camera surfaces (the live player
+  // band, the scanner viewfinder). Its own token so no widget reaches for
+  // `Colors.black`; it is a surface colour, not a scrim.
+  static const Color black = Color(0xFF000000);
+
+  // White at 70% — the secondary label on a photo/camera surface where the
+  // on-navy [txtSecondary] would wash out.
+  static const Color white70 = Color(0xB3FFFFFF);
+
+  // Black scrims over photo / video / camera surfaces, by opacity. Named the
+  // same way as [scrimBlack55] so the set reads as one scale.
+  static const Color scrimBlack25 = Color(0x40000000); // scanner card shadow
+  static const Color scrimBlack35 = Color(0x59000000); // scanner viewfinder mask
+  static const Color scrimBlack40 = Color(0x66000000); // scanner busy overlay
+  static const Color scrimBlack50 = Color(0x80000000); // home hero image scrim
+  static const Color scrimWhite90 = Color(0xE6FFFFFF); // radio pill on beige
+
+  // [accent] at zero alpha — the fade-out stop of the scanner sweep gradient.
+  // A token, not `accent.withValues(alpha: 0)`, because the gradient is const.
+  static const Color accentFade = Color(0x00C9A84C);
+  // D-771 — seat TIER colours (Normal / VIP / VVIP). The tier belongs to a hall
+  // ROW, so these tint the row's start-edge band, never the seat square (which
+  // keeps its reservation-state colour). The two values match the seeded VVIP /
+  // VIP profile-type badge colours and the Control Panel's --color-seat-tier-*
+  // tokens, so a tier reads identically on a badge, a CP seat plan and the app.
+  static const Color seatTierVvip = Color(0xFFB91C1C); // deep red — protocol
+  static const Color seatTierVip = Color(0xFF0E7490); // deep teal — VIP
+  // A12 — the CONFIRMED seat square: the holder scanned in at the hall gate,
+  // so the seat is no longer just held. Mirrors the Control Panel's
+  // --color-seat-confirmed (= --color-success, dark #4FA37D) so a confirmed
+  // seat reads the same green on the CP seat map and in the app.
+  static const Color seatConfirmed = Color(0xFF4FA37D);
 
   // Spacing scale.
   static const double space1 = 4;
@@ -657,6 +691,14 @@ class SimfTokens {
     color: navy,
     fontWeight: FontWeight.w700,
   );
+
+  /// Gold bold with NO size — for a span inside a richer line that should keep
+  /// the parent's size (the OTP resend countdown). Sized siblings live above as
+  /// labelGoldBold / labelGoldBoldLg / labelGoldBoldXl.
+  static const TextStyle labelGoldBoldInherit = TextStyle(
+    color: accent,
+    fontWeight: FontWeight.w700,
+  );
   static const TextStyle bodyInkMutedSm = TextStyle(
     color: inkMuted,
     fontSize: textSm,
@@ -667,7 +709,7 @@ class SimfTokens {
     fontWeight: FontWeight.w700,
   );
   static const TextStyle bodyWhite70 = TextStyle(
-    color: Colors.white70,
+    color: white70,
   );
   // ai_summary (Figma 1072:14628 / 1388:8392) — list card title/category, day
   // header, session label, agenda rows, section heading, bullets + paragraph.
@@ -707,6 +749,23 @@ class SimfTokens {
   );
   static const TextStyle bodyDanger = TextStyle(
     color: danger,
+  );
+
+  /// Colour-only bodies for text inside a sized parent (list tiles, inline
+  /// hints) — the size comes from the surrounding style, as with [bodyInkMuted].
+  static const TextStyle bodyGrey = TextStyle(
+    color: greyText,
+  );
+  static const TextStyle bodyHeadlineInk = TextStyle(
+    color: headlineInk,
+  );
+
+  /// The small inline validation error under a form field — the single most
+  /// repeated hand-rolled style in the app (18 sites across the auth, sign-up
+  /// and badge screens all spelled it out).
+  static const TextStyle labelDangerSm = TextStyle(
+    color: danger,
+    fontSize: textSm,
   );
   // home (Figma 758:1239) — highlights carousel slide title. Most home text
   // reuses S3 tokens (labelWhiteMediumSm, labelGoldSemiboldLg, bodyWhiteSm,
@@ -819,6 +878,10 @@ class SimfTokens {
       340; // seat-map viewport height before the grid scrolls vertically
   static const double seatSwatchSm = 14; // my-seat legend swatch
   static const double seatSwatchLg = 16; // picker + available legend swatch
+  // D-771 — the staff seating desk (tablet): the body's reading-width cap and the
+  // guest-photo square on the result card.
+  static const double staffSeatingMaxWidth = 960;
+  static const double staffSeatingPhotoSize = 64;
   static const double seatRowLabelWidth = 12; // seat-map row column (1 letter)
   static const double seatRowLabelCharWidth =
       10; // row column grows this-per-char for multi-char labels (VVIP/A001)
@@ -880,5 +943,13 @@ class SimfTokens {
     fontSize: textMd,
     fontWeight: FontWeight.w500,
     height: 1.3,
+  );
+  // #16 sweep (2026-07-30) — the shared app/widgets layer. The navigation
+  // drawer's heading was the last inline TextStyle there; this token is its
+  // exact value (surface / 20 / w600), so the render is unchanged.
+  static const TextStyle labelWhiteSemiboldXl = TextStyle(
+    color: surface,
+    fontSize: textXl,
+    fontWeight: FontWeight.w600,
   );
 }

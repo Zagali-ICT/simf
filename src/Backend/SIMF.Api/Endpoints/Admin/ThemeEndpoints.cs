@@ -1,14 +1,15 @@
-// Tests: SIMF.Api.Tests/AdminThemesTests.cs
-using System.Security.Claims;
+// Tests: SIMF.Api.Tests/AdminThemeUpdateTests.cs
+// Tests: SIMF.Api.Tests/ThemesExcelTests.cs
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-134 Sprint B — admin CRUD over <c>Themes</c>
-/// (SIMF-FDS-004 §5.1). Mirrors the InterestEndpoints shape.</summary>
+/// <summary>Admin CRUD over <c>Themes</c>.
+/// Mirrors the InterestEndpoints shape.</summary>
 public sealed class ListThemesEndpoint(IAdminThemeService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminThemeSummary>>>
 {
@@ -67,27 +68,21 @@ public sealed class CreateThemeEndpoint(IAdminThemeService service)
 
     public override async Task HandleAsync(AdminCreateThemeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var detail = await service.CreateAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminThemeDetail>.Ok(detail), ct);
     }
 }
 
-public sealed class UpdateThemeRequest
+/// <summary>Binds {id} + body via a derived route that INHERITS the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// several PUT endpoints — sessions, gates and profile types among them —
+/// silently dropped a field. Passing the bound request straight through
+/// makes that drop impossible.</summary>
+public sealed class UpdateThemeRequest : AdminUpdateThemeRequest
 {
     public Guid Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? DescriptionArabic { get; set; }
-    public int DisplayOrder { get; set; }
-    public string PageColor { get; set; } = string.Empty;
-    public bool IsActive { get; set; } = true;
 }
 
 public sealed class UpdateThemeEndpoint(IAdminThemeService service)
@@ -103,23 +98,9 @@ public sealed class UpdateThemeEndpoint(IAdminThemeService service)
 
     public override async Task HandleAsync(UpdateThemeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var detail = await service.UpdateAsync(actorId, req.Id,
-            new AdminUpdateThemeRequest
-            {
-                Code = req.Code,
-                Name = req.Name,
-                NameArabic = req.NameArabic,
-                Description = req.Description,
-                DescriptionArabic = req.DescriptionArabic,
-                DisplayOrder = req.DisplayOrder,
-                PageColor = req.PageColor,
-                IsActive = req.IsActive,
-            }, ct);
+            req, ct);
         await Send.OkAsync(ApiResult<AdminThemeDetail>.Ok(detail), ct);
     }
 }
@@ -139,11 +120,7 @@ public sealed class DeactivateThemeEndpoint(IAdminThemeService service)
 
     public override async Task HandleAsync(DeactivateThemeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

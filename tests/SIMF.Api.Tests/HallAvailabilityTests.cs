@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -19,7 +20,7 @@ namespace SIMF.Api.Tests;
 public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
 {
     // Far-future windows so the slots are in the future regardless of the test clock.
-    private static readonly DateTimeOffset WindowStart = new(2030, 1, 1, 10, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime WindowStart = new(2030, 1, 1, 10, 0, 0);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -128,10 +129,126 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
         Assert.Equal(before[1].Start, after[0].Start);
     }
 
+    [Fact]
+    public async Task A36_hall_availability_is_gated_by_its_own_permission_not_the_speaker_desk()
+    {
+        // QA A36 — the four endpoints used to borrow SpeakerMeetingRequests.*, so
+        // a delegation-meeting operator or a halls operator could never define the
+        // windows that EVERY meeting Approve modal reads. They now carry the
+        // hall-scoped HallAvailability pair.
+        var hallId = await SeedHallAsync();
+
+        // The speaker desk alone no longer opens the hall's windows.
+        var speakerDeskOnly = await CreateAdminWithCustomRoleAsync(
+        [
+            PermissionCatalog.SpeakerMeetingRequests.View,
+            PermissionCatalog.SpeakerMeetingRequests.Manage,
+        ]);
+        var denied = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/availability-windows",
+            new CreateHallAvailabilityWindowRequest
+            {
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
+            }, speakerDeskOnly);
+        Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+
+        // A hall-availability operator holding NO meeting-desk code at all can
+        // define a window and read the free slots both desks depend on.
+        var hallOperator = await CreateAdminWithCustomRoleAsync(
+        [
+            PermissionCatalog.HallAvailability.View,
+            PermissionCatalog.HallAvailability.Manage,
+        ]);
+        var created = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/availability-windows",
+            new CreateHallAvailabilityWindowRequest
+            {
+                Start = WindowStart, End = WindowStart.AddMinutes(60), SlotMinutes = 30,
+            }, hallOperator);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+
+        var slots = await SendAuthAsync(HttpMethod.Get,
+            $"/api/v1/admin/halls/{hallId}/available-slots", hallOperator);
+        Assert.Equal(HttpStatusCode.OK, slots.StatusCode);
+
+        // View alone reads but never writes.
+        var readOnly = await CreateAdminWithCustomRoleAsync(
+            [PermissionCatalog.HallAvailability.View]);
+        var listed = await SendAuthAsync(HttpMethod.Get,
+            $"/api/v1/admin/halls/{hallId}/availability-windows", readOnly);
+        Assert.Equal(HttpStatusCode.OK, listed.StatusCode);
+        var write = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/availability-windows",
+            new CreateHallAvailabilityWindowRequest
+            {
+                Start = WindowStart.AddDays(1), End = WindowStart.AddDays(1).AddMinutes(60),
+                SlotMinutes = 30,
+            }, readOnly);
+        Assert.Equal(HttpStatusCode.Forbidden, write.StatusCode);
+    }
+
     // -- helpers --------------------------------------------------------------
 
+    // A UserType.Admin user holding a fresh custom role whose only grants are
+    // `codes` (mirrors PermissionEnforcementTests — the seeder does not run under
+    // the Testing host, so the Permission rows are inserted here).
+    private async Task<string> CreateAdminWithCustomRoleAsync(string[] codes)
+    {
+        var email = $"hall-avail-perm-{Guid.NewGuid():N}@simf.test";
+        var roleName = $"HallAvail-{Guid.NewGuid():N}";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+
+            var role = new SimfRole { Name = roleName, IsBaseline = false };
+            await roleManager.CreateAsync(role);
+
+            foreach (var code in codes)
+            {
+                var def = PermissionCatalog.All.Single(permission => permission.Code == code);
+                var permission = await db.Permissions
+                    .SingleOrDefaultAsync(p => p.Code == code);
+                if (permission is null)
+                {
+                    permission = new Permission
+                    {
+                        Id = Guid.NewGuid(),
+                        Code = def.Code,
+                        Page = def.Page,
+                        Action = def.Action,
+                        DisplayName = def.DisplayName,
+                    };
+                    db.Permissions.Add(permission);
+                    await db.SaveChangesAsync();
+                }
+                db.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = role.Id,
+                    PermissionId = permission.Id,
+                });
+            }
+            await db.SaveChangesAsync();
+
+            var user = new SimfUser
+            {
+                UserName = email, Email = email, EmailConfirmed = true,
+                DisplayName = "Hall Avail Limited",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Admin,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            await users.AddToRoleAsync(user, roleName);
+        }
+
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
+    }
+
+
     private async Task SeedBoundMeetingAsync(
-        Guid hallId, DateTimeOffset start, DateTimeOffset end)
+        Guid hallId, DateTime start, DateTime end)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -141,7 +258,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             Code = "SPK-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Bound Speaker", NameArabic = "متحدّث",
             AllowsMeetingRequests = true, IsActive = true, DisplayOrder = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         db.SpeakerMeetingRequests.Add(new SpeakerMeetingRequest
@@ -152,7 +269,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             RequesterName = "Bound", Subject = "Bound meeting",
             HallId = hallId, SlotStart = start, SlotEnd = end,
             Status = MeetingRequestStatus.AwaitingSpeaker,
-            CreatedAt = DateTimeOffset.UtcNow, RespondedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now, RespondedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
@@ -184,7 +301,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Meeting Hall", NameArabic = "قاعة الاجتماعات",
             Purpose = HallPurpose.Meeting,
-            Capacity = 20, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = 20, IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         await db.SaveChangesAsync();
@@ -212,14 +329,7 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

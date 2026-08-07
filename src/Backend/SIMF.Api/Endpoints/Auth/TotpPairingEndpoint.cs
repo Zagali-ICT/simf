@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/TotpEnrolmentTests.cs (alongside the rest of the TOTP suite)
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.RateLimiting;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// D-096: <c>GET /api/v1/app/auth/totp/pairing</c> — returns the QR + otpauth
+/// <c>GET /api/v1/app/auth/totp/pairing</c> — returns the QR + otpauth
 /// URI for the caller's CURRENT authenticator secret without rotating it.
 /// Used by the CP's <c>/account/totp-pairing</c> page so an admin whose
 /// authenticator device was lost can re-scan against the same secret the
@@ -32,11 +32,7 @@ public sealed class TotpPairingEndpoint(ITotpEnrollmentService totpEnrollment)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var response = await totpEnrollment.GetCurrentPairingAsync(userId, ct);
         if (response is null)

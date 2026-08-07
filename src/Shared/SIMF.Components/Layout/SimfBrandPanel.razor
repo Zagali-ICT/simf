@@ -7,10 +7,10 @@
 
 <div class="simf-brand">
     <div class="simf-brand__texture" aria-hidden="true"></div>
-    @* H22 — D-081: logo alt is the only accessible name for the brand
-       image on every sign-in / sign-up / forgot / reset page; pre-H22 it
-       was hard-coded English, which an Arabic-locale screen reader
-       (with H6's <html lang="ar">) speaks with English phonemes mangled
+    @* The logo alt is the only accessible name for the brand
+       image on every sign-in / sign-up / forgot / reset page. It used to be
+       hard-coded English, which an Arabic-locale screen reader
+       (under <html lang="ar">) speaks with English phonemes mangled
        by the Arabic engine. AltText is the caller-supplied localised
        string; the English fallback covers callers that haven't been
        wired through the resx pattern yet. *@
@@ -38,7 +38,7 @@
     [Parameter] public string? Caption { get; set; }
 
     /// <summary>
-    /// H22 — D-081: localised alt text for the SIMF logo (the only
+    /// Localised alt text for the SIMF logo (the only
     /// accessible name for the brand image). Defaults to the English
     /// fallback so callers that don't wire a localised string still get
     /// a sensible name. Arabic callers pass <c>@L["Brand.LogoAlt"]</c>

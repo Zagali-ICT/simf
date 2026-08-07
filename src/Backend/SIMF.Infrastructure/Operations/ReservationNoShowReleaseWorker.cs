@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Operations;
 using SIMF.Application.SeatReservations.Abstractions;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -82,7 +83,7 @@ internal sealed class ReservationNoShowReleaseWorker(
         var service = scope.ServiceProvider.GetRequiredService<ISeatReservationService>();
 
         var released = await service.ReleaseNoShowsAsync(
-            timeProvider.GetUtcNow(), cancellationToken);
+            timeProvider.SimfNow(), cancellationToken);
         if (released > 0)
         {
             logger.LogInformation(

@@ -3,7 +3,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// D-172 (gap doc G10, PDF §2.5) — biometric (Face ID / Touch ID) sign-in.
+/// Biometric (Face ID / Touch ID) sign-in.
 /// Owns the device-key registration ceremony, challenge issuance, and
 /// signature verification + token mint.
 /// </summary>
@@ -14,7 +14,7 @@ public interface IDeviceKeyService
         RegisterDeviceKeyRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>#7a — issue + email a one-time step-up code to the signed-in
+    /// <summary>Issue + email a one-time step-up code to the signed-in
     /// caller's own address, to be supplied on the following
     /// <see cref="RegisterAsync"/> call. Capped per window like the sign-in OTP;
     /// returns the masked recipient + lifetime (never the plaintext code).</summary>

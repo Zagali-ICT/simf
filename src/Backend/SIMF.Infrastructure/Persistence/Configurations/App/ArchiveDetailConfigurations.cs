@@ -5,7 +5,7 @@ using SIMF.Domain.Common;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-432 — EF config for the archive edition's gallery items. Owned
+/// <summary>EF config for the archive edition's gallery items. Owned
 /// snapshot children: parent FK only, cascade-deleted with the edition, no own
 /// IsActive (visibility inherits the parent). The FK index doubles as the public
 /// read index (WHERE ArchiveEditionId = @id ORDER BY DisplayOrder).</summary>
@@ -31,7 +31,7 @@ internal sealed class ArchiveMediaItemConfiguration
     }
 }
 
-/// <summary>D-432 — EF config for the archive edition's session titles. Same
+/// <summary>EF config for the archive edition's session titles. Same
 /// owned-snapshot pattern as <see cref="ArchiveMediaItemConfiguration"/>.</summary>
 internal sealed class ArchiveSessionTitleConfiguration
     : IEntityTypeConfiguration<ArchiveSessionTitle>
@@ -53,7 +53,7 @@ internal sealed class ArchiveSessionTitleConfiguration
     }
 }
 
-/// <summary>D-432 — EF config for the archive edition's past speakers. Same
+/// <summary>EF config for the archive edition's past speakers. Same
 /// owned-snapshot pattern; the photo is a relative path (≤256), never absolute.</summary>
 internal sealed class ArchivePastSpeakerConfiguration
     : IEntityTypeConfiguration<ArchivePastSpeaker>
@@ -72,7 +72,7 @@ internal sealed class ArchivePastSpeakerConfiguration
             .HasForeignKey(speaker => speaker.ArchiveEditionId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // D-456 — logical FK to the Country lookup (no nav, Restrict), mirroring
+        // Logical FK to the Country lookup (no nav, Restrict), mirroring
         // the live Speaker's country FK; the FK auto-creates the index.
         builder.HasOne<Country>()
             .WithMany()

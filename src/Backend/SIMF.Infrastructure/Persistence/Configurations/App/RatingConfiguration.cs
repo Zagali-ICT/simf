@@ -7,7 +7,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// <summary>EF mapping for the dynamic, config-driven rating model. Replaces the
 /// old fixed single-row <c>Rating</c> table. Real DB FKs within this DbContext;
 /// <c>RatingResponse.UserId</c> and <c>RatingResponse.TargetId</c> stay bare
-/// Guids (cross-DB to Identity / polymorphic target — the D-157 separation rule).
+/// Guids (cross-DB to Identity / polymorphic target — the App/Identity separation rule).
 /// Mirrors <c>FaqConfiguration</c> for the parent → child cascade shape.</summary>
 internal sealed class RatingTypeConfiguration : IEntityTypeConfiguration<RatingType>
 {
@@ -82,7 +82,7 @@ internal sealed class RatingResponseConfiguration : IEntityTypeConfiguration<Rat
 {
     public void Configure(EntityTypeBuilder<RatingResponse> builder)
     {
-        // D-611 (Wave B) — the optional overall score is 1–5 when present.
+        // The optional overall score is 1–5 when present.
         builder.ToTable("RatingResponses", table => table.HasCheckConstraint(
             "CK_RatingResponses_OverallStars",
             "[OverallStars] IS NULL OR [OverallStars] BETWEEN 1 AND 5"));
@@ -117,7 +117,7 @@ internal sealed class RatingAnswerConfiguration : IEntityTypeConfiguration<Ratin
 {
     public void Configure(EntityTypeBuilder<RatingAnswer> builder)
     {
-        // D-611 (Wave B) — a per-question score is between 1 and 5.
+        // A per-question score is between 1 and 5.
         builder.ToTable("RatingAnswers", table => table.HasCheckConstraint(
             "CK_RatingAnswers_Stars", "[Stars] BETWEEN 1 AND 5"));
         builder.HasKey(a => a.Id);

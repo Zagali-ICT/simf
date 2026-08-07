@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launcher name. Android picks values-ar/ on an Arabic-locale device and
+         this default everywhere else, so the name under the icon matches
+         AppL10n.appName without any per-widget plumbing. -->
+    <string name="app_name">SIMF</string>
+</resources>

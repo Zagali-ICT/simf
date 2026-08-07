@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/route_names.dart';
@@ -10,16 +11,39 @@ import '../../contacts/scan_contact_screen.dart';
 
 /// The role-based QR-page actions (D-426). A visitor reads another visitor's
 /// shared contact (gold-filled "امسح لإضافة شخص") and shares their own (outlined);
-/// an exhibitor ("Other") scans visitor badges into My Visitors.
+/// an exhibitor scans visitor badges into My Visitors.
+///
+/// **DEF-EXH-005:** the branch keys off the signed-in [AppRole], not the
+/// dashboard's `isVisitor` flag. `isVisitor` is false for EVERY partner profile
+/// type (Staff, Moderator, Media, Sponsor, Exhibitor), so it showed the
+/// exhibitor-only "مسح بطاقة زائر" button to all of them and the router
+/// (`_routeRoles[106] = {exhibitor}`) then bounced them home — a visible dead
+/// control. The role sets here mirror `_routeRoles`: routes 100..102 (the
+/// contact actions) are attendee-only and route 106 is exhibitor-only, so a
+/// Staff / Moderator badge now shows no action at all.
 class BadgeActions extends StatelessWidget {
-  const BadgeActions({required this.l10n, required this.isVisitor, super.key});
+  const BadgeActions({required this.l10n, required this.role, super.key});
 
   final AppL10n l10n;
-  final bool isVisitor;
+
+  /// The signed-in user's effective app role (`CurrentUser.effectiveAppRole` —
+  /// a not-yet-approved account presents as [AppRole.guest], D-666).
+  final AppRole role;
 
   @override
   Widget build(BuildContext context) {
-    if (isVisitor) {
+    if (role == AppRole.exhibitor) {
+      return _actionButton(
+        icon: const SimfSvgIcon(
+          AppAssets.badgeScan,
+          size: 24,
+          color: SimfTokens.surface,
+        ),
+        label: l10n.badgeScanVisitor,
+        onTap: () => context.pushNamed(RouteNames.scanVisitor),
+      );
+    }
+    if (role == AppRole.visitor) {
       return Column(
         children: <Widget>[
           _actionButton(
@@ -55,15 +79,8 @@ class BadgeActions extends StatelessWidget {
         ],
       );
     }
-    return _actionButton(
-      icon: const SimfSvgIcon(
-        AppAssets.badgeScan,
-        size: 24,
-        color: SimfTokens.surface,
-      ),
-      label: l10n.badgeScanVisitor,
-      onTap: () => context.pushNamed(RouteNames.scanVisitor),
-    );
+    // Guest / Staff / Moderator — none of the badge actions are open to them.
+    return const SizedBox.shrink();
   }
 
   /// One full-width QR-page action button (frame 758:1469). [filled] = the gold

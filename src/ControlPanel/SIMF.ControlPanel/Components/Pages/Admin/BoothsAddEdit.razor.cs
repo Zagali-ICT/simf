@@ -1,13 +1,10 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Exhibitors;
 
@@ -20,7 +17,7 @@ public partial class BoothsAddEdit
 
     private readonly Model _model = new();
 
-    // D-766 — booth-officer country + coordinate inputs kept as raw strings
+    // Booth-officer country + coordinate inputs kept as raw strings
     // (parsed on submit), mirroring SpeakersAddEdit. Nationality is the officer's
     // own country picker.
     private string _officerCountryIdInput = string.Empty;
@@ -121,7 +118,7 @@ public partial class BoothsAddEdit
         }
     }
 
-    // D-766 — active countries for the officer nationality picker. Mirrors
+    // Active countries for the officer nationality picker. Mirrors
     // SpeakersAddEdit's loader. A failure leaves the picker empty (country is
     // optional) rather than blocking the whole form.
     private async Task LoadCountriesAsync()
@@ -170,7 +167,7 @@ public partial class BoothsAddEdit
             _error = L["Admin.Booths.Required"]; return;
         }
 
-        // D-766 — officer country comes from the controlled picker (only valid
+        // Officer country comes from the controlled picker (only valid
         // active ids or empty); the service re-validates it. Lat/long are an
         // all-or-nothing pair; the service enforces the real-world ranges.
         int? officerCountryId = null;
@@ -180,97 +177,26 @@ public partial class BoothsAddEdit
             officerCountryId = parsedCountry;
         }
 
-        double? officerLatitude = null, officerLongitude = null;
-        var hasLat = !string.IsNullOrWhiteSpace(_officerLatitudeInput);
-        var hasLong = !string.IsNullOrWhiteSpace(_officerLongitudeInput);
-        if (hasLat != hasLong)
+        var coordinateError = CoordinateInput.Read(
+            _officerLatitudeInput, _officerLongitudeInput, out var officerLatitude, out var officerLongitude);
+        if (coordinateError is not null)
         {
-            _error = L["Admin.ContactField.LatLongHint"]; return;
+            _error = L[coordinateError];
+            return;
         }
-        if (hasLat)
-        {
-            if (!double.TryParse(_officerLatitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
-                || !double.TryParse(_officerLongitudeInput, NumberStyles.Float, CultureInfo.InvariantCulture, out var lng))
-            {
-                _error = L["Admin.ContactField.LatLongInvalid"]; return;
-            }
-            officerLatitude = lat;
-            officerLongitude = lng;
-        }
+
+        var officer = new OfficerValues(officerCountryId, officerLatitude, officerLongitude);
 
         _busy = true;
         try
         {
-            ApiResult<AdminBoothDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminBoothDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/booths",
-                    new AdminCreateBoothRequest
-                    {
-                        Code = _model.Code.Trim(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        ExhibitorId = _model.ExhibitorId,
-                        OfficerName = NullIfBlank(_model.OfficerName),
-                        OfficerPhone = NullIfBlank(_model.OfficerPhone),
-                        OfficerEmail = NullIfBlank(_model.OfficerEmail),
-                        OfficerNameArabic = NullIfBlank(_model.OfficerNameArabic),
-                        OfficerPhoneSecondary = NullIfBlank(_model.OfficerPhoneSecondary),
-                        OfficerWebsite = NullIfBlank(_model.OfficerWebsite),
-                        OfficerFacebookUrl = NullIfBlank(_model.OfficerFacebookUrl),
-                        OfficerXUrl = NullIfBlank(_model.OfficerXUrl),
-                        OfficerLinkedInUrl = NullIfBlank(_model.OfficerLinkedInUrl),
-                        OfficerInstagramUrl = NullIfBlank(_model.OfficerInstagramUrl),
-                        OfficerCity = NullIfBlank(_model.OfficerCity),
-                        OfficerCityArabic = NullIfBlank(_model.OfficerCityArabic),
-                        OfficerLatitude = officerLatitude,
-                        OfficerLongitude = officerLongitude,
-                        OfficerCountryId = officerCountryId,
-                        Sector = NullIfBlank(_model.Sector),
-                        SectorArabic = NullIfBlank(_model.SectorArabic),
-                        Description = NullIfBlank(_model.Description),
-                        DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
-                        HallId = _model.HallId,
-                        MapX = _model.MapX,
-                        MapY = _model.MapY,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminBoothDetail>>(
+            var envelope = IsEdit
+                ? await JS.InvokeAsync<ApiResult<AdminBoothDetail>>(
                     "simfAccount.putJson", $"/account/api/admin/booths/{Initial!.Id}",
-                    new AdminUpdateBoothRequest
-                    {
-                        Code = _model.Code.Trim(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        ExhibitorId = _model.ExhibitorId,
-                        OfficerName = NullIfBlank(_model.OfficerName),
-                        OfficerPhone = NullIfBlank(_model.OfficerPhone),
-                        OfficerEmail = NullIfBlank(_model.OfficerEmail),
-                        OfficerNameArabic = NullIfBlank(_model.OfficerNameArabic),
-                        OfficerPhoneSecondary = NullIfBlank(_model.OfficerPhoneSecondary),
-                        OfficerWebsite = NullIfBlank(_model.OfficerWebsite),
-                        OfficerFacebookUrl = NullIfBlank(_model.OfficerFacebookUrl),
-                        OfficerXUrl = NullIfBlank(_model.OfficerXUrl),
-                        OfficerLinkedInUrl = NullIfBlank(_model.OfficerLinkedInUrl),
-                        OfficerInstagramUrl = NullIfBlank(_model.OfficerInstagramUrl),
-                        OfficerCity = NullIfBlank(_model.OfficerCity),
-                        OfficerCityArabic = NullIfBlank(_model.OfficerCityArabic),
-                        OfficerLatitude = officerLatitude,
-                        OfficerLongitude = officerLongitude,
-                        OfficerCountryId = officerCountryId,
-                        Sector = NullIfBlank(_model.Sector),
-                        SectorArabic = NullIfBlank(_model.SectorArabic),
-                        Description = NullIfBlank(_model.Description),
-                        DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
-                        HallId = _model.HallId,
-                        MapX = _model.MapX,
-                        MapY = _model.MapY,
-                        IsActive = _model.IsActive,
-                    });
-            }
+                    BuildUpdateRequest(officer))
+                : await JS.InvokeAsync<ApiResult<AdminBoothDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/booths",
+                    BuildCreateRequest(officer));
 
             if (envelope is { Success: true, Data: not null })
             {
@@ -288,6 +214,71 @@ public partial class BoothsAddEdit
         }
         finally { _busy = false; }
     }
+
+    private AdminCreateBoothRequest BuildCreateRequest(OfficerValues officer) => new()
+    {
+        Code = _model.Code.Trim(),
+        Name = _model.Name.Trim(),
+        NameArabic = _model.NameArabic.Trim(),
+        ExhibitorId = _model.ExhibitorId,
+        OfficerName = NullIfBlank(_model.OfficerName),
+        OfficerPhone = NullIfBlank(_model.OfficerPhone),
+        OfficerEmail = NullIfBlank(_model.OfficerEmail),
+        OfficerNameArabic = NullIfBlank(_model.OfficerNameArabic),
+        OfficerPhoneSecondary = NullIfBlank(_model.OfficerPhoneSecondary),
+        OfficerWebsite = NullIfBlank(_model.OfficerWebsite),
+        OfficerFacebookUrl = NullIfBlank(_model.OfficerFacebookUrl),
+        OfficerXUrl = NullIfBlank(_model.OfficerXUrl),
+        OfficerLinkedInUrl = NullIfBlank(_model.OfficerLinkedInUrl),
+        OfficerInstagramUrl = NullIfBlank(_model.OfficerInstagramUrl),
+        OfficerCity = NullIfBlank(_model.OfficerCity),
+        OfficerCityArabic = NullIfBlank(_model.OfficerCityArabic),
+        OfficerLatitude = officer.Latitude,
+        OfficerLongitude = officer.Longitude,
+        OfficerCountryId = officer.CountryId,
+        Sector = NullIfBlank(_model.Sector),
+        SectorArabic = NullIfBlank(_model.SectorArabic),
+        Description = NullIfBlank(_model.Description),
+        DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
+        HallId = _model.HallId,
+        MapX = _model.MapX,
+        MapY = _model.MapY,
+    };
+
+    private AdminUpdateBoothRequest BuildUpdateRequest(OfficerValues officer) => new()
+    {
+        Code = _model.Code.Trim(),
+        Name = _model.Name.Trim(),
+        NameArabic = _model.NameArabic.Trim(),
+        ExhibitorId = _model.ExhibitorId,
+        OfficerName = NullIfBlank(_model.OfficerName),
+        OfficerPhone = NullIfBlank(_model.OfficerPhone),
+        OfficerEmail = NullIfBlank(_model.OfficerEmail),
+        OfficerNameArabic = NullIfBlank(_model.OfficerNameArabic),
+        OfficerPhoneSecondary = NullIfBlank(_model.OfficerPhoneSecondary),
+        OfficerWebsite = NullIfBlank(_model.OfficerWebsite),
+        OfficerFacebookUrl = NullIfBlank(_model.OfficerFacebookUrl),
+        OfficerXUrl = NullIfBlank(_model.OfficerXUrl),
+        OfficerLinkedInUrl = NullIfBlank(_model.OfficerLinkedInUrl),
+        OfficerInstagramUrl = NullIfBlank(_model.OfficerInstagramUrl),
+        OfficerCity = NullIfBlank(_model.OfficerCity),
+        OfficerCityArabic = NullIfBlank(_model.OfficerCityArabic),
+        OfficerLatitude = officer.Latitude,
+        OfficerLongitude = officer.Longitude,
+        OfficerCountryId = officer.CountryId,
+        Sector = NullIfBlank(_model.Sector),
+        SectorArabic = NullIfBlank(_model.SectorArabic),
+        Description = NullIfBlank(_model.Description),
+        DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
+        HallId = _model.HallId,
+        MapX = _model.MapX,
+        MapY = _model.MapY,
+        IsActive = _model.IsActive,
+    };
+
+    /// <summary>The booth officer's parsed contact values — the only submit inputs
+    /// that are not read straight off <see cref="_model"/>.</summary>
+    private sealed record OfficerValues(int? CountryId, double? Latitude, double? Longitude);
 
     private void OnExhibitorIdChanged(ChangeEventArgs e)
     {

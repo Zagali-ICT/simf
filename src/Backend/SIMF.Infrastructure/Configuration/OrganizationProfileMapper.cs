@@ -4,10 +4,10 @@ using SIMF.Domain.Organization;
 
 namespace SIMF.Infrastructure.Configuration;
 
-/// <summary>D-495 — projects the singleton <see cref="OrganizationProfile"/> + its
+/// <summary>Projects the singleton <see cref="OrganizationProfile"/> + its
 /// active child lists to the public <see cref="OrganizationProfileResponse"/>. Shared
 /// by the cached read service and the admin GET so the mapping lives in one place.
-/// URLs are sanitised on read (D-467): only an absolute http(s) URL is surfaced.</summary>
+/// URLs are sanitised on read: only an absolute http(s) URL is surfaced.</summary>
 internal static class OrganizationProfileMapper
 {
     public static OrganizationProfileResponse ToResponse(
@@ -59,7 +59,7 @@ internal static class OrganizationProfileMapper
     private static string? NullIfBlank(string? v) =>
         string.IsNullOrWhiteSpace(v) ? null : v.Trim();
 
-    // D-467 — a URL is rendered as a link target (website footer / app launcher), so
+    // A URL is rendered as a link target (website footer / app launcher), so
     // only an absolute http(s) URL is surfaced; any other scheme drops to inert null.
     private static string? SafeUrl(string? v)
     {

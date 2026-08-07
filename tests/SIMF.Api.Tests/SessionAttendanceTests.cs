@@ -204,7 +204,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var hall = new Hall
         {
             Id = Guid.NewGuid(),
@@ -252,7 +252,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
 
     private static HallAttendance NewAttendance(
         Guid sessionId, Guid hallId, Guid userId,
-        DateTimeOffset enter, DateTimeOffset? leave) =>
+        DateTime enter, DateTime? leave) =>
         new()
         {
             Id = Guid.NewGuid(),
@@ -262,14 +262,14 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
             Method = AttendanceMethod.Geofence,
             Enter = enter,
             Leave = leave,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
 
     private async Task<(Guid SessionId, Guid HallId)> SeedSessionWithLayoutAsync()
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var hall = new Hall
         {
             Id = Guid.NewGuid(),
@@ -314,7 +314,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
             JobTitle = jobTitle,
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }
@@ -324,7 +324,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         db.HallAttendances.Add(NewAttendance(sessionId, hallId, userId,
-            DateTimeOffset.UtcNow.AddMinutes(-3), leave: null));
+            SimfClock.Now.AddMinutes(-3), leave: null));
         await db.SaveChangesAsync();
     }
 
@@ -333,7 +333,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         db.HallAttendances.Add(NewAttendance(sessionId, hallId, userId,
-            DateTimeOffset.UtcNow.AddMinutes(-10), DateTimeOffset.UtcNow.AddMinutes(-2)));
+            SimfClock.Now.AddMinutes(-10), SimfClock.Now.AddMinutes(-2)));
         await db.SaveChangesAsync();
     }
 
@@ -350,7 +350,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
             Kind = SeatReservationKind.UserBooking,
             ReservedForUserId = userId,
             CreatedByUserId = userId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
             Status = BookingStatus.Approved,
         });
         await db.SaveChangesAsync();
@@ -377,15 +377,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

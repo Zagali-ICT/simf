@@ -4,7 +4,7 @@ using SIMF.Domain.Sponsors;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-199 (Mockup page 23) — Sponsor EF config. Mirrors
+/// <summary>Sponsor EF config. Mirrors
 /// DelegationConfiguration / CountryConfiguration. <see cref="Sponsor.Tier"/>
 /// is stored as its int value (the public sort weight). The composite index
 /// matches the public read order (active rows, by tier, then display order).
@@ -28,18 +28,18 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         builder.Property(sponsor => sponsor.LogoRelativePath).HasMaxLength(256);
         builder.Property(sponsor => sponsor.Url).HasMaxLength(512);
 
-        // D-432 — optional bilingual tagline (<=256, mirrors the service-layer
-        // validation + CP MaxLength). Additive nullable columns (D-219 freeze-lift).
+        // Optional bilingual tagline (<=256, mirrors the service-layer
+        // validation + CP MaxLength). Additive nullable columns.
         builder.Property(sponsor => sponsor.Tagline).HasMaxLength(256);
         builder.Property(sponsor => sponsor.TaglineArabic).HasMaxLength(256);
 
-        // Wave 3 — optional bilingual "نبذة عن الراعي" about paragraph (≤2048,
-        // mirrors the CP MaxLength). Additive nullable columns (D-219 freeze-lift).
+        // Optional bilingual "نبذة عن الراعي" about paragraph (≤2048,
+        // mirrors the CP MaxLength). Additive nullable columns.
         builder.Property(sponsor => sponsor.About).HasMaxLength(2048);
         builder.Property(sponsor => sponsor.AboutArabic).HasMaxLength(2048);
 
         // Contact identity-card fields inlined from the removed shared Contact
-        // directory (supersedes SIMF-FDS-014 / D-260). All nullable. The Website
+        // directory. All nullable. The Website
         // slot is the existing Url above. Latitude/Longitude are double? and need
         // no length.
         builder.Property(sponsor => sponsor.Email).HasMaxLength(320);

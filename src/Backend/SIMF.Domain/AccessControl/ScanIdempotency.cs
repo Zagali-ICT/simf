@@ -1,29 +1,28 @@
 namespace SIMF.Domain.AccessControl;
 
 /// <summary>
-/// D-148 — the idempotency replay store for <c>POST /api/v1/gates/{id}/scans</c>
-/// (SIMF-API-GATES-001 §9). Same <see cref="Key"/> + same payload → byte-identical
-/// replay of the prior response, with response header <c>X-Idempotent-Replay: true</c>.
-/// Same key with different payload → 409 IDEMPOTENCY_KEY_CONFLICT. Records expire
-/// 24 hours after <see cref="StoredAt"/>.
+/// The replay store behind the gate-scan endpoint's idempotency key. The same
+/// key with the same payload replays the earlier response byte for byte, flagged
+/// as a replay in a response header; the same key with a different payload is a
+/// conflict. Records expire a day after they are stored.
 /// </summary>
 public class ScanIdempotency
 {
-    /// <summary>Client-generated UUIDv4 (36 chars).</summary>
+    /// <summary>A client-generated UUID.</summary>
     public string Key { get; set; } = string.Empty;
 
     public Guid GateId { get; set; }
 
-    /// <summary>SHA-256 of the request body (qr + idempotencyKey + source).
-    /// Mismatch with a prior request under the same key = conflict.</summary>
+    /// <summary>A hash of the request body. A mismatch against an earlier request
+    /// under the same key is what makes the pair a conflict.</summary>
     public string RequestHash { get; set; } = string.Empty;
 
-    /// <summary>SHA-256 of the recorded response body for replay verification.</summary>
+    /// <summary>A hash of the recorded response, for verifying a replay.</summary>
     public string ResponseHash { get; set; } = string.Empty;
 
-    /// <summary>The recorded GateScan row id, when one was created (denials
-    /// and allowed scans both populate this).</summary>
+    /// <summary>The scan row that was written, if one was. Both allowed and
+    /// denied scans record one.</summary>
     public long? ScanId { get; set; }
 
-    public DateTimeOffset StoredAt { get; set; }
+    public DateTime StoredAt { get; set; }
 }

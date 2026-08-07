@@ -1,22 +1,27 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Notifications;
 
 namespace SIMF.ControlPanel.Components.Layout;
 
 public partial class CpShellLayout
 {
+    // The notification bell is refreshed from pages that change read-state, via
+    // the BellRefresh cascade below.
+    private SIMF.Components.Controls.SimfNotificationBell? _bell;
+
+    private async Task RefreshBellAsync()
+    {
+        if (_bell is not null)
+        {
+            await _bell.RefreshUnreadAsync();
+            StateHasChanged();
+        }
+    }
+
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -55,7 +60,7 @@ public partial class CpShellLayout
 
     protected override async Task OnInitializedAsync()
     {
-        // P11 — D-052: guard every CP shell page. A non-Approved user is
+        // Guard every CP shell page. A non-Approved user is
         // routed to the matching state-banner page before any module
         // content renders. The pending / rejected pages use MainLayout
         // (not this layout), so they don't trigger this guard themselves.

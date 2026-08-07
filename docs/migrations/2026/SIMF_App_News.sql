@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    SIMF_App — news seed  (Highlights item)  ->  GET /app/news
 
    Target database : SIMF_App   (NOT SIMF_Identity)

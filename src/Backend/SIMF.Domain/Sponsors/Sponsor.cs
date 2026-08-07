@@ -4,63 +4,49 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Sponsors;
 
 /// <summary>
-/// D-199 (Mockup page 23, "الرعاة" / Sponsors) — one event sponsor shown on the
-/// public sponsors screen and managed from the Control Panel. Sponsors are
-/// grouped on the public surface by <see cref="Tier"/> (Platinum first) and,
-/// within a tier, ordered by <see cref="DisplayOrder"/> ascending then
-/// <see cref="NameArabic"/>. Soft-deleted via <see cref="IsActive"/> /
-/// <see cref="Deactivate"/> — the public list filters <c>IsActive == true</c>.
+/// One event sponsor, shown on the public sponsors screen and managed from the
+/// Control Panel. The public surface groups by <see cref="Tier"/>, Platinum
+/// first, and orders within a tier by <see cref="DisplayOrder"/> then
+/// <see cref="NameArabic"/>. Soft-deleted through <see cref="BaseAuditEntity.IsActive"/>, which
+/// the public list filters on.
 /// </summary>
-public sealed class Sponsor: BaseAuditEntity
-{ 
-
-    /// <summary>English display name (1–256 chars).</summary>
+public sealed class Sponsor : BaseAuditEntity
+{
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>Arabic display name (1–256 chars) — the primary surface on the
-    /// mobile app and public website.</summary>
+    /// <summary>The primary surface on the mobile app and the public website.</summary>
     public string NameArabic { get; set; } = string.Empty;
 
-
-    /// <summary>Sponsorship tier. Drives both the grouping heading and the
-    /// top-level ordering on the public screen.</summary>
+    /// <summary>Drives both the grouping heading and the top-level ordering on
+    /// the public screen.</summary>
     public SponsorTier Tier { get; set; } = SponsorTier.Bronze;
 
-    /// <summary>Sort key within a tier — ascending. Tie-broken by
+    /// <summary>Ascending sort key within a tier, tie-broken by
     /// <see cref="NameArabic"/>.</summary>
     public int DisplayOrder { get; set; }
 
-    /// <summary>Relative path to the sponsor's logo asset (≤256 chars), resolved
-    /// against the static asset root. Optional — never an absolute URL. Retained
-    /// per SIMF-FDS-014 (D-260): the entity keeps its own inline logo as the
-    /// fallback; when a <see cref="Contact"/> is linked the public projection
-    /// prefers the Contact's logo (D-281).</summary>
+    /// <summary>Path to the logo asset, resolved against the static asset root.
+    /// Never an absolute URL.</summary>
     public string? LogoRelativePath { get; set; }
 
-    /// <summary>Optional outbound link to the sponsor's website (≤512 chars).</summary>
+    /// <summary>Outbound link to the sponsor's own website.</summary>
     public string? Url { get; set; }
 
-    /// <summary>D-432 — an optional short tagline / strapline shown under the
-    /// sponsor name on the public screen (≤256 chars, bilingual). The Figma
-    /// frame 922:2824 shows a line such as "الراعي الاستراتيجي · شريك التحول
-    /// الدفاعي". Optional; the public projection omits it when blank.</summary>
+    /// <summary>A short strapline under the sponsor name, such as "الراعي
+    /// الاستراتيجي". Omitted from the public projection when blank.</summary>
     public string? Tagline { get; set; }
 
-    /// <summary>D-432 — Arabic tagline (≤256 chars). The primary surface.</summary>
+    /// <summary>The primary surface.</summary>
     public string? TaglineArabic { get; set; }
 
-    /// <summary>Wave 3 (Figma 1439:11826) — the full "نبذة عن الراعي" about
-    /// paragraph on the sponsor-detail screen (distinct from the short
-    /// <see cref="Tagline"/>). Bilingual; ≤2048. Optional. Additive (D-219).</summary>
+    /// <summary>The full about paragraph on the sponsor-detail screen, distinct
+    /// from the one-line <see cref="Tagline"/>.</summary>
     public string? About { get; set; }
     public string? AboutArabic { get; set; }
 
-
-    // Contact identity-card fields inlined from the removed shared Contact
-    // directory (supersedes SIMF-FDS-014 / D-260). All nullable. The Website
-    // slot is the existing Url above (never re-added); LogoRelativePath above is
-    // likewise the entity's own logo asset (not inlined). Latitude/Longitude are
-    // double? and need no length.
+    // Contact-card fields, inlined when the shared contact directory was removed.
+    // The website slot is the Url above, and the logo is LogoRelativePath; neither
+    // was re-added here.
     public string? Email { get; set; }
     public string? PhonePrimary { get; set; }
     public string? PhoneSecondary { get; set; }
@@ -73,12 +59,9 @@ public sealed class Sponsor: BaseAuditEntity
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
 
-    /// <summary>ISO 3166-1 numeric country id — real same-DB FK to
-    /// <see cref="Common.Country"/> (App DB), OnDelete.Restrict. Inlined from
-    /// the removed shared Contact directory. Optional.</summary>
+    /// <summary>ISO 3166-1 numeric country id. A real foreign key, since the
+    /// country lives in the same database.</summary>
     public int? CountryId { get; set; }
 
-    /// <summary>Navigation for <see cref="CountryId"/> (same FK), so the public
-    /// projection reads the country name through one join.</summary>
     public Country? Country { get; set; }
 }

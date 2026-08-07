@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Authentication;
 
-/// <summary>The body of <c>POST /api/v1/app/auth/sign-in</c> (SIMF-API-001 section 12.4).</summary>
+/// <summary>The body of <c>POST /api/v1/app/auth/sign-in</c>.</summary>
 public sealed class SignInRequest
 {
     public string Email { get; set; } = string.Empty;
@@ -10,7 +10,7 @@ public sealed class SignInRequest
     public string Password { get; set; } = string.Empty;
 
     /// <summary>
-    /// The surface this sign-in attempt came from (P2). Defaults to
+    /// The surface this sign-in attempt came from. Defaults to
     /// <see cref="SignInAudience.Web"/> — the least-privileged surface — so
     /// any caller that forgets to set it falls into the visitor bucket.
     /// </summary>
@@ -26,15 +26,21 @@ public sealed class SignInRequest
 ///     <see cref="MfaRequired"/> is <c>true</c>.</item>
 ///   <item>When the account has <c>TwoFactorEnabled = false</c>, neither token
 ///     is set, <see cref="MfaRequired"/> is <c>false</c> and <see cref="Tokens"/>
-///     carries the issued tokens directly — sign-in is complete (myComment #34,
-///     decision D-033).</item>
-///   <item>D-206: when a Control Panel account must change a forced
+///     carries the issued tokens directly — sign-in is complete.</item>
+///   <item>When a Control Panel account must change a forced
 ///     (seeded/admin-rotated) password, <see cref="PasswordChangeToken"/> is set
 ///     and every other field is null/false. The caller collects a new password
 ///     and completes the change at <c>POST /auth/complete-password-change</c>;
 ///     no session is minted until that succeeds and the user signs in again.
 ///     For non-Control-Panel audiences the forced-change case still returns the
 ///     <c>AUTH_PASSWORD_CHANGE_REQUIRED</c> 403 unchanged.</item>
+///   <item>When a Control Panel account signs in with no
+///     authenticator secret paired, <see cref="TwoFactorEnrolmentToken"/> is set
+///     and every other field is null/false — <b>no token is issued on the
+///     password alone</b>. The caller enrols at
+///     <c>POST /auth/totp/enrolment/start</c> +
+///     <c>/complete</c>, and the completion issues the session. The App and Web
+///     audiences are unaffected.</item>
 /// </list>
 /// </summary>
 public sealed record SignInResponse(
@@ -43,13 +49,14 @@ public sealed record SignInResponse(
     string? OtpToken,
     AuthTokens? Tokens = null,
     AccountStateInfo? AccountState = null,
-    string? PasswordChangeToken = null);
+    string? PasswordChangeToken = null,
+    string? TwoFactorEnrolmentToken = null);
 
 /// <summary>
 /// Carries the user's account state on a sign-in response when the
-/// account is **not** Approved (P10 — D-051). Null on an Approved
+/// account is **not** Approved. Null on an Approved
 /// sign-in. The front-end branches on <see cref="State"/> to route the
-/// user to the pending / rejected state-banner page (P11). The
+/// user to the pending / rejected state-banner page. The
 /// <see cref="RejectionReason"/> + <see cref="RejectionReasonArabic"/>
 /// pair is populated only when <see cref="State"/> is
 /// <c>"Rejected"</c>.
@@ -58,10 +65,10 @@ public sealed record AccountStateInfo(
     string State,
     string? RejectionReason,
     string? RejectionReasonArabic,
-    DateTimeOffset? StateChangedAt);
+    DateTime? StateChangedAt);
 
 /// <summary>The token payload returned once a sign-in is fully completed.</summary>
-/// <remarks>A7-31 (NCA): <see cref="PreviousSignInAtUtc"/> carries the time of the
+/// <remarks>A7-31 (NCA): <see cref="PreviousSignInAt"/> carries the time of the
 /// account's prior successful sign-in (null on the very first one, and on token
 /// refresh) so the client can show a "last signed in …" notice. Additive trailing
 /// field — the mobile/web wire contract stays backward-compatible.</remarks>
@@ -71,18 +78,18 @@ public sealed record AuthTokens(
     string TokenType,
     int AccessTokenExpiresInSeconds,
     AuthUser User,
-    DateTimeOffset? PreviousSignInAtUtc = null);
+    DateTime? PreviousSignInAt = null);
 
 /// <summary>The signed-in user, as carried in <see cref="AuthTokens"/>.</summary>
 public sealed record AuthUser(Guid Id, string Email, string DisplayName);
 
 /// <summary>
 /// The signed-in user as the Flutter app decodes it from
-/// <c>GET /api/v1/app/users/me</c> (SIMF-MOB-API-001 §5.1) — the same wire
+/// <c>GET /api/v1/app/users/me</c> — the same wire
 /// shape the app's <c>CurrentUserDto</c> consumes. Built additively for the
-/// Registration-Status screen (Page 011) so the app can poll the approval
+/// Registration-Status screen so the app can poll the approval
 /// state; available to any signed-in account, including not-yet-approved ones
-/// (D-249).
+///.
 /// <list type="bullet">
 ///   <item><see cref="AppRole"/> is the resolved mobile app-role name —
 ///     <c>"Visitor"</c>, <c>"Staff"</c> or <c>"Moderator"</c> — matching the
@@ -104,8 +111,8 @@ public sealed record CurrentUserResponse(
     string PreferredLanguage,
     string RegistrationStatus,
     string? AvatarUrl,
-    // D-374 — server-computed profile completeness so the app can force the
+    // Server-computed profile completeness so the app can force the
     // add-profile stage right after ANY login path (names + ≥1 interest +
-    // the C7 male-photo rule), without a separate profile probe. Additive
+    // the male-photo rule), without a separate profile probe. Additive
     // wire field (append-only contract).
     bool ProfileComplete = false);

@@ -22,14 +22,20 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";
 
-    // D-753 — meeting scheduling is now bounded to the forum days (MIN/MAX over the
-    // active ProgrammeDay rows). The test fixture seeds programme days 2026-11-20..22
-    // (SIMF_App_Programme.sql), so every scheduled slot below is anchored to day one
-    // (09:00 Riyadh) and offset by HOURS to stay inside that window while remaining in
-    // the future relative to the test clock. The two "in the past" tests keep a
+    // D-753 — meeting scheduling is bounded to the forum days (MIN/MAX over the
+    // active ProgrammeDay rows). The fixture seeds those days from
+    // SIMF_App_Programme.sql, so every scheduled slot below is anchored to day one
+    // (09:00 Riyadh) and offset by HOURS to stay inside that window while remaining
+    // in the future relative to the test clock. The two "in the past" tests keep a
     // relative-to-now start so they still trip the not-in-past lower bound.
-    private static readonly DateTimeOffset EventStart =
-        new(2026, 11, 20, 9, 0, 0, TimeSpan.FromHours(3));
+    //
+    // The anchor was 2026-11-20 until 2026-07-28. Commit db9b6f76 replaced the
+    // placeholder programme with the real SIMF-4 one — 23-25 Nov 2026 — and
+    // soft-deletes the old 20-22 days, so the old anchor fell OUTSIDE the forum
+    // window: every schedule call 400'd on the D-753 bound before reaching the
+    // behaviour each test was actually asserting.
+    private static readonly DateTime EventStart =
+        new(2026, 11, 23, 9, 0, 0);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -892,7 +898,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
-        var start = DateTimeOffset.UtcNow.AddHours(-24);
+        var start = SimfClock.Now.AddHours(-24);
 
         var response = await PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -920,7 +926,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         // A valid end AFTER a past start, so ValidateSlot passes the end<=start
         // branch and reaches the new not-in-past lower bound.
-        var start = DateTimeOffset.UtcNow.AddHours(-24);
+        var start = SimfClock.Now.AddHours(-24);
 
         var response = await PostAuthAsync(
             $"/api/v1/admin/halls/{hallId}/hall-allocations",
@@ -941,12 +947,12 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Schedule_a_meeting_inside_the_forum_window_succeeds()
     {
-        // The fixture seeds programme days 2026-11-20..22; a slot on day two is inside
+        // The fixture seeds programme days 2026-11-23..25; a slot on day two is inside
         // the window (and in the future) so scheduling is accepted.
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
-        var start = new DateTimeOffset(2026, 11, 21, 10, 0, 0, TimeSpan.FromHours(3));
+        var start = new DateTime(2026, 11, 24, 10, 0, 0);
 
         var resp = await ScheduleAsync(tableId, token, start, start.AddHours(1),
             await SeedCompanyAsync(), await SeedCompanyAsync());
@@ -957,12 +963,12 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     public async Task Schedule_a_meeting_outside_the_forum_window_is_400()
     {
         // A future slot (so the not-in-past bound passes) but AFTER the last forum day
-        // (2026-11-22) is rejected by the D-753 forum-day bound. The forum check runs
+        // (2026-11-25) is rejected by the D-753 forum-day bound. The forum check runs
         // before the participant checks, so a valid two-company meeting still 400s.
         var token = await CreateAdministratorAndSignInAsync();
         var hallId = await SeedHallAsync(HallPurpose.Meeting);
         var tableId = await CreateTableAsync(hallId, token, capacity: 4);
-        var start = new DateTimeOffset(2026, 12, 15, 10, 0, 0, TimeSpan.FromHours(3));
+        var start = new DateTime(2026, 12, 15, 10, 0, 0);
 
         var resp = await ScheduleAsync(tableId, token, start, start.AddHours(1),
             await SeedCompanyAsync(), await SeedCompanyAsync());
@@ -974,7 +980,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     // -- Helpers --------------------------------------------------------------
 
     private Task<HttpResponseMessage> ScheduleAsync(
-        Guid tableId, string token, DateTimeOffset start, DateTimeOffset end,
+        Guid tableId, string token, DateTime start, DateTime end,
         Guid companyA, Guid companyB) =>
         PostAuthAsync(
             "/api/v1/admin/business-meetings",
@@ -1014,7 +1020,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             Capacity = capacity,
             IsActive = true,
             Purpose = purpose,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Halls.Add(hall);
         await appDb.SaveChangesAsync();
@@ -1031,7 +1037,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             Name = $"Co {Guid.NewGuid():N}",
             NameArabic = "شركة",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();
@@ -1080,16 +1086,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
@@ -1129,7 +1126,7 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task<Guid> ScheduleConfirmedAsync(
-        Guid tableId, string token, DateTimeOffset start, DateTimeOffset end)
+        Guid tableId, string token, DateTime start, DateTime end)
     {
         var resp = await ScheduleAsync(tableId, token, start, end,
             await SeedCompanyAsync(), await SeedCompanyAsync());

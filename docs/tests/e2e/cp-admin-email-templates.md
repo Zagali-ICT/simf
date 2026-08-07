@@ -44,6 +44,8 @@
 | E2E-EMT-011 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-EMT-012 | RTL render: the Arabic body field + the live preview mirror to RTL | i18n | P1 | _to author_ |
 | E2E-EMT-013 | Edit-permission gate: an admin with `EmailTemplates.View` but not `.Edit` sees a read-only editor — Save / Reset fire 403 | auth | P1 | _to author_ |
+| E2E-EMT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-EMT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

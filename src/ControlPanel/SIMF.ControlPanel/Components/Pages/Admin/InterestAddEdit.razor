@@ -1,9 +1,9 @@
-@* D-353 — reusable Interest Add/Edit form, hosted by CrudShell (as a popup
+@* Reusable Interest Add/Edit form, hosted by CrudShell (as a popup
    or a full page) from InterestsList.razor. Inherits CrudAddEditFormBase so
    it exposes the standard CRUD-form parameter surface (IsEdit / Initial /
    OnSuccess / OnCancel). IsEdit=false runs Create (POST); IsEdit=true runs
    Edit (PUT against Initial) and shows the IsActive checkbox. Supersedes the
-   old InterestForm.razor (D-132) which keyed off Initial==null.
+   old InterestForm.razor, which keyed off Initial==null.
    Code-behind: InterestAddEdit.razor.cs. *@
 @inherits CrudAddEditFormBase<AdminInterestSummary>
 

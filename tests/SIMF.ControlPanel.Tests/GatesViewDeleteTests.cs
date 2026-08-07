@@ -12,17 +12,27 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class GatesViewDeleteTests : CpComponentTestBase
 {
+    public GatesViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Gates.Manage);
+    }
+
     private static AdminGateDetail Detail() => new(
         Guid.NewGuid(), "GATE-1", "North Gate", "Ø§Ù„Ø¨ÙˆØ§Ø¨Ø© Ø§Ù„Ø´Ù…Ø§Ù„ÙŠØ©",
         Description: "Main entrance", DescriptionArabic: "Ø§Ù„Ù…Ø¯Ø®Ù„ Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠ",
         DirectionMode.Both, IsActive: true,
         AllowedProfileTypeIds: Array.Empty<Guid>(),
         AssignedOperatorUserIds: Array.Empty<Guid>(),
-        DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()
     {
+        // BUG-018 — the form now loads the gate's assignments on init.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+
         var cut = RenderComponent<GatesViewDelete>(p => p
             .Add(x => x.IsDelete, false)
             .Add(x => x.Initial, Detail()));
@@ -30,6 +40,30 @@ public sealed class GatesViewDeleteTests : CpComponentTestBase
         Assert.Contains("North Gate", cut.Markup);
         Assert.Empty(cut.FindAll(".simf-button--danger"));
         Assert.Empty(cut.FindAll(".simf-modal"));
+    }
+
+    // BUG-018 (18-6) — the detail view used to render only the operator COUNT, so
+    // an assignment could not be audited from the CP. It must name each operator.
+    [Fact]
+    public void View_mode_lists_the_assigned_operators_by_name_and_email()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var row = Detail();
+        JSInterop.Setup<ApiResult<IReadOnlyList<AdminGateAssignmentRow>>>(
+            "simfAccount.getJson",
+            $"/account/api/admin/gates/{row.Id}/assignments")
+            .SetResult(ApiResult<IReadOnlyList<AdminGateAssignmentRow>>.Ok(
+            [
+                new(Guid.NewGuid(), Guid.NewGuid(), "Ahmed Al-Rashid",
+                    DateTime.UnixEpoch, Guid.NewGuid(), "ahmed@simf.test"),
+            ]));
+
+        var cut = RenderComponent<GatesViewDelete>(p => p
+            .Add(x => x.IsDelete, false)
+            .Add(x => x.Initial, row));
+
+        Assert.Contains("Ahmed Al-Rashid", cut.Markup);
+        Assert.Contains("ahmed@simf.test", cut.Markup);
     }
 
     [Fact]

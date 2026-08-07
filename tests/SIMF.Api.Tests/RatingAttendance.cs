@@ -11,12 +11,13 @@ using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
 internal static class RatingAttendance
 {
-    // Event-local offset (UTC+3) — the codebase convention the PerDay gate uses.
+    // Event-local offset (+03:00) — the codebase convention the PerDay gate uses.
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
     /// <summary>The <c>SimfUser.Id</c> for a test email (Identity DB).</summary>
@@ -31,7 +32,7 @@ internal static class RatingAttendance
     /// <summary>Marks the user as having attended the event (a HallAttendance on a
     /// throwaway past session), satisfying the Global-scope rating gate.</summary>
     internal static Task SeedEventAttendanceAsync(SimfApiFactory factory, Guid userId) =>
-        SeedOnNewSessionAsync(factory, userId, DateTimeOffset.UtcNow.AddHours(-1));
+        SeedOnNewSessionAsync(factory, userId, SimfClock.Now.AddHours(-1));
 
     /// <summary>Marks the user as having attended a session on the event-local day of
     /// <paramref name="dayId"/>, satisfying the PerDay gate for that programme day.</summary>
@@ -44,8 +45,8 @@ internal static class RatingAttendance
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             date = await db.ProgrammeDays.Where(d => d.Id == dayId).Select(d => d.Date).SingleAsync();
         }
-        // Noon on the day, in event-local time, is unambiguously inside its UTC window.
-        var start = new DateTimeOffset(date.ToDateTime(new TimeOnly(12, 0)), EventOffset);
+        // Noon on the day, in event-local time, is unambiguously inside its day window.
+        var start = date.ToDateTime(new TimeOnly(12, 0));
         await SeedOnNewSessionAsync(factory, userId, start);
     }
 
@@ -68,11 +69,11 @@ internal static class RatingAttendance
     /// UserProfile exists (test visitors approved via SetAccountState have none) since
     /// the scan is keyed on <c>UserProfile.Id</c>, then adds a Gate + GateScan.</summary>
     internal static async Task SeedGateCheckInAsync(
-        SimfApiFactory factory, Guid userId, DateTimeOffset scannedAt)
+        SimfApiFactory factory, Guid userId, DateTime scannedAt)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
 
         var profileId = await db.UserProfiles
             .Where(p => p.UserId == userId).Select(p => (Guid?)p.Id)
@@ -82,7 +83,7 @@ internal static class RatingAttendance
             var profileType = new UserProfileType
             {
                 Id = Guid.NewGuid(),
-                Name = "Visitor " + Guid.NewGuid().ToString("N")[..4],
+                Name = "Visitor " + Guid.NewGuid().ToString("N")[..8],
                 NameArabic = "زائر",
                 PageColor = "#0EA5E9",
                 IsForVisitor = true,
@@ -126,7 +127,7 @@ internal static class RatingAttendance
     }
 
     /// <summary>A venue-gate Check-In scan on the event-local day of
-    /// <paramref name="dayId"/> (noon, UTC+3) with no in-hall attendance.</summary>
+    /// <paramref name="dayId"/> (noon, +03:00) with no in-hall attendance.</summary>
     internal static async Task SeedGateCheckInOnDayAsync(
         SimfApiFactory factory, Guid userId, Guid dayId)
     {
@@ -136,12 +137,12 @@ internal static class RatingAttendance
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             date = await db.ProgrammeDays.Where(d => d.Id == dayId).Select(d => d.Date).SingleAsync();
         }
-        var scannedAt = new DateTimeOffset(date.ToDateTime(new TimeOnly(12, 0)), EventOffset);
+        var scannedAt = date.ToDateTime(new TimeOnly(12, 0));
         await SeedGateCheckInAsync(factory, userId, scannedAt);
     }
 
     private static async Task SeedOnNewSessionAsync(
-        SimfApiFactory factory, Guid userId, DateTimeOffset sessionStart)
+        SimfApiFactory factory, Guid userId, DateTime sessionStart)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -150,7 +151,7 @@ internal static class RatingAttendance
             Id = Guid.NewGuid(),
             Code = "AH-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Attendance Hall", NameArabic = "قاعة الحضور",
-            Capacity = 10, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = 10, IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -161,7 +162,7 @@ internal static class RatingAttendance
             HallId = hall.Id,
             Start = sessionStart,
             End = sessionStart.AddHours(1),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         db.HallAttendances.Add(NewAttendance(userId, session.Id, hall.Id));
@@ -175,7 +176,7 @@ internal static class RatingAttendance
         HallId = hallId,
         UserId = userId,
         Method = AttendanceMethod.QrScan,
-        Enter = DateTimeOffset.UtcNow,
-        CreatedAt = DateTimeOffset.UtcNow,
+        Enter = SimfClock.Now,
+        CreatedAt = SimfClock.Now,
     };
 }

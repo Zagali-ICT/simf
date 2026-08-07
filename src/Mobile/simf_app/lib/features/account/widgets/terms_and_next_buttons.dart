@@ -50,24 +50,27 @@ class TermsAndNextButtons extends StatelessWidget {
           ),
         ),
         const SizedBox(height: SimfTokens.space6),
-        FilledButton(
-          onPressed: busy ? null : onNext,
-          child: busy
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: SimfTokens.surface,
+        // BUG-019 / 19h — the button loses its only label while the spinner is
+        // up, so the accessible name is declared explicitly and always present.
+        Semantics(
+          button: true,
+          label: l10n.nextLabel,
+          child: FilledButton(
+            onPressed: busy ? null : onNext,
+            child: busy
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: SimfTokens.surface,
+                    ),
+                  )
+                : Text(
+                    l10n.nextLabel,
+                    style: SimfTokens.titleBold,
                   ),
-                )
-              : Text(
-                  l10n.nextLabel,
-                  style: const TextStyle(
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+          ),
         ),
       ],
     );

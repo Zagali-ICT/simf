@@ -1,7 +1,8 @@
-@* Control Panel — the signed-in user's profile (myComment item #11). Four
-   sections: two-factor authentication enrolment, change password, my roles,
-   my avatar. Every action goes through CP-side proxy endpoints
-   (/account/api/…) so the access token never reaches the page. *@
+﻿@* Control Panel — the signed-in user's profile. Six sections: two-factor
+   authentication enrolment, recovery codes (only once 2FA is on), change
+   password, my roles, my avatar, and display preferences. Every action goes
+   through CP-side proxy endpoints (/account/api/…) so the access token never
+   reaches the page. *@
 @page "/account/profile"
 @layout CpShellLayout
 
@@ -139,7 +140,7 @@ else
         <section class="simf-card simf-page-card">
             <h2 class="simf-card__title">@L["Profile.Password.Title"]</h2>
             @* No success banner — a successful change rolls the security stamp
-               and signs the user out, so the page navigates away. D-206: the
+               and signs the user out, so the page navigates away. The
                form is the shared ChangePasswordCard (also used by the
                forced-change sign-in popup). *@
             <ChangePasswordCard ShowCurrentField="true" Busy="_busy"
@@ -188,7 +189,7 @@ else
                 }
             </div>
             <p id="avatar-input-hint" class="simf-form__helper">@L["Profile.Avatar.SizeHint"]</p>
-            @* D-119 — picking a file opens the cropper modal directly.
+            @* Picking a file opens the cropper modal directly.
                The explicit Upload button is gone; the cropper has its own
                Save action. Picking a new file resets the input so the same
                file fires the change event again on re-pick. *@
@@ -201,13 +202,13 @@ else
             <div class="simf-form__actions">
                 @if (!string.IsNullOrEmpty(_profile.AvatarUrl))
                 {
-                    <SimfButton Type="button" Variant="secondary" OnClick="RemoveAvatarAsync"
+                    <SimfButton Type="button" Variant="secondary" OnClick="@(() => _confirmingAvatarRemove = true)"
                                 Disabled="_busy">@L["Profile.Avatar.Remove"]</SimfButton>
                 }
             </div>
         </section>
 
-        @* -- Display preferences (D-353) ------------------------------------------ *@
+        @* -- Display preferences -------------------------------------------------- *@
         <section class="simf-card simf-page-card">
             <h2 class="simf-card__title">@L["Profile.Display.Title"]</h2>
             @if (_displayFlash is not null)
@@ -226,7 +227,7 @@ else
     </div>
 }
 
-@* D-119 — Avatar cropper modal (first SimfImageCropperModal consumer).
+@* Avatar cropper modal (first SimfImageCropperModal consumer).
    Opens when the user picks a file; on confirm the cropped 400×400 PNG
    is uploaded via the existing /account/api/avatar multipart endpoint
    (no backend change). On cancel the picked file is discarded. *@
@@ -235,3 +236,13 @@ else
                        Title="@L["Profile.Avatar.Crop.Title"]"
                        OnCropped="OnAvatarCroppedAsync"
                        OnCancel="OnAvatarCropCancelAsync" />
+
+@* Removing the avatar deletes the stored file; confirm first. *@
+<SimfConfirm Open="_confirmingAvatarRemove"
+             Danger="true"
+             Title="@L["Profile.Avatar.Remove.Confirm.Title"]"
+             Message="@L["Profile.Avatar.Remove.Confirm.Message"]"
+             ConfirmLabel="@L["Profile.Avatar.Remove"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmRemoveAvatarAsync"
+             OnCancel="@(() => _confirmingAvatarRemove = false)" />

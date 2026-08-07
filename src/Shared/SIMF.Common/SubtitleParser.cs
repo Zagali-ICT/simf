@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace SIMF.Common;
 
 /// <summary>
-/// D-578 — parses a subtitle file (SubRip <c>.srt</c> or WebVTT <c>.vtt</c>), or
+/// Parses a subtitle file (SubRip <c>.srt</c> or WebVTT <c>.vtt</c>), or
 /// already-plain text, into a clean readable transcript for the AI session-summary
 /// drafter (<c>AdminSessionSummaryService</c> feeds it as the <c>transcript</c> input).
 /// Strips cue indices, timestamp lines, the WebVTT header + NOTE/STYLE/REGION blocks

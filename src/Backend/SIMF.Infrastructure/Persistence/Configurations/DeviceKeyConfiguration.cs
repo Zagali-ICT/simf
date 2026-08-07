@@ -4,7 +4,7 @@ using SIMF.Domain.IdentityAccess;
 
 namespace SIMF.Infrastructure.Persistence.Configurations;
 
-/// <summary>D-172 (gap doc G10) — DeviceKey entity configuration on
+/// <summary>DeviceKey entity configuration on
 /// the Identity DbContext. Real FK to SimfUser with cascade so a user
 /// delete cleans up their device keys.</summary>
 internal sealed class DeviceKeyConfiguration : IEntityTypeConfiguration<DeviceKey>
@@ -31,7 +31,7 @@ internal sealed class DeviceKeyConfiguration : IEntityTypeConfiguration<DeviceKe
         // by this composite.
         builder.HasIndex(k => new { k.UserId, k.RevokedAt });
 
-        // D-610 (Wave B) — at most one ACTIVE (non-revoked) key per (user,
+        // At most one ACTIVE (non-revoked) key per (user,
         // public-key): a filtered unique so re-enrolling a rotated key still
         // works after the old one is revoked (RevokedAt set → excluded).
         builder.HasIndex(k => new { k.UserId, k.PublicKey })

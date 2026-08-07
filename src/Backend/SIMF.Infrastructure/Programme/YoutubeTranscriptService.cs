@@ -9,7 +9,7 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// D-578 — server-side YouTube caption fetch. Resolves the video id via the shared
+/// Server-side YouTube caption fetch. Resolves the video id via the shared
 /// <see cref="LiveStreamUrlPolicy"/>, lists the caption tracks through YouTube's public
 /// "innertube" player API (the ANDROID client bypasses the web consent interstitial),
 /// downloads the chosen track as JSON3 and flattens it to running text.
@@ -138,7 +138,7 @@ internal sealed class YoutubeTranscriptService(
     private async Task<string> DownloadTranscriptAsync(
         string baseUrl, CancellationToken cancellationToken)
     {
-        // SSRF defence-in-depth (D-578 security review): NEVER trust the host in the
+        // SSRF defence-in-depth: NEVER trust the host in the
         // baseUrl YouTube returned — re-validate it is an https YouTube/Google caption
         // host before fetching it. Combined with the no-redirect client (DI), a crafted
         // or MITM'd player response cannot steer this GET to an internal target. On
@@ -231,7 +231,7 @@ internal sealed class YoutubeTranscriptService(
 
     // The hosts a legitimate YouTube caption baseUrl uses. Re-checked before the
     // second HTTP hop so a crafted/spoofed player response can't point the GET at an
-    // internal host (SSRF defence-in-depth, D-578 review #1).
+    // internal host.
     private static bool IsCaptionHost(string host)
     {
         host = host.ToLowerInvariant();

@@ -7,7 +7,7 @@ namespace SIMF.Common;
 /// <para>
 /// Every list service clamps <c>Top</c> to its own page size (see
 /// <see cref="GridQuery.ClampPage"/>), so a single oversized <c>Top</c> is
-/// silently truncated to one page (D-642). Rather than widen that clamp — which
+/// silently truncated to one page. Rather than widen that clamp — which
 /// would require a client-reachable escape hatch on the shared, model-bound
 /// <see cref="GridQuery"/> and so weaken the list-endpoint DoS cap — the export
 /// keeps fetching successive pages until the set is exhausted or the export cap is

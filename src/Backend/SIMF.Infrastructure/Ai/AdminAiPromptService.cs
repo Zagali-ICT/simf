@@ -11,7 +11,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>D-176 (gap doc G12) — admin CRUD over <see cref="AiPrompt"/>
+/// <summary>Admin CRUD over <see cref="AiPrompt"/>
 /// + read-only invocations log. Writes bump <see cref="AiPrompt.Version"/>
 /// and audit; deactivate is soft (<see cref="AiPrompt.IsActive"/> = false).</summary>
 internal sealed class AdminAiPromptService(
@@ -28,7 +28,7 @@ internal sealed class AdminAiPromptService(
 
         var rows = appDbContext.AiPrompts.AsNoTracking().AsQueryable();
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -57,7 +57,7 @@ internal sealed class AdminAiPromptService(
                 || p.DisplayName.Contains(s) || p.DisplayNameArabic.Contains(s));
         }
 
-        // CP grid sortable columns (D-255). Default: Feature, then Key.
+        // CP grid sortable columns. Default: Feature, then Key.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("key", false) => rows.OrderBy(p => p.Key),
@@ -133,21 +133,19 @@ internal sealed class AdminAiPromptService(
             MaxOutputTokens = validated.MaxOutputTokens,
             IsActive = true,
             Version = 1,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
             UpdatedByUserId = actorUserId,
         };
         appDbContext.AiPrompts.Add(prompt);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        // D-179 — structured JSON detail with prompt-content hash so
+        // Structured JSON detail with prompt-content hash so
         // SOC can detect prompt drift across edits without storing
         // the raw text (may contain prompt-injection payloads).
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiPromptCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = AiAuditDetail.ToJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AiPromptCreated,
+            actorUserId,
+            AiAuditDetail.ToJson(new
             {
                 promptId = prompt.Id,
                 promptKey = prompt.Key,
@@ -158,7 +156,7 @@ internal sealed class AdminAiPromptService(
                 contentHash = AiAuditDetail.PromptContentHash(
                     prompt.SystemPrompt, prompt.UserPromptTemplate),
             }),
-        }, cancellationToken);
+            cancellationToken);
         logger.LogInformation(
             "AI prompt {Key} created by {Actor}", prompt.Key, actorUserId);
         return ToDetail(prompt);
@@ -176,13 +174,13 @@ internal sealed class AdminAiPromptService(
                 "AI prompt not found.",
                 "لم يتم العثور على محفّز الذكاء الاصطناعي.");
 
-        // D-179 — capture old hash BEFORE mutation so the audit row
+        // Capture old hash BEFORE mutation so the audit row
         // carries both old + new content hashes; SOC can flag any
         // prompt-text drift even without raw text access.
         var oldHash = AiAuditDetail.PromptContentHash(
             prompt.SystemPrompt, prompt.UserPromptTemplate);
 
-        // D-188 — snapshot the PRE-mutation state into AiPromptHistory
+        // Snapshot the PRE-mutation state into AiPromptHistory
         // so SOC + the CP history tab can reconstruct any prior
         // version after a drift detection. Captured BEFORE the
         // version bump; uses the current prompt.Version so the
@@ -190,7 +188,7 @@ internal sealed class AdminAiPromptService(
         // be replaced. The hash matches the `contentHashOld` value
         // the audit row will carry — SOC can correlate the audit
         // row and the history snapshot by hash.
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         appDbContext.AiPromptHistory.Add(new AiPromptHistory
         {
             Id = Guid.NewGuid(),
@@ -224,7 +222,7 @@ internal sealed class AdminAiPromptService(
         prompt.Version++;
         prompt.UpdatedAt = now;
         prompt.UpdatedByUserId = actorUserId;
-        // D-188: SaveChangesAsync writes both the snapshot AND the
+        // SaveChangesAsync writes both the snapshot AND the
         // live-row update in one transaction. EF SaveChanges is
         // atomic per call; if the snapshot insert fails (e.g. unique
         // index violation on a duplicate version retry), the live
@@ -233,12 +231,10 @@ internal sealed class AdminAiPromptService(
 
         var newHash = AiAuditDetail.PromptContentHash(
             prompt.SystemPrompt, prompt.UserPromptTemplate);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiPromptUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = AiAuditDetail.ToJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AiPromptUpdated,
+            actorUserId,
+            AiAuditDetail.ToJson(new
             {
                 promptId = prompt.Id,
                 promptKey = prompt.Key,
@@ -248,7 +244,7 @@ internal sealed class AdminAiPromptService(
                 contentChanged = !string.Equals(oldHash, newHash, StringComparison.Ordinal),
                 isActive = prompt.IsActive,
             }),
-        }, cancellationToken);
+            cancellationToken);
         return ToDetail(prompt);
     }
 
@@ -264,28 +260,26 @@ internal sealed class AdminAiPromptService(
                 "لم يتم العثور على محفّز الذكاء الاصطناعي.");
         if (!prompt.IsActive) return;
         prompt.IsActive = false;
-        prompt.UpdatedAt = timeProvider.GetUtcNow();
+        prompt.UpdatedAt = timeProvider.SimfNow();
         prompt.UpdatedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiPromptDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = AiAuditDetail.ToJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AiPromptDeactivated,
+            actorUserId,
+            AiAuditDetail.ToJson(new
             {
                 promptId = prompt.Id,
                 promptKey = prompt.Key,
             }),
-        }, cancellationToken);
+            cancellationToken);
     }
 
     public async Task<AiCallResult> TestAsync(
         Guid actorUserId, Guid id, TestAiPromptRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-179 review-pass: input caps now live in AiService.InvokeAsync
+        // Input caps live in AiService.InvokeAsync
         // so every caller (admin Test + public feature endpoints) goes
         // through the same chokepoint. No duplicate validation here.
         var prompt = await appDbContext.AiPrompts.AsNoTracking()
@@ -320,7 +314,7 @@ internal sealed class AdminAiPromptService(
 
         var rows = appDbContext.AiInvocations.AsNoTracking().AsQueryable();
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         // Feature filters by enum name; the rest are substring matches. The
         // page-level "Errors only" toggle reaches us as the errorOnly filter.
         foreach (var (column, raw) in query.Filters)
@@ -350,7 +344,7 @@ internal sealed class AdminAiPromptService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: newest first.
+        // CP grid sortable columns. Default: newest first.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("createdat", false) => rows.OrderBy(i => i.CreatedAt),
@@ -384,7 +378,7 @@ internal sealed class AdminAiPromptService(
         int windowHours = 24, CancellationToken cancellationToken = default)
     {
         var hours = Math.Clamp(windowHours, 1, 24 * 30);
-        var since = timeProvider.GetUtcNow().AddHours(-hours);
+        var since = timeProvider.SimfNow().AddHours(-hours);
 
         // Per-service invocation aggregates over the window (one GROUP BY).
         var perFeature = await appDbContext.AiInvocations.AsNoTracking()
@@ -544,7 +538,7 @@ internal sealed class AdminAiPromptService(
         p.SystemPrompt, p.UserPromptTemplate, p.Temperature, p.MaxOutputTokens,
         p.IsActive, p.Version, p.CreatedAt, p.UpdatedAt);
 
-    /// <summary>D-188 — read the append-only edit history for one
+    /// <summary>Read the append-only edit history for one
     /// prompt. Newest first. Capped at the natural ceiling of how
     /// many edits a single prompt accumulates over an event
     /// lifetime (single-digit hundreds at most); no paging needed

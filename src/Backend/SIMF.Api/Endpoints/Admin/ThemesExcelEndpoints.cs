@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/themes/export</c> — the D-356 grid export for
+/// <c>POST /api/v1/admin/themes/export</c> — the grid export for
 /// programme themes. All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass only declares the
 /// route, permission, sheet/file names, the column layout (mirroring the
@@ -32,7 +32,7 @@ public sealed class ExportThemesEndpoint(IAdminThemeService service, IGridExcelE
         new("DisplayOrder", row => row.DisplayOrder),
         new("PageColor", row => row.PageColor),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the bilingual descriptions (appended so the existing
+        // Round-trip the bilingual descriptions (appended so the existing
         // column order is unchanged; import binds by header name and already
         // reads these two columns in ApplyRowAsync).
         new("Description", row => row.Description),
@@ -47,7 +47,7 @@ public sealed class ExportThemesEndpoint(IAdminThemeService service, IGridExcelE
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/themes/import</c> — the D-356 grid import (insert-only)
+/// <c>POST /api/v1/admin/themes/import</c> — the grid import (insert-only)
 /// for programme themes. The base does the upload defence, parse and per-row
 /// error aggregation; this subclass binds one row to
 /// <see cref="AdminCreateThemeRequest"/> and creates it (the service rejects a

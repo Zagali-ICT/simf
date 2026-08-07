@@ -6,6 +6,7 @@ using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Domain.IdentityAccess;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -22,7 +23,7 @@ public sealed class DormantAccountTests : IClassFixture<DormantAccountApiFactory
     [Fact]
     public async Task Sweep_disables_only_dormant_approved_accounts()
     {
-        var t0 = _factory.Time.GetUtcNow();
+        var t0 = _factory.Time.SimfNow();
         var stamp = Guid.NewGuid().ToString("N");
 
         // Created "long ago" (at t0): one Approved (should be disabled) and one
@@ -33,7 +34,7 @@ public sealed class DormantAccountTests : IClassFixture<DormantAccountApiFactory
         // Move 31 days forward, then create a fresh Approved account (not dormant).
         _factory.Time.Advance(TimeSpan.FromDays(31));
         var recentEmail = await CreateUserAsync(
-            $"recent-{stamp}@simf.test", AccountState.Approved, _factory.Time.GetUtcNow());
+            $"recent-{stamp}@simf.test", AccountState.Approved, _factory.Time.SimfNow());
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -50,7 +51,7 @@ public sealed class DormantAccountTests : IClassFixture<DormantAccountApiFactory
     [Fact]
     public async Task Sweep_never_disables_administrators()
     {
-        var t0 = _factory.Time.GetUtcNow();
+        var t0 = _factory.Time.SimfNow();
         var stamp = Guid.NewGuid().ToString("N");
         // A long-dormant ADMIN (Approved + UserType.Admin) — must be left alone so
         // the sweep can never lock out the (only) admin and brick the CP.
@@ -68,7 +69,7 @@ public sealed class DormantAccountTests : IClassFixture<DormantAccountApiFactory
     }
 
     private async Task<string> CreateUserAsync(
-        string email, AccountState state, DateTimeOffset createdAt,
+        string email, AccountState state, DateTime createdAt,
         UserType userType = UserType.Visitor)
     {
         using var scope = _factory.Services.CreateScope();

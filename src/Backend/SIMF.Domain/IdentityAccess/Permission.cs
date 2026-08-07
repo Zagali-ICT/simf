@@ -1,9 +1,8 @@
 namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>
-/// One action on one page — the unit of authorisation in the SIMF
-/// page-and-action permission model (SIMF-RPM-001 section 8,
-/// SIMF-DAT-001 section 5.1).
+/// One action on one page, the unit of authorisation in the page-and-action
+/// permission model.
 /// </summary>
 public class Permission
 {

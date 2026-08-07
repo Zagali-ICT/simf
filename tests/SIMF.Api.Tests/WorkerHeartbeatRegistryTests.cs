@@ -7,6 +7,7 @@ using Microsoft.Extensions.Time.Testing;
 using SIMF.Contracts.Ops;
 using SIMF.Infrastructure.Operations;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -19,7 +20,7 @@ public sealed class WorkerHeartbeatRegistryTests
 
     private static WorkerHeartbeatRegistry NewRegistry(out FakeTimeProvider time)
     {
-        time = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        time = new FakeTimeProvider(SimfClock.Now);
         return new WorkerHeartbeatRegistry(time);
     }
 

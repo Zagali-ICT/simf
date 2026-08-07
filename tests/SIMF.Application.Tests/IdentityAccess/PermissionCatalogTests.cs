@@ -16,6 +16,72 @@ public sealed class PermissionCatalogTests
         Assert.Equal(codes.Count, codes.Distinct(StringComparer.Ordinal).Count());
     }
 
+    /// <summary>Every <c>const</c> in a nested group class, as (group, name, code).
+    /// The three constants on <c>PermissionCatalog</c> itself (Wildcard, ClaimType,
+    /// PolicyPrefix) are excluded for free: they are not nested in a group.</summary>
+    private static IReadOnlyList<(string Group, string Name, string Code)> DeclaredCodes() =>
+        typeof(PermissionCatalog)
+            .GetNestedTypes(System.Reflection.BindingFlags.Public)
+            .SelectMany(group => group.GetFields(
+                System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.Static
+                | System.Reflection.BindingFlags.FlattenHierarchy))
+            .Where(field => field is { IsLiteral: true, IsInitOnly: false }
+                && field.FieldType == typeof(string))
+            .Select(field => (
+                Group: field.DeclaringType!.Name,
+                Name: field.Name,
+                Code: (string)field.GetRawConstantValue()!))
+            .ToList();
+
+    [Fact]
+    public void Every_declared_code_is_registered_in_All()
+    {
+        // D-830 (review finding F6). A const that exists but was never added to All is
+        // never seeded, so no role can hold it. The policy still resolves, so the gate
+        // still DENIES - and it denies everyone except Administrator, who passes on the
+        // wildcard. The result is a page or button that works for the owner and silently
+        // vanishes for every other role, which is the hardest kind of gap to notice
+        // because the person most likely to test it is the one it never affects.
+        var registered = PermissionCatalog.All
+            .Select(permission => permission.Code)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var orphans = DeclaredCodes()
+            .Where(declared => !registered.Contains(declared.Code))
+            .Select(declared => $"{declared.Group}.{declared.Name} = \"{declared.Code}\"")
+            .OrderBy(entry => entry, StringComparer.Ordinal)
+            .ToList();
+
+        Assert.True(
+            orphans.Count == 0,
+            "Permission code(s) are declared as a const but missing from PermissionCatalog.All, "
+            + "so the seeder never creates them and only Administrator passes their gate. Add a "
+            + "new(...) entry:\n  " + string.Join("\n  ", orphans));
+    }
+
+    [Fact]
+    public void Every_registered_code_is_declared_as_a_const()
+    {
+        // The mirror. A code that lives only as a string literal inside All is seeded
+        // and grantable, but no endpoint or page can reference it without retyping the
+        // string - which is how a typo becomes a permanently ungated action.
+        var declared = DeclaredCodes()
+            .Select(entry => entry.Code)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var literals = PermissionCatalog.All
+            .Select(permission => permission.Code)
+            .Where(code => !declared.Contains(code))
+            .OrderBy(code => code, StringComparer.Ordinal)
+            .ToList();
+
+        Assert.True(
+            literals.Count == 0,
+            "Permission code(s) are registered in PermissionCatalog.All with no matching "
+            + "const, so nothing can reference them safely:\n  " + string.Join("\n  ", literals));
+    }
+
     [Fact]
     public void Every_entry_has_a_page_action_and_display_name()
     {

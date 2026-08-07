@@ -8,7 +8,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Configuration;
 
-/// <summary>D-495 — the public, IMemoryCache-backed read of the singleton
+/// <summary>The public, IMemoryCache-backed read of the singleton
 /// Organization Profile (mirrors <c>GateConfigCache</c>). 5-minute TTL plus explicit
 /// <see cref="Invalidate"/> on every admin write, so an edit shows immediately while a
 /// stale read can never persist past the TTL. The snapshot carries the row's
@@ -50,7 +50,7 @@ internal sealed class OrganizationProfileReadService(
             // answer 200 with an empty profile rather than fail the public read.
             var empty = OrganizationProfileMapper.ToResponse(
                 new OrganizationProfile(), [], [], null);
-            return new OrganizationProfileSnapshot(empty, DateTimeOffset.UnixEpoch);
+            return new OrganizationProfileSnapshot(empty, DateTime.UnixEpoch);
         }
 
         var about = await db.OrganizationAboutItems.AsNoTracking()

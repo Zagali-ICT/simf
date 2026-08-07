@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-124 — <c>GET /api/v1/admin/visitors/{id}/profile-for-approval</c>.
+/// <c>GET /api/v1/admin/visitors/{id}/profile-for-approval</c>.
 /// Returns the full <see cref="PendingProfileResponse"/> when the target
 /// is a Visitor currently in PendingApproval; returns 404 otherwise
 /// (unknown id, wrong state, or wrong UserType all collapse to one
@@ -40,7 +40,7 @@ public sealed class GetPendingVisitorProfileEndpoint(IAdminApprovalReadService s
         {
             // Single 404 for missing / wrong-state / wrong-type so an
             // enumerator cannot diff error codes (matches the type-
-            // smuggling stance D-113 took on the bulk endpoints).
+            // smuggling stance the bulk endpoints take).
             throw new ApiException(
                 ErrorCodes.NotFound, 404,
                 "No pending visitor was found for this id.",

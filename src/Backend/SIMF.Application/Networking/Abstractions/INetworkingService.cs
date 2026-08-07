@@ -3,7 +3,7 @@ using SIMF.Contracts.Networking;
 namespace SIMF.Application.Networking.Abstractions;
 
 /// <summary>
-/// B6 — D-224: visitor-to-visitor networking connections. App-facing only
+/// Visitor-to-visitor networking connections. App-facing only
 /// (used by the mobile networking screen): a caller requests a connection,
 /// the target accepts, and either party can remove it. There is no admin/CP
 /// surface, so the endpoints carry no permission code (RequireApprovedAccount

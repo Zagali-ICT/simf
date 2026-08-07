@@ -243,16 +243,7 @@ public sealed class AdminGridVisitorsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
             id = user.Id;
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, id);
+        return (await AuthFlow.SignInControlPanelAsync(_client, _factory, email), id);
     }
 
     private async Task<Guid> CreateVisitorAsync(string adminToken, string? displayName = null)

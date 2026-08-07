@@ -1,4 +1,4 @@
-@* D-132 — the admin broadcast-Notifications desk (admin -> audience). Composes a
+@* The admin broadcast-Notifications desk (admin -> audience). Composes a
    free-text bilingual message and sends it as an in-app notification + email to a
    specific session's registered attendees or to a broad audience. Delivery is
    background-processed; the history grid shows past broadcasts + their status. *@
@@ -93,7 +93,7 @@
         </SimfFormSection>
 
         <div class="simf-form__actions">
-            <SimfButton Type="button" OnClick="SubmitAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="SubmitAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Announcements.Send"]
             </SimfButton>
         </div>

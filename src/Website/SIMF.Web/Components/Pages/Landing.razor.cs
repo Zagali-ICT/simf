@@ -15,7 +15,7 @@ namespace SIMF.Web.Components.Pages;
 // public "ln-" page (LandingHeader / LandingFooter / LandingShell).
 public partial class Landing
 {
-    // D-755 — the CP-editable forum date range (from OrganizationProfile), resolved
+    // The CP-editable forum date range (from OrganizationProfile), resolved
     // server-side during static SSR. Null when the profile is unavailable; the view
     // then falls back to the Landing.Subnav.Date resx label.
     [Inject] private ForumDates Dates { get; set; } = default!;
@@ -25,9 +25,9 @@ public partial class Landing
     // simply hides the section (see the @if guard in Landing.razor).
     [Inject] private SimfPublicClient Api { get; set; } = default!;
 
-    // D-756 — the CP-editable hero background video (from OrganizationProfile),
-    // resolved server-side during static SSR. Null when none is configured / the
-    // profile is unavailable; the view then falls back to the bundled hero-video.mp4.
+    // The CP-editable hero background video (from OrganizationProfile), resolved
+    // server-side during static SSR. Null when none is configured / the profile is
+    // unavailable; the view then falls back to the bundled hero-video.mp4.
     [Inject] private HeroMedia Hero { get; set; } = default!;
 
     private string? ForumDate { get; set; }

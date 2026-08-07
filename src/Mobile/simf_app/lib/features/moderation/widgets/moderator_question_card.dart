@@ -22,6 +22,7 @@ class ModeratorQuestionCard extends StatelessWidget {
     required this.onReject,
     required this.onAnswered,
     required this.onPush,
+    this.dragHandleIndex,
     super.key,
   });
 
@@ -32,6 +33,13 @@ class ModeratorQuestionCard extends StatelessWidget {
   final VoidCallback onReject;
   final VoidCallback onAnswered;
   final VoidCallback onPush;
+
+  /// FR-MOD-003 — the row's index in the desk list, which turns the card's
+  /// leading glyph into a drag handle for `PUT …/questions/reorder`. Null on a
+  /// row that cannot be reordered (a rejected question is off the desk, so it
+  /// has no place in the running order) — the glyph is then omitted entirely
+  /// rather than rendered dead.
+  final int? dragHandleIndex;
 
   static String _initials(String name) {
     final parts = name
@@ -68,6 +76,33 @@ class ModeratorQuestionCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
+              // FR-MOD-003 — the drag handle sits at the row's leading edge, so
+              // it mirrors with the rest of the card in RTL. A vertical reorder
+              // list has no left/right semantics to invert: "up" is earlier in
+              // the running order in both languages.
+              if (dragHandleIndex != null) ...<Widget>[
+                ReorderableDragStartListener(
+                  index: dragHandleIndex!,
+                  child: Semantics(
+                    // Its OWN node: without container the handle's name is
+                    // merged into the card's, so a screen reader reads the
+                    // question text and the handle as one blob and the control
+                    // has no name of its own to announce.
+                    container: true,
+                    label: l10n.moderatorReorderHandle,
+                    button: true,
+                    child: const Padding(
+                      padding: EdgeInsetsDirectional.only(
+                        end: SimfTokens.space3,
+                      ),
+                      child: Icon(
+                        Icons.drag_handle,
+                        color: SimfTokens.accent,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               Text(
                 _hm.format(saudiOf(question.createdAt)),
                 style: SimfTokens.labelBeigeSemibold24,
@@ -114,7 +149,7 @@ class ModeratorQuestionCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(SimfTokens.space5),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(
+              color: SimfTokens.black.withValues(
                 alpha: SimfTokens.moderatorScrimOpacity,
               ),
               border: Border.all(

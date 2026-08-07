@@ -3,7 +3,7 @@ using System.Resources;
 
 namespace SIMF.Common.Resources.Enums;
 
-/// <summary>D-110: resource accessor for <c>SignInAudience</c> enum display names.</summary>
+/// <summary>Resource accessor for <c>SignInAudience</c> enum display names.</summary>
 public static class ResSignInAudience
 {
     private static ResourceManager? _resourceManager;

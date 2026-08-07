@@ -43,7 +43,7 @@ class SimfLanguageToggle extends StatelessWidget {
     final text = Text(
       label,
       style: const TextStyle(
-        color: Colors.white,
+        color: SimfTokens.surface,
         fontSize: 10,
         fontWeight: FontWeight.w600,
       ),

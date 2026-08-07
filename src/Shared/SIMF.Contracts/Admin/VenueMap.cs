@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Admin;
 
-/// <summary>P2.5 — D-230 (FR-605): one venue-map node in the admin list.</summary>
+/// <summary>One venue-map node in the admin list.</summary>
 public sealed record AdminVenueMapNodeSummary(
     Guid Id,
     string Label,
@@ -25,8 +25,8 @@ public sealed record AdminVenueMapNodeDetail(
     Guid? HallId,
     Guid? BoothId,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>P2.5 — create a venue-map node.</summary>
 public sealed class AdminCreateVenueMapNodeRequest

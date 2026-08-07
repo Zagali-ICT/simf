@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -19,7 +19,7 @@ namespace SIMF.Api.Tests;
 
 /// <summary>
 /// H25 — D-085: end-to-end visitor lifecycle test (Sprint 1 §3.5).
-/// Drives the full chain in one <see cref="Fact"/> so a cross-hop seam
+/// Drives the full chain in one <c>Fact</c> so a cross-hop seam
 /// regression (e.g. an Approved visitor cannot sign in on the App
 /// audience because of a stamp/claim drift) is caught at the boundary
 /// between any two hops, not lost in the gap between two per-hop
@@ -128,6 +128,8 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
                 IsSaudi = true,
                 NationalId = "1101798278",
                 OrganisationId = organisationId,
+                // DEF-PHN-004 — the mobile is required on the upsert now.
+                SaudiMobile = "0501234567",
             }),
         };
         upsertRequest.Headers.Authorization =
@@ -225,7 +227,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "اهتمام دورة الحياة",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
@@ -244,7 +246,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "جهة دورة الحياة",
             Name = $"Lifecycle Org {Guid.NewGuid():N}",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(org);
         await appDb.SaveChangesAsync();
@@ -272,13 +274,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var signIn = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = adminEmail, Password = Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await signIn.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, adminEmail, Password);
     }
 
     private async Task<HttpResponseMessage> PostAuthAsync<TBody>(

@@ -4,7 +4,7 @@ using SIMF.Contracts.Faq;
 namespace SIMF.Application.Faq.Abstractions;
 
 /// <summary>
-/// P2.1 (D-211) — admin CRUD over the two-level FAQ (groups → entries).
+/// Admin CRUD over the two-level FAQ (groups → entries).
 /// Built on <c>SimfAppDbContext</c>; one audit row per mutation; soft-delete
 /// via <c>IsActive</c>. Mirrors the News module shape.
 /// </summary>

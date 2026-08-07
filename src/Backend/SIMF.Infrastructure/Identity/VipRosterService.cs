@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// V-1 (D-429) — builds the VVIP/VIP welcome roster (موج) and renders it as CSV
-/// or Excel. Cross-DB read (D-157): VVIP/VIP profiles come from
+/// Builds the VVIP/VIP welcome roster (موج) and renders it as CSV
+/// or Excel. Cross-DB read: VVIP/VIP profiles come from
 /// <see cref="SimfAppDbContext"/>; the owners' email / display-name / state are
 /// resolved in one batched query against <see cref="SimfIdentityDbContext"/>.
 /// </summary>
@@ -30,7 +30,7 @@ internal sealed class VipRosterService(
     {
         "Mawj ID", "Honorific", "Tier", "English name", "Arabic name",
         "Display name", "Job title", "Job title (Arabic)", "Preferred language", "Email", "Mobile",
-        "Reference", "State", "Has photo", "Registered (UTC)",
+        "Reference", "State", "Has photo", "Registered",
     };
 
     public async Task<IReadOnlyList<VipRosterRow>> GetRosterAsync(
@@ -224,7 +224,7 @@ internal sealed class VipRosterService(
         ClosedXmlUserExcelService.SanitiseForExcel(r.ReferenceNumber),
         ClosedXmlUserExcelService.SanitiseForExcel(r.AccountState),
         r.HasVipPhoto ? "Yes" : "No",
-        r.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm"),
+        r.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
     ];
 
     /// <summary>RFC-4180 CSV field quoting — wrap in quotes and double any

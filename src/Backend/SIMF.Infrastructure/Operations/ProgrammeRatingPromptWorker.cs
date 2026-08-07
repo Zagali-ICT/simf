@@ -8,12 +8,13 @@ using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Domain.Configuration;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
 /// Background worker for the two coarse rating prompts above the per-session one
-/// (D-679):
+///:
 /// <list type="bullet">
 /// <item><b>End of each programme day</b> — once a day has ended, dispatch a
 /// <see cref="NotificationKind.DayRatingRequest"/> to every attendee who
@@ -33,7 +34,7 @@ namespace SIMF.Infrastructure.Operations;
 /// that the notification is addressed to. No cross-DB join (both live on
 /// <see cref="SimfAppDbContext"/>).</para>
 ///
-/// <para>Day boundaries are event-local (UTC+3, the codebase
+/// <para>Day boundaries are event-local (+03:00, the codebase
 /// <c>EventTimeZoneOffset</c> convention): a session belongs to the day whose
 /// local calendar date matches its <c>Start</c>. A day "ends" at the latest
 /// session end + <see cref="SessionGrace"/>, or (for a session-less day) at the
@@ -50,7 +51,7 @@ internal sealed class ProgrammeRatingPromptWorker(
     // First tick is delayed so the host finishes migrations + seeding first.
     private static readonly TimeSpan StartupDelay = TimeSpan.FromMinutes(1);
 
-    /// <summary>Event-local offset (UTC+3) — the codebase convention for bucketing
+    /// <summary>Event-local offset (+03:00) — the codebase convention for bucketing
     /// sessions into calendar days (mirrors <c>MyAreaService</c> /
     /// <c>ProgrammeSessionService</c>).</summary>
     internal static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
@@ -124,7 +125,7 @@ internal sealed class ProgrammeRatingPromptWorker(
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var days = await RunDayPromptScanAsync(db, notifications, now, BackfillWindow, logger, cancellationToken);
         if (days > 0)
@@ -149,7 +150,7 @@ internal sealed class ProgrammeRatingPromptWorker(
     /// </summary>
     internal static async Task<int> RunDayPromptScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
-        DateTimeOffset now, TimeSpan backfillWindow, ILogger logger,
+        DateTime now, TimeSpan backfillWindow, ILogger logger,
         CancellationToken cancellationToken)
     {
         // Respect the CP: if an admin deactivated the "Day" rating type in
@@ -234,7 +235,7 @@ internal sealed class ProgrammeRatingPromptWorker(
     /// </summary>
     internal static async Task<bool> RunProgramEndScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
-        DateTimeOffset now, TimeSpan backfillWindow, ILogger logger,
+        DateTime now, TimeSpan backfillWindow, ILogger logger,
         CancellationToken cancellationToken)
     {
         var lastDay = await db.ProgrammeDays
@@ -280,7 +281,7 @@ internal sealed class ProgrammeRatingPromptWorker(
         // Claim the once-only marker BEFORE dispatching the trio so a restart
         // mid-dispatch cannot re-fire it to the whole audience. The notification
         // rows land on SIMF_Identity and cannot share a transaction with this
-        // SIMF_App marker (D-157), so committing the marker first makes the trio
+        // SIMF_App marker, so committing the marker first makes the trio
         // at-most-once (a crash may drop the rest) rather than re-blasting every
         // checked-in attendee on the next tick. Kept inactive so it does not
         // surface in the admin System Settings list; the dedup check ignores
@@ -290,7 +291,7 @@ internal sealed class ProgrammeRatingPromptWorker(
             Id = Guid.NewGuid(),
             Key = ProgramEndSettingKey,
             Value = now.ToString("O"),
-            Description = "Internal marker: end-of-programme rating prompts dispatched (D-679).",
+            Description = "Internal marker: end-of-programme rating prompts dispatched.",
             IsActive = false,
             CreatedBy = Guid.Empty,
             CreatedAt = now,
@@ -356,7 +357,7 @@ internal sealed class ProgrammeRatingPromptWorker(
 
         if (day is { } d)
         {
-            var dayStart = new DateTimeOffset(d.ToDateTime(TimeOnly.MinValue), EventOffset);
+            var dayStart = d.ToDateTime(TimeOnly.MinValue);
             var dayEndBoundary = dayStart.AddDays(1);
             scans = scans.Where(g => g.ScannedAt >= dayStart && g.ScannedAt < dayEndBoundary);
         }
@@ -380,18 +381,19 @@ internal sealed class ProgrammeRatingPromptWorker(
     /// <summary>When an event-local <paramref name="date"/> "ends": the latest end
     /// of its active sessions + <see cref="SessionGrace"/>, or the next local
     /// midnight if the day has no sessions.</summary>
-    internal static DateTimeOffset DayEnd(DateOnly date, IReadOnlyCollection<SessionWindow> sessions)
+    internal static DateTime DayEnd(DateOnly date, IReadOnlyCollection<SessionWindow> sessions)
     {
         var daySessions = sessions
-            .Where(s => DateOnly.FromDateTime(s.Start.ToOffset(EventOffset).DateTime) == date)
+            .Where(s => DateOnly.FromDateTime(s.Start) == date)
             .ToList();
         if (daySessions.Count > 0)
         {
             return daySessions.Max(s => s.End) + SessionGrace;
         }
-        return new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), EventOffset).AddDays(1);
+        return date.ToDateTime(TimeOnly.MinValue).AddDays(1);
     }
 
-    /// <summary>A session's UTC start/end, projected for in-memory day bucketing.</summary>
-    internal readonly record struct SessionWindow(DateTimeOffset Start, DateTimeOffset End);
+    /// <summary>A session's Saudi-local start/end, projected for in-memory day
+    /// bucketing.</summary>
+    internal readonly record struct SessionWindow(DateTime Start, DateTime End);
 }

@@ -1,7 +1,7 @@
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// D-148 — direction policy for a <c>Gate</c> (SIMF-FDS-003 §5.6 step 10).
+/// Direction policy for a <c>Gate</c> (SIMF-FDS-003 §5.6 step 10).
 /// Drives the operator console UI (fixed-direction button vs single Scan
 /// with server-side inference) and the constraint engine's direction step.
 /// </summary>

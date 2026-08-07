@@ -1,8 +1,8 @@
 @using System.Globalization
-@* H6 — D-061: lang/dir track the current culture so Arabic visitors
-   get lang="ar" + dir="rtl". Mirrors the Control Panel's App.razor
-   pattern (D-028 / D-061). Without this every Arabic Website page is
-   announced with English phonemes by AT and renders LTR. *@
+@* lang/dir track the current culture so Arabic visitors get lang="ar" +
+   dir="rtl", mirroring the Control Panel's App.razor. Without this every
+   Arabic Website page is announced with English phonemes by assistive
+   technology and renders LTR. *@
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"
       dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")">
@@ -27,10 +27,23 @@
         })();
     </script>
     <ResourcePreloader />
+    @* QA-LIVE-001 — the Control Panel got its icon; the Website did not, so every
+       public page load still fell back to /favicon.ico, 404'd, and showed the blank
+       default glyph in the tab. Same emblem as the CP and the app, so the three
+       surfaces share one brand mark. *@
+    <link rel="icon" type="image/png" href="@Assets["favicon.png"]" />
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/theme.tokens.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/simf-components.css"]" />
-    <link rel="stylesheet" href="@Assets["SIMF.Web.styles.css"]" />
+    @* No <link> to SIMF.Web.styles.css. That is the Razor SDK's SCOPED-CSS bundle,
+       and the SDK only emits it when the project HAS scoped CSS. This one
+       deliberately has none — CLAUDE.md §8, "No scoped .razor.css in Web project,
+       centralize in Theme" — and the project contains zero *.razor.css files, so
+       the bundle is never generated in any configuration. The link therefore 404'd
+       on every page of the public site: the SPA fallback answered with HTML and
+       every visitor's console logged "Refused to apply style ... MIME type
+       ('text/html') is not a supported stylesheet MIME type". Found by the WS4
+       Website sweep, which failed all 17 public routes on it. *@
     <script src="@Assets["_content/SIMF.Components/js/simf-theme.js"]"></script>
     <ImportMap />
     <HeadOutlet />
@@ -39,9 +52,6 @@
 <body>
     <Routes />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
-    <script src="@Assets["js/simf-account.js"]"></script>
-    @* D-443 — token-driven session-expiry guard (config emitted by SessionTimeoutGuard). *@
-    <script src="@Assets["js/session-timeout.js"]"></script>
 </body>
 
 </html>

@@ -90,7 +90,8 @@ class _Guest extends AuthController {
   AuthState build() => const AuthStateSignedOut();
 }
 
-// Two real slots on 2026-07-10 (09:00 + 10:00 local → UTC so toLocal()
+// Two real slots on 2026-07-10 (09:00 + 10:00 local → a zoned value so
+// toLocal()
 // round-trips regardless of the test machine's timezone).
 final List<SpeakerSlot> _profileSlots = <SpeakerSlot>[
   SpeakerSlot(
@@ -220,7 +221,8 @@ void main() {
       expect(find.text('Biography'), findsOneWidget);
       expect(find.text('A maritime leader.'), findsOneWidget);
       // The speaker's sessions render. (The meeting CTA is VIP-only, D-729 —
-      // covered by the dedicated VIP / non-VIP tests below; a guest never sees it.)
+      // covered by the dedicated VIP / non-VIP tests below; a guest never sees
+      // it.)
       expect(find.text('Opening talk'), findsOneWidget);
     });
 
@@ -364,7 +366,8 @@ void main() {
 
     // D-436 verification rule: confirm the CV-tab order with a deterministic
     // Arabic-locale position test. Frame 912:2312 places نبذة عنه (Bio, the
-    // first section) at the inline-start (RIGHT in RTL) and الجوائز (Awards, the
+    // first section) at the inline-start (RIGHT in RTL) and الجوائز (Awards,
+    // the
     // last) at the inline-end (LEFT).
     testWidgets('CV tabs lay out Bio (first) right-most in Arabic',
         (tester) async {
@@ -385,7 +388,8 @@ void main() {
         tester.getCenter(find.text(l10n.cvTraining)).dx,
         tester.getCenter(find.text(l10n.cvAwards)).dx,
       ];
-      // RTL: each subsequent pill (Bio→Quals→Training→Awards) sits further left.
+      // RTL: each subsequent pill (Bio→Quals→Training→Awards) sits further
+      // left.
       for (var i = 1; i < dx.length; i++) {
         expect(dx[i], lessThan(dx[i - 1]));
       }

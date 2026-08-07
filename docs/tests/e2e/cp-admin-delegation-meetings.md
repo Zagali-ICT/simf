@@ -67,6 +67,14 @@
 | E2E-DLM-011 | Operator Check-in — a Confirmed (Accepted) row → Check in → status `Done`; a non-Accepted check-in → 409 (bi-meeting rework) | happy | P0 | authored ✓ (`Checking_in_a_confirmed_delegation_meeting_marks_it_Done` + `Checking_in_a_non_confirmed_delegation_meeting_is_409`, API) |
 | E2E-DLM-012 | Other-party confirm — Approve notifies each target-delegation member (`MeetingRequested`) who confirms from the app (cross-ref `mobile-meeting-confirm.md`) | happy | P0 | authored ✓ (`Other_party_confirm_response_does_not_leak_the_requester_email`, API) |
 | E2E-DLM-013 | Confirm of an AwaitingConfirmation request books it (even on a past bound slot) → Accepted (bi-meeting rework) | happy | P1 | authored ✓ (`Admin_confirm_of_an_awaiting_request_with_a_PAST_bound_slot_still_succeeds`, API) |
+| E2E-DLM-014 | A Decline/Cancel notice reaches the requester by **email**, not only in-app (A31) | happy | P1 | authored ✓ (`A31_A33_an_admin_decline_emails_the_requester_with_real_html`, API) |
+| E2E-DLM-015 | The outcome email carries a real notice body (both delegations, topic, Saudi local time, admin note) rather than one encoded paragraph (A33) | happy | P2 | authored ✓ (`A31_A33_an_admin_decline_emails_the_requester_with_real_html`, API) |
+| E2E-DLM-016 | A verbal **Confirm from Pending** notifies the TARGET delegation (A32) | happy | P1 | authored ✓ (`A32_a_verbal_confirm_from_pending_notifies_the_target_delegation`, API) |
+| E2E-DLM-017 | Binding a **meeting table** already booked at that time is a 409; a touching window is allowed (A34) | conflict | P1 | authored ✓ (`A34_binding_a_table_already_booked_at_that_time_is_a_conflict`, API) |
+| E2E-DLM-018 | An unconfirmed (AwaitingConfirmation) delegation meeting is swept back to Pending once its confirm link expires, freeing the hall slot (B10) | edge | P1 | authored ✓ (`DelegationMeetingExpiryWorkerTests`, API) |
+| E2E-DLM-019 | The **target** delegation can DECLINE from the app; the row becomes Rejected and the hall slot is released (B8) | happy | P1 | authored ✓ (`B8_a_target_member_can_decline_an_awaiting_meeting`, API) |
+| E2E-DLM-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-DLM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -222,6 +230,89 @@ Scenario: Admin Confirm of an AwaitingConfirmation request with a past bound slo
 **Evidence:** `DelegationMeetingRequestsTests.Other_party_confirm_response_does_not_leak_the_requester_email`,
 `Admin_confirm_of_an_awaiting_request_with_a_PAST_bound_slot_still_succeeds` (both green).
 
+### E2E-DLM-014/015 — A decline reaches the requester by email, with a real body
+
+```gherkin
+Scenario: The admin declines a pending delegation meeting
+  Given a delegate of "XJ" submitted a request to meet "XK" with subject "Decline email probe"
+  When the Administrator opens Respond and clicks Decline with the note
+       "No slot available this year."
+  Then PUT .../respond returns 200 and the row status becomes Rejected
+  And the requester receives an in-app notification
+  And an email is queued to the requester with the subject "Delegation meeting declined"
+  And that email body contains "Delegations:", "Topic: Decline email probe",
+      the meeting time in Saudi local 12-hour form, and the admin note
+  And the email carries NO confirm link (only the target delegation may confirm)
+```
+
+**Evidence:** `DelegationMeetingQaFixesTests.A31_A33_an_admin_decline_emails_the_requester_with_real_html`.
+Before A31 the decline arm dispatched with `SendEmail = false` even though the code
+comment promised "in-app + email too"; before A33 every outcome email was the
+dispatcher's fallback `<p>HtmlEncode(body)</p>`.
+
+### E2E-DLM-016 — A verbal Confirm from Pending tells the target delegation
+
+```gherkin
+Scenario: The admin already holds the verbal agreement and books it outright
+  Given a delegate of "XL" submitted a Pending request to meet "XM"
+  And an eligible member of "XM" holds AllowsDelegationMeeting
+  When the Administrator clicks Confirm on the Pending row
+  Then the row becomes Accepted
+  And the "XM" member receives a "Delegation meeting scheduled" notification
+      naming the requesting delegation and the Saudi local meeting time
+```
+
+**Evidence:** `DelegationMeetingQaFixesTests.A32_a_verbal_confirm_from_pending_notifies_the_target_delegation`.
+Before A32 the respond chain had arms only for Approve and for a post-approval
+cancel, so a Confirm straight from Pending told the target nothing at all — their
+first notice was the 15-minute reminder.
+
+### E2E-DLM-017 — A meeting table cannot be double-booked
+
+```gherkin
+Scenario: The picked table is already held at that time
+  Given table "T" is held 09:00-10:00 by a live meeting
+  And table "T" now belongs to hall "B", which is otherwise free at 09:00
+  When the Administrator approves another delegation meeting into hall "B"
+       09:00-10:00 on table "T"
+  Then PUT .../respond returns 409 DELEGATION_MEETING_REQUEST_INVALID
+       ("That meeting table is already booked at that time.")
+
+Scenario: A touching window is not a clash
+  When the Administrator approves the same meeting into 10:00-11:00 on table "T"
+  Then PUT .../respond returns 200 and the meeting is bound to that table
+```
+
+**Evidence:** `DelegationMeetingQaFixesTests.A34_binding_a_table_already_booked_at_that_time_is_a_conflict`.
+Half-open overlap (`start < otherEnd && otherStart < end`), the same rule the hall
+guards use, so back-to-back meetings on one table are allowed.
+
+### E2E-DLM-018 — An unconfirmed delegation meeting expires
+
+```gherkin
+Scenario: Nobody in the target delegation ever confirms
+  Given an AwaitingConfirmation delegation meeting bound to a hall + table
+  And its 72h confirm token has expired unused
+  When MeetingAwaitingSpeakerExpiryWorker runs its hourly sweep
+  Then the request returns to Pending with hall, table, slot and response stamps cleared
+  And an OperationLog row "DelegationMeetingRequest.Reverted" is written
+  And the freed hall slot is offered again by GET .../halls/{id}/available-slots
+```
+
+**Evidence:** `DelegationMeetingExpiryWorkerTests` (4 scenarios: expired, used,
+still-live, decided).
+
+### E2E-DLM-019 — The target delegation declines
+
+See [`mobile-meeting-confirm.md`](mobile-meeting-confirm.md) E2E-MOBMC-008..010 for
+the app half. On the desk the row simply moves to **Rejected** with the hall + table
+binding cleared, so the slot frees immediately and the queue does not dead-end on an
+admin cancel.
+
+**Evidence:** `DelegationMeetingQaFixesTests.B8_a_target_member_can_decline_an_awaiting_meeting`.
+
 ---
 
 _Last reviewed:_ 2026-07-22 by Claude — bi-meeting rework: requester gate moved to `AllowsDelegationMeeting`; availability windows + hall-bind; unified 3-button modal (Close/Decline-or-Cancel/Approve/Confirm, no verbal checkbox); AwaitingConfirmation + Done statuses; other-party app-tap confirm; operator Check-in (E2E-DLM-010/011/012/013). Prior: on-site W2b (M-3 accept-slot validation; E2E-DLM-007/008/009, 2026-07-11); D-478 (#11) delegation↔delegation meeting desk (Group G phase 2, 2026-06-20).
+
+_Last reviewed:_ 2026-07-26 by Claude — QA batch: A31 decline emails the requester, A33 real outcome-email HTML, A32 verbal-Confirm notifies the target, A34 meeting-table overlap guard, B10 delegation expiry sweep, B8 target-side decline (E2E-DLM-014..019).

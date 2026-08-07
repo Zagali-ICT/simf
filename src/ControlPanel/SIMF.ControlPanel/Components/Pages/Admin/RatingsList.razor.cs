@@ -1,19 +1,8 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
 using SIMF.Contracts.Feedback;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -53,14 +42,19 @@ public partial class RatingsList
 
     // Excel export (selected rows, or the current filtered set). Export only —
     // responses are owned by the attendees who submit them (read-only view).
-    private Task OnExportAsync(IReadOnlyList<AdminRatingResponseSummary> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<AdminRatingResponseSummary> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/ratings/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private async Task LoadAsync()
     {

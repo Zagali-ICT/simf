@@ -4,7 +4,7 @@ namespace SIMF.Common.Options;
 /// Rate-limit settings for the authentication endpoints, bound from the
 /// <c>RateLimit</c> configuration section.
 ///
-/// <para>Two independent partitions guard the auth surface (H7 — D-062):
+/// <para>Two independent partitions guard the auth surface:
 /// the per-IP partition (<see cref="PermitLimit"/> / <see cref="WindowSeconds"/>)
 /// covers the whole "auth" policy; the per-email partition
 /// (<see cref="EmailPermitLimit"/> / <see cref="EmailWindowSeconds"/>) is
@@ -17,6 +17,30 @@ namespace SIMF.Common.Options;
 public sealed class RateLimitOptions
 {
     public const string SectionName = "RateLimit";
+
+    /// <summary>
+    /// The policy name for the on-site OPERATIONAL endpoints: gate
+    /// scans, hall arrivals/departures, walk-in registration, approve /
+    /// bulk-approve, staff uploads and the offline batch upload. The policy is
+    /// deliberately UNLIMITED, and requests carrying it are also exempted from
+    /// the global per-IP cap.
+    ///
+    /// <para>Why: the Control Panel is a server-side BFF, so from the API's
+    /// point of view every CP desk shares ONE source IP — the CP host's. The
+    /// per-IP "auth" window (20/min) therefore capped the entire Control Panel
+    /// at 20 registrations per minute, and venue NAT put every staff tablet in
+    /// the same bucket. At an event with a large walk-in crowd that is not a
+    /// safety margin, it is an outage: desks and gates start returning 429
+    /// while the queue grows.</para>
+    ///
+    /// <para>These endpoints are safe to leave uncapped because every one of
+    /// them requires an authenticated operator holding a specific permission —
+    /// the permission gate is the real control, not the IP window. The
+    /// UNAUTHENTICATED surface (sign-in, sign-up, password reset, OTP, email
+    /// sends) keeps its caps, which is where per-IP throttling actually
+    /// belongs.</para>
+    /// </summary>
+    public const string OperationalPolicy = "operational";
 
     /// <summary>Requests permitted per window, per client IP.</summary>
     public int PermitLimit { get; set; } = 20;
@@ -35,7 +59,7 @@ public sealed class RateLimitOptions
     public int EmailWindowSeconds { get; set; } = 60;
 
     /// <summary>
-    /// H29 — D-088: per-IP cap applied to EVERY request (not just the
+    /// Per-IP cap applied to EVERY request (not just the
     /// "auth" routes). Closes the post-R3 reviewer's Security SEV-2.1
     /// main finding: the pre-H29 rate limiter only covered <c>/auth/*</c>;
     /// every bearer-protected route had no per-IP rate cap, so a
@@ -49,7 +73,7 @@ public sealed class RateLimitOptions
     /// <summary>The global window length, in seconds.</summary>
     public int GlobalWindowSeconds { get; set; } = 60;
 
-    /// <summary>D-179 (gap doc G12 hardening) — per-admin cap on the AI
+    /// <summary>The per-admin cap on the AI
     /// prompt dry-run endpoint (<c>POST /admin/ai/prompts/{id}/test</c>).
     /// The existing per-IP "auth" window does not protect against an
     /// office shared by multiple admins, or a stolen-credential botnet

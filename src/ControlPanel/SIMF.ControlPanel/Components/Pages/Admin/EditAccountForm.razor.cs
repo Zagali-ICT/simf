@@ -1,18 +1,10 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
 using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -30,7 +22,7 @@ public partial class EditAccountForm
     /// <summary>True for the audience (Visitor) desk; false for the partner (Other) desk.</summary>
     [Parameter] public bool IsVisitorScope { get; set; } = true;
 
-    /// <summary>V-1 (VIP edit) — when true, the form also offers the VVIP/VIP
+    /// <summary>When true, the form also offers the VVIP/VIP
     /// welcome photo (موج) field. Set by the VIP list; the visitors/others desks
     /// leave it false. Only meaningful for the visitors scope (the vip-photo
     /// endpoint lives under /admin/visitors only).</summary>
@@ -57,6 +49,17 @@ public partial class EditAccountForm
     // Bi-Meeting rework — the two admin-assigned per-user meeting-eligibility flags.
     private bool _allowsSpeakerMeeting;
     private bool _allowsDelegationMeeting;
+
+    // The nationality picker. `_nationalityCode` is the ISO alpha-2 code sent on
+    // save; empty means "leave the stored nationality alone" (the server treats an
+    // empty/absent code as no change). Prefilled from the loaded profile.
+    private IReadOnlyList<CountryDto> _countries = new List<CountryDto>();
+    private string _nationalityCode = string.Empty;
+
+    // The mobile correction. Prefilled from the loaded profile;
+    // an empty field sends nothing and leaves the stored number untouched.
+    private string _saudiMobile = string.Empty;
+    private string _internationalMobile = string.Empty;
 
     private bool _loading = true;
     private bool _busy;
@@ -96,13 +99,39 @@ public partial class EditAccountForm
     private void OnProfileTypeChanged(AdminProfileTypeSummary? selected) =>
         _profileTypeId = selected?.Id;
 
+    // Nationality picker plumbing. Mirrors the walk-in desk's field so the two
+    // admin surfaces label and pick a country identically.
+    private CountryDto? _selectedCountry =>
+        _countries.FirstOrDefault(c => c.Code == _nationalityCode);
+
+    private void OnNationalityPicked(CountryDto? country) =>
+        _nationalityCode = country?.Code ?? string.Empty;
+
+    // Null when nothing is picked, so the server leaves the stored nationality alone.
+    private string? NationalityCodeForSave =>
+        string.IsNullOrWhiteSpace(_nationalityCode) ? null : _nationalityCode;
+
+    // FR-PHN-002 — an empty field means "no change" (the server's contract), so a
+    // desk correcting only the email never wipes the number.
+    private string? SaudiMobileForSave =>
+        string.IsNullOrWhiteSpace(_saudiMobile) ? null : _saudiMobile.Trim();
+
+    private string? InternationalMobileForSave =>
+        string.IsNullOrWhiteSpace(_internationalMobile) ? null : _internationalMobile.Trim();
+
+    private static string CountryLabel(CountryDto c) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? $"{c.NameArabic} ({c.Code})"
+            : $"{c.Name} ({c.Code})";
+
     protected override async Task OnInitializedAsync()
     {
         _loading = true;
-        _cacheBust = DateTime.UtcNow.Ticks;
+        _cacheBust = SimfClock.Now.Ticks;
         try
         {
             await LoadProfileTypesAsync();
+            await LoadCountriesAsync();
             await LoadAccountAsync();
         }
         catch (Exception)
@@ -114,7 +143,7 @@ public partial class EditAccountForm
 
     private async Task LoadProfileTypesAsync()
     {
-        // Both Visitor and Other profile types are UserType=Visitor post-D-186;
+        // Both Visitor and Other profile types are UserType=Visitor;
         // the picker route filters by UserType, then we narrow to the scope's
         // IsVisitor side so the dropdown only offers valid tiers.
         var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
@@ -124,6 +153,28 @@ public partial class EditAccountForm
             _profileTypes = envelope.Data
                 .Where(p => p.IsActive && p.IsVisitor == IsVisitorScope)
                 .ToList();
+        }
+    }
+
+    // The same active-country list the walk-in desk's nationality dropdown uses,
+    // through the existing BFF passthrough (no new proxy route). Nationality is an
+    // OPTIONAL field on this form, so a failed country read must not block the edit:
+    // swallow it, leave the picker empty (which sends no nationality and keeps the
+    // stored value) and let the admin still fix the email / name / tier.
+    private async Task LoadCountriesAsync()
+    {
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<CountryListResponse>>(
+                "simfAccount.getJson", "/account/api/admin/walk-in/countries");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _countries = envelope.Data.Countries;
+            }
+        }
+        catch (Exception)
+        {
+            _countries = new List<CountryDto>();
         }
     }
 
@@ -140,6 +191,9 @@ public partial class EditAccountForm
             _allowsDelegationMeeting = envelope.Data.AllowsDelegationMeeting;
             _hasAvatar = envelope.Data.HasAvatar;
             _hasIdImage = envelope.Data.HasIdImage;
+            _nationalityCode = envelope.Data.NationalityCode ?? string.Empty;
+            _saudiMobile = envelope.Data.SaudiMobile ?? string.Empty;
+            _internationalMobile = envelope.Data.InternationalMobile ?? string.Empty;
         }
         else
         {
@@ -182,6 +236,9 @@ public partial class EditAccountForm
                     ProfileTypeId = _profileTypeId,
                     AllowsSpeakerMeeting = _allowsSpeakerMeeting,
                     AllowsDelegationMeeting = _allowsDelegationMeeting,
+                    NationalityCode = NationalityCodeForSave,
+                    SaudiMobile = SaudiMobileForSave,
+                    InternationalMobile = InternationalMobileForSave,
                 }
                 : new AdminUpdateOtherRequest
                 {
@@ -190,6 +247,9 @@ public partial class EditAccountForm
                     ProfileTypeId = _profileTypeId ?? Guid.Empty,
                     AllowsSpeakerMeeting = _allowsSpeakerMeeting,
                     AllowsDelegationMeeting = _allowsDelegationMeeting,
+                    NationalityCode = NationalityCodeForSave,
+                    SaudiMobile = SaudiMobileForSave,
+                    InternationalMobile = InternationalMobileForSave,
                 };
 
             var envelope = await JS.InvokeAsync<ApiResult<bool>>(

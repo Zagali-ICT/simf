@@ -1,17 +1,9 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -20,6 +12,7 @@ public partial class HallsList
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private CpPreferences Prefs { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private record Toast(string Variant, string Message);
 
@@ -122,6 +115,12 @@ public partial class HallsList
         _target = detail;
     }
 
+    // A40 — open the seat-layout editor already focused on THIS hall. The editor
+    // reads ?hallId= from the query string, so the admin lands on the hall's grid
+    // instead of an empty picker they have to re-find the hall in.
+    private void OpenSeatLayout(AdminHallSummary row) =>
+        Nav.NavigateTo($"/admin/halls/seat-layouts?hallId={row.Id}");
+
     // Edit / View / Delete all work against the full detail (the grid carries
     // a summary). Returns null and surfaces a toast on failure.
     private async Task<AdminHallDetail?> LoadDetailAsync(Guid id)
@@ -145,7 +144,7 @@ public partial class HallsList
         _target = null;
     }
 
-    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    // Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminHallSummary> selected) =>
         _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
 

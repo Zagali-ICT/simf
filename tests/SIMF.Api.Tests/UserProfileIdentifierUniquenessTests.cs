@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -75,6 +76,6 @@ public sealed class UserProfileIdentifierUniquenessTests : IClassFixture<SimfApi
             NationalIdHash = nationalIdHash,
             IqamaNumberHash = iqamaNumberHash,
             PassportNumberHash = passportNumberHash,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
 }

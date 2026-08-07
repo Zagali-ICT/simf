@@ -1,17 +1,10 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -88,7 +81,7 @@ public partial class SessionsViewDelete
         finally { _lifecycleBusy = false; }
     }
 
-    // P3.2b — D-232: attach / remove the session recording. Upload streams the
+    // Attach / remove the session recording. Upload streams the
     // file through the hidden <input> via simfAccount.uploadFile; the returned
     // detail refreshes the view so HasRecording flips immediately.
     private async Task UploadRecordingAsync()

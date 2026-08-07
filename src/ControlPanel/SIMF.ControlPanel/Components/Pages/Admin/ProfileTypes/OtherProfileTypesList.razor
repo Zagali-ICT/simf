@@ -1,4 +1,4 @@
-@* Control Panel — Other profile types CRUD (D-118; consumer of D-115).
+@* Control Panel — Other profile types CRUD.
    Lookup-table CRUD scoped to UserType=Other. Twin of VisitorProfileTypesList. *@
 @page "/admin/profile-types/other"
 @layout CpShellLayout
@@ -18,6 +18,8 @@
                       Multiselect="true"
                       RowKey="@(row => row.Id.ToString())"
                       RowLabel="@(row => row.Name)"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
                       Caption="@L["Admin.ProfileTypes.Other.Title"]"
                       FilterColumnLabel="@L["Admin.Users.FilterColumn"]"
                       OnAdd="OnAddAsync"
@@ -37,7 +39,10 @@
                       EditLabel="@L["Admin.ProfileTypes.Edit.Title"]"
                       DetailsLabel="@L["Admin.Users.Action.Details"]"
                       DeleteLabel="@L["Admin.ProfileTypes.Delete.Title"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      AddPermission="@PermissionCatalog.ProfileTypes.Create"
+                      EditPermission="@PermissionCatalog.ProfileTypes.Edit"
+                      DeletePermission="@PermissionCatalog.ProfileTypes.Delete">
             <Columns>
                 <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="userType"
                                     Header="@L["Admin.ProfileTypes.Column.UserType"]">
@@ -57,7 +62,7 @@
                                     Header="@L["Admin.ProfileTypes.Column.PageColor"]">
                     <CellTemplate>@context.PageColor</CellTemplate>
                 </SimfDataGridColumn>
-                @* D-161 — mobile-app role; "Other" types only (Visitor types
+                @* Mobile-app role; "Other" types only (Visitor types
                    always resolve to Visitor at JWT issue time regardless). *@
                 <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="mobileAppRole"
                                     Header="@L["Admin.ProfileTypes.Column.MobileAppRole"]">
@@ -93,9 +98,9 @@
 
 @if (_addOpen)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
-            @* D-186: partner-side form — UserType is always Visitor;
+            @* Partner-side form — UserType is always Visitor;
                IsPartnerForm=true tells the form to send IsVisitor=false. *@
             <ProfileTypeForm IsPartnerForm="true"
                              OnSuccess="OnSavedAsync"
@@ -109,7 +114,8 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@string.Format(L["Admin.ProfileTypes.Edit.TitleFor"], _editTarget.Name)"
-               OnClose="@(() => _editTarget = null)">
+               OnClose="@(() => _editTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <ProfileTypeForm Initial="_editTarget"
                              OnSuccess="OnSavedAsync"
@@ -122,7 +128,8 @@
 {
     <SimfModal Open="true"
                Title="@string.Format(L["Admin.ProfileTypes.Details.Title"], _detailsTarget.Name)"
-               OnClose="@(() => _detailsTarget = null)">
+               OnClose="@(() => _detailsTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <dl class="simf-dl">
                 <dt>@L["Admin.ProfileTypes.Field.UserType"]</dt>
@@ -153,7 +160,7 @@
 
 @if (_deleteTarget is not null)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Delete.Title"]" OnClose="@(() => _deleteTarget = null)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.ProfileTypes.Delete.Title"]" OnClose="@(() => _deleteTarget = null)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.ProfileTypes.Delete.Confirm"], _deleteTarget.Name)</p>
         </ChildContent>
@@ -162,11 +169,15 @@
                         OnClick="@(() => _deleteTarget = null)">
                 @L["Admin.ProfileTypes.Delete.Cancel"]
             </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.ProfileTypes.Delete">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        OnClick="ConfirmDeleteAsync">
-                @L["Admin.ProfileTypes.Delete.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            OnClick="ConfirmDeleteAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.ProfileTypes.Delete.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }

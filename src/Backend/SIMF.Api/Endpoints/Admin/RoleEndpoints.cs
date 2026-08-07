@@ -1,6 +1,8 @@
-// Tests: SIMF.Api.Tests/AdminRolesTests.cs
-using System.Security.Claims;
+// Tests: SIMF.Api.Tests/AdminRoleUpdateTests.cs
+// Tests: SIMF.Api.Tests/RolesExcelTests.cs
+// Tests: SIMF.Api.Tests/RolePermissionsEndpointsTests.cs
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -8,7 +10,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-134 Sprint A — admin CRUD over the SimfRole table. Built on the
+/// Admin CRUD over the SimfRole table. Built on the
 /// existing Identity schema; this file follows the InterestEndpoints
 /// pattern (one endpoint per file-section, FastEndpoints conventions,
 /// ApiResult envelope, Administrator-only).
@@ -79,20 +81,21 @@ public sealed class CreateRoleEndpoint(IAdminRoleService service)
     public override async Task HandleAsync(
         AdminCreateRoleRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var summary = await service.CreateAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminRoleSummary>.Ok(summary), ct);
     }
 }
 
-public sealed class UpdateRoleRequest
+/// <summary>Binds {id} + body via a derived route that INHERITS the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// the sessions, gates and profile-type routes — and the four before them —
+/// each silently dropped a field on PUT. Passing the bound request straight
+/// through makes that drop impossible.</summary>
+public sealed class UpdateRoleRequest : AdminUpdateRoleRequest
 {
     public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
 }
 
 public sealed class UpdateRoleEndpoint(IAdminRoleService service)
@@ -111,13 +114,9 @@ public sealed class UpdateRoleEndpoint(IAdminRoleService service)
     public override async Task HandleAsync(
         UpdateRoleRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var summary = await service.UpdateAsync(actorId, req.Id,
-            new AdminUpdateRoleRequest { Name = req.Name }, ct);
+            req, ct);
         await Send.OkAsync(ApiResult<AdminRoleSummary>.Ok(summary), ct);
     }
 }
@@ -127,7 +126,7 @@ public sealed class GetRolePermissionsRequest
     public Guid Id { get; set; }
 }
 
-/// <summary>Issue-1 — the permission codes a role currently grants.</summary>
+/// <summary>The permission codes a role currently grants.</summary>
 public sealed class GetRolePermissionsEndpoint(IAdminRoleService service)
     : Endpoint<GetRolePermissionsRequest, ApiResult<AdminRolePermissionsResponse>>
 {
@@ -159,7 +158,7 @@ public sealed class SetRolePermissionsRequest
     public List<string> Codes { get; set; } = new();
 }
 
-/// <summary>Issue-1 — replaces a custom role's permission grants. Gated by
+/// <summary>Replaces a custom role's permission grants. Gated by
 /// <c>Roles.AssignPermissions</c>.</summary>
 public sealed class SetRolePermissionsEndpoint(IAdminRoleService service)
     : Endpoint<SetRolePermissionsRequest, ApiResult<bool>>
@@ -176,11 +175,7 @@ public sealed class SetRolePermissionsEndpoint(IAdminRoleService service)
 
     public override async Task HandleAsync(SetRolePermissionsRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.SetPermissionsAsync(actorId, req.Id, req.Codes, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -209,11 +204,7 @@ public sealed class DeleteRoleEndpoint(IAdminRoleService service)
     public override async Task HandleAsync(
         DeleteRoleRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeleteAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

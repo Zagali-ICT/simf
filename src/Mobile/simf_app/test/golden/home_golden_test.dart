@@ -107,6 +107,7 @@ void main() {
             l10n: AppL10n.of(context),
             name: 'أحمد محمد',
             baseUrl: _baseUrl,
+            onRefresh: () async {},
             highlights: _highlights,
             // Meeting-eligible so the "اللقاءات الثنائية" tile renders (matches the
             // Figma home 758:1134, which shows it) — D-745.

@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/YoutubeTranscriptServiceTests.cs (the service this wraps);
-//        endpoint auth-gate (401) + graceful 502 path live-verified on dev (D-578).
+//        endpoint auth-gate (401) + graceful 502 path live-verified on dev.
 //        A WebApplicationFactory integration test is deferred: this branch's host-boot
-//        env issue (FileStorage/Region, per D-572/D-568) fails all host-based API tests.
+//        env issue (FileStorage/Region) fails all host-based API tests.
 using FastEndpoints;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
@@ -9,7 +9,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-578 — server-side subtitle fetch from a video (YouTube) for the CP
+/// <summary>Server-side subtitle fetch from a video (YouTube) for the CP
 /// Sessions editor. Stateless: it returns the transcript text so the admin reviews it
 /// and Saves it onto the session's <c>LiveCaptions</c> (the AI session-summary drafter
 /// then reads it). Gated by <c>Sessions.Edit</c> — the same permission that edits the

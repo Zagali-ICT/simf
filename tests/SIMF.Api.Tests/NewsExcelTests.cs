@@ -105,7 +105,7 @@ public sealed class NewsExcelTests : IClassFixture<SimfApiFactory>
                 BodyArabic = "نص الخبر بالعربية.",
                 Category = "Press",
                 CategoryArabic = "صحافة",
-                PublishedAt = DateTimeOffset.UtcNow,
+                PublishedAt = SimfClock.Now,
                 DisplayOrder = 0,
             },
             adminToken);
@@ -269,7 +269,7 @@ public sealed class NewsExcelTests : IClassFixture<SimfApiFactory>
             sheet.Cell(i + 2, 4).Value = rows[i].BodyArabic;
             sheet.Cell(i + 2, 5).Value = rows[i].Category;
             sheet.Cell(i + 2, 6).Value = rows[i].CategoryArabic;
-            sheet.Cell(i + 2, 7).Value = DateTimeOffset.UtcNow.UtcDateTime.ToString("O");
+            sheet.Cell(i + 2, 7).Value = SimfClock.Now.ToString("O");
             sheet.Cell(i + 2, 8).Value = rows[i].DisplayOrder;
         }
         using var stream = new MemoryStream();
@@ -289,7 +289,7 @@ public sealed class NewsExcelTests : IClassFixture<SimfApiFactory>
                 BodyArabic = "نص الخبر.",
                 Category = "Press",
                 CategoryArabic = "صحافة",
-                PublishedAt = DateTimeOffset.UtcNow,
+                PublishedAt = SimfClock.Now,
                 DisplayOrder = 0,
             },
             token);
@@ -320,16 +320,7 @@ public sealed class NewsExcelTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

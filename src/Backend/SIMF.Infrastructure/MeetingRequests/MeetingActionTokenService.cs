@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/MeetingActionTokenTests.cs
+//        SIMF.Api.Tests/SpeakerMeetingQaTests.cs (QA A22 requester outcome email)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,10 +13,11 @@ using SIMF.Contracts.Programme;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Notifications;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.MeetingRequests;
 
-/// <summary>D-717 (item 7, FDS-013 §15.7 GAP-3) — the speaker double-opt-in
+/// <summary>The speaker double-opt-in
 /// action-link tokens. Mints two single-use, action-bound, 72h tokens per
 /// accept-with-hall request (Approve + Reject), stores only their keyed-HMAC hash,
 /// and validates / consumes them for the public landing page. GET-safe preview vs
@@ -31,9 +33,14 @@ internal sealed class MeetingActionTokenService(
     IOptions<MeetingLinksOptions> options,
     ILogger<MeetingActionTokenService> logger) : IMeetingActionTokenService
 {
+    // QA A24 — the approve / resend paths ask this BEFORE minting so an unconfigured
+    // public base URL fails up front instead of stranding an AwaitingSpeaker request.
+    public bool LinksConfigured =>
+        !string.IsNullOrWhiteSpace(options.Value.PublicWebBaseUrl);
+
     public MeetingActionLinks StageTokensForRequest(Guid speakerMeetingRequestId)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var expires = now.AddHours(Math.Max(1, options.Value.TokenTtlHours));
         var approveSecret = MeetingActionTokenHasher.NewSecret();
         var rejectSecret = MeetingActionTokenHasher.NewSecret();
@@ -49,17 +56,15 @@ internal sealed class MeetingActionTokenService(
 
     public Task AuditMintedAsync(
         Guid speakerMeetingRequestId, CancellationToken cancellationToken = default) =>
-        auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingActionTokenMinted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = Guid.Empty,
-            Detail = $"requestId={speakerMeetingRequestId}",
-        }, cancellationToken);
+        auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingActionTokenMinted,
+            Guid.Empty,
+            $"requestId={speakerMeetingRequestId}",
+            cancellationToken);
 
     public string StageDelegationConfirmToken(Guid delegationMeetingRequestId)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var expires = now.AddHours(Math.Max(1, options.Value.TokenTtlHours));
         var secret = MeetingActionTokenHasher.NewSecret();
 
@@ -71,7 +76,7 @@ internal sealed class MeetingActionTokenService(
             Id = Guid.NewGuid(),
             DelegationMeetingRequestId = delegationMeetingRequestId,
             TokenHash = MeetingActionTokenHasher.Hash(secret),
-            ExpiresUtc = expires,
+            ExpiresAt = expires,
             CreatedAt = now,
         });
 
@@ -99,13 +104,11 @@ internal sealed class MeetingActionTokenService(
                     .SingleOrDefaultAsync(cancellationToken);
             }
 
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.MeetingActionTokenViewed,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = Guid.Empty,
-                Detail = $"requestId={request.Id}; action={token.Action}",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.MeetingActionTokenViewed,
+                Guid.Empty,
+                $"requestId={request.Id}; action={token.Action}",
+                cancellationToken);
 
             return new MeetingActionPreview(
                 token.Action, speaker?.Name ?? string.Empty, speaker?.NameArabic ?? string.Empty,
@@ -130,7 +133,7 @@ internal sealed class MeetingActionTokenService(
         if (await ValidateAsync(tokenSecret, cancellationToken) is { } loaded)
         {
             var (token, request) = loaded;
-            var now = timeProvider.GetUtcNow();
+            var now = timeProvider.SimfNow();
 
             // Atomic single-use (§15.7) — the DB is the single arbiter, not the read in
             // ValidateAsync. Claim the token (conditional UPDATE ... WHERE UsedAt IS NULL)
@@ -163,13 +166,11 @@ internal sealed class MeetingActionTokenService(
                 return null;
             }
 
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.MeetingActionTokenApplied,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = Guid.Empty,
-                Detail = $"requestId={request.Id}; action={token.Action}",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.MeetingActionTokenApplied,
+                Guid.Empty,
+                $"requestId={request.Id}; action={token.Action}",
+                cancellationToken);
 
             await NotifyRequesterAsync(request, token.Action, cancellationToken);
             return new MeetingActionOutcome(token.Action);
@@ -196,7 +197,7 @@ internal sealed class MeetingActionTokenService(
             return null;
         }
         var hash = MeetingActionTokenHasher.Hash(tokenSecret);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var token = await appDbContext.MeetingActionTokens.AsNoTracking()
             .SingleOrDefaultAsync(t => t.TokenHash == hash, cancellationToken);
@@ -239,11 +240,15 @@ internal sealed class MeetingActionTokenService(
             Severity = NotificationSeverity.Info,
             RelatedEntityType = nameof(SpeakerMeetingRequest),
             RelatedEntityId = request.Id,
-            SendEmail = false,
+            // QA A22 — the speaker's own Approve/Reject decision is a terminal outcome for
+            // the requester, so it is emailed as well as shown in-app (the same convention
+            // the admin decide paths use). Previously in-app only, so a requester who was
+            // not in the app never learned the meeting was confirmed or declined.
+            SendEmail = true,
         }, logger, cancellationToken);
     }
 
-    // R4 (D-767) — the delegation confirm-token twin of ValidateAsync. Look up by hash,
+    // The delegation confirm-token twin of ValidateAsync. Look up by hash,
     // confirm it is unused + unexpired, and that its request is still AwaitingSpeaker (an
     // already-confirmed / cancelled request is no longer confirmable). Read-only.
     private async Task<(DelegationMeetingActionToken Token, DelegationMeetingRequest Request)?>
@@ -254,11 +259,11 @@ internal sealed class MeetingActionTokenService(
             return null;
         }
         var hash = MeetingActionTokenHasher.Hash(tokenSecret);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var token = await appDbContext.DelegationMeetingActionTokens.AsNoTracking()
             .SingleOrDefaultAsync(t => t.TokenHash == hash, cancellationToken);
-        if (token is null || token.UsedAt != null || token.ExpiresUtc <= now)
+        if (token is null || token.UsedAt != null || token.ExpiresAt <= now)
         {
             return null;
         }
@@ -291,13 +296,11 @@ internal sealed class MeetingActionTokenService(
                 .SingleOrDefaultAsync(cancellationToken);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingActionTokenViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = Guid.Empty,
-            Detail = $"delegationRequestId={request.Id}; action=Confirm",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingActionTokenViewed,
+            Guid.Empty,
+            $"delegationRequestId={request.Id}; action=Confirm",
+            cancellationToken);
 
         return new MeetingActionPreview(
             MeetingActionType.Approve, string.Empty, string.Empty,
@@ -313,7 +316,7 @@ internal sealed class MeetingActionTokenService(
         DelegationMeetingActionToken token, DelegationMeetingRequest request,
         CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var tokenClaimed = await appDbContext.DelegationMeetingActionTokens
             .Where(t => t.Id == token.Id && t.UsedAt == null)
@@ -336,13 +339,11 @@ internal sealed class MeetingActionTokenService(
             return null;
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingActionTokenApplied,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = Guid.Empty,
-            Detail = $"delegationRequestId={request.Id}; action=Confirm",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingActionTokenApplied,
+            Guid.Empty,
+            $"delegationRequestId={request.Id}; action=Confirm",
+            cancellationToken);
 
         await NotifyDelegationRequesterConfirmedAsync(request, cancellationToken);
         return new MeetingActionOutcome(MeetingActionType.Approve);
@@ -373,7 +374,7 @@ internal sealed class MeetingActionTokenService(
 
     private static MeetingActionToken NewToken(
         Guid requestId, MeetingActionType action, string secret,
-        DateTimeOffset now, DateTimeOffset expires) =>
+        DateTime now, DateTime expires) =>
         new()
         {
             Id = Guid.NewGuid(),

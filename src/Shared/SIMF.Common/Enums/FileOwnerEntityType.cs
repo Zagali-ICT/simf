@@ -1,7 +1,7 @@
 namespace SIMF.Common.Enums;
 
-/// <summary>D-568 — which entity family a <c>StoredFile</c> belongs to. With
-/// <c>StoredFile.OwnerEntityId</c> (a bare logical Guid, no DB FK — D-157) it
+/// <summary>Which entity family a <c>StoredFile</c> belongs to. With
+/// <c>StoredFile.OwnerEntityId</c> (a bare logical Guid, never a DB FK) it
 /// forms the polymorphic back-link the owning row resolves on read, and it
 /// scopes the owner-or-admin authorization check on the download endpoint.
 ///

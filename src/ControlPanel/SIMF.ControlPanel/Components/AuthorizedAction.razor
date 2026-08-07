@@ -1,8 +1,11 @@
-@* Issue-1 — renders its content only when the signed-in user holds the given
+@* Renders its content only when the signed-in user holds the given
    permission code (or the Administrator wildcard). Wrap an action control —
    a create / edit / delete button — so it disappears for users who lack the
    permission. The API still enforces the same permission, so this is a UX
-   layer (don't show what you can't do), not the security boundary. *@
-<AuthorizeView Policy="@_policy">
-    <Authorized>@ChildContent</Authorized>
-</AuthorizeView>
+   layer (don't show what you can't do), not the security boundary.
+
+   The policy decision itself lives in SimfActionGate, in the shared
+   component library, because SimfDataGrid has to gate the buttons it renders
+   itself and cannot reach a Control Panel component. This stays as the name CP
+   page markup uses, so no page changed; there is one implementation underneath. *@
+<SimfActionGate Permission="@Permission">@ChildContent</SimfActionGate>

@@ -20,7 +20,7 @@ internal sealed class SecondFactorTokenRepository(SimfIdentityDbContext dbContex
             .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
 
     public async Task<bool> TryConsumeAsync(
-        Guid tokenId, DateTimeOffset now, CancellationToken cancellationToken = default)
+        Guid tokenId, DateTime now, CancellationToken cancellationToken = default)
     {
         // Single conditional UPDATE: only the row that is still unconsumed is
         // touched, so exactly one concurrent caller sees affected == 1.

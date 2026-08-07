@@ -10,10 +10,17 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class MediaPartnerViewDeleteTests : CpComponentTestBase
 {
+    public MediaPartnerViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.MediaPartners.Delete);
+    }
+
     private static AdminMediaPartnerDetail Detail() => new(
         Guid.NewGuid(), "Maritime Times", "Ø£ÙˆÙ‚Ø§Øª Ø¨Ø­Ø±ÙŠØ©",
         "media/partners/mt.png", "https://example.com", 3,
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()

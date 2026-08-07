@@ -1,8 +1,8 @@
-@* D-173 (gap doc G8, PDF Â§1) â€” Dynamic CMS: time-windowed banners /
+@* Dynamic CMS: time-windowed banners /
    announcements. Admin CRUD; public read filters by current window.
-   D-256 â€” migrated from the raw <table> to the owner-mandated
-   SimfDataGrid (server-paged, sortable + filterable, full pager).
-   D-353 â€” centralized dialog/full-page framing: Add / Edit / View / Delete
+   The list is the owner-mandated
+   SimfDataGrid (server-paged, sortable + filterable, full pager), not a raw <table>.
+   Dialog/full-page framing is centralized: Add / Edit / View / Delete
    are hosted by CrudShell, which frames the reusable BannersAddEdit and
    BannersViewDelete forms as a popup or a full page per the admin's toolbar
    choice (persisted in localStorage via CpPreferences). The inline SimfModal
@@ -11,7 +11,7 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Banners.View)]
 
-<PageTitle>@L["Admin.Banners.Title"] Â· SIMF</PageTitle>
+<PageTitle>@L["Admin.Banners.Title"] · SIMF</PageTitle>
 
 @if (!GridHidden)
 {
@@ -21,7 +21,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminBannerSummary"
@@ -57,7 +59,12 @@
                           DeleteLabel="@L["Grid.Delete"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Banners.Create"
+                          EditPermission="@PermissionCatalog.Banners.Edit"
+                          DeletePermission="@PermissionCatalog.Banners.Delete"
+                          ImportPermission="@PermissionCatalog.Banners.Import"
+                          ExportPermission="@PermissionCatalog.Banners.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

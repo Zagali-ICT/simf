@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Application.Email;
 
-/// <summary>D-735 — renders one transactional email, preferring the admin's
+/// <summary>Renders one transactional email, preferring the admin's
 /// stored override for the type and falling back to the code-owned catalogue
 /// default. Implementations MUST NOT throw: a missing, inactive, or broken
 /// template — or a database error — degrades to the default, so a sign-in /

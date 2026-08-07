@@ -82,8 +82,8 @@ public sealed record HallAllocationRow(
     HallAllocationMode Mode,
     int? UnitCount,
     string? RowColumnSpec,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     string? Notes);
 
 /// <summary>Reserve hall space (whole / random-by-count / row-column) for a
@@ -94,8 +94,8 @@ public class CreateHallAllocationRequest
     public HallAllocationMode Mode { get; set; }
     public int? UnitCount { get; set; }
     public string? RowColumnSpec { get; set; }
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
     public string? Notes { get; set; }
 }
 
@@ -118,8 +118,8 @@ public sealed class ScheduleMeetingRequest
 {
     public Guid MeetingTableId { get; set; }
     public BusinessMeetingType MeetingType { get; set; }
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
+    public DateTime Start { get; set; }
+    public DateTime End { get; set; }
     public string? Notes { get; set; }
     public List<ScheduleMeetingParticipant> Participants { get; set; } = [];
 }
@@ -145,8 +145,8 @@ public sealed record BusinessMeetingRow(
     Guid HallId,
     string HallName,
     BusinessMeetingType MeetingType,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     BusinessMeetingStatus Status,
     int ParticipantCount);
 
@@ -158,18 +158,18 @@ public sealed record BusinessMeetingDetail(
     Guid HallId,
     string HallName,
     BusinessMeetingType MeetingType,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     BusinessMeetingStatus Status,
     string? Notes,
     string? CancellationReason,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? CancelledAt,
+    DateTime CreatedAt,
+    DateTime? CancelledAt,
     IReadOnlyList<MeetingParticipantDto> Participants);
 
 /// <summary>Response after a successful schedule.</summary>
 public sealed record BusinessMeetingScheduled(
     Guid Id,
     BusinessMeetingStatus Status,
-    DateTimeOffset Start,
-    DateTimeOffset End);
+    DateTime Start,
+    DateTime End);

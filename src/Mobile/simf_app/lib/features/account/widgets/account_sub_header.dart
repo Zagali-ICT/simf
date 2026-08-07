@@ -34,6 +34,7 @@ class AccountSubHeader extends StatelessWidget {
     final Widget backButton = IconButton(
       key: const ValueKey<String>('accountBack'),
       onPressed: busy ? null : onBack,
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       icon: const Icon(
         Icons.arrow_back_ios_new,
         color: SimfTokens.surface,

@@ -1,6 +1,6 @@
 namespace SIMF.Application.Configuration.Abstractions;
 
-/// <summary>D-768 — the CP-uploaded hero background video for the singleton
+/// <summary>The CP-uploaded hero background video for the singleton
 /// Organization Profile. Stores the video in the centralized file store
 /// (<c>FileService.OrganizationHeroVideo</c>: public, plaintext, seekable), points
 /// the profile's <c>BackgroundVideoUrl</c> at the served <c>.mp4</c> route, and

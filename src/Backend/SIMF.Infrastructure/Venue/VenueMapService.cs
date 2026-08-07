@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Venue;
 
-/// <summary>P2.5 — D-230 (FR-605, FDS-006 §5.3): the 2D venue map. Admin CRUD
+/// <summary>The 2D venue map. Admin CRUD
 /// over nodes + the public read for the app. Validates optional Hall / Booth
 /// references against the same DbContext. Mirrors AdminSessionCategoryService.</summary>
 internal sealed class VenueMapService(
@@ -29,7 +29,7 @@ internal sealed class VenueMapService(
 
         var rows = db.VenueMapNodes.AsNoTracking().AsQueryable();
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -50,7 +50,7 @@ internal sealed class VenueMapService(
                 || EF.Functions.Like(n.LabelArabic, $"%{term}%"));
         }
 
-        // CP grid sortable columns (D-255). Default: Label ascending.
+        // CP grid sortable columns. Default: Label ascending.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("label", true) => rows.OrderByDescending(n => n.Label),
@@ -87,7 +87,7 @@ internal sealed class VenueMapService(
         await EnsureReferencesAsync(request.HallId, request.BoothId, cancellationToken);
         EnsureKindMatchesReferences(request.Kind, request.HallId, request.BoothId);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var node = new VenueMapNode
         {
             Id = Guid.NewGuid(),
@@ -104,13 +104,11 @@ internal sealed class VenueMapService(
         db.VenueMapNodes.Add(node);
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.VenueMapNodeCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={node.Id}; label={label}; kind={request.Kind}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.VenueMapNodeCreated,
+            actorUserId,
+            $"id={node.Id}; label={label}; kind={request.Kind}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created venue-map node {Label} ({Id})", actorUserId, label, node.Id);
@@ -138,16 +136,14 @@ internal sealed class VenueMapService(
         node.HallId = request.HallId;
         node.BoothId = request.BoothId;
         node.IsActive = request.IsActive;
-        node.UpdatedAt = timeProvider.GetUtcNow();
+        node.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.VenueMapNodeUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={node.Id}; label={label}; active={node.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.VenueMapNodeUpdated,
+            actorUserId,
+            $"id={node.Id}; label={label}; active={node.IsActive}",
+            cancellationToken);
 
         return ToDetail(node);
     }
@@ -164,16 +160,14 @@ internal sealed class VenueMapService(
         }
 
         node.Deactivate();
-        node.UpdatedAt = timeProvider.GetUtcNow();
+        node.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.VenueMapNodeDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={node.Id}; label={node.Label}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.VenueMapNodeDeactivated,
+            actorUserId,
+            $"id={node.Id}; label={node.Label}",
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<PublicVenueMapNode>> ListPublicAsync(
@@ -231,14 +225,14 @@ internal sealed class VenueMapService(
         }
     }
 
-    // D-611 (Wave B) — the DB CK_VenueMapNodes_KindArc enforces the weak arc; this
+    // The DB CK_VenueMapNodes_KindArc enforces the weak arc; this
     // guards it at the edge with a clean 400 instead of a SaveChanges 500: a Hall
     // reference requires Kind=Hall, a Booth reference requires Kind=Booth, and a
     // node may not reference both. A Zone / PointOfInterest node carries neither.
     private static void EnsureKindMatchesReferences(
         VenueMapNodeKind kind, Guid? hallId, Guid? boothId)
     {
-        // #25 — reject an out-of-range Kind (e.g. a direct API call sending an
+        // Reject an out-of-range Kind (e.g. a direct API call sending an
         // undefined enum value) before it persists: the DB has no enum-range check,
         // only the weak arc below, so an unreferenced node would otherwise store it.
         if (!Enum.IsDefined(kind))

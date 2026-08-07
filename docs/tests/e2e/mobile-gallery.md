@@ -40,6 +40,8 @@
 | E2E-MOB030-012 | الشركاء الإعلاميون pill navigates to /media-partners | nav | P0 | _to author_ |
 | E2E-MOB030-013 | Active gallery pill is inert (no navigation) | edge | P1 | _to author_ |
 | E2E-MOB030-014 | RTL — pills + sections lay out right-to-left in Arabic | i18n | P1 | _to author_ |
+| E2E-MOB030-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB030-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.PublicRelations;
 
-/// <summary>D-199 — admin CRUD over <see cref="News"/> (PR / marketing).
-/// Mirrors <see cref="SIMF.Infrastructure.Delegations.AdminDelegationService"/>:
+/// <summary>Admin CRUD over <see cref="News"/> (PR / marketing).
+/// Mirrors <c>AdminDelegationService</c>:
 /// built on <see cref="SimfAppDbContext"/>, writes one audit row per mutation,
 /// stamps timestamps via <see cref="TimeProvider"/>, and guards a unique
 /// English title with a 409. The admin list returns every row (including
@@ -48,7 +48,7 @@ internal sealed class AdminNewsService(
                 || EF.Functions.Like(news.CategoryArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         // The column keys match the SimfDataGridColumn `Key` values on the page.
         foreach (var (column, raw) in query.Filters)
         {
@@ -126,7 +126,7 @@ internal sealed class AdminNewsService(
                 news.IsActive,
                 imageOwners.Contains(news.Id),
                 news.CreatedAt,
-                // D-506 — append in the same positional order as the record so the
+                // Append in the same positional order as the record so the
                 // Excel export round-trips the bilingual body + excerpt.
                 news.BodyArabic,
                 news.ExcerptArabic))
@@ -167,7 +167,7 @@ internal sealed class AdminNewsService(
                 $"يوجد خبر بالعنوان الإنجليزي '{draft.Title}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var news = new News
         {
             Id = Guid.NewGuid(),
@@ -188,13 +188,11 @@ internal sealed class AdminNewsService(
         dbContext.News.Add(news);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.NewsCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={news.Id}; title={news.Title}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.NewsCreated,
+            actorUserId,
+            $"id={news.Id}; title={news.Title}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created News {Title} ({Id})",
@@ -249,16 +247,14 @@ internal sealed class AdminNewsService(
         news.PublishedAt = request.PublishedAt;
         news.DisplayOrder = draft.DisplayOrder;
         news.IsActive = request.IsActive;
-        news.UpdatedAt = timeProvider.GetUtcNow();
+        news.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.NewsUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={news.Id}; title={news.Title}; active={news.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.NewsUpdated,
+            actorUserId,
+            $"id={news.Id}; title={news.Title}; active={news.IsActive}",
+            cancellationToken);
 
         return ToDetail(news);
     }
@@ -278,16 +274,14 @@ internal sealed class AdminNewsService(
         if (!news.IsActive) { return; } // idempotent
 
         news.IsActive = false;
-        news.UpdatedAt = timeProvider.GetUtcNow();
+        news.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.NewsDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={news.Id}; title={news.Title}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.NewsDeactivated,
+            actorUserId,
+            $"id={news.Id}; title={news.Title}",
+            cancellationToken);
     }
 
     private sealed record NewsDraft(

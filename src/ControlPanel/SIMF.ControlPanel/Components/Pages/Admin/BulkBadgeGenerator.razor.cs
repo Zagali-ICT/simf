@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -48,7 +47,7 @@ public partial class BulkBadgeGenerator
     private bool _busy;
     private Toast? _bulkToast;
 
-    // D-751 (#10) — confirm modal + optional organiser recipient for the emailed
+    // Confirm modal + optional organiser recipient for the emailed
     // QR-badge ZIP.
     private bool _confirmOpen;
     private string _recipientEmail = string.Empty;

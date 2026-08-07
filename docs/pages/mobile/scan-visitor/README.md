@@ -1,10 +1,39 @@
 # Scan visitor badge — مسح بطاقة زائر (`scanVisitor`, D-426)
 
 - **Route:** `/exhibitor/scan` (`RouteNames.scanVisitor`). Access:
-  **Exhibitor (approved, non-visitor)** — a visitor-tier caller gets 403 → a
-  toast. Reached from the badge screen (exhibitor action).
+  **Exhibitor (approved) with a current booth membership** — DEF-EXH-001: the
+  server authorises on `ProfileType.MobileAppRole == Exhibitor` (D-519), so
+  Staff / Moderator / Media / Sponsor / plain Visitor callers all get 403 → a
+  toast. DEF-EXH-006: the role alone is **not** authority — an active
+  `ExhibitorMembership` of an active `Exhibitor` is required alongside it, so
+  dropping an officer from a booth (or closing the exhibitor with
+  `DELETE /admin/exhibitors/{id}`) revokes scan **and** list immediately, even
+  on an already-issued token. Reached from the badge screen (exhibitor action).
 - **API:** `ExhibitorRepository.scanByBadge(qrId)` — captures the visitor
-  server-side; on success routes to `myVisitors`.
+  server-side; on success routes to `myVisitors`. **D-780 (owner decision
+  2026-07-27 — "can scan all badges"):** the scanned subject only has to be an
+  ACTIVE account holding a badge — a media, sponsor, staff or fellow-exhibitor
+  badge is a capturable lead like any other. Only a DEACTIVATED (soft-deleted)
+  account is refused, with the same 404 as an unknown code, so the scan never
+  leaks that a badge exists. This **reverses** the DEF-EXH-003 rule, which had
+  narrowed the subject to audience-side (`IsForVisitor`) profile types.
+  DEF-EXH-002: a NEW
+  capture raises one `NotificationKind.ExhibitorLeadCaptured` in-app notice to
+  the visitor naming the exhibitor; an idempotent re-scan raises none.
+  DEF-EXH-007: that name is the **exhibitor** the officer represents (the
+  officer's own profile name is only a fallback) — a CP-provisioned officer has
+  a stub profile with no name, which used to degrade the notice to "An
+  exhibitor". DEF-EXH-005: a booth officer provisioned from the CP
+  (`POST /admin/exhibitors/{id}/accounts`) now carries the exhibitor profile
+  type, so the CP's own path produces an account that can actually scan.
+  **D-781 (owner decision 2026-07-27):** an exhibitor-typed account created
+  through the generic Others pipeline (`POST /admin/others`) or the Others
+  walk-in desk has the right profile type but no `ExhibitorMembership`, so the
+  DEF-EXH-006 rule locked it out with nothing in the CP able to fix it — an
+  administrator now attaches it to a booth with
+  `POST /admin/exhibitors/{id}/accounts/link` (permission
+  `Exhibitors.LinkAccount`) from the exhibitor's Accounts modal. The scanner-side
+  controls are unchanged.
 - **Figma:** none — a D-426 functional page, not a KSA design frame.
   **Clean-code freeze:** D-643 (2026-07-04).
 
@@ -12,8 +41,30 @@
 
 Exhibitor lead-capture: scan a visitor's entry-badge QR (or type the code). On a
 successful scan the visitor is captured and the screen shows a confirmation
-toast, then routes to زواري (My Visitors). A 404 / 403 / other failure each
-surface a distinct toast.
+toast, then routes to زوار جناحي (My Booth Visitors). A 404 / 403 / other failure
+each surface a distinct toast.
+
+## Server side-effect — the lead is emailed to the exhibitor (BUG-024, 2026-07-26)
+
+A **new** capture also mails the lead card to the exhibitor's **own account
+email**, satisfying the owner's "share user info for exhibitor by scanning the
+badge → add to my contact list AND send to exhibitor email". Built on the
+existing pipeline, no new mail path:
+
+- Template `EmailTemplateType.ExhibitorLeadCapture` in `EmailTemplateCatalog`
+  (bilingual EN + RTL AR blocks, admin-editable at `/admin/email/templates`).
+- Tokens: `VisitorName(Arabic)`, `JobTitle(Arabic)`, `Organisation(Arabic)`,
+  `ScannedAt`, `Note`. The scan time is the **Saudi wall clock, 12-hour**
+  (`SaudiTime.FormatSaudi`) — D-219 forbids user-facing UTC.
+- **Never** included: the visitor's national ID (encrypted at rest) and the raw
+  badge QR id (no existing SIMF template carries one).
+- Dispatch is `IEmailTemplateResolver.RenderAsync` + `IEmailQueue.TryEnqueueAsync`
+  — a mail failure is logged + audited (`Email.EnqueueFailed`, purpose
+  `ExhibitorLeadCapture`) and never fails the 200 or the capture row.
+- **Idempotent:** a repeat scan of the same visitor still refreshes only the
+  note; it sends **no** second email.
+
+Backend: `SIMF.Infrastructure/Exhibitors/ExhibitorVisitorService.EmailLeadToExhibitorAsync`.
 
 ## Structure
 
@@ -40,8 +91,9 @@ surface. No Figma frame is bound, so this is a structural render-lock.
 ## Level-F
 
 - **Camera / manual entry** — both feed `_onCode` (shared `QrScanView`).
-- **Successful scan** — capture server-side → toast → route to `myVisitors`.
-- **404 / 403 / error** — distinct failure toasts.
+- **Successful scan** — capture server-side → lead email to the exhibitor
+  (BUG-024, new captures only) → toast → route to `myVisitors`.
+- **404 / 403 / error** — distinct failure toasts; no email.
 - **Back** — `_leave` (pop, else → badge).
 
 ## Tests
@@ -49,14 +101,17 @@ surface. No Figma frame is bound, so this is a structural render-lock.
 `test/golden/scan_visitor_golden_test.dart` (render-lock, @375×812, ar,
 `enableCamera:false`) + `test/features/exhibitor/scan_visitor_screen_test.dart`
 (widget, 4 cases — the `_onCode` branches: valid badge → capture + route to My
-Visitors with the code trimmed; 404 / 403 / 5xx → the distinct toasts, no
-navigation). E2E:
+Booth Visitors with the code trimmed; 404 / 403 / 5xx → the distinct toasts, no
+navigation). Backend: `tests/SIMF.Api.Tests/ExhibitorVisitorScanTests.cs` (scan /
+403 / 404) + `tests/SIMF.Api.Tests/ExhibitorLeadEmailTests.cs` (BUG-024 — exactly
+one lead email per new capture, none for a duplicate or a failed scan). E2E:
 [`docs/tests/e2e/mobile-scan-visitor.md`](../../../tests/e2e/mobile-scan-visitor.md)
-(E2E-MOBSCANVIS-001..005). Both the widget-test and E2E gaps flagged at freeze
+(E2E-MOBSCANVIS-001..007). Both the widget-test and E2E gaps flagged at freeze
 are now closed (D-648).
 
 ## Related decisions
 
+- **D-771** (BUG-024 — the captured lead is emailed to the exhibitor).
 - **D-643** (this clean-code freeze — render-lock golden + first PAGE-INDEX row,
   no code change).
 - **D-426** (exhibitor scan + my-visitors built), **D-430** (shared `QrScanView`).

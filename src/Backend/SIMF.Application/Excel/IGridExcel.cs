@@ -1,7 +1,7 @@
 namespace SIMF.Application.Excel;
 
 /// <summary>
-/// One export column of a grid Excel workbook (D-356). The generic exporter
+/// One export column of a grid Excel workbook. The generic exporter
 /// writes one sheet whose header row is the <see cref="Header"/> values and
 /// whose data cells are produced by <see cref="Value"/> per row. This is the
 /// single source for a resource's export layout — the same descriptor list a
@@ -11,7 +11,7 @@ namespace SIMF.Application.Excel;
 public sealed record GridExcelColumn<TRow>(string Header, Func<TRow, object?> Value);
 
 /// <summary>
-/// Renders a list of grid rows into an XLSX workbook (D-356). One hardened
+/// Renders a list of grid rows into an XLSX workbook. One hardened
 /// implementation (<c>ClosedXmlGridExcelExporter</c>) carries the OWASP
 /// formula-injection sanitisation (CWE-1236) so no per-resource exporter can
 /// forget it.
@@ -37,11 +37,11 @@ public sealed record GridImportRow(int RowNumber, IReadOnlyDictionary<string, st
 public sealed record GridImportSheet(IReadOnlyList<GridImportRow> Rows);
 
 /// <summary>
-/// Parses an uploaded XLSX workbook into typed rows for a generic grid import
-/// (D-356). One hardened implementation (<c>ClosedXmlGridExcelImporter</c>)
+/// Parses an uploaded XLSX workbook into typed rows for a generic grid import.
+/// One hardened implementation (<c>ClosedXmlGridExcelImporter</c>)
 /// enforces the strict sheet name, the required-header check and the row cap —
 /// the size + ZIP-magic gate lives at the endpoint, matching the proven user
-/// import (D-045 H1).
+/// import.
 /// </summary>
 public interface IGridExcelImporter
 {

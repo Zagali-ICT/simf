@@ -1,8 +1,8 @@
-@* D-153 — Speakers CRUD. SIMF-DAT-001 §5.4. Centralized dialog/full-page
-   framing D-353: Add / Edit / View / Delete are hosted by CrudShell, which frames
+@* Speakers CRUD. Centralized dialog/full-page
+   framing: Add / Edit / View / Delete are hosted by CrudShell, which frames
    the reusable SpeakersAddEdit and SpeakersViewDelete forms as a popup or a full
    page per the admin's toolbar choice (persisted in localStorage via
-   CpPreferences). D-356 — generic Excel export/import via CrudGridExcel. *@
+   CpPreferences). Generic Excel export/import via CrudGridExcel. *@
 @page "/admin/speakers"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Speakers.View)]
@@ -17,7 +17,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminSpeakerSummary"
@@ -53,7 +55,12 @@
                           DeleteLabel="@L["Admin.Speakers.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Speakers.Create"
+                          EditPermission="@PermissionCatalog.Speakers.Edit"
+                          DeletePermission="@PermissionCatalog.Speakers.Delete"
+                          ImportPermission="@PermissionCatalog.Speakers.Import"
+                          ExportPermission="@PermissionCatalog.Speakers.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

@@ -69,6 +69,8 @@
 | E2E-MOB007-023 | **All fields mandatory except plate + Arabic job title (owner item 4 / D-723; #37):** job title, place of birth (Saudi region / non-Saudi free text) and the mobile number are now **required** — an empty one blocks Next with its inline error ("Job title is required" / "Place of birth is required" / "Mobile number is required"); only the plate and the Arabic job title stay optional. The women's face-photo exception (D-694) is unchanged | validation | P0 | authored ✓ (widget — each empty field blocks Next) |
 | E2E-MOB007-024 | **Arabic job title (backlog #37):** an **optional** "المسمى الوظيفي (بالعربية)" input sits right after the job title (RTL). Leaving it empty still advances Next; when filled, `Next` carries it into the profile upsert (`jobTitleArabic`) + the interests-screen draft, so `UserProfile.JobTitleArabic` (already carried by the backend + CP) is finally captured by the app. Prefilled on re-entry from the stored profile | happy | P1 | authored ✓ (widget — prefill → upsert + draft round-trip) |
 | E2E-MOB007-025 | **Job-title labels + per-script masks (owner request):** the two job-title fields are language-labelled — "المسمى الوظيفي (بالإنجليزية)" (English, LTR) and "المسمى الوظيفي (بالعربية)" (Arabic, RTL) — so which is which is unambiguous. Each takes the **same per-script keystroke filter as its name field**: the English job title accepts **Latin letters + spaces only** (Arabic/digits/punctuation filtered at the keystroke); the Arabic job title accepts **Arabic letters + spaces only** (Latin filtered). Neither field can ever hold the other's script | validation | P1 | authored ✓ (golden `sign_up_visitor_168-2972` shows both labels; formatters mirror the verified name-field filters E2E-MOB007-021) |
+| E2E-MOB007-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB007-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -280,6 +282,14 @@ Scenario: A full name needs 2 to 4 parts in one language
   And a 5-part name is likewise rejected (the ceiling is 4)
   And the same rule applies to the English name (Latin letters only, 2–4 parts)
   And the server's UpsertUserProfileRequestValidator re-checks both (400 on violation)
+
+Scenario: Tashkeel is part of an ordinary Arabic name (BUG-021)
+  Given the complete-profile form is open
+  When the visitor types "محمَّد عبدالله" (fatha + shadda on the meem) into the Arabic name
+  Then every character is kept — the keystroke filter accepts U+0621-U+0652
+       (Arabic letters, tatweel and the tashkeel marks), not only U+0621-U+064A
+  And tapping Next saves: the server accepts the shadda-bearing name
+  And "محمد Ahmed" is still filtered / rejected, and digits are still rejected
 ```
 
 ### E2E-MOB007-022 — Birth location: Saudi region dropdown / non-Saudi free text (D-469)

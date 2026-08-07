@@ -1,12 +1,26 @@
 # SIMF — .gitignore
 
 # ── Production secrets — NEVER commit real values (SIMF-OPS-001 §6) ──
-# set-env-cp.ps1 / set-env-web.ps1 are EMPTY templates and stay tracked; real
-# filled-in secret scripts (DB passwords, keys) stay untracked via the names below.
-# deploy/set-env-api.ps1 is the filled API overlay (real secrets) — untracked.
+# deploy/set-env.template.ps1 is the tracked template: every Secret entry is
+# empty and a test enforces it. deploy/set-env.ps1 is the FILLED overlay an
+# operator creates on the server — real connection strings, SMTP password and
+# keys — and must stay untracked. Never delete that rule to "share" the script.
+# deploy/set-env-api.ps1 is the pre-2026-08-06 filled overlay, still ignored so
+# an existing server's copy cannot be committed by accident.
 set-env-prod.ps1
 set-env-*.local.ps1
+deploy/set-env.ps1
 deploy/set-env-api.ps1
+
+# ── Runtime file store — personal data, NEVER commit ───────────────
+# App_Data/files is the filesystem storage root (FilesystemFileStorageProvider),
+# so anything a local run uploads lands here: avatars, ID-document scans,
+# speaker photos. 55 such files had been committed by accident and were
+# untracked on 2026-08-05; they are runtime artifacts, referenced by nothing in
+# source, and an ID scan has no business in source control. Ignored so a
+# `git add` on the project directory cannot sweep them back in.
+src/Backend/SIMF.Api/App_Data/files/
+src/Backend/SIMF.Api/App_Data/recordings/
 
 # ── .NET build output ──────────────────────────────────────────────
 [Bb]in/
@@ -36,6 +50,12 @@ src/MobileApp/build/
 Pods/
 .gradle/
 local.properties
+# Golden-comparison output. `flutter test` writes the four diff PNGs per failing
+# golden here; they are generated artefacts of a FAILING run, never an input to
+# one. 48 of them had been committed and were stale against a long-superseded
+# revision, so anyone grepping the directory was reading obsolete debris
+# (STALE-GOLDEN-ARTIFACTS). The masters live in test/golden/goldens/.
+src/Mobile/simf_app/test/golden/failures/
 
 # ── Secrets & environment ──────────────────────────────────────────
 # Production config is applied via Machine-scope env vars (set-env-*.ps1);
@@ -64,3 +84,23 @@ set-env-*.local.ps1
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Repo-root scratch notes. txt.txt was tracked and carried a plaintext
+# production super-admin credential (twice) plus demo passwords; removed
+# 2026-07-30. Scratch files do not belong in the repo at all.
+txt.txt
+# SEC-NOTES (2026-07-30) — myComment.txt is the owner's hand-written fix-list.
+# Untracked, NOT deleted: it is owner-authored, other work still references it,
+# and it stays on disk. Untracked because a plaintext working-notes file at the
+# repo root has no review gate — the next paste into it lands in a commit with
+# nobody reading it, which is how txt.txt came to carry a production credential.
+# Requires `git rm --cached myComment.txt` once, or the tracked copy survives
+# this ignore rule.
+myComment.txt
+/*.scratch.txt
+
+# Test run artefacts. A .trx captures the whole test console log; two of
+# these were tracked at 707 MB and 564 MB, so every clone paid 1.2 GB for
+# stale output. Nothing reads them.
+TestResults/
+*.trx

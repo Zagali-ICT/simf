@@ -1,5 +1,8 @@
-﻿// Tests: SIMF.Api.Tests/SignInTests.cs (email-verified sign-in surfaces
-//        AccountStateInfo state=EmailVerified; second-factor + state gates)
+// Tests: SIMF.Api.Tests/SignInTests.cs (email-verified sign-in surfaces
+//        AccountStateInfo state=EmailVerified; second-factor + state gates);
+//        SIMF.Api.Tests/ControlPanelTwoFactorEnrolmentTests.cs
+//        (enrolment-first: a Cp-audience password-only sign-in returns an
+//        enrolment challenge, never tokens; enrol-then-complete mints amr=mfa)
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -7,7 +10,6 @@ using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
-using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Options;
@@ -15,7 +17,6 @@ using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
-using SIMF.Domain.Notifications;
 
 namespace SIMF.Application.IdentityAccess;
 
@@ -29,27 +30,31 @@ namespace SIMF.Application.IdentityAccess;
 public sealed class SignInService(
     IUserAccountRepository accounts,
     ISecondFactorTokenRepository secondFactorTokenRepository,
-    IRefreshTokenRepository refreshTokenRepository,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
     IEmailTemplateResolver emailTemplates,
-    INotificationDispatcher notifications,
     IUserProfileService userProfiles,
-    IJwtTokenService jwtTokenService,
-    IPermissionResolver permissionResolver,
+    ITokenIssuer tokenIssuer,
     ITotpVerifier totpVerifier,
     IRecoveryCodeService recoveryCodes,
+    ITotpEnrollmentService totpEnrollment,
     IAuditLog auditLog,
     IOptions<IdentityLifecycleOptions> lifecycleOptions,
     TimeProvider timeProvider,
     ILogger<SignInService> logger) : ISignInService
 {
     private static readonly TimeSpan TicketLifetime = TimeSpan.FromMinutes(5);
+    // The mandatory-enrolment ticket is longer-lived than the 5-minute
+    // verification ticket because the user has to install an authenticator app
+    // and scan a QR before they can produce a code. Still single-use, still
+    // attempt-capped, and it authorises nothing except enrolling a second
+    // factor on the one account that just proved its password.
+    private static readonly TimeSpan EnrolmentTicketLifetime = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan OtpLifetime = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan OtpRequestWindow = TimeSpan.FromHours(1);
     private const int MaxSecondFactorAttempts = 5;
     private const int MaxOtpRequestsPerWindow = 5;
-    // #12 — client resend-button cooldown, 2 minutes (D-695); the hard cap is
+    // Client resend-button cooldown, 2 minutes; the hard cap is
     // MaxOtpRequestsPerWindow.
     private const int ResendCooldownSeconds = 120;
 
@@ -87,7 +92,7 @@ public sealed class SignInService(
 
         await accounts.ResetAccessFailedCountAsync(user);
 
-        // H19 — D-080: account-state block fires BEFORE the password-change
+        // Account-state block fires BEFORE the password-change
         // gate (was reversed pre-H19 — Disabled/Registered users with the
         // flag set were getting an enumeration oracle via the more-specific
         // PasswordChangeRequired error, when they should hit the
@@ -100,23 +105,23 @@ public sealed class SignInService(
             throw new ApiException(blockCode, 403, blockMessage!, blockMessageArabic!);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var roles = await accounts.GetRolesAsync(user);
 
-        // Audience gate (P2) — runs *after* credentials and account state are
+        // Audience gate — runs *after* credentials and account state are
         // OK so a wrong-surface response can't be used as a credential-
         // existence oracle. Throws 403 with AUTH_WRONG_SURFACE_CP or
         // AUTH_WRONG_SURFACE_WEB and writes one SignIn.WrongSurface audit row.
         await EnforceAudienceAsync(user, roles, request.Audience, cancellationToken);
 
-        // H4 — D-059 + H19 — D-080 + D-206: a SimfUser with
+        // A SimfUser with
         // PasswordChangeRequired=true holds a seeded or admin-rotated credential
         // it must replace before any session is minted. This runs *after* the
         // audience gate so a wrong-surface caller hits AUTH_WRONG_SURFACE first
         // and cannot use the forced-change branch as an account-existence
-        // oracle (the D-080 state-block ordering is likewise preserved above).
+        // oracle (the state-block ordering is likewise preserved above).
         //
-        // D-206: the Control Panel hands the operator a single-use
+        // The Control Panel hands the operator a single-use
         // password-change ticket (in place of the old
         // AUTH_PASSWORD_CHANGE_REQUIRED 403) so they can set a new password
         // in-flow and then sign in normally. The credential was already proven
@@ -126,7 +131,7 @@ public sealed class SignInService(
         // RequirePasswordChangeNotRequired (VerifyTotpAsync /
         // VerifyRecoveryCodeAsync / VerifyOtpAsync / SessionService.RefreshAsync),
         // so no session can be minted until the password is actually changed.
-        // A7-13 (NCA) — enforce the admin-configured maximum password age. When the
+        // NCA — enforce the admin-configured maximum password age. When the
         // password is older than the limit, persist the forced-change flag so the
         // change-ticket completion (which requires the flag in the DB) works and so
         // the gate survives a retry; the existing forced-change branch below then
@@ -172,13 +177,60 @@ public sealed class SignInService(
             return new SignInResponse(false, null, null, null, null, changeTicketValue);
         }
 
-        // When 2FA is turned off for the account (myComment #34, D-033), the
+        // The second-factor flavour is the user's own choice, not just their
+        // role: anyone with an authenticator key paired (the new
+        // /account/profile → 2FA enrolment) completes sign-in with
+        // TOTP; everyone else completes with an emailed code. The original
+        // role-only rule (Control Panel → TOTP) is preserved as a fallback
+        // for users who have a role but haven't enrolled.
+        var authenticatorKey = await accounts.GetAuthenticatorKeyAsync(user);
+
+        // ENROLMENT-FIRST. The Control Panel must never
+        // mint a session on the password alone, and nobody may be locked out
+        // getting there — including the production super-admin, which is
+        // recorded as 2FA-off. So a Cp-audience account with no authenticator
+        // secret paired is answered with an enrolment ticket instead of tokens:
+        // it enrols at /auth/totp/enrolment/start + /complete, and the
+        // completion issues the session (stamped amr=mfa). This runs BEFORE the
+        // !TwoFactorEnabled fast path below, which would otherwise mint a
+        // session on the password alone, and before the TOTP/EmailOtp split
+        // below, which would challenge a role-holding admin against a secret
+        // that does not exist.
+        // The App and Web audiences are deliberately untouched.
+        if (request.Audience == SignInAudience.Cp
+            && lifecycleOptions.Value.RequireControlPanelTwoFactorEnrolment
+            && string.IsNullOrEmpty(authenticatorKey))
+        {
+            var enrolmentTicketValue = OpaqueToken.Generate();
+            await secondFactorTokenRepository.AddAsync(
+                new SecondFactorToken
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    TokenHash = OpaqueToken.Hash(enrolmentTicketValue),
+                    Kind = SecondFactorKind.TotpEnrolment,
+                    CreatedAt = now,
+                    ExpiresAt = now.Add(EnrolmentTicketLifetime),
+                },
+                cancellationToken);
+            await AuditAsync(AuditEvents.SignInTwoFactorEnrolmentRequired,
+                AuditOutcome.Success, user.Email!, user.Id,
+                cancellationToken: cancellationToken);
+            logger.LogInformation(
+                "Control Panel sign-in held for mandatory 2FA enrolment: {Email}",
+                user.Email);
+            return new SignInResponse(
+                false, null, null, null, null, null, enrolmentTicketValue);
+        }
+
+        // When 2FA is turned off for the account, the
         // password step IS the sign-in — issue tokens directly. This applies
         // to both Control Panel users and visitors.
         if (!user.TwoFactorEnabled)
         {
-            var tokens = await IssueTokensAsync(user, cancellationToken);
-            // P10 — D-051: surface AccountStateInfo on the response when
+            var tokens = await IssueTokensAsync(
+                user, cancellationToken, secondFactorCompleted: false);
+            // Surface AccountStateInfo on the response when
             // the user is non-Approved, and audit the guest sign-in
             // separately so SOC can spot it. The JWT itself also carries
             // the account_state claim, so 2FA-completed sign-ins are
@@ -193,14 +245,6 @@ public sealed class SignInService(
             return new SignInResponse(false, null, null, tokens, stateInfo);
         }
 
-        // The second-factor flavour is the user's own choice, not just their
-        // role: anyone with an authenticator key paired (the new
-        // /account/profile → 2FA enrolment, D-040) completes sign-in with
-        // TOTP; everyone else completes with an emailed code
-        // (SIMF-FDS-001 §5.6 — read forward to D-040). The original
-        // role-only rule (Control Panel → TOTP) is preserved as a fallback
-        // for users who have a role but haven't enrolled.
-        var authenticatorKey = await accounts.GetAuthenticatorKeyAsync(user);
         var kind = !string.IsNullOrEmpty(authenticatorKey) || roles.Count > 0
             ? SecondFactorKind.Totp
             : SecondFactorKind.EmailOtp;
@@ -234,7 +278,7 @@ public sealed class SignInService(
             return new SignInResponse(true, ticketValue, null);
         }
 
-        // H10 / H23 — D-065 / D-083: helper owns the failure-audit
+        // Helper owns the failure-audit
         // pattern shared across all four credential-flow dispatch sites.
         await emailQueue.TryEnqueueAsync(
             await BuildSignInOtpEmailAsync(user.Email!, otpCode!, cancellationToken),
@@ -244,19 +288,13 @@ public sealed class SignInService(
             auditLog: auditLog,
             logger: logger,
             cancellationToken: cancellationToken);
-        // D-099: in-app trail for the credential email — visible inside
-        // the app after the user completes sign-in.
-        await notifications.TryDispatchAsync(new NotificationRequest
-        {
-            UserId = user.Id,
-            Kind = NotificationKind.CredentialSignInOtpSent,
-            Title = "Sign-in code sent",
-            TitleArabic = "تم إرسال رمز تسجيل الدخول",
-            Body = "A sign-in verification code was sent to your email address.",
-            BodyArabic = "تم إرسال رمز التحقق لتسجيل الدخول إلى بريدك الإلكتروني.",
-            Severity = NotificationSeverity.Info,
-            SendEmail = false,
-        }, logger, cancellationToken);
+        // No in-app notification is written for a sign-in code. The old
+        // trail row fired on EVERY 2FA sign-in, so the notification centre
+        // filled with "Sign-in code sent" rows and buried the meaningful ones
+        // (account approved + QR, profile submitted). The code itself travels by
+        // email, and the security trail is the SignInSecondFactorIssued audit row
+        // above — neither needs a user-facing row. Security-relevant notices
+        // (password changed / reset completed) are unaffected.
         return new SignInResponse(true, null, ticketValue);
     }
 
@@ -294,7 +332,7 @@ public sealed class SignInService(
                 "رمز التحقق غير صحيح.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         user.LastUsedTotpTimestep = totp.TimeStep;
         user.UpdatedAt = now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
@@ -312,7 +350,8 @@ public sealed class SignInService(
                 "The sign-in session is not valid.",
                 "جلسة تسجيل الدخول غير صالحة.");
         }
-        return await IssueTokensAsync(user, cancellationToken);
+        return await IssueTokensAsync(
+            user, cancellationToken, secondFactorCompleted: true);
     }
 
     public async Task<AuthTokens> VerifyRecoveryCodeAsync(
@@ -320,7 +359,7 @@ public sealed class SignInService(
         CancellationToken cancellationToken = default)
     {
         // Same ticket the TOTP step uses — the recovery code is an
-        // *alternative* second factor, not a bypass (D-040). A recovery
+        // *alternative* second factor, not a bypass. A recovery
         // attempt counts against the ticket's MaxSecondFactorAttempts so
         // brute-force is bounded the same way as a wrong TOTP code.
         var ticket = await GetValidTicketAsync(
@@ -337,7 +376,7 @@ public sealed class SignInService(
             user.Id, request.Code, cancellationToken);
         if (!accepted)
         {
-            // Round-1 audit #17 — a wrong recovery code is bounded by the ticket's
+            // A wrong recovery code is bounded by the ticket's
             // MaxSecondFactorAttempts only (matching the wrong-TOTP path at
             // VerifyTotpAsync and the wrong-OTP path at VerifyOtpAsync above); it must
             // NOT also drive the account-level lockout counter, or a user mistyping
@@ -355,7 +394,7 @@ public sealed class SignInService(
         }
 
         await accounts.ResetAccessFailedCountAsync(user);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // Atomically consume the ticket — the recovery code was already verified
         // + consumed above; the ticket gate ensures a concurrent second verify of
         // the same ticket cannot mint a second session.
@@ -372,7 +411,68 @@ public sealed class SignInService(
 
         await AuditAsync(AuditEvents.TotpRecoveryCodeUsed, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
-        return await IssueTokensAsync(user, cancellationToken);
+        return await IssueTokensAsync(
+            user, cancellationToken, secondFactorCompleted: true);
+    }
+
+    public async Task<TotpSetupResponse> StartTwoFactorEnrolmentAsync(
+        StartTwoFactorEnrolmentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // The ticket is NOT consumed here. Staging a secret is idempotent
+        // (TotpEnrollmentService overwrites the pending slot), so a user who
+        // reloads the page or re-scans simply gets a fresh QR; only the confirm
+        // step below spends the ticket.
+        var (_, user) = await GetValidEnrolmentTicketAsync(
+            request.EnrolmentToken, cancellationToken);
+
+        return await totpEnrollment.SetupAsync(user.Id, cancellationToken);
+    }
+
+    public async Task<CompleteTwoFactorEnrolmentResponse> CompleteTwoFactorEnrolmentAsync(
+        CompleteTwoFactorEnrolmentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var (ticket, user) = await GetValidEnrolmentTicketAsync(
+            request.EnrolmentToken, cancellationToken);
+
+        // ConfirmAsync throws TOTP_ENROLMENT_CODE_INVALID on a wrong code and
+        // counts it against the account lockout. Count it against the ticket's
+        // own attempt budget too, so a ticket cannot be used as an unbounded
+        // oracle even if lockout is relaxed.
+        TotpConfirmResponse confirmed;
+        try
+        {
+            confirmed = await totpEnrollment.ConfirmAsync(
+                user.Id, new TotpConfirmRequest { Code = request.Code }, cancellationToken);
+        }
+        catch (ApiException)
+        {
+            await secondFactorTokenRepository.IncrementAttemptCountAsync(
+                ticket.Id, cancellationToken);
+            throw;
+        }
+
+        // Atomically consume the ticket — only the caller that flips ConsumedAt
+        // proceeds to mint, so one ticket yields exactly one session.
+        var now = timeProvider.SimfNow();
+        if (!await secondFactorTokenRepository.TryConsumeAsync(
+                ticket.Id, now, cancellationToken))
+        {
+            await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthMfaTokenInvalid,
+                "already_consumed", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
+                "The sign-in session is not valid.",
+                "جلسة تسجيل الدخول غير صالحة.");
+        }
+
+        // The code just verified IS the second factor, so the session is
+        // stamped amr=mfa — a token minted this way is as strong as one from
+        // the normal TOTP challenge.
+        var tokens = await IssueTokensAsync(
+            user, cancellationToken, secondFactorCompleted: true);
+        return new CompleteTwoFactorEnrolmentResponse(tokens, confirmed.RecoveryCodes);
     }
 
     public async Task<AuthTokens> VerifyOtpAsync(
@@ -389,7 +489,7 @@ public sealed class SignInService(
         await EnsureNotLockedOutAsync(user, cancellationToken);
         RequirePasswordChangeNotRequired(user);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var code = await accountCodeRepository.GetLatestUnconsumedAsync(
             user.Id, AccountCodePurpose.SignInOtp, cancellationToken);
 
@@ -430,14 +530,15 @@ public sealed class SignInService(
         // Single-use the OTP itself (the ticket gate above already decided the
         // mint; this marks the code consumed atomically).
         await accountCodeRepository.TryConsumeAsync(code.Id, now, cancellationToken);
-        return await IssueTokensAsync(user, cancellationToken);
+        return await IssueTokensAsync(
+            user, cancellationToken, secondFactorCompleted: true);
     }
 
     public async Task<ResendOtpResponse> ResendOtpAsync(
         ResendOtpRequest request,
         CancellationToken cancellationToken = default)
     {
-        // #12 — re-issue the emailed code for an in-progress 2FA ticket without
+        // Re-issue the emailed code for an in-progress 2FA ticket without
         // re-entering the password (the ticket already proved it). GetValidTicket
         // throws on a missing / consumed / attempt-exhausted / expired ticket.
         var ticket = await GetValidTicketAsync(
@@ -449,7 +550,7 @@ public sealed class SignInService(
 
         await EnsureNotLockedOutAsync(user, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         // Re-issue under the same per-hour budget (5/window) — a 6th resend
         // throws RateLimitExceeded (429), consuming any prior unconsumed code.
         var otpCode = await IssueSignInOtpAsync(user, now, cancellationToken);
@@ -477,16 +578,16 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// Enforces the audience gate (P2, rekeyed by P7b). The CP surface
+    /// Enforces the audience gate. The CP surface
     /// is for <see cref="UserType.Admin"/> only; the visitor surfaces
     /// (Web, Flutter app) are for <see cref="UserType.Visitor"/>
-    /// (D-186 collapsed the legacy Other type into Visitor). A
+    /// (the legacy Other type was collapsed into Visitor). A
     /// mismatch audits one <c>SignIn.WrongSurface</c> row and throws 403.
     ///
     /// <para>The <paramref name="roles"/> argument is kept on the
     /// signature so the call site does not have to re-fetch them; the
     /// gate itself does not read roles any more — <c>UserType</c> is
-    /// the authoritative discriminator (decision D-048).</para>
+    /// the authoritative discriminator.</para>
     /// </summary>
     private async Task EnforceAudienceAsync(
         SimfUser user,
@@ -494,7 +595,7 @@ public sealed class SignInService(
         SignInAudience audience,
         CancellationToken cancellationToken)
     {
-        _ = roles; // P7b — no longer read; signature kept stable.
+        _ = roles; // No longer read; signature kept stable.
 
         var isAdmin = user.UserType == UserType.Admin;
         var allowed = audience switch
@@ -523,31 +624,31 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// The account states that **hard-block** sign-in (P10 — D-051). The
+    /// The account states that **hard-block** sign-in. The
     /// only hard block left is <c>Disabled</c> (the operator's "this
     /// account is dead" lever) and <c>Registered</c> (the user has not
     /// verified their email yet). <c>PendingApproval</c> and
     /// <c>Rejected</c> now sign in successfully and receive an
     /// <see cref="AccountStateInfo"/> on the response + the
     /// <c>account_state</c> JWT claim, so the client routes them to the
-    /// pending / rejected page (P11) — they are not granted any access
+    /// pending / rejected page — they are not granted any access
     /// beyond the state-banner surface, but the JWT is the gate the
-    /// authorization handler (P11) checks. <c>EmailVerified</c> and
-    /// <c>Approved</c> may always sign in (D-010 — auth and authz are
+    /// authorization handler checks. <c>EmailVerified</c> and
+    /// <c>Approved</c> may always sign in (auth and authz are
     /// separate concerns).
     /// </summary>
-    /// <summary>A7-13 (NCA) — true when password expiry is configured
+    /// <summary>NCA — true when password expiry is configured
     /// (<see cref="IdentityLifecycleOptions.PasswordMaxAgeDays"/> &gt; 0) and the
     /// password is older than the limit. The baseline is the last set time, or the
     /// account's creation time for accounts whose password predates the column.</summary>
-    private bool IsPasswordExpired(SimfUser user, DateTimeOffset now)
+    private bool IsPasswordExpired(SimfUser user, DateTime now)
     {
         var maxAgeDays = lifecycleOptions.Value.PasswordMaxAgeDays;
         if (maxAgeDays <= 0)
         {
             return false;
         }
-        var baseline = user.PasswordChangedAtUtc ?? user.CreatedAt;
+        var baseline = user.PasswordChangedAt ?? user.CreatedAt;
         return now - baseline > TimeSpan.FromDays(maxAgeDays);
     }
 
@@ -568,8 +669,8 @@ public sealed class SignInService(
 
     /// <summary>
     /// Builds the <see cref="AccountStateInfo"/> surfaced on a
-    /// non-Approved sign-in response (P10 — D-051; D-198 added the
-    /// EmailVerified case). Null when the user is Approved or in any
+    /// non-Approved sign-in response, including the
+    /// EmailVerified case. Null when the user is Approved or in any
     /// other state that doesn't need to inform the client (the
     /// hard-blocked states never reach this helper — they 403 before
     /// sign-in completes).
@@ -580,7 +681,7 @@ public sealed class SignInService(
         switch (user.AccountState)
         {
             case AccountState.EmailVerified:
-                // D-198 — a verified user who has not yet submitted their
+                // A verified user who has not yet submitted their
                 // profile (EmailVerified only advances to PendingApproval on
                 // the first profile save — UserProfileService.UpsertMineAsync).
                 // Surfacing the state lets the client route them straight to
@@ -601,7 +702,7 @@ public sealed class SignInService(
                     RejectionReasonArabic: null,
                     StateChangedAt: user.StateChangedAt);
             case AccountState.Rejected:
-                // D-106: rejection text lives on UserProfile now. Fetch it
+                // Rejection text lives on UserProfile now. Fetch it
                 // (null when the row or the field is missing — the
                 // state-banner still renders, just without the reason).
                 var rejection = await userProfiles.GetRejectionTextAsync(
@@ -631,7 +732,7 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// H19 — D-080: blocks every token-mint path (second-factor verify,
+    /// Blocks every token-mint path (second-factor verify,
     /// recovery-code verify, OTP verify, refresh) when the user holds
     /// <c>PasswordChangeRequired=true</c>. Pre-H19 only the initial password
     /// step checked this — a holder of an existing MFA ticket or refresh
@@ -671,7 +772,7 @@ public sealed class SignInService(
                 "جلسة تسجيل الدخول غير صالحة.");
         }
 
-        if (timeProvider.GetUtcNow() >= ticket.ExpiresAt)
+        if (timeProvider.SimfNow() >= ticket.ExpiresAt)
         {
             var expiredCode = expectedKind == SecondFactorKind.Totp
                 ? ErrorCodes.AuthMfaTokenExpired
@@ -685,56 +786,68 @@ public sealed class SignInService(
         return ticket;
     }
 
-    private async Task<AuthTokens> IssueTokensAsync(SimfUser user, CancellationToken cancellationToken)
+    /// <summary>
+    /// Resolves a mandatory-enrolment ticket to its account. Rejects an
+    /// unknown, wrong-kind, consumed, attempt-exhausted or expired ticket with
+    /// <see cref="ErrorCodes.AuthTwoFactorEnrolmentRequired"/>: the caller is
+    /// still in the "must enrol" state, so the honest instruction is to sign in
+    /// again rather than a generic invalid-session message. Re-runs the lockout
+    /// and forced-password-change gates, so a ticket minted seconds before an
+    /// admin locked the account cannot still be spent.
+    /// </summary>
+    private async Task<(SecondFactorToken Ticket, SimfUser User)> GetValidEnrolmentTicketAsync(
+        string tokenValue,
+        CancellationToken cancellationToken)
     {
-        var roles = await accounts.GetRolesAsync(user);
-        var permissions = await permissionResolver.ResolveForRolesAsync(roles, cancellationToken);
-        var mobileAppRole = await userProfiles.ResolveMobileAppRoleAsync(user.Id, cancellationToken);
-        var accessToken = jwtTokenService.CreateAccessToken(user, roles, permissions, mobileAppRole);
+        var ticket = await secondFactorTokenRepository.GetByTokenHashAsync(
+            OpaqueToken.Hash(tokenValue), cancellationToken);
 
-        var refreshValue = OpaqueToken.Generate();
-        var now = timeProvider.GetUtcNow();
-        await refreshTokenRepository.AddAsync(
-            new RefreshToken
-            {
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                TokenHash = OpaqueToken.Hash(refreshValue),
-                CreatedAt = now,
-                // D-443 (NCA finding): stamp the absolute session deadline
-                // (sign-in + Jwt:SessionLifetimeHours). Rotation carries this
-                // deadline forward instead of sliding, so the session is
-                // capped at 24h from sign-in.
-                ExpiresAt = now.Add(jwtTokenService.RefreshTokenLifetime),
-            },
-            cancellationToken);
+        if (ticket is null
+            || ticket.Kind != SecondFactorKind.TotpEnrolment
+            || ticket.ConsumedAt is not null
+            || ticket.AttemptCount >= MaxSecondFactorAttempts
+            || timeProvider.SimfNow() >= ticket.ExpiresAt)
+        {
+            await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
+                null, ticket?.UserId, ErrorCodes.AuthTwoFactorEnrolmentRequired,
+                nameof(SecondFactorKind.TotpEnrolment), cancellationToken);
+            throw new ApiException(ErrorCodes.AuthTwoFactorEnrolmentRequired, 400,
+                "Two-factor enrolment must be started from a fresh sign-in.",
+                "يجب بدء تسجيل المصادقة الثنائية من تسجيل دخول جديد.");
+        }
 
-        // A7-31 / A1-19 (NCA) — record this successful sign-in (the activity signal
-        // for dormant-account disable) and surface the PRIOR sign-in time to the
-        // client for the "last signed in …" notice. UpdateAsync does not roll the
-        // security stamp, so the access token just minted stays valid.
-        var previousSignInAtUtc = user.LastSuccessfulSignInAtUtc;
-        user.LastSuccessfulSignInAtUtc = now;
-        await accounts.UpdateAsync(user).EnsureSuccessAsync();
+        var user = await accounts.FindByIdAsync(ticket.UserId, cancellationToken)
+            ?? throw new ApiException(ErrorCodes.AuthTwoFactorEnrolmentRequired, 400,
+                "Two-factor enrolment must be started from a fresh sign-in.",
+                "يجب بدء تسجيل المصادقة الثنائية من تسجيل دخول جديد.");
 
-        await AuditAsync(AuditEvents.RefreshTokenIssued, AuditOutcome.Success,
-            user.Email!, user.Id, cancellationToken: cancellationToken);
+        await EnsureNotLockedOutAsync(user, cancellationToken);
+        RequirePasswordChangeNotRequired(user);
+        return (ticket, user);
+    }
+
+    /// <param name="secondFactorCompleted">True on every path
+    /// that cleared TOTP, a recovery code or an emailed OTP; false only on the
+    /// !TwoFactorEnabled fast path. Stated at the call site rather than inferred
+    /// here, so a future issuance path has to answer the question consciously.</param>
+    /// <remarks>The token contents and the session lifetime cap live in
+    /// <see cref="ITokenIssuer"/>, shared with the
+    /// device-key ceremony. What stays here is the sign-in-specific audit row.</remarks>
+    private async Task<AuthTokens> IssueTokensAsync(
+        SimfUser user, CancellationToken cancellationToken, bool secondFactorCompleted)
+    {
+        var tokens = await tokenIssuer.IssueAsync(
+            user, secondFactorCompleted, cancellationToken);
+
         await AuditAsync(AuditEvents.SignInSucceeded, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
         logger.LogInformation("Sign-in completed for {Email}", user.Email);
-
-        return new AuthTokens(
-            accessToken.Value,
-            refreshValue,
-            "Bearer",
-            accessToken.ExpiresInSeconds,
-            new AuthUser(user.Id, user.Email!, user.DisplayName),
-            previousSignInAtUtc);
+        return tokens;
     }
 
     private async Task<string> IssueSignInOtpAsync(
         SimfUser user,
-        DateTimeOffset now,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         // Cap how many sign-in codes one account may request — without this an
@@ -758,7 +871,7 @@ public sealed class SignInService(
             await accountCodeRepository.TryConsumeAsync(previous.Id, now, cancellationToken);
         }
 
-        // M3 (security) — store only the keyed hash; the plaintext is emailed.
+        // Store only the keyed hash; the plaintext is emailed.
         var plaintext = VerificationCodeGenerator.Generate();
         var code = new AccountCode
         {
@@ -774,7 +887,7 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// D-735 (was H23 — D-083): resolves the OTP email from the admin-editable
+    /// Resolves the OTP email from the admin-editable
     /// template (else the code-owned default) and fills {Code}/{ExpiryMinutes}.
     /// Caller pairs it with `IEmailQueue.TryEnqueueAsync`.
     /// </summary>

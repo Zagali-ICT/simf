@@ -1,18 +1,8 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes;
 
@@ -21,7 +11,7 @@ public partial class VisitorProfileTypesList
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    // D-186: every non-admin profile type lives under UserType.Visitor;
+    // Every non-admin profile type lives under UserType.Visitor;
     // the audience-vs-partner split rides on IsVisitor. This page is
     // the audience queue.
     private GridQuery _query = new()
@@ -62,10 +52,19 @@ public partial class VisitorProfileTypesList
         {
             var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminProfileTypeSummary>>>(
                 "simfAccount.postJson", "/account/api/admin/profile-types/list", _query);
-            _page = envelope is { Success: true, Data: not null }
-                ? envelope.Data
-                : GridPage<AdminProfileTypeSummary>.Of(
-                    Array.Empty<AdminProfileTypeSummary>(), 0, _query);
+            // §6.16 (F-U5-002) — a FAILED envelope used to be substituted with an
+            // empty page, so an API 500 / 403 was indistinguishable from "no rows"
+            // and the admin read a working page with no data. Report it instead;
+            // the page already renders a toast surface it never used on this path.
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _page = GridPage<AdminProfileTypeSummary>.Of(Array.Empty<AdminProfileTypeSummary>(), 0, _query);
+                ShowToast("error", envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.ProfileTypes.LoadFailed"]);
+            }
         }
         finally { _loading = false; }
     }

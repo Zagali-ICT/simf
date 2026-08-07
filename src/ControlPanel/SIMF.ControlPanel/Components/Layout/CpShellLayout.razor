@@ -83,23 +83,10 @@
     </ChildContent>
 </SimfAppShell>
 
-@* D-443 — token-driven session-expiry guard (signed-in shell only). *@
+@* Token-driven session-expiry guard (signed-in shell only). *@
 <SessionTimeoutGuard />
 
 @* Floating Control Panel help assistant — visible to any operator holding
    Assistant.Use; renders nothing otherwise. Rendered once here so every
    signed-in CP page carries it. *@
 <CpAssistantWidget />
-
-@code {
-    private SIMF.Components.Controls.SimfNotificationBell? _bell;
-
-    private async Task RefreshBellAsync()
-    {
-        if (_bell is not null)
-        {
-            await _bell.RefreshUnreadAsync();
-            StateHasChanged();
-        }
-    }
-}

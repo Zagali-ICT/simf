@@ -8,11 +8,17 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// Part B — <c>POST /api/v1/app/auth/resolve-badge</c>. The app posts a scanned
+/// <c>POST /api/v1/app/auth/resolve-badge</c>. The app posts a scanned
 /// badge QR; the response tells it which path to take (normal sign-in vs.
 /// set-password activation). Anonymous + rate-limited like the other
 /// pre-authentication auth endpoints; the QR's ~60-bit entropy makes the
 /// found/not-found signal a non-viable enumeration oracle.
+///
+/// <para>That entropy argument holds ONLY for minted QR ids. The offline
+/// badge ids ('W' + a desk sequence) are
+/// consecutive and therefore trivially enumerable, so
+/// <c>BadgeAuthService.ResolveApprovedUserAsync</c> refuses them outright.
+/// Anything added to this anonymous surface must re-check that assumption.</para>
 /// </summary>
 public sealed class ResolveBadgeEndpoint(IBadgeAuthService badgeAuthService)
     : Endpoint<ResolveBadgeRequest, ApiResult<ResolveBadgeResponse>>

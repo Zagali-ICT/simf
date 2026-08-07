@@ -4,20 +4,19 @@ using SIMF.Common;
 using SIMF.Components.Forms;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
-using SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
 /// <summary>The pending-visitor approval queue. The shared grid / approve /
-/// reject / bulk logic lives in <see cref="PendingApprovalPageBase"/> (D-641);
+/// reject / bulk logic lives in <see cref="PendingApprovalPageBase"/>;
 /// this partial pins the <c>visitors</c> API segment and adds the richest
-/// profile-review modal — ID + avatar lightboxes (D-387/CS-4) and the approve-tier
-/// picker (D-386/D-392, defaulting to the seeded "Normal" audience type).</summary>
+/// profile-review modal — ID + avatar lightboxes and the approve-tier picker,
+/// which defaults to the seeded "Normal" audience type.</summary>
 public partial class PendingVisitors
 {
     protected override string ApiBase => "visitors";
 
-    // D-353 parity — the review "View" modal honours the popup/full-page toggle,
+    // The review "View" modal honours the popup/full-page toggle,
     // persisted per-user under this key (matches /admin/visitors' "visitors" key
     // family). ViewFullPage hides the grid while the review takes the full page.
     protected override string? PresentationPageKey => "pending-visitors";
@@ -26,28 +25,27 @@ public partial class PendingVisitors
         _viewTarget is not null && _presentation == CrudPresentation.Page;
 
     // The pending row's avatar thumbnail URL, or null so SimfIdentityCell shows an
-    // initials tile (never a broken image). Only when HasAvatar is set (D-568).
+    // initials tile (never a broken image). Only when HasAvatar is set.
     private static string? AvatarImageUrl(AdminPendingUserSummary row) =>
         row.HasAvatar ? $"/account/api/admin/visitors/{row.Id}/avatar" : null;
 
-    // D-125 — View modal state for the D-124 pending-profile preview.
-    // D-128 — _approveMode reuses the same modal for the
-    // review-before-approve confirmation flow.
+    // View modal state for the pending-profile preview. _approveMode reuses the
+    // same modal for the review-before-approve confirmation flow.
     private AdminPendingUserSummary? _viewTarget;
     private PendingProfileResponse? _viewProfile;
     private bool _viewLoading;
     private string? _viewError;
     private bool _approveMode;
 
-    // CS-E (D-387) — full-size image lightbox. _imageUrl is captured once when
-    // the view modal opens so the cache-buster stays stable across re-renders.
+    // Full-size image lightbox. _imageUrl is captured once when the view modal
+    // opens so the cache-buster stays stable across re-renders.
     private bool _imageZoomOpen;
     private string? _imageUrl;
-    // CS-4 — profile photo (avatar) lightbox state, parallel to the ID image.
+    // Profile photo (avatar) lightbox state, parallel to the ID image.
     private bool _avatarZoomOpen;
     private string? _avatarUrl;
 
-    // CS-D (D-386) — approve-modal tier picker state. The list holds the
+    // Approve-modal tier picker state. The list holds the
     // active audience-side profile types; the selection (null = keep current)
     // is sent in the approve POST.
     private AdminProfileTypeSummary[] _approveProfileTypes = Array.Empty<AdminProfileTypeSummary>();
@@ -74,23 +72,22 @@ public partial class PendingVisitors
             if (envelope is { Success: true, Data: not null })
             {
                 _viewProfile = envelope.Data;
-                // CS-E (D-387) — capture the cache-buster URL once so the
-                // thumbnail and lightbox share a stable src and don't re-fetch.
+                // Capture the cache-buster URL once so the thumbnail and
+                // lightbox share a stable src and don't re-fetch.
                 _imageUrl = _viewProfile.HasIdImage
-                    ? $"/account/api/admin/visitors/{_viewProfile.Id}/id-document?v={DateTime.UtcNow.Ticks}"
+                    ? $"/account/api/admin/visitors/{_viewProfile.Id}/id-document?v={SimfClock.Now.Ticks}"
                     : null;
-                // CS-4 — same capture for the profile photo (avatar).
+                // Same capture for the profile photo (avatar).
                 _avatarUrl = _viewProfile.HasAvatar
-                    ? $"/account/api/admin/visitors/{_viewProfile.Id}/avatar?v={DateTime.UtcNow.Ticks}"
+                    ? $"/account/api/admin/visitors/{_viewProfile.Id}/avatar?v={SimfClock.Now.Ticks}"
                     : null;
-                // CS-D (D-386) — only the approve flow needs the tier picker.
-                // Reuse the same list call the walk-in form uses, then keep
-                // only the active audience-side rows.
-                // D-392 (owner: "default is 0 normal") — pre-select the seeded
-                // "Normal" audience type by default rather than the visitor's
-                // current tier, so the desk just reviews the photo/data and
-                // approves. Falls back to the visitor's current tier if a
-                // "Normal" row is somehow absent.
+                // Only the approve flow needs the tier picker. Reuse the same
+                // list call the walk-in form uses, then keep only the active
+                // audience-side rows.
+                // Pre-select the seeded "Normal" audience type by default
+                // rather than the visitor's current tier, so the desk just
+                // reviews the photo/data and approves. Falls back to the
+                // visitor's current tier if a "Normal" row is somehow absent.
                 if (_approveMode)
                 {
                     await LoadApproveProfileTypesAsync();
@@ -137,7 +134,7 @@ public partial class PendingVisitors
     {
         if (_viewTarget is null) return;
         var target = _viewTarget;
-        // CS-D (D-386) — carry the optionally-picked tier (null = keep current).
+        // Carry the optionally-picked tier (null = keep current).
         var profileTypeId = _approveProfileTypeId;
         // Close the review modal before firing the approve call so the
         // toast that surfaces from ApproveAsync isn't covered by it.

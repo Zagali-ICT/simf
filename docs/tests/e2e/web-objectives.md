@@ -42,6 +42,8 @@
 | E2E-WOBJ-005 | RTL / Arabic — under `dir="rtl"` the page mirrors, hero photo on the LEFT, Arabic card content renders | i18n | P0 | _to author_ |
 | E2E-WOBJ-006 | LTR / English mirror — hero photo flips RIGHT; breadcrumb "Home / About / Objectives"; English card content | i18n | P1 | _to author_ |
 | E2E-WOBJ-007 | Responsive — the `ln-fsection` grid steps 3→2→1 at ≤900/≤560; no horizontal overflow at 1440/1024/768/390 in both languages | responsive | P1 | _to author_ |
+| E2E-WOBJ-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-WOBJ-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | 2026-07-29 PASS (LTR+RTL) |
 
 ## Scenarios
 

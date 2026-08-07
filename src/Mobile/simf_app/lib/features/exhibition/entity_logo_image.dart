@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_logo_image.dart';
 
 /// The square logo on an exhibitor / sponsor detail card (Figma 1439:11881 /
 /// 11826): the real ExhibitorLogo / SponsorLogo asset (served anonymously per
-/// D-357) clipped to fill, falling back to the entity initials while it loads or
-/// when no logo is set (the asset route 404s) or [url] is null.
+/// D-357) shown **whole** inside the box, falling back to the entity initials
+/// while it loads or when no logo is set (the asset route 404s) or [url] is null.
 ///
 /// [fallbackUrl] is an optional second logo tried when [url] 404s / is null —
 /// the exhibitor detail passes its own ExhibitorLogo as [url] and the legacy
 /// Contact CompanyLogo as [fallbackUrl], so an exhibitor that has not yet
 /// re-uploaded its own logo still shows its company logo instead of initials.
+///
+/// Owner 2026-07-26 — a brand mark must FIT its box, so this renders through the
+/// shared [SimfLogoImage] with its `BoxFit.contain` default (the old
+/// `BoxFit.cover` cropped wide logos); tapping it opens the logo full size.
 class EntityLogoImage extends StatelessWidget {
   const EntityLogoImage({
     required this.url,
     required this.initials,
+    required this.name,
     this.fallbackUrl,
     super.key,
   });
@@ -22,6 +28,10 @@ class EntityLogoImage extends StatelessWidget {
   final String? url;
   final String? fallbackUrl;
   final String initials;
+
+  /// The exhibitor / sponsor name — the picture's accessible name and the
+  /// full-size viewer's title.
+  final String name;
 
   @override
   Widget build(BuildContext context) {
@@ -43,36 +53,18 @@ class EntityLogoImage extends StatelessWidget {
         ),
       ),
       // Primary logo → fallback logo → initials tile (each on error / null).
-      child: _network(
-        url,
+      // The second URL is only fetched when the first one fails.
+      child: SimfLogoImage(
+        url: url,
         placeholder: fallback,
-        onError: () => _network(
-          fallbackUrl,
+        semanticLabel: name,
+        onError: () => SimfLogoImage(
+          url: fallbackUrl,
           placeholder: fallback,
+          semanticLabel: name,
           onError: () => fallback,
         ),
       ),
-    );
-  }
-
-  // Renders [src] as a network image showing [placeholder] while it loads and
-  // calling [onError] when it fails / is null — so callers can chain a second
-  // URL before the initials tile, without fetching it unless the first fails.
-  Widget _network(
-    String? src, {
-    required Widget placeholder,
-    required Widget Function() onError,
-  }) {
-    if (src == null || src.isEmpty) {
-      return onError();
-    }
-    return Image.network(
-      src,
-      fit: BoxFit.cover,
-      gaplessPlayback: true,
-      loadingBuilder: (context, child, progress) =>
-          progress == null ? child : placeholder,
-      errorBuilder: (context, error, stackTrace) => onError(),
     );
   }
 }

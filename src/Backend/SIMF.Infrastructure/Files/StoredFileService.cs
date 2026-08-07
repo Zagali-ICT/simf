@@ -1,5 +1,7 @@
 // Tests: SIMF.Api.Tests/Files/FilesEndpointsTests.cs (upload/download/delete),
-//        SIMF.Api.Tests/Files/FileAuthorizationTests.cs (per-service authz + IDOR).
+//        SIMF.Api.Tests/Files/FileAuthorizationTests.cs (per-service authz + IDOR),
+//        SIMF.Api.Tests/IdentitySeederTests.cs (ContentExistsAsync — both the
+//        missing-bytes and the missing-row shapes, via the demo-image repair).
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -14,7 +16,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Files;
 
-/// <summary>D-568 — the one service behind the centralized file store. Named
+/// <summary>The one service behind the centralized file store. Named
 /// <c>StoredFileService</c> (not <c>FileService</c>) to avoid colliding with the
 /// <see cref="FileService"/> business-category enum. Upload runs one pipeline for
 /// every file; download authorizes off the stored file's own service policy.</summary>
@@ -56,7 +58,7 @@ internal sealed class StoredFileService(
                 "This file category requires an owner.", "هذا النوع من الملفات يتطلب مالكًا.");
         }
 
-        // A6-18 (NCA) / D-494 — scan before storing; fail-closed in Production.
+        // Scan before storing; fail-closed in Production.
         await scanner.EnsureCleanFailClosedAsync(
             command.Content, command.OriginalFileName ?? "upload", command.FailClosed, cancellationToken);
 
@@ -65,7 +67,7 @@ internal sealed class StoredFileService(
         var write = await storage.WriteAsync(
             command.Service, fileId, detected.Extension, command.Content, policy.EncryptAtRest, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var file = new StoredFile
         {
             Id = fileId,
@@ -82,7 +84,7 @@ internal sealed class StoredFileService(
             Sha256 = sha256,
             IsDeletable = policy.DeletableDefault,
             RetainUntil = policy.Retention is { } retention ? now.Add(retention) : null,
-            // P2 (D-568 hardening) — the owner FAMILY is authoritative from the
+            // The owner FAMILY is authoritative from the
             // policy, never the client, so a caller can't over-post a mismatched
             // owner type. Only the owner id rides the request (server-derived for
             // owner-scoped services by the caller).
@@ -95,14 +97,12 @@ internal sealed class StoredFileService(
         dbContext.StoredFiles.Add(file);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.FileUploaded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = command.ActorUserId,
-            Detail = $"id={fileId}; service={command.Service}; type={detected.Type}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileUploaded,
+            command.ActorUserId,
+            $"id={fileId}; service={command.Service}; type={detected.Type}; "
                 + $"bytes={command.Content.LongLength}; encrypted={policy.EncryptAtRest}",
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "File {Id} uploaded (service={Service}, type={Type}, {Bytes} bytes, encrypted={Encrypted}).",
@@ -133,13 +133,13 @@ internal sealed class StoredFileService(
                 "This file category requires an owner.", "هذا النوع من الملفات يتطلب مالكًا.");
         }
 
-        // The malware scan is SKIPPED for streamed uploads (P5 size-capped policy): the
+        // The malware scan is SKIPPED for streamed uploads: the
         // caller is an admin-only, extension+MIME-validated video up to 1 GiB, and
         // buffering it whole for a byte[] scan would defeat the streaming pipeline.
         var fileId = Guid.NewGuid();
         var write = await storage.WriteStreamAsync(service, fileId, extension, content, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var file = new StoredFile
         {
             Id = fileId,
@@ -165,13 +165,11 @@ internal sealed class StoredFileService(
         dbContext.StoredFiles.Add(file);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.FileUploaded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={fileId}; service={service}; type=Video; bytes={write.SizeBytes}; encrypted=false; streamed",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileUploaded,
+            actorUserId,
+            $"id={fileId}; service={service}; type=Video; bytes={write.SizeBytes}; encrypted=false; streamed",
+            cancellationToken);
 
         logger.LogInformation(
             "File {Id} streamed (service={Service}, {Bytes} bytes, plaintext).", fileId, service, write.SizeBytes);
@@ -203,7 +201,7 @@ internal sealed class StoredFileService(
                 "This file category requires an owner.", "هذا النوع من الملفات يتطلب مالكًا.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // Owner-upsert (ported from AssetService.SetExternalLinkAsync): replace the
         // owner's existing active file of this service with the link, freeing any
@@ -265,13 +263,11 @@ internal sealed class StoredFileService(
             await storage.DeleteAsync(previousUploadKey, cancellationToken);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.FileLinked,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = command.ActorUserId,
-            Detail = $"id={file.Id}; service={command.Service}; url={url}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileLinked,
+            command.ActorUserId,
+            $"id={file.Id}; service={command.Service}; url={url}",
+            cancellationToken);
 
         return new StoredFileResult(
             file.Id, $"/api/v1/files/{file.Id}", command.Service, file.FileType, IsEncrypted: false, SizeBytes: 0);
@@ -287,13 +283,11 @@ internal sealed class StoredFileService(
         var policy = FileServicePolicies.Resolve(file.Service);
         if (!IsAuthorized(policy, file, caller))
         {
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.FileAccessDenied,
-                Outcome = AuditOutcome.Failure,
-                ActorUserId = caller.UserId,
-                Detail = $"id={id}; service={file.Service}",
-            }, cancellationToken);
+            await auditLog.WriteFailureAsync(
+                AuditEvents.FileAccessDenied,
+                caller.UserId,
+                detail: $"id={id}; service={file.Service}",
+                cancellationToken: cancellationToken);
             // Uniform 404 — no exists-but-forbidden oracle for a private file.
             throw NotFound();
         }
@@ -310,7 +304,7 @@ internal sealed class StoredFileService(
         var bytes = await storage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
         if (bytes is null) { throw NotFound(); }
 
-        // P4 (D-568 hardening) — integrity verification on a private file (SAMA
+        // Integrity verification on a private file (SAMA
         // H-29/30). FAIL CLOSED: a stored-hash mismatch means the bytes on disk
         // were tampered with (or a decrypt returned garbage) — audit it and refuse
         // to serve, never hand the caller unverified bytes. Only Confidential+
@@ -323,13 +317,11 @@ internal sealed class StoredFileService(
                 logger.LogError(
                     "Integrity mismatch on file {Id} (service={Service}) — refusing to serve tampered bytes.",
                     id, file.Service);
-                await auditLog.WriteAsync(new AuditEntry
-                {
-                    EventType = AuditEvents.FileIntegrityFailed,
-                    Outcome = AuditOutcome.Failure,
-                    ActorUserId = caller.UserId,
-                    Detail = $"id={id}; service={file.Service}; expected={file.Sha256}; actual={actual}",
-                }, cancellationToken);
+                await auditLog.WriteFailureAsync(
+                    AuditEvents.FileIntegrityFailed,
+                    caller.UserId,
+                    detail: $"id={id}; service={file.Service}; expected={file.Sha256}; actual={actual}",
+                    cancellationToken: cancellationToken);
                 throw NotFound();
             }
         }
@@ -337,13 +329,11 @@ internal sealed class StoredFileService(
         // Per-row audit only for non-public reads (public reads would flood the log).
         if (policy.Access != FileAccessClass.Public)
         {
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.FileDownloaded,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = caller.UserId,
-                Detail = $"id={id}; service={file.Service}",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.FileDownloaded,
+                caller.UserId,
+                $"id={id}; service={file.Service}",
+                cancellationToken);
         }
 
         return new FileDownload(
@@ -351,6 +341,21 @@ internal sealed class StoredFileService(
             ContentType: file.ContentType ?? "application/octet-stream",
             FileName: file.OriginalFileName,
             file.Service, policy.Tier, policy.Access, file.FileType);
+    }
+
+    public async Task<bool> ContentExistsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var file = await dbContext.StoredFiles.AsNoTracking()
+            .Where(f => f.Id == id && f.IsActive)
+            .Select(f => new { f.SourceType, f.StorageKey })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (file is null) { return false; }
+
+        // An external link owns no bytes here, so the row IS the content.
+        if (file.SourceType == FileSourceType.ExternalLink) { return true; }
+
+        return file.StorageKey is { Length: > 0 } key
+            && await storage.ExistsAsync(key, cancellationToken);
     }
 
     public async Task DeleteAsync(Guid id, Guid actorUserId, CancellationToken cancellationToken = default)
@@ -366,14 +371,14 @@ internal sealed class StoredFileService(
                 "هذا الملف خاضع لفترة احتفاظ ولا يمكن حذفه.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         file.Deactivate();
         file.DeletedAt = now;
         file.UpdatedBy = actorUserId;
         file.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // P7 (D-568 hardening) — deletion honesty: a soft-deleted file's bytes must
+        // Deletion honesty: a soft-deleted file's bytes must
         // not linger on disk. Unlink the stored blob (Upload only; an ExternalLink
         // holds no bytes). Best-effort after the row commit — the row is the source
         // of truth (IsActive=false already makes the file un-downloadable).
@@ -382,13 +387,11 @@ internal sealed class StoredFileService(
             await storage.DeleteAsync(file.StorageKey, cancellationToken);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.FileDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; service={file.Service}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileDeleted,
+            actorUserId,
+            $"id={id}; service={file.Service}",
+            cancellationToken);
     }
 
     public async Task ForceDeleteAsync(Guid id, Guid actorUserId, CancellationToken cancellationToken = default)
@@ -398,7 +401,7 @@ internal sealed class StoredFileService(
             ?? throw NotFound();
         if (file.SecureDestroyed is not null) { return; } // idempotent
 
-        // P7 — PDPL right-to-erasure. Securely destroy the bytes (crypto-shred the
+        // PDPL right-to-erasure. Securely destroy the bytes (crypto-shred the
         // wrapped DEK for an encrypted file, overwrite the header for a plaintext
         // one), bypassing the retention hold that blocks the ordinary delete.
         if (file.SourceType == FileSourceType.Upload && !string.IsNullOrEmpty(file.StorageKey))
@@ -406,20 +409,18 @@ internal sealed class StoredFileService(
             await storage.SecureEraseAsync(file.StorageKey, cancellationToken);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         file.MarkSecurelyDestroyed(now);
         file.DeletedAt ??= now;
         file.UpdatedBy = actorUserId;
         file.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.FileSecurelyDestroyed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; service={file.Service}; force-delete",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.FileSecurelyDestroyed,
+            actorUserId,
+            $"id={id}; service={file.Service}; force-delete",
+            cancellationToken);
     }
 
     private static bool IsAuthorized(FileServicePolicy policy, StoredFile file, FileAccessContext caller) =>
@@ -487,7 +488,7 @@ internal sealed class StoredFileService(
         }
         if (StartsWith(content, [0x50, 0x4B, 0x03, 0x04]))
         {
-            // P3 (D-568 hardening) — a ZIP container is an OOXML Office document.
+            // A ZIP container is an OOXML Office document.
             // The stored MIME is the CANONICAL OOXML type resolved from the
             // declared extension; the client content-type is NEVER echoed (a ZIP
             // could be anything, and trusting the client MIME lets a caller
@@ -516,7 +517,7 @@ internal sealed class StoredFileService(
     private static bool StartsWith(ReadOnlySpan<byte> content, ReadOnlySpan<byte> signature) =>
         content.Length >= signature.Length && content[..signature.Length].SequenceEqual(signature);
 
-    // P6 (D-568) — external links are 302-served to anonymous visitors, so the
+    // External links are 302-served to anonymous visitors, so the
     // target must be a real, public https host. Ported from AssetService.ValidateLink:
     // require https (no cleartext) and reject literal IPs / localhost / internal TLDs
     // so the trusted SIMF domain can't become an open redirect to an internal service.

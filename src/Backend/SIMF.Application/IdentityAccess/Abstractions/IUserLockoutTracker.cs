@@ -3,7 +3,7 @@ using SIMF.Domain.IdentityAccess;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// R3.5 — D-094: lockout and access-failure tracking for the
+/// Lockout and access-failure tracking for the
 /// <see cref="SimfUser"/> aggregate. Split out of the 22-method
 /// <see cref="IUserAccountRepository"/> so lockout-aware orchestrators
 /// (sign-in flow, admin unlock endpoint) advertise their dependency

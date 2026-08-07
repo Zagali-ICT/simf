@@ -49,6 +49,8 @@
 | E2E-VIS-025 | Walk-in birth location (D-469) — Saudi → region `<select>` over the 13 official regions (code-keyed, cross-locale preselect); non-Saudi → free-text "as in passport" | validation | P1 | _to author_ |
 | E2E-VIS-030 | Edit login email (D-214 + #24) — golden change → 200 + save toast, stamp roll + old-session revoke + new address unverified (re-verify at next sign-in); duplicate → 409 `ADMIN_EMAIL_ALREADY_REGISTERED` inline SimfAlert; name-only edit keeps the session; bad format → 400 | happy | P1 | _to author_ |
 | E2E-VIS-031 | Bulk add (#10 batch-builder) — gated toolbar "Bulk add" opens the `BulkBadgeGenerator` dialog; build a batch (type + count → Add), Generate → confirm → `bulk-generate` 200; hidden without `Visitors.BulkGenerate` | happy | P1 | authored ✓ (BulkBadgeGeneratorTests; gate by CpNavigationPermission/PermissionEnforcement) |
+| E2E-VIS-032 | B22 — Edit account carries **Nationality**: pick a country -> saved onto `UserProfile.NationalityId`; leaving the picker empty keeps the stored value; an unknown / inactive code -> 400 `PROFILE_NATIONALITY_UNKNOWN` and nothing is written; the edit stays gated by the account-management permission | happy / error / auth-gate | P1 | authored ✓ (`AdminAccountNationalityTests`, API) |
+| E2E-VIS-033 | **FR-PHN-002** — Edit account carries the **mobile numbers**: correct a wrong Saudi / international mobile -> saved onto `UserProfile.SaudiMobile` / `.InternationalMobile`; leaving a field empty keeps the stored number; a malformed number -> 400 and **nothing** is written (not even the display name); the value is stored **canonicalised** (DEF-PHN-003); gated by the existing `Visitors.Edit` / `Others.Edit` permission | happy / error / auth-gate | P0 | authored ✓ (`AdminAccountMobileTests`, API — 7 cases) |
 
 ## Scenarios
 
@@ -495,6 +497,9 @@ Scenario: An admin converts a visitor into a partner (Other) account
   And its "New type" dropdown lists ONLY active partner-scope types
       (no visitor types, no inactive types — the opposite scope only)
   When they pick a partner type and click "Change type"
+  Then a SimfConfirm dialog opens titled "Change account type" naming the target type (D-809)
+  And no request has been sent yet
+  When they click "Change type" in the dialog
   Then POST /account/api/admin/accounts/{id}/change-type returns 200
   And the block shows the green "The account type was changed..." success alert
   And the account's ProfileTypeId is now the picked partner type
@@ -558,6 +563,9 @@ filter + POST wiring). Live browser drive pending the E2E-VIS authoring pass.
 | Id | Scenario | Category | Priority | Status |
 |----|----------|----------|----------|--------|
 | E2E-VIS-027 | Walk-in with an already-registered National ID / Iqama / passport → `DUPLICATE_IDENTITY` (409) | conflict | P0 | _to author_ |
+| E2E-VIS-028 | Tier isolation on the ID document and the VIP photo (D-836): a `Visitors.*`-only admin cannot read or overwrite a **partner's** ID image through the visitors route, and the VIP-photo routes are audience-tier only — 404, never 403. Cross-referenced from [cp-admin-others.md](cp-admin-others.md) E2E-OTH-028 | auth | P0 | _to author_ |
+| E2E-VIS-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-VIS-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ### E2E-VIS-027 — duplicate identity is rejected at the desk
 
@@ -720,6 +728,108 @@ Scenario: The Bulk add button is hidden without the permission
 The same generator + request contract is exercised on `/admin/delegates`
 (`cp-admin-delegates.md`, E2E-DLG-004/013/014).
 
+### E2E-VIS-032 - Edit account: correct the nationality (B22)
+
+`UserProfile.NationalityId` used to be written **only** by the self-service sign-up
+upsert, so no admin endpoint or CP form could change it - yet nationality decides
+which delegation an account belongs to and therefore gates
+`POST /app/delegation-meeting-requests/{id}/confirm` and `.../decline`
+([`mobile-meeting-confirm.md`](mobile-meeting-confirm.md)). A delegate whose
+nationality was captured wrong could not be helped by an admin at all.
+
+```gherkin
+Feature: An admin corrects a delegate's nationality
+Background:
+  Given an Administrator has signed in to the Control Panel
+  And a visitor account exists whose profile nationality is wrong
+
+Scenario: Correct the nationality
+  When the Administrator opens Edit on that account
+  Then the form shows a "Nationality" / "الجنسية" picker prefilled from the profile
+  And the helper note explains it controls delegation-meeting confirmation
+  When they pick the correct country and Save
+  Then PUT /account/api/admin/visitors/{id} carries nationalityCode
+  And the response is 200 and UserProfile.NationalityId is the picked country
+  And the account can now confirm that delegation's meetings
+
+Scenario: Leaving the picker empty changes nothing
+  When the Administrator edits only the display name and saves
+  Then no nationalityCode is sent and the stored nationality is untouched
+
+Scenario: An unknown or inactive country is refused
+  When a scripted client PUTs nationalityCode "ZZ" (or an inactive country's code)
+  Then the response is 400 PROFILE_NATIONALITY_UNKNOWN
+       ("Nationality code 'ZZ' is not supported." / "الجنسية 'ZZ' غير مدعومة.")
+  And nothing is written - the display name and the stored nationality are unchanged
+
+Scenario: The edit stays permission-gated
+  When a signed-in non-admin account PUTs the same body
+  Then the response is 403 (the existing account-management policy, unchanged)
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/AdminAccountNationalityTests.cs`
+(correct / omit / unknown / inactive / permission). The same optional
+`NationalityCode` field is on `AdminUpdateOtherRequest`, so
+[`cp-admin-others.md`](cp-admin-others.md) inherits it.
+
+### E2E-VIS-033 - Edit account: correct the mobile number (FR-PHN-002)
+
+Until this shipped there was **no admin path to fix a phone number**: every CP
+surface showed `UserProfile.SaudiMobile` / `.InternationalMobile` read-only, and
+only the walk-in CREATE desk had an editable field. A number typed wrong at
+registration left the account permanently unreachable. `EditAccountForm` now has
+two `SimfTextField`s (`Admin.Edit.SaudiMobile` / `Admin.Edit.InternationalMobile`,
+`type=tel`), and `PUT /admin/{visitors,others}/{id}` carries the two optional
+fields, validated by the **same** shape predicates as the self-service upsert.
+
+```gherkin
+Feature: Correct an account's mobile number from the Control Panel
+
+Background:
+  Given an administrator is signed in with the Visitors.Edit permission
+  And a visitor account whose stored Saudi mobile is "0501111111"
+
+Scenario: Correct a wrong Saudi mobile
+  When the administrator opens Edit on that row
+  Then the "Saudi mobile" field is pre-filled with "0501111111"
+  When they replace it with "0559876543" and save
+  Then the response is 200 and the toast reads "The account was updated."
+  And UserProfile.SaudiMobile is "0559876543"
+
+Scenario: The number is stored canonicalised (DEF-PHN-003)
+  When the administrator types "+966-55 598 7654" and saves
+  Then UserProfile.SaudiMobile is "+966555987654"
+       (separators stripped - the same string the app would have written)
+
+Scenario: An empty field means "no change"
+  When the administrator edits only the display name and saves
+  Then UserProfile.SaudiMobile is still "0501111111" - the contact detail is not wiped
+
+Scenario: A malformed number is rejected and nothing is written
+  When the administrator types "0401234567" (not the 05 mobile plan) and saves
+  Then the response is 400
+  And UserProfile.SaudiMobile is still "0501111111"
+  And the display name is unchanged - the whole edit rolled back
+
+Scenario: An international mobile is accepted in E.164
+  When the administrator types "0044-7700 900123" in "International mobile"
+  Then UserProfile.InternationalMobile is "+447700900123"
+  And the untouched Saudi number is unchanged
+  And "+44" alone is rejected with 400 (too short for E.164)
+
+Scenario: The mobile edit stays permission-gated
+  When a signed-in non-admin account PUTs the same body
+  Then the response is 403 (the existing Visitors.Edit policy - no new permission)
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/AdminAccountMobileTests.cs`
+(correct / canonicalise / international / omit-means-unchanged / malformed
+rolls back / bad E.164 / permission). The same two optional fields are on
+`AdminUpdateOtherRequest`, so [`cp-admin-others.md`](cp-admin-others.md)
+inherits them.
+
 ---
 
 _Last reviewed:_ 2026-07-22 by Claude (#10 front-end redesign - the walk-in wizard regrouped into SimfFormSection cards + SimfSelect/SimfDatePicker/SimfFileUpload (behaviour-preserving, E2E-VIS structure note + WalkInRegistrationFormTests); added E2E-VIS-031 - the gated "Bulk add" toolbar dialog hosting the shared BulkBadgeGenerator batch-builder). Prior: 2026-07-22 by Claude (#24 DoD - added E2E-VIS-030, the dedicated edit-email scenario for PUT /admin/visitors/{id}: golden change, stamp roll + old-session revoke + EmailConfirmed=false re-verify, duplicate 409 ADMIN_EMAIL_ALREADY_REGISTERED inline, name-only keeps the session, bad-format 400). Prior: 2026-07-22 by SIMF Team (Build #24 - noted on E2E-VIS-001 that an Edit which changes the email now marks it unverified (EmailConfirmed=false) for re-verification at next sign-in; not a lockout). Prior: 2026-07-21 by Claude (VIP edit - the shared EditAccountForm gained a Photo & ID section; E2E-VIS-029). Earlier: 2026-07-11 by Claude (W4 on-site remediation - H-1 duplicate-identity guard; E2E-VIS-027). Earlier: 2026-07-09 by SIMF Team (D-728 - E2E-VIS-026 change-account-type); 2026-06-20 (D-469 - E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 - Excel + toggle; E2E-VIS-023/024).
+
+_Last reviewed:_ 2026-07-27 by Claude (FR-PHN-002 - the Edit account form and PUT /admin/{visitors,others}/{id} now carry optional SaudiMobile / InternationalMobile, validated by the self-service shapes and stored canonicalised (DEF-PHN-003); gated by the existing Visitors.Edit / Others.Edit permission - no new permission; E2E-VIS-033). Prior: 2026-07-26 by Claude (B22 - the Edit account form and PUT /admin/{visitors,others}/{id} now carry an optional NationalityCode; E2E-VIS-032).

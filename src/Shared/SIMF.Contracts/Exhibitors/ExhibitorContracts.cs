@@ -3,7 +3,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Contracts.Exhibitors;
 
 /// <summary>
-/// D-199 #3 — admin grid row for an exhibitor.
+/// Admin grid row for an exhibitor.
 /// </summary>
 public sealed record AdminExhibitorSummary(
     Guid Id,
@@ -14,8 +14,8 @@ public sealed record AdminExhibitorSummary(
     string? Website,
     int AccountCount,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    // D-503 — carried so the grid Excel export can round-trip the tier (the grid
+    DateTime CreatedAt,
+    // Carried so the grid Excel export can round-trip the tier (the grid
     // does not render it as a column). Optional; null = no tier.
     ExhibitorTier? Tier = null,
     // The exhibitor owns its own ExhibitorLogo (owner = the exhibitor) — true when
@@ -23,7 +23,7 @@ public sealed record AdminExhibitorSummary(
     // (else an initials tile). Appended trailing-optional (wire-safe).
     bool HasExhibitorLogo = false);
 
-/// <summary>D-199 #3 — full admin detail for one exhibitor.</summary>
+/// <summary>Full admin detail for one exhibitor.</summary>
 public sealed record AdminExhibitorDetail(
     Guid Id,
     string NameEn,
@@ -32,12 +32,12 @@ public sealed record AdminExhibitorDetail(
     string? ContactPhone,
     string? Website,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
-    // Wave 3 (Figma 1439:11881) — optional exhibitor tier; null renders no pill.
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
+    // Optional exhibitor tier; null renders no pill.
     ExhibitorTier? Tier = null,
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; the email + primary phone reuse the
+    // directory. All optional; the email + primary phone reuse the
     // existing ContactEmail / ContactPhone above (no second slot). Trailing-
     // optional so the wire contract stays append-only.
     int? CountryId = null,
@@ -54,7 +54,7 @@ public sealed record AdminExhibitorDetail(
     double? Longitude = null);
 
 /// <summary>
-/// D-199 #3 — body of <c>POST /api/v1/admin/exhibitors</c>. Creates the exhibitor
+/// Body of <c>POST /api/v1/admin/exhibitors</c>. Creates the exhibitor
 /// shell (name); accounts are provisioned afterwards via
 /// <c>POST /api/v1/admin/exhibitors/{id}/accounts</c>.
 /// </summary>
@@ -79,7 +79,7 @@ public sealed class CreateExhibitorRequest
     public ExhibitorTier? Tier { get; init; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; the email + primary phone reuse the
+    // directory. All optional; the email + primary phone reuse the
     // existing ContactEmail / ContactPhone above (no second slot).
     /// <summary>Optional same-DB country FK (nationality).</summary>
     public int? CountryId { get; init; }
@@ -112,8 +112,8 @@ public sealed class CreateExhibitorRequest
     public double? Longitude { get; init; }
 }
 
-/// <summary>D-199 #3 — body of <c>PUT /api/v1/admin/exhibitors/{id}</c>.
-/// Not sealed: the endpoint binds {id}+body via a derived route class (D-202).</summary>
+/// <summary>Body of <c>PUT /api/v1/admin/exhibitors/{id}</c>.
+/// Not sealed: the endpoint binds {id}+body via a derived route class.</summary>
 public class UpdateExhibitorRequest
 {
     /// <summary>English display name (1–256 chars).</summary>
@@ -135,7 +135,7 @@ public class UpdateExhibitorRequest
     public ExhibitorTier? Tier { get; init; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; the email + primary phone reuse the
+    // directory. All optional; the email + primary phone reuse the
     // existing ContactEmail / ContactPhone above (no second slot).
     /// <summary>Optional same-DB country FK (nationality).</summary>
     public int? CountryId { get; init; }
@@ -172,7 +172,7 @@ public class UpdateExhibitorRequest
 }
 
 /// <summary>
-/// D-199 #3 — one provisioned login account under an exhibitor. <c>UserId</c> is
+/// One provisioned login account under an exhibitor. <c>UserId</c> is
 /// the SimfUser id on the Identity database (logical FK).
 /// </summary>
 public sealed record ExhibitorAccountSummary(
@@ -182,14 +182,16 @@ public sealed record ExhibitorAccountSummary(
     string Email,
     string? RoleLabel,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>
-/// D-199 #3 — body of <c>POST /api/v1/admin/exhibitors/{id}/accounts</c>.
+/// Body of <c>POST /api/v1/admin/exhibitors/{id}/accounts</c>.
 /// Provisions a least-privilege login account tagged to the exhibitor. The
-/// account is created through the existing admin provisioning pipeline
-/// (a Visitor account) and an <c>ExhibitorMembership</c> row links it.
-/// Not sealed: the endpoint binds {id}+body via a derived route class (D-202).
+/// account is created through the existing admin provisioning pipeline as a
+/// partner-side account carrying the exhibitor profile type (so
+/// the booth officer can actually use the lead-capture tools), and an
+/// <c>ExhibitorMembership</c> row links it.
+/// Not sealed: the endpoint binds {id}+body via a derived route class.
 /// </summary>
 public class ProvisionExhibitorAccountRequest
 {
@@ -198,6 +200,31 @@ public class ProvisionExhibitorAccountRequest
 
     /// <summary>The new account's email address; must not already be registered.</summary>
     public string Email { get; init; } = string.Empty;
+
+    /// <summary>Optional free-text role label inside the exhibitor (≤128 chars).</summary>
+    public string? RoleLabel { get; init; }
+}
+
+/// <summary>
+/// Body of <c>POST /api/v1/admin/exhibitors/{id}/accounts/link</c>.
+/// Attaches an <b>existing</b> account to the exhibitor by writing the missing
+/// <c>ExhibitorMembership</c>. <c>ProvisionExhibitorAccountRequest</c> is the only
+/// other writer of that row, so an exhibitor-typed account created through the
+/// generic Others pipeline (<c>POST /admin/others</c>) or the Others walk-in desk
+/// had no membership at all — and therefore 403 on badge scan and on My Visitors,
+/// with no Control-Panel path to fix it (a current membership is half the
+/// authorisation). This is that path.
+/// Not sealed: the endpoint binds {id}+body via a derived route class.
+/// </summary>
+public class LinkExhibitorAccountRequest
+{
+    /// <summary>The existing account's login email (1–320 chars). Matched
+    /// case-insensitively against the Identity database.</summary>
+    public string Email { get; init; } = string.Empty;
+
+    /// <summary>Optional contact name for the membership row (≤256 chars).
+    /// Defaults to the account's display name, then to its email.</summary>
+    public string? ContactName { get; init; }
 
     /// <summary>Optional free-text role label inside the exhibitor (≤128 chars).</summary>
     public string? RoleLabel { get; init; }

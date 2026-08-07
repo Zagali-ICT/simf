@@ -11,7 +11,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-209 (A2 split): the Issue-1 RBAC role-assignment surface of
+/// The RBAC role-assignment surface of
 /// <see cref="AdminAccountService"/> — read + diff-apply an admin user's
 /// roles, with the last-administrator lockout guard. Split into its own
 /// partial-class file for navigability; behaviour and DI are unchanged
@@ -46,7 +46,7 @@ internal sealed partial class AdminAccountService
                 "The user was not found.",
                 "لم يتم العثور على المستخدم.");
 
-        // RBAC roles apply only to Admin-typed users (D-048).
+        // RBAC roles apply only to Admin-typed users.
         if (user.UserType != UserType.Admin)
         {
             throw new ApiException(

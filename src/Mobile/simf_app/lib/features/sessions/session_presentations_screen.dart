@@ -6,11 +6,13 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/presentation_models.dart';
 import 'data/presentation_repository.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
 import 'widgets/session_filter_tabs.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// **Sessions** — App "الجلسات" (Figma 1388:7621, Approved account), reached
 /// from the Home "الجلسات" tile. Sessions grouped by event day, each card a file
@@ -39,10 +41,7 @@ class _SessionPresentationsScreenState
   int _dayTab = 0;
 
   /// Pull-to-refresh — re-fetch the presentations (invalidate + await next).
-  Future<void> _refresh() async {
-    ref.invalidate(presentationsProvider);
-    await ref.read(presentationsProvider.future);
-  }
+  Future<void> _refresh() => refreshAsync(ref, presentationsProvider.future);
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +131,7 @@ class _Body extends StatelessWidget {
     }
 
     final isArabic = l10n.isArabic;
-    final nowUtc = DateTime.now().toUtc();
+    final nowUtc = saudiNow();
     final days = distinctLocalDays(items, (p) => p.sessionStartLocal);
     final tabLabels = <String>[
       l10n.sessionsTabAll,

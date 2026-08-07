@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/sponsors/export</c> — the D-356 grid export for
+/// <c>POST /api/v1/admin/sponsors/export</c> — the grid export for
 /// sponsors. All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>;
 /// this subclass only declares the route, permission, sheet/file names, the
 /// column layout (mirroring the Sponsors grid — Tier is exported by its display
@@ -35,7 +35,7 @@ public sealed class ExportSponsorsEndpoint(IAdminSponsorService service, IGridEx
         new("Url", row => row.Url),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
-        // D-502 — round-trip the bilingual tagline + about (appended so the
+        // Round-trip the bilingual tagline + about (appended so the
         // existing column order is unchanged; import binds by header name).
         new("Tagline", row => row.Tagline),
         new("TaglineArabic", row => row.TaglineArabic),
@@ -51,7 +51,7 @@ public sealed class ExportSponsorsEndpoint(IAdminSponsorService service, IGridEx
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/sponsors/import</c> — the D-356 grid import
+/// <c>POST /api/v1/admin/sponsors/import</c> — the grid import
 /// (insert-only) for sponsors. The base does the upload defence, parse and
 /// per-row error aggregation; this subclass binds one row to
 /// <see cref="AdminCreateSponsorRequest"/> and creates it. Tier is parsed from
@@ -59,7 +59,7 @@ public sealed class ExportSponsorsEndpoint(IAdminSponsorService service, IGridEx
 /// writes — back to its int value; an unknown tier raises a per-row error
 /// rather than aborting the batch.
 /// <para><b>Omitted column:</b> <c>ContactId</c> (the optional shared-Contact
-/// link, SIMF-FDS-014 / D-283) cannot be expressed as plain text in a bulk
+/// link) cannot be expressed as plain text in a bulk
 /// import — it is a directory FK chosen with the ContactPicker — so import
 /// always leaves it unset; an admin links a contact afterwards via Edit.</para>
 /// </summary>
@@ -97,7 +97,7 @@ public sealed class ImportSponsorsEndpoint(IAdminSponsorService service, IGridEx
             Url = NullIfBlank(row.Cells.GetValueOrDefault("Url", string.Empty)),
             DisplayOrder = int.TryParse(
                 row.Cells.GetValueOrDefault("DisplayOrder", string.Empty), out var order) ? order : 0,
-            // D-502 — optional bilingual tagline + about (CreateAsync trims and
+            // Optional bilingual tagline + about (CreateAsync trims and
             // length-guards them; absent columns simply stay null).
             Tagline = NullIfBlank(row.Cells.GetValueOrDefault("Tagline", string.Empty)),
             TaglineArabic = NullIfBlank(row.Cells.GetValueOrDefault("TaglineArabic", string.Empty)),

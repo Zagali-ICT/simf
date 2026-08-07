@@ -40,7 +40,7 @@ internal sealed class AdminRegionService(
                 || EF.Functions.Like(region.Code, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored; the
+        // CP grid per-column filters. Unknown columns are ignored; the
         // boolean isActive filter is parsed from its text value.
         foreach (var (column, raw) in query.Filters)
         {
@@ -118,7 +118,7 @@ internal sealed class AdminRegionService(
             throw DuplicateCode(v.Code);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var region = new Region
         {
             Id = Guid.NewGuid(),
@@ -132,13 +132,11 @@ internal sealed class AdminRegionService(
         db.Regions.Add(region);
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RegionCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={region.Id}; code={v.Code}; nameAr={v.NameAr}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RegionCreated,
+            actorUserId,
+            $"id={region.Id}; code={v.Code}; nameAr={v.NameAr}",
+            ct);
 
         logger.LogInformation(
             "Admin {ActorId} created Region {Code} ({Id})",
@@ -176,16 +174,14 @@ internal sealed class AdminRegionService(
         region.Name = v.NameEn;
         region.SortOrder = v.SortOrder;
         region.IsActive = request.IsActive;
-        region.UpdatedAt = timeProvider.GetUtcNow();
+        region.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RegionUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={region.Id}; code={v.Code}; active={region.IsActive}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RegionUpdated,
+            actorUserId,
+            $"id={region.Id}; code={v.Code}; active={region.IsActive}",
+            ct);
 
         return ToDetail(region);
     }
@@ -205,16 +201,11 @@ internal sealed class AdminRegionService(
         }
 
         region.Deactivate();
-        region.UpdatedAt = timeProvider.GetUtcNow();
+        region.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RegionDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={region.Id}; code={region.Code}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RegionDeactivated, actorUserId, $"id={region.Id}; code={region.Code}", ct);
     }
 
     private sealed record RegionDraft(string Code, string NameAr, string? NameEn, int SortOrder);

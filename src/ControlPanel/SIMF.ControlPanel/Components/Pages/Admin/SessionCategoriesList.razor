@@ -1,7 +1,7 @@
-@* B9b (D-226) — CP management for the dynamic session-category lookup
-   (SIMF-FDS-004 §5.4). Admin CRUD over a small bilingual lookup; the table
-   ships empty and is seeded by the team once the client confirms the list
-   (open item OI-2). Centralized dialog/full-page framing D-353: Add / Edit /
+@* CP management for the dynamic session-category lookup.
+   Admin CRUD over a small bilingual lookup; the table
+   ships empty and is seeded by the team once the client confirms the
+   list. Centralized dialog/full-page framing: Add / Edit /
    View / Delete are hosted by CrudShell, which frames the reusable
    SessionCategoriesAddEdit and SessionCategoriesViewDelete forms as a popup or
    a full page per the admin's toolbar choice (persisted in localStorage via
@@ -22,7 +22,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminSessionCategorySummary"
@@ -58,7 +60,12 @@
                           DeleteLabel="@L["Grid.Delete"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.SessionCategories.Create"
+                          EditPermission="@PermissionCatalog.SessionCategories.Edit"
+                          DeletePermission="@PermissionCatalog.SessionCategories.Delete"
+                          ImportPermission="@PermissionCatalog.SessionCategories.Import"
+                          ExportPermission="@PermissionCatalog.SessionCategories.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

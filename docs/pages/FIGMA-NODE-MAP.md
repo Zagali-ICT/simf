@@ -72,7 +72,7 @@ scan-contact / share-my-contact (FDS-014), registration-status (#11).
 |---|---|---|
 | Media gallery (#30) | Dissolved — content embedded in Home page | No standalone screen in V1 |
 | Audience comments (#28) | REMOVED from app (D-605, rejected by customer) — screen/route/tests deleted; backend teardown separate | — |
-| Guest mode (#12) | Not a separate screen — guest users see Home (`758-2910`) directly | — |
+| Guest mode (#12) | **A real screen** — `lib/features/guest/guest_mode_screen.dart`, routed at `/guest` (`RouteNames.guestMode`, router route 12), clean-code frozen D-644. It is the guest **landing** reached from the sign-in screen's "الدخول كزائر" link (D-325); "continue as guest" then enters the guest **Home** variant (`758-2910`). No pinned Figma node of its own — built from the Page 012 mockup. | — |
 
 ## Standard top-nav spec (from 758-1469 / 922-2824)
 - Header container: full width, bottom hairline border (`#c9a84c` ~0.1px / beige hairline).

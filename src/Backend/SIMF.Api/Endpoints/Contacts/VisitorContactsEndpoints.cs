@@ -1,15 +1,14 @@
 // Tests: SIMF.Api.Tests/VisitorContactSharingTests.cs
-using System.Security.Claims;
-using System.Text;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Contacts.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Contacts;
 
 namespace SIMF.Api.Endpoints.Contacts;
 
-// SIMF-FDS-014 §5.7 (D-284, Track 2) — visitor-to-visitor contact sharing (app
+// Visitor-to-visitor contact sharing (app
 // audience). App-only, no CP surface and no permission code — these self-service
 // visitor features key off RequireApprovedAccount + the app token (matching
 // Connection), which does NOT violate the new-page-needs-
@@ -28,11 +27,7 @@ public sealed class GetShareTokenEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await Send.OkAsync(ApiResult<VisitorShareTokenResponse>.Ok(
             await service.GetOrMintTokenAsync(userId, ct)), ct);
     }
@@ -52,11 +47,7 @@ public sealed class RotateShareTokenEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         await Send.OkAsync(ApiResult<VisitorShareTokenResponse>.Ok(
             await service.RotateTokenAsync(userId, ct)), ct);
     }
@@ -93,11 +84,7 @@ public sealed class SaveContactEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(SaveContactRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var ownerUserId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var ownerUserId = User.ActorId();
         await Send.OkAsync(ApiResult<SavedContactRow>.Ok(
             await service.SaveAsync(ownerUserId, req.Token, req.Note, ct)), ct);
     }
@@ -116,11 +103,7 @@ public sealed class ListSavedContactsEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var ownerUserId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var ownerUserId = User.ActorId();
         await Send.OkAsync(ApiResult<IReadOnlyList<SavedContactRow>>.Ok(
             await service.ListSavedAsync(ownerUserId, ct)), ct);
     }
@@ -142,11 +125,7 @@ public sealed class RemoveSavedContactEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(SavedContactRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var ownerUserId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var ownerUserId = User.ActorId();
         await service.RemoveSavedAsync(ownerUserId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -166,71 +145,14 @@ public sealed class SavedContactVCardEndpoint(IVisitorShareService service)
 
     public override async Task HandleAsync(SavedContactRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var ownerUserId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var ownerUserId = User.ActorId();
         var card = await service.GetSavedCardAsync(ownerUserId, req.Id, ct);
-        var vcard = BuildVCard(card);
 
-        HttpContext.Response.ContentType = "text/vcard; charset=utf-8";
+        // FR-EXH-002 — the rendering moved to the shared VisitorCardVCard so the
+        // exhibitor lead export is the same vCard, not a second copy of it. The
+        // bytes this endpoint returns are unchanged.
+        HttpContext.Response.ContentType = VisitorCardVCard.ContentType;
         HttpContext.Response.Headers.ContentDisposition = "attachment; filename=\"simf-contact.vcf\"";
-        await HttpContext.Response.WriteAsync(vcard, ct);
+        await HttpContext.Response.WriteAsync(VisitorCardVCard.Build(card), ct);
     }
-
-    // vCard 3.0 (mirrors the My-Area contact-card export). The visitor card adds
-    // TEL (Saudi + international mobile) and EMAIL over the My-Area shape.
-    private static string BuildVCard(VisitorCard card)
-    {
-        var displayName = !string.IsNullOrWhiteSpace(card.Name) ? card.Name : card.NameArabic;
-        var sb = new StringBuilder();
-        sb.Append("BEGIN:VCARD\r\n");
-        sb.Append("VERSION:3.0\r\n");
-        sb.Append("FN:").Append(Escape(displayName)).Append("\r\n");
-        sb.Append("N:").Append(Escape(displayName)).Append(";;;;\r\n");
-        if (!string.IsNullOrWhiteSpace(card.JobTitle))
-        {
-            sb.Append("TITLE:").Append(Escape(card.JobTitle!)).Append("\r\n");
-            // Bilingual title (2026-07-20): the Arabic title as a language-tagged
-            // second TITLE (RFC 6350 LANGUAGE param); parsers that keep only the
-            // first still get the English one.
-            if (!string.IsNullOrWhiteSpace(card.JobTitleArabic))
-            {
-                sb.Append("TITLE;LANGUAGE=ar:").Append(Escape(card.JobTitleArabic!)).Append("\r\n");
-            }
-        }
-        else if (!string.IsNullOrWhiteSpace(card.JobTitleArabic))
-        {
-            // Arabic-only title → emit it as the sole (untagged) TITLE so every
-            // parser shows it.
-            sb.Append("TITLE:").Append(Escape(card.JobTitleArabic!)).Append("\r\n");
-        }
-        if (!string.IsNullOrWhiteSpace(card.Organisation))
-        {
-            sb.Append("ORG:").Append(Escape(card.Organisation!)).Append("\r\n");
-        }
-        if (!string.IsNullOrWhiteSpace(card.Email))
-        {
-            sb.Append("EMAIL;TYPE=INTERNET:").Append(Escape(card.Email!)).Append("\r\n");
-        }
-        if (!string.IsNullOrWhiteSpace(card.SaudiMobile))
-        {
-            sb.Append("TEL;TYPE=CELL:").Append(Escape(card.SaudiMobile!)).Append("\r\n");
-        }
-        if (!string.IsNullOrWhiteSpace(card.InternationalMobile))
-        {
-            sb.Append("TEL;TYPE=CELL:").Append(Escape(card.InternationalMobile!)).Append("\r\n");
-        }
-        sb.Append("END:VCARD\r\n");
-        return sb.ToString();
-    }
-
-    // vCard text escaping (RFC 6350 §3.4).
-    private static string Escape(string value) => value
-        .Replace("\\", "\\\\")
-        .Replace(";", "\\;")
-        .Replace(",", "\\,")
-        .Replace("\r\n", "\\n")
-        .Replace("\n", "\\n");
 }

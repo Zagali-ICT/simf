@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>One row in the admin Speakers grid (D-151 — SIMF-DAT-001 §5.4).
-/// D-153 — the country is carried as <c>CountryId</c> (ISO 3166-1 numeric,
+/// <summary>One row in the admin Speakers grid.
+/// The country is carried as <c>CountryId</c> (ISO 3166-1 numeric,
 /// FK to <c>Country.Id</c>) with the display names (<c>CountryNameEn</c> /
 /// <c>CountryNameAr</c>) projected alongside so the grid renders the country
 /// column without a second fetch.
@@ -24,9 +24,9 @@ public sealed record AdminSpeakerSummary(
     int DisplayOrder,
     bool IsActive,
     bool HasPhoto,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
-/// <summary>Full speaker detail (Details + Edit modals). D-153 carries
+/// <summary>Full speaker detail (Details + Edit modals). Carries
 /// the full bilingual rich-text set + consent toggles + social URLs +
 /// the optional <c>UserProfileId</c> link to a SIMF account.</summary>
 public sealed record AdminSpeakerDetail(
@@ -57,10 +57,10 @@ public sealed record AdminSpeakerDetail(
     string? PhotoRelativePath,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality reuses CountryId above
+    // directory. All optional; nationality reuses CountryId above
     // (no second country slot). The service now populates all of these in
     // ToDetail; the trailing defaults are kept so an ad-hoc caller can omit
     // the block.
@@ -91,10 +91,10 @@ public sealed class AdminCreateSpeakerRequest
     public string? Awards { get; set; }
     public string? AwardsArabic { get; set; }
 
-    /// <summary>D-153 — default false; admin must opt-in per speaker.</summary>
+    /// <summary>Default false; admin must opt-in per speaker.</summary>
     public bool AllowsMeetingRequests { get; set; }
 
-    /// <summary>D-153 — default false; admin must opt-in per speaker.</summary>
+    /// <summary>Default false; admin must opt-in per speaker.</summary>
     public bool AllowsDataSharing { get; set; }
 
     public string? FacebookUrl { get; set; }
@@ -104,7 +104,7 @@ public sealed class AdminCreateSpeakerRequest
     public int DisplayOrder { get; set; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality reuses CountryId above.
+    // directory. All optional; nationality reuses CountryId above.
     public string? Email { get; set; }
     public string? PhonePrimary { get; set; }
     public string? PhoneSecondary { get; set; }
@@ -115,7 +115,9 @@ public sealed class AdminCreateSpeakerRequest
     public double? Longitude { get; set; }
 }
 
-public sealed class AdminUpdateSpeakerRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateSpeakerRequest
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -141,7 +143,7 @@ public sealed class AdminUpdateSpeakerRequest
     public int DisplayOrder { get; set; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality reuses CountryId above.
+    // directory. All optional; nationality reuses CountryId above.
     public string? Email { get; set; }
     public string? PhonePrimary { get; set; }
     public string? PhoneSecondary { get; set; }

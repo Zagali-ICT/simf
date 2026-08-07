@@ -44,17 +44,24 @@ class AccountEmailField extends StatelessWidget {
       children: <Widget>[
         SimfFieldLabel(label, color: SimfTokens.navy),
         const SizedBox(height: SimfTokens.space2),
-        TextFormField(
-          controller: controller,
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: autofillHints,
-          maxLength: maxLength,
-          enabled: enabled,
-          onChanged: onChanged,
-          style: simfInputStyle,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: validator,
-          decoration: simfFieldDecoration(counterText: ''),
+        // The visible [SimfFieldLabel] is a sibling Text, not the field's own
+        // name, so the sign-in / sign-up email box announced as a bare "edit
+        // box" (BUG-012). Attaching it here names the field, paint unchanged.
+        Semantics(
+          label: label,
+          textField: true,
+          child: TextFormField(
+            controller: controller,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: autofillHints,
+            maxLength: maxLength,
+            enabled: enabled,
+            onChanged: onChanged,
+            style: simfInputStyle,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: validator,
+            decoration: simfFieldDecoration(counterText: ''),
+          ),
         ),
       ],
     );
@@ -103,31 +110,38 @@ class AccountPasswordField extends StatelessWidget {
       children: <Widget>[
         SimfFieldLabel(label, color: SimfTokens.navy),
         const SizedBox(height: SimfTokens.space2),
-        TextFormField(
-          controller: controller,
-          obscureText: obscure,
-          autofillHints: autofillHints,
-          maxLength: maxLength,
-          enabled: enabled,
-          onChanged: onChanged,
-          onFieldSubmitted: onSubmitted,
-          style: simfInputStyle,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: validator,
-          decoration: simfFieldDecoration(
-            counterText: '',
-            suffixIcon: IconButton(
-              tooltip: obscure
-                  ? l10n.showPasswordTooltip
-                  : l10n.hidePasswordTooltip,
-              // The eye tint matches the field's resting border (D-674) rather
-              // than the muted grey, so the suffix reads as part of the field.
-              icon: SimfSvgIcon(
-                obscure ? AppAssets.authEyeOff : AppAssets.authEye,
-                size: 16,
-                color: SimfTokens.beigeBorder,
+        // See [AccountEmailField] — the sibling label is not the field's own
+        // accessible name (BUG-012).
+        Semantics(
+          label: label,
+          textField: true,
+          child: TextFormField(
+            controller: controller,
+            obscureText: obscure,
+            autofillHints: autofillHints,
+            maxLength: maxLength,
+            enabled: enabled,
+            onChanged: onChanged,
+            onFieldSubmitted: onSubmitted,
+            style: simfInputStyle,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: validator,
+            decoration: simfFieldDecoration(
+              counterText: '',
+              suffixIcon: IconButton(
+                tooltip: obscure
+                    ? l10n.showPasswordTooltip
+                    : l10n.hidePasswordTooltip,
+                // The eye tint matches the field's resting border (D-674)
+                // rather than the muted grey, so the suffix reads as part of
+                // the field.
+                icon: SimfSvgIcon(
+                  obscure ? AppAssets.authEyeOff : AppAssets.authEye,
+                  size: 16,
+                  color: SimfTokens.beigeBorder,
+                ),
+                onPressed: onToggleObscure,
               ),
-              onPressed: onToggleObscure,
             ),
           ),
         ),

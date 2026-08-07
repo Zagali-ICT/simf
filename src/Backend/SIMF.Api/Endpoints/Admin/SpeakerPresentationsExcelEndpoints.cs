@@ -8,8 +8,8 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/speaker-presentations/export</c> — the D-356 grid export
-/// for the speaker presentation-file list (P2.3 / D-228, FR-407). <b>Export only:</b>
+/// <c>POST /api/v1/admin/speaker-presentations/export</c> — the grid export
+/// for the speaker presentation-file list. <b>Export only:</b>
 /// no generic import is added (presentations are binary files uploaded one at a
 /// time, not flat rows).
 /// <para>

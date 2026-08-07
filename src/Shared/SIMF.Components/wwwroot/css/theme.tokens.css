@@ -132,6 +132,22 @@
   --font-size-body-small: 0.8125rem;     /* 13px */
   --font-weight-bold: var(--font-weight-heading);  /* 700 */
 
+  /* §6.16 (D3-003) — the four tiers the component sheet was already using as
+     bare literals. Naming them is the whole point: they were not "extra" sizes
+     invented here, they are the values in the shipped CSS, now on the scale and
+     therefore changeable in one place.
+       micro       — count / "Soon" pills (was 0.65rem and 0.7rem)
+       body-large  — walk-in card names, badge QR id, section legends
+       heading-lg  — the 2FA code input and the printed badge name
+       display     — the dashboard's headline stat number
+     Note the type scale is absolute; the two `em` sizes left in the sheet
+     (.simf-country__flag, .simf-speaker-card__country) are deliberately
+     RELATIVE to their parent and are not scale steps. */
+  --font-size-micro: 0.6875rem;          /* 11px */
+  --font-size-body-large: 1rem;          /* 16px */
+  --font-size-heading-lg: 1.25rem;       /* 20px */
+  --font-size-display: 1.75rem;          /* 28px */
+
   /* Monospace stack — log viewer, code cells (one canonical name + alias). */
   --font-family-mono: ui-monospace, "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
   --font-mono: var(--font-family-mono);
@@ -167,6 +183,16 @@
   --shadow-sm: 0 1px 3px rgba(26, 36, 51, 0.12);
   --shadow-2: var(--shadow-card);
 
+  /* §6.16 (D3-004 / D3-005 / D3-006) — overlay + scrim colours that were raw
+     rgba() literals at their use sites. A literal cannot follow a theme switch:
+     the grid's loading overlay hardcoded a white wash for light and a navy wash
+     for dark, and had NO grey-theme value at all, so switching to grey left the
+     white light-theme wash over grey surfaces. These are per-theme tokens. */
+  --color-scrim: rgba(26, 36, 51, 0.45);        /* modal backdrop */
+  --color-overlay-wash: rgba(255, 255, 255, 0.55); /* busy wash over a surface */
+  --color-scrim-strong: rgba(0, 0, 0, 0.40);    /* framework reconnect backdrop */
+  --shadow-reconnect: 0 3px 6px 2px rgba(0, 0, 0, 0.30);
+
   /* Seat-plan states (SessionSeatPlan / SessionLiveHall). Colours match the
      MOBILE APP seat map (owner: same colour per case in app + CP): user/"mine"
      = the app gold, admin/reserved = the app navy, random = a distinct naval
@@ -183,6 +209,48 @@
   --color-seat-confirmed: var(--color-success);
   --color-seat-contrast: #FFFFFF;      /* label on dark navy/steel seats */
   --color-seat-user-contrast: #01132D; /* navy label on the gold user seat */
+  /* The label on the RANDOM seat. Its own token because the dark theme has to
+     lighten that seat past the point where a white label still reads — see the
+     dark-theme block below. Light theme: identical to --color-seat-contrast. */
+  --color-seat-random-contrast: var(--color-seat-contrast);
+  /* D-771 seat TIERS (Normal / VIP / VVIP). The tier is a property of the row,
+     so these tint the row BAND, not the seat squares (which keep their
+     reservation-state colours above). Deep red = VVIP protocol seating and deep
+     teal = VIP, matching the seeded VVIP / VIP profile-type badge colours so the
+     tier reads the same on a badge and on a seat plan. */
+  --color-seat-tier-vvip: #B91C1C;
+  --color-seat-tier-vip: #0E7490;
+  --color-seat-tier-normal: var(--color-border);
+
+  /* -- Chart series palette (dashboard charts) -------------------------------
+     A categorical palette: each slot identifies ONE metric, assigned in fixed
+     order and never cycled. The brand tokens themselves are not usable here —
+     --color-primary is too dark and too low-chroma to sit in the readable band,
+     and the brand gold falls under 3:1 against a white surface — so these are
+     brand-adjacent steps chosen to satisfy the measurable checks:
+
+       lightness band  OKLCH L within 0.43-0.77 (light) / 0.48-0.67 (dark)
+       chroma floor    OKLCH C >= 0.10 (below it a hue reads as grey)
+       CVD separation  worst adjacent OKLab dE >= 8.0 under protan/deutan
+       contrast        >= 3:1 against the chart surface
+
+     Verified: light/grey worst adjacent dE 9.4 (deutan), tritan 31.0, normal
+     25.7; dark worst adjacent dE 9.2 (protan), tritan 30.1, normal 24.0. Every
+     value passes all checks on --color-surface for its theme. Re-run the
+     validation if any value here changes — do not eyeball a replacement.
+
+     The grey theme deliberately has no override: this palette was verified
+     against the grey surface (#E9EAEB) and passes unchanged. */
+  --chart-series-1: #2A6FB5;   /* slot 1 — blue  */
+  --chart-series-2: #C2410C;   /* slot 2 — orange */
+  --chart-series-3: #1B8A63;   /* slot 3 — green  */
+
+  /* Chart furniture — recessive by design: the data carries the ink, the
+     gridlines only orient it. */
+  --chart-grid: var(--color-border);
+  --chart-axis: var(--color-text-muted);
+  --chart-baseline: var(--color-text-muted);
+  --chart-track: var(--color-surface-sunken);
 }
 
 /* ----------------------------------------------------------------------------
@@ -223,6 +291,38 @@
                  0 8px 24px rgba(0, 0, 0, 0.40);
 
   --pattern-opacity: 0.18;
+
+  /* Chart series — SELECTED for the dark surface (#16233A), not an automatic
+     lightening of the light steps: they are re-stepped into the dark lightness
+     band (L 0.48-0.67) and re-verified against that surface.
+     Worst adjacent OKLab dE 9.2 (protan), tritan 30.1, normal 24.0, all >= 3:1. */
+  --chart-series-1: #4A8CD4;
+  --chart-series-2: #D9683C;
+  --chart-series-3: #2E9D74;
+
+  /* §6.16 (D3-005) — the busy wash follows the theme instead of staying white. */
+  --color-overlay-wash: rgba(14, 24, 38, 0.55);
+
+  /* §6.16 (DT-003) — seat states in the dark theme.
+     The seat colours above are the MOBILE APP's, chosen against the app's light
+     seat board. --color-seat-free aliases --color-surface-sunken, so in dark
+     theme the board becomes #101D30 and the reserved/admin seat (#01132D) lands
+     at 1.10:1 against it — and because the seat sets its BORDER to the same
+     colour, a reserved seat rendered as a hole in the grid rather than a seat.
+     Free seats kept their #2B3D57 border, so the two states were inverted: the
+     empty seat was the visible one.
+
+     Lightened along the SAME hues, so a reserved seat still reads navy and a
+     random seat still reads steel. Measured against the dark board (#101D30),
+     WCAG 2.2 1.4.11 non-text contrast, 3:1 target:
+       admin  #3F6BA6 → 3.12:1 board, 5.43:1 white label
+       random #8CB0D6 → 7.50:1 board, 8.21:1 navy  label
+     and 2.41:1 between the two seat kinds, close to the light theme's 2.68:1.
+     Random has to go light enough that a white label no longer reads on it,
+     which is what --color-seat-random-contrast is for. */
+  --color-seat-admin: #3F6BA6;
+  --color-seat-random: #8CB0D6;
+  --color-seat-random-contrast: #01132D;
 }
 
 /* ----------------------------------------------------------------------------
@@ -266,4 +366,9 @@
                  0 4px 14px rgba(31, 39, 49, 0.10);
 
   --pattern-opacity: 0.14;
+
+  /* §6.16 (D3-005) — the grey theme had NO overlay value at all: the busy wash
+     was declared only for light and dark, so a grid loading over grey surfaces
+     got the white light-theme wash. This is the specific gap in that finding. */
+  --color-overlay-wash: rgba(210, 212, 214, 0.60);
 }

@@ -1,11 +1,11 @@
-@* D-096 — CP TOTP re-pairing page. Renders the QR + otpauth URI for the
+@* CP TOTP re-pairing page. Renders the QR + otpauth URI for the
    caller's CURRENT authenticator secret without rotating it. Used by an
    admin (typically the seeded super-admin) whose authenticator device
    was lost or whose initial pairing failed — re-scanning here does NOT
    reset the secret, so existing recovery codes survive and the sign-in
    flow continues to verify against the same key.
 
-   D-102 — the Verify section below confirms the scan worked without
+   The Verify section below confirms the scan worked without
    mutating state (no replay-guard update), so the user can immediately
    use the same code (or the next one) to sign in. *@
 @page "/account/totp-pairing"

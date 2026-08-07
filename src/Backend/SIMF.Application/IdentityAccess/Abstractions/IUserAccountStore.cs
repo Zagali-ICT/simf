@@ -3,7 +3,7 @@ using SIMF.Domain.IdentityAccess;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// R3.5 — D-094: lookups + lifecycle for the <see cref="SimfUser"/>
+/// Lookups + lifecycle for the <see cref="SimfUser"/>
 /// aggregate. Split out of the 22-method <see cref="IUserAccountRepository"/>
 /// so an Application service that only needs to find a user (or create a
 /// new one, or persist field changes) does not have to depend on the

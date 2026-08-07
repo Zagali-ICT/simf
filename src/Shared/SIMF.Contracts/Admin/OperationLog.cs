@@ -1,10 +1,10 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>One row in the admin Operation log viewer (D-134 Sprint A —
-/// read-only over the existing <c>OperationLogEntry</c> table).</summary>
+/// <summary>One row in the admin Operation log viewer — read-only over
+/// the existing <c>OperationLogEntry</c> table.</summary>
 public sealed record AdminOperationLogSummary(
     Guid Id,
-    DateTimeOffset Timestamp,
+    DateTime Timestamp,
     string EventType,
     string Outcome,
     string? SubjectEmail,
@@ -17,7 +17,7 @@ public sealed record AdminOperationLogSummary(
 /// full row including UserAgent + Detail.</summary>
 public sealed record AdminOperationLogDetail(
     Guid Id,
-    DateTimeOffset Timestamp,
+    DateTime Timestamp,
     string EventType,
     string Outcome,
     string? SubjectEmail,

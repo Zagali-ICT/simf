@@ -27,7 +27,7 @@ internal sealed class RatingFormService(
     private const int MaxStars = 5;
     private const int CommentMaxLength = 2000;
 
-    /// <summary>Event-local offset (UTC+3) — the codebase convention for bucketing
+    /// <summary>Event-local offset (+03:00) — the codebase convention for bucketing
     /// sessions / scans into calendar days (mirrors <c>ProgrammeSessionService</c>,
     /// <c>MyAreaService</c> and <c>ProgrammeRatingPromptWorker</c>).</summary>
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
@@ -74,11 +74,11 @@ internal sealed class RatingFormService(
 
         var existing = await LoadExistingAsync(userId, type.Id, targetId, cancellationToken);
 
-        // D-713 (item 8) — the rated session's title + date, for the app's
+        // The rated session's title + date, for the app's
         // "watched at {session} · {date}" header. Session scope only; a one-row
         // projection (Global/Day carry no header).
         string? targetName = null, targetNameArabic = null;
-        DateTimeOffset? targetStart = null;
+        DateTime? targetStart = null;
         if (type.Scope == RatingScope.PerSession && targetId != Guid.Empty)
         {
             var session = await dbContext.Sessions.AsNoTracking()
@@ -130,7 +130,7 @@ internal sealed class RatingFormService(
                 $"يجب ألا يتجاوز التعليق {CommentMaxLength} حرفاً.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var existing = await dbContext.RatingResponses
             .Include(r => r.Answers)
@@ -171,14 +171,12 @@ internal sealed class RatingFormService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = revised ? AuditEvents.RatingRevised : AuditEvents.RatingSubmitted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = userId,
-            Detail = $"responseId={response.Id}; type={type.Code}; target={response.TargetId}; " +
+        await auditLog.WriteSuccessAsync(
+            revised ? AuditEvents.RatingRevised : AuditEvents.RatingSubmitted,
+            userId,
+            $"responseId={response.Id}; type={type.Code}; target={response.TargetId}; " +
                      $"overall={response.OverallStars}; answers={answers.Count}",
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "User {UserId} {Action} rating {ResponseId} for type {Code} ({Answers} answers)",
@@ -236,7 +234,7 @@ internal sealed class RatingFormService(
         }
 
         // Each targeted scope validates against its own table. An unhandled scope
-        // is a programming error (append-only enum, D-110) — fail loud rather than
+        // is a programming error (the enum is append-only) — fail loud rather than
         // silently accepting an unvalidated target.
         var exists = type.Scope switch
         {
@@ -311,7 +309,7 @@ internal sealed class RatingFormService(
         {
             return false; // target already validated by ResolveTargetAsync; stay defensive
         }
-        var dayStart = new DateTimeOffset(day.ToDateTime(TimeOnly.MinValue), EventOffset);
+        var dayStart = day.ToDateTime(TimeOnly.MinValue);
         var dayEnd = dayStart.AddDays(1);
 
         var inHall = await dbContext.HallAttendances.AnyAsync(

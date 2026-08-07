@@ -5,7 +5,7 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// R4 — D-209: persistence seam for <see cref="UserProfileService"/>. The
+/// Persistence seam for <see cref="UserProfileService"/>. The
 /// service genuinely spans both databases — the profile + its lookups
 /// (ProfileType, Interest, Country) live on the App DB, while the owning
 /// account + admin recipients live on the Identity DB — so this gateway
@@ -32,11 +32,11 @@ public interface IUserProfileRepository
     /// <see cref="SaveAppChangesAsync"/>).</summary>
     void Add(UserProfile profile);
 
-    /// <summary>H-1 — true when ANOTHER profile (<c>UserId != excludeUserId</c>)
+    /// <summary>True when ANOTHER profile (<c>UserId != excludeUserId</c>)
     /// already carries one of the supplied non-null identity blind-index hashes
     /// (National ID / Iqama / passport). The self-exclusion lets a user re-save
     /// their OWN id without a false duplicate. Null hashes are ignored. A plain
-    /// single-context read on the App DB — no cross-DB JOIN (D-157).</summary>
+    /// single-context read on the App DB — never a cross-DB JOIN.</summary>
     Task<bool> AnyOtherProfileWithIdentityHashAsync(
         Guid excludeUserId, string? nationalIdHash, string? iqamaNumberHash,
         string? passportNumberHash, CancellationToken cancellationToken = default);
@@ -50,13 +50,13 @@ public interface IUserProfileRepository
     Task<string?> GetIdImagePathAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
-    /// <summary>V-1 (D-429) — the relative path of the stored VVIP/VIP welcome
+    /// <summary>The relative path of the stored VVIP/VIP welcome
     /// photo, or null when the profile has none. A one-column projection (no
     /// tracking) for the per-image read path.</summary>
     Task<string?> GetVipPhotoPathAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
-    /// <summary>D-568 (Wave C S4/S5) — the active <c>StoredFile</c>'s storage locator
+    /// <summary>The active <c>StoredFile</c>'s storage locator
     /// (key + content-type + encrypted flag) for a Confidential owner-scoped service
     /// (<see cref="FileService.VipPhoto"/>, <see cref="FileService.IdDocument"/>) + an
     /// owner, or null when none. Owner-scoped (<c>Service=service,
@@ -69,7 +69,7 @@ public interface IUserProfileRepository
     Task<ProfileTypeRole?> GetAssignedProfileTypeRoleAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
-    /// <summary>D-374 — the scalar facts behind the profile-completeness
+    /// <summary>The scalar facts behind the profile-completeness
     /// flag (one projected row, no entity/Interests hydration — this runs on
     /// every <c>/users/me</c> hydration), or null when no profile row exists.</summary>
     Task<ProfileCompletenessFacts?> GetCompletenessFactsAsync(
@@ -82,7 +82,7 @@ public interface IUserProfileRepository
     Task<ProfileTypeFacts?> FindProfileTypeAsync(
         Guid profileTypeId, CancellationToken cancellationToken = default);
 
-    /// <summary>D-373 — the next value of the registration-reference SQL
+    /// <summary>The next value of the registration-reference SQL
     /// sequence (concurrency-safe, monotonic). The service formats it as
     /// <c>SIMF-&lt;year&gt;-&lt;value:D8&gt;</c>.</summary>
     Task<long> NextRegistrationReferenceAsync(
@@ -107,12 +107,12 @@ public interface IUserProfileRepository
     Task<string> ResolveCountryCodeAsync(
         int id, CancellationToken cancellationToken = default);
 
-    /// <summary>B3 — D-221: true when the id is an active <c>Organisation</c>
+    /// <summary>True when the id is an active <c>Organisation</c>
     /// row. Used to validate the profile's الجهة pick at write time.</summary>
     Task<bool> OrganisationExistsActiveAsync(
         Guid id, CancellationToken cancellationToken = default);
 
-    /// <summary>D-611 (Wave B): true when the id is an active <c>Region</c>
+    /// <summary>True when the id is an active <c>Region</c>
     /// row. Used to validate the profile's المنطقة pick at write time.</summary>
     Task<bool> RegionExistsActiveAsync(
         Guid id, CancellationToken cancellationToken = default);
@@ -146,14 +146,14 @@ public interface IUserProfileRepository
 }
 
 /// <summary>Active + scope facts read off a <see cref="UserProfileType"/>.
-/// C5 (D-371) added the audience flag + name so the self-pick lock
+/// The audience flag + name are carried so the self-pick lock
 /// ("Visitor → Normal only") can be enforced in the service.</summary>
 public sealed record ProfileTypeFacts(
     bool IsActive, UserType UserType, bool IsForVisitor, string Name,
-    // D-729 (owner item 15) — the VIP-tier flag (VVIP/VIP), so the app profile
+    // The VIP-tier flag (VVIP/VIP), so the app profile
     // read can report IsVip for the speaker-meeting CTA gate.
     bool AllowsVipMeetingSlots,
-    // R1 audit fix (D-725) — the self-registration picker visibility flag, so the
+    // The self-registration picker visibility flag, so the
     // self-service write path (UpsertMineAsync) can reject a self-picked CP-only
     // (IsAppRegisterable=false) operational type, mirroring the server-side filter
     // on GET /app/account/profile-types instead of trusting the client.
@@ -162,11 +162,18 @@ public sealed record ProfileTypeFacts(
 /// <summary>Audience flag + mobile role read off an assigned profile type.</summary>
 public sealed record ProfileTypeRole(bool IsVisitor, MobileAppRole MobileAppRole);
 
-/// <summary>D-374 — the facts the completeness rule reads (names + ≥1
-/// interest + the C7 male-photo rule), projected in one row.</summary>
+/// <summary>The facts the completeness rule reads (names + ≥1
+/// interest + the male-photo rule), projected in one row.
+/// <para><paramref name="IsVisitorProfileType"/> says whether the
+/// row belongs to an AUDIENCE registrant (no profile type yet, or one with
+/// <c>IsForVisitor=true</c>). The interest / ID-document / male-face evidence rules
+/// are a visitor-registration requirement and must not lock an operational
+/// partner-side account (a gate operator, a moderator) out of the app. Appended
+/// with a default so the record stays append-only.</para></summary>
 public sealed record ProfileCompletenessFacts(
     string? Name, string? NameArabic, Gender Gender,
-    string? IdImageRelativePath, bool HasInterests);
+    string? IdImageRelativePath, bool HasInterests,
+    bool IsVisitorProfileType = true);
 
 /// <summary>An approved Admin account — a notification recipient.</summary>
 public sealed record PendingAdminRecipient(Guid Id, string? Email, string? DisplayName);

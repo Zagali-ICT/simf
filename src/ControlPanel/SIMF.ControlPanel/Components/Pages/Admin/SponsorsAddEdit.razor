@@ -1,9 +1,9 @@
-@* D-353 — reusable Sponsor Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Sponsor Add/Edit form, hosted by CrudShell (popup or full
    page) from SponsorsList. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). IsEdit
    =false runs Create (POST); IsEdit=true runs Edit (PUT against Initial) and
    shows the IsActive checkbox. Preserves the tier dropdown, the optional
-   shared-Contact link (SIMF-FDS-014 / D-283) and the same create/update request
+   shared-Contact link and the same create/update request
    DTOs + JS calls the inline SimfModal form used. *@
 @inherits CrudAddEditFormBase<AdminSponsorDetail>
 
@@ -44,7 +44,7 @@
                        ValueExpression="@(() => _model.Url)"
                        MaxLength="512"
                        Disabled="_busy" />
-        @* D-432 — optional bilingual tagline shown under the sponsor name. *@
+        @* Optional bilingual tagline shown under the sponsor name. *@
         <SimfTextField Label="@L["Admin.Sponsors.Field.TaglineAr"]"
                        Value="@_model.TaglineAr"
                        ValueChanged="@(v => _model.TaglineAr = v)"
@@ -91,7 +91,7 @@
                 @L["Admin.Sponsors.Field.IsActive"]
             </SimfCheckbox>
         }
-        @* D-357 — logo via the unified media-asset pipeline (edit only; the row
+        @* Logo via the unified media-asset pipeline (edit only; the row
            must exist before bytes can be attached). *@
         @if (IsEdit && Initial is not null)
         {
@@ -102,7 +102,7 @@
         }
     </div>
 
-    @* Contact information (D-766: identity-card fields inlined from the removed
+    @* Contact information (identity-card fields inlined from the removed
        shared Contact directory). The website slot is the Url field above. *@
     <SimfFormSection Title="@L["Admin.ContactField.Heading"]">
         <div class="simf-form__grid">

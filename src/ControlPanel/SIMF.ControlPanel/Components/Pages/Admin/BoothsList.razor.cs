@@ -1,13 +1,10 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Exhibitors;
 
@@ -223,7 +220,7 @@ public partial class BoothsList
         _target = null;
     }
 
-    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    // Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminBoothSummary> selected) =>
         _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
 

@@ -3,10 +3,10 @@ using SIMF.Common.Enums;
 namespace SIMF.Contracts.Account;
 
 /// <summary>
-/// The My-Area (منطقتي) personal dashboard — App Screen 14 (Page_014). One
+/// The My-Area (منطقتي) personal dashboard — the app's Page_014 screen. One
 /// additive, read-only aggregate over existing App-DB tables: the identity
 /// card, the two stat counters, and today's merged schedule. No schema change,
-/// no migration (D-249). Counter / schedule rules live in
+/// no migration. Counter / schedule rules live in
 /// <c>docs/App/Page_014/Page_014_Logic.md</c>.
 /// </summary>
 public sealed record MyAreaDashboard(
@@ -18,7 +18,7 @@ public sealed record MyAreaDashboard(
 /// The identity card. Names + QR id come from the user's <c>UserProfile</c>;
 /// the tier (name + colour) from the assigned <c>ProfileType</c>; the avatar
 /// from the account. <see cref="QrId"/> is null until the account is Approved
-/// (Page_014 L-1) — the card still renders, but the badge QR is hidden.
+/// — the card still renders, but the badge QR is hidden.
 /// </summary>
 public sealed record MyAreaIdentity(
     string FullNameAr,
@@ -31,10 +31,10 @@ public sealed record MyAreaIdentity(
     // True for audience profile types, false for partner/exhibitor ("Other")
     // types — drives the QR-page actions (visitor: read/share contact;
     // exhibitor: scan visitor badges → My Visitors). Defaults true when no
-    // ProfileType is assigned (D-426). Additive wire field.
+    // ProfileType is assigned. Additive wire field.
     bool IsVisitor = true);
 
-/// <summary>The two stat counters (Page_014 L-2, L-3).</summary>
+/// <summary>The two stat counters shown on the dashboard.</summary>
 public sealed record MyAreaCounters(
     int BookedSessionsCount,
     int MeetingsCount);
@@ -53,8 +53,8 @@ public sealed record MyAreaCounters(
 /// </summary>
 public sealed record MyAreaScheduleItem(
     string Kind,
-    DateTimeOffset Start,
-    DateTimeOffset? End,
+    DateTime Start,
+    DateTime? End,
     string TitleEn,
     string TitleAr,
     string? HallNameEn,
@@ -72,28 +72,29 @@ public sealed record MyAreaScheduleItem(
 /// </summary>
 public sealed record MyAreaCalendarEvent(
     Guid Uid,
-    DateTimeOffset Start,
-    DateTimeOffset? End,
+    DateTime Start,
+    DateTime? End,
     string Summary,
     string? Location);
 
 /// <summary>
-/// The "my sessions" list — App "تفاصيل الجلسات" (Figma 1388:9067), reached from
+/// The "my sessions" list — App "تفاصيل الجلسات", reached from
 /// the My-Area "my sessions" counter. The user's booked / joined sessions (the
 /// same active seat-bookings the dashboard counts), each enriched with the
-/// per-user heart (<see cref="IsFavourite"/>) and whether the user actually
-/// arrived (<see cref="Attended"/>, derived from <c>HallAttendance</c> — no
-/// schema). The app partitions these into the four tabs client-side from the
-/// device clock: القادمة (upcoming = <see cref="Start"/> in the future),
-/// حضرتها (<see cref="Attended"/>), فاتتني (ended &amp; not attended), and الأرشيف
-/// (recorded / published — <see cref="Status"/>). Read-only aggregate, own
-/// <c>sub</c>; no migration (D-249 pattern). <see cref="SessionFavourite"/>
-/// powers the heart.
+/// per-user heart (<see cref="MyAreaSessionItem.IsFavourite"/>) and whether the
+/// user actually arrived (<see cref="MyAreaSessionItem.Attended"/>, derived from
+/// <c>HallAttendance</c> — no schema). The app partitions these into the four
+/// tabs client-side from the device clock: القادمة (upcoming =
+/// <see cref="MyAreaSessionItem.Start"/> in the future), حضرتها
+/// (<see cref="MyAreaSessionItem.Attended"/>), فاتتني (ended &amp; not attended),
+/// and الأرشيف (recorded / published — <see cref="MyAreaSessionItem.Status"/>).
+/// Read-only aggregate, own <c>sub</c>; no migration.
+/// <c>SessionFavourite</c> powers the heart.
 /// </summary>
 public sealed record MyAreaSessions(IReadOnlyList<MyAreaSessionItem> Items);
 
 /// <summary>
-/// One card on the "my sessions" list (Figma 1388:9067). The card shows the
+/// One card on the "my sessions" list. The card shows the
 /// title, the day/time line + the category chip, and the primary speaker
 /// (name + <see cref="SpeakerTitle"/> rank) with the hall. Bilingual fields are
 /// paired (the app picks per locale); the hall / category / speaker fields are
@@ -104,8 +105,8 @@ public sealed record MyAreaSessionItem(
     Guid Id,
     string Title,
     string TitleArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End,
+    DateTime Start,
+    DateTime End,
     string? HallNameEn,
     string? HallNameAr,
     string? CategoryNameEn,
@@ -118,11 +119,11 @@ public sealed record MyAreaSessionItem(
     bool IsFavourite);
 
 /// <summary>
-/// The vCard data for the <c>contact-card.vcf</c> export (Page_014 E3) and the
-/// share-my-contact QR (D-470). <see cref="QrId"/> is the badge's gate key and
+/// The vCard data for the <c>contact-card.vcf</c> export and the
+/// share-my-contact QR. <see cref="QrId"/> is the badge's gate key and
 /// is deliberately NOT emitted into the camera-readable vCard. The mobile
-/// numbers feed the vCard <c>TEL</c> lines (D-470, requirement #8 "Name ar,
-/// phones").
+/// numbers feed the vCard <c>TEL</c> lines, so a scanned contact carries the
+/// Arabic name and the phone numbers.
 /// </summary>
 public sealed record MyAreaContactCard(
     string FullNameEn,

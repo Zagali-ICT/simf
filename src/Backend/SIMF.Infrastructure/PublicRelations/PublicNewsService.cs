@@ -3,10 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using SIMF.Application.PublicRelations.Abstractions;
 using SIMF.Contracts.PublicRelations;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.PublicRelations;
 
-/// <summary>D-199 (Mockup screen 29 / 29b) — public read of the News feed.
+/// <summary>Public read of the News feed.
 /// Surfaces only active articles whose <c>PublishedAt</c> has passed, newest
 /// first. Built on <see cref="SimfAppDbContext"/>; mirrors
 /// <c>PublicDelegationService</c> but adds paging because a news feed grows
@@ -24,7 +25,7 @@ internal sealed class PublicNewsService(
         if (page < 1) { page = 1; }
         pageSize = pageSize < 1 ? DefaultPageSize : Math.Min(pageSize, MaxPageSize);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var visible = dbContext.News
             .AsNoTracking()
@@ -55,7 +56,7 @@ internal sealed class PublicNewsService(
     public async Task<PublicNewsArticle?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         return await dbContext.News
             .AsNoTracking()

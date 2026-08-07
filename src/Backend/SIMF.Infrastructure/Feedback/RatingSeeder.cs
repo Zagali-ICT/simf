@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SIMF.Common.Enums;
 using SIMF.Domain.Feedback;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Feedback;
 
@@ -12,7 +13,7 @@ namespace SIMF.Infrastructure.Feedback;
 /// (global, one per user), "Session" (per-session, with default Speaker / Sound /
 /// Light questions) and "Day" (per programme day) — so the app's App-rating entry
 /// and the end-of-session / end-of-day / end-of-programme prompts resolve by code
-/// on a fresh database (D-679). Idempotent and keyed on deterministic ids:
+/// on a fresh database. Idempotent and keyed on deterministic ids:
 /// re-running never
 /// overwrites admin edits, it only inserts what is missing. Runs in every
 /// environment (the types must exist in production too) and is invoked explicitly
@@ -35,7 +36,7 @@ public sealed class RatingSeeder(
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var added = 0;
 
         added += await EnsureTypeAsync(new RatingType
@@ -68,7 +69,7 @@ public sealed class RatingSeeder(
             CreatedAt = now,
         }, cancellationToken);
 
-        // End-of-day prompt target (D-679): one rating per user per programme day,
+        // End-of-day prompt target: one rating per user per programme day,
         // fired to attendees who checked in that day.
         added += await EnsureTypeAsync(new RatingType
         {
@@ -85,7 +86,7 @@ public sealed class RatingSeeder(
             CreatedAt = now,
         }, cancellationToken);
 
-        // Overall forum rating (D-679): one per user, fired at the end of the
+        // Overall forum rating: one per user, fired at the end of the
         // whole programme.
         added += await EnsureTypeAsync(new RatingType
         {
@@ -102,7 +103,7 @@ public sealed class RatingSeeder(
             CreatedAt = now,
         }, cancellationToken);
 
-        // Overall exhibition rating (D-679): one per user, fired at the end of the
+        // Overall exhibition rating: one per user, fired at the end of the
         // whole programme.
         added += await EnsureTypeAsync(new RatingType
         {
@@ -141,7 +142,7 @@ public sealed class RatingSeeder(
     }
 
     private async Task<int> EnsureQuestionAsync(
-        Guid id, string text, string textArabic, int order, DateTimeOffset now, CancellationToken cancellationToken)
+        Guid id, string text, string textArabic, int order, DateTime now, CancellationToken cancellationToken)
     {
         if (await appDbContext.RatingQuestions.AnyAsync(q => q.Id == id, cancellationToken))
         {

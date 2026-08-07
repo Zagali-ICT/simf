@@ -11,12 +11,12 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// Interests CRUD (P9 — D-050; الاهتمامات). The admin grid is paged +
+/// Interests (الاهتمامات) CRUD. The admin grid is paged +
 /// filtered through <see cref="GridQuery"/>; mutations audit one row
 /// each. The visitor picker (<see cref="ListActiveAsync"/>) hits the
 /// composite filter index <c>(IsActive, DisplayOrder)</c>.
 ///
-/// <para>R4 — D-209: moved from <c>SIMF.Infrastructure.Identity</c>;
+/// <para>Moved here from <c>SIMF.Infrastructure.Identity</c>;
 /// persistence is delegated to <see cref="IInterestRepository"/> so this
 /// service holds only the orchestration (validation, audit, logging).</para>
 /// </summary>
@@ -59,7 +59,7 @@ internal sealed class InterestService(
                 $"يوجد اهتمام بالاسم '{request.Name}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var interest = new UserInterest
         {
             Id = Guid.NewGuid(),
@@ -71,13 +71,11 @@ internal sealed class InterestService(
         };
         await interests.AddAsync(interest, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.InterestCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={interest.Id}; name={interest.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.InterestCreated,
+            actorUserId,
+            $"id={interest.Id}; name={interest.Name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created interest {Name} ({Id})",
@@ -117,16 +115,14 @@ internal sealed class InterestService(
         interest.NameArabic = request.NameArabic.Trim();
         interest.DisplayOrder = request.DisplayOrder;
         interest.IsActive = request.IsActive;
-        interest.UpdatedAt = timeProvider.GetUtcNow();
+        interest.UpdatedAt = timeProvider.SimfNow();
         await interests.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.InterestUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={interest.Id}; name={interest.Name}; active={interest.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.InterestUpdated,
+            actorUserId,
+            $"id={interest.Id}; name={interest.Name}; active={interest.IsActive}",
+            cancellationToken);
 
         return new AdminInterestSummary(
             interest.Id, interest.Name, interest.NameArabic,
@@ -151,15 +147,13 @@ internal sealed class InterestService(
         }
 
         interest.IsActive = false;
-        interest.UpdatedAt = timeProvider.GetUtcNow();
+        interest.UpdatedAt = timeProvider.SimfNow();
         await interests.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.InterestDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={interest.Id}; name={interest.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.InterestDeactivated,
+            actorUserId,
+            $"id={interest.Id}; name={interest.Name}",
+            cancellationToken);
     }
 }

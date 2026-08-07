@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/TotpEnrolmentTests.cs (alongside the rest of the TOTP suite)
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.RateLimiting;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// D-102: <c>POST /api/v1/app/auth/totp/pairing/verify</c> — confirms the
+/// <c>POST /api/v1/app/auth/totp/pairing/verify</c> — confirms the
 /// caller has successfully scanned the QR returned by
 /// <c>GET /auth/totp/pairing</c>. Verifies the code against the active
 /// authenticator secret WITHOUT mutating state — no replay-guard update,
@@ -30,11 +30,7 @@ public sealed class TotpPairingVerifyEndpoint(ITotpEnrollmentService totpEnrollm
 
     public override async Task HandleAsync(TotpConfirmRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var ok = await totpEnrollment.VerifyPairingAsync(userId, req.Code ?? string.Empty, ct);
         await Send.OkAsync(ApiResult<TotpPairingVerifyResponse>.Ok(

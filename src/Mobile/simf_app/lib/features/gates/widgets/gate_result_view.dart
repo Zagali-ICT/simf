@@ -36,6 +36,9 @@ class GateResultView extends StatelessWidget {
     final direction = result.direction == ScanDirection.checkOut
         ? l10n.gateDirectionOut
         : l10n.gateDirectionIn;
+    final notice = (result.noticeMessage?.trim().isNotEmpty ?? false)
+        ? result.noticeMessage!.trim()
+        : null;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(SimfTokens.space4),
       child: Container(
@@ -69,8 +72,22 @@ class GateResultView extends StatelessWidget {
                       ? result.denialMessage!
                       : l10n.gateDeniedSub),
               textAlign: TextAlign.center,
-              style: TextStyle(color: accent),
+              style: SimfTokens.textAccent,
             ),
+            // DEF-CHK-004 — allowed, but the server flagged something the
+            // operator has to know (today: no session running in this hall,
+            // so no attendance was recorded). Arrives already localized.
+            if (notice != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space2),
+              Text(
+                notice,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.warning,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
             const SizedBox(height: SimfTokens.space4),
             Container(
               padding: const EdgeInsets.all(SimfTokens.space4),

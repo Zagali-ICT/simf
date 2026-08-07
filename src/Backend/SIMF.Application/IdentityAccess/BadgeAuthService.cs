@@ -1,17 +1,23 @@
 // Tests: SIMF.Api.Tests/BadgeAuthTests.cs
+// Tests: SIMF.Api.Tests/BadgeSelfClaimProfileTests.cs (the placeholder
+//        profile is filled from the capture step at complete)
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Abstractions;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Badges;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 
 namespace SIMF.Application.IdentityAccess;
 
@@ -31,16 +37,25 @@ internal sealed class BadgeAuthService(
     IUserAccountRepository accounts,
     ISignInService signInService,
     IAccountCodeRepository accountCodeRepository,
+    IUserProfileRepository profiles,
     IEmailQueue emailQueue,
     IEmailTemplateResolver emailTemplates,
     IAuditLog auditLog,
     ITransactionRunner transactionRunner,
     TimeProvider timeProvider,
+    // Gates badge activation for walk-in-minted accounts.
+    IOptionsMonitor<WalkInModeOptions> walkInMode,
     ILogger<BadgeAuthService> logger) : IBadgeAuthService
 {
     private static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(10);
     private const int MaxAttempts = 5;
     private const string PlaceholderEmailSuffix = "@simf.local";
+
+    // The local-part the walk-in desk synthesizes when it registers
+    // someone with no email (AdminAccountService.RegisterOnSiteAsync). Kept
+    // distinct from the bulk-badge "badge-" prefix so the activation block
+    // targets walk-ins without changing the shipped bulk-badge flow.
+    private const string WalkInEmailPrefix = "walkin-";
 
     // Verify-then-attach: the holder-supplied email is stashed on the account's
     // Identity token store (AspNetUserTokens) at the start step and promoted to the
@@ -87,13 +102,12 @@ internal sealed class BadgeAuthService(
             // generic invalid-credentials error, so an unknown badge is
             // indistinguishable from a wrong password (the public badge is never
             // a valid-QR oracle and never bypasses the password).
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.SignInBadCredentials,
-                Outcome = AuditOutcome.Failure,
-                ErrorCode = ErrorCodes.AuthInvalidCredentials,
-                Detail = "badge",
-            }, cancellationToken);
+            await auditLog.WriteFailureAsync(
+                AuditEvents.SignInBadCredentials,
+                null,
+                errorCode: ErrorCodes.AuthInvalidCredentials,
+                detail: "badge",
+                cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthInvalidCredentials, 401,
                 "The email address or password is not correct.",
                 "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
@@ -121,7 +135,7 @@ internal sealed class BadgeAuthService(
             ?? throw BadgeNotFound();
         EnsureNotAlreadyActivated(user);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         string targetEmail;
         string code;
 
@@ -134,6 +148,25 @@ internal sealed class BadgeAuthService(
         }
         else
         {
+            // A walk-in badge grants PHYSICAL ACCESS ONLY by default.
+            //
+            // This branch lets the QR holder nominate the address the code is
+            // sent to, which is safe for a controlled bulk-badge batch but not
+            // for walk-in badges in open circulation: anyone who photographs one
+            // across a room could claim it as a full app account (sign-in,
+            // networking, contacts, meeting requests). Refused with the SAME
+            // "badge not recognised" an unknown QR returns, so this is not an
+            // oracle for which badges exist.
+            //
+            // If a walk-in should get app access, a staffed desk attaches a real
+            // email after an ID check — which routes to the branch above, where
+            // the code goes to the verified owner and cannot be redirected.
+            if (IsWalkInPlaceholderEmail(user.Email)
+                && !walkInMode.CurrentValue.BadgeActivationAllowedForWalkIns)
+            {
+                throw BadgeNotFound();
+            }
+
             // No real email on file — the holder must supply one to verify + attach.
             var email = (request.Email ?? string.Empty).Trim();
             if (email.Length == 0)
@@ -191,7 +224,7 @@ internal sealed class BadgeAuthService(
             ?? throw BadgeNotFound();
         EnsureNotAlreadyActivated(user);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var code = await accountCodeRepository.GetLatestUnconsumedAsync(
             user.Id, AccountCodePurpose.BadgeActivationOtp, cancellationToken);
 
@@ -253,6 +286,26 @@ internal sealed class BadgeAuthService(
             }
         }
 
+        // Resolve + validate the captured profile fields against the
+        // live App-DB lookups BEFORE any write, exactly like the pending-email
+        // re-check above, so a bad country code or a deactivated interest fails
+        // cleanly instead of half-activating the badge.
+        var nationalityId = await ResolveNationalityIdAsync(
+            request.NationalityCode, cancellationToken);
+        var interestIds = await ResolveInterestIdsAsync(
+            request.InterestIds, cancellationToken);
+
+        // Fill the placeholder profile FIRST, in its own App-DB unit of
+        // work (no transaction spans the two databases). Ordering matters: if
+        // the password step below then fails (a policy rejection, an email race), the
+        // badge is still unactivated and the holder simply retries — the profile write
+        // is idempotent and the retry overwrites it. The reverse order would leave an
+        // activated account whose retry is refused by EnsureNotAlreadyActivated, with
+        // the placeholder name never filled.
+        var realName = FirstNonBlank(request.EnglishName, request.ArabicName);
+        await FillPlaceholderProfileAsync(
+            user.Id, request, nationalityId, interestIds, now, cancellationToken);
+
         await transactionRunner.ExecuteAsync(
             async token =>
             {
@@ -274,6 +327,14 @@ internal sealed class BadgeAuthService(
                     await accounts.RemoveAuthenticationTokenAsync(
                             user, ActivationTokenProvider, PendingEmailTokenName, token)
                         .EnsureSuccessAsync();
+                }
+                // A bulk-generated badge account carries a GENERATED
+                // display name ("VIP #3"). The holder has now identified themselves,
+                // so promote the captured name to the account's display name too —
+                // otherwise the app greets them by the placeholder forever.
+                if (realName is not null)
+                {
+                    user.DisplayName = realName;
                 }
                 user.EmailConfirmed = true;
                 user.UpdatedAt = now;
@@ -298,12 +359,134 @@ internal sealed class BadgeAuthService(
 
     // -- Helpers --------------------------------------------------------------
 
+    /// <summary>Resolves the wire ISO country code to the
+    /// <c>Country</c> PK, or null when the caller supplied none. An unknown /
+    /// inactive code is a 400, matching the profile upsert.</summary>
+    private async Task<int?> ResolveNationalityIdAsync(
+        string? nationalityCode, CancellationToken cancellationToken)
+    {
+        var code = (nationalityCode ?? string.Empty).Trim();
+        if (code.Length == 0) { return null; }
+
+        return await profiles.ResolveCountryIdAsync(code, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.ProfileNationalityUnknown, 400,
+                $"Nationality code '{code}' is not supported.",
+                $"الجنسية '{code}' غير مدعومة.");
+    }
+
+    /// <summary>The distinct picked interest ids, after checking every
+    /// one exists and is active. Empty when the caller picked none.</summary>
+    private async Task<IReadOnlyList<Guid>> ResolveInterestIdsAsync(
+        IReadOnlyCollection<Guid>? requested, CancellationToken cancellationToken)
+    {
+        var ids = (requested ?? []).Distinct().ToList();
+        if (ids.Count == 0) { return []; }
+
+        var active = await profiles.FilterActiveInterestIdsAsync(ids, cancellationToken);
+        if (active.Count != ids.Count)
+        {
+            throw new ApiException(
+                ErrorCodes.InterestInvalid, 400,
+                "One or more selected interests are unknown or no longer active.",
+                "بعض الاهتمامات المختارة غير معروفة أو لم تعد مفعّلة.");
+        }
+        return ids;
+    }
+
+    /// <summary>
+    /// Writes the captured profile fields onto the badge's placeholder
+    /// <c>UserProfile</c> (App DB). Every field is optional: a blank one leaves the
+    /// existing value alone, so a client that sends nothing behaves exactly as it did
+    /// before. Creates the row when the badge has none (a badge minted without a
+    /// profile stub). Interests are ADDED, never removed — the holder edits the full
+    /// set later on the profile screen.
+    /// </summary>
+    private async Task FillPlaceholderProfileAsync(
+        Guid userId,
+        BadgeActivationCompleteRequest request,
+        int? nationalityId,
+        IReadOnlyList<Guid> interestIds,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        var englishName = FirstNonBlank(request.EnglishName);
+        var arabicName = FirstNonBlank(request.ArabicName);
+        if (englishName is null && arabicName is null
+            && nationalityId is null && interestIds.Count == 0)
+        {
+            // Nothing captured — do not touch the row at all.
+            return;
+        }
+
+        var profile = await profiles.GetWithInterestsAsync(userId, tracked: true, cancellationToken);
+        if (profile is null)
+        {
+            profile = new UserProfile { UserId = userId, CreatedAt = now };
+            profiles.Add(profile);
+        }
+        else
+        {
+            profile.UpdatedAt = now;
+        }
+
+        if (englishName is not null) { profile.Name = englishName; }
+        if (arabicName is not null) { profile.NameArabic = arabicName; }
+        if (nationalityId is { } countryId) { profile.NationalityId = countryId; }
+
+        if (interestIds.Count > 0)
+        {
+            var alreadyPicked = profile.Interests.Select(interest => interest.Id).ToHashSet();
+            var toAdd = interestIds.Where(id => !alreadyPicked.Contains(id)).ToList();
+            if (toAdd.Count > 0)
+            {
+                foreach (var row in await profiles.GetInterestsByIdsAsync(toAdd, cancellationToken))
+                {
+                    profile.Interests.Add(row);
+                }
+            }
+        }
+
+        await profiles.SaveAppChangesAsync(cancellationToken);
+    }
+
+    /// <summary>The first of the supplied values that is not null/blank, trimmed;
+    /// null when they all are.</summary>
+    private static string? FirstNonBlank(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value)) { return value.Trim(); }
+        }
+        return null;
+    }
+
     /// <summary>Resolves a QR to its owning <see cref="SimfUser"/> only when the
     /// account is Approved; null for unknown / not-approved QRs.</summary>
     private async Task<SimfUser?> ResolveApprovedUserAsync(
         string? qrId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
+
+        // An OFFLINE badge id is never resolvable here.
+        //
+        // Every endpoint on this service is AllowAnonymous, and their safety
+        // rests on a scanned QR being unguessable: a minted QrId is 12 random
+        // Crockford characters (~59 bits). An offline id is NOT — it is
+        // 'W' plus a desk sequence, so the live ids at an event are a few
+        // thousand consecutive numbers. Left resolvable, this turns
+        // resolve-badge into an anonymous roster oracle that returns the
+        // holder's display name for any guess.
+        //
+        // Refusing costs nothing: a walk-in badge is physical access only, and
+        // badge activation is already blocked for these accounts further down.
+        // The bearer of a real offline badge presents the ENCRYPTED blob, which
+        // is unguessable and is what the gate reads.
+        if (OfflineBadgeId.IsOfflineBadge(qrId.Trim().ToUpperInvariant()))
+        {
+            return null;
+        }
+
         var resolution = await qrResolver.ResolveAsync(
             qrId.Trim().ToUpperInvariant(), cancellationToken);
         if (resolution is null || resolution.AccountState != AccountState.Approved)
@@ -327,7 +510,7 @@ internal sealed class BadgeAuthService(
 
     /// <summary>Consumes any prior unconsumed activation code and issues a fresh
     /// one. Returns the new code's value so the caller can email it.</summary>
-    private async Task<string> IssueCodeAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
+    private async Task<string> IssueCodeAsync(Guid userId, DateTime now, CancellationToken cancellationToken)
     {
         var previous = await accountCodeRepository.GetLatestUnconsumedAsync(
             userId, AccountCodePurpose.BadgeActivationOtp, cancellationToken);
@@ -369,6 +552,18 @@ internal sealed class BadgeAuthService(
     private static bool IsPlaceholderEmail(string? email) =>
         string.IsNullOrWhiteSpace(email)
         || email.EndsWith(PlaceholderEmailSuffix, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// True for an account minted by the WALK-IN desk with no real email
+    /// (<c>walkin-{guid}@simf.local</c>). Deliberately narrower than
+    /// <see cref="IsPlaceholderEmail"/>: the pre-existing bulk-badge path
+    /// (<c>badge-{guid}@…</c>) keeps its shipped activation behaviour, because
+    /// those badges are handed out deliberately from a controlled batch.
+    /// </summary>
+    private static bool IsWalkInPlaceholderEmail(string? email) =>
+        !string.IsNullOrWhiteSpace(email)
+        && email.EndsWith(PlaceholderEmailSuffix, StringComparison.OrdinalIgnoreCase)
+        && email.StartsWith(WalkInEmailPrefix, StringComparison.OrdinalIgnoreCase);
 
     private static ApiException BadgeNotFound() =>
         new(ErrorCodes.AuthAccountNotFound, 404,

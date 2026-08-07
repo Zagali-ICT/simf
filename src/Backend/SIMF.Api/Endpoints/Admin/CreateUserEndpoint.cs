@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminCreateUserTests.cs, SIMF.Api.Tests/AdminApprovalTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.RateLimiting;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -11,11 +11,11 @@ namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
 /// <c>POST /api/v1/admin/admins</c> — an Administrator creates a new
-/// Control Panel **Admin** user (P7c — renamed from
-/// <c>POST /admin/staff</c>; decisions D-042 + D-048). The new account
+/// Control Panel **Admin** user (renamed from
+/// <c>POST /admin/staff</c>). The new account
 /// lands in <c>PendingApproval</c> with no password and receives a
 /// 7-day password-set invitation. Approval is Administrator-only and
-/// mints the QR id (D-046a + P4).
+/// mints the QR id.
 /// </summary>
 public sealed class CreateAdminEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<AdminCreateAdminRequest, ApiResult<AdminCreateUserResponse>>
@@ -32,11 +32,7 @@ public sealed class CreateAdminEndpoint(IAdminUserProvisioningService adminAccou
 
     public override async Task HandleAsync(AdminCreateAdminRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         // Granting roles at create time requires the same permission as the
         // standalone role-assignment desk (Admins.AssignRoles): an admin who can
         // create but not assign roles must not mint an elevated (Administrator)
@@ -77,11 +73,7 @@ public sealed class CreateOtherEndpoint(IAdminUserProvisioningService adminAccou
 
     public override async Task HandleAsync(AdminCreateOtherRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.CreateOtherAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(response), ct);
     }
@@ -89,7 +81,7 @@ public sealed class CreateOtherEndpoint(IAdminUserProvisioningService adminAccou
 
 /// <summary>
 /// <c>POST /api/v1/admin/visitors</c> — Administrator creates a new
-/// <b>Visitor</b> user (P3; P7c added optional <c>ProfileTypeId</c>).
+/// <b>Visitor</b> user, with an optional <c>ProfileTypeId</c> tier.
 /// </summary>
 public sealed class CreateVisitorEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<AdminCreateVisitorRequest, ApiResult<AdminCreateUserResponse>>
@@ -106,11 +98,7 @@ public sealed class CreateVisitorEndpoint(IAdminUserProvisioningService adminAcc
 
     public override async Task HandleAsync(AdminCreateVisitorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.CreateVisitorAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(response), ct);
     }

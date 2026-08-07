@@ -5,7 +5,7 @@ using SIMF.Application.Excel;
 namespace SIMF.Infrastructure.Excel;
 
 /// <summary>
-/// ClosedXML-backed generic grid exporter (D-356). One hardened renderer for
+/// ClosedXML-backed generic grid exporter. One hardened renderer for
 /// every resource's XLSX export, so the OWASP CSV/formula-injection guard
 /// (CWE-1236) and the layout conventions live in exactly one place rather than
 /// being copy-pasted into 39 per-entity services.
@@ -70,9 +70,9 @@ internal sealed class ClosedXmlGridExcelExporter : IGridExcelExporter
             case bool b:
                 cell.Value = b ? "Yes" : "No";
                 break;
-            case DateTimeOffset dto:
-                cell.Value = dto.UtcDateTime.ToString("O");
-                break;
+            // One arm, not two: DateTimeOffset and DateTime used to be distinct
+            // cases and are now the same type (owner decision 2026-07-31 — every
+            // instant is a plain Saudi-local DateTime).
             case DateTime dt:
                 cell.Value = dt.ToString("O");
                 break;

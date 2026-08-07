@@ -6,7 +6,7 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 /// expired refresh tokens, expired 2FA tickets, expired account codes, and
 /// expired gate-scan idempotency records. Idempotent and set-based; safe to run
 /// repeatedly and concurrently with normal traffic. Each table is swept
-/// independently — there is no cross-database transaction (D-157).
+/// independently — there is no cross-database transaction.
 /// </summary>
 public interface IRetentionPurgeService
 {

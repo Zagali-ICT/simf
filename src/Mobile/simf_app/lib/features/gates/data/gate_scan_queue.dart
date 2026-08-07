@@ -70,7 +70,13 @@ class GateScanQueue {
 
   /// Keep the newest scans if the backlog ever runs away during a long outage;
   /// the oldest are dropped first.
-  static const int maxItems = 500;
+  ///
+  /// D-819: raised from 500. A dropped scan is a person who walked through a
+  /// gate with no record of it, and 500 is inside one busy gate's shift — the
+  /// exact scenario the offline capability exists for is also the one most
+  /// likely to overrun it. Each entry is a small JSON object, so several
+  /// thousand is well within what the preferences store holds comfortably.
+  static const int maxItems = 5000;
 
   List<PendingGateScan> all() {
     final raw = _prefs.getString(StorageKeys.pendingGateScans);

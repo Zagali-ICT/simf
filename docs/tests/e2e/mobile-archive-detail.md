@@ -52,6 +52,8 @@
 | E2E-MOB024D-012 | المتحدثون السابقون — first 4 avatars + "+N آخرون" overflow chip | happy | P1 | authored (screen) |
 | E2E-MOB024D-013 | P6 — gallery image with an absolute url renders the real photo; a video / relative path do not (D-440) | display | P1 | authored ✓ (screen `P6 — gallery image + past-speaker photo render real URLs`) |
 | E2E-MOB024D-014 | P6 — past-speaker with an absolute photo url renders the real avatar; blank/relative → initials (D-440) | display | P1 | authored ✓ (screen `P6 — gallery image + past-speaker photo render real URLs`) |
+| E2E-MOB024D-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB024D-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

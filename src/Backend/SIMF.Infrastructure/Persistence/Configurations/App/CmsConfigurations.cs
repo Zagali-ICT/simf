@@ -4,7 +4,7 @@ using SIMF.Domain.Cms;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-173 (gap doc G8) — ContentBlock EF config. Unique
+/// <summary>ContentBlock EF config. Unique
 /// <see cref="ContentBlock.Key"/> index — the client-facing slug must
 /// resolve to exactly one row.</summary>
 internal sealed class ContentBlockConfiguration : IEntityTypeConfiguration<ContentBlock>
@@ -23,13 +23,13 @@ internal sealed class ContentBlockConfiguration : IEntityTypeConfiguration<Conte
     }
 }
 
-/// <summary>D-173 — Banner EF config. Window index covers the public
+/// <summary>Banner EF config. Window index covers the public
 /// "active banners now" query.</summary>
 internal sealed class BannerConfiguration : IEntityTypeConfiguration<Banner>
 {
     public void Configure(EntityTypeBuilder<Banner> builder)
     {
-        // D-611 (Wave B) — a banner display window must end after it starts.
+        // A banner display window must end after it starts.
         builder.ToTable("Banners", table => table.HasCheckConstraint(
             "CK_Banners_TimeWindow", "[End] > [Start]"));
         builder.HasKey(b => b.Id);

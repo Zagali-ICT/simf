@@ -24,7 +24,7 @@ public sealed class InterestAddEditTests : CpComponentTestBase
     public void Edit_mode_shows_the_Active_checkbox()
     {
         var row = new AdminInterestSummary(
-            Guid.NewGuid(), "Naval", "بحرية", 10, IsActive: true, DateTimeOffset.UnixEpoch);
+            Guid.NewGuid(), "Naval", "بحرية", 10, IsActive: true, DateTime.UnixEpoch);
 
         var cut = RenderComponent<InterestAddEdit>(parameters => parameters
             .Add(p => p.IsEdit, true)
@@ -38,7 +38,7 @@ public sealed class InterestAddEditTests : CpComponentTestBase
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         var created = new AdminInterestSummary(
-            Guid.NewGuid(), "Naval Engineering", "الهندسة البحرية", 10, true, DateTimeOffset.UnixEpoch);
+            Guid.NewGuid(), "Naval Engineering", "الهندسة البحرية", 10, true, DateTime.UnixEpoch);
         var handler = JSInterop.Setup<ApiResult<AdminInterestSummary>>(
             "simfAccount.postJson", _ => true)
             .SetResult(ApiResult<AdminInterestSummary>.Ok(created));
@@ -100,7 +100,7 @@ public sealed class InterestAddEditTests : CpComponentTestBase
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         var row = new AdminInterestSummary(
-            Guid.NewGuid(), "Naval", "بحرية", 10, IsActive: true, DateTimeOffset.UnixEpoch);
+            Guid.NewGuid(), "Naval", "بحرية", 10, IsActive: true, DateTime.UnixEpoch);
         var handler = JSInterop.Setup<ApiResult<AdminInterestSummary>>(
             "simfAccount.putJson", _ => true)
             .SetResult(ApiResult<AdminInterestSummary>.Ok(row));

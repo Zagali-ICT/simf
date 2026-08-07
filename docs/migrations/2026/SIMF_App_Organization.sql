@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    SIMF_App — organisation profile seed
               (About / Vision / Mission / Themes + key-fact details + social links)
               ->  GET /app/organization

@@ -1,13 +1,9 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
 using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibitors;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -28,6 +24,15 @@ public partial class ExhibitorsList
     {
         public string ContactName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string RoleLabel { get; set; } = string.Empty;
+    }
+
+    // The "attach an EXISTING account" form. Only the email is required;
+    // the contact name defaults to the account's display name server-side.
+    private sealed class LinkModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string ContactName { get; set; } = string.Empty;
         public string RoleLabel { get; set; } = string.Empty;
     }
 
@@ -58,6 +63,8 @@ public partial class ExhibitorsList
     private List<ExhibitorAccountSummary> _accounts = new();
     private bool _provisionBusy;
     private ProvisionModel _provision = new();
+    private bool _linkBusy;
+    private LinkModel _link = new();
 
     private bool FormOpen => _form != FormKind.None;
     private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
@@ -173,7 +180,7 @@ public partial class ExhibitorsList
         _target = null;
     }
 
-    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    // Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminExhibitorSummary> selected) =>
         _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
 
@@ -207,6 +214,7 @@ public partial class ExhibitorsList
         _accountsExhibitorId = row.Id;
         _accountsExhibitorName = row.NameEn;
         _provision = new ProvisionModel();
+        _link = new LinkModel();
         _toast = null;
         await LoadAccountsAsync();
     }
@@ -271,6 +279,49 @@ public partial class ExhibitorsList
             }
         }
         finally { _provisionBusy = false; }
+    }
+
+    // Attach an EXISTING account to this exhibitor. The account must
+    // already carry an exhibitor profile type (set on the Others page); the API
+    // answers 409 EXHIBITOR_ACCOUNT_NOT_ELIGIBLE with a bilingual message if not,
+    // which is surfaced verbatim.
+    private async Task LinkAsync()
+    {
+        if (_linkBusy) return;
+        if (string.IsNullOrWhiteSpace(_link.Email))
+        {
+            _toast = new Toast("error", L["Admin.Exhibitors.Link.Required"]);
+            return;
+        }
+        _linkBusy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<ExhibitorAccountSummary>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/exhibitors/{_accountsExhibitorId}/accounts/link",
+                new LinkExhibitorAccountRequest
+                {
+                    Email = _link.Email,
+                    ContactName = NullIfBlank(_link.ContactName),
+                    RoleLabel = NullIfBlank(_link.RoleLabel),
+                });
+            if (env is { Success: true })
+            {
+                _link = new LinkModel();
+                _toast = new Toast("success", L["Admin.Exhibitors.Link.Done"]);
+                await LoadAccountsAsync();
+                // Refresh the grid so the AccountCount column reflects the link.
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Exhibitors.Link.Failed"]);
+            }
+        }
+        finally { _linkBusy = false; }
     }
 
     private static string? NullIfBlank(string value) =>

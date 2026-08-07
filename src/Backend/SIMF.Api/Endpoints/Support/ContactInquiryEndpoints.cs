@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/ContactInquiryTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Support.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Support;
@@ -38,8 +38,7 @@ public sealed class SubmitContactInquiryEndpoint(IContactInquiryService service)
 
     public override async Task HandleAsync(SubmitContactInquiryRequest req, CancellationToken ct)
     {
-        Guid? submittedBy =
-            Guid.TryParse(User.FindFirstValue("sub"), out var uid) ? uid : null;
+        Guid? submittedBy = User.ActorIdOrNull();
         await service.SubmitAsync(req, submittedBy, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -84,11 +83,7 @@ public sealed class MarkContactInquiryHandledEndpoint(IContactInquiryService ser
 
     public override async Task HandleAsync(MarkContactInquiryHandledRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.MarkHandledAsync(actorId, Route<Guid>("id"), req.Handled, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

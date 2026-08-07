@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/Files/FilesystemFileStorageProviderTests.cs
-//        (round-trip, sibling-prefix path guard, encrypt-at-rest, secure-erase).
+//        (round-trip, sibling-prefix path guard, encrypt-at-rest, secure-erase,
+//         ExistsAsync presence + no out-of-store existence oracle).
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Files.Abstractions;
@@ -9,7 +10,7 @@ using SIMF.Common.Options;
 namespace SIMF.Infrastructure.Files;
 
 /// <summary>
-/// D-568 — filesystem-backed <see cref="IFileStorageProvider"/>. One root with a
+/// Filesystem-backed <see cref="IFileStorageProvider"/>. One root with a
 /// per-<see cref="FileService"/> sub-folder; the file name is always
 /// <c>{id:N}{ext}</c> built from our own GUID + a sanitized extension, never from
 /// client input, so path traversal is impossible by construction. Writes are
@@ -25,7 +26,7 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
     // (fmt + KEK version + wrapped DEK), rendering an encrypted body unrecoverable.
     private const int ShredHeaderBytes = 4096;
 
-    // Copy buffer for the streamed (recording) read/write paths (D-568 S7).
+    // Copy buffer for the streamed (recording) read/write paths.
     private const int StreamBufferSize = 81920;
 
     private readonly string _root;
@@ -38,11 +39,22 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
         ILogger<FilesystemFileStorageProvider> logger)
     {
         var configured = options.Value.RootPath;
-        _root = Path.GetFullPath(string.IsNullOrWhiteSpace(configured) ? "App_Data/files" : configured);
+        _root = Path.GetFullPath(string.IsNullOrWhiteSpace(configured) ? DefaultRoot() : configured);
         Directory.CreateDirectory(_root);
         _cipher = cipher;
         _logger = logger;
     }
+
+    /// <summary>Where the store lives when <c>FileStorage:RootPath</c> is unset:
+    /// a SIMF folder under the machine's shared application-data directory
+    /// (<c>C:\ProgramData\SIMF\files</c> on Windows). Absolute on purpose, so an
+    /// unconfigured run writes to the machine's data store rather than to
+    /// whatever directory the process happens to have started in.</summary>
+    internal static string DefaultRoot() =>
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "SIMF",
+            "files");
 
     public async Task<FileWriteResult> WriteAsync(
         FileService service, Guid fileId, string extension, byte[] content, bool encrypt,
@@ -77,6 +89,12 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
         return encrypted ? _cipher.Decrypt(raw) : raw;
     }
 
+    public Task<bool> ExistsAsync(string storageKey, CancellationToken cancellationToken = default)
+    {
+        var fullPath = ResolveSafe(storageKey);
+        return Task.FromResult(fullPath is not null && File.Exists(fullPath));
+    }
+
     public async Task<StreamWriteResult> WriteStreamAsync(
         FileService service, Guid fileId, string extension, Stream content,
         CancellationToken cancellationToken = default)
@@ -88,7 +106,7 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
 
         // Stream source → temp with an incremental SHA-256, then atomic-move (temp +
         // move) so a partial write never replaces a good file. Plaintext only — the
-        // file must stay seekable for Range streaming (D-568 S7).
+        // file must stay seekable for Range streaming.
         var temp = fullPath + ".tmp";
         long total = 0;
         string sha256Hex;

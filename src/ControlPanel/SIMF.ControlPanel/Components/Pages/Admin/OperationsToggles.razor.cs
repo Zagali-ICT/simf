@@ -1,18 +1,8 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -31,6 +21,16 @@ public partial class OperationsToggles
     private bool _busy;
     private Toast? _toast;
 
+    /// <summary>§6.16 (F-U5-007) — true only while a load is actually in
+    /// flight. Both sections used to key their "Loading…" text off a null
+    /// state, so a load that FAILED left the page reading "Loading…" forever.</summary>
+    private bool _loading;
+
+    /// <summary>The per-section load error, when the section could not be
+    /// fetched. Rendered in place of the section with a Retry.</summary>
+    private string? _gateError;
+    private string? _archiveError;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
@@ -38,16 +38,27 @@ public partial class OperationsToggles
 
     private async Task LoadAsync()
     {
+        _loading = true;
+        _gateError = null;
+        _archiveError = null;
         try
         {
+            // Note: simfReadEnvelope turns a transport/HTTP failure into a
+            // RETURNED ApiResult.Fail rather than a throw, so the catch below
+            // never sees the common failure — each envelope must be checked.
             var gateEnv = await JS.InvokeAsync<ApiResult<RegistrationGateState>>(
                 "simfAccount.getJson", "/account/api/admin/registration-gate");
             if (gateEnv is { Success: true, Data: not null })
             {
                 _gate = gateEnv.Data;
                 _gateIsOpen = _gate.IsOpen;
-                _gateAutoCloseInput = _gate.AutoClose?.ToSaudi()
+                _gateAutoCloseInput = _gate.AutoClose?
                     .ToString("yyyy-MM-ddTHH:mm") ?? string.Empty;
+            }
+            else
+            {
+                _gateError = gateEnv?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Operations.LoadFailed"];
             }
 
             var archiveEnv = await JS.InvokeAsync<ApiResult<ArchiveVisibilityState>>(
@@ -57,11 +68,18 @@ public partial class OperationsToggles
                 _archive = archiveEnv.Data;
                 _archiveIsVisible = _archive.IsVisible;
             }
+            else
+            {
+                _archiveError = archiveEnv?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Operations.LoadFailed"];
+            }
         }
         catch
         {
-            _toast = new Toast("error", L["Admin.Operations.LoadFailed"]);
+            _gateError ??= L["Admin.Operations.LoadFailed"];
+            _archiveError ??= L["Admin.Operations.LoadFailed"];
         }
+        finally { _loading = false; }
     }
 
     private async Task SaveGateAsync()
@@ -71,7 +89,7 @@ public partial class OperationsToggles
         _toast = null;
         try
         {
-            DateTimeOffset? autoClose = null;
+            DateTime? autoClose = null;
             if (!string.IsNullOrWhiteSpace(_gateAutoCloseInput))
             {
                 if (!DateTime.TryParse(_gateAutoCloseInput, out var parsed))

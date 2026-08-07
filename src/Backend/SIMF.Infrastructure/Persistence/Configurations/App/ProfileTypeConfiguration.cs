@@ -5,7 +5,7 @@ using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>EF mapping for <see cref="UserProfileType"/> (P7 — D-048).</summary>
+/// <summary>EF mapping for <see cref="UserProfileType"/>.</summary>
 internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserProfileType>
 {
     public void Configure(EntityTypeBuilder<UserProfileType> builder)
@@ -28,7 +28,7 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasMaxLength(32)
             .IsRequired();
 
-        // D-161 — MobileAppRole persisted as the stringly enum value
+        // MobileAppRole persisted as the stringly enum value
         // (None / Visitor / Staff / Moderator) so a DBA reading the
         // table can interpret the column without an out-of-band
         // mapping table. Default None keeps backfill safe.
@@ -38,28 +38,28 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(MobileAppRole.None)
             .IsRequired();
 
-        // D-186 — audience/partner split inside the Visitor scope.
+        // Audience/partner split inside the Visitor scope.
         // Defaults to true so freshly created profile types are
         // assumed audience-side until an admin toggles them.
         builder.Property(profileType => profileType.IsForVisitor)
             .HasDefaultValue(true)
             .IsRequired();
 
-        // D-611 (Wave B) — VIP meeting-slot eligibility (replaces the Name
+        // VIP meeting-slot eligibility (replaces the Name
         // substring hack). Default false; the seeder flips VVIP/VIP to true.
         builder.Property(profileType => profileType.AllowsVipMeetingSlots)
             .HasDefaultValue(false)
             .IsRequired();
 
-        // D-725 (owner item 1) — app sign-up picker visibility. Default true
-        // so existing + freshly created rows stay registerable; the D-725
-        // migration's data step flips Staff / Moderator to false, and the CP
-        // form lets an admin toggle any row.
+        // App sign-up picker visibility. Default true so existing +
+        // freshly created rows stay registerable; the migration's data step
+        // flips Staff / Moderator to false, and the CP form lets an admin
+        // toggle any row.
         builder.Property(profileType => profileType.IsAppRegisterable)
             .HasDefaultValue(true)
             .IsRequired();
 
-        // D-760 (owner request) — "Meet People" networking visibility. Default
+        // "Meet People" networking visibility. Default
         // true so existing rows backfill to visible and stay in the partner
         // directory + recommender; the CP "Others" form lets an admin hide a
         // whole partner type.
@@ -67,12 +67,26 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(true)
             .IsRequired();
 
-        // D-186 — after the UserType collapse every profile type is
+        // The small stable number the offline event badge carries in
+        // place of the Guid id. Default 0 = unassigned, which no badge can
+        // carry. Unique among ACTIVE rows only, mirroring the Name index below,
+        // so a soft-deleted type does not permanently reserve its code — but
+        // note the code of a type whose badges are still in circulation must
+        // NOT be reused, which is an operational rule, not a DB one.
+        builder.Property(profileType => profileType.Code)
+            .HasDefaultValue((short)0)
+            .IsRequired();
+
+        builder.HasIndex(profileType => profileType.Code)
+            .IsUnique()
+            .HasFilter("[IsActive] = 1 AND [Code] <> 0");
+
+        // After the UserType collapse every profile type is
         // Visitor-scope; the CP picker + approval queues filter by
         // (IsForVisitor, IsActive), so one composite index serves both.
         builder.HasIndex(profileType => new { profileType.IsForVisitor, profileType.IsActive });
 
-        // D-611 (Wave B) — unique profile-type name among the ACTIVE rows (the
+        // Unique profile-type name among the ACTIVE rows (the
         // seeder is idempotent by Name; the filter lets an admin reuse a
         // soft-deleted name).
         builder.HasIndex(profileType => profileType.Name)

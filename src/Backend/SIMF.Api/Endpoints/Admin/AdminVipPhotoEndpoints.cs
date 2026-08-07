@@ -1,14 +1,15 @@
 // Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_vip_photo_sets_path)
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// V-1 (D-429) — admin upload + read of a visitor's VVIP/VIP welcome photo
+/// Admin upload + read of a visitor's VVIP/VIP welcome photo
 /// (صورة واضحة) for the موج (Mawj) integration. The photo is distinct from the
 /// account avatar and the ID image: it lives in its own store and is written to
 /// <c>UserProfile.VipPhotoRelativePath</c>. Captured on the dedicated VIP
@@ -17,7 +18,8 @@ namespace SIMF.Api.Endpoints.Admin;
 /// portrait may be a formal headshot or an official emblem). Permission-gated like
 /// the avatar / ID-document admin uploads (Visitors.Edit / Visitors.View).
 /// </summary>
-public sealed class UploadVisitorVipPhotoEndpoint(IUserProfileService service)
+public sealed class UploadVisitorVipPhotoEndpoint(
+    IUserProfileService service, IAdminUserProvisioningService provisioning)
     : Endpoint<EmptyRequest, ApiResult<bool>>
 {
     /// <summary>2 MB cap — same as the avatar upload.</summary>
@@ -36,9 +38,16 @@ public sealed class UploadVisitorVipPhotoEndpoint(IUserProfileService service)
 
     public override async Task HandleAsync(EmptyRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        var actorId = User.ActorId();
+
+        // This route is Visitors.Edit and lives under /admin/visitors/,
+        // so it must act only on the audience tier. The service guard compares
+        // UserType alone, which is identical for both Visitor-family
+        // tiers, so a partner id passed here would otherwise be accepted.
+        if (!await provisioning.IsSubjectInFamilyAsync(
+                Route<Guid>("id"), UserType.Visitor, expectedIsVisitor: true, ct))
         {
-            await Send.UnauthorizedAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -79,7 +88,8 @@ public sealed class UploadVisitorVipPhotoEndpoint(IUserProfileService service)
 
 /// <summary><c>GET /api/v1/admin/visitors/{id}/vip-photo</c> — streams the VIP
 /// welcome photo back so the CP roster / export page can render and download it.</summary>
-public sealed class FetchVisitorVipPhotoEndpoint(IUserProfileService service)
+public sealed class FetchVisitorVipPhotoEndpoint(
+    IUserProfileService service, IAdminUserProvisioningService provisioning)
     : EndpointWithoutRequest
 {
     public override void Configure()
@@ -93,9 +103,13 @@ public sealed class FetchVisitorVipPhotoEndpoint(IUserProfileService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        var actorId = User.ActorId();
+
+        // Audience tier only, checked before any byte is read.
+        if (!await provisioning.IsSubjectInFamilyAsync(
+                Route<Guid>("id"), UserType.Visitor, expectedIsVisitor: true, ct))
         {
-            await Send.UnauthorizedAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 

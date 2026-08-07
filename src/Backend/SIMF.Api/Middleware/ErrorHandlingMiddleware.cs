@@ -8,7 +8,7 @@ namespace SIMF.Api.Middleware;
 /// every request: an <see cref="ApiException"/> becomes its declared
 /// <see cref="ApiResult{T}"/> failure with the matching HTTP status; any other
 /// exception becomes a 500. Every error carries both English and Arabic
-/// messages (D-030).
+/// messages.
 /// </summary>
 public sealed class ErrorHandlingMiddleware(
     RequestDelegate next,

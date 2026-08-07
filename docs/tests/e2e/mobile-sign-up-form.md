@@ -6,9 +6,9 @@
 > `src/Mobile/simf_app/test/features/account/sign_up_form_screen_test.dart` (+ the
 > golden `test/golden/sign_up_form_golden_test.dart`, 168:3454); the
 > controller delegation in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_controller_signup_test.dart`; the
+> `src/Mobile/simf_app/packages/simf_auth_pkg/test/auth_controller_signup_test.dart`; the
 > repository contract in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_repository_impl_test.dart`.
+> `src/Mobile/simf_app/packages/simf_auth_pkg/test/auth_repository_impl_test.dart`.
 
 | | |
 |--|--|
@@ -43,6 +43,8 @@
 | E2E-MOB005-012 | Ticking the T&C box clears the error and lets the submit through | happy | P0 | authored ✓ (widget test, D-719) |
 | E2E-MOB005-013 | The terms link opens Page 009 (consent mode); موافق auto-checks the box | happy | P1 | authored ✓ (widget test, D-719) |
 | E2E-MOB005-014 | Declining on Page 009 (back/رفض) leaves the box unchecked → submit still blocked | edge | P2 | authored ✓ (widget test, D-719) |
+| E2E-MOB005-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB005-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -104,8 +106,15 @@ Scenario: A password failing the policy is rejected locally
   And no request is sent
 ```
 
-> The client mirror is length ≥ 8 + a letter + a digit (SIMF-MOB-API-001); the
-> server re-validates and is the authority.
+> The client mirror is the **five structural rules** in
+> `core/validation/password_validation.dart` — 8–128 characters with an
+> upper-case letter, a lower-case letter, a digit and a special character —
+> surfaced as a live per-rule unmet list. The server enforces **four more**
+> (no three-in-a-row repeat, no three-character sequential run, not a
+> common/leet dictionary password, not the user's own identifier) and is the
+> authority. A password can therefore clear every on-screen check and still be
+> refused; the server's reason is surfaced to the user via the field-error
+> details. Corrected 2026-08-03 (was "length ≥ 8 + a letter + a digit").
 
 **Evidence:** `sign_up_form_screen_test` — "a weak password blocks submit".
 

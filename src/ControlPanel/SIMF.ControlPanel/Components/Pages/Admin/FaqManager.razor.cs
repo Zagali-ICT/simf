@@ -1,12 +1,7 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Faq;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -30,6 +25,11 @@ public partial class FaqManager
     private bool _busy;
     private Toast? _toast;
 
+    /// <summary>The in-dialog error. Separate from <c>_toast</c> because the
+    /// page-level alert renders under the modal backdrop and is invisible while
+    /// a modal is open.</summary>
+    private string? _error;
+
     // Group modal state.
     private bool _groupModalOpen;
     private Guid? _groupEditId;
@@ -37,6 +37,13 @@ public partial class FaqManager
     private string _groupNameAr = string.Empty;
     private string _groupOrder = "0";
     private bool _groupActive = true;
+
+    /// <summary>The entry being read. The grid already holds the whole
+    /// summary, including the answer text it has no column for, so Details opens
+    /// straight from the row with no second fetch and no permission of its own.</summary>
+    private AdminFaqEntrySummary? _entryDetails;
+
+    private void OpenEntryDetails(AdminFaqEntrySummary entry) => _entryDetails = entry;
 
     // Entry modal state.
     private bool _entryModalOpen;
@@ -123,6 +130,7 @@ public partial class FaqManager
     private void OpenAddGroup()
     {
         _groupEditId = null;
+        _error = null;
         _groupNameEn = _groupNameAr = string.Empty;
         _groupOrder = "0";
         _groupActive = true;
@@ -131,6 +139,7 @@ public partial class FaqManager
 
     private void OpenEditGroup(AdminFaqGroupSummary g)
     {
+        _error = null;
         _groupEditId = g.Id;
         _groupNameEn = g.NameEn;
         _groupNameAr = g.NameAr;
@@ -143,6 +152,13 @@ public partial class FaqManager
 
     private async Task SaveGroupAsync()
     {
+        if (_busy) return;
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_groupNameEn) || string.IsNullOrWhiteSpace(_groupNameAr))
+        {
+            _error = L["Admin.Faq.Group.Required"];
+            return;
+        }
         _busy = true;
         _toast = null;
         try
@@ -169,8 +185,8 @@ public partial class FaqManager
             }
             else
             {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+                // Dialog still open — report in it, not behind it.
+                _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"];
             }
         }
         finally { _busy = false; }
@@ -198,6 +214,7 @@ public partial class FaqManager
     private void OpenAddEntry()
     {
         _entryEditId = null;
+        _error = null;
         _entryQuestionEn = _entryQuestionAr = _entryAnswerEn = _entryAnswerAr = string.Empty;
         _entryOrder = "0";
         _entryActive = true;
@@ -206,6 +223,7 @@ public partial class FaqManager
 
     private void OpenEditEntry(AdminFaqEntrySummary e)
     {
+        _error = null;
         _entryEditId = e.Id;
         _entryQuestionEn = e.Question;
         _entryQuestionAr = e.QuestionArabic;
@@ -220,7 +238,14 @@ public partial class FaqManager
 
     private async Task SaveEntryAsync()
     {
-        if (_selectedGroup is null) return;
+        if (_selectedGroup is null || _busy) return;
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_entryQuestionEn) || string.IsNullOrWhiteSpace(_entryQuestionAr)
+            || string.IsNullOrWhiteSpace(_entryAnswerEn) || string.IsNullOrWhiteSpace(_entryAnswerAr))
+        {
+            _error = L["Admin.Faq.Entry.Required"];
+            return;
+        }
         _busy = true;
         _toast = null;
         try
@@ -259,8 +284,8 @@ public partial class FaqManager
             }
             else
             {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+                // Dialog still open — report in it, not behind it.
+                _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"];
             }
         }
         finally { _busy = false; }
@@ -282,5 +307,23 @@ public partial class FaqManager
             _toast = new Toast("error",
                 env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
         }
+    }
+
+    // §6.16 (F-U5-004) — the row Delete icon fired the destructive call on the
+    // FIRST click, and these deletes CASCADE. Stage the action and make the admin
+    // confirm; SimfConfirm is RequireExplicitClose so a stray backdrop click
+    // cannot confirm it either.
+    private (string Title, string Message, Func<Task> Run)? _pendingDelete;
+
+    private void AskDelete(string title, string message, Func<Task> run) =>
+        _pendingDelete = (title, message, run);
+
+    private void CancelDelete() => _pendingDelete = null;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        var pending = _pendingDelete;
+        _pendingDelete = null;
+        if (pending is not null) await pending.Value.Run();
     }
 }

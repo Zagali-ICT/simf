@@ -5,16 +5,18 @@ using SIMF.Domain.AccessControl;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
-/// D-148 — append-only audit log of every scan (SIMF-FDS-003 §5.6 / API-GATES-001).
-/// Five non-clustered indexes per SIMF-DAT-001 §5.3.2 ride the clustered bigint
-/// IDENTITY PK. Opts out of <c>RowAudit</c> because it is itself an audit log
-/// (D-148 rationale — the per-decision opt-out D-135 (e) requires).
+/// Append-only audit log of every scan. Five non-clustered indexes ride the
+/// clustered bigint IDENTITY PK. Opts out of <c>RowAudit</c> because it is
+/// itself an audit log: it already carries the scanning user, the correlation id,
+/// the IP and the user agent, so auditing it would double the write volume for
+/// zero gain. The opt-out lives in the excluded-entity set of
+/// <c>RowAuditingSaveChangesInterceptor</c>, where each entry states its reason.
 /// </summary>
 internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
 {
     public void Configure(EntityTypeBuilder<GateScan> builder)
     {
-        // D-611 (Wave B) — pin the Outcome↔DenialReason invariant at the DB:
+        // Pin the Outcome↔DenialReason invariant at the DB:
         // a Denied scan (Outcome=1) always carries a reason code, an Allowed scan
         // (Outcome=0) never does. Outcome/DenialReasonCode are stored as int.
         builder.ToTable("GateScans", table => table.HasCheckConstraint(
@@ -24,8 +26,14 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
         builder.HasKey(scan => scan.Id);
         builder.Property(scan => scan.Id).ValueGeneratedOnAdd();
 
-        builder.Property(scan => scan.QrIdAtScan).HasMaxLength(32).IsRequired();
-        // D-157 — snapshot fields capture the visitor's identity at the
+        // Widened 32 -> 64. The offline event badge is an ENCRYPTED
+        // payload (~54 chars), not a bare 12-character serial, and the scanner
+        // sends the whole blob so the SERVER decrypts it independently rather
+        // than trusting the device's result. That keeps this audit column
+        // exactly what was physically presented at the gate, which is the point
+        // of an append-only scan log.
+        builder.Property(scan => scan.QrIdAtScan).HasMaxLength(96).IsRequired();
+        // Snapshot fields capture the visitor's identity at the
         // moment of the scan so the audit row survives cross-DB drift.
         builder.Property(scan => scan.ScannedDisplayName).HasMaxLength(128);
         builder.Property(scan => scan.ScannedProfileTypeName).HasMaxLength(128);
@@ -65,7 +73,7 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
             .IsUnique()
             .HasFilter("[IdempotencyKey] IS NOT NULL");
 
-        // D-611 (Wave B) — Gate is on the App DB; make the relationship explicit
+        // Gate is on the App DB; make the relationship explicit
         // Restrict (was Cascade by convention) so deleting a Gate can't wipe its
         // append-only scan history. The IX_GateScan_Gate_ScannedAt index (GateId
         // leading) already covers the FK, so no duplicate index is created.

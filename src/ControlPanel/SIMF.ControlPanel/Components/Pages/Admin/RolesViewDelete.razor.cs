@@ -1,20 +1,7 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
-using SIMF.Contracts.Faq;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -28,7 +15,7 @@ public partial class RolesViewDelete
     private bool _confirming;
     private string? _error;
 
-    // Issue-1 â€” open the per-role permission editor page.
+    // Issue-1 — open the per-role permission editor page.
     private void OpenPermissionEditor()
     {
         if (Initial is null) return;

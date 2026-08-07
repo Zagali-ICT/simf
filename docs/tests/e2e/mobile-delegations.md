@@ -11,16 +11,24 @@
 > date range, and a member count). The head is resolved from the new
 > `Country.HeadOfDelegationUserProfileId` pointer; the member count is the active
 > delegate `UserProfile`s (`IsDelegate && IsActive`) with that `NationalityId`.
+>
+> **⚑ G2 (D-811, 2026-07-30) — the list is per-viewer.** A **signed-in** caller
+> never sees their **OWN** delegation: the country whose `Id` equals the caller's
+> `UserProfile.NationalityId` is dropped **server-side**, and both stats
+> (`countryCount`, `totalParticipants`) are recomputed so the strip matches exactly
+> what is on screen. The endpoint stays `AllowAnonymous` — a **guest** (no bearer
+> token) sees the **full** list, nothing excluded. A signed-in caller with no
+> profile row (an Admin / CP user) also sees the full list.
 
 | | |
 |--|--|
 | **Page** | [`mobile/delegations/`](../../pages/mobile/delegations/README.md) (app screen #21 `delegations`) |
 | **Route** | `/delegations` (`GET /app/delegations`) |
-| **APIs** | `GET /api/v1/app/delegations` (`AllowAnonymous`) → `AppDelegations { countryCount, totalParticipants, items[] }`, each `AppDelegationItem { countryId, countryCode, countryName, countryNameArabic, headName?, headNameArabic?, headTitle?, arrivalDate?, departureDate?, memberCount }`. |
+| **APIs** | `GET /api/v1/app/delegations` (`AllowAnonymous`, **bearer optional**) → `AppDelegations { countryCount, totalParticipants, items[] }`, each `AppDelegationItem { countryId, countryCode, countryName, countryNameArabic, headName?, headNameArabic?, headTitle?, arrivalDate?, departureDate?, memberCount }`. When a bearer token IS sent the caller's own country is excluded (G2 / D-811). |
 | **Surface** | Mobile (Flutter) |
 | **Figma** | `1426:10771` |
-| **Auth setup** | **None** — `GET /app/delegations` is anonymous (public delegations content); a guest can open the screen. For the tappable-card path (below) an approved account with `allowsDelegationMeeting = true`. |
-| **Last reviewed** | 2026-07-22 |
+| **Auth setup** | **None** — `GET /app/delegations` is anonymous (public delegations content); a guest can open the screen. For the **own-country exclusion** path (`E2E-DEL-012`) an approved account whose profile nationality is an **invited** country. For the tappable-card path (below) an approved account with `allowsDelegationMeeting = true`. |
+| **Last reviewed** | 2026-07-30 |
 
 > **⚑ Bi-meeting rework update (2026-07-22).** For an account whose profile has
 > `allowsDelegationMeeting = true` (`currentUserMeetingAccessProvider.delegation`), each
@@ -74,6 +82,10 @@
 | E2E-DEL-009 | RTL render (Arabic) — header, stats, search hint, cards mirror right-to-left; head label "رئيس الوفد" | i18n | P1 | _to author_ |
 | E2E-DEL-010 | Tap a stats-strip flag → list narrows to that country; tapped flag ringed; active-filter chip appears; tapping the chip (or the flag again) restores every country; flag + search filters compose | happy | P1 | _to author_ |
 | E2E-DEL-011 | Tappable cards — an entitled account (`allowsDelegationMeeting`) taps a card → the delegation request sheet opens with that country fixed; a guest / non-entitled user's cards are plain (not tappable) (bi-meeting rework) | happy | P0 | authored ✓ (`delegations_screen_test.dart`, widget — guest = non-tappable) |
+| E2E-DEL-012 | Own delegation hidden — a signed-in viewer whose profile nationality is an invited country does **not** see that country's card, still sees every other one, and both stats recompute; the same list read as a **guest** includes it (G2 / D-811) | data | P0 | authored ✓ (`DelegationsTests.cs`, integration) |
+| E2E-DEL-013 | The own-country exclusion carries into the meeting-request target picker — the sheet's country list cannot offer the viewer's own delegation (defence in depth on top of the existing self-target 400) | data | P1 | _to author_ |
+| E2E-DEL-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-DEL-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -196,18 +208,24 @@ Scenario: The screen mirrors under Arabic
 
 ```gherkin
 Scenario: Tapping a country's flag isolates its delegation, and the chip clears it
-  Given the screen lists "United States" / "الولايات المتحدة" and "Saudi Arabia" / "السعودية"
+  Given the screen lists "United States" / "الولايات المتحدة" and "France" / "فرنسا"
+    (both are VISITING delegations — the host country is never marked Country.IsInvited, D-768.
+     US and FR are both in the seeded invited set — see SIMF_App_SeedGaps.sql: AE, BH, KW,
+     OM, QA, EG, GB, US, FR, PK, IN, TR — so this scenario runs against a seeded environment
+     without any extra Given)
+  And the signed-in viewer's nationality is NOT one of those two (G2/D-811 hides the
+    viewer's own delegation, so pick a viewer whose country is neither US nor FR)
   And no flag filter is active (no active-filter chip is shown)
   When the user taps the United States flag in the stats strip
   Then only the "United States" card is shown
   And the tapped flag is ringed in gold
   And an active-filter chip shows "United States" with a close glyph
-  When the user also types "Saud" into the search box
+  When the user also types "Fran" into the search box
   Then no card is shown (the flag filter and the search compose) and the empty/no-results surface appears
   When the user clears the search
   Then the "United States" card returns (the flag filter still applies)
   When the user taps the active-filter chip (or the ringed flag again)
-  Then the flag filter clears, the chip disappears, and both "United States" and "Saudi Arabia" are shown
+  Then the flag filter clears, the chip disappears, and both "United States" and "France" are shown
 ```
 
 **Evidence:** the screen renders the public `GET /app/delegations` feed; the API
@@ -236,9 +254,75 @@ Scenario: A guest sees plain, non-tappable cards
 `currentUserMeetingAccessProvider` overridden to `MeetingAccess.none` (guest — cards stay
 plain); the entitled tap-through is on-device / `_to author_`.
 
+### E2E-DEL-012 — A viewer never sees their OWN delegation (G2 / D-811)
+
+```gherkin
+Feature: Per-viewer delegation list (GET /app/delegations, bearer optional)
+
+Background:
+  Given the countries "South Korea" / "كوريا الجنوبية" and "Singapore" / "سنغافورة"
+    are marked invited (Country.IsInvited) and active
+  And "South Korea" has 3 active delegate profiles (IsDelegate && IsActive, NationalityId = South Korea)
+  And "Singapore" has 1 active delegate profile
+  And an approved account "viewer@simf.test" exists whose UserProfile.NationalityId is South Korea
+
+Scenario: A guest sees every invited delegation, including South Korea
+  Given no session (no bearer token)
+  When a client GETs /api/v1/app/delegations
+  Then it returns 200 and items include both "South Korea" and "Singapore"
+  And countryCount equals the number of returned items
+  And totalParticipants equals the sum of the returned items' memberCount (South Korea's 3 included)
+
+Scenario: The signed-in viewer does not see their own country
+  Given I am signed in as "viewer@simf.test"
+  When I open /delegations (the screen sends the bearer token)
+  Then no card for "South Korea" is shown and the API items contain no countryId for South Korea
+  And the "Singapore" card is still shown
+  And the stats strip shows countryCount = the guest's countryCount minus 1
+  And totalParticipants = the guest's totalParticipants minus South Korea's memberCount (3)
+  And the flags scattered across the stats strip likewise omit South Korea
+
+Scenario: A signed-in caller with no profile is not over-filtered
+  Given I am signed in as an Admin / CP user (no UserProfile row, so no nationality)
+  When a client GETs /api/v1/app/delegations with that bearer token
+  Then it returns 200 with the FULL list — nothing is excluded
+```
+
+**Evidence:** `tests/SIMF.Api.Tests/DelegationsTests.cs` —
+`A_signed_in_viewer_does_not_see_their_own_delegation_but_a_guest_sees_all` and
+`A_signed_in_caller_with_no_profile_sees_every_invited_delegation`. The filter is
+applied in `PublicDelegationService.GetAsync` **before** the member-count group-by,
+so `countryCount` and `totalParticipants` fall out of the filtered set — the strip
+can never disagree with the cards. Note KSA is the OWNER of the forum and is
+deliberately never flagged `Country.IsInvited` (D-768), so the host country is
+absent from this list for every viewer, signed in or not.
+
+### E2E-DEL-013 — The exclusion carries into the meeting-request target picker
+
+```gherkin
+Scenario: The request sheet cannot offer my own delegation as the target
+  Given I am signed in, my profile nationality is "South Korea" (an invited delegation)
+  And my profile has allowsDelegationMeeting = true
+  When I open the delegation meeting request sheet (mobile-delegation-request.md)
+  Then the target-country list is the same GET /app/delegations feed
+  And "South Korea" is not offered as a target
+  And submitting a self-targeted request would still be rejected server-side with 400
+      DELEGATION_MEETING_REQUEST_INVALID ("A delegation cannot request a meeting with itself." /
+      "لا يمكن للوفد طلب اجتماع مع نفسه.") — the picker exclusion is defence in depth, not the only guard
+```
+
+**Evidence:** the sheet reads the same `delegationsProvider` feed, so it inherits
+the G2 exclusion with no Flutter change; the server-side self-target guard is
+`DelegationMeetingRequestService.SubmitAsync` (covered by
+`DelegationMeetingRequestsTests`).
+
 ---
 
-_Last reviewed:_ `2026-07-22` by `Claude` — bi-meeting rework: delegation cards are
+_Last reviewed:_ `2026-07-30` by `Claude` — G2 (D-811): the list is **per-viewer**, the
+signed-in caller's own country is excluded server-side and both stats recompute
+(`E2E-DEL-012`, `E2E-DEL-013`); the flag-filter scenario (`E2E-DEL-010`) no longer names
+Saudi Arabia as a visible delegation (the host is never `IsInvited`, D-768). Prior:
+`2026-07-22` by `Claude` — bi-meeting rework: delegation cards are
 **tappable** for an entitled account (`allowsDelegationMeeting`) → the delegation request
 sheet (`E2E-DEL-011`); guests keep plain non-tappable cards. Prior: `2026-07-13` by `SIMF
 Team` — the stats-strip **flag filter** (`E2E-DEL-010`). Originating: D-499 Wave 4

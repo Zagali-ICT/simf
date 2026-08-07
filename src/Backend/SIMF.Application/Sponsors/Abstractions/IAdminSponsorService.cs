@@ -3,7 +3,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Sponsors.Abstractions;
 
-/// <summary>D-199 (Mockup page 23) — admin CRUD over <c>Sponsor</c>.
+/// <summary>Admin CRUD over <c>Sponsor</c>.
 /// Mirrors IAdminDelegationService / IAdminCountryService.</summary>
 public interface IAdminSponsorService
 {

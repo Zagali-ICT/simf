@@ -5,7 +5,7 @@ using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-151 — Country lookup configuration. Id is manually-assigned
+/// <summary>Country lookup configuration. Id is manually-assigned
 /// ISO 3166-1 numeric (not IDENTITY). Seed covers GCC + key naval / partner
 /// countries; admins can add the remaining ISO list via the CP CRUD.</summary>
 internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
@@ -27,8 +27,8 @@ internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
         builder.HasIndex(country => country.Code).IsUnique();
         builder.HasIndex(country => new { country.IsActive, country.DisplayOrder });
 
-        // D-499 (الوفود) — the head-of-delegation pointer is a same-DB real FK to
-        // UserProfile (both live on SimfAppDbContext, so the D-157 no-cross-DB-FK
+        // The الوفود head-of-delegation pointer is a same-DB real FK to
+        // UserProfile (both live on SimfAppDbContext, so the no-cross-DB-FK
         // rule is not engaged). Nullable with OnDelete.SetNull so removing a
         // delegate profile simply clears the country's head, never cascades.
         builder.HasOne<UserProfile>()
@@ -39,11 +39,11 @@ internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
         // Seed snapshot — 2026-05-29 baseline. Frozen creation timestamp
         // so the migration is deterministic. The admin CP CRUD can add
         // any other ISO 3166-1 row via the standard create flow.
-        var seedAt = new DateTimeOffset(2026, 5, 29, 0, 0, 0, TimeSpan.Zero);
+        var seedAt = new DateTime(2026, 5, 29, 0, 0, 0);
         builder.HasData(SeedRows(seedAt));
     }
 
-    private static Country[] SeedRows(DateTimeOffset seedAt) =>
+    private static Country[] SeedRows(DateTime seedAt) =>
     [
         // GCC — first, alphabetical for AR display
         Seed( 48, "BH", "Bahrain",              "البحرين",                "+973",   10, seedAt),
@@ -111,7 +111,7 @@ internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
     ];
 
     private static Country Seed(int id, string code, string name,
-        string nameArabic, string phonePrefix, int displayOrder, DateTimeOffset at) =>
+        string nameArabic, string phonePrefix, int displayOrder, DateTime at) =>
         new()
         {
             Id = id,

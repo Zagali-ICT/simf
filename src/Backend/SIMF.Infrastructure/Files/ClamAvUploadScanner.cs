@@ -11,7 +11,7 @@ using SIMF.Common.Options;
 namespace SIMF.Infrastructure.Files;
 
 /// <summary>
-/// D-568 — a real malware scanner backed by a <c>clamd</c> daemon over TCP using
+/// A real malware scanner backed by a <c>clamd</c> daemon over TCP using
 /// the INSTREAM protocol. Registered as <see cref="IUploadScanner"/> when
 /// <c>UploadScanning:Engine = "ClamAV"</c>; otherwise the EICAR
 /// <c>DefaultUploadScanner</c> is used.
@@ -20,7 +20,7 @@ namespace SIMF.Infrastructure.Files;
 /// <see cref="UploadScanVerdict.Skipped"/> rather than throwing — the centralized
 /// file pipeline is <b>fail-closed</b> (it rejects a Skipped verdict in
 /// Production), so an unreachable daemon blocks the upload instead of storing it
-/// unscanned (closes D-494).</para>
+/// unscanned.</para>
 /// </summary>
 internal sealed class ClamAvUploadScanner(
     IOptions<UploadScanningOptions> options,

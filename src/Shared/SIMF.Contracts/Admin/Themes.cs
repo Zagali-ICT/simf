@@ -1,7 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>One row in the admin Themes grid (D-134 Sprint B —
-/// SIMF-FDS-004 §5.1).</summary>
+/// <summary>One row in the admin Themes grid.</summary>
 public sealed record AdminThemeSummary(
     Guid Id,
     string Code,
@@ -10,8 +9,8 @@ public sealed record AdminThemeSummary(
     int DisplayOrder,
     string PageColor,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    // D-506 — carry the bilingual descriptions so the Excel export can surface
+    DateTime CreatedAt,
+    // Carry the bilingual descriptions so the Excel export can surface
     // them (optional/defaulted so existing positional callers are unaffected).
     string? Description = null,
     string? DescriptionArabic = null);
@@ -28,8 +27,8 @@ public sealed record AdminThemeDetail(
     int DisplayOrder,
     string PageColor,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>POST body for <c>/admin/themes</c>.</summary>
 public sealed class AdminCreateThemeRequest
@@ -44,7 +43,9 @@ public sealed class AdminCreateThemeRequest
 }
 
 /// <summary>PUT body for <c>/admin/themes/{id}</c>.</summary>
-public sealed class AdminUpdateThemeRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateThemeRequest
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

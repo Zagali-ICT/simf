@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminUserRolesTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.RateLimiting;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -56,11 +56,7 @@ public sealed class SetUserRolesEndpoint(IAdminUserProvisioningService service)
 
     public override async Task HandleAsync(SetUserRolesRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.SetUserRolesAsync(actorId, req.Id, req.Roles, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

@@ -6,11 +6,11 @@ using SIMF.Common;
 namespace SIMF.Infrastructure.Excel;
 
 /// <summary>
-/// ClosedXML-backed generic grid importer (D-356). Mirrors the hardening of
+/// ClosedXML-backed generic grid importer. Mirrors the hardening of
 /// <see cref="ClosedXmlUserExcelService"/> for every resource's XLSX import:
 /// strict sheet-name match (no silent fallback to the first sheet), a
 /// required-header check, and a row cap. The 5 MB size limit and the ZIP-magic
-/// pre-check live at the endpoint (matching the user import, D-045 H1); this
+/// pre-check live at the endpoint (matching the user import); this
 /// service assumes the bytes already passed that gate.
 ///
 /// <para>Each data row becomes a case-insensitive header→trimmed-value

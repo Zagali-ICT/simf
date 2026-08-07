@@ -52,10 +52,16 @@
 | E2E-MOB013-016 | The full-width اسأل المحاور tile opens send-question (1052:12856, D-446) | happy | P1 | authored ✓ (screen — tile → `sendQuestion`) |
 | E2E-MOB013-017 | RTL tile/row order matches the frame (D-436 position assertions) | i18n | P1 | authored ✓ (screen — `getCenter().dx` about/news/smart-row-2) |
 | E2E-MOB013-018 | Discover badge is the filled "السعودية" (signed-in), not "KSA" (758:1280, D-446) | i18n/visual | P2 | authored ✓ (screen) |
-| E2E-MOB013-019 | **اللقاءات الثنائية → Coming soon (owner 2026-06-21):** the bilateral-meetings news tile opens the **ComingSoon** placeholder (the feature is not designed yet), not the media gallery | happy | P2 | authored ✓ (screen — tile → `bilateralMeetings` ComingSoon route) |
+| E2E-MOB013-019 | **اللقاءات الثنائية → the VIP meetings page (D-745; ComingSoon retired by B18, 2026-07-27):** the bilateral-meetings tile opens the real VIP `/meetings` page for a VIP, and is hidden for a non-VIP. The old `bilateralMeetings` ComingSoon sentinel (route 204) has been **deleted** — it had no screen and no caller once D-745 landed | happy | P2 | authored ✓ (screen `the bilateral-meetings tile opens the VIP meetings page` + `the bilateral-meetings tile is hidden for a non-VIP (D-745)`) |
 | E2E-MOB013-020 | **Smart-features tile → AI-summaries (D-580→D-583):** the smart-row-2 tile reads "ملخص الجلسات" and opens the AI-summaries list (1388:8392, header "ملخص الجلسات") | happy | P2 | authored ✓ (screen — smart-row-2 label + section-scan) |
 | E2E-MOB013-021 | **About-tile → session downloads (D-583):** the Home about-row (4-up) tile reads "الجلسات" and opens the session-materials downloads screen (1388:7621, header "الجلسات"); label matches the screen title | happy | P2 | authored ✓ (screen — about-row label + order) |
+| E2E-MOB013-023 | **Language switch reachable from Home (BUG-017; owner-confirmed 2026-07-27, D-772):** the signed-in Home greeting header carries the shared `SimfLanguageToggle` as a **sibling beside** the bell + ☰ cluster (not inside it). Before, the only language entry point was the Profile "More" menu, so from Home there was no route to the language switch at all | nav | P1 | authored ✓ (screen `BUG-017 — the greeting header carries the shared language toggle …`; placement + flip in `simf_page_shell_test`) |
+| E2E-MOB013-025 | **The Home pill really drives the locale (D-772):** tapping it re-renders the greeting header in the other language — greeting `Welcome` ↔ `مرحبًا`, pill `ع` ↔ `EN` — and persists the choice. Asserted in **both** directions (EN→AR and AR→EN) | i18n | P1 | authored ✓ (screen `the Home language toggle flips EN → AR …` + `… flips AR → EN …`) |
+| E2E-MOB013-024 | **Locked guest badge tile announces why (BUG-014):** the guest home's locked "بطاقتي" tile stays intentionally inert but now carries a semantics hint ("Locked — sign in to unlock your smart badge") so a screen-reader user learns it is locked and why | a11y | P2 | authored ✓ (`simf_page_shell_test` — `BUG-014 — a locked tile announces WHY it is locked and stays inert`) |
 | E2E-MOB013-022 | **Hero background video (D-756 / D-761):** when `OrganizationProfile.backgroundVideoUrl` is a **direct MP4/HLS** link the home hero plays it muted + looping + no-controls, cover-fitted as the base layer (edition text overlay + scrim stay on top); a **YouTube** link is NOT played in-app (an Android WebView can't be clipped into the band — D-761) and falls back to the banner-image carousel / discover photo, same as null/unsupported | happy | P2 | authored ✓ (widget — `HeroBackgroundVideo.isSupported` gate + hero base-layer selection) |
+| E2E-MOB013-026 | **Arabic compound given names greet whole (OA-D1):** the greeting renders the FULL trimmed profile name, so "عبد الله" is never amputated to "عبد" and a family-name-first record never greets the wrong token; the line stays `maxLines: 1` + ellipsised so a long name degrades gracefully | i18n | P1 | authored ✓ (widget — `greeting_header_test.dart`, 6 cases) |
+| E2E-MOB013-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB013-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -315,15 +321,25 @@ Scenario: The full-width اسأل المحاور tile opens the send-question sc
   Then the send-a-question screen opens (RouteNames.sendQuestion)
 ```
 
-### E2E-MOB013-019 — اللقاءات الثنائية opens Coming soon (owner 2026-06-21)
+### E2E-MOB013-019 — اللقاءات الثنائية opens the VIP meetings page (D-745 / B18)
 
 ```gherkin
-Scenario: The bilateral-meetings tile lands on the Coming-soon placeholder
-  Given the signed-in Home is shown
+Scenario: The bilateral-meetings tile opens the real VIP meetings page
+  Given the signed-in Home is shown for a VIP attendee
   When the user taps the "اللقاءات الثنائية" news tile
-  Then the ComingSoon placeholder opens (RouteNames.bilateralMeetings)
-  And the media gallery does NOT open (the feature is not designed yet)
+  Then the VIP meetings page opens (RouteNames.meetings, route 116)
+  And the media gallery does NOT open
+
+Scenario: The tile is not offered to a non-VIP
+  Given the signed-in Home is shown for a non-VIP attendee
+  Then no "اللقاءات الثنائية" tile is rendered
 ```
+
+**B18 (2026-07-27):** the `bilateralMeetings` ComingSoon sentinel (route 204) and
+`savedMeetings` (route 206) were **removed**. Both were declared routes with no
+screen, no inbound navigation and nothing persisted behind them — 204's tile went
+to the real VIP page with D-745, and 206's My-Area stat tile went with the D-609
+screen deletion (which had already removed 205 Saved-sessions the same way).
 
 ### E2E-MOB013-017 — RTL tile/row order matches the frame (D-436)
 
@@ -397,9 +413,142 @@ Scenario: No configured video keeps the banner-image hero
   And no video surface is mounted
 ```
 
+### E2E-MOB013-023 — The language switch is reachable from Home
+
+```gherkin
+Scenario: Switching language without leaving Home
+  Given I am signed in and on the Home tab
+  Then the greeting header shows the language pill next to the bell and the menu
+  And the pill offers the language I would switch TO ("EN" under Arabic, "ع" under English)
+  When I tap it
+  Then the app language flips and the choice is persisted
+```
+
+> Every other screen carries the toggle in its header; Home did not, and the
+> language row lives only in the Profile "More" menu — a different menu from the
+> Home header "More", so from Home there was no route to the language switch at
+> all (BUG-017). **Owner-confirmed 2026-07-27 ("keep home lang", D-772),**
+> superseding the 2026-07-11 removal of the pill from the shared cluster: the
+> Home pill is a **sibling beside** `SimfHeaderActions`, not a member of it, so
+> every sub-page keeps the bell + ☰ cluster shape.
+
+**Evidence:** screen test `BUG-017 — the greeting header carries the shared
+language toggle, so the language switch is reachable from Home (owner 2026-07-27
+"keep home lang", D-772)`; the pill's placement + flip + persist behaviour is
+covered by `simf_page_shell_test` (`the signed-in Home greeting header exposes a
+WORKING language toggle, beside the bell + ☰ cluster rather than inside it`), and
+the re-render is covered by E2E-MOB013-025.
+
+### E2E-MOB013-025 — Tapping the Home pill re-renders Home in the other language
+
+```gherkin
+Scenario Outline: The Home language pill actually drives the app locale
+  Given I am signed in and on the Home tab with the app in <from>
+  Then the greeting reads "<greeting_from>" and the pill offers "<pill_from>"
+  When I tap the language pill
+  Then the greeting header re-renders in <to> and reads "<greeting_to>"
+  And the pill now offers "<pill_to>"
+  And "<greeting_from>" is no longer on screen
+  And the stored preferred language is "<stored_to>"
+
+  Examples:
+    | from    | to      | greeting_from | greeting_to | pill_from | pill_to | stored_to |
+    | English | Arabic  | Welcome       | مرحبًا       | ع         | EN      | ar        |
+    | Arabic  | English | مرحبًا         | Welcome     | EN        | ع       | en        |
+```
+
+> Presence alone is not proof — the pill has to drive the live locale. Both
+> directions are asserted so neither language is the only one exercised.
+
+**Evidence:** screen tests `the Home language toggle flips EN → AR and the
+greeting header re-renders in Arabic (owner 2026-07-27)` and `… flips AR → EN and
+the greeting header re-renders in English (owner 2026-07-27)`, both pumped
+against a **live** `localeControllerProvider` (a fixed `MaterialApp.locale` would
+swallow the re-render).
+
+### E2E-MOB013-025 — Moderator home lists جلساتي (FR-MOD-001)
+
+```gherkin
+Scenario: The moderator's operational home lists the sessions they moderate
+  Given a signed-in approved Moderator opens Home
+  Then the programme entry ("Sessions") is still offered
+  And a "جلساتي / My sessions" section lists one row per session they hold a
+    SessionModerator grant on, soonest first, showing the bilingual title,
+    the hall and the Saudi 12-hour start time (never a UTC instant)
+  When they tap a row
+  Then the app opens that session's Q&A desk directly
+
+Scenario: No grants / a failed load
+  Given the moderator holds no grants
+  Then "لم يتم إسنادك إلى أي جلسة بعد. / You are not assigned to any session
+    yet." shows in place of the rows
+  And when GET /app/sessions/moderated fails instead
+  Then the shared error surface shows "تعذّر تحميل جلساتك. حاول مرة أخرى. /
+    Could not load your sessions. Try again." with Retry
+  And the list is pull-to-refresh in every state
+```
+
+> Full behaviour, the endpoint contract and the matching session-detail gate are
+> catalogued in [`mobile-session-moderate.md`](mobile-session-moderate.md)
+> **E2E-MOBMOD-009** — this row exists so the Home catalogue records the section.
+
+**Evidence:** `test/features/home/moderator_home_test.dart` (5 cases).
+
+### E2E-MOB013-026 — The greeting keeps a compound given name whole (OA-D1)
+
+```gherkin
+Feature: Home greeting
+  As an attendee whose given name is a compound Arabic name
+  I want the greeting to address me by my actual name
+  So that the app does not call me by half of it
+
+Background:
+  Given a signed-in attendee whose profile name is "عبد الله"
+
+Scenario: A compound Arabic given name is greeted whole
+  When the Home screen opens at "/"
+  Then the greeting name line reads "عبد الله 👋"
+  And it does NOT read "عبد 👋"
+
+Scenario: A multi-part Latin name is greeted whole
+  Given the profile name is "Ahmed Al Otaibi"
+  When the Home screen opens at "/"
+  Then the greeting name line reads "Ahmed Al Otaibi 👋"
+
+Scenario: A name-less account shows the wave alone
+  Given the profile name is blank (still loading, or never captured)
+  When the Home screen opens at "/"
+  Then the greeting name line reads "👋" with no leading space
+
+Scenario: A very long name degrades gracefully
+  Given the profile name is "عبد الرحمن بن عبد العزيز بن محمد السالم"
+  When the Home screen opens at "/"
+  Then the name line is a single line, ellipsised at the end
+  And the header height is unchanged
+```
+
+**Evidence:** `test/features/home/widgets/greeting_header_test.dart` — six cases
+covering عبد الله, عبد الرحمن السالم, a Latin multi-part name, whitespace
+trimming, the blank-name wave, and the `maxLines: 1` + `TextOverflow.ellipsis`
+guarantee. The previous behaviour took `name.trim().split(' ').first`, which had
+no way to know where an Arabic compound given name ended; there is no captured
+`GivenName` to split on, so the split was removed rather than patched with
+prefix heuristics (owner decision Q3, 2026-07-30).
+
 ---
 
-_Last reviewed:_ `2026-07-01` by `SIMF Team` — D-583: the two Home session tiles
+_Last reviewed:_ `2026-07-30` by `SIMF Team` — OA-D1: the greeting renders the
+full trimmed name; added E2E-MOB013-026.
+_Prior:_ `2026-07-27` by `SIMF Team` — D-772: the owner confirmed the
+signed-in Home keeps its language toggle, superseding the 2026-07-11 removal;
+added E2E-MOB013-025 for the AR/EN re-render.
+_Last reviewed:_ `2026-07-27` by `SIMF Team` — FR-MOD-001: the Moderator
+operational home lists جلساتي, the sessions they actually hold a grant on
+(E2E-MOB013-025).
+_Prior:_ `2026-07-26` by `SIMF Team` — BUG-017: the shared language toggle
+was added to the signed-in Home greeting header (E2E-MOB013-023); BUG-014: the
+locked guest badge tile now carries a semantics hint (E2E-MOB013-024).
+_Prior:_ `2026-07-01` by `SIMF Team` — D-583: the two Home session tiles
 were crossed against their Figma node titles and swapped so each label opens the
 same-titled screen — about "الجلسات" → session-downloads (1388:7621), smart-features
 "ملخص الجلسات" → AI-summaries list (1388:8392). Supersedes D-582 (which relabelled the

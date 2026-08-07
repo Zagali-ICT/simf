@@ -3,8 +3,8 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Contracts.Account;
 
 /// <summary>
-/// The on-login bundle the Flutter app fetches once and caches (App Home /
-/// Screen 13, D9 — D-249): the signed-in user (identity + app-role +
+/// The on-login bundle the Flutter app fetches once and caches for its home
+/// screen: the signed-in user (identity + app-role +
 /// registration status), the unread-notification badge count, and the server
 /// clock for client skew correction. One round-trip instead of several — an
 /// additive read-only aggregate of existing reads (no schema change).
@@ -16,4 +16,4 @@ namespace SIMF.Contracts.Account;
 public sealed record AppBootstrap(
     CurrentUserResponse User,
     int UnreadNotificationCount,
-    DateTimeOffset ServerTime);
+    DateTime ServerTime);

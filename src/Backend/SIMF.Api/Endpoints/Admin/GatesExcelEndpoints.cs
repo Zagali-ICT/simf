@@ -9,7 +9,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/gates/export</c> — the D-356 grid export for gates.
+/// <c>POST /api/v1/admin/gates/export</c> — the grid export for gates.
 /// All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>; this
 /// subclass only declares the route, permission, sheet/file names, the column
 /// layout, and how to list + identify a gate row.
@@ -33,7 +33,7 @@ public sealed class ExportGatesEndpoint(IAdminGateService service, IGridExcelExp
         new("AllowedProfileTypeCount", row => row.AllowedProfileTypeCount),
         new("AssignedOperatorCount", row => row.AssignedOperatorCount),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the bilingual description (appended so the existing
+        // Round-trip the bilingual description (appended so the existing
         // column order is unchanged; import binds by header name).
         new("Description", row => row.Description),
         new("DescriptionArabic", row => row.DescriptionArabic),
@@ -47,7 +47,7 @@ public sealed class ExportGatesEndpoint(IAdminGateService service, IGridExcelExp
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/gates/import</c> — the D-356 grid import (insert-only).
+/// <c>POST /api/v1/admin/gates/import</c> — the grid import (insert-only).
 /// The base does the upload defence, parse and per-row error aggregation; this
 /// subclass binds one row to <see cref="AdminCreateGateRequest"/> and creates it
 /// (the service rejects a duplicate code or an invalid field → a per-row error,
@@ -96,7 +96,7 @@ public sealed class ImportGatesEndpoint(IAdminGateService service, IGridExcelImp
             Code = code,
             Name = name,
             NameArabic = nameArabic,
-            // D-506 — round-trip the bilingual description (CreateAsync trims and
+            // Round-trip the bilingual description (CreateAsync trims and
             // length-guards them; absent columns simply stay null).
             Description = row.Cells.GetValueOrDefault("Description", string.Empty) is { Length: > 0 } description
                 ? description

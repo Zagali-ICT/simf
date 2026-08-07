@@ -155,8 +155,8 @@ public sealed class DeviceKeyStepUpTests : IClassFixture<BiometricStepUpApiFacto
             UserId = userId,
             Purpose = AccountCodePurpose.BiometricEnrolStepUp,
             Code = AccountCodeHasher.Hash(plaintext),
-            CreatedAt = _factory.Time.GetUtcNow(),
-            ExpiresAt = _factory.Time.GetUtcNow().AddMinutes(10),
+            CreatedAt = _factory.Time.SimfNow(),
+            ExpiresAt = _factory.Time.SimfNow().AddMinutes(10),
         });
         await db.SaveChangesAsync();
     }

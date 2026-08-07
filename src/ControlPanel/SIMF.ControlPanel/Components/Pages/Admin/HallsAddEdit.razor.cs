@@ -4,14 +4,8 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -22,12 +16,15 @@ public partial class HallsAddEdit
 
     private readonly Model _model = new();
     private string _capacityInput = "0";
-    // D-485 — seat-selection mode ("0" = AssignedSeat, "1" = OpenSeating).
+    // Seat-selection mode ("0" = AssignedSeat, "1" = OpenSeating).
     private string _seatModeInput = "0";
     private static readonly string[] _seatModeOptions = { "0", "1" };
     private string _geoLatInput = string.Empty;
     private string _geoLonInput = string.Empty;
     private string _geoRadiusInput = string.Empty;
+    // Blank means "inherit the global value", which is what every hall
+    // carried before this field existed.
+    private string _arrivalGraceInput = string.Empty;
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
@@ -47,9 +44,16 @@ public partial class HallsAddEdit
             _geoLatInput = Initial.GeofenceCenterLat?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _geoLonInput = Initial.GeofenceCenterLon?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _geoRadiusInput = Initial.GeofenceRadiusMeters?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            _arrivalGraceInput = Initial.ArrivalGraceMinutes?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         }
         _editContext = new EditContext(_model);
     }
+
+
+    /// <summary>The shared 0..240 bound as the input's own `max`, so the
+    /// browser refuses out-of-range values before the parser has to.</summary>
+    private static string ArrivalGraceMax =>
+        WalkInModeOptions.MaxArrivalGraceMinutes.ToString(CultureInfo.InvariantCulture);
 
     private async Task HandleSubmitAsync()
     {
@@ -66,68 +70,56 @@ public partial class HallsAddEdit
         { _error = L["Admin.Halls.Field.CapacityInvalid"]; return; }
         if (!TryParseGeofence(out var geoLat, out var geoLon, out var geoRadius))
         { _error = L["Admin.Halls.Field.GeofenceInvalid"]; return; }
+        if (!WalkInModeOptions.TryParseArrivalGrace(_arrivalGraceInput, out var arrivalGrace))
+        { _error = L["Admin.Halls.Field.ArrivalGraceInvalid"]; return; }
 
         _busy = true;
         try
         {
-            ApiResult<AdminHallDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminHallDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/halls",
-                    new AdminCreateHallRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Capacity = capacity,
-                        Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
-                        EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
-                        GeofenceCenterLat = geoLat,
-                        GeofenceCenterLon = geoLon,
-                        GeofenceRadiusMeters = geoRadius,
-                        SeatSelectionMode = SeatModeValue(),
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminHallDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/halls/{Initial!.Id}",
-                    new AdminUpdateHallRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Capacity = capacity,
-                        Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
-                        EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
-                        IsActive = _model.IsActive,
-                        GeofenceCenterLat = geoLat,
-                        GeofenceCenterLon = geoLon,
-                        GeofenceRadiusMeters = geoRadius,
-                        SeatSelectionMode = SeatModeValue(),
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/halls",
+                $"/account/api/admin/halls/{Initial?.Id}",
+                new AdminCreateHallRequest
+                {
+                    Code = _model.Code.Trim().ToUpperInvariant(),
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    Capacity = capacity,
+                    Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
+                    EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
+                    GeofenceCenterLat = geoLat,
+                    GeofenceCenterLon = geoLon,
+                    GeofenceRadiusMeters = geoRadius,
+                    SeatSelectionMode = SeatModeValue(),
+                    ArrivalGraceMinutes = arrivalGrace,
+                },
+                new AdminUpdateHallRequest
+                {
+                    Code = _model.Code.Trim().ToUpperInvariant(),
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    Capacity = capacity,
+                    Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
+                    EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
+                    IsActive = _model.IsActive,
+                    GeofenceCenterLat = geoLat,
+                    GeofenceCenterLon = geoLon,
+                    GeofenceRadiusMeters = geoRadius,
+                    SeatSelectionMode = SeatModeValue(),
+                    ArrivalGraceMinutes = arrivalGrace,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.Halls.Fallback"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Halls.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Halls.Fallback"];
         }
         finally { _busy = false; }
     }
 
-    // P5.1 â€” D-240: parse the geofence inputs. All three together (a valid
-    // coordinate + positive radius â‰¤ 100 km), or all three empty (no geofence).
+    // Parse the geofence inputs. All three together (a valid
+    // coordinate + positive radius ≤ 100 km), or all three empty (no geofence).
     private bool TryParseGeofence(out double? lat, out double? lon, out double? radius)
     {
         lat = lon = radius = null;
@@ -157,7 +149,11 @@ public partial class HallsAddEdit
         return true;
     }
 
-    // D-485 — the hall's seat-selection mode select ("0" = assigned, "1" = open).
+    // Blank is legal and means "inherit"; anything else must be a whole
+    // number of minutes inside the one shared bound. Mirrors the server rule in
+    // AdminHallService.ValidateArrivalGrace so the admin is told here rather than
+    // by a round-trip.
+    // The hall's seat-selection mode select ("0" = assigned, "1" = open).
     private string SeatModeLabel(string id) => id switch
     {
         "1" => L["Admin.Halls.SeatMode.Open"],

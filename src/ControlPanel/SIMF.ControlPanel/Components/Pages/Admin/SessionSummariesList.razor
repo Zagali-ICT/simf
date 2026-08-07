@@ -1,5 +1,5 @@
-@* P4.1 — D-238 (Completion Programme §6.4.1, Mockup screen 34): the Scientific-
-   Committee AI session-summary / محضر desk. Lists every active session with its
+@* The Scientific-Committee AI session-summary / محضر desk.
+   Lists every active session with its
    summary state; AI-draft (generate) or hand-write (edit), then publish for the
    app to read. Gated by SessionSummaries.* . *@
 @page "/admin/session-summaries"
@@ -14,7 +14,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="AdminSessionSummaryRow"
@@ -36,7 +38,8 @@
                       PageSizeLabel="@L["Grid.PageSize"]"
                       PageFormatter="@FormatPage"
                       LoadingLabel="@L["Admin.SessionSummaries.Loading"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ExportPermission="@PermissionCatalog.SessionSummaries.Export">
             <Columns>
                 <SimfDataGridColumn TItem="AdminSessionSummaryRow" Key="session"
                                     Header="@L["Admin.SessionSummaries.Col.Session"]"
@@ -52,7 +55,7 @@
                         }
                         else
                         {
-                            @* D-472 — the review state (Draft / In review / Approved =
+                            @* The review state (Draft / In review / Approved =
                                ready for المحاور), plus a Published pill for the public read. *@
                             @if (context.IsApproved)
                             {
@@ -87,7 +90,7 @@
                     {
                         <SimfToolbarButton Icon="edit" Title="@L["Admin.SessionSummaries.Action.Edit"]"
                                            Disabled="_busy" OnClick="@(() => OpenEditorAsync(context.SessionId))" />
-                        @* D-472 — submit the draft for the team's approval. *@
+                        @* Submit the draft for the team's approval. *@
                         @if (!context.IsInReview && !context.IsApproved)
                         {
                             <SimfToolbarButton Icon="send" Title="@L["Admin.SessionSummaries.Action.SubmitReview"]"
@@ -97,7 +100,7 @@
                 </AuthorizedAction>
                 @if (context.HasSummary)
                 {
-                    @* D-472 — approve a submitted summary / send it back to draft. *@
+                    @* Approve a submitted summary / send it back to draft. *@
                     <AuthorizedAction Permission="@PermissionCatalog.SessionSummaries.Approve">
                         @if (context.IsInReview)
                         {
@@ -137,7 +140,7 @@
 
 @if (_edit is not null)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@_editTitle" OnClose="CloseEditor">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@_editTitle" OnClose="CloseEditor" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             @if (_editAiModel is not null)
             {
@@ -178,8 +181,8 @@
                           @bind-Value="_edit.FullText" Disabled="_busy" />
             <SimfTextarea Label="@L["Admin.SessionSummaries.Field.FullTextArabic"]" Rows="5" MaxLength="8000"
                           @bind-Value="_edit.FullTextArabic" Disabled="_busy" />
-            @* Item #35 (2026-07-20) — the OPTIONAL team summary-video URL: the app's
-               second player on screen 34, beside the full live recording. A YouTube
+            @* The OPTIONAL team summary-video URL: the app's
+               second player, beside the full live recording. A YouTube
                or direct HLS/MP4 link; the server validates it with the same
                LiveStreamUrlPolicy as the session's live feed. *@
             <SimfTextField Label="@L["Admin.SessionSummaries.Field.SummaryVideoUrl"]"
@@ -188,7 +191,7 @@
                            @bind-Value="_edit.SummaryVideoUrl" Disabled="_busy" />
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Loading="_busy" OnClick="SaveAsync">
+            <SimfButton Type="button" Loading="_busy" OnClick="OnSaveClickedAsync" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.SessionSummaries.Editor.Save"]
             </SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseEditor">
@@ -196,4 +199,19 @@
             </SimfButton>
         </Footer>
     </SimfModal>
+
+    @* Saving an edited summary clears its approval and (if it was live)
+       takes it out of the app until it is re-approved and re-published. That
+       used to happen silently on any save; now it is a must-decide step that
+       names the consequence. *@
+    <SimfConfirm Open="_confirmUnpublishOpen"
+                 Title="@L["Admin.SessionSummaries.Confirm.Title"]"
+                 Message="@UnpublishConfirmMessage"
+                 ConfirmLabel="@L["Admin.SessionSummaries.Confirm.Save"]"
+                 CancelLabel="@L["Admin.SessionSummaries.Editor.Cancel"]"
+                 Danger="_editWasPublished"
+                 Busy="_busy"
+                 OnConfirm="ConfirmUnpublishSaveAsync"
+                 OnCancel="CancelUnpublishConfirm"
+                 Permission="@PermissionCatalog.SessionSummaries.Edit"/>
 }

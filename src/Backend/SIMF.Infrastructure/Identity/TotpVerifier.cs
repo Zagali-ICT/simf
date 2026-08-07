@@ -16,7 +16,7 @@ namespace SIMF.Infrastructure.Identity;
 /// <c>"abcd efgh ijkl mnop"</c>) decodes correctly. Diagnosing myComment #35
 /// (2026-05-23): the seeded key contained spaces, which made
 /// <c>Base32Encoding.ToBytes</c> throw and the verifier silently fail-closed,
-/// so every code looked wrong (decision D-034).
+/// so every code looked wrong.
 /// </remarks>
 internal sealed class TotpVerifier : ITotpVerifier
 {

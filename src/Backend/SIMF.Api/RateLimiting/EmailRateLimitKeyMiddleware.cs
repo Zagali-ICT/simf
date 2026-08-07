@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace SIMF.Api.RateLimiting;
 
 /// <summary>
-/// Reads the <c>email</c> field (or the <c>qrId</c> fallback for badge sign-in,
-/// D-738) out of credential-touching request bodies (sign-in, forgot-password,
+/// Reads the <c>email</c> field (or the <c>qrId</c> fallback for badge sign-in)
+/// out of credential-touching request bodies (sign-in, forgot-password,
 /// reset-password, badge-sign-in) and stashes it on the HttpContext as
 /// <c>HttpContext.Items["RateLimitEmail"]</c>, so the <c>"auth-email"</c>
 /// rate-limit policy can key its partition on the target account/badge —
@@ -15,7 +15,7 @@ namespace SIMF.Api.RateLimiting;
 /// body so the endpoint's normal model binding still works. A malformed
 /// body or a missing email field just leaves the key unset — the
 /// per-IP "auth" policy still applies, the "auth-email" policy falls
-/// through to a no-op partition. H7 — D-062.</para>
+/// through to a no-op partition.</para>
 /// </summary>
 public sealed class EmailRateLimitKeyMiddleware
 {
@@ -28,10 +28,6 @@ public sealed class EmailRateLimitKeyMiddleware
         "/api/v1/app/auth/forgot-password",
         "/api/v1/app/auth/reset-password",
         "/api/v1/app/auth/badge-sign-in",
-        // #24 — key the per-email partition on the TARGET new address (the body
-        // field is `newEmail`, not `email`; the fallback scan below reads it).
-        "/api/v1/app/auth/change-email/send-otp",
-        "/api/v1/app/auth/change-email/confirm",
     };
 
     private readonly RequestDelegate _next;
@@ -56,7 +52,7 @@ public sealed class EmailRateLimitKeyMiddleware
         await _next(context);
     }
 
-    // H19 — D-080: cap the body buffer at 8 KB so an attacker posting a
+    // Cap the body buffer at 8 KB so an attacker posting a
     // 30 MB JSON body to /auth/sign-in (the Kestrel default
     // MaxRequestBodySize) cannot force a 30 MB MemoryStream allocation
     // per request on the pre-auth path. Real credential bodies are
@@ -94,11 +90,9 @@ public sealed class EmailRateLimitKeyMiddleware
             // PascalCase on the wire (`{"Email":"..."}`) but a future
             // serialiser change or a hand-rolled client may use lowercase.
             // The badge sign-in body carries no `email` field, so fall back to the
-            // scanned `qrId`; the change-email bodies carry `newEmail` (the target
-            // address). Either fallback lets the "auth-email" limiter partition per
+            // scanned `qrId` — that lets the "auth-email" limiter partition per
             // target (same normalisation) instead of collapsing to the per-IP key.
             string? qrId = null;
-            string? newEmail = null;
             foreach (var prop in doc.RootElement.EnumerateObject())
             {
                 if (prop.Value.ValueKind != JsonValueKind.String)
@@ -113,12 +107,8 @@ public sealed class EmailRateLimitKeyMiddleware
                 {
                     qrId = prop.Value.GetString();
                 }
-                if (string.Equals(prop.Name, "newEmail", StringComparison.OrdinalIgnoreCase))
-                {
-                    newEmail = prop.Value.GetString();
-                }
             }
-            return qrId ?? newEmail;
+            return qrId;
         }
         catch (OperationCanceledException)
         {

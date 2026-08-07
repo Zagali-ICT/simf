@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
-/// <summary>D-132 — the admin broadcast-Notifications desk. Composes a bilingual
+/// <summary>The admin broadcast-Notifications desk. Composes a bilingual
 /// message and queues it (in-app + email) to a session's registered attendees or a
 /// broad audience; the history grid shows past broadcasts + their delivery status.
 /// Calls flow through the same-origin BFF proxy (<c>/account/api/...</c>).</summary>
@@ -54,7 +54,13 @@ public partial class Announcements
     {
         var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
             "simfAccount.postJson", "/account/api/admin/sessions/list",
-            new GridQuery { Top = 200, Sort = "startUtc", SortDescending = false });
+            // "start", not "startUtc": the persisted column was renamed and
+            // AdminSessionService has no arm for the old key, so this asked for a
+            // sort nothing served. The picker still came out in start order only
+            // because that service's catch-all happens to be OrderBy(Start) — a
+            // coincidence, not a contract, and one that would break silently the
+            // day that default changes.
+            new GridQuery { Top = 200, Sort = "start", SortDescending = false });
         if (env is { Success: true, Data: not null })
         {
             _sessions = env.Data.Items;
@@ -230,8 +236,8 @@ public partial class Announcements
             ? row.TitleArabic
             : row.Title;
 
-    // Saudi wall-clock (the CP's datetime convention, D-765), not the server TZ.
-    private static string FormatWhen(DateTimeOffset when) => when.FormatSaudi();
+    // Saudi wall-clock (the CP's datetime convention), not the server TZ.
+    private static string FormatWhen(DateTime when) => when.FormatSaudi();
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);

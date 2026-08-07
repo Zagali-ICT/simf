@@ -1,8 +1,0 @@
-@* D-443 (NCA finding) — renders the token-driven session-expiry guard config
-   for the signed-in Website (SSR). session-timeout.js reads this global and
-   auto-starts: it silently refreshes the short-lived access token while the
-   user is active and shows a "Stay signed in / Sign out" countdown once idle. *@
-<script>
-    window.__simfSessionGuardCfg = @((MarkupString)ConfigJson);
-    if (window.simfSessionGuard) { window.simfSessionGuard.start(window.__simfSessionGuardCfg); }
-</script>

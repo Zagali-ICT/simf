@@ -4,7 +4,7 @@ namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
 /// Generates, normalises and hashes the user-facing recovery codes that act as
-/// a single-use fallback for TOTP (decision D-040). Codes use the Crockford
+/// a single-use fallback for TOTP. Codes use the Crockford
 /// base32 alphabet (no <c>0/O/1/I/L/U</c>) so a code written down by hand is
 /// unambiguous to read back. A code is 10 characters of ~50 bits' entropy,
 /// printed as <c>XXXXX-XXXXX</c> for readability; the hyphen and any

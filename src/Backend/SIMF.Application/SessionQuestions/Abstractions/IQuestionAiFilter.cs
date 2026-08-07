@@ -1,8 +1,8 @@
 namespace SIMF.Application.SessionQuestions.Abstractions;
 
 /// <summary>
-/// P4.2 — D-236 (Completion Programme §6, stage 1 of the Q&amp;A pipeline D-212):
-/// the AI advisory filter for audience questions. On every submission the
+/// Stage 1 of the Q&amp;A pipeline: the AI advisory filter for audience
+/// questions. On every submission the
 /// service calls <see cref="ScreenAsync"/> and persists the returned verdict to
 /// <c>SessionQuestion.AiFilterVerdict</c>. It is <b>advisory only</b> — it
 /// NEVER changes the question's <c>Status</c> (which always lands Pending for
@@ -28,7 +28,7 @@ public interface IQuestionAiFilter
         CancellationToken cancellationToken = default);
 }
 
-/// <summary>P4.2 — D-236: the advisory verdict. <see cref="Verdict"/> is the
+/// <summary>The advisory verdict. <see cref="Verdict"/> is the
 /// short bucket persisted to <c>SessionQuestion.AiFilterVerdict</c>;
 /// <see cref="Flagged"/> lets the Committee queue highlight questions the
 /// filter is unsure about — advisory only, it never hides anything.</summary>

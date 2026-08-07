@@ -6,7 +6,7 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-753 — the forum-day window (MIN/MAX over the active
+/// <summary>The forum-day window (MIN/MAX over the active
 /// <c>ProgrammeDay.Date</c> rows) used by the CP meeting-scheduling pages to bound
 /// their date pickers to the event days. A read-only convenience endpoint gated by
 /// the existing <see cref="PermissionCatalog.BusinessMeetings"/> View permission

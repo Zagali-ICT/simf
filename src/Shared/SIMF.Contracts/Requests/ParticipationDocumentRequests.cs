@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب وثيقة المشاركة") — login-required body for
+/// <summary>Login-required body for the الطلبات "طلب وثيقة المشاركة" request,
 /// <c>POST /app/document-requests</c>.</summary>
 public sealed class SubmitParticipationDocumentRequestBody
 {
@@ -12,17 +12,17 @@ public sealed class SubmitParticipationDocumentRequestBody
     public string? Note { get; set; }
 }
 
-/// <summary>D-500 — response after a successful participation-document
+/// <summary>Response after a successful participation-document
 /// submission.</summary>
 public sealed record ParticipationDocumentRequestSubmitted(
     Guid Id,
     ParticipationDocumentType DocumentType,
     MeetingRequestStatus Status,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
-/// <summary>D-500 — one row in the admin participation-document-requests grid.
+/// <summary>One row in the admin participation-document-requests grid.
 /// The requester display name is resolved from the App-DB profile; the email is
-/// deliberately NOT on the list row (it moves to the detail — the D-185
+/// deliberately NOT on the list row (it moves to the detail, following the
 /// bulk-PII pattern).</summary>
 public sealed record AdminParticipationDocumentRequestRow(
     Guid Id,
@@ -32,10 +32,10 @@ public sealed record AdminParticipationDocumentRequestRow(
     string? Note,
     MeetingRequestStatus Status,
     string? ResponseNote,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTime CreatedAt,
+    DateTime? RespondedAt);
 
-/// <summary>D-500 — single-record detail for the admin respond modal. Includes
+/// <summary>Single-record detail for the admin respond modal. Includes
 /// <c>RequesterEmail</c> (resolved on read from the Identity DB) so the admin
 /// can reach out; fetched on demand and audit-logged as Viewed.</summary>
 public sealed record AdminParticipationDocumentRequestDetail(
@@ -47,12 +47,12 @@ public sealed record AdminParticipationDocumentRequestDetail(
     string? Note,
     MeetingRequestStatus Status,
     string? ResponseNote,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTime CreatedAt,
+    DateTime? RespondedAt);
 
-/// <summary>D-500 — admin moves the row off Pending. Status must be Accepted or
+/// <summary>Admin moves the row off Pending. Status must be Accepted or
 /// Rejected. Open for inheritance so the route-binding endpoint can carry an
-/// <c>Id</c> field (the D-168 pattern).</summary>
+/// <c>Id</c> field.</summary>
 public class RespondToParticipationDocumentRequestRequest : RespondToRequest
 {
 }

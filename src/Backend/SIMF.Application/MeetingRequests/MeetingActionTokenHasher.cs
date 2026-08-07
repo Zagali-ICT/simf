@@ -4,7 +4,7 @@ using System.Text;
 namespace SIMF.Application.MeetingRequests;
 
 /// <summary>
-/// D-717 (item 7, FDS-013 §15.7 GAP-3) — mints and hashes the speaker
+/// Mints and hashes the speaker
 /// action-link token secret, so the <c>MeetingActionTokens</c> table stores a
 /// keyed-HMAC hash, not the live secret (a leaked table cannot forge a link). The
 /// secret is a 256-bit random value carried only in the emailed URL; the HMAC-SHA256

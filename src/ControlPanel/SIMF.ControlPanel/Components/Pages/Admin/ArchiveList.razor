@@ -1,12 +1,12 @@
-@* D-199 (Mockup screen 24) — admin CRUD over the public Archive / Past
+@* Admin CRUD over the public Archive / Past
    Editions list. Each edition carries a year, bilingual title + summary,
    the headline attendees/sessions/speakers counts, an optional cover-image
    relative path, and the active flag that gates public visibility.
-   Centralized dialog/full-page framing D-353: Add / Edit / View / Delete are
+   Centralized dialog/full-page framing: Add / Edit / View / Delete are
    hosted by CrudShell, which frames the reusable ArchiveAddEdit and
    ArchiveViewDelete forms as a popup or a full page per the admin's toolbar
    choice (persisted in localStorage via CpPreferences). The "make this year
-   history" snapshot action (D-275) stays as its own dialog. The inline
+   history" snapshot action stays as its own dialog. The inline
    SimfModal edit form + native confirm() delete it used to carry are gone. *@
 @page "/admin/archive"
 @layout CpShellLayout
@@ -23,10 +23,12 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
-            @* D-275 (§9) — one-click "make this year history" snapshot. *@
+            @* One-click "make this year history" snapshot. *@
             <div class="simf-toolbar">
                 <AuthorizedAction Permission="@PermissionCatalog.Archive.Snapshot">
                     <SimfButton Type="button" Variant="secondary" Disabled="_busy"
@@ -69,7 +71,12 @@
                           DeleteLabel="@L["Grid.Delete"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Archive.Create"
+                          EditPermission="@PermissionCatalog.Archive.Edit"
+                          DeletePermission="@PermissionCatalog.Archive.Delete"
+                          ImportPermission="@PermissionCatalog.Archive.Import"
+                          ExportPermission="@PermissionCatalog.Archive.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>
@@ -148,12 +155,13 @@
     </CrudShell>
 }
 
-@* D-275 (§9) — "make this year history" confirm dialog (counts auto-computed). *@
+@* "Make this year history" confirm dialog (counts auto-computed). *@
 @if (_snapshotOpen)
 {
     <SimfModal Open="true"
                Title="@L["Admin.Archive.Snapshot.Title"]"
-               OnClose="@(() => _snapshotOpen = false)">
+               OnClose="@(() => _snapshotOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <p>@L["Admin.Archive.Snapshot.Intro"]</p>
@@ -168,7 +176,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _snapshotOpen = false)">
                 @L["Admin.Archive.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="SnapshotConfirmAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="SnapshotConfirmAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Archive.Snapshot.Confirm"]
             </SimfButton>
         </Footer>

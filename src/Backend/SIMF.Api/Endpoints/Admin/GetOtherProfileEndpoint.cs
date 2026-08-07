@@ -6,7 +6,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-126 — twin of <see cref="GetVisitorProfileEndpoint"/> for Other.</summary>
+/// <summary>Twin of <see cref="GetVisitorProfileEndpoint"/> for Other.</summary>
 public sealed class GetOtherProfileRequest
 {
     public Guid Id { get; set; }

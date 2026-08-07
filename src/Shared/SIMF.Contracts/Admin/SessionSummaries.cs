@@ -1,34 +1,34 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>P4.1 — D-238 (Completion Programme §6.4.1, Mockup screen 34): one
-/// row in the Scientific-Committee session-summary / محضر desk. The desk lists
-/// every active session and its summary state, so a session with no summary
-/// yet shows <see cref="HasSummary"/> = false and a Generate / Create action.
-/// <see cref="GeneratedByAi"/> reflects whether the current draft was AI-drafted
-/// (vs. hand-written); <see cref="IsPublished"/> whether the app can read it.</summary>
+/// <summary>One row in the Scientific-Committee session-summary / محضر desk.
+/// The desk lists every active session and its summary state, so a session with
+/// no summary yet shows <see cref="HasSummary"/> = false and a Generate / Create
+/// action. <see cref="GeneratedByAi"/> reflects whether the current draft was
+/// AI-drafted (vs. hand-written); <see cref="IsPublished"/> whether the app can
+/// read it.</summary>
 public sealed record AdminSessionSummaryRow(
     Guid SessionId,
     string SessionCode,
     string SessionTitle,
     string SessionTitleArabic,
-    DateTimeOffset SessionStart,
+    DateTime SessionStart,
     bool HasSummary,
     bool GeneratedByAi,
     bool IsPublished,
-    DateTimeOffset? PublishedAt,
-    DateTimeOffset? UpdatedAt,
-    // D-472 (#9) — the team review/approval state, derived from the timestamps:
+    DateTime? PublishedAt,
+    DateTime? UpdatedAt,
+    // The team review/approval state, derived from the timestamps:
     // InReview = submitted but not yet approved; Approved = ready for المحاور.
     bool IsInReview,
     bool IsApproved,
-    DateTimeOffset? ApprovedAt);
+    DateTime? ApprovedAt);
 
-/// <summary>P4.1 — D-238: the full summary detail for the editor. Bilingual
+/// <summary>The full summary detail for the editor. Bilingual
 /// content sections + the session header (read-only context) + provenance and
 /// publish state. <see cref="AiModel"/> is non-null when the draft was AI-
-/// generated. Slice D adds the two read-only AI-transparency sources
-/// (<see cref="Subtitle"/> and <see cref="AiDraftFullTextArabic"/>) the editor
-/// shows beside the editable fields — CP-internal, never on a public contract.</summary>
+/// generated. The two read-only AI-transparency sources
+/// (<see cref="Subtitle"/> and <see cref="AiDraftFullTextArabic"/>) are shown
+/// beside the editable fields — CP-internal, never on a public contract.</summary>
 public sealed record AdminSessionSummaryDetail(
     Guid SessionId,
     string SessionCode,
@@ -44,14 +44,14 @@ public sealed record AdminSessionSummaryDetail(
     string FullTextArabic,
     string? AiModel,
     bool IsPublished,
-    DateTimeOffset? PublishedAt,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
-    // D-472 (#9) — team review/approval state (derived from the timestamps).
+    DateTime? PublishedAt,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
+    // Team review/approval state (derived from the timestamps).
     bool IsInReview,
     bool IsApproved,
-    DateTimeOffset? ApprovedAt,
-    // Slice D (2026-07-19) — AI-transparency read-only sources shown in the
+    DateTime? ApprovedAt,
+    // 2026-07-19 — AI-transparency read-only sources shown in the
     // editor: Subtitle / SubtitleArabic = the raw session captions the AI
     // drafted from (Session.LiveCaptions*); AiDraftFullTextArabic = the pristine
     // AI output captured at generation (immutable across edits) with
@@ -60,16 +60,16 @@ public sealed record AdminSessionSummaryDetail(
     string? Subtitle,
     string? SubtitleArabic,
     string? AiDraftFullTextArabic,
-    DateTimeOffset? AiDraftGeneratedAt,
-    // Item #35 (2026-07-20) — the OPTIONAL team summary-video URL the editor
+    DateTime? AiDraftGeneratedAt,
+    // The OPTIONAL team summary-video URL the editor
     // shows/saves (a YouTube or HLS/MP4 feed, LiveStreamUrlPolicy-validated).
     // Appended (defaulted) so the wire stays append-only. Null = no summary video.
     string? SummaryVideoUrl = null);
 
-/// <summary>P4.1 — D-238: the Committee's edit (upsert) of a summary's content.
+/// <summary>The Committee's edit (upsert) of a summary's content.
 /// Saving a session that has no summary yet creates a hand-written draft
-/// (<c>AiModel</c> stays null); the lengths align with the EF column limits
-/// (§7). Open class per the D-168 / D-174 admin-request pattern.</summary>
+/// (<c>AiModel</c> stays null); the lengths align with the EF column limits.
+/// Open class, matching the other admin-request contracts.</summary>
 public class SaveSessionSummaryRequest
 {
     public string KeyPoints { get; set; } = string.Empty;
@@ -81,8 +81,8 @@ public class SaveSessionSummaryRequest
     public string FullText { get; set; } = string.Empty;
     public string FullTextArabic { get; set; } = string.Empty;
 
-    /// <summary>Item #35 (2026-07-20) — the OPTIONAL team summary-video URL
-    /// (screen 34's second player). A YouTube watch/live URL or a direct HLS/MP4
+    /// <summary>The OPTIONAL team summary-video URL, shown in the desk's second
+    /// player. A YouTube watch/live URL or a direct HLS/MP4
     /// stream, validated server-side by <c>LiveStreamUrlPolicy</c> (the same rule
     /// as the session's live feed); null / blank = clear it. Max length aligns
     /// with the <c>SummaryVideoUrl</c> column (1024).</summary>

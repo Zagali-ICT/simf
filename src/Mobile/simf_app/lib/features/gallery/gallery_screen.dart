@@ -5,6 +5,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import 'data/media_repository.dart';
 import 'widgets/coverage_tabs.dart';
 import 'widgets/gallery_body.dart';
@@ -41,10 +42,7 @@ class GalleryScreen extends ConsumerWidget {
     // `{base}/app/media/{id}/(thumbnail|image)` from it.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     // Pull-to-refresh — re-fetch the media items (invalidate + await next).
-    Future<void> onRefresh() async {
-      ref.invalidate(mediaItemsProvider);
-      await ref.read(mediaItemsProvider.future);
-    }
+    Future<void> onRefresh() => refreshAsync(ref, mediaItemsProvider.future);
 
     return SimfPageShell(
       title: l10n.mediaCoverageTitle,

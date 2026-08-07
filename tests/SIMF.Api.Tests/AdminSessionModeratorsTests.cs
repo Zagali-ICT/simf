@@ -143,7 +143,7 @@ public sealed class AdminSessionModeratorsTests : IClassFixture<SimfApiFactory>
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Hall X", NameArabic = "قاعة س",
             Capacity = 100, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -152,31 +152,21 @@ public sealed class AdminSessionModeratorsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "S", TitleArabic = "ج",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddHours(1),
-            End = DateTimeOffset.UtcNow.AddHours(2),
+            Start = SimfClock.Now.AddHours(1),
+            End = SimfClock.Now.AddHours(2),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
         return session;
     }
 
-    private async Task<Guid> CreateApprovedUserAsync()
-    {
-        var email = $"mod-{Guid.NewGuid():N}@simf.test";
-        using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
-        var user = new SimfUser
-        {
-            UserName = email, Email = email, EmailConfirmed = true,
-            DisplayName = "Mod",
-            AccountState = AccountState.Approved,
-            UserType = UserType.Visitor,
-        };
-        await users.CreateAsync(user, AuthFlow.Password);
-        return user.Id;
-    }
+    /// <summary>An approved account that is ELIGIBLE to moderate (DEF-MOD-005):
+    /// it carries a partner profile type whose mobile app role is Moderator —
+    /// the same fact the JWT's app role is minted from.</summary>
+    private Task<Guid> CreateApprovedUserAsync() =>
+        SessionModeratorSeed.CreateEligibleModeratorAsync(_factory);
 
     private async Task<string> CreateAdministratorAndSignInAsync()
     {
@@ -199,15 +189,7 @@ public sealed class AdminSessionModeratorsTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

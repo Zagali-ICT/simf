@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/localization/locale_controller.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
 import '../../../app/widgets/simf_bottom_nav.dart' show SimfTab;
+import '../../../app/widgets/simf_language_toggle.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 
 /// The greeting header (frame node 203:1238): avatar + greeting + name at the
@@ -20,11 +25,16 @@ class GreetingHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // First name only (owner 2026-07-21) — the greeting shows just the given
-    // name, not the full multi-part name. Name-less while the profile loads (or
-    // for a name-less account) → just the wave, never a stray leading space.
-    final firstName = name.trim().split(' ').first;
-    final nameLine = firstName.isEmpty ? '👋' : '$firstName 👋';
+    // Greet the FULL trimmed name (OA-D1). The old "first token only" split
+    // (owner 2026-07-21) broke every Arabic compound given name — عبد الله
+    // greeted as عبد, عبد الرحمن as عبد — and greeted the wrong name whenever
+    // the family name came first. There is no captured GivenName to split on,
+    // so no amount of string surgery is safe; the Text below already carries
+    // maxLines: 1 + TextOverflow.ellipsis, so a long name degrades gracefully.
+    // Name-less while the profile loads (or for a name-less account) → just the
+    // wave, never a stray leading space.
+    final trimmedName = name.trim();
+    final nameLine = trimmedName.isEmpty ? '👋' : '$trimmedName 👋';
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space4,
@@ -70,9 +80,24 @@ class GreetingHeader extends StatelessWidget {
               ],
             ),
           ),
+          // The shared language toggle. Every other screen carries it in its
+          // header, but the signed-in Home did not — and the language row lives
+          // only in the Profile "More" menu, so from Home there was no route to
+          // the language switch at all (BUG-017). It sits BESIDE the action
+          // cluster, not inside it: the pill was dropped from the shared
+          // cluster on 2026-07-11 and the owner reversed that for Home only on
+          // 2026-07-27 ("keep home lang", D-772). Keep it here.
+          Consumer(
+            builder: (context, ref, _) => SimfLanguageToggle(
+              onPressed: () => unawaited(
+                ref.read(localeControllerProvider.notifier).toggle(),
+              ),
+            ),
+          ),
+          const SizedBox(width: SimfTokens.space2),
           // The shared top-nav action cluster — identical to every sub-page:
-          // the bell, the language globe, and the menu ☰, each a gold glyph in
-          // a navy box. Home carries the unread badge.
+          // the bell and the menu ☰, each a gold glyph in a navy box. Home
+          // carries the unread badge.
           const SimfHeaderActions(showUnreadBadge: true),
         ],
       ),

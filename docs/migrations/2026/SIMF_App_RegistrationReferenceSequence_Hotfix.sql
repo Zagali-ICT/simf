@@ -1,4 +1,4 @@
-/*
+﻿/*
   SIMF_App — interim hotfix: create the missing dbo.RegistrationReferenceSequence
   on a RUNNING production database that predates the consolidated migration.
 

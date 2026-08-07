@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
+// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
@@ -7,11 +7,12 @@ using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Application.AccessControl.Abstractions;
 
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-124 — Reads a pending-approval subject's profile for the CP's
+/// Reads a pending-approval subject's profile for the CP's
 /// "preview before approve" flow. Only emits a row when the subject
 /// matches BOTH AccountState=PendingApproval AND the expected UserType
 /// — the single 404-for-mismatch policy lives at the endpoint, this
@@ -24,10 +25,11 @@ namespace SIMF.Infrastructure.Identity;
 /// </summary>
 internal sealed class AdminApprovalReadService(
     SimfIdentityDbContext dbContext,
-    SimfAppDbContext appDbContext)
+    SimfAppDbContext appDbContext,
+    IQrResolver qrResolver)
     : IAdminApprovalReadService
 {
-    // D-186: every non-admin account is UserType.Visitor. The
+    // Every non-admin account is UserType.Visitor. The
     // audience-vs-partner queue split routes on the linked
     // ProfileType.IsVisitor flag — true (or no profile yet) lands on
     // the Visitors queue, false lands on the Others queue.
@@ -51,7 +53,11 @@ internal sealed class AdminApprovalReadService(
         string qrId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
-        var normalised = qrId.Trim().ToUpperInvariant();
+        // Canonicalise first. An offline badge arrives as a
+        // ~61-character encrypted blob, not a QrId, so the direct lookup below
+        // would miss it and report an unknown badge. A minted serial passes
+        // through unchanged.
+        var normalised = qrResolver.ToStoredQrId(qrId);
 
         var row = await appDbContext.UserProfiles
             .AsNoTracking()
@@ -86,8 +92,8 @@ internal sealed class AdminApprovalReadService(
             row.ProfileTypeColor ?? "#244A77");
     }
 
-    /// <summary>D-126 — any-state full profile read scoped to the
-    /// audience-vs-partner queue. D-186: every non-admin account is
+    /// <summary>Any-state full profile read scoped to the
+    /// audience-vs-partner queue. Every non-admin account is
     /// UserType.Visitor; the audience-vs-partner distinction is the
     /// linked <c>ProfileType.IsVisitor</c> flag (audience when true or
     /// when no profile type is set yet; partner when explicitly false).
@@ -149,7 +155,7 @@ internal sealed class AdminApprovalReadService(
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        // D-151 — translate the logical FK Id back to the ISO code the
+        // Translate the logical FK Id back to the ISO code the
         // wire contract exposes. Cross-context, so a separate query.
         var nationalityCode = profile is null
             ? null
@@ -179,8 +185,8 @@ internal sealed class AdminApprovalReadService(
             profile?.SaudiMobile,
             profile?.InternationalMobile,
             profile?.HasIdImage ?? false,
-            // D-727 — the avatar (profile photo) lives on SimfUser (Identity);
-            // AvatarRelativePath is its StoredFile presence sentinel (D-568 S3).
+            // The avatar (profile photo) lives on SimfUser (Identity);
+            // AvatarRelativePath is its StoredFile presence sentinel.
             !string.IsNullOrEmpty(user.AvatarRelativePath),
             profile?.InterestIds ?? new List<Guid>(),
             profile?.RejectionReason,
@@ -204,7 +210,7 @@ internal sealed class AdminApprovalReadService(
         }
         // The single guarded query — both the state AND the type are
         // filtered before any projection so a wrong-type or
-        // wrong-state id never produces a row. D-186: scope guard
+        // wrong-state id never produces a row. The scope guard
         // (audience vs partner) is enforced upstream by
         // MatchesScopeAsync over the linked ProfileType.IsVisitor.
         var user = await dbContext.Users
@@ -258,7 +264,7 @@ internal sealed class AdminApprovalReadService(
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        // D-151 — translate the logical FK Id back to the wire-side code.
+        // Translate the logical FK Id back to the wire-side code.
         var nationalityCode = profile is null
             ? null
             : await ResolveCodeAsync(profile.NationalityId, cancellationToken);
@@ -293,13 +299,13 @@ internal sealed class AdminApprovalReadService(
             profile?.PlateNumber,
             profile?.ReferenceNumber,
             profile?.Interests.Select(i => new PendingProfileInterest(i.Name, i.NameArabic)).ToList(),
-            // CS-4 — the avatar (profile photo) lives on SimfUser (Identity); its
-            // AvatarRelativePath is the StoredFile pointer/presence sentinel (D-568
-            // S3). Use IsNullOrEmpty to match every other presence reader.
+            // The avatar (profile photo) lives on SimfUser (Identity); its
+            // AvatarRelativePath is the StoredFile pointer/presence sentinel.
+            // Use IsNullOrEmpty to match every other presence reader.
             HasAvatar: !string.IsNullOrEmpty(user.AvatarRelativePath));
     }
 
-    // D-151 — Country lookup helper. Cross-context (Country lives in
+    // Country lookup helper. Cross-context (Country lives in
     // SimfAppDbContext, the profile in SimfIdentityDbContext) so this
     // is a separate cheap single-row index query.
     private async Task<string> ResolveCodeAsync(int id, CancellationToken cancellationToken)
@@ -312,7 +318,7 @@ internal sealed class AdminApprovalReadService(
             .SingleOrDefaultAsync(cancellationToken) ?? string.Empty;
     }
 
-    // D-186 — audience-vs-partner scope guard. Audience scope (the
+    // Audience-vs-partner scope guard. Audience scope (the
     // visitors queue) accepts a user with no profile type yet OR a
     // profile type whose IsVisitor flag is true. Partner scope (the
     // others queue) requires an explicitly false IsVisitor — a user

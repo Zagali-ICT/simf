@@ -1,13 +1,10 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.BusinessMeetings;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Programme;
@@ -33,7 +30,7 @@ public partial class BusinessMeetingsList
     private List<AdminExhibitorSummary> _companies = new();
     private List<AdminAttendeeSummary> _visitors = new();
 
-    // D-753 — forum-day bounds for the datetime-local pickers (yyyy-MM-ddTHH:mm),
+    // Forum-day bounds for the datetime-local pickers (yyyy-MM-ddTHH:mm),
     // null when no programme days are seeded (no client bound; the server still
     // enforces the rule once days exist).
     private string? _forumMin;
@@ -103,7 +100,7 @@ public partial class BusinessMeetingsList
         await LoadForumWindowAsync();
     }
 
-    // D-753 — read the forum-day window (MIN/MAX programme day) and translate it into
+    // Read the forum-day window (MIN/MAX programme day) and translate it into
     // datetime-local min/max attributes spanning the whole day. A failed / empty read
     // leaves both null (no client bound); the backend enforces the rule on save.
     private async Task LoadForumWindowAsync()
@@ -127,17 +124,22 @@ public partial class BusinessMeetingsList
         await LoadAsync();
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — scheduling and
     // cancelling stay on the page's bespoke modals. The row id is the grid key.
-    private Task OnExportAsync(IReadOnlyList<BusinessMeetingRow> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<BusinessMeetingRow> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/business-meetings/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
@@ -250,7 +252,7 @@ public partial class BusinessMeetingsList
             _toast = new Toast("error", L["Admin.BusinessMeetings.Validation.Table"]);
             return;
         }
-        if (!TryParseUtc(_startText, out var start) || !TryParseUtc(_endText, out var end) || end <= start)
+        if (!TryParseSaudiWallClock(_startText, out var start) || !TryParseSaudiWallClock(_endText, out var end) || end <= start)
         {
             _toast = new Toast("error", L["Admin.BusinessMeetings.Validation.Slot"]);
             return;
@@ -352,8 +354,13 @@ public partial class BusinessMeetingsList
         finally { _busy = false; }
     }
 
-    // datetime-local has no timezone; treat the entered wall-clock as UTC.
-    private static bool TryParseUtc(string text, out DateTimeOffset value)
+    // datetime-local carries no timezone, and it does not need one:
+    // what the admin types IS what gets stored. AssumeUniversal + AdjustToUniversal
+    // is the parse that leaves a naked "2026-11-23T09:00" at 09:00 regardless of
+    // the server's own timezone; FromSaudiWallClock then only stamps the Kind.
+    // Do not "fix" this into a local-time parse — that would make the stored value
+    // depend on where the Control Panel happens to be running.
+    private static bool TryParseSaudiWallClock(string text, out DateTime value)
     {
         value = default;
         if (DateTime.TryParse(text, CultureInfo.InvariantCulture,

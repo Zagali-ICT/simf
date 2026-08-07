@@ -1,22 +1,27 @@
-﻿// Tests: SIMF.Api.Tests/GateScanTests.cs
+// Tests: SIMF.Api.Tests/GateScanTests.cs
+// Tests: SIMF.Api.Tests/GateHallDoorChainTests.cs (DEF-CHK-004 — the hall-attendance
+//        chain and the advisory NoticeMessage an allowed scan can carry)
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Gates;
 using SIMF.Domain.AccessControl;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.AccessControl;
 
 /// <summary>
-/// Operator surface + 13-step constraint engine (SIMF-FDS-003 §5.6.1). Every
-/// recorded denial emits exactly one <see cref="DenialReasonCode"/> per the
-/// table in §5.6.1; HTTP-level errors (404 / 403 / 409 / 429 / 503) ride on
+/// Operator surface + 13-step constraint engine. Every
+/// recorded denial emits exactly one <see cref="DenialReasonCode"/>;
+/// HTTP-level errors (404 / 403 / 409 / 429 / 503) ride on
 /// <see cref="GateScanResult.Kind"/> for the endpoint to translate.
 /// </summary>
 internal sealed class GateOperatorService(
@@ -28,13 +33,21 @@ internal sealed class GateOperatorService(
     IHallAttendanceService hallAttendance,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    IOptionsMonitor<WalkInModeOptions> walkInMode,
     ILogger<GateOperatorService> logger) : IGateOperatorService
 {
     private const string ArabicLanguageCode = "ar";
-    // GateScan.QrIdAtScan column width (GateScanConfiguration.HasMaxLength(32)). A
-    // normalised QR longer than this can never be a badge (UserProfile.QrId is 16)
-    // and would truncate on insert, so it is denied as QrUnknown rather than stored.
-    private const int QrIdAtScanMaxLength = 32;
+    // GateScan.QrIdAtScan column width (GateScanConfiguration.HasMaxLength(96)).
+    // A normalised QR longer than this would truncate the append-only scan row on
+    // insert, so it is denied as QrUnknown rather than stored.
+    //
+    // The limit grew from 32 to 64 and then to 96 when the badge tag went
+    // to the full 16 bytes. The bound is NOT removed: it still guards the insert
+    // against an over-length mis-scan. It is wide because a badge is no longer
+    // only a 12-character serial — an offline event badge is an encrypted payload
+    // of ~61 characters, and the whole blob is stored so the audit row is exactly
+    // what was presented at the gate.
+    private const int QrIdAtScanMaxLength = 96;
     private static readonly TimeSpan DuplicateWindow = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan IdempotencyRetention = TimeSpan.FromHours(24);
 
@@ -50,6 +63,67 @@ internal sealed class GateOperatorService(
             .ToListAsync(cancellationToken);
         return rows.Select(g => new OperatorGateAssignment(
             g.Id, g.Code, g.Name, g.NameArabic, g.DirectionMode, g.IsActive)).ToList();
+    }
+
+    public async Task<GateOfflineConfig> GetOfflineConfigAsync(
+        Guid operatorUserId, CancellationToken cancellationToken = default)
+    {
+        var options = walkInMode.CurrentValue;
+        var now = timeProvider.SimfNow();
+        var armed = options.AcceptOfflineBadgesActive(now);
+
+        var gates = await appDbContext.GateAssignments.AsNoTracking()
+            .Where(assignment => assignment.UserId == operatorUserId && assignment.IsActive)
+            .Join(appDbContext.Gates.AsNoTracking().Include(gate => gate.AllowedProfileTypes),
+                assignment => assignment.GateId, gate => gate.Id, (_, gate) => gate)
+            .OrderBy(gate => gate.Code)
+            .ToListAsync(cancellationToken);
+
+        // The allow-list is stored as profile-type Guids, but an offline device
+        // only ever sees the CODE inside the decrypted badge, so translate here
+        // rather than shipping a Guid the scanner could not match. A type with
+        // no code yet is dropped: admitting on a code of 0 would admit every
+        // un-coded type at once.
+        var codeByProfileType = await appDbContext.ProfileTypes.AsNoTracking()
+            .Where(type => type.Code != 0)
+            .ToDictionaryAsync(type => type.Id, type => type.Code, cancellationToken);
+
+        var rules = gates.Select(gate => new GateOfflineRule(
+            gate.Id,
+            gate.Code,
+            gate.AllowedProfileTypes
+                .Select(allow => codeByProfileType.TryGetValue(allow.ProfileTypeId, out var code)
+                    ? code
+                    : (short)0)
+                .Where(code => code != 0)
+                .Distinct()
+                .OrderBy(code => code)
+                .ToList(),
+            gate.HallId is not null,
+            gate.IsActive)).ToList();
+
+        // The key travels ONLY while offline badges are armed, and ONLY to a
+        // caller who actually works a gate. Disarming therefore stops handing it
+        // to new devices — the lever available if one goes missing, together
+        // with rotating the version.
+        //
+        // The assignment requirement matters as much as the arming
+        // one. Gates.Operate is held by every Staff and Moderator app account,
+        // not just the provisioned scanner tablets, so without this the key would
+        // land in unencrypted preferences on every staff phone at the event and
+        // nobody could say how many copies existed.
+        var handOutKey = armed && rules.Count > 0;
+
+        return new GateOfflineConfig(
+            BadgeKey: handOutKey ? options.BadgeKey : null,
+            BadgeKeyVersion: options.BadgeKeyVersion,
+            PreviousBadgeKey: handOutKey && !string.IsNullOrWhiteSpace(options.PreviousBadgeKey)
+                ? options.PreviousBadgeKey
+                : null,
+            PreviousBadgeKeyVersion: options.PreviousBadgeKeyVersion,
+            SessionWalkIn: options.SessionWalkInActive(now),
+            IssuedAt: now,
+            Gates: rules);
     }
 
     public async Task<GateScanResult> RecordScanAsync(
@@ -85,12 +159,12 @@ internal sealed class GateOperatorService(
 
         var qr = QrId.Normalise(context.Request.Qr ?? string.Empty);
 
-        // #14 — GateScan.QrIdAtScan is nvarchar(32) (GateScanConfiguration) and a
-        // real badge QrId is at most 16 chars, so a normalised value longer than the
-        // column can never resolve to a badge and would truncate the append-only scan
-        // row on insert (a 500 for an ordinary over-length mis-scan). Deny it as the
-        // documented QrUnknown at HTTP 200, storing a length-capped QrIdAtScan so the
-        // log row still fits — the same denial the unresolved-QR path below records.
+        // Bound raised to the widened nvarchar(96) column) — a
+        // normalised value longer than the column would truncate the append-only
+        // scan row on insert (a 500 for an ordinary over-length mis-scan). Deny it
+        // as the documented QrUnknown at HTTP 200, storing a length-capped
+        // QrIdAtScan so the log row still fits — the same denial the unresolved-QR
+        // path below records.
         if (qr.Length > QrIdAtScanMaxLength)
         {
             return await RecordDenialAsync(
@@ -127,8 +201,9 @@ internal sealed class GateOperatorService(
         var coldStart = ResolveDirection(snapshot, context.Request.RequestedDirection, null);
 
         // Steps 5–9: per-row predicate → denial reason, ordered. Step 9.5
-        // (time-window) and step 11.5 (booking-required) are reserved hooks
-        // for later increments — no rows here today.
+        // (time-window) is still a reserved hook — no row here today. Step 11.5
+        // (booking-required) is implemented and runs after the
+        // allow-list below, because it needs the resolved direction.
         var simpleChecks = new (bool failed, DenialReasonCode reason)[]
         {
             (!snapshot.IsActive,                              DenialReasonCode.GateInactiveAtScan),
@@ -152,7 +227,7 @@ internal sealed class GateOperatorService(
         // UserProfileId). Run BEFORE the allow-list and direction queries so
         // an absorbed duplicate skips both. The single query returns enough
         // to satisfy both the duplicate path and the direction inference.
-        var windowCutoff = timeProvider.GetUtcNow() - DuplicateWindow;
+        var windowCutoff = timeProvider.SimfNow() - DuplicateWindow;
         var lastAllowed = await appDbContext.GateScans.AsNoTracking()
             .Where(s => s.GateId == context.GateId
                      && s.UserProfileId == resolution.UserProfileId
@@ -160,7 +235,7 @@ internal sealed class GateOperatorService(
             .OrderByDescending(s => s.ScannedAt)
             .Select(s => new { s.Id, s.Direction, s.ScannedAt })
             .FirstOrDefaultAsync(cancellationToken);
-        // D-509 — on a Both-mode gate the operator can deliberately switch
+        // On a Both-mode gate the operator can deliberately switch
         // دخول/خروج and re-scan the same badge within the window (e.g. a quick
         // correction, or a fast in-then-out). That is an intentional new
         // movement, NOT an accidental duplicate, so it must NOT be absorbed.
@@ -194,6 +269,36 @@ internal sealed class GateOperatorService(
                 requestHash, idempotencyKey, cancellationToken);
         }
 
+        // Step 11.5 — a SESSION HALL door additionally requires the
+        // attendee to be registered for the session running behind it. This is
+        // the third of the three access rules (approved at the main gate,
+        // profile type allowed at any gate, registered at a session hall) and
+        // was previously unimplemented: DenialReasonCode.BookingRequiredMissing
+        // existed as a reserved hook with no writer, so any valid badge opened
+        // every hall.
+        //
+        // Applied to ENTRIES only. A departure is never blocked — someone
+        // already inside must always be able to leave — and CheckHallEntry
+        // returns AlreadyInside for an attendee with an open row, which also
+        // covers a Both-mode gate whose direction was only inferred.
+        //
+        // The walk-in mode relaxes THIS rule and only this one; approved and
+        // profile-type-allowed above always hold.
+        if (snapshot.HallId is { } sessionHallId && direction == ScanDirection.CheckIn)
+        {
+            var eligibility = await hallAttendance.CheckHallEntryEligibilityAsync(
+                resolution.UserId, sessionHallId, cancellationToken);
+
+            if (eligibility == HallEntryEligibility.NotRegistered
+                && !walkInMode.CurrentValue.SessionWalkInActive(timeProvider.SimfNow()))
+            {
+                return await RecordDenialAsync(context, qrIdAtScan: qr, denialCtx,
+                    direction: direction,
+                    reason: DenialReasonCode.BookingRequiredMissing,
+                    requestHash, idempotencyKey, cancellationToken);
+            }
+        }
+
         return await RecordAllowedAsync(context, qr, resolution, direction,
             snapshot.HallId, snapshot.DirectionMode == DirectionMode.Both,
             requestHash, idempotencyKey, cancellationToken);
@@ -203,8 +308,8 @@ internal sealed class GateOperatorService(
         Guid operatorUserId, Guid? gateId,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
-        var fromUtc = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
+        var now = timeProvider.SimfNow();
+        var fromUtc = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
         var toUtc = fromUtc.AddDays(1).AddTicks(-1);
 
         var query = appDbContext.GateScans.AsNoTracking()
@@ -225,7 +330,7 @@ internal sealed class GateOperatorService(
             })
             .ToListAsync(cancellationToken);
 
-        // D-167: split cross-context join into App-then-Identity round-trips.
+        // Split cross-context join into App-then-Identity round-trips.
         var profileIds = rows
             .Where(r => r.UserProfileId != null)
             .Select(r => r.UserProfileId!.Value)
@@ -316,7 +421,7 @@ internal sealed class GateOperatorService(
             .Select(s => new GateVisitorListItem(
                 s.Id, s.ScannedAt, s.Direction, s.Outcome,
                 s.UserProfileId, s.QrIdAtScan,
-                // D-158 snapshot columns — no cross-DB JOIN.
+                // Snapshot columns on the scan row — no cross-DB JOIN.
                 s.ScannedDisplayName, s.ScannedProfileTypeName,
                 s.DenialReasonCode))
             .ToListAsync(cancellationToken);
@@ -327,10 +432,10 @@ internal sealed class GateOperatorService(
 
         return new GateVisitorsListResult(
             GateVisitorsListResultKind.Ok,
-            new GateVisitorsListResponse(items, nextCursor, timeProvider.GetUtcNow()));
+            new GateVisitorsListResponse(items, nextCursor, timeProvider.SimfNow()));
     }
 
-    // D-160 — opaque cursor encoding for the gate-visitors list. Single
+    // Opaque cursor encoding for the gate-visitors list. Single
     // long-valued cursor (lastSeenScanId); base64 over a tiny JSON blob
     // so the wire format can grow without breaking older clients.
     private static string EncodeCursor(long lastSeenScanId)
@@ -364,12 +469,12 @@ internal sealed class GateOperatorService(
     // ---- internals ----
 
     private GateScanResult Routing(GateScanResultKind kind, string code) =>
-        new(kind, EmptyResponse(timeProvider.GetUtcNow()), false, code);
+        new(kind, EmptyResponse(timeProvider.SimfNow()), false, code);
 
-    private static GateScanResponse EmptyResponse(DateTimeOffset scannedAt) =>
+    private static GateScanResponse EmptyResponse(DateTime scannedAt) =>
         new(0, ScanOutcome.Denied, ScanDirection.CheckIn, scannedAt, null, null, null);
 
-    /// <summary>D-509 — resolves the direction a scan records. A fixed In / Out
+    /// <summary>Resolves the direction a scan records. A fixed In / Out
     /// gate always records its configured direction. A <c>Both</c> gate honours
     /// the operator's explicit <paramref name="requested"/> choice (the staff
     /// console's دخول/خروج toggle); when the operator did not pick one it falls
@@ -393,7 +498,7 @@ internal sealed class GateOperatorService(
         string idempotencyKey, Guid gateId, string requestHash,
         string? acceptLanguage, CancellationToken cancellationToken)
     {
-        var cutoff = timeProvider.GetUtcNow() - IdempotencyRetention;
+        var cutoff = timeProvider.SimfNow() - IdempotencyRetention;
         var prior = await appDbContext.ScanIdempotencies.AsNoTracking()
             .Where(r => r.Key == idempotencyKey && r.GateId == gateId && r.StoredAt >= cutoff)
             .SingleOrDefaultAsync(cancellationToken);
@@ -407,7 +512,7 @@ internal sealed class GateOperatorService(
     }
 
     /// <summary>
-    /// A4 (D-592) — stages the idempotency row for a just-processed scan, to be
+    /// Stages the idempotency row for a just-processed scan, to be
     /// committed in the same SaveChanges as the GateScan. Upserts on the composite
     /// PK (Key, GateId): a returning badge that re-scans with the same key AFTER
     /// the 24h replay window has a stale row that <see cref="TryReplayAsync"/>
@@ -418,7 +523,7 @@ internal sealed class GateOperatorService(
     /// </summary>
     private async Task StageIdempotencyAsync(
         string idempotencyKey, Guid gateId, string requestHash, string responseHash,
-        DateTimeOffset now, CancellationToken cancellationToken)
+        DateTime now, CancellationToken cancellationToken)
     {
         var existing = await appDbContext.ScanIdempotencies
             .SingleOrDefaultAsync(
@@ -443,12 +548,12 @@ internal sealed class GateOperatorService(
         });
     }
 
-    /// <summary>#15 — persists a freshly built <see cref="GateScan"/> (with its
+    /// <summary>Persists a freshly built <see cref="GateScan"/> (with its
     /// staged idempotency row) and back-fills the idempotency row's ScanId. A
     /// concurrent same-key retry (both requests clear <see cref="TryReplayAsync"/>
     /// before either commits) or a key reused past the 24h replay window collides on
     /// the append-only <c>UX_GateScan_Idempotency</c> / <c>PK_ScanIdempotency</c>
-    /// uniqueness. The idempotency contract (SIMF-API-GATES-001 §9) is a replay, not
+    /// uniqueness. The idempotency contract is a replay, not
     /// a 500, so that duplicate-key collision is recovered into the prior committed
     /// scan — mirroring <c>HallAttendanceService.OpenOrCreateArrivalAsync</c> and
     /// <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>. Returns the
@@ -482,7 +587,7 @@ internal sealed class GateOperatorService(
         return null;
     }
 
-    /// <summary>#15 — recovers a duplicate-key idempotency collision into a replay:
+    /// <summary>Recovers a duplicate-key idempotency collision into a replay:
     /// detaches the losing scan insert and its staged idempotency row so the context
     /// is clean, then loads and returns the prior committed scan (the byte-identical
     /// replay the idempotency contract promises). The <see cref="TrySaveScanAsync"/>
@@ -520,7 +625,7 @@ internal sealed class GateOperatorService(
         string? requestHash, string? idempotencyKey,
         CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var scan = BuildScan(context, qr, ScanOutcome.Allowed,
             denialReason: null, userProfileId: resolution.UserProfileId,
             direction: direction, now: now, idempotencyKey: idempotencyKey,
@@ -551,7 +656,7 @@ internal sealed class GateOperatorService(
             "Allowed scan {ScanId} on gate {GateId} for visitor {ProfileId}",
             scan.Id, context.GateId, resolution.UserProfileId);
 
-        // X-1 (chain design) — a hall-door gate (HallId set) feeds hall attendance
+        // By design, a hall-door gate (HallId set) feeds hall attendance
         // for the session live in that hall. Best-effort: the gate scan is already
         // committed, so a chain failure is logged and swallowed rather than failing
         // the operator's scan (mirrors HallAttendanceService's departure-hook
@@ -561,25 +666,72 @@ internal sealed class GateOperatorService(
         // FIX C — a Both-mode gate's direction is only an alternation guess, so the
         // chain derives the real action from attendance state (directionInferred);
         // a fixed In/Out gate stays authoritative.
+        // DEF-CHK-004 — a hall-door scan can admit the holder while recording NO
+        // session attendance (no session live in the hall, or an Out scan with no
+        // open row to close). That used to be silent, so the operator saw a plain
+        // "Allowed" while the attendance was lost. Carry an advisory notice on the
+        // (still Allowed) result, resolved to the caller's Accept-Language through
+        // the same helper the denial messages use.
+        string? notice = null;
         if (hallDoorHallId is { } hallId)
         {
             try
             {
-                await hallAttendance.RecordGateDoorScanAsync(
+                var attendanceRecorded = await hallAttendance.RecordGateDoorScanAsync(
                     resolution.UserId, hallId, direction,
                     hallDoorDirectionInferred, context.OperatorUserId, cancellationToken);
+                if (!attendanceRecorded)
+                {
+                    notice = NoticeMessageFor(
+                        GateScanNotice.AttendanceNotRecorded, context.AcceptLanguage);
+                }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex,
                     "Hall-attendance chain failed for scan {ScanId} on gate {GateId} (hall {HallId}).",
                     scan.Id, context.GateId, hallId);
+                notice = NoticeMessageFor(
+                    GateScanNotice.AttendanceChainFailed, context.AcceptLanguage);
             }
         }
 
         return new GateScanResult(GateScanResultKind.Recorded,
-            response with { ScanId = scan.Id }, false, null);
+            response with { ScanId = scan.Id, NoticeMessage = notice }, false, null);
     }
+
+    /// <summary>DEF-CHK-004 — the advisory notes an ALLOWED scan can carry. Kept
+    /// private to this service: the wire contract only ships the already-localized
+    /// <c>GateScanResponse.NoticeMessage</c>, mirroring how the denial reasons
+    /// surface as <c>DenialMessage</c>.</summary>
+    private enum GateScanNotice
+    {
+        /// <summary>The chain ran but recorded nothing — no session live in the
+        /// hall, a check-out that found no open attendance row to close, or an
+        /// arrival whose insert the store rejected. The service reports all of
+        /// them identically (one bool), so the wording must not name a single
+        /// cause; the exact reason is in the server log.</summary>
+        AttendanceNotRecorded,
+        AttendanceChainFailed,
+    }
+
+    private static string NoticeMessageFor(GateScanNotice notice, string? acceptLanguage)
+    {
+        var (en, ar) = NoticeMessages(notice);
+        return string.Equals(acceptLanguage, ArabicLanguageCode, StringComparison.OrdinalIgnoreCase)
+            ? ar : en;
+    }
+
+    private static (string en, string ar) NoticeMessages(GateScanNotice notice) =>
+        notice switch
+        {
+            GateScanNotice.AttendanceNotRecorded =>
+                ("Entry allowed, but no session attendance was recorded for this scan.",
+                 "تم السماح بالدخول، ولكن لم يتم تسجيل حضور الجلسة لهذا المسح."),
+            _ =>
+                ("Entry allowed, but the session attendance could not be recorded.",
+                 "تم السماح بالدخول، ولكن تعذّر تسجيل حضور الجلسة."),
+        };
 
     private async Task<GateScanResult> RecordDenialAsync(
         GateScanContext context,
@@ -590,7 +742,7 @@ internal sealed class GateOperatorService(
         string? requestHash, string? idempotencyKey,
         CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         // G-5 — debounce denied scans the same way allowed scans are absorbed (the
         // 5s window in RecordScanAsync only covered Allowed). A malfunctioning or
@@ -642,13 +794,11 @@ internal sealed class GateOperatorService(
             scan, idempotencyKey, context.GateId, context.AcceptLanguage, cancellationToken);
         if (replayResult is not null) { return replayResult; }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.GateScanDenied,
-            Outcome = AuditOutcome.Failure,
-            ActorUserId = context.OperatorUserId,
-            Detail = $"gateId={context.GateId}; reason={reason}; scanId={scan.Id}; corr={context.CorrelationId}",
-        }, cancellationToken);
+        await auditLog.WriteFailureAsync(
+            AuditEvents.GateScanDenied,
+            context.OperatorUserId,
+            detail: $"gateId={context.GateId}; reason={reason}; scanId={scan.Id}; corr={context.CorrelationId}",
+            cancellationToken: cancellationToken);
         // G-3 — only SYSTEM-fault denials count toward the failure-rate circuit.
         // Benign POLICY denials (unknown QR, holder-not-approved, wrong profile
         // type, …) are the operator's normal traffic and must never trip a 5-minute
@@ -667,13 +817,13 @@ internal sealed class GateOperatorService(
     private static GateScan BuildScan(
         GateScanContext context, string qrIdAtScan, ScanOutcome outcome,
         DenialReasonCode? denialReason, Guid? userProfileId, ScanDirection direction,
-        DateTimeOffset now, string? idempotencyKey,
+        DateTime now, string? idempotencyKey,
         string? scannedDisplayName, string? scannedProfileTypeName) =>
         new()
         {
             GateId = context.GateId,
             UserProfileId = userProfileId,
-            // D-157 — snapshot the visitor identity at scan time so the
+            // Snapshot the visitor identity at scan time so the
             // log row survives even if the linked Identity-DB row is
             // later deleted or renamed.
             ScannedDisplayName = scannedDisplayName,
@@ -701,7 +851,7 @@ internal sealed class GateOperatorService(
             .SingleOrDefaultAsync(s => s.Id == prior.ScanId.Value, cancellationToken);
         if (scan is null) { return EmptyResponse(prior.StoredAt); }
 
-        // D-167: split cross-context join into App-then-Identity round-trips.
+        // Split cross-context join into App-then-Identity round-trips.
         GateScanUserProfile? profile = null;
         if (scan.UserProfileId is { } pid)
         {
@@ -767,7 +917,7 @@ internal sealed class GateOperatorService(
             ? ar : en;
     }
 
-    /// <summary>D-167: resolves UserProfile.Id → display name (taken from
+    /// <summary>Resolves UserProfile.Id → display name (taken from
     /// SimfUser.DisplayName on the Identity DB) via App-then-Identity
     /// round-trips since the two entities now live in different
     /// DbContexts.</summary>

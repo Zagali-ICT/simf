@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/features/live/data/current_live_session.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 SessionListItem _session(
   String id, {
@@ -34,7 +35,7 @@ ProviderContainer _containerWith(List<SessionListItem> sessions) {
 void main() {
   group('currentLiveSessionIdProvider (Home LIVE-banner deep-link)', () {
     test('returns the id of the session that is live right now', () async {
-      final now = DateTime.now().toUtc();
+      final now = saudiNow();
       final container = _containerWith(<SessionListItem>[
         _session(
           'ended',
@@ -62,7 +63,7 @@ void main() {
 
     test('returns null when nothing is live (card falls back id-less)',
         () async {
-      final now = DateTime.now().toUtc();
+      final now = saudiNow();
       final container = _containerWith(<SessionListItem>[
         _session(
           'ended',

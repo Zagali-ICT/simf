@@ -6,23 +6,23 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Exhibition;
 
-/// <summary>D-199 — public, anonymous read over active booths. Mirrors
+/// <summary>Public, anonymous read over active booths. Mirrors
 /// PublicDelegationService: AsNoTracking, IsActive filter, projection to
 /// the public contract.
 ///
-/// <para>A5 — the related-entity fields are read through the navigation
+/// <para>The related-entity fields are read through the navigation
 /// properties (<c>Booth.Exhibitor</c>, <c>Booth.Hall</c>), so EF emits one
 /// LEFT JOIN per related row instead of a correlated subquery per field. The
 /// booth-officer + company city/country fields are now inlined columns on the
 /// Booth / Exhibitor rows (the shared Contact directory was removed). The legacy
 /// free-text columns remain the fallback when a booth is not yet linked to a
-/// curated Exhibitor (D-219 wire contract).</para></summary>
+/// curated Exhibitor, preserving the shipped wire contract.</para></summary>
 internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothService
 {
     public async Task<IReadOnlyList<PublicBoothSummary>> ListAsync(
         CancellationToken cancellationToken = default) =>
         await db.Booths.AsNoTracking()
-            // #16 — a soft-deleted exhibitor must not stay publicly visible through
+            // A soft-deleted exhibitor must not stay publicly visible through
             // its still-active booths: exclude booths whose linked Exhibitor is
             // inactive. An unlinked booth (b.Exhibitor == null) keeps showing on its
             // own / legacy free-text data.
@@ -34,7 +34,7 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 Code = b.Code,
                 Name = b.Name,
                 NameArabic = b.NameArabic,
-                // B1 — D-222: the exhibitor name comes from the linked Exhibitor
+                // The exhibitor name comes from the linked Exhibitor
                 // when set (the curated source of truth), falling back to the
                 // legacy free-text.
                 ExhibitorName = b.Exhibitor != null ? b.Exhibitor.Name : b.ExhibitorName,
@@ -45,21 +45,21 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 HallId = b.HallId,
                 MapX = b.MapX,
                 MapY = b.MapY,
-                // D-432 — the hall display name + the booth officer fields
+                // The hall display name + the booth officer fields
                 // (now inlined columns on the Booth row).
                 HallName = b.Hall != null ? b.Hall.Name : null,
                 HallNameArabic = b.Hall != null ? b.Hall.NameArabic : null,
                 OfficerName = b.OfficerName,
                 OfficerPhone = b.OfficerPhone,
                 OfficerEmail = b.OfficerEmail,
-                // P6 — D-440: append-only frozen wire field. The exhibitor's
+                // Append-only frozen wire field. The exhibitor's
                 // Contact id is gone with the shared Contact directory, so it now
                 // emits null.
                 ExhibitorContactId = null,
-                // D-456: the exhibitor company's country (now inlined as
+                // The exhibitor company's country (now inlined as
                 // Exhibitor.CountryId) for the app's corner flag on the booth logo.
                 CountryId = b.Exhibitor != null ? b.Exhibitor.CountryId : null,
-                // #9: the country NAME from the Country lookup on that numeric id
+                // The country NAME from the Country lookup on that numeric id
                 // (so the app shows the country name, not only the corner flag).
                 CountryName = db.Countries
                     .Where(c => b.Exhibitor != null && b.Exhibitor.CountryId == c.Id)
@@ -73,7 +73,7 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
     public async Task<PublicBoothDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default) =>
         await db.Booths.AsNoTracking()
-            // #16 — hide a booth whose linked Exhibitor was soft-deleted (see ListAsync).
+            // Hide a booth whose linked Exhibitor was soft-deleted (see ListAsync).
             .Where(b => b.IsActive && b.Id == id
                 && (b.Exhibitor == null || b.Exhibitor.IsActive))
             .Select(b => new PublicBoothDetail
@@ -82,7 +82,7 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 Code = b.Code,
                 Name = b.Name,
                 NameArabic = b.NameArabic,
-                // B1 — D-222: exhibitor name from the linked Exhibitor when set,
+                // Exhibitor name from the linked Exhibitor when set,
                 // else the legacy free-text.
                 ExhibitorName = b.Exhibitor != null ? b.Exhibitor.Name : b.ExhibitorName,
                 ExhibitorNameArabic =
@@ -94,26 +94,26 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 HallId = b.HallId,
                 MapX = b.MapX,
                 MapY = b.MapY,
-                // D-432 — hall name + inlined booth officer fields (see ListAsync).
+                // Hall name + inlined booth officer fields (see ListAsync).
                 HallName = b.Hall != null ? b.Hall.Name : null,
                 HallNameArabic = b.Hall != null ? b.Hall.NameArabic : null,
                 OfficerName = b.OfficerName,
                 OfficerPhone = b.OfficerPhone,
                 OfficerEmail = b.OfficerEmail,
-                // P6 — D-440: append-only frozen wire field; now emits null (the
+                // Append-only frozen wire field; now emits null (the
                 // exhibitor's Contact id is gone). See ListAsync.
                 ExhibitorContactId = null,
-                // D-456: the exhibitor company's country (now inlined as
+                // The exhibitor company's country (now inlined as
                 // Exhibitor.CountryId) for the app's corner flag on the booth logo.
                 CountryId = b.Exhibitor != null ? b.Exhibitor.CountryId : null,
-                // #9: the country NAME from the Country lookup (see ListAsync).
+                // The country NAME from the Country lookup (see ListAsync).
                 CountryName = db.Countries
                     .Where(c => b.Exhibitor != null && b.Exhibitor.CountryId == c.Id)
                     .Select(c => c.Name).FirstOrDefault(),
                 CountryNameArabic = db.Countries
                     .Where(c => b.Exhibitor != null && b.Exhibitor.CountryId == c.Id)
                     .Select(c => c.NameArabic).FirstOrDefault(),
-                // Wave 3 (Figma 1439:11881): the exhibitor-detail extras. Website
+                // The exhibitor-detail extras. Website
                 // is exhibitor-owned; City is now inlined on the Exhibitor; Tier
                 // from the exhibitor (TierName = the enum name, the app localizes).
                 Website = b.Exhibitor != null ? b.Exhibitor.Website : null,

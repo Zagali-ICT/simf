@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/SponsorsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Sponsors.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -9,7 +9,7 @@ using SIMF.Contracts.Sponsors;
 
 namespace SIMF.Api.Endpoints.Sponsors;
 
-/// <summary>D-199 (Mockup page 23) — public anonymous list of active sponsors,
+/// <summary>Public anonymous list of active sponsors,
 /// grouped by tier. Mirrors ListPublicDelegationsEndpoint (AllowAnonymous,
 /// Tags("Public")).</summary>
 public sealed class ListPublicSponsorsEndpoint(IPublicSponsorService service)
@@ -20,7 +20,7 @@ public sealed class ListPublicSponsorsEndpoint(IPublicSponsorService service)
         Get("/app/sponsors");
         AllowAnonymous();
         Tags("Public");
-        Options(b => b.CacheOutput("PublicRead")); // A6d — 45s output cache (no-op under Testing)
+        Options(b => b.CacheOutput("PublicRead")); // 45s output cache (no-op under Testing)
     }
 
     public override async Task HandleAsync(CancellationToken ct) =>
@@ -28,7 +28,7 @@ public sealed class ListPublicSponsorsEndpoint(IPublicSponsorService service)
             await service.ListAsync(ct)), ct);
 }
 
-/// <summary>Wave 3 (Figma 1439:11826 "الراعي") — public anonymous sponsor detail
+/// <summary>Public anonymous sponsor ("الراعي") detail
 /// (about, city, website, tier, country). A 404 when the sponsor is missing /
 /// inactive.</summary>
 public sealed class GetPublicSponsorRequest { public Guid Id { get; set; } }
@@ -108,21 +108,17 @@ public sealed class CreateSponsorEndpoint(IAdminSponsorService service)
 
     public override async Task HandleAsync(AdminCreateSponsorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSponsorDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
 }
 
-// D-504 — bind the route {id} + the JSON body via a derived route class that
+// Bind the route {id} + the JSON body via a derived route class that
 // INHERITS the contract (mirrors UpdateExhibitorRoute). Passing the bound req
 // straight to the service removes the old field-by-field remap, so a future
 // AdminUpdateSponsorRequest field can never again be silently dropped at bind
-// time (the D-432/D-501 tagline-drop class of bug).
+// time.
 public sealed class UpdateSponsorRoute : AdminUpdateSponsorRequest
 {
     public Guid Id { get; set; }
@@ -142,11 +138,7 @@ public sealed class UpdateSponsorEndpoint(IAdminSponsorService service)
 
     public override async Task HandleAsync(UpdateSponsorRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSponsorDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -168,11 +160,7 @@ public sealed class DeactivateSponsorEndpoint(IAdminSponsorService service)
 
     public override async Task HandleAsync(DeactivateSponsorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

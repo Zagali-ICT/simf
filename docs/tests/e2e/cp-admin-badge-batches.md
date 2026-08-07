@@ -5,17 +5,27 @@ Auth-setup uses the `Get-Totp` helper — never a literal secret.
 
 ## Coverage matrix
 
-| Function | Scenario |
-|---|---|
-| List (golden) | E2E-BBT-001 |
-| Empty state | E2E-BBT-002 |
-| Re-email — success | E2E-BBT-003 |
-| Re-email — invalid email | E2E-BBT-004 |
-| Re-email — unknown batch | E2E-BBT-005 |
-| Revoke — success (disables accounts) | E2E-BBT-006 |
-| Revoke — status reflects revoked | E2E-BBT-007 |
-| Auth gate | E2E-BBT-008 |
-| RTL (Arabic) | E2E-BBT-009 |
+> Rewritten into the standard shape on 2026-07-28. This file used a bespoke
+> `| Function | Scenario |` table with the id in the **second** column, so
+> `tools/testbook/build_testbook.py` — which reads the id from the first cell —
+> saw no scenarios here at all and the page contributed **nothing** to the tester
+> workbook despite being fully authored. `E2E-BBT-010` was also written up in
+> Scenarios below but missing from the matrix entirely.
+
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-BBT-001 | List (golden) — the batches grid shows the generated run | happy | P0 | _to author_ |
+| E2E-BBT-002 | Empty state before any batch exists | happy | P1 | _to author_ |
+| E2E-BBT-003 | Re-email the QR pack to an organiser — success | happy | P0 | _to author_ |
+| E2E-BBT-004 | Re-email — invalid organiser email is rejected, nothing queued | error | P1 | _to author_ |
+| E2E-BBT-005 | Re-email — unknown batch id → 404 `ADMIN_USER_NOT_FOUND` | error | P1 | _to author_ |
+| E2E-BBT-006 | Revoke — disables every account in the batch | happy | P0 | _to author_ |
+| E2E-BBT-007 | Revoke — a revoked batch reads "Revoked" and drops its actions | function | P1 | _to author_ |
+| E2E-BBT-008 | Auth gate — `Visitors.ViewBatches` gates the page, nav item and list API | auth | P0 | _to author_ |
+| E2E-BBT-009 | RTL (Arabic) — grid, pills and both dialogs mirror; no horizontal overflow | i18n | P1 | _to author_ |
+| E2E-BBT-010 | View-only cannot re-email or revoke (`Visitors.ManageBatches` gate) | auth | P0 | _to author_ |
+| E2E-BBT-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-BBT-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

@@ -3,10 +3,10 @@ using SIMF.Contracts.Contacts;
 namespace SIMF.Application.Contacts.Abstractions;
 
 /// <summary>
-/// SIMF-FDS-014 §5.7 (D-284, Track 2) — visitor-to-visitor contact sharing.
+/// Visitor-to-visitor contact sharing.
 /// All operations are caller-scoped (the visitor's own <c>SimfUser.Id</c> from
 /// the JWT <c>sub</c>). Cards are projected live; nothing of the subject's PII
-/// is persisted on save (D-157).
+/// is persisted on save.
 /// </summary>
 public interface IVisitorShareService
 {

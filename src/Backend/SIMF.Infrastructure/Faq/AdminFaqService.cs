@@ -11,7 +11,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Faq;
 
-/// <summary>P2.1 (D-211) — admin CRUD over the two-level FAQ. Mirrors
+/// <summary>Admin CRUD over the two-level FAQ. Mirrors
 /// <see cref="SIMF.Infrastructure.PublicRelations.AdminNewsService"/>: built on
 /// <see cref="SimfAppDbContext"/>, one audit row per mutation, timestamps via
 /// <see cref="TimeProvider"/>, soft-delete through <c>IsActive</c>. The admin
@@ -91,7 +91,7 @@ internal sealed class AdminFaqService(
         var nameAr = RequireText(request.NameAr, NameMaxLength, "Arabic name", "الاسم العربي");
         RequireNonNegative(request.DisplayOrder);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var group = new FaqGroup
         {
             Id = Guid.NewGuid(),
@@ -104,7 +104,7 @@ internal sealed class AdminFaqService(
         dbContext.FaqGroups.Add(group);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqGroupCreated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqGroupCreated, actorUserId,
             $"id={group.Id}; nameEn={group.Name}", cancellationToken);
         logger.LogInformation("Admin {ActorId} created FAQ group {Name} ({Id})",
             actorUserId, group.Name, group.Id);
@@ -124,10 +124,10 @@ internal sealed class AdminFaqService(
         RequireNonNegative(request.DisplayOrder);
         group.DisplayOrder = request.DisplayOrder;
         group.IsActive = request.IsActive;
-        group.UpdatedAt = timeProvider.GetUtcNow();
+        group.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqGroupUpdated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqGroupUpdated, actorUserId,
             $"id={group.Id}; nameEn={group.Name}; active={group.IsActive}", cancellationToken);
 
         var entryCount = await dbContext.FaqEntries
@@ -144,10 +144,10 @@ internal sealed class AdminFaqService(
         if (!group.IsActive) { return; } // idempotent
 
         group.IsActive = false;
-        group.UpdatedAt = timeProvider.GetUtcNow();
+        group.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqGroupDeactivated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqGroupDeactivated, actorUserId,
             $"id={group.Id}; nameEn={group.Name}", cancellationToken);
     }
 
@@ -218,13 +218,13 @@ internal sealed class AdminFaqService(
             AnswerArabic = RequireText(request.AnswerArabic, AnswerMaxLength, "Arabic answer", "الإجابة العربية"),
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         RequireNonNegative(request.DisplayOrder);
         dbContext.FaqEntries.Add(entry);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqEntryCreated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqEntryCreated, actorUserId,
             $"id={entry.Id}; groupId={entry.FaqGroupId}", cancellationToken);
 
         return ToEntrySummary(entry);
@@ -244,10 +244,10 @@ internal sealed class AdminFaqService(
         RequireNonNegative(request.DisplayOrder);
         entry.DisplayOrder = request.DisplayOrder;
         entry.IsActive = request.IsActive;
-        entry.UpdatedAt = timeProvider.GetUtcNow();
+        entry.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqEntryUpdated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqEntryUpdated, actorUserId,
             $"id={entry.Id}; groupId={entry.FaqGroupId}; active={entry.IsActive}", cancellationToken);
 
         return ToEntrySummary(entry);
@@ -262,24 +262,14 @@ internal sealed class AdminFaqService(
         if (!entry.IsActive) { return; } // idempotent
 
         entry.IsActive = false;
-        entry.UpdatedAt = timeProvider.GetUtcNow();
+        entry.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.FaqEntryDeactivated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.FaqEntryDeactivated, actorUserId,
             $"id={entry.Id}; groupId={entry.FaqGroupId}", cancellationToken);
     }
 
     // -- internals ------------------------------------------------------------
-
-    private Task WriteAuditAsync(
-        string eventType, Guid actorUserId, string detail, CancellationToken cancellationToken) =>
-        auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = eventType,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = detail,
-        }, cancellationToken);
 
     private static AdminFaqGroupSummary ToGroupSummary(FaqGroup g, int entryCount) =>
         new(g.Id, g.Name, g.NameArabic, g.DisplayOrder, g.IsActive, entryCount, g.CreatedAt);

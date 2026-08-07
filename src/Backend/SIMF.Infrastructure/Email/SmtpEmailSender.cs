@@ -19,7 +19,7 @@ public sealed class SmtpEmailSender(IOptions<EmailOptions> options) : IEmailSend
         mime.To.Add(MailboxAddress.Parse(message.To));
         mime.Subject = message.Subject;
 
-        // D-751 — attachments (e.g. the bulk-badge QR ZIP) ride the same
+        // Attachments (e.g. the bulk-badge QR ZIP) ride the same
         // BodyBuilder; without any, this is identical to the previous single-part
         // HTML body.
         var builder = new BodyBuilder { HtmlBody = message.HtmlBody };

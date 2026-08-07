@@ -4,11 +4,11 @@ using SIMF.Domain.Media;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-199 (Mockup page 30) — <see cref="MediaItem"/> configuration.
+/// <summary><see cref="MediaItem"/> configuration.
 /// Lives in the <c>...Configurations.App</c> namespace so it is picked up by
 /// <c>SimfAppDbContext.OnModelCreating</c>'s
 /// <c>ApplyConfigurationsFromAssembly</c> namespace filter. Binary bytes are
-/// out-of-row (D-90) in the unified StoredFile store, referenced by the
+/// out-of-row in the unified StoredFile store, referenced by the
 /// <c>ImageFileId</c> / <c>ThumbnailFileId</c> pointers. Max lengths below are
 /// the single source of truth the FluentValidation rules and the service
 /// validation mirror.</summary>
@@ -37,7 +37,7 @@ internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaIte
         // index, with Album appended for the by-album filter).
         builder.HasIndex(item => new { item.IsActive, item.Album, item.DisplayOrder });
 
-        // D-611 (Wave B) — the active gallery read path filtered by media kind.
+        // The active gallery read path filtered by media kind.
         builder.HasIndex(item => new { item.IsActive, item.Kind, item.DisplayOrder });
     }
 }

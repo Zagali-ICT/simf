@@ -12,8 +12,8 @@
 | **Implements use case(s)** | UC-SES-CREATE-001, UC-SES-EDIT-001, UC-SES-DEACTIVATE-001, UC-SES-LIFECYCLE-001 (per SIMF-FDS-004 §5.3 + PDF §2.9) |
 | **Backend endpoints** | `POST /account/api/admin/sessions/list`, `GET /account/api/admin/sessions/{id}`, `POST /account/api/admin/sessions`, `PUT /account/api/admin/sessions/{id}`, `DELETE /account/api/admin/sessions/{id}`, `PUT /account/api/admin/sessions/{id}/status`, `POST`/`DELETE /account/api/admin/sessions/{id}/recording`, `POST /account/api/admin/sessions/export`, `POST /account/api/admin/sessions/import` (BFF → API `/api/v1/admin/sessions/*`) |
 | **Source file** | [`SessionsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsList.razor), [`SessionsAddEdit.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsAddEdit.razor), [`SessionsViewDelete.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsViewDelete.razor) |
-| **Tests** | [`docs/tests/e2e/cp-admin-sessions.md`](../../tests/e2e/cp-admin-sessions.md); `tests/SIMF.Api.Tests/AdminSessionsTests.cs`, `SessionLifecycleTests.cs`, `SessionRecordingTests.cs`, `SessionsExcelTests.cs` |
-| **Last reviewed** | 2026-06-10 |
+| **Tests** | [`docs/tests/e2e/cp-admin-sessions.md`](../../tests/e2e/cp-admin-sessions.md); `tests/SIMF.Api.Tests/AdminSessionsTests.cs`, `SessionLifecycleTests.cs`, `SessionRecordingTests.cs`, `SessionsExcelTests.cs`, `SessionLiveNoticeTests.cs` |
+| **Last reviewed** | 2026-08-04 (arrival-grace override: added D-839, made to actually save on edit D-842) |
 
 ---
 
@@ -127,6 +127,8 @@ First / Prev / numbered / Next / Last; default `Top = 20`; summary
 | Description (Arabic) | textarea | no | 2048 | optional; `null` if blank |
 | Live stream URL | text | no | 1024 | `LiveStreamUrlPolicy.IsAllowed` (YouTube / HLS / MP4 https) |
 | Live sign-language URL | text | no | 1024 | same policy |
+| Live notice — shown with the stream (English) | textarea (2 rows) | no | 512 | optional; `null` if blank. Server caps at 512 → 400 `SESSION_INVALID` |
+| Live notice — shown with the stream (Arabic) | textarea (2 rows) | no | 512 | same; blank in **both** languages = no notice is shown anywhere |
 | Hall | select | yes | — | must parse to a Guid; loaded from `…/halls/list` (Top=500, active) |
 | Category | select | no | — | optional; loaded from `…/session-categories/list` |
 | Type | select | yes* | — | Workshop / Session / Event — **required** on create (#3); *grandfathered: a legacy untyped row may stay untyped on edit, but a set type can't be cleared |
@@ -137,6 +139,21 @@ First / Prev / numbered / Next / Last; default `Top = 20`; summary
 | Add speaker | select | yes* | — | reorderable roster with per-speaker role (Speaker/Host); **≥1 required unless Type = Event** (#4); *grandfathered on edit |
 | Add theme | select | no | — | multi-pick theme chips |
 | Active | checkbox | (Edit only) | — | shows in the public agenda |
+
+**The live notice (FR-702 — owner decision 2026-07-31, D-815).** The two notice
+textareas sit with the broadcast settings, directly under the stream URLs and
+above the AI caption fields, because that is what they annotate. The helper line
+states the rule in the admin's own language: *"Optional note displayed beside the
+live stream, in the viewer's language. It is information only — it blocks nobody
+and the stream stays available to everyone, wherever they are. Leave both
+languages blank to show no notice."* (resx `Admin.Sessions.Field.LiveNotice`,
+`…LiveNoticeArabic`, `…LiveNoticeHint`.) Both create and update send the values
+through `NullIfBlank`, so **emptying a box is how an admin takes a notice down** —
+it stores `null` and the banner disappears from the app live screen and the
+Website session page. Nothing about the field restricts the broadcast:
+SIMF-FDS-007 §5.1 used to specify FR-702 as a Riyadh-region restriction and the
+owner reversed it, so there is no region check anywhere and the stream is served
+to every viewer whether a notice is set or not.
 
 The View/Delete form (`SessionsViewDelete`) renders a read-only `<dl>` of every
 field plus Effective capacity, Speakers, Published-at (when present) and the
@@ -193,6 +210,14 @@ The Add/Edit form also lazy-loads its pickers on first render:
   - `SESSION_TYPE_REQUIRED` (400, #3) — no type on create; or clearing a set type on edit.
   - `SESSION_SPEAKER_REQUIRED` (400, #4) — a non-Event session with no speaker on create; or dropping the last speaker of a compliant non-Event on edit.
   - `SESSION_INVALID` (400) — live URL fails the shared `LiveStreamUrlPolicy`.
+  - `SESSION_HAS_ACTIVE_BOOKINGS` (409) — deactivating (via Delete, or by clearing
+    Active on the edit form) a session attendees still hold seats for. **A5:** the
+    message names the page that can actually release them — Session seat plans
+    (`/admin/sessions/seat-plans`, behind `SeatPlans.View`). It deliberately does
+    **not** name `/admin/bookings`, which is a read-only monitor with no row
+    actions.
+  - `SESSION_CAPACITY_BELOW_BOOKINGS` (409) — effective capacity under the held
+    seat count (skipped when the hall/time change already releases them).
 - **Excel import** (`ImportSessionsEndpoint` over `AdminGridImportEndpoint`):
   insert-only, dedup/row key = **Code**. Required headers: Code, Title,
   TitleArabic, Hall, Start, End. An optional **Speakers** column holds
@@ -213,7 +238,57 @@ The Add/Edit form also lazy-loads its pickers on first render:
   `Admin.Sessions.Updated` / `Admin.Sessions.Deactivated` (each `string.Format`
   with the title); import success `Grid.Import.Done`; load failure
   `Admin.Sessions.LoadFailed`; form fallback `Admin.Sessions.Fallback`. Server
-  errors surface `Error.MessageForCurrentCulture()` (bilingual).
+  errors surface `Error.MessageForCurrentCulture()` (bilingual). **A1/A6:** when
+  the saved edit released seats, the update toast is
+  `Admin.Sessions.UpdatedWithReleases` instead — title + the released
+  registration count + the destroyed admin row-block count.
+
+### 6.1 The seat-release confirmation (A1 / A6)
+
+Moving the **Hall** or either end of the **Start/End** window cascade-releases
+every seat already held for the session — the seat belongs to a specific hall and
+time slot. That happens in the same unit of work as the save and cannot be undone.
+
+- **Before the save:** `SessionsAddEdit.WouldReleaseHeldSeats` compares HallId /
+  Start / End against `Initial` (exactly the comparison
+  `AdminSessionService.UpdateAsync` makes, so the warning and the cascade can never
+  disagree). If the slot moves and anything is held, the submit is intercepted and
+  a `SimfConfirm` — the same must-decide dialog every destructive CP action uses —
+  opens with `Admin.Sessions.Release.Title` / `.Message` / `.Confirm`, naming both
+  real counts. Cancelling leaves the form untouched; confirming re-runs the submit.
+- **The counts come from the loaded detail**, not a second endpoint:
+  `AdminSessionDetail.ActiveReservationCount` + `.ActiveAdminBlockCount` are
+  stamped by `GetAsync` on every read (one grouped query). No new endpoint and no
+  new permission.
+- **After the save:** the update response carries
+  `ReleasedReservationCount` + `ReleasedAdminBlockCount`, and the service writes a
+  second audit row — `SeatReservation.Released` with
+  `session=…; reason=HallChanged|Rescheduled; reservations=N; adminBlocks=M`.
+- **Who is told:** each affected attendee gets a `BookingRejected` notification —
+  in-app **and email** (A2), bilingual, quoting the new start on the Saudi wall
+  clock, never UTC. **Admin row-blocks have no attendee**, so nothing notifies
+  them; the count in the toast and the audit row is their only trace and the admin
+  must re-paint them on the seat-plan page.
+
+### 6.2 Cancelling a session tells the attendees (B2)
+
+Deactivating a session dispatches `NotificationKind.SessionCancelled` (additive
+value 57, persisted by name) to everyone who still holds an active seat **and**
+everyone who favourited it — the two audiences whose agenda silently loses the
+card. In-app row + email, bilingual, Saudi wall clock. The audience is a distinct
+set, so someone who both booked and favourited is told once; a genuine second
+cancellation (re-activated, then cancelled again) is **not** suppressed. The
+`Session.Deactivated` audit row carries `notified=N`. Before this the
+cancellation wrote an audit row and nothing else.
+
+**Both cancellation paths announce.** An admin can cancel a session two ways —
+the Delete/Deactivate action (`DeactivateAsync`) and clearing the **Active**
+checkbox on the edit form (`UpdateAsync`, the PUT carries `IsActive`). Both run
+the same `AnnounceSessionCancelledAsync` step: the audience is resolved before
+the row is hidden, and after the commit it writes the `Session.Deactivated`
+audit row with `notified=N` and dispatches the notice. So an edit-form
+deactivation also produces a `Session.Deactivated` row alongside the ordinary
+`Session.Updated` one. An edit that leaves Active ticked announces nothing.
 
 ## 7. Edge cases + known limitations
 
@@ -231,7 +306,21 @@ The Add/Edit form also lazy-loads its pickers on first render:
   and import never sets them. An admin manages them afterwards via Edit.
 - **Import is insert-only** — a duplicate Code is a per-row error, not an update.
 - **Delete is a soft-delete** — `IsActive=false`; the row stays visible with the
-  grey "Inactive" pill.
+  grey "Inactive" pill in the CP, and disappears from the app + public agenda.
+- **Rescheduling re-arms the workers (A4)** — moving Start/End clears
+  `Session.ReminderSent` and `Session.RatingPromptSent`, because both workers
+  treat a non-null stamp as "already done" and a moved session would otherwise be
+  permanently un-remindable. An edit that leaves the window alone does **not**
+  clear them, so an already-delivered reminder is never re-sent.
+- **There is still no CANCELLED session status** (B3, not built) — `SessionStatus`
+  remains Scheduled/Held/Recorded/Published and a cancellation is expressed as
+  `IsActive=false`. The attendees are now told (B2), but the public agenda still
+  drops the row rather than showing it struck through as cancelled. Adding the
+  additive `Cancelled` value would require every public/app/agenda read and the
+  booking guards (seat surfaces owned elsewhere) to change together — an owner
+  decision, not a QA fix.
+- **No bulk release before deactivating** (B21, not built) — releasing held seats
+  is still one-at-a-time on the seat-plan page, behind `SeatPlans.View`.
 
 ## 8. i18n + RTL
 
@@ -275,6 +364,7 @@ The Add/Edit form also lazy-loads its pickers on first render:
 | Excel export (D-356) | same | E2E-SES-022 |
 | Excel import + rejection (D-356) | same | E2E-SES-023, 024 |
 | Moderate row action → live Q&A desk (D-646) | same | E2E-SES-031 |
+| Live notice — author / clear / 512 length lock (FR-702, D-815) | same | E2E-SES-054..056 |
 
 ## 12. Related docs
 
@@ -287,7 +377,7 @@ The Add/Edit form also lazy-loads its pickers on first render:
 - Authority spec: SIMF-FDS-004 §5.3 (+ PDF §2.9).
 - Decisions: D-165 (CRUD), D-225 (speaker roles), D-226 (category), D-231
   (lifecycle), D-232 (recording), D-349 (live URLs), D-353 (CrudShell framing),
-  D-356 (Uniform-CRUD Excel).
+  D-356 (Uniform-CRUD Excel), D-815 (FR-702 live notice — informational).
 - Source: [`SessionsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsList.razor),
   [`SessionsAddEdit.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsAddEdit.razor),
   [`SessionsViewDelete.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionsViewDelete.razor),
@@ -298,6 +388,9 @@ The Add/Edit form also lazy-loads its pickers on first render:
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-08-04 | D-842 | **The arrival-grace override now actually saves.** D-839 added the field to the contract DTO, the Control Panel and the service, but not to `UpdateSessionRequest` — the bespoke route DTO `UpdateSessionEndpoint` binds instead of the contract type. Every `PUT /admin/sessions/{id}` therefore bound it to `null` and the endpoint's hand-written mapping wrote that `null` over the stored value: the Control Panel reported *"Session … was updated"* while the column stayed `NULL`, and an override set at create time was wiped by the next edit to anything else on the session. Create was never affected (`CreateSessionEndpoint` binds `AdminCreateSessionRequest` directly), nor were halls, for the same reason. Fixed by carrying the property and mapping it; pinned by `UpdateSessionRequestParityTests`, a reflection ratchet over the whole DTO — this was the **fifth** field this one hand-copy has silently dropped (after the live URLs D-439, `Type`, `SeatSelectionModeOverride` D-485, and `Language`/`Outcomes`). Found by the live-DOM pass, not by the test suite. New E2E-SES-060. |
+| 2026-08-04 | D-839 | **Arrival grace (minutes)** on `SessionsAddEdit`, beside `CapacityOverride` — the other "blank inherits" knob. Additive nullable `Session.ArrivalGraceMinutesOverride` (0..240, `CK_Sessions_ArrivalGrace`); **blank = inherit the hall**, which may itself inherit the global `WalkInMode` value. Resolution is session → hall → global → 15. On edit the field's helper names the number currently being inherited, read off `AdminSessionDetail.InheritedArrivalGraceMinutes`, so an admin can see what blank means rather than guessing which layer is in force. Lets one keynote open its doors 40 minutes early without changing the hall the rest of that day's programme runs in. Round-trips through Excel as `ArrivalGraceMinutesOverride` (the **resolved** value is deliberately not exported — it is derived, and a round-trip would pin an inherited value on as an override). New resx quartet (EN + AR). New E2E-SES-057..059. |
+| 2026-07-31 | D-815 | **FR-702 re-scoped from a geographic restriction to an informational notice** (owner: *"No restriction, this is only notification and be added to session."*). `SessionsAddEdit` gained a bilingual "Live notice — shown with the stream" textarea pair (≤512 each) in the broadcast block; the value rides `AdminSessionDetail` + `PublicSessionDetail` (appended, D-219) to the app live screen and the Website session page, where it is displayed **with** the stream. No region check, no location lookup, no gate — the feed is unchanged. Blank in both languages shows nothing; clearing the boxes stores `null` and removes the banner. E2E SES-054..056; `SessionLiveNoticeTests.cs`. |
 | 2026-07-01 | D-578 | `SessionsAddEdit` "get subtitle" tools below the caption fields: import an `.srt`/`.vtt`/`.txt` file (parsed server-side to text) or **Fetch subtitle from video** (`POST /admin/sessions/subtitle/fetch-from-video`, gated `Sessions.Edit`), both filling `LiveCaptions`/`LiveCaptionsArabic` which feed the AI session-summary. Fetch degrades to `SUBTITLE_FETCH_FAILED` where the server can't reach YouTube (on-prem NCA network) → paste/upload instead. E2E SES-027..030. |
 | 2026-06-10 | D-356 | Uniform-CRUD Excel export (`Sessions.Export`) + import (`Sessions.Import`) via `CrudGridExcel`; reference doc created. |
 | 2026-06-09 | D-353 | CrudShell dialog/full-page toggle; inline SimfModal forms replaced by reusable `SessionsAddEdit` + `SessionsViewDelete`; delete now gated by SimfConfirm. |
@@ -305,4 +398,8 @@ The Add/Edit form also lazy-loads its pickers on first render:
 
 ---
 
-_Last reviewed:_ 2026-07-01 by Claude (D-578 — subtitle import/fetch tools).
+_Last reviewed:_ 2026-08-04 by Claude (D-842 — the PUT round-trip the D-839 override was missing).
+
+_Prior:_ 2026-07-31 by Claude (D-815 — FR-702 live-notice fields on the broadcast block: informational bilingual text shown with the stream, gating nothing).
+
+_Prior:_ 2026-07-01 by Claude (D-578 — subtitle import/fetch tools).

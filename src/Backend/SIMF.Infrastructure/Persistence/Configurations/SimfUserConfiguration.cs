@@ -18,13 +18,13 @@ internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>
             .HasConversion<string>()
             .HasMaxLength(32);
 
-        // P7 — UserType (decision D-048). Stored as a string for
-        // readability in SQL diagnostics. P8 moved ProfileTypeId off
-        // SimfUser onto UserProfile (see UserProfileConfiguration).
+        // UserType, stored as a string for readability in SQL diagnostics.
+        // ProfileTypeId is not on SimfUser: it lives on UserProfile instead
+        // (see UserProfileConfiguration).
         builder.Property(user => user.UserType)
             .HasConversion<string>()
             .HasMaxLength(16);
-        // D-610 (Wave B) — the "users of type X, newest first" admin listing
+        // The "users of type X, newest first" admin listing
         // filters by UserType and orders by CreatedAt; the composite supersedes
         // the former standalone HasIndex(UserType) (a redundant left-prefix).
         builder.HasIndex(user => new { user.UserType, user.CreatedAt });
@@ -32,13 +32,13 @@ internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>
         builder.Property(user => user.AvatarRelativePath)
             .HasMaxLength(256);
 
-        // P10 — D-051: state-change metadata. The composite index supports
+        // State-change metadata. The composite index supports
         // "recently rejected" / "recently approved" admin queries without
-        // scanning AspNetUsers. D-106 moved QrId + RejectionReason* to
-        // UserProfile (profile-scope).
+        // scanning AspNetUsers. QrId + RejectionReason* live on
+        // UserProfile instead, because they are profile-scoped.
         builder.HasIndex(user => new { user.AccountState, user.StateChangedAt });
 
-        // D-610 (Wave B) — enforce e-mail uniqueness at the DB. Identity creates
+        // Enforce e-mail uniqueness at the DB. Identity creates
         // a non-unique "EmailIndex" on NormalizedEmail by default; override it in
         // place (same database name) as UNIQUE + filtered so multiple NULL/e-mail-
         // less rows are still allowed. Redundant-but-defensive alongside the

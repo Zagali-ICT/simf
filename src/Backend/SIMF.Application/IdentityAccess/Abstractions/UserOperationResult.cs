@@ -3,8 +3,7 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 /// <summary>
 /// SIMF-owned outcome shape for <see cref="IUserAccountRepository"/>
 /// methods that previously returned <c>IdentityResult</c>. Application
-/// code never sees Identity types now (H21 — D-082, closes the leftover
-/// of Architecture SEV-1.1).
+/// code never sees Identity types.
 ///
 /// <para>The implementation in Infrastructure translates
 /// <c>IdentityResult</c> → <c>UserOperationResult</c> at the boundary;
@@ -46,11 +45,11 @@ public sealed record UserOperationResult
 public sealed record UserOperationError(string Code, string Description);
 
 /// <summary>
-/// H20 — D-082: helpers for <see cref="UserOperationResult"/>. Application
+/// Helpers for <see cref="UserOperationResult"/>. Application
 /// callers that don't have a sensible fallback for a failed operation
-/// (most write-side paths after R3) call <c>.EnsureSuccessAsync()</c>
+/// (most write-side paths) call <c>.EnsureSuccessAsync()</c>
 /// directly on the repository task — a failure throws and propagates
-/// to the error middleware as a 500. Pre-H20 18 call sites discarded
+/// to the error middleware as a 500. Previously 18 call sites discarded
 /// the <see cref="UserOperationResult"/> entirely; this extension is the
 /// minimum-invasive way to close that gap without rewriting each caller.
 /// </summary>

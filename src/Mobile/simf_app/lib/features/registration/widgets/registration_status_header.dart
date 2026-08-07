@@ -29,6 +29,7 @@ class RegistrationStatusHeader extends StatelessWidget {
           children: <Widget>[
             IconButton(
               onPressed: onBack,
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               icon: const Icon(
                 Icons.arrow_back_ios_new,
                 color: SimfTokens.surface,
@@ -42,11 +43,7 @@ class RegistrationStatusHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: SimfTokens.textTitle,
-                  fontWeight: FontWeight.w600,
-                  color: SimfTokens.surface,
-                ),
+                style: SimfTokens.labelWhiteSemiboldTitle,
               ),
             ),
             const SizedBox(width: 48), // balances the back button; keeps title centred

@@ -40,6 +40,8 @@
 | E2E-MOB201-004 | `GET /app/faq` returns active groups + entries anonymously | happy | P0 | authored ✓ (API `Public_faq_returns_active_groups_with_their_entries_anonymously`) |
 | E2E-MOB201-005 | Deactivated / empty groups are hidden from the public read | data | P1 | authored ✓ (API `Public_faq_hides_empty_and_deactivated_groups`) |
 | E2E-MOB201-006 | RTL — Arabic question/answer text from the same entry | rtl | P2 | covered (models `localized*` getters; `isArabic` path) |
+| E2E-MOB201-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB201-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

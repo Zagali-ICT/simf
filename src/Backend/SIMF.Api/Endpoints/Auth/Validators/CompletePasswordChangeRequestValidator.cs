@@ -4,7 +4,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Auth.Validators;
 
-/// <summary>D-206: validates the complete-password-change request.</summary>
+/// <summary>Validates the complete-password-change request.</summary>
 public sealed class CompletePasswordChangeRequestValidator : Validator<CompletePasswordChangeRequest>
 {
     public CompletePasswordChangeRequestValidator()

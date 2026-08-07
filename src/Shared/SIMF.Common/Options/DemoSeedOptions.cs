@@ -1,7 +1,7 @@
 namespace SIMF.Common.Options;
 
 /// <summary>
-/// D-585 — settings for the demo user-account seed (the one-per-profile-type
+/// Settings for the demo user-account seed (the one-per-profile-type
 /// sample accounts created by <c>IdentitySeeder.EnsureDemoAccountsAsync</c>).
 /// Bound from the <c>Seed</c> configuration section.
 /// <para><b>Security (Round-1 held item #1):</b> the demo accounts seed ONLY in

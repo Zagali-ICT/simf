@@ -3,7 +3,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// The authenticator-app enrolment use cases (myComment item #11, decision D-035).
+/// The authenticator-app enrolment use cases.
 /// A signed-in user generates a secret, scans the QR with an authenticator app
 /// and confirms a first code; on success the account flips to
 /// <c>TwoFactorEnabled = true</c>. A user can also turn 2FA off by providing a
@@ -40,7 +40,7 @@ public interface ITotpEnrollmentService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-096: returns the QR + <c>otpauth://</c> URI for the user's CURRENT
+    /// Returns the QR + <c>otpauth://</c> URI for the user's CURRENT
     /// (already-active) authenticator secret. Does NOT rotate the secret —
     /// the same QR is returned on every call. Used for the
     /// <c>/account/totp-pairing</c> CP page so an admin whose authenticator
@@ -54,7 +54,7 @@ public interface ITotpEnrollmentService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// D-102: verifies a code against the user's CURRENT active
+    /// Verifies a code against the user's CURRENT active
     /// authenticator secret without mutating state — no replay-guard
     /// update, no flag change, no audit row. Lets the
     /// <c>/account/totp-pairing</c> page confirm a scan succeeded; the

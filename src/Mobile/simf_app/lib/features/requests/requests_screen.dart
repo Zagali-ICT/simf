@@ -10,8 +10,9 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
-import '../account/data/profile_repository.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
+import '../account/data/profile_repository.dart';
 import '../speakers/widgets/meeting_request_sheet.dart';
 import 'data/request_models.dart';
 import 'data/requests_repository.dart';
@@ -103,10 +104,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
   }
 
   /// Pull-to-refresh — re-fetch the requests feed (invalidate + await next).
-  Future<void> _refresh() async {
-    ref.invalidate(myRequestsProvider);
-    await ref.read(myRequestsProvider.future);
-  }
+  Future<void> _refresh() => refreshAsync(ref, myRequestsProvider.future);
 
   @override
   Widget build(BuildContext context) {

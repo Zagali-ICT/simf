@@ -28,7 +28,7 @@ public partial class DelegationAvailabilityPage
     private bool _busy;
     private Toast? _toast;
 
-    // R10 (D-767) — a must-decide guard for the destructive window delete.
+    // A must-decide guard for the destructive window delete.
     private bool _confirmOpen;
     private Guid _confirmWindowId;
 
@@ -107,8 +107,8 @@ public partial class DelegationAvailabilityPage
         // the authoritative server rule). Skipped when no programme days are seeded.
         if (_forumMinDate is { } minDate && _forumMaxDate is { } maxDate)
         {
-            var startDate = DateOnly.FromDateTime(start.UtcDateTime);
-            var endDate = DateOnly.FromDateTime(end.UtcDateTime);
+            var startDate = DateOnly.FromDateTime(start);
+            var endDate = DateOnly.FromDateTime(end);
             if (startDate < minDate || endDate > maxDate)
             {
                 var range = EventDateRange.Format(
@@ -151,7 +151,7 @@ public partial class DelegationAvailabilityPage
         finally { _busy = false; }
     }
 
-    // R10 (D-767) — open the delete confirm; RunDeleteAsync does the work on OK.
+    // Open the delete confirm; RunDeleteAsync does the work on OK.
     private void ConfirmDelete(Guid windowId)
     {
         _confirmWindowId = windowId;
@@ -191,7 +191,7 @@ public partial class DelegationAvailabilityPage
         finally { _busy = false; }
     }
 
-    private static bool TryParseUtc(string value, out DateTimeOffset result)
+    private static bool TryParseUtc(string value, out DateTime result)
     {
         if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var dt))

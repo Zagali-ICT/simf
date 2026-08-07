@@ -60,7 +60,10 @@ void main() {
       expect(d.websiteUrl, 'https://reef.example.sa'); // D-544
       expect(d.sessions, hasLength(1));
       expect(d.sessions.single.localizedTitle(true), 'حديث');
-      expect(d.sessions.single.start.isUtc, isTrue);
+      // Saudi wall-clock carries no zone, so a decoded value must NOT be
+      // left untagged: tagging it would let a later toLocal() shift it by the
+      // device offset (owner decision 2026-07-31).
+      expect(d.sessions.single.start.isUtc, isFalse);
     });
 
     test('gates + sessions default safely when absent', () {

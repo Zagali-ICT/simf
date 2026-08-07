@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminApprovalTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -27,11 +27,7 @@ public sealed class RejectAdminEndpoint(IAdminUserApprovalService adminAccountSe
 
     public override async Task HandleAsync(RejectRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await adminAccountService.RejectAdminAsync(actorId, req.Id,
             new AdminRejectRequest { Reason = req.Reason }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
@@ -40,8 +36,11 @@ public sealed class RejectAdminEndpoint(IAdminUserApprovalService adminAccountSe
 
 /// <summary>
 /// <c>POST /api/v1/admin/others/{id:guid}/reject</c> — set a pending
-/// Other to Rejected with a mandatory 10–500 char reason (P7c — new).
-/// Administrator-only.
+/// Other to Rejected with a mandatory 10–500 char reason.
+/// <para>Gated on <c>Others.Reject</c>, matching
+/// <see cref="ApproveOtherEndpoint"/> and the bulk endpoint. Same
+/// copy-paste as the approve half: the admin policy line survived from
+/// <see cref="RejectAdminEndpoint"/> above.</para>
 /// </summary>
 public sealed class RejectOtherEndpoint(IAdminUserApprovalService adminAccountService)
     : Endpoint<RejectRouteRequest, ApiResult<bool>>
@@ -49,7 +48,7 @@ public sealed class RejectOtherEndpoint(IAdminUserApprovalService adminAccountSe
     public override void Configure()
     {
         Post("/admin/others/{id:guid}/reject");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.Reject), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.Reject), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Reject a pending Other. Requires Administrator role.");
@@ -57,11 +56,7 @@ public sealed class RejectOtherEndpoint(IAdminUserApprovalService adminAccountSe
 
     public override async Task HandleAsync(RejectRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await adminAccountService.RejectOtherAsync(actorId, req.Id,
             new AdminRejectRequest { Reason = req.Reason }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);

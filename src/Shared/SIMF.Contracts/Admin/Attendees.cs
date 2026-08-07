@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>One row in the admin Attendees roster (D-134 Sprint A —
+/// <summary>One row in the admin Attendees roster (a
 /// read-only view over the existing <c>UserProfile</c> + <c>SimfUser</c>
 /// + <c>ProfileType</c> tables; no schema change). Combined view across
 /// every Approved Visitor + Other; admins are excluded.</summary>
@@ -14,4 +14,4 @@ public sealed record AdminAttendeeSummary(
     string? ProfileTypeNameArabic,
     string AccountState,
     string? QrId,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);

@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.UserProfile;
@@ -9,7 +9,7 @@ namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
 /// <c>POST /api/v1/app/account/user-profile</c> — creates / updates the
-/// signed-in user's profile (decisions D-046 b, P8 — D-049; renamed
+/// signed-in user's profile (renamed
 /// from <c>/account/visitor-profile</c>). The unrelated
 /// <c>/account/profile</c> endpoint serves the lightweight identity
 /// card; this one carries the richer registration data.
@@ -29,11 +29,7 @@ public sealed class UserProfileUpsertEndpoint(IUserProfileService service)
     public override async Task HandleAsync(
         UpsertUserProfileRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await service.UpsertMineAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<UserProfileResponse>.Ok(response), ct);
     }

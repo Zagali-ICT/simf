@@ -67,14 +67,8 @@ public sealed class TailLogEndpoint(ILogFileService logs, IAuditLog auditLog)
             return;
         }
 
-        await auditLog.WriteAsync(
-            new AuditEntry
-            {
-                EventType = AuditEvents.AdminLogViewed,
-                Outcome = AuditOutcome.Success,
-                Detail = $"{tail.Project}/{tail.FileName}",
-            },
-            ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminLogViewed, null, $"{tail.Project}/{tail.FileName}", ct);
 
         await Send.OkAsync(ApiResult<LogTailResponse>.Ok(tail), ct);
     }
@@ -112,14 +106,8 @@ public sealed class DownloadLogEndpoint(ILogFileService logs, IAuditLog auditLog
             return;
         }
 
-        await auditLog.WriteAsync(
-            new AuditEntry
-            {
-                EventType = AuditEvents.AdminLogDownloaded,
-                Outcome = AuditOutcome.Success,
-                Detail = $"{req.Project}/{req.File}",
-            },
-            ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminLogDownloaded, null, $"{req.Project}/{req.File}", ct);
 
         var safeFileName = Path.GetFileName(req.File);
         HttpContext.Response.Headers.ContentDisposition =

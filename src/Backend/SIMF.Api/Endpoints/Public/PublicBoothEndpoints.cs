@@ -6,7 +6,7 @@ using SIMF.Contracts.Exhibition;
 
 namespace SIMF.Api.Endpoints.Public;
 
-/// <summary>D-199 (Mockup page 22) — public anonymous list of active
+/// <summary>The public, anonymous list of active
 /// booths, feeding the exhibition page and the 2D venue map. Mirrors
 /// ListPublicDelegationsEndpoint's shape.</summary>
 public sealed class ListPublicBoothsEndpoint(IPublicBoothService service)
@@ -27,7 +27,7 @@ public sealed class ListPublicBoothsEndpoint(IPublicBoothService service)
 
 public sealed class GetPublicBoothRoute { public Guid Id { get; set; } }
 
-/// <summary>D-199 — public anonymous single active booth by id.</summary>
+/// <summary>Public anonymous single active booth by id.</summary>
 public sealed class GetPublicBoothEndpoint(IPublicBoothService service)
     : Endpoint<GetPublicBoothRoute, ApiResult<PublicBoothDetail>>
 {

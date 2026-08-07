@@ -92,7 +92,7 @@ public sealed class NoSubRateLimitTests : IClassFixture<SimfApiFactory>
 
     private static string MintTokenWithEmptySub()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SigningKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -115,8 +115,8 @@ public sealed class NoSubRateLimitTests : IClassFixture<SimfApiFactory>
             issuer: Issuer,
             audience: Audience,
             claims: claims,
-            notBefore: now.UtcDateTime,
-            expires: now.AddMinutes(15).UtcDateTime,
+            notBefore: now,
+            expires: now.AddMinutes(15),
             signingCredentials: credentials);
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

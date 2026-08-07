@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminCountriesTests.cs, SIMF.Api.Tests/DelegationsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Common.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -57,40 +57,23 @@ public sealed class CreateCountryEndpoint(IAdminCountryService service)
     }
     public override async Task HandleAsync(AdminCreateCountryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminCountryDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
 }
 
-public sealed class UpdateCountryRequest
+/// <summary>Binds {id} + body via a derived route that INHERITS the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// the sessions route, the gates and profile-type routes, and the four before
+/// them silently dropped a field on PUT. Passing the bound request straight
+/// through makes that drop impossible.</summary>
+public sealed class UpdateCountryRequest : AdminUpdateCountryRequest
 {
+    // Countries are the one admin resource with an int key, not a Guid — the
+    // route is {id:int}.
     public int Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public string? PhonePrefix { get; set; }
-    public int DisplayOrder { get; set; }
-    public bool IsActive { get; set; } = true;
-
-    /// <summary>D-473 (#10) — invited to send a delegation (وفد). (Threaded through
-    /// from D-499: this binding model previously omitted IsInvited, so editing a
-    /// country silently reset the flag to false — fixed here.)</summary>
-    public bool IsInvited { get; set; }
-
-    /// <summary>D-499 (الوفود) — the invited delegation's arrival date (optional).</summary>
-    public DateOnly? DelegationArrivalDate { get; set; }
-
-    /// <summary>D-499 (الوفود) — the invited delegation's departure date (optional).</summary>
-    public DateOnly? DelegationDepartureDate { get; set; }
-
-    /// <summary>D-499 (الوفود) — the UserProfile id of the head of delegation
-    /// (رئيس الوفد); must be an active delegate of this country (optional).</summary>
-    public Guid? HeadOfDelegationUserProfileId { get; set; }
 }
 
 public sealed class UpdateCountryEndpoint(IAdminCountryService service)
@@ -106,30 +89,14 @@ public sealed class UpdateCountryEndpoint(IAdminCountryService service)
     }
     public override async Task HandleAsync(UpdateCountryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminCountryDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id,
-                new AdminUpdateCountryRequest
-                {
-                    Code = req.Code,
-                    Name = req.Name,
-                    NameArabic = req.NameArabic,
-                    PhonePrefix = req.PhonePrefix,
-                    DisplayOrder = req.DisplayOrder,
-                    IsActive = req.IsActive,
-                    IsInvited = req.IsInvited,
-                    DelegationArrivalDate = req.DelegationArrivalDate,
-                    DelegationDepartureDate = req.DelegationDepartureDate,
-                    HeadOfDelegationUserProfileId = req.HeadOfDelegationUserProfileId,
-                }, ct)), ct);
+                req, ct)), ct);
     }
 }
 
-/// <summary>D-499 (الوفود) — <c>GET /admin/countries/{id}/delegates</c>: the active
+/// <summary>The delegations (الوفود) endpoint <c>GET /admin/countries/{id}/delegates</c>: the active
 /// delegates of a country, feeding the head-of-delegation picker on the CP country
 /// Edit form. Gated by <see cref="PermissionCatalog.Countries.View"/>.</summary>
 public sealed class ListCountryDelegatesEndpoint(IAdminCountryService service)
@@ -162,11 +129,7 @@ public sealed class DeactivateCountryEndpoint(IAdminCountryService service)
     }
     public override async Task HandleAsync(DeactivateCountryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

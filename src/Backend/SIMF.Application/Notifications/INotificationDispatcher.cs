@@ -4,9 +4,9 @@ using SIMF.Domain.Notifications;
 namespace SIMF.Application.Notifications;
 
 /// <summary>
-/// Writes one in-app notification row (P12 — D-053) and optionally
+/// Writes one in-app notification row and optionally
 /// queues an email through <c>IEmailSender</c>. The dispatcher is the
-/// seam every lifecycle event uses; P13 wires the call sites.
+/// seam every lifecycle event uses.
 /// </summary>
 public interface INotificationDispatcher
 {
@@ -33,7 +33,7 @@ public sealed class NotificationRequest
     public string? RelatedEntityType { get; init; }
     public Guid? RelatedEntityId { get; init; }
 
-    /// <summary>D-713 — when true (and <see cref="RelatedEntityId"/> is set), the
+    /// <summary>When true (and <see cref="RelatedEntityId"/> is set), the
     /// dispatcher skips the write if a notification of the same
     /// <see cref="Kind"/> for the same <see cref="RelatedEntityId"/> already
     /// exists for <see cref="UserId"/>. Gives "one prompt per (user, kind,
@@ -43,12 +43,12 @@ public sealed class NotificationRequest
     /// intentionally repeatable).</summary>
     public bool DeduplicateByRelatedEntity { get; init; }
 
-    /// <summary>D-677 — an explicit app-internal deep-link. Null (the default)
+    /// <summary>An explicit app-internal deep-link. Null (the default)
     /// lets <see cref="NotificationKindCatalog"/> derive one from the kind +
     /// <see cref="RelatedEntityId"/>; a non-null value here wins.</summary>
     public string? ClickUrl { get; init; }
 
-    /// <summary>D-677 — an explicit group code; null defers to the catalog.</summary>
+    /// <summary>An explicit group code; null defers to the catalog.</summary>
     public string? Group { get; init; }
 
     /// <summary>When true, the dispatcher queues an email for the user

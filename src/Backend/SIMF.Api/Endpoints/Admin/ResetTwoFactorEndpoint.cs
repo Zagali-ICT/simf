@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -14,7 +14,7 @@ namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
 /// <c>POST /api/v1/admin/admins/reset-two-factor</c> — an Administrator resets
-/// another user's 2FA (decision D-041). Requires the Administrator role; the
+/// another user's 2FA. Requires the Administrator role; the
 /// target cannot be the actor or another Administrator. Audits both sides
 /// with a mandatory reason.
 /// </summary>
@@ -36,11 +36,7 @@ public sealed class ResetTwoFactorEndpoint(IAdminTwoFactorService adminAccountSe
     public override async Task HandleAsync(
         AdminResetTwoFactorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         await adminAccountService.ResetTwoFactorAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
@@ -51,38 +47,42 @@ public sealed class ResetTwoFactorEndpoint(IAdminTwoFactorService adminAccountSe
 public static class AuthorizationPolicies
 {
     /// <summary>
-    /// Requires the caller to hold the Administrator role. Per the P7
-    /// model (decision D-048) only <see cref="SIMF.Domain.IdentityAccess.UserType.Admin"/>
-    /// users carry RBAC roles at all, so this is **the** policy every
-    /// CP endpoint uses today. The P4-era <c>TeamMember</c> policy was
-    /// removed by P7b when the reviewer roles (Staff / Scientific /
-    /// Security) ceased to be RBAC roles.
+    /// Requires the caller to hold the Administrator role. Only
+    /// <see cref="SIMF.Common.Enums.UserType.Admin"/> users carry RBAC roles at
+    /// all, so this used to be the policy every CP endpoint carried. The
+    /// per-action permission policies (<c>PermissionCatalog.PolicyFor</c>) have
+    /// since taken that job over, and this blunt role policy is now left only on
+    /// the actions that are Administrator-only by definition — today just the
+    /// admin device-key revoke. An earlier <c>TeamMember</c> policy was removed
+    /// when the reviewer roles (Staff / Scientific / Security) ceased to be RBAC
+    /// roles.
     /// </summary>
     public const string AdministratorOnly = "AdministratorOnly";
 
     /// <summary>
-    /// Requires the caller's <c>account_state</c> JWT claim (P10 — D-051)
+    /// Requires the caller's <c>account_state</c> JWT claim
     /// to be <c>"Approved"</c>. Defense-in-depth gate available to any
     /// endpoint that should not be reachable by a non-approved (guest)
-    /// user. Today (P11 — D-052) no endpoint applies this policy by
-    /// default — the client-side routing on CP + Website is the primary
-    /// gate. A follow-up sweep will opt sensitive endpoints into this
-    /// policy explicitly.
+    /// user. It began life applied nowhere, with the client-side routing on CP +
+    /// Website as the only gate and a follow-up sweep owing it to sensitive
+    /// endpoints; that sweep has since run, so the policy now sits alongside the
+    /// per-action permission policy across the admin and app surface and the
+    /// client-side routing is only the first gate, never the enforcing one.
     /// </summary>
     public const string RequireApprovedAccount = "RequireApprovedAccount";
 
-    /// <summary>D-148 — admin-only management of gates / assignments /
-    /// allow-lists / reports (SIMF-API-GATES-001 §4).</summary>
+    /// <summary>Admin-only management of gates / assignments /
+    /// allow-lists / reports.</summary>
     public const string GatesManage = "GatesManage";
 
-    /// <summary>D-148 — operator-only scan submission and own-assignments
-    /// listing (SIMF-API-GATES-001 §4). Administrator inherits.</summary>
+    /// <summary>Operator-only scan submission and own-assignments
+    /// listing. Administrator inherits.</summary>
     public const string GatesOperate = "GatesOperate";
 
-    /// <summary>D-148 — operator's own-daily-report endpoint.</summary>
+    /// <summary>Operator's own-daily-report endpoint.</summary>
     public const string GatesViewOwnReports = "GatesViewOwnReports";
 
-    /// <summary>D-168 (gap doc G5) — Administrator or
+    /// <summary>Administrator or
     /// <see cref="SIMF.Common.AppRoles.PublicRelations"/>. Used by every
     /// invitation CRUD endpoint and the VIP list + notify endpoints.
     /// PublicRelations cannot reach any other admin surface; the policy
@@ -95,14 +95,14 @@ public static class AuthorizationPolicies
         builder.AddPolicy(AdministratorOnly, policy =>
             policy.RequireRole(SIMF.Common.AppRoles.Administrator));
 
-        // P11 — D-052: gate by the account_state claim minted by
-        // JwtTokenService (P10). Non-approved users see the state-banner
+        // Gate by the account_state claim minted by
+        // JwtTokenService. Non-approved users see the state-banner
         // page on the client; this policy is the API's matching guard
         // for any endpoint that opts in.
         builder.AddPolicy(RequireApprovedAccount, policy =>
             policy.RequireClaim("account_state", "Approved"));
 
-        // D-148 — Administrator bypasses the gate permission checks
+        // Administrator bypasses the gate permission checks
         // (an admin can also operate a gate from the CP console for
         // testing); GateOperator holds the operator permissions only.
         builder.AddPolicy(GatesManage, policy =>
@@ -114,7 +114,7 @@ public static class AuthorizationPolicies
             policy.RequireRole(SIMF.Common.AppRoles.Administrator,
                                SIMF.Common.AppRoles.GateOperator));
 
-        // D-168 (gap doc G5) — PublicRelations role gate. Administrator
+        // PublicRelations role gate. Administrator
         // inherits so an admin can also operate the invitation desk from
         // the CP console.
         builder.AddPolicy(PublicRelationsAccess, policy =>

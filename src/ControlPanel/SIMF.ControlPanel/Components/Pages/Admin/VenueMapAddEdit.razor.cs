@@ -1,18 +1,11 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
 using SIMF.Contracts.Exhibition;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -74,52 +67,36 @@ public partial class VenueMapAddEdit
             Guid? hallId = Guid.TryParse(_model.HallId, out var hid) ? hid : null;
             Guid? boothId = Guid.TryParse(_model.BoothId, out var bid) ? bid : null;
 
-            ApiResult<AdminVenueMapNodeDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminVenueMapNodeDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/venue-map",
-                    new AdminCreateVenueMapNodeRequest
-                    {
-                        Label = _model.Label.Trim(),
-                        LabelArabic = _model.LabelArabic.Trim(),
-                        Kind = _model.Kind,
-                        X = _model.X,
-                        Y = _model.Y,
-                        HallId = hallId,
-                        BoothId = boothId,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminVenueMapNodeDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/venue-map/{Initial!.Id}",
-                    new AdminUpdateVenueMapNodeRequest
-                    {
-                        Label = _model.Label.Trim(),
-                        LabelArabic = _model.LabelArabic.Trim(),
-                        Kind = _model.Kind,
-                        X = _model.X,
-                        Y = _model.Y,
-                        HallId = hallId,
-                        BoothId = boothId,
-                        IsActive = _model.IsActive,
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/venue-map",
+                $"/account/api/admin/venue-map/{Initial?.Id}",
+                new AdminCreateVenueMapNodeRequest
+                {
+                    Label = _model.Label.Trim(),
+                    LabelArabic = _model.LabelArabic.Trim(),
+                    Kind = _model.Kind,
+                    X = _model.X,
+                    Y = _model.Y,
+                    HallId = hallId,
+                    BoothId = boothId,
+                },
+                new AdminUpdateVenueMapNodeRequest
+                {
+                    Label = _model.Label.Trim(),
+                    LabelArabic = _model.LabelArabic.Trim(),
+                    Kind = _model.Kind,
+                    X = _model.X,
+                    Y = _model.Y,
+                    HallId = hallId,
+                    BoothId = boothId,
+                    IsActive = _model.IsActive,
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.VenueMap.Fallback"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.VenueMap.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.VenueMap.Fallback"];
         }
         finally { _busy = false; }
     }

@@ -1,4 +1,4 @@
-@* D-353 — reusable Country View/Delete form, hosted by CrudShell (popup or
+@* Reusable Country View/Delete form, hosted by CrudShell (popup or
    full page) from CountriesList. Inherits CrudViewDeleteFormBase so it exposes
    the standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show; when IsDelete=true a Deactivate button appears and a
@@ -51,5 +51,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
-                 OnCancel="@(() => _confirming = false)" />
+                 OnCancel="@(() => _confirming = false)" 
+                 Permission="@PermissionCatalog.Countries.Delete"/>
 }

@@ -36,6 +36,33 @@ public sealed class SecurityResponseTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task An_error_envelope_still_carries_the_baseline_security_headers()
+    {
+        // Regression: SecurityHeadersMiddleware used to set its headers before
+        // calling next(), and ErrorHandlingMiddleware - which runs inside it -
+        // calls Response.Clear() to write a failure envelope. Every one of the
+        // ~770 ApiException responses therefore shipped with no security
+        // headers at all, while the 404-route test above kept passing because
+        // routing answers that one without ever clearing the response.
+        var tokens = await AuthFlow.SignInApprovedVisitorWithoutTwoFactorAsync(_client, _factory);
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Get, $"/api/v1/app/sessions/{Guid.NewGuid()}/seats");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
+        var response = await _client.SendAsync(request);
+
+        // Proves the response really came from ErrorHandlingMiddleware.
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.SessionNotFound, body!.Error!.Code);
+
+        Assert.Equal("nosniff", Single(response, "X-Content-Type-Options"));
+        Assert.Equal("DENY", Single(response, "X-Frame-Options"));
+        Assert.Equal("no-referrer", Single(response, "Referrer-Policy"));
+        Assert.Contains("default-src 'none'", Single(response, "Content-Security-Policy"));
+    }
+
+    [Fact]
     public async Task Json_responses_declare_an_explicit_utf8_charset()
     {
         // A protected route hit without a token returns the ApiResult envelope as

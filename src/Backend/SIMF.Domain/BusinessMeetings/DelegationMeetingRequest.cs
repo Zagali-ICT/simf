@@ -5,91 +5,94 @@ using SIMF.Domain.Programme;
 namespace SIMF.Domain.BusinessMeetings;
 
 /// <summary>
-/// D-478 (#11, Group G phase 2) — a delegation-to-delegation (G2G) meeting
-/// request: a delegate (وفد) from one invited country asks to meet another
-/// invited country's delegation, bringing <see cref="AttendeeCount"/> people, at a
-/// proposed slot. The team reviews and Accepts/Rejects (same lifecycle enum as the
-/// speaker meeting request, D-269); on accept the requester is notified + emailed.
-/// Mirrors <see cref="SpeakerMeetingRequest"/> but keyed on countries, not a speaker.
+/// A delegation-to-delegation meeting request: a delegate from one country asks to meet
+/// another invited country's delegation, bringing <see cref="AttendeeCount"/> people, at
+/// a proposed slot the team then reviews. Mirrors <see cref="SpeakerMeetingRequest"/>,
+/// but keyed on countries rather than a speaker.
+///
+/// <para>A requester holds one open request per target delegation: a repeat submission
+/// moves the existing Pending row onto the new slot rather than adding a second, and only
+/// the submit path enforces that.</para>
 /// </summary>
 public sealed class DelegationMeetingRequest
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>The delegate who submitted it. Logical FK to <c>SimfUser.Id</c>
-    /// (Identity DB), resolved on read — no cross-DB relation (D-157).</summary>
+    /// <summary>The delegate who submitted it. A bare Guid rather than a navigation: the
+    /// user lives in the Identity database, so there is no foreign key across the two.</summary>
     public Guid RequestedByUserId { get; set; }
 
-    /// <summary>The requester's own country (their nationality). Real FK to
-    /// <see cref="Country"/> on the App DB.</summary>
+    /// <summary>Real foreign keys: the countries live in the same DbContext. The requesting
+    /// country is the requester's nationality and need not be invited, so the host country
+    /// can ask to meet the visiting ones; the target must be invited, and not the same.</summary>
     public int RequestingCountryId { get; set; }
     public Country? RequestingCountry { get; set; }
 
-    /// <summary>The country whose delegation they want to meet. Real FK to
-    /// <see cref="Country"/> on the App DB.</summary>
     public int TargetCountryId { get; set; }
     public Country? TargetCountry { get; set; }
 
-    /// <summary>"count X" — how many of the requester's delegation will attend.</summary>
+    /// <summary>How many of the requester's delegation will attend; 1 to 100.</summary>
     public int AttendeeCount { get; set; }
 
-    /// <summary>The meeting topic — free text up to 1000 chars.</summary>
+    /// <summary>The meeting topic, up to 1000 characters.</summary>
     public string Subject { get; set; } = string.Empty;
 
-    /// <summary>The proposed slot (the team confirms it on accept). Optional.</summary>
-    public DateTimeOffset? SlotStart { get; set; }
-    public DateTimeOffset? SlotEnd { get; set; }
+    /// <summary>Saudi local time, and null until proposed. The requester's proposed slot
+    /// until an approval binds a hall slot over it, after which it is the meeting time of
+    /// record. Set as a pair, End after Start, enforced by a database check constraint.</summary>
+    public DateTime? SlotStart { get; set; }
+    public DateTime? SlotEnd { get; set; }
 
-    /// <summary>Lifecycle state (unified machine — Bi-Meeting rework): Pending on
-    /// create; AwaitingSpeaker = admin Approved + bound a hall slot, awaiting the other
-    /// party's confirmation; Accepted = Confirmed (admin-verbal or other-party link/tap);
-    /// Done = checked in at the hall; Rejected/Cancelled are releases.</summary>
+    /// <summary>Pending on create; AwaitingSpeaker once the team has approved it and bound
+    /// a hall slot, with the target delegation yet to confirm; Accepted once confirmed, by
+    /// an admin recording a verbal confirmation or by the other party's emailed link or app
+    /// tap; Done once an operator has checked it in at the hall. Rejected and Cancelled
+    /// release the slot. Accepted, AwaitingSpeaker and Done all hold a booked slot: read
+    /// that set from <see cref="MeetingRequestStatuses.SlotHolding"/> rather than
+    /// re-deriving it, since the database's filtered unique index follows the same set.</summary>
     public MeetingRequestStatus Status { get; set; } = MeetingRequestStatus.Pending;
 
-    /// <summary>Bi-Meeting rework — the picked availability window the bound slot
-    /// belongs to. Real FK to <see cref="DelegationAvailabilityWindow"/> (SetNull).
-    /// Null for a requester-proposed slot or when the window is later removed.</summary>
+    /// <summary>Vestigial: nothing writes a window id here. The column and its foreign key
+    /// to <see cref="DelegationAvailabilityWindow"/> exist for parity with
+    /// <see cref="SpeakerMeetingRequest.AvailabilityWindowId"/>, which the speaker flow does
+    /// populate; here the only writer is the expiry sweep, clearing it back to null.</summary>
     public Guid? AvailabilityWindowId { get; set; }
 
-    /// <summary>Bi-Meeting rework — the hall the admin bound the meeting to on Approve.
-    /// Real FK to <see cref="Hall"/> (SetNull). Null before approval; when set,
-    /// <see cref="SlotStart"/>/<see cref="SlotEnd"/> hold the bound hall slot.</summary>
+    /// <summary>The hall, and optionally a meeting table in it, that an approval bound the
+    /// meeting to. Null before approval and cleared on cancel or revert, which is what
+    /// releases the slot. SetNull, so deleting a hall clears the binding, not the row.</summary>
     public Guid? HallId { get; set; }
     public Hall? Hall { get; set; }
 
-    /// <summary>Bi-Meeting rework — the optional meeting table inside
-    /// <see cref="HallId"/>. Real FK to <see cref="MeetingTable"/> (SetNull).</summary>
     public Guid? MeetingTableId { get; set; }
     public MeetingTable? MeetingTable { get; set; }
 
-    /// <summary>Optional admin response note / cancellation justification shown to the
-    /// requester.</summary>
+    /// <summary>The admin's note to the requester, and their justification on a cancel.</summary>
     public string? ResponseNote { get; set; }
 
-    /// <summary>Bi-Meeting rework — when the meeting became Confirmed (admin-verbal or
-    /// the other party's link/tap). Null until confirmed.</summary>
-    public DateTimeOffset? ConfirmedAt { get; set; }
+    /// <summary>When the meeting became confirmed, and by whom; both null until then. The
+    /// actor is the admin for a verbal confirmation and the confirming delegate for an app
+    /// tap, but stays null when the confirmation arrived through the emailed link, where
+    /// the token is the credential and there is no signed-in caller.</summary>
+    public DateTime? ConfirmedAt { get; set; }
 
-    /// <summary>Bi-Meeting rework — the actor who confirmed (admin id for a verbal
-    /// confirm; null when confirmed by the other party's token/app-tap). Logical FK
-    /// (Identity); no cross-DB relation (D-157).</summary>
     public Guid? ConfirmedByUserId { get; set; }
 
-    /// <summary>Bi-Meeting rework — once-only dedup stamp for the 15-minute reminder
-    /// worker (mirrors <c>Session.ReminderSent</c>). Null until the reminder fires.</summary>
-    public DateTimeOffset? ReminderSent { get; set; }
+    /// <summary>Stamped by the reminder worker before it dispatches. The null check is
+    /// its once-only guard, so a meeting is reminded at most once.</summary>
+    public DateTime? ReminderSent { get; set; }
 
-    /// <summary>Bi-Meeting rework — when an operator checked the meeting in at the hall
-    /// (flips it to <see cref="MeetingRequestStatus.Done"/>). Null until checked in.</summary>
-    public DateTimeOffset? CheckedInAt { get; set; }
+    /// <summary>When an operator checked the meeting in at the hall, which is what moves it
+    /// to <see cref="MeetingRequestStatus.Done"/>, and who did it. Both null until then.</summary>
+    public DateTime? CheckedInAt { get; set; }
 
-    /// <summary>Bi-Meeting rework — the operator who checked it in. Logical FK
-    /// (Identity); no cross-DB relation (D-157).</summary>
     public Guid? CheckedInByUserId { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? RespondedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? RespondedAt { get; set; }
 
-    /// <summary>The admin who responded. Logical FK (Identity); null while Pending.</summary>
+    /// <summary>The admin who moved the row off Pending. Null while Pending, and reset to
+    /// null with <see cref="RespondedAt"/> and the note when the expiry sweep reverts an
+    /// approval the other delegation never confirmed, so the admin decides again.</summary>
     public Guid? RespondedByUserId { get; set; }
 }

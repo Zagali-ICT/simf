@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Ai;
 
-/// <summary>D-176 (gap doc G12) — centralised AI orchestrator. The
+/// <summary>Centralised AI orchestrator. The
 /// one path every feature endpoint goes through. Steps:
 /// <list type="number">
 /// <item>Look up the prompt by key (404 + 503 if missing / inactive).</item>
@@ -45,7 +45,7 @@ internal sealed class AiService(
                 "Prompt key is required.",
                 "مفتاح المحفّز مطلوب.");
         }
-        // D-179 (review-pass): caps live at the IAiService chokepoint, not
+        // Caps live at the IAiService chokepoint, not
         // only at AdminAiPromptService.TestAsync. The public feature endpoints
         // (FAQ, Assistance, Translate, live-translation, live-sign-language)
         // call InvokeAsync directly with raw user text — without this cap an
@@ -89,7 +89,7 @@ internal sealed class AiService(
         var systemPrompt = Substitute(prompt.SystemPrompt, inputs);
         var userPrompt = Substitute(prompt.UserPromptTemplate, inputs);
 
-        // D-484 — an Echo-default prompt is redirected to the operator's
+        // An Echo-default prompt is redirected to the operator's
         // configured DefaultProvider (e.g. Anthropic) when one is set; a prompt
         // pinned to a concrete provider is honoured as-is.
         var effectiveProvider = AiProviderRouting.Effective(
@@ -144,7 +144,7 @@ internal sealed class AiService(
         stopwatch.Stop();
         var latencyMs = (int)stopwatch.ElapsedMilliseconds;
 
-        // D-185 — single-call redact+serialise+summarise so the audit
+        // Single-call redact+serialise+summarise so the audit
         // Detail carries the SIEM-canonical redactionKinds + count +
         // inputPreview (SIEM rules AI-005/007/008/009 depend on these).
         var redactedOutput = AiAuditDetail.RedactValue(providerResponse.OutputText);
@@ -158,10 +158,10 @@ internal sealed class AiService(
             Feature = prompt.Feature,
             Provider = prompt.Provider,
             Model = prompt.Model,
-            // D-179 — redact common secret / PII patterns before
+            // Redact common secret / PII patterns before
             // persistence so PII/keys never land raw in the DB
             // (was an unfulfilled promise — comment in AiInvocation.cs:20).
-            // D-179 (review-pass) — also redact OutputText: an LLM that
+            // Also redact OutputText: an LLM that
             // echoes a user-pasted secret (or names a person verbatim
             // from RAG context) would otherwise persist it.
             InputJson = redacted.InputJson,
@@ -172,22 +172,20 @@ internal sealed class AiService(
             ErrorCode = null,
             CallerUserId = caller.UserId,
             CallerKind = caller.CallerKind,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         appDbContext.AiInvocations.Add(invocation);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        // D-179 — JSON-shape the audit Detail so SIEM field-extracts
-        // instead of regex-parsing free text. D-185 — added
+        // JSON-shape the audit Detail so SIEM field-extracts
+        // instead of regex-parsing free text. The Detail carries
         // redactionKinds/redactionCount/inputPreview so SIEM rules
         // AI-005/007/008/009 can field-extract instead of joining the
         // OperationLog row back to the AiInvocation row.
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiInvocationSucceeded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = caller.UserId ?? Guid.Empty,
-            Detail = AiAuditDetail.ToJson(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AiInvocationSucceeded,
+            caller.UserId ?? Guid.Empty,
+            AiAuditDetail.ToJson(new
             {
                 promptKey = prompt.Key,
                 feature = prompt.Feature.ToString(),
@@ -202,13 +200,17 @@ internal sealed class AiService(
                 redactionCount = redacted.RedactionCount,
                 inputPreview = redacted.InputPreview,
             }),
-        }, cancellationToken);
+            cancellationToken);
 
         return new AiCallResult(
             invocation.Id, prompt.Key, prompt.Feature, prompt.Provider,
             prompt.Model, providerResponse.OutputText,
             providerResponse.TokensInput, providerResponse.TokensOutput,
-            latencyMs);
+            latencyMs,
+            // Carry the provider's own "this is the offline stub" flag out
+            // to the caller. prompt.Provider is the CONFIGURED provider, which
+            // routing may have redirected, so it cannot answer this.
+            providerResponse.IsStub);
     }
 
     private async Task PersistFailureAsync(
@@ -224,23 +226,21 @@ internal sealed class AiService(
             Feature = prompt.Feature,
             Provider = prompt.Provider,
             Model = prompt.Model,
-            // D-179 — redacted serialise on failure path too.
+            // Redacted serialise on failure path too.
             InputJson = AiAuditDetail.SerialiseAndRedact(inputs),
             OutputText = null,
             LatencyMs = latencyMs,
             ErrorCode = errorCode,
             CallerUserId = caller.UserId,
             CallerKind = caller.CallerKind,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         appDbContext.AiInvocations.Add(invocation);
         await appDbContext.SaveChangesAsync(cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AiInvocationFailed,
-            Outcome = AuditOutcome.Failure,
-            ActorUserId = caller.UserId ?? Guid.Empty,
-            Detail = AiAuditDetail.ToJson(new
+        await auditLog.WriteFailureAsync(
+            AuditEvents.AiInvocationFailed,
+            caller.UserId ?? Guid.Empty,
+            detail: AiAuditDetail.ToJson(new
             {
                 promptKey = prompt.Key,
                 feature = prompt.Feature.ToString(),
@@ -251,10 +251,10 @@ internal sealed class AiService(
                 errorCode,
                 invocationId = invocation.Id,
             }),
-        }, cancellationToken);
+            cancellationToken: cancellationToken);
     }
 
-    // D-179 (review-pass) — single source of truth for AI input caps. The
+    // Single source of truth for AI input caps. The
     // numbers live in the shared SIMF.Contracts.Ai.AiInputLimits so producers
     // outside this assembly (the CP grounding builder) reference the same values;
     // these aliases keep the in-assembly references and the boundary tests
@@ -263,8 +263,8 @@ internal sealed class AiService(
     public const int MaxInputKeyLength = AiInputLimits.MaxInputKeyLength;
     public const int MaxInputValueLength = AiInputLimits.MaxInputValueLength;
 
-    // D-484 follow-up — every prompt is seeded with the sentinel Model="echo".
-    // When routing redirects an Echo-default prompt to a REAL provider (D-484),
+    // Every prompt is seeded with the sentinel Model="echo".
+    // When routing redirects an Echo-default prompt to a REAL provider,
     // that literal would be sent to the vendor API as a model name and 404. Blank
     // it so the real provider substitutes its configured DefaultModel; an Echo call
     // keeps "echo" so its "[echo:echo]" label is unchanged. This is what lets a

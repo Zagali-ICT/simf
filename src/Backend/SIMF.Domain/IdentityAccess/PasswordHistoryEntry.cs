@@ -17,6 +17,6 @@ public class PasswordHistoryEntry
     /// <summary>The retired ASP.NET Identity password hash.</summary>
     public string PasswordHash { get; set; } = string.Empty;
 
-    /// <summary>When the password was retired (UTC).</summary>
-    public DateTimeOffset CreatedAtUtc { get; set; }
+    /// <summary>When the password was retired (Saudi local).</summary>
+    public DateTime CreatedAt { get; set; }
 }

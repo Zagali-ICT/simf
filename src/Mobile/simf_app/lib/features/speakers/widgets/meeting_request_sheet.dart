@@ -1,5 +1,4 @@
 import 'dart:async';
-import '../../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +6,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/errors/api_error_l10n.dart';
 import '../../../core/utils/gregorian_month_names.dart';
+import '../../../core/utils/saudi_time.dart';
 import '../../../core/utils/weekday_names.dart';
 import '../data/speaker_models.dart';
 import '../data/speakers_repository.dart';
@@ -28,10 +29,14 @@ import 'speaker_option_tile.dart';
 ///
 /// D-709 (item 6, FDS-013 §15.4 GAP-4) — the date + time come from the speaker's
 /// **real availability slots** (`GET /app/speakers/{id}/available-slots`), NOT a
-/// free client-side grid; this **reverts D-703**. When the speaker has no windows
-/// the sheet shows a clear "no slots" state and the request is sent subject-only
-/// (the team then arranges a time). Booking a slot is VIP-gated by the server (a
-/// 403 surfaces "VIP only").
+/// free client-side grid; this **reverts D-703**. Booking a slot is VIP-gated by
+/// the server (a 403 surfaces "VIP only").
+///
+/// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the request
+/// can no longer be sent subject-only: the sheet shows the "no slots" notice and
+/// the send button is disabled (the API 409s `SPEAKER_MEETING_NO_AVAILABILITY`).
+/// A **failed** slot fetch is a separate state — it shows a load error + Retry, so
+/// a transient network failure never masquerades as "this speaker has no time".
 class MeetingRequestSheet extends ConsumerStatefulWidget {
   const MeetingRequestSheet({
     required this.speakerId,
@@ -75,6 +80,10 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   // is set. Empty (once loaded) ⇒ the "no slots" state.
   List<SpeakerSlot> _slots = const <SpeakerSlot>[];
   bool _slotsLoading = false;
+  // G3 — the slot fetch FAILED (network / server), which is NOT the same as the
+  // speaker having no availability. Kept apart so the sheet can offer a retry
+  // instead of telling the user something untrue and locking the send button.
+  bool _slotsError = false;
   // The picked calendar day (one that has slots) and the picked slot within it.
   DateTime? _selectedDay;
   SpeakerSlot? _selectedSlot;
@@ -110,11 +119,14 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     }
   }
 
-  /// Load the chosen speaker's real availability slots (D-709). A failure is
-  /// treated as "no slots" so the request can still be sent subject-only.
+  /// Load the chosen speaker's real availability slots (D-709). G3 — a failure is
+  /// NO LONGER folded into "no slots": now that an empty list disables sending, a
+  /// swallowed network error would tell the user the speaker has no availability
+  /// and leave them stuck, so the failure gets its own state + a Retry.
   Future<void> _loadSlots(String speakerId) async {
     setState(() {
       _slotsLoading = true;
+      _slotsError = false;
       _slots = const <SpeakerSlot>[];
       _selectedDay = null;
       _selectedSlot = null;
@@ -136,7 +148,10 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
       if (!mounted || speakerId != _selectedSpeakerId) {
         return;
       }
-      setState(() => _slotsLoading = false);
+      setState(() {
+        _slotsLoading = false;
+        _slotsError = true;
+      });
     }
   }
 
@@ -193,19 +208,17 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
       setState(() => _error = l10n.meetingRequestInvalid);
       return;
     }
-    // A slot is required only when the speaker actually offers slots; with no
-    // slots the request goes subject-only and the team arranges a time.
-    DateTime? slotStart;
-    DateTime? slotEnd;
-    if (_slots.isNotEmpty) {
-      final slot = _selectedSlot;
-      if (slot == null) {
-        setState(() => _error = l10n.meetingPickDateTime);
-        return;
-      }
-      slotStart = slot.start;
-      slotEnd = slot.end;
+    // G3 — a slot is now ALWAYS required. The subject-only bypass is gone: the
+    // server 409s a request against a speaker with no free slot, so sending one
+    // could only ever fail. The send button is disabled in that state; this is
+    // the guard for the picked-a-day-but-not-a-time case.
+    final slot = _selectedSlot;
+    if (slot == null) {
+      setState(() => _error = l10n.meetingPickDateTime);
+      return;
     }
+    final slotStart = slot.start;
+    final slotEnd = slot.end;
     // R0 — clear the inline error and submit. Feedback stays inside the sheet.
     setState(() {
       _submitting = true;
@@ -250,17 +263,23 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     return '$hh:$mm $meridiem';
   }
 
+  /// The inline error for a failed submit.
+  ///
+  /// QA A26 — this used to map EVERY 409 onto "this speaker does not accept
+  /// meeting requests", so a duplicate-pending or a slot-already-taken conflict
+  /// surfaced a flatly wrong reason and the correct bilingual text the API had
+  /// already picked for the active locale was thrown away. Every status except
+  /// 403 now defers to the shared [ApiFailureL10n] mapper, which returns the
+  /// envelope's own message and still localizes the network / timeout codes.
+  ///
+  /// QA A28 — a 403 keeps its own app copy because the server's forbidden text
+  /// is generic: eligibility is the per-user `AllowsSpeakerMeeting` flag (no
+  /// longer the VIP tier), and only the app can say what the user should do.
   String _failureText(ApiFailure failure, AppL10n l10n) {
     if (failure.httpStatus == 403) {
-      return l10n.meetingVipOnly;
+      return l10n.meetingNotEnabled;
     }
-    if (failure.httpStatus == 409) {
-      return l10n.meetingRequestNotAllowed;
-    }
-    if (failure.httpStatus == 400) {
-      return l10n.meetingRequestInvalid;
-    }
-    return l10n.meetingRequestFailed;
+    return failure.localizedMessage(l10n);
   }
 
   @override
@@ -326,8 +345,9 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     );
   }
 
-  /// The date + time section: a spinner while loading, a "no slots" hint when the
-  /// speaker has no windows, else the day cards + the selected day's time chips.
+  /// The date + time section: a spinner while loading, a load-error + Retry when
+  /// the fetch failed (G3), a "no slots" hint when the speaker really has no free
+  /// slot, else the day cards + the selected day's time chips.
   List<Widget> _slotSection(AppL10n l10n, bool isArabic) {
     if (_slotsLoading) {
       return const <Widget>[
@@ -346,6 +366,9 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           ),
         ),
       ];
+    }
+    if (_slotsError) {
+      return <Widget>[_slotsRetry(l10n)];
     }
     if (_slots.isEmpty) {
       return <Widget>[_hint(l10n.meetingSlotNone)]; // لا توجد فترات متاحة
@@ -384,6 +407,32 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           ),
         ),
       );
+
+  /// G3 — the slot fetch failed: say so and offer a Retry. Deliberately different
+  /// copy from [AppL10n.meetingSlotNone] so a network blip is never read as "this
+  /// speaker has no availability", which would be a lie the user cannot act on.
+  Widget _slotsRetry(AppL10n l10n) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _hint(l10n.lookupLoadError), // تعذر تحميل القائمة.
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton(
+              key: const ValueKey<String>('meeting-slots-retry'),
+              onPressed: _retrySlots,
+              child: Text(l10n.retryLabel, style: SimfTokens.labelNavyMediumSm),
+            ),
+          ),
+        ],
+      );
+
+  void _retrySlots() {
+    final speakerId = _selectedSpeakerId;
+    if (speakerId == null) {
+      return;
+    }
+    unawaited(_loadSlots(speakerId));
+  }
 
   /// The subject input — a white, beige-bordered field with the "اكتب الموضوع"
   /// hint (Figma 1776:5048).
@@ -584,16 +633,20 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     );
   }
 
-  /// The full-width gold "ارسال الطلب" button (Figma 1776:5083).
-  Widget _sendButton(AppL10n l10n) => Material(
+  /// The full-width gold "ارسال الطلب" button (Figma 1776:5083). G3 — disabled
+  /// while the slots load, and disabled once they are loaded and EMPTY (no free
+  /// slot ⇒ the server would 409), so the user is never invited to send a request
+  /// that cannot succeed. A failed fetch ([_slotsError]) also leaves it disabled —
+  /// the Retry in the slot section is the way forward there.
+  Widget _sendButton(AppL10n l10n) {
+    final enabled = !_submitting && !_slotsLoading && _slots.isNotEmpty;
+    return Opacity(
+      opacity: enabled ? 1 : SimfTokens.opacityDisabled,
+      child: Material(
         color: SimfTokens.accent,
         borderRadius: SimfTokens.borderRadiusSmall,
         child: InkWell(
-          // Disabled while slots load so a fast tap can't submit subject-only
-          // before we know whether the speaker offers windows.
-          onTap: (_submitting || _slotsLoading)
-              ? null
-              : () => unawaited(_submit()),
+          onTap: enabled ? () => unawaited(_submit()) : null,
           borderRadius: SimfTokens.borderRadiusSmall,
           child: Container(
             height: SimfTokens.controlHeight,
@@ -604,5 +657,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
 }

@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.PublicRelations;
 
 // ---------------------------------------------------------------------------
-// D-199 — News / Media-Centre contracts (Mockup screen 29 / 29b).
+// News / Media-Centre contracts (Mockup screen 29 / 29b).
 // Public payloads are the app / website shape; admin payloads drive the CP
 // grid + edit modal. Lives in the existing SIMF.Contracts.PublicRelations
 // namespace alongside the Invitation contracts.
@@ -19,7 +19,7 @@ public sealed record PublicNewsListItem(
     string Category,
     string CategoryArabic,
     string? ImageRelativePath,
-    DateTimeOffset PublishedAt);
+    DateTime PublishedAt);
 
 /// <summary>A page of the public News feed. Self-contained paged envelope
 /// (mirrors the <c>PublicDelegations</c> wrapper-record style rather than
@@ -40,7 +40,7 @@ public sealed record PublicNewsArticle(
     string Category,
     string CategoryArabic,
     string? ImageRelativePath,
-    DateTimeOffset PublishedAt);
+    DateTime PublishedAt);
 
 /// <summary>One row in the admin News grid (CP). The grid and detail share the
 /// summary except the detail adds the long-form body + excerpt + image. Admin
@@ -52,14 +52,14 @@ public sealed record AdminNewsSummary(
     string TitleArabic,
     string Category,
     string CategoryArabic,
-    DateTimeOffset PublishedAt,
+    DateTime PublishedAt,
     int DisplayOrder,
     bool IsActive,
-    // D-357 — true when an active NewsImage asset exists, so the grid renders the
+    // True when an active NewsImage asset exists, so the grid renders the
     // image thumbnail (SimfIdentityCell), else an initials tile.
     bool HasImage,
-    DateTimeOffset CreatedAt,
-    // D-506 — carried so the grid Excel export can round-trip them (not rendered
+    DateTime CreatedAt,
+    // Carried so the grid Excel export can round-trip them (not rendered
     // as grid columns). Optional; the long-form body is required on the entity so
     // BodyArabic is always present, ExcerptArabic is blank when unset.
     string BodyArabic = "",
@@ -77,11 +77,11 @@ public sealed record AdminNewsDetail(
     string Category,
     string CategoryArabic,
     string? ImageRelativePath,
-    DateTimeOffset PublishedAt,
+    DateTime PublishedAt,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>Create payload (admin). Mirrors <c>CreateDelegationRequest</c> shape.</summary>
 public sealed class CreateNewsRequest
@@ -95,7 +95,7 @@ public sealed class CreateNewsRequest
     public string Category { get; set; } = string.Empty;
     public string CategoryArabic { get; set; } = string.Empty;
     public string? ImageRelativePath { get; set; }
-    public DateTimeOffset PublishedAt { get; set; }
+    public DateTime PublishedAt { get; set; }
     public int DisplayOrder { get; set; }
 }
 
@@ -111,7 +111,7 @@ public class UpdateNewsRequest
     public string Category { get; set; } = string.Empty;
     public string CategoryArabic { get; set; } = string.Empty;
     public string? ImageRelativePath { get; set; }
-    public DateTimeOffset PublishedAt { get; set; }
+    public DateTime PublishedAt { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
 }

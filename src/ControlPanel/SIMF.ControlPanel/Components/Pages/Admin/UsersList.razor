@@ -1,10 +1,9 @@
-@* Control Panel — list every account (decisions D-042, D-044, hardened in
-   D-045 H1, promoted to canonical CRUD pattern in D-117). Administrator
-   only. Uses SimfDataGrid with the full myComment #16 spec, the new
-   correct icon set, the full pager (First/Prev/numbered/Next/Last +
+@* Control Panel — list every account. Administrator
+   only. Uses SimfDataGrid built to the full canonical CP list-page spec: the
+   standard icon set, the full pager (First/Prev/numbered/Next/Last +
    page-size), and the SimfBanner page-top. /admin/admins/new still
-   resolves to the create-user page as a deep-link fallback (Q-D).
-   Centralized dialog/full-page framing D-353: Add / Edit (roles) / Details
+   resolves to the create-user page as a deep-link fallback.
+   Centralized dialog/full-page framing: Add / Edit (roles) / Details
    are hosted by CrudShell, which frames the reusable UsersAddEdit and
    UsersViewDelete forms as a popup or a full page per the admin's toolbar
    choice (persisted in localStorage via CpPreferences). The inline SimfModal
@@ -65,7 +64,12 @@
                           DuplicateLabel="@L["Admin.Users.Action.Duplicate"]"
                           ImportLabel="@L["Admin.Users.Action.Import"]"
                           ExportLabel="@L["Admin.Users.Action.Export"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Admins.Create"
+                          EditPermission="@PermissionCatalog.Admins.AssignRoles"
+                          DeletePermission="@PermissionCatalog.Admins.Delete"
+                          ImportPermission="@PermissionCatalog.Admins.Import"
+                          ExportPermission="@PermissionCatalog.Admins.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>
@@ -137,7 +141,7 @@
     </div>
 }
 
-@* H13 — D-068: this picker is visually hidden (triggered by the
+@* This picker is visually hidden (triggered by the
    Import button via JS), but assistive tech that surfaces hidden inputs
    still needs an accessible name. *@
 <input type="file" id="users-import-input" accept=".xlsx"
@@ -145,7 +149,7 @@
        aria-label="@L["Admin.Users.Import.Picker"]"
        @onchange="OnImportFileSelectedAsync" />
 
-@* D-353 — Add (CreateAdminForm) / Edit (roles) / Details hosted by CrudShell. *@
+@* Add (CreateAdminForm) / Edit (roles) / Details hosted by CrudShell. *@
 @if (FormOpen)
 {
     <CrudShell Open="true" Presentation="_presentation"
@@ -166,7 +170,7 @@
 
 @if (_bulkDeleteOpen)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Users.BulkDelete.Title"]" OnClose="@(() => _bulkDeleteOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Users.BulkDelete.Title"]" OnClose="@(() => _bulkDeleteOpen = false)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Users.BulkDelete.Confirm"], _bulkDeleteTargets.Count)</p>
             <SimfTextarea Label="@L["Admin.Users.BulkDelete.Reason"]"
@@ -179,19 +183,23 @@
                         OnClick="@(() => _bulkDeleteOpen = false)">
                 @L["Admin.Users.BulkDelete.Cancel"]
             </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Admins.Delete">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_bulkDeleteReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmBulkDeleteAsync">
-                @L["Admin.Users.BulkDelete.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_bulkDeleteReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmBulkDeleteAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Users.BulkDelete.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
 
 @if (_duplicateOpen)
 {
-    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Users.Duplicate.Title"]" OnClose="@(() => _duplicateOpen = false)">
+    <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Users.Duplicate.Title"]" OnClose="@(() => _duplicateOpen = false)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Users.Duplicate.Confirm"], _duplicateSource?.Email)</p>
             <SimfTextField Label="@L["Admin.Users.Duplicate.NewEmail"]"
@@ -206,19 +214,23 @@
                         OnClick="@(() => _duplicateOpen = false)">
                 @L["Admin.Users.Duplicate.Cancel"]
             </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Admins.Create">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(!IsLikelyEmail(_duplicateEmail))"
-                        OnClick="ConfirmDuplicateAsync">
-                @L["Admin.Users.Duplicate.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(!IsLikelyEmail(_duplicateEmail))"
+                            OnClick="ConfirmDuplicateAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Users.Duplicate.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
 
 @if (_importResult is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.Users.Import.ResultTitle"]" OnClose="@(() => _importResult = null)">
+    <SimfModal Open="true" Title="@L["Admin.Users.Import.ResultTitle"]" OnClose="@(() => _importResult = null)" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Users.Import.ResultBody"], _importResult.Created, _importResult.Skipped)</p>
             @if (_importResult.Errors.Count > 0)

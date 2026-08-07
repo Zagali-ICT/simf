@@ -1,20 +1,9 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
-using SIMF.Contracts.Faq;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -24,6 +13,13 @@ public partial class HallArrivalsConsole
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private record Toast(string Variant, string Message);
+
+    // How far outside a session's [Start, End] window an ARRIVAL is still
+    // accepted by the server. The server sends the RESOLVED value per
+    // session (its override, else its hall's, else the global one), so there is
+    // no constant here to keep in step with HallAttendanceService.
+    private static TimeSpan GraceOf(AdminSessionSummary session) =>
+        TimeSpan.FromMinutes(session.EffectiveArrivalGraceMinutes);
 
     private List<AdminSessionSummary> _sessions = new();
     private AdminSessionSummary? _selected;
@@ -44,16 +40,23 @@ public partial class HallArrivalsConsole
                 new GridQuery { Top = 200, Sort = "start" });
             if (envelope is { Success: true, Data: not null })
             {
-                // X-3 — the operator can only record an arrival against a session
-                // that is currently live (its time window, ± a short grace). Match
-                // the server's EnsureSessionLiveNow rule so the picker never offers
-                // a session the API would reject with SESSION_NOT_LIVE.
-                var now = DateTimeOffset.UtcNow;
-                var grace = TimeSpan.FromMinutes(15);
+                // The picker used to apply the ARRIVAL window
+                // (EnsureSessionLiveNow, ± ArrivalGrace) to BOTH actions, so once a
+                // session had ended the operator could no longer select it — exactly
+                // when a hall has to be checked OUT. RecordQrDepartureAsync
+                // deliberately has NO window (an attendee already inside must always
+                // be able to leave), so any session that has already opened for
+                // arrivals stays selectable; only the not-yet-started ones are
+                // filtered out (no attendance row can exist for those yet). An
+                // arrival attempted on an ended session still gets the server's
+                // bilingual SESSION_NOT_LIVE message in the error toast.
+                var now = SimfClock.Now;
                 _sessions = envelope.Data.Items
-                    .Where(s => s.IsActive
-                        && now >= s.Start - grace
-                        && now <= s.End + grace)
+                    .Where(s => s.IsActive && now >= s.Start - GraceOf(s))
+                    // Live sessions first (the common check-in case), then the most
+                    // recently ended — those are the ones still being closed out.
+                    .OrderBy(s => now <= s.End + GraceOf(s) ? 0 : 1)
+                    .ThenByDescending(s => s.Start)
                     .ToList();
             }
             else

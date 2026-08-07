@@ -53,6 +53,8 @@
 | E2E-MOB023-008 | Card secondary line is omitted when both tagline and url are empty | edge | P2 | _to author (Figma 922:2824)_ |
 | E2E-MOB023-009 | P6 — lowest tier renders as the 3-col logo grid; group 0 stays the hero card (D-440) | layout | P1 | authored ✓ (screen `P6 — the lowest tier renders as a logo grid`) |
 | E2E-MOB023-010 | P6 — each sponsor logo is wired to the D-357 SponsorLogo route (hero, card + grid) (D-440) | display | P1 | authored ✓ (screen `P6 — each sponsor logo is wired to the D-357 SponsorLogo route`) |
+| E2E-MOB023-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB023-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

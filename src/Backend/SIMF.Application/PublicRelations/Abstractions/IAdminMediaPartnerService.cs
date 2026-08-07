@@ -5,7 +5,7 @@ using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.Application.PublicRelations.Abstractions;
 
-/// <summary>D-199 — admin CRUD contract over
+/// <summary>Admin CRUD contract over
 /// <see cref="Contracts.PublicRelations.AdminMediaPartnerSummary"/>.
 /// Mirrors <c>IAdminCountryService</c> / <c>IAdminSpeakerService</c>.</summary>
 public interface IAdminMediaPartnerService

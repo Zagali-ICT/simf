@@ -225,7 +225,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
                 Y = 20,
                 BoothId = created.Id,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await db.SaveChangesAsync();
         }
@@ -340,7 +340,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             Service = FileService.BoothLogo,
             OwnerEntityId = boothId,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
     }
@@ -359,7 +359,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             Name = nameEn ?? $"Exhibitor {Guid.NewGuid():N}",
             NameArabic = "شركة عارضة",
             IsActive = isActive,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();
@@ -390,16 +390,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

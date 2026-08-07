@@ -42,11 +42,7 @@ class MoreProfileCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       l10n.moreMyAreaCardTitle,
-                      style: const TextStyle(
-                        color: SimfTokens.surface,
-                        fontSize: SimfTokens.textMd,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: SimfTokens.labelWhiteBoldMd,
                     ),
                     if (subtitle.isNotEmpty) ...<Widget>[
                       const SizedBox(height: SimfTokens.space1),
@@ -54,10 +50,7 @@ class MoreProfileCard extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: SimfTokens.beigeBorder,
-                          fontSize: SimfTokens.textSm,
-                        ),
+                        style: SimfTokens.labelBeigeSm,
                       ),
                     ],
                   ],

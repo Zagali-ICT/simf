@@ -1,4 +1,4 @@
-@* D-353 â€” reusable Media-Partner View/Delete form, hosted by CrudShell (popup
+@* Reusable Media-Partner View/Delete form, hosted by CrudShell (popup
    or full page) from MediaPartnersList.razor. Inherits CrudViewDeleteFormBase so
    it exposes the standard surface (IsDelete / Initial / OnDeleted / OnCancel).
    Read-only details always show (including the logo path); when IsDelete=true a
@@ -15,7 +15,7 @@
 
 @if (Initial is not null)
 {
-    @* D-357 — logo from the unified media-asset pipeline. *@
+    @* Logo from the unified media-asset pipeline. *@
     <div class="simf-image-upload__preview">
         <SimfImageThumb Src="@($"/account/api/admin/assets/MediaPartnerLogo/{Initial.Id}/image")"
                         Alt="@Initial.Name" Class="simf-img-thumb--lg" />
@@ -27,9 +27,9 @@
         <dt>@L["Admin.MediaPartners.Col.NameAr"]</dt>
         <dd>@Initial.NameArabic</dd>
         <dt>@L["Admin.MediaPartners.Col.Logo"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.LogoRelativePath) ? "â€”" : Initial.LogoRelativePath)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LogoRelativePath) ? "—" : Initial.LogoRelativePath)</dd>
         <dt>@L["Admin.MediaPartners.Col.Url"]</dt>
-        <dd>@(string.IsNullOrWhiteSpace(Initial.Url) ? "â€”" : Initial.Url)</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Url) ? "—" : Initial.Url)</dd>
         <dt>@L["Admin.MediaPartners.Col.DisplayOrder"]</dt>
         <dd>@Initial.DisplayOrder</dd>
         <dt>@L["Admin.MediaPartners.Col.Active"]</dt>
@@ -58,5 +58,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
-                 OnCancel="@(() => _confirming = false)" />
+                 OnCancel="@(() => _confirming = false)" 
+                 Permission="@PermissionCatalog.MediaPartners.Delete"/>
 }

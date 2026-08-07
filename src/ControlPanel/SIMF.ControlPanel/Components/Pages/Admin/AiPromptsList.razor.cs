@@ -1,13 +1,8 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Ai;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -159,7 +154,7 @@ public partial class AiPromptsList
         _target = null;
     }
 
-    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    // Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminAiPromptSummary> selected) =>
         _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
 
@@ -240,7 +235,7 @@ public partial class AiPromptsList
     private void OnTestInputsChanged(ChangeEventArgs e) =>
         _testInputsRaw = e.Value?.ToString() ?? string.Empty;
 
-    // D-188 — append-only version history for one prompt, reusing the existing
+    // Append-only version history for one prompt, reusing the existing
     // GET /admin/ai/prompts/{id}/history endpoint (gated on AiPrompts.View).
     private bool _historyOpen;
     private string _historyKey = string.Empty;

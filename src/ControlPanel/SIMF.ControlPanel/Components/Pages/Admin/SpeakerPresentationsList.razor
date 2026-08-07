@@ -1,5 +1,5 @@
-@* P2.3 (D-228) — speaker presentation-file management (SIMF-FDS-004 §5.3,
-   FR-407). Pick a speaker, see their presentation files (each linked to a
+@* Speaker presentation-file management.
+   Pick a speaker, see their presentation files (each linked to a
    session), upload a new file for a session, download or remove existing ones.
    Gated by Speakers.* (View to read, Edit to upload/delete). Mirrors the
    MediaList out-of-row upload via simfAccount.uploadFile.
@@ -24,7 +24,7 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        @* D-357 — pick a speaker from a wall of profile cards (photo + name +
+        @* Pick a speaker from a wall of profile cards (photo + name +
            country). Selecting one reveals their presentation files below; this
            gallery replaces the old <select> picker. *@
         @if (string.IsNullOrEmpty(_speakerId))
@@ -40,7 +40,18 @@
                     {
                         <button type="button" class="simf-speaker-card" disabled="@_busy"
                                 @onclick="@(() => SelectSpeakerAsync(s.Id.ToString()))">
-                            <SimfImageThumb Src="@($"/account/api/admin/assets/SpeakerPhoto/{s.Id}/image")"
+                            @* Only speakers who HAVE a photo get an <img>. 9 of the
+                               32 seeded speakers have none, and building the URL
+                               unconditionally pointed each of them at an asset that
+                               correctly 404s — a failed request per card and a
+                               broken image the placeholder hid. SpeakersList.razor.cs
+                               already gates on HasPhoto via CpAssetUrls.AdminImage;
+                               this picker hand-rolled the URL and lost the
+                               guard. SimfImageThumb renders its placeholder for a
+                               null Src, so the empty state is unchanged. *@
+                            <SimfImageThumb Src="@(s.HasPhoto
+                                                ? CpAssetUrls.AdminImage(nameof(AssetCategory.SpeakerPhoto), s.Id)
+                                                : null)"
                                             Alt="@SpeakerName(s)" Class="simf-speaker-card__photo" />
                             <span class="simf-speaker-card__name">@SpeakerName(s)</span>
                             <span class="simf-speaker-card__country">@SpeakerCountry(s)</span>
@@ -82,7 +93,8 @@
                     </label>
                     <SimfButton Type="button" Loading="_busy"
                                 Disabled="@(string.IsNullOrEmpty(_sessionId))"
-                                OnClick="UploadAsync">
+                                OnClick="UploadAsync"
+                                LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.SpeakerPresentations.Upload"]
                     </SimfButton>
                 </div>
@@ -111,7 +123,8 @@
                           ActionsHeader="@L["Grid.Actions"]"
                           SelectAllLabel="@L["Grid.SelectAll"]"
                           SelectRowLabel="@L["Grid.SelectRow"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          ExportPermission="@PermissionCatalog.Speakers.Export">
                 <Columns>
                     <SimfDataGridColumn TItem="AdminSpeakerPresentationRow" Key="fileName"
                                         Header="@L["Admin.SpeakerPresentations.Col.File"]"

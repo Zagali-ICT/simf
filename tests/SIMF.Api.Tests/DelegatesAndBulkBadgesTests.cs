@@ -536,7 +536,7 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             {
                 Id = code == "SA" ? 682 : 840,
                 Code = code, Name = code, NameArabic = code,
-                IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+                IsActive = true, CreatedAt = SimfClock.Now,
             };
             appDb.Countries.Add(country);
         }
@@ -558,7 +558,7 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             Name = "Test Organisation",
             CommercialRegistration = $"CR{Guid.NewGuid():N}"[..12],
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -580,7 +580,7 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             PageColor = "#3B82F6",
             IsForVisitor = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -599,7 +599,7 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             PageColor = "#3B82F6",
             IsForVisitor = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -627,14 +627,7 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

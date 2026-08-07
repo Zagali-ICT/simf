@@ -3,13 +3,14 @@ using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.Extensions.Logging;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Ai.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Ai;
 
 namespace SIMF.Api.Endpoints.Ai;
 
-/// <summary>D-176 (gap doc G12) — six AI feature endpoints. Each
+/// <summary>Six AI feature endpoints. Each
 /// resolves to one named prompt key from the AiPrompt catalogue:
 /// `question-filter`, `faq-answer`, `assistance`, `translate`. The
 /// live-stream features (LiveTranslation + LiveSignLanguage) ship
@@ -22,7 +23,7 @@ internal static class AiCaller
         {
             return new AiCallerContext(null, "Anonymous");
         }
-        Guid? userId = Guid.TryParse(user.FindFirstValue("sub"), out var p) ? p : null;
+        Guid? userId = user.ActorIdOrNull();
         var kind = user.IsInRole("Administrator") ? "Admin"
             : user.IsInRole("Moderator") ? "Moderator"
             : user.IsInRole("Staff") ? "Staff"
@@ -136,12 +137,7 @@ public sealed class AssistanceHistoryEndpoint(IAiChatHistoryService history)
     }
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (AiCaller.FromUser(User).UserId is not Guid userId)
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
-        var turns = await history.GetHistoryAsync(userId, ct);
+        var turns = await history.GetHistoryAsync(User.ActorId(), ct);
         await Send.OkAsync(ApiResult<IReadOnlyList<AiChatTurn>>.Ok(turns), ct);
     }
 }

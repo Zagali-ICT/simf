@@ -1,12 +1,8 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -26,7 +22,7 @@ public partial class UsersList
     private bool _loading;
     private bool _busy;
 
-    // D-353 — presentation toggle + hosted-form state (replaces the inline
+    // Presentation toggle + hosted-form state (replaces the inline
     // Add / Edit-roles / Details SimfModals).
     private CrudPresentation _presentation = CrudPresentation.Dialog;
     private FormKind _form = FormKind.None;
@@ -42,7 +38,7 @@ public partial class UsersList
     private IReadOnlyList<AdminUserSummary> _bulkDeleteTargets = Array.Empty<AdminUserSummary>();
     private string _bulkDeleteReason = string.Empty;
 
-    // Duplicate modal state (D-045 H1: real email input replaces the @simf.local Guid)
+    // Duplicate modal state (a real email input replaces the @simf.local Guid)
     private bool _duplicateOpen;
     private AdminUserSummary? _duplicateSource;
     private string _duplicateEmail = string.Empty;
@@ -50,7 +46,7 @@ public partial class UsersList
     // Import result modal state
     private AdminImportUsersResponse? _importResult;
 
-    // Transient toast for clipboard outcomes / error flashes (D-045 H1)
+    // Transient toast for clipboard outcomes / error flashes
     private Toast? _toast;
 
     private string FormTitle => _form switch
@@ -81,15 +77,24 @@ public partial class UsersList
         {
             var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminUserSummary>>>(
                 "simfAccount.postJson", "/account/api/admin/admins/list", _query);
-            _page = envelope is { Success: true, Data: not null }
-                ? envelope.Data
-                : GridPage<AdminUserSummary>.Of(
-                    Array.Empty<AdminUserSummary>(), 0, _query);
+            // A FAILED envelope used to be substituted with an
+            // empty page, so an API 500 / 403 was indistinguishable from "no rows"
+            // and the admin read a working page with no data. Report it instead;
+            // the page already renders a toast surface it never used on this path.
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _page = GridPage<AdminUserSummary>.Of(Array.Empty<AdminUserSummary>(), 0, _query);
+                ShowToast("error", envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Users.LoadFailed"]);
+            }
         }
         finally { _loading = false; }
     }
 
-    // D-353 — open the hosted Add form (CreateAdminForm) in the shell.
+    // Open the hosted Add form (CreateAdminForm) in the shell.
     private Task OnAddAsync()
     {
         _form = FormKind.AddEdit;
@@ -98,7 +103,7 @@ public partial class UsersList
         return Task.CompletedTask;
     }
 
-    // D-353 — open the hosted Edit-roles form in the shell.
+    // Open the hosted Edit-roles form in the shell.
     private Task OnEditAsync(AdminUserSummary user)
     {
         _form = FormKind.AddEdit;
@@ -107,7 +112,7 @@ public partial class UsersList
         return Task.CompletedTask;
     }
 
-    // D-353 — open the hosted read-only Details form in the shell (no extra fetch).
+    // Open the hosted read-only Details form in the shell (no extra fetch).
     private Task OnDetailsAsync(AdminUserSummary user)
     {
         _form = FormKind.ViewDelete;
@@ -122,7 +127,7 @@ public partial class UsersList
         _target = null;
     }
 
-    // D-353 — Add success (CreateAdminForm) or roles saved (edit) both land here.
+    // Add success (CreateAdminForm) or roles saved (edit) both land here.
     private async Task OnSavedAsync(AdminUserSummary? saved)
     {
         var wasEdit = _isEdit;
@@ -255,9 +260,12 @@ public partial class UsersList
     private async Task OnExportAsync(IReadOnlyList<AdminUserSummary> selected)
     {
         var ids = selected.Select(u => u.Id).ToList();
-        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+        // A failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/admins/export",
-            new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null });
+            new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null }, L);
+        if (error is not null) ShowToast("error", error);
     }
 
     private async Task OnImportAsync() =>
@@ -291,9 +299,9 @@ public partial class UsersList
     private string FormatPage(int current, int total) =>
         string.Format(L["Admin.Users.Pager.Page"], current, total);
 
-    // D-357 — the admin's profile photo for the identity-cell thumbnail. Only
+    // The admin's profile photo for the identity-cell thumbnail. Only
     // requested when HasAvatar is set (so the grid never issues a 404); the CP BFF
-    // streams the bytes from the central StoredFile avatar (D-568), gated Admins.View.
+    // streams the bytes from the central StoredFile avatar, gated Admins.View.
     // When null, SimfIdentityCell shows an initials tile (never a broken image).
     private static string? AvatarImageUrl(AdminUserSummary row) =>
         row.HasAvatar ? $"/account/api/admin/admins/{row.Id}/avatar" : null;

@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/ProfileEndpointsTests.cs
-//        SIMF.Api.Tests/UserProfileTests.cs (D-374 Me_profileComplete)
+//        SIMF.Api.Tests/UserProfileTests.cs
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
@@ -17,12 +17,12 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// Implements account-management use cases for the signed-in user
-/// (myComment #11): reading the profile, updating and removing the avatar.
-/// D-568 (Wave C S3) — avatar bytes now live in the unified <see cref="IFileService"/>
+/// Implements account-management use cases for the signed-in user:
+/// reading the profile, updating and removing the avatar.
+/// Avatar bytes now live in the unified <see cref="IFileService"/>
 /// store (App DB, <c>FileService.Avatar</c>, encrypted at rest). The Identity
 /// <c>SimfUser.AvatarRelativePath</c> column is repurposed as the bare-Guid pointer
-/// to that <c>StoredFile</c> (no cross-DB FK — D-157) and doubles as the "has
+/// to that <c>StoredFile</c> (never a cross-DB FK) and doubles as the "has
 /// avatar" presence sentinel that <see cref="BuildAvatarUrl"/> and the profile-
 /// completeness / male-face gates already read; so those Identity-side reads stay
 /// byte-identical and no Identity migration is needed.
@@ -62,9 +62,9 @@ internal sealed class AccountService(
         var user = await GetUserAsync(userId);
 
         // The app-role lookup reads the App database (ProfileType.MobileAppRole)
-        // — a second query on the other context, never a cross-DB join (D-157).
+        // — a second query on the other context, never a cross-DB join.
         var mobileAppRole = await userProfiles.ResolveMobileAppRoleAsync(user.Id, cancellationToken);
-        // D-374 — completeness rides on the login flow so the app can force
+        // Completeness rides on the login flow so the app can force
         // the add-profile stage without a separate profile probe.
         var profileComplete = await userProfiles.IsProfileCompleteAsync(user.Id, cancellationToken);
 
@@ -74,7 +74,7 @@ internal sealed class AccountService(
             user.DisplayName,
             MapAppRole(mobileAppRole),
             // The Identity row carries no per-user language today; Arabic is the
-            // primary / default language (SIMF-MAA-001 §10) and the app overrides
+            // primary / default language, and the app overrides
             // it locally. Emitted for wire-shape completeness.
             PreferredLanguageDefault,
             MapRegistrationStatus(user.AccountState),
@@ -137,7 +137,7 @@ internal sealed class AccountService(
                 "يجب أن تكون الصورة بصيغة PNG أو JPEG أو WebP.");
         }
 
-        // D-568 (S3) — store the bytes in the unified StoredFile store (App DB,
+        // Store the bytes in the unified StoredFile store (App DB,
         // owner = the user id). IFileService runs the full pipeline (malware scan,
         // magic-byte allow-list, canonical MIME, SHA-256, encrypt-at-rest, audit);
         // the avatar-specific 2 MB cap + MIME check above still apply first.
@@ -148,7 +148,7 @@ internal sealed class AccountService(
             cancellationToken);
 
         user.AvatarRelativePath = result.Id.ToString();
-        user.UpdatedAt = DateTimeOffset.UtcNow;
+        user.UpdatedAt = SimfClock.Now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
 
         // Retire the replaced avatar's bytes (one active per user) after the
@@ -181,13 +181,13 @@ internal sealed class AccountService(
 
         if (!string.IsNullOrEmpty(user.AvatarRelativePath))
         {
-            // D-568 (S3) — securely delete the StoredFile the pointer references.
+            // Securely delete the StoredFile the pointer references.
             if (ParseFileId(user.AvatarRelativePath) is { } fileId)
             {
                 await fileService.DeleteAsync(fileId, user.Id, cancellationToken);
             }
             user.AvatarRelativePath = null;
-            user.UpdatedAt = DateTimeOffset.UtcNow;
+            user.UpdatedAt = SimfClock.Now;
             await accounts.UpdateAsync(user).EnsureSuccessAsync();
         }
 
@@ -235,16 +235,16 @@ internal sealed class AccountService(
     private static string? BuildAvatarUrl(SimfUser user) =>
         string.IsNullOrEmpty(user.AvatarRelativePath)
             ? null
-            : $"/account/api/avatar/{user.Id:N}?v={user.UpdatedAt?.UtcTicks ?? 0}";
+            : $"/account/api/avatar/{user.Id:N}?v={user.UpdatedAt?.Ticks ?? 0}";
 
-    /// <summary>D-568 (S3) — the avatar pointer (<c>AvatarRelativePath</c>) now
+    /// <summary>The avatar pointer (<c>AvatarRelativePath</c>) now
     /// holds the StoredFile GUID. Returns it when parseable, else null (a legacy
     /// non-Guid path, or unset).</summary>
     private static Guid? ParseFileId(string? pointer) =>
         Guid.TryParse(pointer, out var id) ? id : null;
 
     /// <summary>The primary-language default emitted for <c>users/me</c> until
-    /// a per-user language preference is persisted (SIMF-MAA-001 §10).</summary>
+    /// a per-user language preference is persisted.</summary>
     private const string PreferredLanguageDefault = "ar";
 
     /// <summary>

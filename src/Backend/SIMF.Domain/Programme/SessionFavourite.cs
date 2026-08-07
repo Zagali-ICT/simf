@@ -1,24 +1,23 @@
 namespace SIMF.Domain.Programme;
 
 /// <summary>
-/// A user's "favourite" (المفضلة) mark on a programme <see cref="Session"/> —
-/// the heart toggle on the session-summaries (1388:8392) and my-sessions
-/// (1388:9067) screens. One row per (user, session); un-favouriting deletes the
-/// row. <see cref="UserId"/> is a bare Guid (logical FK to <c>SimfUser.Id</c> in
-/// the Identity DB — no cross-DB FK, D-157); <see cref="SessionId"/> is a real
-/// FK to <see cref="Session"/> (same App DB).
+/// A user's favourite mark on a <see cref="Session"/>, behind the heart toggle
+/// on the session and my-sessions screens. One row per user and session;
+/// un-favouriting deletes it outright rather than deactivating it.
 /// </summary>
 public sealed class SessionFavourite
 {
     public Guid Id { get; set; }
 
-    /// <summary>The signed-in user who favourited (bare Guid — no DB FK).</summary>
+    /// <summary>A bare Guid: the user lives in the Identity database, so there is
+    /// no foreign key across the two.</summary>
     public Guid UserId { get; set; }
 
-    /// <summary>The favourited session (real FK, same DbContext).</summary>
+    /// <summary>A real foreign key, since the session lives in the same
+    /// database.</summary>
     public Guid SessionId { get; set; }
     public Session? Session { get; set; }
 
-    /// <summary>When the favourite was added (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    /// <summary>Saudi local time.</summary>
+    public DateTime CreatedAt { get; set; }
 }

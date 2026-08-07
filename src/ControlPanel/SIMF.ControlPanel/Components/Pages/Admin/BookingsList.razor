@@ -1,8 +1,8 @@
-@* #6/#17 (owner 2026-07-20) — read-only booking MONITOR (was the P2.2/D-227
+@* Read-only booking MONITOR (it used to be an
    approval queue). Bookings auto-confirm — there is no approval step — and no-show
    seats are released automatically 3 minutes before start by
    ReservationNoShowReleaseWorker, so this page only lists the active (confirmed,
-   still-held) visitor reservations and exports them. SimfDataGrid (D-255). *@
+   still-held) visitor reservations and exports them. Built on SimfDataGrid. *@
 @page "/admin/bookings"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Bookings.View)]
@@ -45,7 +45,8 @@
                       ActionsHeader="@L["Grid.Actions"]"
                       SelectAllLabel="@L["Grid.SelectAll"]"
                       SelectRowLabel="@L["Grid.SelectRow"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ExportPermission="@PermissionCatalog.Bookings.Export">
             <Columns>
                 <SimfDataGridColumn TItem="ActiveBookingRow" Key="session"
                                     Header="@L["Admin.Bookings.Col.Session"]"
@@ -60,7 +61,7 @@
                 <SimfDataGridColumn TItem="ActiveBookingRow" Key="seat"
                                     Header="@L["Admin.Bookings.Col.Seat"]"
                                     Sortable="true" Filterable="true">
-                    @* D-485 — an open-seating join has no row/seat; show it as
+                    @* An open-seating join has no row/seat; show it as
                        general admission rather than a blank cell. *@
                     <CellTemplate>@(context.RowLabel is null
                         ? L["Admin.Bookings.GeneralAdmission"]

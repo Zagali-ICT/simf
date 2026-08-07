@@ -6,8 +6,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/venue_map_models.dart';
 import 'data/venue_map_repository.dart';
 import 'widgets/venue_map_booth_sheet.dart';
@@ -244,16 +244,28 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     return _buildMap(l10n);
   }
 
+  /// Only the error and empty branches are pull-to-refreshable. The map itself
+  /// is pan/zoom, and a RefreshIndicator over it would swallow every downward
+  /// drag — the gesture belongs where the user is otherwise stuck.
   Widget _buildError(AppL10n l10n) {
-    return SimfErrorState(
-      message: l10n.venueMapError,
-      retryLabel: l10n.retryLabel,
-      onRetry: () => unawaited(_load()),
+    return SimfRefreshableMessage(
+      onRefresh: _load,
+      child: SimfErrorState(
+        message: l10n.venueMapError,
+        retryLabel: l10n.retryLabel,
+        onRetry: () => unawaited(_load()),
+      ),
     );
   }
 
   Widget _buildEmpty(AppL10n l10n) {
-    return SimfEmptyState(icon: Icons.map_outlined, message: l10n.venueMapEmpty);
+    return SimfRefreshableMessage(
+      onRefresh: _load,
+      child: SimfEmptyState(
+        icon: Icons.map_outlined,
+        message: l10n.venueMapEmpty,
+      ),
+    );
   }
 
   Widget _buildMap(AppL10n l10n) {
@@ -301,12 +313,21 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
           top: SimfTokens.space4,
           child: Column(
             children: <Widget>[
-              VenueMapControl(icon: Icons.my_location, onTap: _resetView),
+              VenueMapControl(
+                icon: Icons.my_location,
+                label: l10n.venueMapResetView,
+                onTap: _resetView,
+              ),
               const SizedBox(height: SimfTokens.space2),
-              VenueMapControl(icon: Icons.add, onTap: () => _zoomBy(_zoomStep)),
+              VenueMapControl(
+                icon: Icons.add,
+                label: l10n.venueMapZoomIn,
+                onTap: () => _zoomBy(_zoomStep),
+              ),
               const SizedBox(height: SimfTokens.space2),
               VenueMapControl(
                 icon: Icons.remove,
+                label: l10n.venueMapZoomOut,
                 onTap: () => _zoomBy(1 / _zoomStep),
               ),
             ],
@@ -321,6 +342,10 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
               l10n: l10n,
               node: selected,
               booth: selectedBooth,
+              // FR-LGO-005 — the badge builds
+              // `{base}/app/assets/BoothLogo/{id}/image` (the D-357 anonymous
+              // asset route), exactly like the booths list.
+              baseUrl: ref.watch(simfDataConfigProvider).baseUrl,
               onDirect: () => _centreOn(selected),
               onDetails: selected.isBooth
                   ? () => _openDetails(selected, selectedBooth)

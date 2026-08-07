@@ -1,10 +1,10 @@
-@* D-353 â€” reusable Role Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Role Add/Edit form, hosted by CrudShell (popup or full
    page) from RolesList. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel).
    IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT against
-   Initial). Baseline roles cannot be renamed â€” in Edit mode against a
+   Initial). Baseline roles cannot be renamed — in Edit mode against a
    built-in role the form shows the read-only notice instead of the field.
-   Supersedes RoleForm.razor (D-134), which keyed off Initial==null. *@
+   Supersedes RoleForm.razor, which keyed off Initial==null. *@
 @inherits CrudAddEditFormBase<AdminRoleSummary>
 
 @if (_error is not null)

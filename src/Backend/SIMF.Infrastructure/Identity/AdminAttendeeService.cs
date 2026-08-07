@@ -12,15 +12,14 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-134 Sprint A / D-167 — read-only attendee roster. After D-167 moved
-/// <c>UserProfile</c> + <c>ProfileType</c> onto <c>SimfAppDbContext</c>,
-/// the user + profile + profile-type join can no longer be a single SQL
-/// query (the two DbContexts hit different physical databases). Pattern:
-/// page the SimfUser rows (Identity DB), then load the matching
-/// UserProfile + ProfileType rows (App DB) keyed by user id, then merge
+/// Read-only attendee roster. Because <c>UserProfile</c> + <c>ProfileType</c>
+/// live on <c>SimfAppDbContext</c>, the user + profile + profile-type join
+/// cannot be a single SQL query (the two DbContexts hit different physical
+/// databases). Pattern: page the SimfUser rows (Identity DB), then load the
+/// matching UserProfile + ProfileType rows (App DB) keyed by user id, then merge
 /// in memory. Total = the Identity count; the App round-trip only fetches
-/// the visible page's worth of rows. P1.6 added the XLSX export + a
-/// CreatedAt date-range filter; list + export share one filter/merge path.
+/// the visible page's worth of rows. The XLSX export and the CreatedAt
+/// date-range filter share that one filter/merge path with the list.
 /// </summary>
 internal sealed class AdminAttendeeService(
     SimfIdentityDbContext dbContext,
@@ -29,7 +28,7 @@ internal sealed class AdminAttendeeService(
     IAttendeeExcelService excel)
     : IAdminAttendeeService
 {
-    /// <summary>P1.6 — the export bound. Matches the user export's cap so an
+    /// <summary>The export bound. Matches the user export's cap so an
     /// accidental "export everything" can't load the whole roster into RAM.</summary>
     private const int ExportRowCap = 5_000;
 
@@ -55,13 +54,11 @@ internal sealed class AdminAttendeeService(
 
         var bytes = excel.Export(rows);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminAttendeesExported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"count={rows.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminAttendeesExported,
+            actorUserId,
+            $"count={rows.Count}",
+            cancellationToken);
 
         return bytes;
     }
@@ -95,14 +92,14 @@ internal sealed class AdminAttendeeService(
         {
             users = users.Where(user => user.AccountState == state);
         }
-        // P1.6 — registration date-range filter (CreatedAt).
+        // Registration date-range filter (CreatedAt).
         if (query.Filters.TryGetValue("from", out var fromRaw)
-            && DateTimeOffset.TryParse(fromRaw, out var from))
+            && DateTime.TryParse(fromRaw, out var from))
         {
             users = users.Where(user => user.CreatedAt >= from);
         }
         if (query.Filters.TryGetValue("to", out var toRaw)
-            && DateTimeOffset.TryParse(toRaw, out var to))
+            && DateTime.TryParse(toRaw, out var to))
         {
             users = users.Where(user => user.CreatedAt <= to);
         }

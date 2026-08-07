@@ -14,8 +14,8 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
 
-/// <summary>P2.3 — D-228 (FR-407): admin management of speaker presentation
-/// files (SIMF-FDS-004 §5.3). D-568 (Wave C S6): bytes live in the unified
+/// <summary>Admin management of speaker presentation
+/// files. The bytes live in the unified
 /// <c>StoredFile</c> store (Internal tier, encrypted at rest); the row keeps only
 /// the metadata + the bare-Guid pointer in <c>StoredFileName</c>. Both Speaker and
 /// Session are real FKs on <see cref="SimfAppDbContext"/>, so the session title is
@@ -94,7 +94,7 @@ internal sealed class AdminSpeakerPresentationService(
 
         var safeName = SanitiseFileName(fileName);
         var presentationId = Guid.NewGuid();
-        // D-568 (S6) — store the bytes in the unified StoredFile store (Internal tier,
+        // Store the bytes in the unified StoredFile store (Internal tier,
         // encrypted at rest, owner = the presentation). IFileService runs the full
         // pipeline (malware scan, magic-byte allow-list, canonical MIME, SHA-256,
         // audit), so the standalone scanner call is gone. StoredFileName holds the
@@ -117,19 +117,17 @@ internal sealed class AdminSpeakerPresentationService(
             SizeBytes = content.Length,
             UploadedByUserId = actorUserId,
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         db.SpeakerPresentations.Add(presentation);
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerPresentationUploaded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"presentationId={presentation.Id}; speakerId={speakerId}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerPresentationUploaded,
+            actorUserId,
+            $"presentationId={presentation.Id}; speakerId={speakerId}; "
                 + $"sessionId={sessionId}; file={safeName}; bytes={content.Length}",
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "Speaker presentation {File} uploaded for speaker {SpeakerId} session {SessionId} by {Actor}",
@@ -174,7 +172,7 @@ internal sealed class AdminSpeakerPresentationService(
         presentation.Deactivate();
         await db.SaveChangesAsync(cancellationToken);
 
-        // D-568 (S6) — retire the StoredFile (soft-delete + unlink bytes). Best-effort:
+        // Retire the StoredFile (soft-delete + unlink bytes). Best-effort:
         // the row is already deactivated (source of truth), so a delete failure must
         // not fail the operation. SpeakerPresentation is DeletableDefault:true.
         if (Guid.TryParse(presentation.StoredFileName, out var fileId))
@@ -191,14 +189,12 @@ internal sealed class AdminSpeakerPresentationService(
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SpeakerPresentationDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"presentationId={presentation.Id}; speakerId={presentation.SpeakerId}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SpeakerPresentationDeleted,
+            actorUserId,
+            $"presentationId={presentation.Id}; speakerId={presentation.SpeakerId}; "
                 + $"file={presentation.FileName}",
-        }, cancellationToken);
+            cancellationToken);
     }
 
     private static readonly HashSet<string> AllowedPresentationExtensions =

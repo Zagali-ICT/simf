@@ -19,11 +19,15 @@ namespace SIMF.Api.Tests;
 
 public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
 {
-    // D-753 — availability windows are now bounded to the forum days (MIN/MAX over the
-    // active ProgrammeDay rows). The fixture seeds programme days 2026-11-20..22, so the
+    // D-753 — availability windows are bounded to the forum days (MIN/MAX over the
+    // active ProgrammeDay rows). The fixture seeds programme days 2026-11-23..25, so the
     // window sits on day one — inside that window and (relative to the test clock) in the
     // future so the derived slots are still offered.
-    private static readonly DateTimeOffset WindowStart = new(2026, 11, 20, 10, 0, 0, TimeSpan.Zero);
+    //
+    // Was 2026-11-20 until 2026-07-28: db9b6f76 moved the real SIMF-4 programme to
+    // 23-25 Nov and soft-deletes the old 20-22 placeholder days, which put this
+    // window outside the forum bound so the window was refused and no slot existed.
+    private static readonly DateTime WindowStart = new(2026, 11, 23, 10, 0, 0);
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -85,7 +89,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
                 Status = MeetingRequestStatus.Accepted,
                 SlotStart = WindowStart,
                 SlotEnd = WindowStart.AddMinutes(30),
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await db.SaveChangesAsync();
         }
@@ -125,7 +129,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
                 Status = MeetingRequestStatus.AwaitingSpeaker,
                 SlotStart = WindowStart,
                 SlotEnd = WindowStart.AddMinutes(30),
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await db.SaveChangesAsync();
         }
@@ -190,7 +194,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
         // trips, returning the standard 400.
         var admin = await CreateAdministratorAndSignInAsync();
         var speakerId = await SeedSpeakerAsync();
-        var outside = new DateTimeOffset(2026, 12, 15, 10, 0, 0, TimeSpan.Zero);
+        var outside = new DateTime(2026, 12, 15, 10, 0, 0);
 
         var resp = await PostAuthAsync(
             $"/api/v1/admin/speakers/{speakerId}/availability-windows",
@@ -233,7 +237,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
             Name = "Test Speaker", NameArabic = "متحدّث",
             AllowsMeetingRequests = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         await db.SaveChangesAsync();
@@ -261,14 +265,7 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

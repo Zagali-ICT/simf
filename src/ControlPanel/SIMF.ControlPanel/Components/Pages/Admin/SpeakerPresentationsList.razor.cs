@@ -1,13 +1,9 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -191,23 +187,26 @@ public partial class SpeakerPresentationsList
             $"/account/api/admin/speaker-presentations/{row.Id}/file", "_blank");
     }
 
-    // D-356 — Excel export (selected rows, or the whole filtered set for the
+    // Excel export (selected rows, or the whole filtered set for the
     // selected speaker). This grid is master-detail: the export endpoint has no
     // GridQuery list, so the chosen speaker id rides Query.Filters["speakerId"]
     // (the endpoint lists that speaker's files, then honours any selected ids).
-    private Task OnExportAsync(IReadOnlyList<AdminSpeakerPresentationRow> selected)
+    private async Task OnExportAsync(IReadOnlyList<AdminSpeakerPresentationRow> selected)
     {
         var query = new GridQuery
         {
             Filters = new Dictionary<string, string> { ["speakerId"] = _speakerId },
         };
-        return JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/speaker-presentations/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = query,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
     }
 
     private async Task UploadAsync()

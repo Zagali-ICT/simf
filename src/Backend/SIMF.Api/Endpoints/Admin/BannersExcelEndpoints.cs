@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/banners/export</c> — the D-356 grid export for CMS
+/// <c>POST /api/v1/admin/banners/export</c> — the grid export for CMS
 /// banners. All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>;
 /// this subclass only declares the route, permission, sheet/file names, the
 /// column layout (mirroring the Banners grid) and how to list + identify a
@@ -32,7 +32,7 @@ public sealed class ExportBannersEndpoint(IAdminCmsService service, IGridExcelEx
         new("End", row => row.End),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the bilingual body + image/link (appended so the
+        // Round-trip the bilingual body + image/link (appended so the
         // existing column order is unchanged; import binds by header name and
         // already reads these four columns).
         new("Body", row => row.Body),
@@ -49,7 +49,7 @@ public sealed class ExportBannersEndpoint(IAdminCmsService service, IGridExcelEx
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/banners/import</c> — the D-356 grid import (insert-only)
+/// <c>POST /api/v1/admin/banners/import</c> — the grid import (insert-only)
 /// for CMS banners. The base does the upload defence, parse and per-row error
 /// aggregation; this subclass binds one row to <see cref="CreateBannerRequest"/>
 /// and creates it (the service rejects an invalid window/length → a per-row
@@ -105,7 +105,7 @@ public sealed class ImportBannersEndpoint(IAdminCmsService service, IGridExcelIm
         }
 
         var startRaw = row.Cells.GetValueOrDefault("Start", string.Empty);
-        if (!DateTimeOffset.TryParse(startRaw, out var start))
+        if (!DateTime.TryParse(startRaw, out var start))
         {
             throw new DataValidationException(
                 "The start date/time is required and must be a valid date.",
@@ -113,7 +113,7 @@ public sealed class ImportBannersEndpoint(IAdminCmsService service, IGridExcelIm
         }
 
         var endRaw = row.Cells.GetValueOrDefault("End", string.Empty);
-        if (!DateTimeOffset.TryParse(endRaw, out var end))
+        if (!DateTime.TryParse(endRaw, out var end))
         {
             throw new DataValidationException(
                 "The end date/time is required and must be a valid date.",

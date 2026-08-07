@@ -1,12 +1,12 @@
 // Tests: SIMF.Api.Tests/OrganizationHeroVideoTests.cs
 using FastEndpoints;
-using SIMF.Api.Endpoints;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Application.Files.Abstractions;
+using SIMF.Common;
 
 namespace SIMF.Api.Endpoints.Public;
 
-/// <summary>D-768 — anonymously range-stream the singleton Organization Profile's
+/// <summary>Anonymously range-stream the singleton Organization Profile's
 /// uploaded hero background video (public branding content shown on the app home +
 /// the website landing hero). A FIXED singleton route ending <c>.mp4</c> — so the
 /// app/website hero accept-gate passes and no file GUID is enumerable — resolves the
@@ -19,7 +19,7 @@ public sealed class OrganizationHeroVideoStreamEndpoint(
 {
     public override void Configure()
     {
-        Get(OrganizationHeroVideoRoutes.StreamRoute);
+        Get(OrganizationHeroVideoRoute.StreamRoute);
         AllowAnonymous();
         Tags("Public");
     }

@@ -1,7 +1,7 @@
 // Tests: SIMF.Api.Tests/DelegationAvailabilityTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Programme;
@@ -28,11 +28,7 @@ public sealed class CreateDelegationAvailabilityWindowEndpoint(IDelegationAvaila
     public override async Task HandleAsync(
         CreateDelegationAvailabilityWindowRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var countryId = Route<int>("countryId");
         await Send.OkAsync(ApiResult<AdminDelegationAvailabilityWindow>.Ok(
             await service.CreateWindowAsync(actorId, countryId, req, ct)), ct);
@@ -69,11 +65,7 @@ public sealed class DeleteDelegationAvailabilityWindowEndpoint(IDelegationAvaila
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeleteWindowAsync(actorId, Route<Guid>("id"), ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

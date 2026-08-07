@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminGridV2Tests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -11,7 +11,6 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <summary>
 /// <c>POST /api/v1/admin/admins/export</c> — returns an XLSX workbook of the
 /// selected users (or the whole grid result if no ids are given).
-/// Decision D-044 b.
 /// </summary>
 public sealed class ExportUsersEndpoint(IAdminUserBulkService adminAccountService)
     : Endpoint<AdminExportUsersRequest>
@@ -30,14 +29,10 @@ public sealed class ExportUsersEndpoint(IAdminUserBulkService adminAccountServic
 
     public override async Task HandleAsync(AdminExportUsersRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var bytes = await adminAccountService.ExportUsersAsync(actorId, req, ct);
         HttpContext.Response.Headers.ContentDisposition =
-            $"attachment; filename=\"simf-users-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx\"";
+            $"attachment; filename=\"simf-users-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";
         await Send.BytesAsync(bytes,
             contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             cancellation: ct);

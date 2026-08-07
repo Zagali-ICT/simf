@@ -3,6 +3,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Authentication;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.Programme.Abstractions;
@@ -11,7 +12,7 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Programme;
 
-/// <summary>P3.2b — D-232 (D-213): mint a short-lived token to stream one
+/// <summary>Mint a short-lived token to stream one
 /// published session's recording. Requires a signed-in approved account (the
 /// app user) — recordings are not anonymously enumerable. 404 when the session
 /// is not published or has no recording. The token is scoped to this one
@@ -42,11 +43,7 @@ public sealed class RequestRecordingStreamTokenEndpoint(
                 "لا يوجد تسجيل منشور متاح لهذه الجلسة.");
         }
 
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var token = tokens.CreateRecordingStreamToken(req.Id, userId);
         var streamUrl = $"/api/v1/app/programme/sessions/{req.Id}/recording/stream";
@@ -59,7 +56,7 @@ public sealed class RequestRecordingStreamTokenEndpoint(
     }
 }
 
-/// <summary>P3.2b — D-232 (D-213): range-stream the recording's MP4 bytes.
+/// <summary>Range-stream the recording's MP4 bytes.
 /// Authenticated by the StreamToken scheme (token on <c>?access_token=</c>,
 /// since an HTML5 <c>&lt;video&gt;</c> cannot set an Authorization header). The
 /// token is scoped to one recording, so a mismatched <c>recording_session_id</c>
@@ -101,7 +98,7 @@ public sealed class StreamSessionRecordingEndpoint(
             return;
         }
 
-        // D-568 (S7) — RecordingStoredFileName is now the StoredFile pointer; open it
+        // RecordingStoredFileName is now the StoredFile pointer; open it
         // as a seekable plaintext stream (SessionRecording is EncryptAtRest:false) so
         // the player can Range-seek (HTTP 206) without buffering the whole video.
         if (!Guid.TryParse(recording.StoredFileName, out var fileId))
@@ -124,7 +121,7 @@ public sealed class StreamSessionRecordingEndpoint(
 
         // Send.StreamAsync disposes the stream after sending (see
         // AvatarFetchEndpoint). enableRangeProcessing lets the player seek
-        // and resume — a large MP4 is never buffered whole in memory (D-213).
+        // and resume — a large MP4 is never buffered whole in memory.
         await Send.StreamAsync(
             file.Content,
             fileName: recording.FileName,

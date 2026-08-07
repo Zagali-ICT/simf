@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/moderation/data/moderation_models.dart';
+import 'package:simf_app/features/moderation/data/moderation_repository.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/data/session_calendar.dart';
@@ -16,6 +18,8 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../accessibility/_fake_prefs.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/sessions/data/hall_attendance_repository.dart';
 
 SessionDetail _detail({
   String? liveStreamUrl,
@@ -158,6 +162,35 @@ class _PendingController extends AuthController {
       );
 }
 
+// DEF-MOD-003 / 004 / 008 — a MODERATOR. The approved one may open the Q&A desk
+// (#104) but NOT the attendee-only ask / seat routes; the unapproved one
+// presents as a guest (D-666) and may open neither.
+CurrentUser _moderator({required RegistrationStatus registrationStatus}) =>
+    CurrentUser(
+      id: 'u3',
+      email: 'moderator@example.sa',
+      displayName: 'Moderator',
+      appRole: AppRole.moderator,
+      preferredLanguage: PreferredLanguage.fromJson('en'),
+      registrationStatus: registrationStatus,
+    );
+
+class _ModeratorController extends AuthController {
+  _ModeratorController({required this.registrationStatus});
+
+  final RegistrationStatus registrationStatus;
+
+  @override
+  AuthState build() => AuthStateSignedIn(
+        Session(
+          accessToken: 'A',
+          refreshToken: 'R',
+          accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+          user: _moderator(registrationStatus: registrationStatus),
+        ),
+      );
+}
+
 class _FakeDetailRepo implements SessionDetailRepository {
   _FakeDetailRepo({this.detail, this.detailStatus});
 
@@ -184,6 +217,27 @@ class _FakeDetailRepo implements SessionDetailRepository {
   Future<MySeat?> getMySeat(String sessionId) async => null;
 }
 
+/// Answers the gate check-in strip with "no scan recorded" so these tests never
+/// reach the network. The card is read-only, so both writes throw: a POST from
+/// this screen would be the GPS self-check-in coming back.
+class _FakeAttendance implements HallAttendanceRepository {
+  @override
+  Future<HallAttendanceStatus> getStatus(String sessionId) async =>
+      const HallAttendanceStatus(arrived: false);
+
+  @override
+  Future<HallAttendanceStatus> recordArrival(
+    String sessionId, {
+    required double lat,
+    required double lon,
+  }) async =>
+      throw StateError('the session detail must never post an arrival');
+
+  @override
+  Future<HallAttendanceStatus> recordDeparture(String sessionId) async =>
+      throw StateError('the session detail must never post a departure');
+}
+
 class _FakeSeatRepo implements SeatMapRepository {
   _FakeSeatRepo({this.map, this.releaseFailure});
 
@@ -196,9 +250,13 @@ class _FakeSeatRepo implements SeatMapRepository {
   int joinCalls = 0;
   int reserveCalls = 0;
   int releaseCalls = 0;
+  // DEF-MOD-004 — proves the seat map is not even fetched for a role that
+  // cannot open the join / my-seat routes.
+  int getSeatMapCalls = 0;
 
   @override
   Future<SessionSeatMap> getSeatMap(String sessionId) async {
+    getSeatMapCalls++;
     final m = map;
     if (m == null) {
       throw ApiFailure(
@@ -250,6 +308,15 @@ class _FakeSeatRepo implements SeatMapRepository {
       throw failure;
     }
   }
+
+  // B1 — the move is driven from the seat picker, not the session page.
+  @override
+  Future<MyReservation> moveSeat(
+    String sessionId, {
+    required String rowLabel,
+    required int seatNumber,
+  }) =>
+      throw UnimplementedError();
 }
 
 class _FakeCalendar implements SessionCalendar {
@@ -257,6 +324,17 @@ class _FakeCalendar implements SessionCalendar {
   Future<bool> addSession(SessionDetail detail, {required bool isArabic}) async =>
       true;
 }
+
+/// FR-MOD-001 — one row of `GET /app/sessions/moderated`.
+ModeratedSession _moderatedSession(String id) => ModeratedSession(
+      sessionId: id,
+      title: 'Granted $id',
+      titleArabic: 'جلسة $id',
+      hallName: 'Main Hall',
+      hallNameArabic: 'القاعة الرئيسية',
+      start: DateTime.utc(2026, 3, 1, 9),
+      end: DateTime.utc(2026, 3, 1, 10),
+    );
 
 Future<void> _pump(
   WidgetTester tester, {
@@ -266,6 +344,11 @@ Future<void> _pump(
   SeatMapRepository? seatRepo,
   SessionCalendar? calendar,
   Locale locale = const Locale('en'),
+  // FR-MOD-001 — the session ids the signed-in user actually holds a
+  // SessionModerator grant on. The desk action is offered only for these; the
+  // moderator ROLE alone no longer earns it, because the grant is per session
+  // and a missing one used to surface as a 403 after the tap.
+  List<String> moderatedSessionIds = const <String>['s1'],
 }) async {
   // A tall surface so the whole lazy ListView (down to the CTA row) lays out —
   // the restructured frame (header buttons + ask-host card) pushes the lower
@@ -322,12 +405,23 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
+        // The check-in strip mounts on any session at or past its arrival window,
+        // so without this a widget test would resolve the REAL SimfApiClient and
+        // fire a live GET at test.local. flutter_test's mock HttpClient happens to
+        // short-circuit it today, which made the omission invisible rather than
+        // harmless.
+        hallAttendanceRepositoryProvider.overrideWithValue(_FakeAttendance()),
         sessionDetailRepositoryProvider.overrideWithValue(repo),
         seatMapRepositoryProvider
             .overrideWithValue(seatRepo ?? _FakeSeatRepo(map: seatMap)),
         sessionCalendarProvider
             .overrideWithValue(calendar ?? _FakeCalendar()),
         authControllerProvider.overrideWith(() => controller),
+        myModeratedSessionsProvider.overrideWith(
+          (ref) async => <ModeratedSession>[
+            for (final id in moderatedSessionIds) _moderatedSession(id),
+          ],
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -485,8 +579,8 @@ void main() {
         'live + streaming (owner 2026-07-14 gate)', (tester) async {
       final live = _detail(
         liveStreamUrl: 'https://youtu.be/abcdefghijk',
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: saudiNow().subtract(const Duration(hours: 1)),
+        end: saudiNow().add(const Duration(hours: 1)),
       );
       await _pump(
         tester,
@@ -549,8 +643,8 @@ void main() {
     testWidgets('S-4 — an in-window in-person session (no live URL) SHOWS the '
         'ask card with the neutral live label on the detail', (tester) async {
       final ongoing = _detail(
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: saudiNow().subtract(const Duration(hours: 1)),
+        end: saudiNow().add(const Duration(hours: 1)),
       );
       await _pump(
         tester,
@@ -569,8 +663,8 @@ void main() {
         'card on the detail (asking moves to the live-broadcast screen)',
         (tester) async {
       final broadcasting = _detail(
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
-        end: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        start: saudiNow().subtract(const Duration(hours: 1)),
+        end: saudiNow().add(const Duration(hours: 1)),
         liveStreamUrl: 'https://live.example.sa/main.m3u8',
       );
       await _pump(
@@ -591,8 +685,8 @@ void main() {
       // After End `_showAsk` returns false regardless of the viewer, so a
       // guest proves it.
       final ended = _detail(
-        start: DateTime.now().toUtc().subtract(const Duration(hours: 3)),
-        end: DateTime.now().toUtc().subtract(const Duration(hours: 2)),
+        start: saudiNow().subtract(const Duration(hours: 3)),
+        end: saudiNow().subtract(const Duration(hours: 2)),
       );
       await _pump(
         tester,
@@ -630,9 +724,14 @@ void main() {
       expect(find.text('Row B · Seat 12'), findsOneWidget);
       // D-485 — the pending-approval hint replaced the badge hint.
       expect(find.text('Pending approval'), findsOneWidget);
-      // Owner 2026-06-30 — cancel is now a plain white "Cancel" line under the
-      // CTA row (was the red "Cancel booking" link inside the card).
-      expect(find.text('Cancel'), findsOneWidget);
+      // Owner 2026-06-30 — cancel is a plain white line under the CTA row (was
+      // the red link inside the card). A13 — it reads "Cancel booking", matching
+      // the dialog it opens (which is titled "Cancel booking?").
+      expect(
+        find.widgetWithText(TextButton, 'Cancel booking'),
+        findsOneWidget,
+      );
+      expect(find.text('Cancel'), findsNothing);
       expect(
         find.widgetWithText(FilledButton, 'Add to calendar'),
         findsOneWidget,
@@ -665,8 +764,8 @@ void main() {
         controller: _SignedInController(),
       );
 
-      // Open the confirm dialog from the white "Cancel" link under the CTA row.
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      // Open the confirm dialog from the white cancel line under the CTA row.
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
       await tester.pumpAndSettle();
       expect(find.text('Cancel booking?'), findsOneWidget);
 
@@ -688,10 +787,10 @@ void main() {
         controller: _SignedInController(),
       );
 
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
       await tester.pumpAndSettle();
-      // Tap the dialog's dismiss (Cancel) button — scoped to the dialog so it
-      // doesn't collide with the screen's own white "Cancel" link.
+      // Tap the dialog's dismiss (Cancel) button — scoped to the dialog, which
+      // A13 also disambiguates (the screen's line now reads "Cancel booking").
       await tester.tap(
         find.descendant(
           of: find.byType(Dialog),
@@ -723,7 +822,7 @@ void main() {
         controller: _SignedInController(),
       );
 
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Cancel booking'));
       await tester.pumpAndSettle();
@@ -755,7 +854,7 @@ void main() {
         controller: _SignedInController(),
       );
 
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Cancel booking'));
       await tester.pumpAndSettle();
@@ -862,6 +961,84 @@ void main() {
       );
     });
 
+    // DEF-MOD-003 / DEF-MOD-004 — the ask + join/seat affordances open
+    // attendee-only routes, so offering them to a Moderator produced an enabled
+    // control that silently bounced them Home. They must not render at all.
+    testWidgets('DEF-MOD-003/004: a MODERATOR is offered neither the ask card '
+        'nor the join CTA (both routes are attendee-only)', (tester) async {
+      final seatRepo = _FakeSeatRepo(map: _seatMap());
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatRepo: seatRepo,
+        controller: _ModeratorController(
+          registrationStatus: RegistrationStatus.approved,
+        ),
+      );
+
+      expect(find.text('Ask a question before it starts'), findsNothing);
+      expect(find.text('Ask a question'), findsNothing);
+      expect(
+        find.widgetWithText(FilledButton, 'Join the session'),
+        findsNothing,
+      );
+      // …and no seat-map retry either: the map was never fetched for them.
+      expect(find.text('Could not load the seat map.'), findsNothing);
+      expect(seatRepo.getSeatMapCalls, 0);
+      // The moderator DOES keep their own desk entry (route #104 allows them)
+      // on a session they hold the grant for — the harness grants 's1'.
+      expect(find.byIcon(Icons.forum_outlined), findsOneWidget);
+    });
+
+    // FR-MOD-001 — the desk is authorised PER SESSION, but the icon used to
+    // render for any moderator on every session in the programme, so a missing
+    // grant was only discoverable as a 403 after the tap. The action now needs
+    // a confirmed grant for THIS session.
+    testWidgets('FR-MOD-001: a moderator with no grant for this session is not '
+        'offered the Q&A desk', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        controller: _ModeratorController(
+          registrationStatus: RegistrationStatus.approved,
+        ),
+        // They moderate something — just not this one.
+        moderatedSessionIds: const <String>['some-other-session'],
+      );
+
+      expect(find.byIcon(Icons.forum_outlined), findsNothing);
+    });
+
+    testWidgets('FR-MOD-001: a moderator who moderates nothing is not offered '
+        'the Q&A desk', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        controller: _ModeratorController(
+          registrationStatus: RegistrationStatus.approved,
+        ),
+        moderatedSessionIds: const <String>[],
+      );
+
+      expect(find.byIcon(Icons.forum_outlined), findsNothing);
+    });
+
+    // DEF-MOD-008 — the router gates on effectiveAppRole (D-666), so an
+    // UNAPPROVED moderator presents as a guest. Showing them the desk entry
+    // guaranteed a bounce back to Home the moment they tapped it.
+    testWidgets('DEF-MOD-008: an UNAPPROVED moderator is not shown the Q&A desk '
+        'action (the router would bounce them)', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        controller: _ModeratorController(
+          registrationStatus: RegistrationStatus.pending,
+        ),
+      );
+
+      expect(find.byIcon(Icons.forum_outlined), findsNothing);
+    });
+
     testWidgets('signed-in, assigned-seat, no reservation → the Select-my-seat '
         'CTA opens the seat picker', (tester) async {
       await _pump(
@@ -929,6 +1106,14 @@ void main() {
       await tester.pumpAndSettle();
       // The confirm dialog, then Join.
       expect(find.text('Join this session?'), findsOneWidget);
+      // A8 / DEF-SEA-003 — the confirm body must describe what actually
+      // happens. Bookings auto-confirm (2026-07-18), so it no longer says the
+      // request goes to the organisers for approval.
+      expect(find.textContaining('no approval'), findsOneWidget);
+      expect(
+        find.textContaining('sent to the organisers for approval'),
+        findsNothing,
+      );
       await tester.tap(find.widgetWithText(FilledButton, 'Join'));
       await tester.pumpAndSettle();
       expect(seatRepoHolder.joinCalls, 1);

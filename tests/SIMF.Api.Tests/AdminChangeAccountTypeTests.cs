@@ -203,7 +203,7 @@ public sealed class AdminChangeAccountTypeTests : IClassFixture<SimfApiFactory>
             IsForVisitor = isForVisitor,
             MobileAppRole = isForVisitor ? MobileAppRole.None : MobileAppRole.Staff,
             IsActive = isActive,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(type);
         await appDb.SaveChangesAsync();
@@ -242,7 +242,7 @@ public sealed class AdminChangeAccountTypeTests : IClassFixture<SimfApiFactory>
                 NameArabic = "الحساب",
                 PlaceOfBirth = "Riyadh",
                 NationalityId = 0,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -273,16 +273,7 @@ public sealed class AdminChangeAccountTypeTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private async Task<HttpResponseMessage> PostAuthAsync<TBody>(

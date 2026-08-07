@@ -3,10 +3,10 @@ using SIMF.Contracts.Sessions;
 namespace SIMF.Application.SessionQuestions.Abstractions;
 
 /// <summary>
-/// D-169 (gap doc G6, PDF §2.7.2 + §2.10) — public-facing surface for
+/// Public-facing surface for
 /// audience question submission. Used by the mobile app via
 /// <c>POST /api/v1/sessions/{sessionId}/questions</c>. The geofence
-/// gate per §G7 is **deferred** — once G-OI-2 resolves, a check is
+/// gate is **deferred** — when the venue boundary is settled, the check is
 /// added here, not at the endpoint, so the gate logic lives in one
 /// place.
 /// </summary>

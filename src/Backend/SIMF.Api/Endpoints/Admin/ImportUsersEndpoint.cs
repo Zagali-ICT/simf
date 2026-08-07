@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminGridV2Tests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -10,10 +10,10 @@ namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
 /// <c>POST /api/v1/admin/admins/import</c> — bulk-creates users from an XLSX
-/// workbook upload (decision D-044 b, hardened in D-045 H1). Multipart form
+/// workbook upload. Multipart form
 /// upload, single file field "file". Returns the per-row outcome summary.
 ///
-/// <para>Defence-in-depth (D-045): the upload is capped at 5 MB, the first
+/// <para>Defence-in-depth: the upload is capped at 5 MB, the first
 /// four bytes must be the ZIP magic <c>50 4B 03 04</c>, and the row cap is
 /// enforced at the service layer. ClosedXML is itself a Zip handler;
 /// without these gates a hostile admin could submit a Zip-bomb workbook
@@ -41,11 +41,7 @@ public sealed class ImportUsersEndpoint(IAdminUserBulkService adminAccountServic
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)

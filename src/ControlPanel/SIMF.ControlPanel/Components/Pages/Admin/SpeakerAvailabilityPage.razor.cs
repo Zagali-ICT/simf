@@ -1,18 +1,9 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
 using SIMF.Contracts.Programme;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -33,11 +24,11 @@ public partial class SpeakerAvailabilityPage
     private bool _busy;
     private Toast? _toast;
 
-    // R10 (D-767) — a must-decide guard for the destructive window delete.
+    // A must-decide guard for the destructive window delete.
     private bool _confirmOpen;
     private Guid _confirmWindowId;
 
-    // D-753 — forum-day bounds read from the backend, replacing the former hardcoded
+    // Forum-day bounds read from the backend, replacing the former hardcoded
     // 2026-11-23..25 window. The string forms feed the datetime-local Min/Max; the
     // DateOnly forms back the client-side range check. All null when no programme days
     // are seeded (no client bound; the server still enforces once days exist).
@@ -59,7 +50,7 @@ public partial class SpeakerAvailabilityPage
         await LoadForumWindowAsync();
     }
 
-    // D-753 — read the forum-day window (MIN/MAX programme day) and translate it into
+    // Read the forum-day window (MIN/MAX programme day) and translate it into
     // datetime-local Min/Max attributes spanning the whole day. A failed / empty read
     // leaves the bounds null (no client bound); the backend enforces the rule on save.
     private async Task LoadForumWindowAsync()
@@ -104,17 +95,17 @@ public partial class SpeakerAvailabilityPage
             _toast = new Toast("error", L["Admin.SpeakerAvailability.BadDates"]);
             return;
         }
-        // D-753 — client-side forum-day check (a backstop to the datetime-local
+        // Client-side forum-day check (a backstop to the datetime-local
         // Min/Max and the authoritative server rule). Skipped when no programme days
         // are seeded. Dates compare the entered wall-clock day, matching the whole-day
         // Min/Max attributes.
         if (_forumMinDate is { } minDate && _forumMaxDate is { } maxDate)
         {
-            var startDate = DateOnly.FromDateTime(start.UtcDateTime);
-            var endDate = DateOnly.FromDateTime(end.UtcDateTime);
+            var startDate = DateOnly.FromDateTime(start);
+            var endDate = DateOnly.FromDateTime(end);
             if (startDate < minDate || endDate > maxDate)
             {
-                // D-753 — render the actual forum window (config-driven) in the
+                // Render the actual forum window (config-driven) in the
                 // toast instead of a hardcoded literal. Arabic vs English is
                 // chosen from the current UI culture's text direction.
                 var range = EventDateRange.Format(
@@ -157,7 +148,7 @@ public partial class SpeakerAvailabilityPage
         finally { _busy = false; }
     }
 
-    // R10 (D-767) — open the delete confirm; RunDeleteAsync does the work on OK.
+    // Open the delete confirm; RunDeleteAsync does the work on OK.
     private void ConfirmDelete(Guid windowId)
     {
         _confirmWindowId = windowId;
@@ -197,7 +188,7 @@ public partial class SpeakerAvailabilityPage
         finally { _busy = false; }
     }
 
-    private static bool TryParseUtc(string value, out DateTimeOffset result)
+    private static bool TryParseUtc(string value, out DateTime result)
     {
         if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var dt))

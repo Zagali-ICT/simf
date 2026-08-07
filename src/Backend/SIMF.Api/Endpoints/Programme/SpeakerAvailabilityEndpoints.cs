@@ -1,14 +1,14 @@
 // Tests: SIMF.Api.Tests/SpeakerAvailabilityTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Programme;
 
-/// <summary>D-474 (#11, Group G phase 1) — the team defines speaker availability
+/// <summary>The team defines speaker availability
 /// windows; the VIP-meeting flow reads the free slots derived from them. Admin
 /// window CRUD is gated by <c>SpeakerMeetingRequests.Manage</c>/<c>.View</c>; the
 /// free-slot read needs an approved account.</summary>
@@ -27,11 +27,7 @@ public sealed class CreateSpeakerAvailabilityWindowEndpoint(ISpeakerAvailability
     public override async Task HandleAsync(
         CreateSpeakerAvailabilityWindowRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var speakerId = Route<Guid>("speakerId");
         await Send.OkAsync(ApiResult<AdminSpeakerAvailabilityWindow>.Ok(
             await service.CreateWindowAsync(actorId, speakerId, req, ct)), ct);
@@ -68,17 +64,13 @@ public sealed class DeleteSpeakerAvailabilityWindowEndpoint(ISpeakerAvailability
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeleteWindowAsync(actorId, Route<Guid>("id"), ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }
 
-/// <summary>D-474 — the free meeting slots for a speaker (an approved attendee
+/// <summary>The free meeting slots for a speaker (an approved attendee
 /// reads these before requesting a VIP meeting). Empty when the speaker has no
 /// future windows.</summary>
 public sealed class GetSpeakerAvailableSlotsEndpoint(ISpeakerAvailabilityService service)

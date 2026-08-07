@@ -1,14 +1,14 @@
 // Tests: SIMF.Api.Tests/DeviceKeySignInTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Auth;
 
-/// <summary>D-172 (gap doc G10, PDF §2.5) — register a new device key
+/// <summary>Register a new device key
 /// after a successful sign-in. Caller is the bound user; the new key
 /// is created with no challenge.</summary>
 public sealed class RegisterDeviceKeyEndpoint(IDeviceKeyService service)
@@ -24,17 +24,13 @@ public sealed class RegisterDeviceKeyEndpoint(IDeviceKeyService service)
 
     public override async Task HandleAsync(RegisterDeviceKeyRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var entry = await service.RegisterAsync(callerId, req, ct);
         await Send.OkAsync(ApiResult<DeviceKeyEntry>.Ok(entry), ct);
     }
 }
 
-/// <summary>#7a — issue + email a step-up code to the signed-in caller's own
+/// <summary>Issue + email a step-up code to the signed-in caller's own
 /// address. The user supplies it on the following
 /// <see cref="RegisterDeviceKeyEndpoint"/> call, so a borrowed-but-unlocked
 /// phone can't silently enrol a biometric credential without also holding the
@@ -53,11 +49,7 @@ public sealed class SendBiometricStepUpEndpoint(IDeviceKeyService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var result = await service.IssueEnrolStepUpAsync(callerId, ct);
         await Send.OkAsync(ApiResult<SendBiometricStepUpResponse>.Ok(result), ct);
     }
@@ -75,11 +67,7 @@ public sealed class ListMyDeviceKeysEndpoint(IDeviceKeyService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         var rows = await service.ListMineAsync(callerId, ct);
         await Send.OkAsync(ApiResult<IReadOnlyList<DeviceKeyEntry>>.Ok(rows), ct);
     }
@@ -90,7 +78,7 @@ public sealed class IssueDeviceKeyChallengeRoute
     public Guid Id { get; set; }
 }
 
-/// <summary>D-172 — anonymous: anyone with the device-key id can ask
+/// <summary>Anonymous: anyone with the device-key id can ask
 /// for a challenge. The challenge is useless without the matching
 /// private key, so leaking the deviceKeyId does not enable sign-in.</summary>
 public sealed class IssueDeviceKeyChallengeEndpoint(IDeviceKeyService service)
@@ -111,7 +99,7 @@ public sealed class IssueDeviceKeyChallengeEndpoint(IDeviceKeyService service)
     }
 }
 
-/// <summary>D-172 — anonymous: verify signed challenge + mint JWT pair.
+/// <summary>Anonymous: verify signed challenge + mint JWT pair.
 /// On failure returns 401 with the typed code; success returns full
 /// <see cref="AuthTokens"/>.</summary>
 public sealed class SignInWithDeviceKeyEndpoint(IDeviceKeyService service)
@@ -157,11 +145,7 @@ public sealed class RevokeMyDeviceKeyEndpoint(IDeviceKeyService service)
 
     public override async Task HandleAsync(RevokeMyDeviceKeyRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
         await service.RevokeAsync(callerId, req.Id, actorIsAdministrator: false, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -186,11 +170,7 @@ public sealed class AdminRevokeDeviceKeyEndpoint(IDeviceKeyService service)
 
     public override async Task HandleAsync(AdminRevokeDeviceKeyRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.RevokeAsync(actorId, req.Id, actorIsAdministrator: true, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

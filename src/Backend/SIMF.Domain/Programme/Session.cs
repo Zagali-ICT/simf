@@ -4,189 +4,130 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Programme;
 
 /// <summary>
-/// D-165 (gap doc G3, PDF §2.9) — one scheduled run-of-show talk.
-/// A Session is the time-window slot in a specific <see cref="Hall"/>
-/// that one or more <see cref="Speaker"/>s present at, optionally
-/// tagged with one or more <see cref="Theme"/>s for editorial
-/// grouping in the agenda view.
+/// One scheduled talk: a time window in a <see cref="Hall"/>, presented by one or
+/// more <see cref="Speaker"/>s and optionally tagged with <see cref="Theme"/>s.
 ///
-/// <para><b>Distinct from <see cref="Theme"/>:</b> a Theme is a pillar
-/// — an editorial category that colour-codes content. A Session is a
-/// scheduled talk. Many Sessions can belong to one Theme; one Session
-/// can be tagged with several Themes if it spans pillars.</para>
-///
-/// <para><b>Capacity:</b> defaults to the parent <see cref="Hall"/>'s
-/// <c>SeatCount</c>. The PDF §2.9 requires per-session expansion or
-/// contraction (the room can be reconfigured for one session); the
-/// optional <see cref="CapacityOverride"/> column captures the
-/// per-session value. Null means "use the hall default".</para>
+/// <para>A <see cref="Theme"/> is an editorial pillar that groups content; a
+/// Session is the talk itself. Many sessions share a theme, and a session that
+/// spans pillars carries several.</para>
 /// </summary>
 public class Session : BaseAuditEntity
 {
-    /// <summary>Stable admin code (2–16 chars; unique across all
-    /// sessions). Used by the booking module + the URL of the public
-    /// session page.</summary>
+    /// <summary>Unique across all sessions, and the session's public URL segment.</summary>
     public string Code { get; set; } = string.Empty;
 
-    /// <summary>English title shown on the agenda card.</summary>
     public string Title { get; set; } = string.Empty;
-
-    /// <summary>Arabic title — paired with <see cref="Title"/>.</summary>
     public string TitleArabic { get; set; } = string.Empty;
 
-    /// <summary>Optional English abstract / description (≤2048).</summary>
     public string? Description { get; set; }
-
-    /// <summary>Optional Arabic abstract / description (≤2048).</summary>
     public string? DescriptionArabic { get; set; }
 
-    /// <summary>Optional session-language label (e.g. "Arabic", "Arabic &amp;
-    /// English") shown on the public session "at a glance" card (Figma
-    /// 5991-85840). Null = the card omits the language row.</summary>
+    /// <summary>Free text such as "Arabic &amp; English". Null omits the language
+    /// row from the public "at a glance" card.</summary>
     public string? Language { get; set; }
-
-    /// <summary>Arabic pair of <see cref="Language"/> (e.g. "العربية").</summary>
     public string? LanguageArabic { get; set; }
 
-    /// <summary>The hosting hall. Real FK — same DbContext.</summary>
+    /// <summary>A real foreign key: the hall lives in the same DbContext.</summary>
     public Guid HallId { get; set; }
     public Hall? Hall { get; set; }
 
-    /// <summary>B9b — D-226 (FDS-004 §5.4): the session's category, an optional
-    /// real FK to the dynamic <see cref="SessionCategory"/> lookup (same
-    /// DbContext, OnDelete.Restrict). Null until a category is assigned.</summary>
     public Guid? CategoryId { get; set; }
     public SessionCategory? Category { get; set; }
 
-    /// <summary>D-452 (Figma 883:2308 filter tabs) — the session's kind
-    /// (Workshop / Session / Event), driving the app's "ورش العمل / جلسات /
-    /// احداث" type tabs. Null = untyped (only the "الكل / All" tab shows it).</summary>
+    /// <summary>Drives the app's Workshop / Session / Event filter tabs. An
+    /// untyped session appears only under "All".</summary>
     public SessionType? Type { get; set; }
 
-    /// <summary>Session start (UTC). The Flutter agenda renders local-
-    /// time per the user's tz.</summary>
-    public DateTimeOffset Start { get; set; }
+    /// <summary>Saudi local time.</summary>
+    public DateTime Start { get; set; }
 
-    /// <summary>Session end (UTC). Must be > <see cref="Start"/>;
-    /// validated at the service layer.</summary>
-    public DateTimeOffset End { get; set; }
+    /// <summary>Saudi local time. Must be after <see cref="Start"/>, enforced by
+    /// a database check constraint and again by the admin service.</summary>
+    public DateTime End { get; set; }
 
-    /// <summary>D-165 (PDF §2.9) — optional per-session override of the
-    /// parent <see cref="Hall"/>'s <c>SeatCount</c>. Null means "use
-    /// the hall default" — most sessions inherit; only the
-    /// reconfigured rooms override.</summary>
+    /// <summary>Null inherits the hall's seat count. Only a room reconfigured for
+    /// one session overrides it.</summary>
     public int? CapacityOverride { get; set; }
 
-    /// <summary>D-485 (owner batch 2026-06-21) — optional per-session override of
-    /// the parent <see cref="Hall"/>'s <see cref="Hall.SeatSelectionMode"/>. Null
-    /// means "inherit the hall". Lets one session in an assigned-seat hall run as
-    /// open seating (or vice-versa) without re-configuring the hall.</summary>
+    /// <summary>Null inherits the hall. Lets a single session run open-seating in
+    /// an assigned-seat hall, or the reverse, without touching the hall.</summary>
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
 
-    /// <summary>P1.7 (D-217 freeze-lift) — set by the automated reminder
-    /// worker once it has dispatched the "starting soon" notifications for
-    /// this session. The null check is the worker's dedup guard: a session
-    /// is reminded exactly once. Null until reminded (the normal state).</summary>
-    public DateTimeOffset? ReminderSent { get; set; }
+    /// <summary>Minutes (0..240) before the start that arrivals are accepted.
+    /// Resolved session, then hall, then the global WalkInMode setting, then 15 —
+    /// so one keynote can open early without changing the hall every other
+    /// session that day runs in. Null inherits.</summary>
+    public int? ArrivalGraceMinutesOverride { get; set; }
 
-    /// <summary>Set by the end-of-session rating-prompt worker once it has
-    /// dispatched the "please rate this session" notifications. The null check is
-    /// the worker's dedup guard: a session is prompted exactly once. Null until
-    /// prompted (the normal state).</summary>
-    public DateTimeOffset? RatingPromptSent { get; set; }
+    /// <summary>Stamped by the reminder worker. The null check is its once-only
+    /// guard, so a session is reminded exactly once.</summary>
+    public DateTime? ReminderSent { get; set; }
 
-    /// <summary>P3.2 — D-231 (Completion Programme §5.2, Option A): the
-    /// broadcast lifecycle. The Scientific Committee drives the transitions
-    /// in the CP (<c>Scheduled → Held → Recorded → Published</c>).
-    /// Orthogonal to <see cref="IsActive"/> (soft-delete). New sessions
-    /// start <see cref="SessionStatus.Scheduled"/>.</summary>
+    /// <summary>Stamped by the rating-prompt worker, and its once-only guard in
+    /// the same way as <see cref="ReminderSent"/>.</summary>
+    public DateTime? RatingPromptSent { get; set; }
+
+    /// <summary>The broadcast lifecycle, driven by the Scientific Committee in the
+    /// Control Panel. Orthogonal to <see cref="BaseAuditEntity.IsActive"/>, which
+    /// is the soft-delete flag.</summary>
     public SessionStatus Status { get; set; } = SessionStatus.Scheduled;
 
-    /// <summary>P3.2 — D-231: stamped when the session is published
-    /// (<see cref="SessionStatus.Published"/>) and cleared if it is
-    /// un-published. Null in every other state.</summary>
-    public DateTimeOffset? PublishedAt { get; set; }
+    /// <summary>Stamped on publish and cleared on un-publish; null otherwise.</summary>
+    public DateTime? PublishedAt { get; set; }
 
-    /// <summary>P3.2b — D-232 (D-213): the recording attached to this session,
-    /// stored out-of-row on the filesystem behind <c>ISessionRecordingStorage</c>.
-    /// All null until a recording is uploaded; cleared when it is deleted.
-    /// Orthogonal to <see cref="Status"/> — uploading does not change the
-    /// lifecycle, and the public stream requires both a recording AND
-    /// <see cref="SessionStatus.Published"/>.</summary>
+    // The recording is stored out-of-row behind ISessionRecordingStorage, so
+    // these columns hold only its metadata. All null until something is
+    // uploaded, and all cleared on delete. Orthogonal to Status: the public
+    // stream needs a recording AND a Published session.
     public string? RecordingStoredFileName { get; set; }
-
-    /// <summary>The original upload file name (shown in the CP, used as the
-    /// download name).</summary>
     public string? RecordingFileName { get; set; }
-
-    /// <summary>The recording's MIME type (e.g. <c>video/mp4</c>) — echoed on
-    /// the stream response so the player knows how to decode it.</summary>
     public string? RecordingContentType { get; set; }
-
-    /// <summary>The recording's size in bytes (shown in the CP).</summary>
     public long? RecordingSizeBytes { get; set; }
+    public DateTime? RecordingUploadedAt { get; set; }
 
-    /// <summary>When the recording was last uploaded.</summary>
-    public DateTimeOffset? RecordingUploadedAt { get; set; }
-
-    /// <summary>Bare <c>Guid</c> of the admin who uploaded the recording —
-    /// cross-context (Identity DB), no FK (D-157).</summary>
+    /// <summary>A bare Guid rather than a navigation: the user lives in the
+    /// Identity database, so there is no foreign key across the two.</summary>
     public Guid? RecordingUploadedByUserId { get; set; }
 
-    /// <summary>§8 (Mockup screen 25 "البث المباشر") — the LIVE broadcast stream
-    /// URL, set manually by an admin in the CP. Non-null
-    /// = this session has a live broadcast (the app shows the LIVE player);
-    /// null = recorded/scheduled only. D-349: the provider is YouTube (a YouTube
-    /// watch/live URL) for the POC, with a direct HLS/MP4 URL accepted as a
-    /// fallback — both validated by <c>LiveStreamUrlPolicy</c>. Orthogonal
-    /// to <see cref="Status"/> and the recording.</summary>
+    /// <summary>Non-null means this session has a live broadcast and the app shows
+    /// the live player. A YouTube watch/live URL, with a direct HLS or MP4 URL
+    /// accepted as a fallback; both are checked by LiveStreamUrlPolicy.</summary>
     public string? LiveStreamUrl { get; set; }
 
-    /// <summary>§8 (Mockup screen 26 "لغة الإشارة") — the optional alternate
-    /// live stream that carries sign-language interpretation. Non-null = the app
-    /// shows the sign-language toggle on the live player; null = no sign-language
-    /// feed.</summary>
+    /// <summary>The optional parallel feed carrying sign-language interpretation.
+    /// Non-null adds the sign-language toggle to the live player.</summary>
     public string? LiveSignLanguageUrl { get; set; }
 
-    /// <summary>P5 — D-439 (Mockup screen 25 "البث المباشر", Figma 934:3613): the
-    /// AI live-caption / running-transcript line shown under the player ("الترجمة
-    /// الفورية للنص المنطوق"). Non-null = the app renders the caption strip with
-    /// this text; null = the strip shows the placeholder hint (and YouTube CC
-    /// supplies captions for a YouTube feed). <b>Provider stubbed (D-439):</b> like
-    /// <see cref="LiveStreamUrl"/> (a manually-entered YouTube URL, not a
-    /// streaming-infra integration), the caption text is entered by an admin in
-    /// the CP for the POC; the future <c>ILiveCaptionProvider</c> speech-to-text
-    /// seam would auto-populate this same column. English line.</summary>
+    /// <summary>The running-transcript line under the player. Typed by an admin,
+    /// not generated: there is no speech-to-text integration, and a YouTube feed
+    /// supplies its own captions. Null shows the placeholder hint instead.</summary>
     public string? LiveCaptions { get; set; }
-
-    /// <summary>P5 — D-439: the Arabic pair of <see cref="LiveCaptions"/>. The app
-    /// renders the active locale with a fallback to the other when one is blank.</summary>
     public string? LiveCaptionsArabic { get; set; }
 
-    /// <summary>M-to-M with <see cref="Speaker"/> via the explicit join
-    /// entity <see cref="SessionSpeaker"/>. Explicit because the
-    /// composite key + the per-row metadata (DisplayOrder) earns the
-    /// extra type; mirrors the D-161 reasoning for GateProfileTypeAllow.</summary>
+    /// <summary><b>Informational only — this restricts nothing.</b> It was
+    /// specified as a regional restriction on the live feed and the owner reversed
+    /// that, so there is no region check and no location lookup anywhere; the feed
+    /// plays for every caller and this text only adds a banner beside it. Blank on
+    /// both languages shows no notice.</summary>
+    public string? LiveNotice { get; set; }
+    public string? LiveNoticeArabic { get; set; }
+
+    /// <summary>Explicit join entity, because the join row carries its own
+    /// <see cref="SessionSpeaker.DisplayOrder"/> and <see cref="SessionSpeaker.Role"/>.</summary>
     public ICollection<SessionSpeaker> Speakers { get; set; }
         = new List<SessionSpeaker>();
 
-    /// <summary>M-to-M with <see cref="Theme"/> via <see cref="SessionTheme"/>.
-    /// A session belongs to zero or more themes; the agenda groups by
-    /// the first-listed theme as the "primary pillar".</summary>
     public ICollection<SessionTheme> Themes { get; set; }
         = new List<SessionTheme>();
 
-    /// <summary>The session's key-outcome bullets ("أبرز المخرجات" on the public
-    /// session-detail page), ordered by <see cref="SessionOutcome.DisplayOrder"/>.
-    /// Cascade-deleted with the session.</summary>
+    /// <summary>The key-outcome bullets on the public session page, ordered by
+    /// <see cref="SessionOutcome.DisplayOrder"/>. Cascade-deleted with the session.</summary>
     public ICollection<SessionOutcome> Outcomes { get; set; }
         = new List<SessionOutcome>();
 }
 
-/// <summary>D-165 — join row linking a <see cref="Session"/> to one
-/// <see cref="Speaker"/>. Composite PK (SessionId, SpeakerId).
-/// <see cref="DisplayOrder"/> drives the speaker-list order on the
-/// session card (primary speaker first, supporting speakers after).</summary>
+/// <summary>Join row for <see cref="Session"/> and <see cref="Speaker"/>.
+/// Composite key (SessionId, SpeakerId).</summary>
 public class SessionSpeaker
 {
     public Guid SessionId { get; set; }
@@ -195,20 +136,16 @@ public class SessionSpeaker
     public Guid SpeakerId { get; set; }
     public Speaker? Speaker { get; set; }
 
-    /// <summary>Order of the speaker in the session's speaker list
-    /// (0 = primary).</summary>
+    /// <summary>Position in the session's speaker list; 0 is the primary speaker.</summary>
     public int DisplayOrder { get; set; }
 
-    /// <summary>B9 — D-225 (FDS-004 §5.4): this person's role in THIS session —
-    /// speaker or host. Defaults to <see cref="SessionSpeakerRole.Speaker"/>.</summary>
+    /// <summary>Whether this person speaks at or hosts this particular session.</summary>
     public SessionSpeakerRole Role { get; set; }
 }
 
-/// <summary>D-165 — join row linking a <see cref="Session"/> to one
-/// <see cref="Theme"/> (composite PK). One session can carry several
-/// themes — useful for the cross-pillar "Cybersecurity × Maritime
-/// Navigation" sessions where the agenda should show the card under
-/// both pillar groups.</summary>
+/// <summary>Join row for <see cref="Session"/> and <see cref="Theme"/>. A session
+/// carrying several themes shows on the agenda under each of their pillar
+/// groups.</summary>
 public class SessionTheme
 {
     public Guid SessionId { get; set; }

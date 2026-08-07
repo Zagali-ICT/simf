@@ -2,27 +2,28 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.SessionQuestions.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Sessions;
 
-/// <summary>D-169 (gap doc G6, PDF §2.7.2 + §2.10) — public submission
-/// endpoint. P5.1 — D-242 (FR-704): the venue gate is enforced in the service —
-/// a HallAttendance arrival when the hall has a geofence (D-240/D-241), else the
+/// <summary>Public submission
+/// endpoint. The venue gate is enforced in the service —
+/// a HallAttendance arrival when the hall has a geofence, else the
 /// <see cref="SubmitSessionQuestionRoute.IsAtVenue"/> self-assert fallback.</summary>
 public sealed class SubmitSessionQuestionRoute
 {
     public Guid SessionId { get; set; }
     public string QuestionText { get; set; } = string.Empty;
 
-    /// <summary>D-171 (gap doc G7) — the venue self-assert flag. Used as the
-    /// gate only when the session's hall has no geofence configured (D-242);
+    /// <summary>The venue self-assert flag. Used as the
+    /// gate only when the session's hall has no geofence configured;
     /// otherwise the authoritative gate is the HallAttendance arrival record.</summary>
     public bool IsAtVenue { get; set; }
 
-    /// <summary>D-174 (gap doc G11, Mockup page 26) — Speaker or Host.</summary>
+    /// <summary>Speaker or Host.</summary>
     public SIMF.Common.Enums.SessionQuestionRecipient Recipient { get; set; }
         = SIMF.Common.Enums.SessionQuestionRecipient.Speaker;
 }
@@ -40,11 +41,7 @@ public sealed class SubmitSessionQuestionEndpoint(ISessionQuestionService servic
 
     public override async Task HandleAsync(SubmitSessionQuestionRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
         var result = await service.SubmitAsync(
             req.SessionId, userId,
             new SubmitSessionQuestionRequest
@@ -58,7 +55,7 @@ public sealed class SubmitSessionQuestionEndpoint(ISessionQuestionService servic
     }
 }
 
-/// <summary>D-169 — small helper for the per-session moderator
+/// <summary>Small helper for the per-session moderator
 /// authorization check. Caller is authorized when they hold the
 /// Administrator role OR they have a row in <c>SessionModerators</c>
 /// for the requested session. Used inline by every moderator endpoint
@@ -71,7 +68,7 @@ internal static class SessionModeratorAuth
         ISessionModerationService moderationService,
         CancellationToken ct)
     {
-        if (!Guid.TryParse(user.FindFirstValue("sub"), out var actorId))
+        if (user.ActorIdOrNull() is not { } actorId)
         {
             return null;
         }
@@ -87,9 +84,45 @@ internal static class SessionModeratorAuth
     }
 }
 
+/// <summary>The signed-in user's own moderated sessions. Gated the
+/// same way the desk is (an approved app account); the grant list itself is what
+/// scopes the response, so there is nothing here another moderator could read.
+/// The app calls it to offer the desk only where the grant exists — the icon used
+/// to show on every session and the missing grant only surfaced as a 403 after the
+/// tap — and to list the moderator's sessions on their operational home.</summary>
+public sealed class ListMyModeratedSessionsEndpoint(ISessionModerationService service)
+    : EndpointWithoutRequest<ApiResult<IReadOnlyList<ModeratedSessionRow>>>
+{
+    public override void Configure()
+    {
+        Get("/app/sessions/moderated");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Sessions");
+        Summary(s => s.Summary = "List the sessions the caller moderates.");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var userId = User.ActorId();
+        var rows = await service.ListMySessionsAsync(userId, ct);
+        await Send.OkAsync(ApiResult<IReadOnlyList<ModeratedSessionRow>>.Ok(rows), ct);
+    }
+}
+
 public sealed class ListModeratorQueueRoute
 {
     public Guid SessionId { get; set; }
+
+    /// <summary>The desk tab to read. Omitted (the shipped app's
+    /// call shape) returns the working desk: the Committee-approved rows plus the
+    /// ones already marked answered. An explicit status returns exactly that
+    /// bucket — <c>Hidden</c> is how the desk lists (and can then restore) the
+    /// questions it rejected, so a mis-click is no longer permanent.
+    /// <para>Only the desk's own three buckets are accepted (Approved / Answered /
+    /// Hidden); the service refuses anything else with a 400 so this filter cannot
+    /// be used to read questions the Scientific Committee has not released.</para>
+    /// </summary>
+    public SIMF.Common.Enums.QuestionStatus? Status { get; set; }
 }
 
 public sealed class ListModeratorQueueEndpoint(ISessionModerationService service)
@@ -111,7 +144,7 @@ public sealed class ListModeratorQueueEndpoint(ISessionModerationService service
             await Send.ForbiddenAsync(ct);
             return;
         }
-        var rows = await service.ListAsync(req.SessionId, ct);
+        var rows = await service.ListAsync(req.SessionId, req.Status, ct);
         await Send.OkAsync(
             ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>.Ok(rows), ct);
     }
@@ -146,6 +179,42 @@ public sealed class HideQuestionEndpoint(ISessionModerationService service)
         }
         var row = await service.SetHiddenAsync(
             actorId.Value, req.SessionId, req.QuestionId, req.IsHidden, ct);
+        await Send.OkAsync(ApiResult<SessionQuestionModeratorRow>.Ok(row), ct);
+    }
+}
+
+/// <summary>The moderator's "تمت الإجابة" mark, persisted. Same
+/// shape and gate as <see cref="HideQuestionRoute"/>: the target state travels on
+/// the body and the call is idempotent.</summary>
+public sealed class SetQuestionAnsweredRoute
+{
+    public Guid SessionId { get; set; }
+    public Guid QuestionId { get; set; }
+    public bool IsAnswered { get; set; }
+}
+
+public sealed class SetQuestionAnsweredEndpoint(ISessionModerationService service)
+    : Endpoint<SetQuestionAnsweredRoute, ApiResult<SessionQuestionModeratorRow>>
+{
+    public override void Configure()
+    {
+        Put("/app/sessions/{sessionId:guid}/questions/{questionId:guid}/answered");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Sessions");
+    }
+
+    public override async Task HandleAsync(SetQuestionAnsweredRoute req, CancellationToken ct)
+    {
+        var actorId = await SessionModeratorAuth.ResolveAuthorizedUserAsync(
+            User, req.SessionId, service, ct);
+        if (actorId is null)
+        {
+            await Send.ForbiddenAsync(ct);
+            return;
+        }
+        var row = await service.SetAnsweredAsync(
+            actorId.Value, req.SessionId, req.QuestionId, req.IsAnswered, ct);
         await Send.OkAsync(ApiResult<SessionQuestionModeratorRow>.Ok(row), ct);
     }
 }

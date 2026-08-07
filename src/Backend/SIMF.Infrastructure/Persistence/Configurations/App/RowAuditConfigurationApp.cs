@@ -5,7 +5,7 @@ using SIMF.Domain.Auditing;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
-/// D-109: row-audit configuration for the <see cref="SimfAppDbContext"/>
+/// Row-audit configuration for the <see cref="SimfAppDbContext"/>
 /// — same shape as <see cref="Configurations.RowAuditConfiguration"/>,
 /// in the App namespace so the App context's
 /// <c>ApplyConfigurationsFromAssembly</c> filter picks it up while the
@@ -15,7 +15,7 @@ internal sealed class RowAuditConfigurationApp : IEntityTypeConfiguration<RowAud
 {
     public void Configure(EntityTypeBuilder<RowAudit> builder)
     {
-        // D-157: the App context lives in its own physically separate database
+        // The App context lives in its own physically separate database
         // (SIMF_App), so its RowAudits no longer shares a DB with the Identity
         // context's table. The `app` schema qualifier is retained from the
         // earlier one-shared-DB design (C-1, superseded) — harmless under the
@@ -30,7 +30,7 @@ internal sealed class RowAuditConfigurationApp : IEntityTypeConfiguration<RowAud
         builder.Property(audit => audit.PrimaryKey).HasMaxLength(256).IsRequired();
         builder.Property(audit => audit.CorrelationId).HasMaxLength(64);
         builder.Property(audit => audit.AffectedColumns).HasMaxLength(2000);
-        // D-157 — actor-name snapshot, same purpose as the identity-side
+        // Actor-name snapshot, same purpose as the identity-side
         // RowAuditConfiguration.
         builder.Property(audit => audit.ActorDisplayName).HasMaxLength(128);
         builder.Property(audit => audit.OldValuesJson);

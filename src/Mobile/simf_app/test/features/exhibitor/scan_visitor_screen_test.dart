@@ -41,6 +41,13 @@ class _FakeExhibitorRepo implements ExhibitorRepository {
   @override
   Future<List<ExhibitorVisitor>> listMyVisitors() async =>
       const <ExhibitorVisitor>[];
+
+  // FR-EXH-002 — the lead-list actions; the scanner never calls either.
+  @override
+  Future<void> removeVisitor(String id) async => throw UnimplementedError();
+
+  @override
+  Future<String> getVcard(String id) async => throw UnimplementedError();
 }
 
 Future<void> _pump(WidgetTester tester, _FakeExhibitorRepo repo) async {

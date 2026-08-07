@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.ApiClient;
 
 /// <summary>
-/// A typed client over the SIMF Login API (SIMF-API-001 section 12). Every
+/// A typed client over the SIMF Login API. Every
 /// call returns the API's <see cref="ApiResult{T}"/> envelope; a transport
 /// failure is mapped to a failed envelope as well, so a caller branches on
 /// success or failure one way only and never has to catch an exception.
@@ -33,7 +33,7 @@ public sealed class SimfAuthClient(HttpClient http)
         VerifyOtpRequest request, CancellationToken cancellationToken = default) =>
         PostAsync<VerifyOtpRequest, AuthTokens>("verify-otp", request, null, cancellationToken);
 
-    /// <summary>The recovery-code fallback for a lost authenticator (D-040).</summary>
+    /// <summary>The recovery-code fallback for a lost authenticator.</summary>
     public Task<ApiResult<AuthTokens>> VerifyRecoveryCodeAsync(
         VerifyRecoveryCodeRequest request, CancellationToken cancellationToken = default) =>
         PostAsync<VerifyRecoveryCodeRequest, AuthTokens>(
@@ -64,7 +64,7 @@ public sealed class SimfAuthClient(HttpClient http)
             "change-password", request, accessToken, cancellationToken);
 
     /// <summary>
-    /// D-206: sets a new password against the single-use ticket the sign-in
+    /// Sets a new password against the single-use ticket the sign-in
     /// step issued for a Control Panel account with a forced-change credential.
     /// Anonymous — the ticket authorises it (no access token).
     /// </summary>
@@ -72,6 +72,26 @@ public sealed class SimfAuthClient(HttpClient http)
         CompletePasswordChangeRequest request, CancellationToken cancellationToken = default) =>
         PostAsync<CompletePasswordChangeRequest, CompletePasswordChangeResponse>(
             "complete-password-change", request, null, cancellationToken);
+
+    /// <summary>
+    /// Begins MANDATORY authenticator enrolment for a
+    /// Control Panel account whose password step returned an enrolment ticket
+    /// instead of a session. Anonymous — the ticket authorises it (no access
+    /// token exists yet).
+    /// </summary>
+    public Task<ApiResult<TotpSetupResponse>> StartTwoFactorEnrolmentAsync(
+        StartTwoFactorEnrolmentRequest request, CancellationToken cancellationToken = default) =>
+        PostAsync<StartTwoFactorEnrolmentRequest, TotpSetupResponse>(
+            "totp/enrolment/start", request, null, cancellationToken);
+
+    /// <summary>
+    /// Confirms the first authenticator code and completes the held-back
+    /// sign-in. Returns the session plus the one-time recovery codes.
+    /// </summary>
+    public Task<ApiResult<CompleteTwoFactorEnrolmentResponse>> CompleteTwoFactorEnrolmentAsync(
+        CompleteTwoFactorEnrolmentRequest request, CancellationToken cancellationToken = default) =>
+        PostAsync<CompleteTwoFactorEnrolmentRequest, CompleteTwoFactorEnrolmentResponse>(
+            "totp/enrolment/complete", request, null, cancellationToken);
 
     /// <summary>Ends every session for the authenticated caller.</summary>
     public Task<ApiResult<SignOutResponse>> SignOutAsync(

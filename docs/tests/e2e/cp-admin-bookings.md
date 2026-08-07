@@ -6,7 +6,7 @@
 | **Route** | `/admin/bookings` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `Bookings.View` (page + list); `Bookings.Export` (Excel export) — `PermissionCatalog.Bookings.*`. There is **no** `Bookings.Approve` / `Bookings.Reject` (retired with the approval step, #6/#17). |
 | **Last reviewed** | 2026-07-21 (#6/#17 — approval retired; read-only monitor + no-show release) |
 
@@ -43,6 +43,8 @@
 | E2E-BKG-010 | Excel export (D-356) — toolbar Export downloads an .xlsx (whole filtered set vs selected rows) | happy | P1 | _to author_ |
 | E2E-BKG-011 | Admin release closes the lifecycle + notifies (M-4) — releasing a held/confirmed seat is terminal-Cancelled + BookingReleased | happy | P1 | authored ✓ |
 | E2E-BKG-012 | Monitor hint — the info banner explains bookings auto-confirm + the 3-min no-show release | happy | P2 | _to author_ |
+| E2E-BKG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-BKG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

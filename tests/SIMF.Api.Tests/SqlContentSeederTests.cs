@@ -37,20 +37,40 @@ public sealed class SqlContentSeederTests : IClassFixture<SimfApiFactory>
         // The one main hall (SIMF_App_Programme.sql).
         Assert.Equal(1, await db.Halls.CountAsync(h => h.Code == "MAIN"));
 
-        // The three programme days (20-22 Nov 2026).
+        // The three programme days. These were 20-22 Nov 2026 while the seed
+        // carried placeholder content; db9b6f76 (2026-07-21) replaced it with the
+        // REAL SIMF-4 programme on 23-25 Nov and soft-deletes the placeholder
+        // days by (Date, Title) in the same file, so 20-22 must now be gone.
         var days = await db.ProgrammeDays
-            .Where(d => d.Date >= new DateOnly(2026, 11, 20) && d.Date <= new DateOnly(2026, 11, 22))
+            .Where(d => d.IsActive
+                && d.Date >= new DateOnly(2026, 11, 23) && d.Date <= new DateOnly(2026, 11, 25))
             .Select(d => d.Date)
             .ToListAsync();
         Assert.Equal(3, days.Count);
-        Assert.Contains(new DateOnly(2026, 11, 20), days);
-        Assert.Contains(new DateOnly(2026, 11, 22), days);
+        Assert.Contains(new DateOnly(2026, 11, 23), days);
+        Assert.Contains(new DateOnly(2026, 11, 25), days);
 
-        // The five placeholder sessions; the opening one carries the live URL.
-        Assert.Equal(5, await db.Sessions.CountAsync(s => s.Code.StartsWith("S-D")));
-        var opening = await db.Sessions.SingleAsync(s => s.Code == "S-D1-01");
-        Assert.Equal("الجلسة الافتتاحية", opening.TitleArabic);
-        Assert.False(string.IsNullOrWhiteSpace(opening.LiveStreamUrl));
+        // The guarded cleanup half of that swap: no active placeholder day survives.
+        Assert.Empty(await db.ProgrammeDays
+            .Where(d => d.IsActive
+                && d.Date >= new DateOnly(2026, 11, 20) && d.Date <= new DateOnly(2026, 11, 22))
+            .ToListAsync());
+
+        // The real programme: 59 sessions coded D{day}-{nn}, and none of the five
+        // retired S-D* placeholders still active.
+        Assert.Equal(59, await db.Sessions.CountAsync(s => s.IsActive && s.Code.StartsWith("D")));
+        Assert.Equal(0, await db.Sessions.CountAsync(s => s.IsActive && s.Code.StartsWith("S-D")));
+
+        // Day one opens with the arrival + opening ceremony at 07:00 Riyadh.
+        var opening = await db.Sessions.SingleAsync(s => s.Code == "D1-02");
+        Assert.Equal(
+            "وصول معالي رئيس هيئة الأركان العامة وبدء فعاليات افتتاح الملتقى",
+            opening.TitleArabic);
+        Assert.Equal(new DateOnly(2026, 11, 23), DateOnly.FromDateTime(opening.Start.Date));
+
+        // The five محاور / axes and their session links (section 3 + 6 of the SQL).
+        Assert.Equal(5, await db.Themes.CountAsync(t => t.IsActive && t.Code.StartsWith("AXIS-")));
+        Assert.NotEmpty(await db.SessionThemes.ToListAsync());
 
         // The Highlights news item (SIMF_App_News.sql).
         Assert.Equal(1, await db.News.CountAsync(n => n.Category == "Highlights"));
@@ -91,6 +111,42 @@ public sealed class SqlContentSeederTests : IClassFixture<SimfApiFactory>
         // Organisation social links were filled from empty.
         var org = await db.OrganizationProfile.SingleAsync();
         Assert.Equal("https://x.com/SIMF_RSNF", org.XUrl);
+    }
+
+    [Fact]
+    public async Task Every_seeded_asset_reference_resolves_to_stored_file_bytes()
+    {
+        // BUG-001 regression — SIMF_App_SpeakerPhotos.sql seeds StoredFile ROWS whose
+        // bytes ship as a deployable folder that only production copied by hand, so
+        // every seeded speaker photo 404'd behind the UI placeholder. The seeder now
+        // materialises those bytes (and retires any row it cannot back with bytes),
+        // so NO seeded asset reference is left pointing at nothing.
+        await RunRosterAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var storage = scope.ServiceProvider
+            .GetRequiredService<SIMF.Application.Files.Abstractions.IFileStorageProvider>();
+
+        var seeded = await db.StoredFiles.AsNoTracking()
+            .Where(file => file.IsActive
+                && file.SourceType == SIMF.Common.Enums.FileSourceType.Upload
+                && file.CreatedBy == Guid.Empty
+                && file.StorageKey != null)
+            .Select(file => new { file.Id, file.Service, file.StorageKey, file.IsEncrypted })
+            .ToListAsync();
+
+        // The 23 SIMF-4 speaker headshots the content SQL seeds.
+        Assert.NotEmpty(seeded);
+        Assert.Contains(seeded, file => file.Service == SIMF.Common.Enums.FileService.SpeakerPhoto);
+
+        foreach (var file in seeded)
+        {
+            var bytes = await storage.ReadAsync(file.StorageKey!, file.IsEncrypted);
+            Assert.True(
+                bytes is { Length: > 0 },
+                $"seeded {file.Service} file {file.Id} has no bytes at '{file.StorageKey}'");
+        }
     }
 
     private async Task RunRosterAsync()

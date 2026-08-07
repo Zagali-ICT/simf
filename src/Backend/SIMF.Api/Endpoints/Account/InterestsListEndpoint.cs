@@ -8,7 +8,7 @@ namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
 /// <c>GET /api/v1/app/account/interests</c> — every active interest, ordered
-/// for the visitor picker (P9 — D-050; الاهتمامات). Auth required so the
+/// for the visitor picker (الاهتمامات). Auth required so the
 /// data sits behind the same access-token gate as the rest of the
 /// user-profile surface, even though the rows are not sensitive.
 /// </summary>

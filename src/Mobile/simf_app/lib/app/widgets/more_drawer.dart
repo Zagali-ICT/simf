@@ -49,12 +49,10 @@ class MoreDrawer extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(SimfTokens.space4),
               child: Text(
-                l10n.moreTitle,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textXl,
-                  fontWeight: FontWeight.w600,
-                ),
+                // BUG-017 — was `moreTitle`, colliding with the Profile "More"
+                // hub (a different menu with different entries).
+                l10n.menuTitle,
+                style: SimfTokens.labelWhiteSemiboldXl,
               ),
             ),
             const Divider(color: SimfTokens.beigeBorder, height: 1),
@@ -197,6 +195,10 @@ class MoreDrawer extends ConsumerWidget {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final repo = ref.read(myAreaRepositoryProvider);
+    // Read the anchor rect BEFORE popping and awaiting — this element is gone by
+    // the time the fetch returns, and the iPad share sheet must point at the row
+    // the user actually tapped.
+    final origin = shareOriginFromContext(context);
     Navigator.of(context).pop();
     try {
       final ics = await repo.getCalendarIcs();
@@ -204,7 +206,7 @@ class MoreDrawer extends ConsumerWidget {
         content: ics,
         filename: 'simf.ics',
         mimeType: 'text/calendar',
-        sharePositionOrigin: shareOriginFromContext(context),
+        sharePositionOrigin: origin,
       );
     } on ApiFailure {
       messenger.showSnackBar(SnackBar(content: Text(l10n.shareFailed)));
@@ -250,9 +252,12 @@ class _DrawerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // No inline style on the title (#16): the app theme's `listTileTheme`
+    // already sets `textColor: SimfTokens.surface`, so the colour-only override
+    // that used to sit here was a duplicate of the token it re-stated.
     return ListTile(
-      leading: Icon(icon, color: Colors.white),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
+      leading: Icon(icon, color: SimfTokens.surface),
+      title: Text(title),
       onTap: onTap,
     );
   }

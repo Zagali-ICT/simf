@@ -34,6 +34,10 @@
 | E2E-APN-013 | RTL / Arabic render mirrors page + reject modal | i18n | P1 | _to author_ |
 | E2E-APN-014 | Per-column filter narrows the grid (email / Display name) | happy | P1 | _to author_ |
 | E2E-APN-015 | Column sort toggles (Email / Display name) | happy | P2 | _to author_ |
+| E2E-APN-016 | Approve → Cancel on the confirm → dialog closes, NO approve request fires, row stays pending | error | P0 | _to author_ |
+| E2E-APN-017 | Bulk approve → Cancel on the confirm → NO bulk-approve request fires, selection preserved | error | P1 | _to author_ |
+| E2E-APN-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-APN-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -60,6 +64,10 @@ Scenario: Approve a pending admin
   And the supporting line reads "Approval mints the QR badge and unlocks sign-in (CP for staff, event entry for visitors). Rejection records a reason for audit."
   And the grid columns are Email, Display name, Created
   When the administrator clicks "Approve" on the row for "pending.admin@zagali-ict.com"
+  Then a SimfConfirm dialog opens titled "Approve administrator account"
+  And its message names the candidate: "You are about to approve Pending Admin (pending.admin@zagali-ict.com). Approving grants Control Panel access and mints the QR badge."
+  And no request has been sent yet
+  When they click "Confirm approval"
   Then a POST /account/api/admin/admins/{id}/approve fires and returns 200 with ApiResult.Success=true
   And a green toast (SimfAlert variant="success") reads "Approved pending.admin@zagali-ict.com."
   And the list reloads (POST /account/api/admin/admins/pending/list returns 200)
@@ -138,6 +146,10 @@ Scenario: Multiselect then "Approve selected"
   And the grid shows at least 3 pending rows
   When they tick the "Select all" header checkbox (or two row checkboxes)
   And they click "Approve selected"
+  Then a SimfConfirm dialog opens titled "Approve selected accounts"
+  And its message reads "You are about to approve 2 pending account(s). Each approved account can sign in and receives a QR badge."
+  And no request has been sent yet
+  When they click "Confirm approval"
   Then a POST /account/api/admin/admins/bulk-approve fires with body { Ids: [<selected guids>] } and returns 200
   And the response carries AdminBulkApprovalResponse { Approved, Skipped, Failures }
   And a toast reads "Approved 2 user(s). Skipped 0." with variant="success" (green) when Skipped == 0
@@ -366,3 +378,43 @@ Scenario: Clicking a sortable header toggles ascending / descending
 ---
 
 _Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+
+### E2E-APN-016 — Cancelling the approve confirmation posts nothing
+
+```gherkin
+Scenario: The administrator changes their mind at the confirmation
+  Given the administrator is on /admin/admins/pending
+  And the grid shows a row for "pending.admin@zagali-ict.com"
+  When they click "Approve" on that row
+  Then a SimfConfirm dialog opens titled "Approve administrator account"
+  When they click "Cancel"
+  Then the dialog closes
+  And NO request to /account/api/admin/admins/{id}/approve has been made
+  And the row is still present with AccountState=PendingApproval
+```
+
+**Evidence captured:**
+- Network: zero calls to `/approve` across the whole scenario.
+- Side effects: none — the subject's `AccountState` is unchanged and no
+  `OperationLog` row is written.
+- Regression test: `PendingApprovalQueueTests.Staff_row_approve_confirms_before_posting`.
+
+### E2E-APN-017 — Cancelling the bulk-approve confirmation posts nothing
+
+```gherkin
+Scenario: Bulk approve is abandoned at the confirmation
+  Given the administrator is on /admin/admins/pending
+  And they have ticked two pending rows
+  When they click "Approve selected"
+  Then a SimfConfirm dialog opens titled "Approve selected accounts"
+  And the message names the count "2"
+  When they click "Cancel"
+  Then the dialog closes
+  And NO request to /account/api/admin/admins/bulk-approve has been made
+  And both rows are still selected and still pending
+```
+
+**Evidence captured:**
+- Network: zero calls to `/bulk-approve`.
+- Regression tests: `PendingApprovalQueueTests.{Staff,Others,Visitors}_bulk_approve_confirms_before_posting`
+  — the guard lives in the shared `PendingApprovalPageBase`, so all three queues are pinned.

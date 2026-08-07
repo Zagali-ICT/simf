@@ -13,6 +13,13 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class ChangeAccountTypeBlockTests : CpComponentTestBase
 {
+    public ChangeAccountTypeBlockTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Accounts.ChangeType);
+    }
+
     private static AdminProfileTypeSummary Type(
         string name, bool isVisitor, bool isActive) =>
         new(Guid.NewGuid(), name, name, "#244A77", "Visitor", "None",
@@ -56,6 +63,9 @@ public sealed class ChangeAccountTypeBlockTests : CpComponentTestBase
                 new List<AdminProfileTypeSummary> { partnerType }));
         JSInterop.Setup<ApiResult<bool>>("simfAccount.postJson", _ => true)
             .SetResult(ApiResult<bool>.Ok(true));
+        // D-809 — the flip now opens a SimfConfirm, and SimfModal binds its
+        // focus trap through JS on open.
+        JSInterop.SetupVoid("simfModal.bind", _ => true).SetVoidResult();
 
         var changed = false;
         var cut = RenderComponent<ChangeAccountTypeBlock>(p => p
@@ -64,9 +74,19 @@ public sealed class ChangeAccountTypeBlockTests : CpComponentTestBase
             .Add(c => c.OnChanged,
                 EventCallback.Factory.Create(this, () => changed = true)));
 
-        // Pick the partner type, then trigger the flip.
+        // Pick the partner type, then trigger the flip. D-809 — the action button
+        // stages a confirmation; nothing is posted until the admin accepts it.
         cut.Find("select").Change(partnerType.Id.ToString());
-        cut.Find("button").Click();
+        cut.FindAll("button")
+           .First(b => b.TextContent.Contains("Admin.ChangeType.Action"))
+           .Click();
+
+        Assert.Contains("Admin.ChangeType.Confirm.Title", cut.Markup);
+        Assert.Empty(JSInterop.Invocations["simfAccount.postJson"]);
+
+        // Structural selector, not the label — a ConfirmLabel edit must not
+        // masquerade as a broken guard.
+        cut.FindAll(".simf-modal__footer .simf-button--primary")[^1].Click();
 
         var invocation = JSInterop.VerifyInvoke("simfAccount.postJson");
         Assert.Equal(

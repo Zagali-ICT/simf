@@ -13,29 +13,38 @@ import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-CurrentUser _user(RegistrationStatus status) => CurrentUser(
+CurrentUser _user(RegistrationStatus status, AppRole role) => CurrentUser(
       id: 'u1',
       email: 'v@example.sa',
       displayName: 'Raed Al-Salem',
-      appRole: AppRole.visitor,
+      appRole: role,
       preferredLanguage: PreferredLanguage.fromJson('ar'),
       registrationStatus: status,
     );
 
-Session _session(RegistrationStatus status) => Session(
+Session _session(RegistrationStatus status, AppRole role) => Session(
       accessToken: 'A',
       refreshToken: 'R',
       accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
-      user: _user(status),
+      user: _user(status, role),
     );
 
 class _AuthController extends AuthController {
-  _AuthController(this.status);
+  _AuthController(this.status, {this.role = AppRole.visitor});
 
   final RegistrationStatus status;
+  final AppRole role;
 
   @override
-  AuthState build() => AuthStateSignedIn(_session(status));
+  AuthState build() => AuthStateSignedIn(_session(status, role));
+}
+
+/// A TRUE guest — no account at all (BUG-013). The badge tab is reachable this
+/// way because the bottom nav switches tabs inside the shell, so the router's
+/// auth redirect never runs.
+class _SignedOutAuthController extends AuthController {
+  @override
+  AuthState build() => const AuthStateSignedOut();
 }
 
 MyAreaDashboard _dashboard({
@@ -128,6 +137,8 @@ Future<void> _pump(
         (RouteNames.sessions, '/sessions', 'SESSIONS'),
         (RouteNames.venueMap, '/map', 'MAP'),
         (RouteNames.myArea, '/my-area', 'MY-AREA'),
+        (RouteNames.signIn, '/sign-in', 'SIGN-IN'),
+        (RouteNames.signUpForm, '/sign-up', 'SIGN-UP'),
       ])
         GoRoute(
           name: name,
@@ -251,8 +262,40 @@ void main() {
       expect(find.text('Scan visitor badge'), findsNothing);
     });
 
-    testWidgets('an exhibitor (Other) sees scan-visitor, not the contact '
+    testWidgets('an exhibitor sees scan-visitor, not the contact '
         'buttons (D-426)', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _pump(
+        tester,
+        repo: _FakeMyAreaRepository(
+          dashboard: _dashboard(qrId: 'ABC123', isVisitor: false),
+        ),
+        controller: _AuthController(
+          RegistrationStatus.approved,
+          role: AppRole.exhibitor,
+        ),
+      );
+
+      expect(find.text('Scan visitor badge'), findsOneWidget);
+      expect(find.text('Scan to add a contact'), findsNothing);
+      expect(find.text('Share my contact'), findsNothing);
+
+      await tester.tap(find.text('Scan visitor badge'));
+      await tester.pumpAndSettle();
+      expect(find.text('SCAN-VISITOR'), findsOneWidget);
+    });
+
+    // DEF-EXH-005 — a partner profile type (Media / Sponsor) carries
+    // isVisitor=false but resolves to AppRole.visitor on the wire
+    // (MobileAppRole.None → "Visitor"), so it keeps the contact actions and
+    // must NOT be offered the exhibitor-only scan button.
+    testWidgets('a partner-type visitor (isVisitor=false, role Visitor) keeps '
+        'the contact actions and never sees scan-visitor (DEF-EXH-005)',
+        (tester) async {
       tester.view.physicalSize = const Size(1200, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -265,14 +308,39 @@ void main() {
         ),
       );
 
-      expect(find.text('Scan visitor badge'), findsOneWidget);
-      expect(find.text('Scan to add a contact'), findsNothing);
-      expect(find.text('Share my contact'), findsNothing);
-
-      await tester.tap(find.text('Scan visitor badge'));
-      await tester.pumpAndSettle();
-      expect(find.text('SCAN-VISITOR'), findsOneWidget);
+      expect(find.text('Scan visitor badge'), findsNothing);
+      expect(find.text('Scan to add a contact'), findsOneWidget);
+      expect(find.text('Share my contact'), findsOneWidget);
     });
+
+    // DEF-EXH-005 — Staff / Moderator are focused roles (D-519): neither the
+    // exhibitor scan (route 106) nor the attendee contact actions (routes
+    // 100..102) are open to them, so the badge offers no action rather than a
+    // button the router bounces.
+    for (final role in <AppRole>[AppRole.staff, AppRole.moderator]) {
+      testWidgets('a ${role.wireName} badge shows no action button '
+          '(DEF-EXH-005)', (tester) async {
+        tester.view.physicalSize = const Size(1200, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await _pump(
+          tester,
+          repo: _FakeMyAreaRepository(
+            dashboard: _dashboard(qrId: 'ABC123', isVisitor: false),
+          ),
+          controller: _AuthController(
+            RegistrationStatus.approved,
+            role: role,
+          ),
+        );
+
+        expect(find.text('Scan visitor badge'), findsNothing);
+        expect(find.text('Scan to add a contact'), findsNothing);
+        expect(find.text('Share my contact'), findsNothing);
+      });
+    }
 
     testWidgets('a null qrId shows the pending state, no QR', (tester) async {
       await _pump(
@@ -300,6 +368,35 @@ void main() {
       expect(find.byType(QrImageView), findsNothing);
       expect(find.textContaining('not approved'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Retry'), findsNothing);
+    });
+
+    testWidgets('BUG-013 — a TRUE guest gets the guest copy and a working '
+        'sign-in CTA, never the pending-account copy', (tester) async {
+      final repo = _FakeMyAreaRepository(dashboard: _dashboard(qrId: 'ABC123'));
+      await _pump(
+        tester,
+        repo: repo,
+        controller: _SignedOutAuthController(),
+      );
+
+      expect(repo.dashboardCalls, 0);
+      expect(find.byType(QrImageView), findsNothing);
+      // The pending / not-approved wording describes a registration a guest
+      // never submitted — it must NOT be shown.
+      expect(find.textContaining('not approved'), findsNothing);
+      expect(
+        find.textContaining('once your account is approved'),
+        findsNothing,
+      );
+      expect(
+        find.text('Sign in or create an account to get your entry badge.'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(TextButton, 'Create account'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+      expect(find.text('SIGN-IN'), findsOneWidget);
     });
 
     testWidgets('a 403 for an approved user shows the not-approved state, not '

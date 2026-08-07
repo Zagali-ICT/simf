@@ -1,19 +1,7 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
-using Microsoft.JSInterop;
-using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -23,7 +11,7 @@ public partial class WalkInSuccessModal
 
     private string _qrSvg = string.Empty;
 
-    // D-425 — a pending walk-in carries no QR id yet (minted on approval).
+    // A pending walk-in carries no QR id yet (minted on approval).
     private bool Pending => Response is not null && string.IsNullOrEmpty(Response.QrId);
 
     /// <summary>The walk-in response — when null the modal is hidden.</summary>
@@ -45,7 +33,7 @@ public partial class WalkInSuccessModal
     {
         if (Response is not null && !string.IsNullOrEmpty(Response.QrId))
         {
-            _qrSvg = BuildQrSvg(Response.QrId);
+            _qrSvg = BadgeQrCode.ToSvg(Response.QrId);
         }
         else
         {
@@ -78,14 +66,4 @@ public partial class WalkInSuccessModal
         }
     }
 
-    private static string BuildQrSvg(string qrId)
-    {
-        using var generator = new QRCoder.QRCodeGenerator();
-        using var data = generator.CreateQrCode(qrId, QRCoder.QRCodeGenerator.ECCLevel.Q);
-        return new QRCoder.SvgQRCode(data).GetGraphic(
-            pixelsPerModule: 6,
-            darkColorHex: "#0B2545",
-            lightColorHex: "#FFFFFF",
-            drawQuietZones: true);
-    }
 }

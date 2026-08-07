@@ -1,8 +1,8 @@
-@* D-353 — reusable Country Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Country Add/Edit form, hosted by CrudShell (popup or full
    page) from CountriesList. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). The Id
    is the ISO 3166-1 numeric code, manually assigned (e.g. 682 = SA): required
-   and editable on Add, read-only on Edit. Supersedes CountryForm.razor (D-155),
+   and editable on Add, read-only on Edit. Supersedes CountryForm.razor,
    which keyed off Initial==null. *@
 @inherits CrudAddEditFormBase<AdminCountryDetail>
 @using System.Globalization
@@ -42,12 +42,12 @@
                        ValueExpression="@(() => _displayOrderInput)"
                        Disabled="_busy" />
 
-        @* D-473 (#10) — mark the country as invited to send a delegation (وفد). *@
+        @* Mark the country as invited to send a delegation (وفد). *@
         <SimfCheckbox @bind-Value="_model.IsInvited" Disabled="_busy">
             @L["Admin.Countries.Field.IsInvited"]
         </SimfCheckbox>
 
-        @* D-499 (الوفود) — the invited delegation's arrival/departure dates +
+        @* The invited delegation's (الوفود) arrival/departure dates +
            (on edit, once delegates exist) its head of delegation. *@
         <SimfTextField Label="@L["Admin.Countries.Field.DelegationArrival"]"
                        Helper="@L["Admin.Countries.Field.DelegationDateHint"]"

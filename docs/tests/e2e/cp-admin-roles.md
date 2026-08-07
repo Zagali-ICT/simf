@@ -49,6 +49,9 @@
 | E2E-ROL-024 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual 400, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-ROL-025 | Security team baseline role is present (Built-in pill, 8 permissions) and is not renamable / deletable (D-752) | happy | P1 | _to author_ |
 | E2E-ROL-026 | Scientific team baseline role is present (Built-in pill, 31 permissions) and is not renamable / deletable (D-752) | happy | P1 | _to author_ |
+| E2E-ROL-027 | Renaming a role persists, a baseline role refuses the rename with 409, and a blank name is refused with 400 | crud | P0 | authored ✓ (`AdminRoleUpdateTests`) |
+| E2E-ROL-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-ROL-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -562,3 +565,38 @@ Scenario: The Scientific team role ships as a built-in role with the programme g
 _Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-ROL-019..024 and corrected the now-stale one-click delete steps to the D-353 CrudShell + SimfConfirm gate).
 
 _Updated:_ 2026-07-20 by Claude (D-752: added E2E-ROL-025..026 for the SecurityTeam and ScientificCommittee built-in CP roles and their baseline grants).
+
+
+### E2E-ROL-027 — the rename path, which had no test at all
+
+```gherkin
+Feature: A role can be renamed, and the guards around it hold
+  As an Administrator
+  I want renaming a role to persist, and the baseline roles to be protected
+  So that the permission model cannot be quietly broken from the Roles page
+
+  Background:
+    Given I am signed in to the Control Panel as an Administrator
+
+  Scenario: a custom role is renamed and the new name is readable afterwards
+    Given a custom role "Renameable" exists
+    When I rename it to "Renamed"
+    Then the save succeeds
+    And re-reading the roles list shows "Renamed" and not "Renameable"
+
+  Scenario: a baseline role refuses the rename
+    When I try to rename the built-in "Administrator" role
+    Then the request is refused with 409 ROLE_IS_BASELINE
+    And the "Administrator" role still exists under its original name
+
+  Scenario: a blank name is refused
+    Given a custom role exists
+    When I try to rename it to "   " (whitespace only)
+    Then the request is refused with 400
+    # D-844: PUT /admin/roles/{id} had NO test of any kind, and RoleEndpoints.cs
+    # cited `// Tests: SIMF.Api.Tests/AdminRolesTests.cs` — a file that does not
+    # exist. The coverage was written before converting the endpoint's route DTO,
+    # so the conversion could be shown to preserve behaviour instead of assumed to.
+```
+
+_Updated:_ 2026-08-04 by Claude (D-844 — authored E2E-ROL-027 for the previously untested rename path).

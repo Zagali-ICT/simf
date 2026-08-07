@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Networking;
 
 /// <summary>
-/// Build #13 — "Meet People Like You" partner directory. A deduped union of the
+/// The "Meet People Like You" partner directory. A deduped union of the
 /// curated exhibition entities (Sponsors, Speakers, Booth companies) and the
 /// opted-in "Other"-type user accounts. Normal / VIP visitors never appear: they
 /// are not in the curated lists, and the account pool requires
@@ -26,7 +26,7 @@ namespace SIMF.Infrastructure.Networking;
 /// booths, soft-delete filtering) lives once, in those services, rather than
 /// being re-projected here.</para>
 ///
-/// <para>Two-DB (D-157): the account pool comes from the Identity DB in its own
+/// <para>Two-DB: the account pool comes from the Identity DB in its own
 /// round-trip; there is no cross-DB JOIN. Logos follow the existing convention —
 /// a relative path or the owning contact id, never an absolute URL (the client
 /// builds the asset URL per kind).</para>
@@ -131,7 +131,7 @@ internal sealed class PartnerDirectoryService(
                 .Where(p => approvedIds.Contains(p.UserId)
                     && p.ShowInMeetLikeYou
                     && p.ProfileType != null && !p.ProfileType.IsForVisitor
-                    // D-760: admin master switch — hiding a partner type drops
+                    // Admin master switch — hiding a partner type drops
                     // ALL its accounts here (AND with the per-user opt-in).
                     && p.ProfileType.ShowInPartnerDirectory)
                 .OrderBy(p => p.NameArabic).ThenBy(p => p.Name)

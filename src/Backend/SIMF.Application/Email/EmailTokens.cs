@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace SIMF.Application.Email;
 
-/// <summary>D-735 — builds the token bag a one-time-code email hands to
+/// <summary>Builds the token bag a one-time-code email hands to
 /// <see cref="IEmailTemplateResolver"/>. Centralises the single shape every code
 /// email shares (<c>{Code}</c> + <c>{ExpiryMinutes}</c>) so the culture-invariant
 /// minute formatting lives in one place instead of being repeated at each builder.

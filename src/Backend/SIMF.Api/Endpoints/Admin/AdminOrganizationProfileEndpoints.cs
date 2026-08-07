@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/OrganizationProfileTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -8,7 +8,7 @@ using SIMF.Contracts.Organization;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-495 — the CP Organization Profile editor: read the full profile
+/// <summary>The CP Organization Profile editor: read the full profile
 /// (incl. child-row ids) for the form. Gated by OrganizationProfile.View.</summary>
 public sealed class GetAdminOrganizationProfileEndpoint(
     IOrganizationProfileAdminService service)
@@ -27,7 +27,7 @@ public sealed class GetAdminOrganizationProfileEndpoint(
             await service.GetAsync(ct)), ct);
 }
 
-/// <summary>D-495 — save the Organization Profile (full-document upsert), then
+/// <summary>Save the Organization Profile (full-document upsert), then
 /// return the re-read effective profile. Gated by OrganizationProfile.Manage.</summary>
 public sealed class SaveAdminOrganizationProfileEndpoint(
     IOrganizationProfileAdminService service)
@@ -45,11 +45,7 @@ public sealed class SaveAdminOrganizationProfileEndpoint(
     public override async Task HandleAsync(
         AdminUpdateOrganizationProfileRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.UpdateAsync(req, actorId, ct);
         await Send.OkAsync(ApiResult<OrganizationProfileResponse>.Ok(
             await service.GetAsync(ct)), ct);

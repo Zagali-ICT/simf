@@ -1,4 +1,4 @@
-// Tests: SIMF.ControlPanel.Tests/ChangeAccountTypeBlockTests.cs
+﻿// Tests: SIMF.ControlPanel.Tests/ChangeAccountTypeBlockTests.cs
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -36,7 +36,7 @@ public partial class ChangeAccountTypeBlock
     {
         try
         {
-            // Both audience and partner types are UserType=Visitor post-D-186;
+            // Both audience and partner types are UserType=Visitor;
             // the picker route filters by UserType, then we narrow to the
             // OPPOSITE scope's active types (the flip targets).
             var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
@@ -58,6 +58,15 @@ public partial class ChangeAccountTypeBlock
         {
             _error = L["Admin.ChangeType.LoadFailed"];
         }
+    }
+
+    // The scope flip used to commit on the first click.
+    private bool _confirming;
+
+    private async Task ConfirmChangeAsync()
+    {
+        _confirming = false;
+        await ChangeAsync();
     }
 
     private async Task ChangeAsync()

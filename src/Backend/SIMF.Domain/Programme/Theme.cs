@@ -3,38 +3,28 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Programme;
 
 /// <summary>
-/// One programme theme / pillar (SIMF-FDS-004 §5.1). Themes are the
-/// top-level grouping the agenda uses — sessions belong to themes; the
-/// CP picker on the Session editor shows the active themes.
-///
-/// <para>Sprint B of D-134 introduces this entity under D-135's
-/// freeze-lift. <see cref="Code"/> is the stable short identifier the
-/// programme team uses in print materials (e.g. "DEF", "TECH"); the
-/// bilingual Name pair is what visitors see.</para>
+/// A programme theme, the top-level grouping the agenda uses. Sessions belong to
+/// themes, and the Control Panel's session editor offers the active ones.
 /// </summary>
 public class Theme : BaseAuditEntity
 {
-    /// <summary>Short stable code for cross-reference (e.g. "DEF", "TECH").
-    /// Unique, 2–16 chars. Programme team's choice — printable.</summary>
+    /// <summary>A short stable code the programme team also uses in print, such
+    /// as "DEF" or "TECH". Unique, 2 to 16 characters.</summary>
     public string Code { get; set; } = string.Empty;
 
-    /// <summary>English display name (1–128 chars).</summary>
+    /// <summary>What visitors see, paired with <see cref="NameArabic"/>.</summary>
     public string Name { get; set; } = string.Empty;
-
-    /// <summary>Arabic display name (1–128 chars).</summary>
     public string NameArabic { get; set; } = string.Empty;
 
-    /// <summary>Optional English description (≤ 1024 chars).</summary>
     public string? Description { get; set; }
-
-    /// <summary>Optional Arabic description (≤ 1024 chars).</summary>
     public string? DescriptionArabic { get; set; }
 
-    /// <summary>Sort key in the visitor-facing agenda + the CP picker
-    /// (≥ 0; ascending).</summary>
+    /// <summary>Ascending sort key in the agenda and the Control Panel
+    /// picker.</summary>
     public int DisplayOrder { get; set; }
 
-    /// <summary>The theme's accent colour. Free text (hex, CSS variable,
-    /// etc.) — mirrors the D-115 ProfileType.PageColor contract.</summary>
+    /// <summary>The theme's accent colour, free text so it can be a hex value or
+    /// a CSS variable. The same contract profile types use for their own
+    /// colour.</summary>
     public string PageColor { get; set; } = string.Empty;
 }

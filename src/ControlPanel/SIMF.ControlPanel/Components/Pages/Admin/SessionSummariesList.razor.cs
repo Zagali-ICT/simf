@@ -1,12 +1,8 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -28,11 +24,19 @@ public partial class SessionSummariesList
     private Guid _editSessionId;
     private string _editTitle = string.Empty;
     private string? _editAiModel;
-    // Slice D — read-only AI-transparency sources shown in the editor modal.
+    // The review state the editor opened on, plus the values it opened
+    // with. Saving an EDITED summary clears the approval and takes it offline
+    // server side, so the reviewer is warned first
+    // instead of the محضر silently vanishing from the app.
+    private bool _editWasPublished;
+    private bool _editWasApprovedOrInReview;
+    private SaveSessionSummaryRequest _editOriginal = new();
+    private bool _confirmUnpublishOpen;
+    // Read-only AI-transparency sources shown in the editor modal.
     private string _editSubtitle = string.Empty;
     private string _editSubtitleArabic = string.Empty;
     private string _editAiDraftArabic = string.Empty;
-    private DateTimeOffset? _editAiDraftGeneratedAt;
+    private DateTime? _editAiDraftGeneratedAt;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -69,18 +73,23 @@ public partial class SessionSummariesList
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — summaries are
     // drafted / edited / published from this desk's own actions, so there is no
     // import path. Rows are keyed by SessionId (the desk has no separate Id).
-    private Task OnExportAsync(IReadOnlyList<AdminSessionSummaryRow> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<AdminSessionSummaryRow> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/session-summaries/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.SessionId).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private async Task LoadAsync()
     {
@@ -160,7 +169,15 @@ public partial class SessionSummariesList
         _editSubtitleArabic = detail.SubtitleArabic ?? string.Empty;
         _editAiDraftArabic = detail.AiDraftFullTextArabic ?? string.Empty;
         _editAiDraftGeneratedAt = detail.AiDraftGeneratedAt;
-        _edit = new SaveSessionSummaryRequest
+        // Remember what saving would cost before the reviewer starts typing.
+        _editWasPublished = detail.IsPublished;
+        _editWasApprovedOrInReview = detail.IsApproved || detail.IsInReview;
+        _edit = FromDetail(detail);
+        _editOriginal = FromDetail(detail);
+    }
+
+    private static SaveSessionSummaryRequest FromDetail(AdminSessionSummaryDetail detail) =>
+        new()
         {
             KeyPoints = detail.KeyPoints,
             KeyPointsArabic = detail.KeyPointsArabic,
@@ -170,13 +187,62 @@ public partial class SessionSummariesList
             SpeakersArabic = detail.SpeakersArabic,
             FullText = detail.FullText,
             FullTextArabic = detail.FullTextArabic,
-            // Item #35 — the optional team summary-video URL round-trips through
+            // The optional team summary-video URL round-trips through
             // the same upsert as the content sections.
             SummaryVideoUrl = detail.SummaryVideoUrl,
         };
+
+    private void CloseEditor()
+    {
+        _edit = null;
+        _confirmUnpublishOpen = false;
     }
 
-    private void CloseEditor() => _edit = null;
+    // True when the reviewer actually changed something the server persists.
+    // Mirrors AdminSessionSummaryService.ChangesPersistedContent, so the warning
+    // fires exactly when the save would reset the review state.
+    private bool HasUnsavedContentChange()
+    {
+        if (_edit is null) { return false; }
+        return !string.Equals(_edit.KeyPoints, _editOriginal.KeyPoints, StringComparison.Ordinal)
+            || !string.Equals(_edit.KeyPointsArabic, _editOriginal.KeyPointsArabic, StringComparison.Ordinal)
+            || !string.Equals(_edit.Recommendations, _editOriginal.Recommendations, StringComparison.Ordinal)
+            || !string.Equals(_edit.RecommendationsArabic, _editOriginal.RecommendationsArabic, StringComparison.Ordinal)
+            || !string.Equals(_edit.Speakers, _editOriginal.Speakers, StringComparison.Ordinal)
+            || !string.Equals(_edit.SpeakersArabic, _editOriginal.SpeakersArabic, StringComparison.Ordinal)
+            || !string.Equals(_edit.FullText, _editOriginal.FullText, StringComparison.Ordinal)
+            || !string.Equals(_edit.FullTextArabic, _editOriginal.FullTextArabic, StringComparison.Ordinal)
+            || !string.Equals(_edit.SummaryVideoUrl, _editOriginal.SummaryVideoUrl, StringComparison.Ordinal);
+    }
+
+    // The Save button. When the edit would strip a published / approved
+    // summary of its approval (and pull it out of the app), ask first and name
+    // that consequence; otherwise save straight away.
+    private Task OnSaveClickedAsync()
+    {
+        if ((_editWasPublished || _editWasApprovedOrInReview) && HasUnsavedContentChange())
+        {
+            _confirmUnpublishOpen = true;
+            return Task.CompletedTask;
+        }
+        return SaveAsync();
+    }
+
+    private void CancelUnpublishConfirm() => _confirmUnpublishOpen = false;
+
+    private Task ConfirmUnpublishSaveAsync()
+    {
+        _confirmUnpublishOpen = false;
+        return SaveAsync();
+    }
+
+    /// <summary>The consequence spelled out on the confirmation — a published
+    /// summary disappears from the app; an approved / in-review one only loses
+    /// its sign-off.</summary>
+    private string UnpublishConfirmMessage =>
+        _editWasPublished
+            ? L["Admin.SessionSummaries.Confirm.UnpublishOnSave"]
+            : L["Admin.SessionSummaries.Confirm.UnapproveOnSave"];
 
     private async Task SaveAsync()
     {
@@ -237,14 +303,14 @@ public partial class SessionSummariesList
         : row.GeneratedByAi ? L["Admin.SessionSummaries.Source.Ai"]
         : L["Admin.SessionSummaries.Source.Manual"];
 
-    // Slice D — the pristine AI-draft panel label, with the capture time rendered
+    // The pristine AI-draft panel label, with the capture time rendered
     // on the Saudi wall clock (the CP's 12-hour convention) when one is recorded.
     private string AiDraftLabel =>
         _editAiDraftGeneratedAt is { } at
             ? $"{L["Admin.SessionSummaries.Field.AiDraft"]} · {at.FormatSaudi("dd-MM-yyyy hh:mm tt")}"
             : L["Admin.SessionSummaries.Field.AiDraft"];
 
-    // D-472 (#9) — the team review/approval workflow actions. Each forwards a PUT
+    // The team review/approval workflow actions. Each forwards a PUT
     // to the matching admin endpoint, toasts, and reloads the desk.
     private Task SubmitReviewAsync(Guid sessionId) =>
         TransitionAsync(sessionId, "submit-review", "Admin.SessionSummaries.Submitted");

@@ -1,15 +1,15 @@
 // Tests: SIMF.Api.Tests/NewsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.PublicRelations.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.Api.Endpoints.News;
 
-/// <summary>D-199 — admin CRUD over News (PR / marketing). Gated by the
+/// <summary>Admin CRUD over News (PR / marketing). Gated by the
 /// per-action <c>News.*</c> permissions (Issue-1) + <see
 /// cref="AuthorizationPolicies.RequireApprovedAccount"/>. The PublicRelations
 /// role holds <c>News.*</c> as a seeded baseline grant, and Administrator holds
@@ -66,11 +66,7 @@ public sealed class CreateNewsEndpoint(IAdminNewsService service)
     }
     public override async Task HandleAsync(CreateNewsRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminNewsDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -92,11 +88,7 @@ public sealed class UpdateNewsEndpoint(IAdminNewsService service)
     }
     public override async Task HandleAsync(UpdateNewsRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminNewsDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -117,11 +109,7 @@ public sealed class DeleteNewsEndpoint(IAdminNewsService service)
     }
     public override async Task HandleAsync(DeleteNewsRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

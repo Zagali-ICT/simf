@@ -9,12 +9,12 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Configuration;
 
-/// <summary>D-461 / D-495 — the public site-settings read. The social links +
+/// <summary>The public site-settings read. The social links +
 /// registration welcome message now live on the singleton
 /// <see cref="OrganizationProfile"/> (migrated out of the old SystemSetting keys —
 /// one source of truth), but this keeps returning the exact same
 /// <see cref="SiteSettingsResponse"/> shape so the app, website footer and tests are
-/// unchanged. URLs are sanitised to http(s)-only on read (D-467); the registration
+/// unchanged. URLs are sanitised to http(s)-only on read; the registration
 /// message falls back to the in-code default.</summary>
 internal sealed class SiteSettingsService(SimfAppDbContext db) : ISiteSettingsService
 {
@@ -34,7 +34,7 @@ internal sealed class SiteSettingsService(SimfAppDbContext db) : ISiteSettingsSe
         static string Message(string? value, string fallback) =>
             string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
-        // D-467 — a social URL is rendered as a link target, so only an absolute
+        // A social URL is rendered as a link target, so only an absolute
         // http(s) URL is surfaced; anything else drops to an inert null.
         static string? SocialUrl(string? value) =>
             !string.IsNullOrWhiteSpace(value)
@@ -58,10 +58,10 @@ internal sealed class SiteSettingsService(SimfAppDbContext db) : ISiteSettingsSe
                 YouTube: SocialUrl(p?.YouTubeUrl),
                 TikTok: SocialUrl(p?.TikTokUrl),
                 Snapchat: SocialUrl(p?.SnapchatUrl)),
-            // Build #13 — the "Meet People Like You" partner-directory switch;
+            // The "Meet People Like You" partner-directory switch;
             // fail-open (true) when the singleton row is somehow absent.
             PartnerDirectoryEnabled: p?.PartnerDirectoryEnabled ?? true,
-            // 2026-07-22 — the CP RatingConfig "Session" rating-type toggle.
+            // The CP RatingConfig "Session" rating-type toggle.
             SessionRatingEnabled: sessionRatingEnabled);
     }
 }

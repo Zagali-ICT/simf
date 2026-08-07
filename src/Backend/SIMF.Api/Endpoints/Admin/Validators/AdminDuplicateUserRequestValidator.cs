@@ -6,10 +6,10 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin.Validators;
 
 /// <summary>
-/// Validates the admin duplicate-user request (decision D-045, H1 hardening
-/// of D-044 b). Uses the same email-shape rule as
-/// <see cref="AdminCreateUserRequestValidator"/> — a duplicate without a
-/// real email becomes a zombie account that cannot receive its invitation.
+/// Validates the admin duplicate-user request.
+/// Uses the same email-shape rule as the admin create-user
+/// validators — a duplicate without a real email becomes a zombie account
+/// that cannot receive its invitation.
 /// </summary>
 public sealed class AdminDuplicateUserRequestValidator : Validator<AdminDuplicateUserRequest>
 {

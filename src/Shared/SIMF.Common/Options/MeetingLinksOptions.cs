@@ -1,7 +1,7 @@
 namespace SIMF.Common.Options;
 
 /// <summary>
-/// D-717 (item 7, FDS-013 §15 GAP-3) — configuration for the speaker
+/// Configuration for the speaker
 /// double-opt-in email links. <see cref="PublicWebBaseUrl"/> is the public
 /// Website origin the Approve/Reject links point at (the landing page lives at
 /// <c>{PublicWebBaseUrl}/meeting/confirm?token=…</c>). Bound from the
@@ -14,10 +14,15 @@ public sealed class MeetingLinksOptions
     public const string SectionName = "MeetingLinks";
 
     /// <summary>The public Website origin (no trailing slash needed; trimmed when
-    /// the link is built). Empty when unconfigured — the links email is then
-    /// skipped and only logged, never sent with a broken URL.</summary>
+    /// the link is built). Defaulted to the Website's local origin in
+    /// <c>appsettings.Development.json</c>; in QA / Production it MUST be set via
+    /// <c>SIMF_MeetingLinks__PublicWebBaseUrl</c>. When it is empty the
+    /// speaker approve / resend paths FAIL LOUDLY
+    /// (<c>MEETING_LINKS_NOT_CONFIGURED</c>) instead of minting tokens and skipping
+    /// the email with a log line, which parked the request in <c>AwaitingSpeaker</c>
+    /// with no way out.</summary>
     public string PublicWebBaseUrl { get; set; } = string.Empty;
 
-    /// <summary>Token time-to-live in hours (§15.7 / OI-I — default 72).</summary>
+    /// <summary>Token time-to-live in hours (default 72).</summary>
     public int TokenTtlHours { get; set; } = 72;
 }

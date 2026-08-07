@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>One row in the admin <c>Roles</c> grid (D-134 Sprint A —
-/// builds on the existing SimfRole + Permission + RolePermission entities
+/// <summary>One row in the admin <c>Roles</c> grid (built on the existing
+/// SimfRole + Permission + RolePermission entities
 /// — no schema change). Surfaces what an admin needs at-a-glance: the
 /// role's name, whether it ships built-in, how many users hold it, and
 /// how many permissions it grants.</summary>
@@ -24,7 +24,9 @@ public sealed class AdminCreateRoleRequest
 
 /// <summary>The body of <c>PUT /api/v1/admin/roles/{id}</c> — renames a
 /// custom role. Baseline roles cannot be renamed.</summary>
-public sealed class AdminUpdateRoleRequest
+/// <remarks>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class so it cannot drop a field at bind time.</remarks>
+public class AdminUpdateRoleRequest
 {
     public string Name { get; set; } = string.Empty;
 }

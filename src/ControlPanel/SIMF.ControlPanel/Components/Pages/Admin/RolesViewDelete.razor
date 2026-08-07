@@ -1,4 +1,4 @@
-@* D-353 â€” reusable Role View/Delete form, hosted by CrudShell (popup or full
+@* Reusable Role View/Delete form, hosted by CrudShell (popup or full
    page) from RolesList. Inherits CrudViewDeleteFormBase so it exposes the
    standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show; in View mode the "Edit permissions" action is preserved
@@ -57,5 +57,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
-                 OnCancel="@(() => _confirming = false)" />
+                 OnCancel="@(() => _confirming = false)" 
+                 Permission="@PermissionCatalog.Roles.Delete"/>
 }

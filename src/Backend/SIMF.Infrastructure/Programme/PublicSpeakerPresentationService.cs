@@ -7,16 +7,16 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
 
-/// <summary>Wave 2 (Figma 1388:7621 "عروض الجلسات") — the public, read-only view
+/// <summary>The public, read-only view behind "عروض الجلسات",
 /// backing the app's "الجلسات" tile. Lists EVERY active session (time-ordered by
 /// start so the app groups by day) with its primary speaker — NOT only the sessions
-/// that happen to have an uploaded deck (D-704, owner 2026-07-08): the card opens the
+/// that happen to have an uploaded deck: the card opens the
 /// session detail + AI summary, never the file, so a session with no presentation
 /// still belongs on this list. When a session DOES carry an active presentation, its
 /// id + file metadata ride along so the <c>/{id}/file</c> download route still
 /// resolves; otherwise the item id falls back to the session id and the file fields
-/// are empty (the app decodes them but the card ignores them). D-568 (Wave C S6):
-/// the bytes come from the unified <c>StoredFile</c> store via <c>StoredFileName</c>.
+/// are empty (the app decodes them but the card ignores them). The bytes come
+/// from the unified <c>StoredFile</c> store via <c>StoredFileName</c>.
 /// Speaker + Session + Presentation are real FKs on <see cref="SimfAppDbContext"/>.</summary>
 internal sealed class PublicSpeakerPresentationService(
     SimfAppDbContext db,

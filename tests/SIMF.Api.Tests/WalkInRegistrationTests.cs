@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -680,7 +680,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             Name = "Testland",
             NameArabic = "أرض الاختبار",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Countries.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -724,7 +724,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             Name = "Test Organisation",
             CommercialRegistration = $"CR{Guid.NewGuid():N}"[..12],
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -751,7 +751,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             PageColor = "#3B82F6",
             IsForVisitor = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await db.SaveChangesAsync();
@@ -778,7 +778,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             PageColor = "#10B981",
             IsForVisitor = false,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await db.SaveChangesAsync();
@@ -807,14 +807,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email, Password);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

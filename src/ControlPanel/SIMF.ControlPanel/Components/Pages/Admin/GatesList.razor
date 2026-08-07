@@ -1,6 +1,6 @@
-@* D-148 â€” Gate Module CRUD list. SIMF-FDS-003 Â§5.6 / SIMF-API-GATES-001 Â§6.
+@* Gate Module CRUD list.
    Mirrors HallsList; adds DirectionMode column + operator-count + allow-count.
-   Centralized dialog/full-page framing D-353: Add / Edit / View / Delete are
+   Centralized dialog/full-page framing: Add / Edit / View / Delete are
    hosted by CrudShell, which frames the reusable GatesAddEdit and
    GatesViewDelete forms as a popup or a full page per the admin's toolbar
    choice (persisted in localStorage via CpPreferences). *@
@@ -8,7 +8,7 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Gates.Manage)]
 
-<PageTitle>@L["Admin.Gates.Title"] Â· SIMF</PageTitle>
+<PageTitle>@L["Admin.Gates.Title"] · SIMF</PageTitle>
 
 @if (!GridHidden)
 {
@@ -18,7 +18,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminGateSummary"
@@ -52,7 +54,12 @@
                           DeleteLabel="@L["Admin.Gates.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Gates.Manage"
+                          EditPermission="@PermissionCatalog.Gates.Manage"
+                          DeletePermission="@PermissionCatalog.Gates.Manage"
+                          ImportPermission="@PermissionCatalog.Gates.Import"
+                          ExportPermission="@PermissionCatalog.Gates.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

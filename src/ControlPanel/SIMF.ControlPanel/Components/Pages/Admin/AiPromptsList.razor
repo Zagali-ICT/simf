@@ -1,7 +1,7 @@
-@* D-176 (gap doc G12) — AI prompt catalogue: create / edit / view /
+@* AI prompt catalogue: create / edit / view /
    deactivate, plus a per-row dry-run test. The owner ask was "manage all AI in
    one place, dynamically" — this is that one place. Centralized dialog/full-page
-   framing D-353: Add / Edit / View / Delete are hosted by CrudShell, which
+   framing: Add / Edit / View / Delete are hosted by CrudShell, which
    frames the reusable AiPromptsAddEdit and AiPromptsViewDelete forms as a popup
    or a full page per the admin's toolbar choice (persisted in localStorage via
    CpPreferences). The inline SimfModal Add/Edit form + one-click delete it used
@@ -20,7 +20,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminAiPromptSummary"
@@ -56,7 +58,12 @@
                           DeleteLabel="@L["Grid.Delete"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.AiPrompts.Create"
+                          EditPermission="@PermissionCatalog.AiPrompts.Edit"
+                          DeletePermission="@PermissionCatalog.AiPrompts.Delete"
+                          ImportPermission="@PermissionCatalog.AiPrompts.Import"
+                          ExportPermission="@PermissionCatalog.AiPrompts.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>
@@ -125,7 +132,7 @@
                         <SimfToolbarButton Icon="flask" Title="@L["Admin.AiPrompts.Test"]"
                                            OnClick="@(() => OnTestAsync(context))" />
                     </AuthorizedAction>
-                    @* Surface the append-only version history (D-188). The endpoint
+                    @* Surface the append-only version history. The endpoint
                        gates on AiPrompts.View, so the action does too. *@
                     <AuthorizedAction Permission="@PermissionCatalog.AiPrompts.View">
                         <SimfToolbarButton Icon="clock" Title="@L["Admin.AiPrompts.History"]"
@@ -164,7 +171,8 @@
 @if (_testOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.AiPrompts.Test.Title"]"
-               OnClose="OnTestModalClose">
+               OnClose="OnTestModalClose"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <p><code>@_testTargetKey</code></p>
@@ -192,7 +200,7 @@
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="OnTestModalClose">
                 @L["Admin.AiPrompts.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="RunTestAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="RunTestAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.AiPrompts.Test.Action"]
             </SimfButton>
         </Footer>
@@ -201,7 +209,7 @@
 
 @if (_historyOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.AiPrompts.History.Title"]" OnClose="CloseHistory">
+    <SimfModal Open="true" Title="@L["Admin.AiPrompts.History.Title"]" OnClose="CloseHistory" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p><code>@_historyKey</code></p>
             @if (_history.Count == 0)

@@ -11,9 +11,9 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Sponsors;
 
-/// <summary>D-199 (Mockup page 23) — admin CRUD over <see cref="Sponsor"/>.
+/// <summary>Admin CRUD over <see cref="Sponsor"/>.
 /// Mirrors AdminDelegationService structure (validation → mutate → save →
-/// audit). Soft-delete via <see cref="Sponsor.Deactivate"/>.</summary>
+/// audit). Soft-delete via <see cref="SIMF.Domain.Common.BaseAuditEntity.Deactivate"/>.</summary>
 internal sealed class AdminSponsorService(
     SimfAppDbContext appDbContext,
     IAssetService assetService,
@@ -49,7 +49,7 @@ internal sealed class AdminSponsorService(
             rows = rows.Where(sponsor => sponsor.Tier == tier);
         }
 
-        // CP grid per-column text filters (D-255). The grid sends the column
+        // CP grid per-column text filters. The grid sends the column
         // Key as the filter key; unknown columns are ignored. The isActive /
         // tier filters above stay for API callers that pass the structured keys.
         foreach (var (column, raw) in query.Filters)
@@ -67,7 +67,7 @@ internal sealed class AdminSponsorService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default (and any unknown sort):
+        // CP grid sortable columns. Default (and any unknown sort):
         // Tier, then DisplayOrder, then NameAr — the public ordering.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
@@ -156,7 +156,7 @@ internal sealed class AdminSponsorService(
                 $"يوجد راعٍ نشط بالاسم '{nameAr}' في هذه الفئة بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var sponsor = new Sponsor
         {
             Id = Guid.NewGuid(),
@@ -189,13 +189,11 @@ internal sealed class AdminSponsorService(
         appDbContext.Sponsors.Add(sponsor);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SponsorCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sponsorId={sponsor.Id}; tier={tier}; nameAr={nameAr}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SponsorCreated,
+            actorUserId,
+            $"sponsorId={sponsor.Id}; tier={tier}; nameAr={nameAr}",
+            cancellationToken);
 
         var (en, ar) = await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
         return ToDetail(sponsor, en, ar);
@@ -263,17 +261,15 @@ internal sealed class AdminSponsorService(
         sponsor.Latitude = request.Latitude;
         sponsor.Longitude = request.Longitude;
         sponsor.IsActive = request.IsActive;
-        sponsor.UpdatedAt = timeProvider.GetUtcNow();
+        sponsor.UpdatedAt = timeProvider.SimfNow();
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SponsorUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sponsorId={sponsor.Id}; tier={tier}; active={sponsor.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SponsorUpdated,
+            actorUserId,
+            $"sponsorId={sponsor.Id}; tier={tier}; active={sponsor.IsActive}",
+            cancellationToken);
 
         var (en, ar) = await ResolveCountryAsync(sponsor.CountryId, cancellationToken);
         return ToDetail(sponsor, en, ar);
@@ -292,16 +288,14 @@ internal sealed class AdminSponsorService(
         if (!sponsor.IsActive) { return; }
 
         sponsor.Deactivate();
-        sponsor.UpdatedAt = timeProvider.GetUtcNow();
+        sponsor.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SponsorDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"sponsorId={sponsor.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SponsorDeactivated,
+            actorUserId,
+            $"sponsorId={sponsor.Id}",
+            cancellationToken);
     }
 
     private static (string nameEn, string nameAr, SponsorTier tier,
@@ -360,7 +354,7 @@ internal sealed class AdminSponsorService(
         return (nameEn, nameAr, tier, logoRelativePath, url, displayOrderRaw);
     }
 
-    // D-766 — validates the identity-card fields inlined from the removed
+    // Validates the identity-card fields inlined from the removed
     // shared Contact directory. Lengths mirror the EF configuration; latitude
     // and longitude are an all-or-nothing pair with real-world ranges.
     private static void ValidateContactFields(
@@ -480,7 +474,7 @@ internal sealed class AdminSponsorService(
             sponsor.Latitude,
             sponsor.Longitude);
 
-    // D-432 — trim a tagline to null when blank; enforce the 256-char limit
+    // Trim a tagline to null when blank; enforce the 256-char limit
     // (mirrors SponsorConfiguration.HasMaxLength + the CP MaxLength) so a direct
     // API call gets a clean 400 instead of a DB error.
     private static string? NormaliseTagline(string? value)

@@ -1,4 +1,6 @@
 // Tests: SIMF.Api.Tests/SessionQuestionCommitteeTests.cs
+// Tests: SIMF.Api.Tests/ModeratorDeskStateTests.cs (a Committee rejection
+//        restores to Pending, never onto the moderator desk)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -12,10 +14,10 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.SessionQuestions;
 
 /// <summary>
-/// P3.3 — D-212 (Completion Programme §5.3): the Scientific-Committee central
+/// The Scientific-Committee central
 /// Q&amp;A queue (stage 2). Trusts the caller is authorized — the endpoint layer
 /// gates with Questions.View / Moderate / Escalate. Cross-DB submitter display
-/// names are resolved against the Identity DB (no cross-DB JOIN, D-157).
+/// names are resolved against the Identity DB.
 /// </summary>
 internal sealed class SessionQuestionCommitteeService(
     SimfAppDbContext appDbContext,
@@ -99,6 +101,9 @@ internal sealed class SessionQuestionCommitteeService(
         if (question.Status != QuestionStatus.Approved)
         {
             question.Status = QuestionStatus.Approved;
+            // An explicit approval is a new decision, so the "put it back
+            // where it was" memory taken at hide time is spent.
+            question.StatusBeforeHidden = null;
             await appDbContext.SaveChangesAsync(cancellationToken);
             await AuditAsync(AuditEvents.SessionQuestionApproved, actorUserId, question, cancellationToken);
             logger.LogInformation(
@@ -116,6 +121,12 @@ internal sealed class SessionQuestionCommitteeService(
             // Status is the single source of truth for visibility; the desk's
             // IsHidden marker is derived from it at projection time, so there is
             // no separate flag to keep in sync.
+            // Record where the row came from (mirrors
+            // SessionModerationService.SetHiddenAsync). A Committee rejection of a
+            // PENDING question must not become an Approved question the moment a
+            // per-session moderator restores it from the rejected tab: it goes back
+            // to Pending, i.e. back to this queue, never onto the stage.
+            question.StatusBeforeHidden = question.Status;
             question.Status = QuestionStatus.Hidden;
             // S-8 — a hidden question must not stay "pushed to the speaker": clear
             // the pushed marker (mirrors SessionModerationService.SetHiddenAsync) so
@@ -151,7 +162,7 @@ internal sealed class SessionQuestionCommitteeService(
         var question = await LoadAsync(questionId, cancellationToken);
         question.AssignedToRole = trimmedRole;
         question.EscalatedByUserId = actorUserId;
-        question.EscalatedAt = timeProvider.GetUtcNow();
+        question.EscalatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await AuditAsync(
@@ -191,7 +202,7 @@ internal sealed class SessionQuestionCommitteeService(
         }, cancellationToken);
 
     // Mirror of SessionModerationService.ToRowAsync — submitter resolved from
-    // the Identity DB (no cross-DB JOIN, D-157); title is a separate scalar read.
+    // the Identity DB (no cross-DB JOIN); title is a separate scalar read.
     private async Task<SessionQuestionQueueRow> ToRowAsync(
         SessionQuestion question, CancellationToken cancellationToken)
     {

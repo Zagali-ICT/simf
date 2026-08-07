@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AppBootstrapTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.Notifications;
 using SIMF.Common;
@@ -10,7 +10,7 @@ namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
 /// <c>GET /api/v1/app/bootstrap</c> — the on-login bundle the app fetches once
-/// and caches (D9 — D-249): the signed-in user (identity + app-role +
+/// and caches: the signed-in user (identity + app-role +
 /// registration status), the unread-notification count, and the server clock.
 /// One round-trip; an additive read-only aggregate composed from existing,
 /// tested reads (<see cref="IAccountService.GetCurrentUserAsync"/> +
@@ -34,17 +34,13 @@ public sealed class AppBootstrapEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var user = await accountService.GetCurrentUserAsync(userId, ct);
         var unread = await notificationService.UnreadCountMineAsync(userId, ct);
 
         await Send.OkAsync(
-            ApiResult<AppBootstrap>.Ok(new AppBootstrap(user, unread, timeProvider.GetUtcNow())),
+            ApiResult<AppBootstrap>.Ok(new AppBootstrap(user, unread, timeProvider.SimfNow())),
             ct);
     }
 }

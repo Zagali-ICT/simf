@@ -1,14 +1,14 @@
 // Tests: SIMF.Api.Tests/BadgeUpdateRequestsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Requests.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Requests;
 
 namespace SIMF.Api.Endpoints.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب تحديث البادج") — an approved attendee
+/// <summary>الطلبات "طلب تحديث البادج" — an approved attendee
 /// submits a badge job-title update request. Login-required.</summary>
 public sealed class SubmitBadgeUpdateRequestEndpoint(IBadgeUpdateRequestService service)
     : Endpoint<SubmitBadgeUpdateRequestBody, ApiResult<BadgeUpdateRequestSubmitted>>
@@ -23,11 +23,7 @@ public sealed class SubmitBadgeUpdateRequestEndpoint(IBadgeUpdateRequestService 
 
     public override async Task HandleAsync(SubmitBadgeUpdateRequestBody req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<BadgeUpdateRequestSubmitted>.Ok(
             await service.SubmitAsync(actorId, req, ct)), ct);
     }
@@ -48,11 +44,7 @@ public sealed class ListAdminBadgeUpdateRequestsEndpoint(IBadgeUpdateRequestServ
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<GridPage<AdminBadgeUpdateRequestRow>>.Ok(
             await service.ListAllAsync(actorId, req, ct)), ct);
     }
@@ -77,11 +69,7 @@ public sealed class GetAdminBadgeUpdateRequestEndpoint(IBadgeUpdateRequestServic
 
     public override async Task HandleAsync(GetAdminBadgeUpdateRequestRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminBadgeUpdateRequestDetail>.Ok(
             await service.GetAsync(actorId, req.Id, ct)), ct);
     }
@@ -106,11 +94,7 @@ public sealed class RespondToBadgeUpdateRequestEndpoint(IBadgeUpdateRequestServi
 
     public override async Task HandleAsync(RespondToBadgeUpdateRequestRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminBadgeUpdateRequestDetail>.Ok(
             await service.RespondAsync(actorId, req.Id, req, ct)), ct);
     }

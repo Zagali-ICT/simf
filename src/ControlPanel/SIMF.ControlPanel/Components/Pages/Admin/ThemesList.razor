@@ -1,12 +1,12 @@
-@* D-134 Sprint B â€” Themes CRUD. SIMF-FDS-004 Â§5.1. Centralized dialog/full-page
-   framing D-353: Add / Edit / View / Delete are hosted by CrudShell, which frames
+@* Themes CRUD. Centralized dialog/full-page
+   framing: Add / Edit / View / Delete are hosted by CrudShell, which frames
    the reusable ThemesAddEdit and ThemesViewDelete forms as a popup or a full page
    per the admin's toolbar choice (persisted in localStorage via CpPreferences). *@
 @page "/admin/themes"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Themes.View)]
 
-<PageTitle>@L["Admin.Themes.Title"] Â· SIMF</PageTitle>
+<PageTitle>@L["Admin.Themes.Title"] · SIMF</PageTitle>
 
 @if (!GridHidden)
 {
@@ -16,7 +16,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminThemeSummary"
@@ -52,7 +54,12 @@
                           DeleteLabel="@L["Admin.Themes.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Themes.Create"
+                          EditPermission="@PermissionCatalog.Themes.Edit"
+                          DeletePermission="@PermissionCatalog.Themes.Delete"
+                          ImportPermission="@PermissionCatalog.Themes.Import"
+                          ExportPermission="@PermissionCatalog.Themes.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

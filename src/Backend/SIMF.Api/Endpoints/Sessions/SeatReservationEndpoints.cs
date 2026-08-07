@@ -1,14 +1,15 @@
 // Tests: SIMF.Api.Tests/SeatReservationsTests.cs
-using System.Security.Claims;
+// Tests: SIMF.Api.Tests/SeatChangeTests.cs (the change-seat endpoint)
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.SeatReservations.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.Api.Endpoints.Sessions;
 
-/// <summary>D-175 (gap doc G11, Mockup page 7) — authenticated visitor
+/// <summary>An authenticated visitor
 /// reads the current seat-grid for a session: row labels, the
 /// occupied cells, their own active seat (if any), and the active
 /// reservation count.</summary>
@@ -25,8 +26,7 @@ public sealed class GetSessionSeatMapEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(GetSessionSeatMapRoute req, CancellationToken ct)
     {
-        Guid? actorId = Guid.TryParse(User.FindFirstValue("sub"), out var parsed)
-            ? parsed : null;
+        Guid? actorId = User.ActorIdOrNull();
         await Send.OkAsync(ApiResult<SessionSeatMap>.Ok(
             await service.GetSessionSeatMapAsync(req.SessionId, actorId, ct)), ct);
     }
@@ -49,11 +49,7 @@ public sealed class ReserveSeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(ReserveSeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
             await service.ReserveAsync(req.SessionId, actorId,
                 new ReserveSeatRequest
@@ -78,11 +74,7 @@ public sealed class ReserveRandomSeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(ReserveRandomSeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
             await service.ReserveRandomAsync(req.SessionId, actorId, ct)), ct);
     }
@@ -90,7 +82,7 @@ public sealed class ReserveRandomSeatEndpoint(ISeatReservationService service)
 
 public sealed class JoinOpenSeatingRoute { public Guid SessionId { get; set; } }
 
-/// <summary>D-485 — join an OPEN-SEATING session (general admission, no specific
+/// <summary>Join an OPEN-SEATING session (general admission, no specific
 /// seat). The reservation is created Pending and flows through the same Control
 /// Panel approval + notifications as a seat booking. 409 SEAT_SELECTION_REQUIRED
 /// when the session's effective mode is AssignedSeat (the app should show the
@@ -107,13 +99,46 @@ public sealed class JoinOpenSeatingEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(JoinOpenSeatingRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
             await service.JoinOpenSeatingAsync(req.SessionId, actorId, ct)), ct);
+    }
+}
+
+public sealed class MoveSeatRoute : MoveSeatRequest
+{
+    public Guid SessionId { get; set; }
+}
+
+/// <summary>Move the caller's already-held seat to a
+/// different seat in the same session in ONE atomic step, so they are never left
+/// seatless by a cancel-then-rebook. 409 <c>SEAT_ALREADY_RESERVED</c> when the
+/// destination was taken first (the original seat stays held), 409
+/// <c>SEAT_MOVE_SAME_SEAT</c> for a no-op move, 409 <c>SEAT_TIER_*</c> when the
+/// destination's tier is out of reach, 409 <c>BOOKING_SESSION_STARTED</c> once the
+/// session has begun, 404 <c>SEAT_RESERVATION_NOT_FOUND</c> with no seat to
+/// move.</summary>
+public sealed class MoveSeatEndpoint(ISeatReservationService service)
+    : Endpoint<MoveSeatRoute, ApiResult<MySeatReservation>>
+{
+    public override void Configure()
+    {
+        Post("/app/sessions/{sessionId:guid}/seats/move");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Sessions");
+    }
+    public override async Task HandleAsync(MoveSeatRoute req, CancellationToken ct)
+    {
+        var actorId = User.ActorId();
+        await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
+            await service.MoveAsync(req.SessionId, actorId,
+                // Re-projected so the route model cannot over-post onto the request.
+                new MoveSeatRequest
+                {
+                    RowLabel = req.RowLabel,
+                    SeatNumber = req.SeatNumber,
+                }, ct)), ct);
     }
 }
 
@@ -131,11 +156,7 @@ public sealed class ReleaseMySeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(ReleaseMySeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.ReleaseMineAsync(req.SessionId, actorId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -178,21 +199,44 @@ public sealed class SetHallSeatLayoutEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(SetHallSeatLayoutRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<HallSeatLayoutSnapshot>.Ok(
             await service.SetLayoutAsync(actorId, req.HallId,
                 new SetHallSeatLayoutRequest
                 {
                     RowLabels = req.RowLabels,
                     SeatsPerRow = req.SeatsPerRow,
-                    // D-767 — carry the optional per-row seat counts through the
+                    // Carry the optional per-row seat counts through the
                     // over-post-safe re-projection.
                     SeatCounts = req.SeatCounts,
+                    // And the per-row seat tiers.
+                    SeatTiers = req.SeatTiers,
                 }, ct)), ct);
+    }
+}
+
+public sealed class DeleteHallSeatLayoutRoute { public Guid HallId { get; set; } }
+
+/// <summary>Remove a hall's seat layout so the hall reverts to general
+/// admission. Refused (409 <c>SEAT_LAYOUT_HAS_RESERVATIONS</c>) while any active
+/// seat-specific reservation would be stranded — the same rule the PUT applies to a
+/// shrinking layout change.</summary>
+public sealed class DeleteHallSeatLayoutEndpoint(ISeatReservationService service)
+    : Endpoint<DeleteHallSeatLayoutRoute, ApiResult<HallSeatLayoutSnapshot>>
+{
+    public override void Configure()
+    {
+        Delete("/admin/halls/{hallId:guid}/seat-layout");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SeatLayouts.Delete),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(DeleteHallSeatLayoutRoute req, CancellationToken ct)
+    {
+        var actorId = User.ActorId();
+        await Send.OkAsync(ApiResult<HallSeatLayoutSnapshot>.Ok(
+            await service.DeleteLayoutAsync(actorId, req.HallId, ct)), ct);
     }
 }
 
@@ -214,11 +258,7 @@ public sealed class AdminReserveRowEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(AdminReserveRowRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.AdminReserveRowAsync(actorId, req.SessionId,
             new AdminReserveRowRequest { RowLabel = req.RowLabel }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
@@ -243,15 +283,17 @@ public sealed class AdminReserveSeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(AdminReserveSeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.AdminReserveSeatAsync(actorId, req.SessionId,
             new AdminReserveSeatRequest
             {
-                RowLabel = req.RowLabel, SeatNumber = req.SeatNumber,
+                RowLabel = req.RowLabel,
+                SeatNumber = req.SeatNumber,
+                // Carry the manual VVIP guest hint through the over-post-safe
+                // re-projection (a VVIP seat has no registration; the hint is the
+                // occupant record).
+                GuestHint = req.GuestHint,
+                GuestHintArabic = req.GuestHintArabic,
             }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -276,11 +318,7 @@ public sealed class AdminReleaseSeatEndpoint(ISeatReservationService service)
     }
     public override async Task HandleAsync(AdminReleaseSeatRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.AdminReleaseAsync(actorId, req.SessionId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -297,8 +335,13 @@ public sealed class ListSessionSeatReservationsRoute
     public Dictionary<string, string> Filters { get; set; } = new();
 }
 
+/// <summary>The Control Panel seat plan's active reservations.
+/// Returns the ADMIN cell shape (<see cref="SeatPlanCell"/>): it names the holder
+/// so the release confirmation can say whose seat is being taken, and carries the
+/// real booking status + check-in flag. Gated <c>SeatPlans.View</c>; the
+/// app-facing seat map keeps the identity-free <see cref="SessionSeatCell"/>.</summary>
 public sealed class ListSessionSeatReservationsEndpoint(ISeatReservationService service)
-    : Endpoint<ListSessionSeatReservationsRoute, ApiResult<GridPage<SessionSeatCell>>>
+    : Endpoint<ListSessionSeatReservationsRoute, ApiResult<GridPage<SeatPlanCell>>>
 {
     public override void Configure()
     {
@@ -309,7 +352,7 @@ public sealed class ListSessionSeatReservationsEndpoint(ISeatReservationService 
     }
     public override async Task HandleAsync(
         ListSessionSeatReservationsRoute req, CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<GridPage<SessionSeatCell>>.Ok(
+        await Send.OkAsync(ApiResult<GridPage<SeatPlanCell>>.Ok(
             await service.ListSessionReservationsAsync(
                 req.SessionId,
                 new GridQuery
@@ -323,9 +366,9 @@ public sealed class ListSessionSeatReservationsEndpoint(ISeatReservationService 
                 }, ct)), ct);
 }
 
-// -- Booking monitor (#6/#17 — owner 2026-07-20) --
+// -- Booking monitor --
 
-/// <summary>#6 — the read-only Control Panel booking monitor: ACTIVE (confirmed,
+/// <summary>The read-only Control Panel booking monitor: ACTIVE (confirmed,
 /// still-held) visitor reservations across all sessions. There is no approval
 /// step (bookings auto-confirm), so this replaced the old approval queue. The
 /// pre-start no-show release runs in the background (ReservationNoShowReleaseWorker),

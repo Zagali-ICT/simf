@@ -1,4 +1,4 @@
-@* Control Panel — pending Other-typed approval queue (P7e — D-055).
+﻿@* Control Panel — pending Other-typed approval queue.
    Mirrors PendingAdmins (P4b); each row gets Approve + Reject buttons
    wired to the /admin/others/{id}/{approve,reject} API. *@
 @page "/admin/others/pending"
@@ -9,7 +9,7 @@
 
 <PageTitle>@L["Admin.Pending.Others.Title"] · SIMF</PageTitle>
 
-@* D-353 parity — hide the grid while the review "View" takes over the full page. *@
+@* Hide the grid while the review "View" takes over the full page. *@
 @if (!ViewFullPage)
 {
 <SimfBanner Title="@L["Admin.Pending.Others.Title"]" />
@@ -43,7 +43,9 @@
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       ActionsHeader="@L["Grid.Actions"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ApprovePermission="@PermissionCatalog.Others.Approve"
+                      RejectPermission="@PermissionCatalog.Others.Reject">
             <CustomToolbar>
                 <CrudPresentationToggle PageKey="@(PresentationPageKey!)" @bind-Value="_presentation" />
             </CustomToolbar>
@@ -66,22 +68,36 @@
                     <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
+            @* The row pair matches the bulk pair above it. The read-only
+               profile View stays ungated: it is what Others.View already bought,
+               and it is the same drawer, opened without approveMode.
+
+               Every code on this page is Others.*, because every button on
+               it acts on a PARTNER account. An earlier pass mirrored an API that
+               gated the per-row routes on Admins.* while gating the bulk routes on
+               Others.*; the owner ruled that split a bug, the permission catalogue
+               had always specified Others.* for both, and the endpoints were
+               corrected. *@
             <RowActions Context="user">
                 <SimfButton Type="button" Variant="secondary"
                             Disabled="_busy"
                             OnClick="@(() => OpenViewAsync(user, approveMode: false))">
                     @L["Admin.Pending.Action.View"]
                 </SimfButton>
-                <SimfButton Type="button" Variant="primary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenViewAsync(user, approveMode: true))">
-                    @L["Admin.Pending.Action.Approve"]
-                </SimfButton>
-                <SimfButton Type="button" Variant="secondary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenReject(user))">
-                    @L["Admin.Pending.Action.Reject"]
-                </SimfButton>
+                <AuthorizedAction Permission="@PermissionCatalog.Others.Approve">
+                    <SimfButton Type="button" Variant="primary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenViewAsync(user, approveMode: true))">
+                        @L["Admin.Pending.Action.Approve"]
+                    </SimfButton>
+                </AuthorizedAction>
+                <AuthorizedAction Permission="@PermissionCatalog.Others.Reject">
+                    <SimfButton Type="button" Variant="secondary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenReject(user))">
+                        @L["Admin.Pending.Action.Reject"]
+                    </SimfButton>
+                </AuthorizedAction>
             </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.Pending.None"]" />
@@ -105,7 +121,8 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@L["Admin.Pending.Reject.Title"]"
-               OnClose="@(() => _rejectTarget = null)">
+               OnClose="@(() => _rejectTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Pending.Reject.Confirm"], _rejectTarget.Email)</p>
             <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
@@ -119,23 +136,40 @@
                         OnClick="@(() => _rejectTarget = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Others.Reject">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_rejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmRejectAsync">
-                @L["Admin.Pending.Reject.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_rejectReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmRejectAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Pending.Reject.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
 
-@* D-209 — bulk reject: shared-reason modal for the selected pending rows. *@
+@* Bulk approve commits many accounts at once; confirm the count first. *@
+<SimfConfirm Open="@(_bulkApproveSelected is not null)"
+             Title="@L["Admin.Pending.BulkApprove.Confirm.Title"]"
+             Message="@(_bulkApproveSelected is null ? string.Empty
+                        : string.Format(L["Admin.Pending.BulkApprove.Confirm.Message"],
+                                        _bulkApproveSelected.Count))"
+             ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmBulkApproveAsync"
+             OnCancel="CancelBulkApprove" 
+             Permission="@PermissionCatalog.Others.Approve"/>
+
+@* Bulk reject: shared-reason modal for the selected pending rows. *@
 @if (_bulkRejectSelected is not null)
 {
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@L["Admin.Pending.BulkReject.Title"]"
-               OnClose="@(() => _bulkRejectSelected = null)">
+               OnClose="@(() => _bulkRejectSelected = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Pending.BulkReject.Confirm"], _bulkRejectSelected.Count)</p>
             <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
@@ -149,12 +183,16 @@
                         OnClick="@(() => _bulkRejectSelected = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Others.Reject">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmBulkRejectAsync">
-                @L["Admin.Pending.BulkReject.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmBulkRejectAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Pending.BulkReject.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -223,16 +261,16 @@
                     {
                         <div class="simf-walkin__id-image">
                             <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
-                            <img src="@($"/account/api/admin/others/{_viewProfile.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+                            <img src="@($"/account/api/admin/others/{_viewProfile.Id}/id-document?v={SimfClock.Now.Ticks}")"
                                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
                         </div>
                     }
-                    @* D-727 (owner item 5) — the staff/partner profile photo (avatar)
+                    @* The staff/partner profile photo (avatar)
                        so the reviewer sees the person before approving. *@
                     @if (_viewProfile.HasAvatar)
                     {
                         <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
-                                                Src="@($"/account/api/admin/others/{_viewProfile.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
+                                                Src="@($"/account/api/admin/others/{_viewProfile.Id}/avatar?v={SimfClock.Now.Ticks}")" />
                     }
                 }
                 else
@@ -246,12 +284,16 @@
                 <SimfButton Type="button" Variant="secondary" OnClick="CloseView">
                     @L["Admin.Pending.ApproveReview.Cancel"]
                 </SimfButton>
+                @* The commit button of the modal this action opened. *@
+                <AuthorizedAction Permission="@PermissionCatalog.Others.Approve">
                 <SimfButton Type="button" Variant="primary"
-                            Loading="_busy"
-                            Disabled="@(_viewLoading || _viewProfile is null)"
-                            OnClick="ConfirmApproveFromReviewAsync">
-                    @L["Admin.Pending.ApproveReview.Confirm"]
-                </SimfButton>
+                                Loading="_busy"
+                                Disabled="@(_viewLoading || _viewProfile is null)"
+                                OnClick="ConfirmApproveFromReviewAsync"
+                                LoadingLabel="@L["Grid.Working"]">
+                        @L["Admin.Pending.ApproveReview.Confirm"]
+                    </SimfButton>
+                </AuthorizedAction>
             }
             else
             {

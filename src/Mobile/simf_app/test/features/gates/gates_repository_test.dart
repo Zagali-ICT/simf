@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/features/gates/data/gate_models.dart';
+import 'package:simf_app/features/gates/data/gate_offline_config.dart';
 import 'package:simf_app/features/gates/data/gate_scan_queue.dart';
 import 'package:simf_app/features/gates/data/gates_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -20,8 +21,11 @@ final _client = SimfApiClient.build(
 /// Overrides only `recordScan` to simulate a server outcome, and exercises the
 /// real `recordScanOrQueue` / `flushPending` over a real `GateScanQueue`.
 class _StubGates extends GatesRepository {
-  _StubGates(SimfApiClient client, GateScanQueue queue)
-      : super(client, queue);
+  _StubGates(
+    SimfApiClient client,
+    GateScanQueue queue,
+    GateOfflineConfigCache offlineConfig,
+  ) : super(client, queue, offlineConfig);
 
   /// When set, the next `recordScan` throws it; otherwise it returns
   /// `successResult`. A network failure is `ApiFailure(httpStatus: null)`.
@@ -50,7 +54,16 @@ class _StubGates extends GatesRepository {
   }
 }
 
-_StubGates _build() => _StubGates(_client, GateScanQueue(FakePrefs()));
+_StubGates _build() {
+  // One prefs instance for both stores: the queue and the D-820 offline-config
+  // cache live side by side on a real device too.
+  final prefs = FakePrefs();
+  return _StubGates(
+    _client,
+    GateScanQueue(prefs),
+    GateOfflineConfigCache(prefs),
+  );
+}
 
 ApiFailure _network() =>
     const ApiFailure(code: ApiErrorCodes.clientNetwork, message: 'x');

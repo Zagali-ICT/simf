@@ -1,9 +1,10 @@
-@* D-715 (item 7, FDS-013 §15 GAP-1) — the team defines a hall's meeting time
-   (availability windows); the meeting-review flow (GAP-2) binds an accepted request
-   to a free hall slot. Gated by SpeakerMeetingRequests.Manage (the meeting area). *@
+@* The team defines a hall's meeting time (availability windows); the
+   meeting-review flow binds an accepted request to a free hall slot.
+   Gated by the hall-scoped HallAvailability.Manage,
+   not by SpeakerMeetingRequests.Manage: the windows feed BOTH meeting desks. *@
 @page "/admin/hall-availability"
 @layout CpShellLayout
-@attribute [RequirePermission(PermissionCatalog.SpeakerMeetingRequests.Manage)]
+@attribute [RequirePermission(PermissionCatalog.HallAvailability.Manage)]
 @using System.Globalization
 @using SIMF.Contracts.Programme
 
@@ -45,7 +46,7 @@
                                @bind-Value="_slotMinutes" Disabled="_busy" />
             </div>
             <div class="simf-form__actions">
-                <SimfButton Type="button" Loading="_busy" OnClick="AddWindowAsync">
+                <SimfButton Type="button" Loading="_busy" OnClick="AddWindowAsync" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.HallAvailability.Add"]
                 </SimfButton>
             </div>
@@ -64,7 +65,7 @@
                             @w.Start.FormatSaudi("dd-MM-yyyy hh:mm tt")
                             – @w.End.FormatSaudi("hh:mm tt")
                             · @w.SlotMinutes @L["Admin.HallAvailability.Min"]
-                            <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
+                            <AuthorizedAction Permission="@PermissionCatalog.HallAvailability.Manage">
                                 <SimfToolbarButton Icon="trash" Title="@L["Grid.Delete"]"
                                                    Disabled="_busy"
                                                    OnClick="@(() => ConfirmDelete(w.Id))" />
@@ -77,8 +78,11 @@
     </div>
 </div>
 
-@* R10 (D-767) — must-decide guard for the destructive availability-window delete. *@
+@* Must-decide guard for the destructive availability-window delete. *@
+@* Same code as the page gate: the API gates this DELETE on
+.Manage too, so there is no split to express. *@
 <SimfConfirm Open="_confirmOpen" Title="@L["Grid.Delete"]"
              Message="@L["Admin.Availability.DeleteConfirmMsg"]"
              ConfirmLabel="@L["Grid.Delete"]" CancelLabel="@L["Admin.Meetings.Close"]"
-             Danger="true" Busy="_busy" OnConfirm="RunDeleteAsync" OnCancel="CancelConfirm" />
+             Danger="true" Busy="_busy" OnConfirm="RunDeleteAsync" OnCancel="CancelConfirm"
+             Permission="@PermissionCatalog.HallAvailability.Manage" />

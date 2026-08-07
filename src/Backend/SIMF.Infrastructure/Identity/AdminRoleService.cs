@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-134 Sprint A — admin CRUD over <c>SimfRole</c>. Built on the existing
+/// Admin CRUD over <c>SimfRole</c>. Built on the existing
 /// Identity infrastructure (uses <see cref="RoleManager{TRole}"/> so the
 /// stamp + normalised-name invariants stay correct), the existing
 /// <c>RolePermission</c> join (read for the per-role permission count),
@@ -128,13 +128,8 @@ internal sealed class AdminRoleService(
                 $"تعذّر إنشاء الدور: {description}.");
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RoleCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={role.Id}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RoleCreated, actorUserId, $"id={role.Id}; name={name}", cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Role {Name} ({Id})",
@@ -198,13 +193,8 @@ internal sealed class AdminRoleService(
                 $"تعذّر تحديث الدور: {description}.");
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RoleUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={role.Id}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RoleUpdated, actorUserId, $"id={role.Id}; name={name}", cancellationToken);
 
         var userCount = await dbContext.UserRoles
             .AsNoTracking()
@@ -269,13 +259,11 @@ internal sealed class AdminRoleService(
                 $"تعذّر حذف الدور: {description}.");
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RoleDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={role.Id}; name={role.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RoleDeleted,
+            actorUserId,
+            $"id={role.Id}; name={role.Name}",
+            cancellationToken);
     }
 
     public async Task<AdminRolePermissionsResponse?> GetPermissionsAsync(
@@ -375,13 +363,11 @@ internal sealed class AdminRoleService(
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RolePermissionsUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; granted={requestedPermissions.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RolePermissionsUpdated,
+            actorUserId,
+            $"id={id}; granted={requestedPermissions.Count}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} set {Count} permission(s) on role {RoleId}.",

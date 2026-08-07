@@ -1,17 +1,10 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -135,7 +128,7 @@ public partial class SponsorsList
     }
 
     // Edit / View / Delete all work against the full detail — the grid summary
-    // omits ContactId (SIMF-FDS-014 / D-283), so editing from a summary-only
+    // omits ContactId, so editing from a summary-only
     // form would wipe an existing link. Returns null and surfaces a toast on
     // failure.
     private async Task<AdminSponsorDetail?> LoadDetailAsync(Guid id)
@@ -159,7 +152,7 @@ public partial class SponsorsList
         _target = null;
     }
 
-    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    // Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminSponsorSummary> selected) =>
         _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
 

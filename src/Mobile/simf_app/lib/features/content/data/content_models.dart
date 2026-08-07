@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// A published CMS content block — mirrors `SIMF.Contracts.Cms.PublicContentBlock`
 /// (`GET /app/content/{key}` → `{ key, content, contentArabic, lastUpdatedAt }`).
@@ -35,6 +36,6 @@ class ContentBlock {
         content: json['content'] as String? ?? '',
         contentArabic: json['contentArabic'] as String? ?? '',
         lastUpdatedAt:
-            DateTime.tryParse(json['lastUpdatedAt'] as String? ?? ''),
+            parseWireOrNull(json['lastUpdatedAt'] as String? ?? ''),
       );
 }

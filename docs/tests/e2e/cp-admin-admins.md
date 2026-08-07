@@ -6,7 +6,7 @@
 | **Route** | `/admin/admins` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Page permission** | `PermissionCatalog.Admins.View` (`@attribute [RequirePermission(PermissionCatalog.Admins.View)]`) |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
@@ -47,6 +47,8 @@
 | E2E-USR-023 | Full-page mode round-trip — Add/Details take over the content area, Save/Close returns to grid (D-353) | happy | P1 | _to author_ |
 | E2E-USR-024 | Excel import rejection — non-`.xlsx` / oversized / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-USR-025 | Name column renders the admin's profile-photo thumbnail (SimfIdentityCell) when `HasAvatar`, else an initials tile; no avatar request when none; broken bytes fall back to the placeholder, not a broken glyph (D-357) | happy | P2 | _to author_ |
+| E2E-USR-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-USR-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

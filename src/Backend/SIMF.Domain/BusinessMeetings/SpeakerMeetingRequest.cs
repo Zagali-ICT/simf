@@ -4,95 +4,89 @@ using SIMF.Domain.Programme;
 namespace SIMF.Domain.BusinessMeetings;
 
 /// <summary>
-/// D-269 (Mockup page 20 "Speaker profile") — an attendee's request to meet a
-/// <see cref="Speaker"/> who has opted in via
-/// <see cref="Speaker.AllowsMeetingRequests"/>. Distinct from the session-scoped
-/// <c>MeetingRequest</c> (the screen-27 "Request interview during a live
-/// session" feature, removed in D-278): this one targets a speaker, not a session. Form fields: the
-/// requester's display name and the meeting topic. Created
-/// <see cref="MeetingRequestStatus.Pending"/>; an admin reviews and Accepts or
-/// Rejects with an optional response note (the same lifecycle enum the
-/// session-scoped request uses).
+/// An attendee's request to meet a <see cref="Speaker"/> who has opted in via
+/// <see cref="Speaker.AllowsMeetingRequests"/>. Created
+/// <see cref="MeetingRequestStatus.Pending"/>; an admin accepts or rejects it, and
+/// an accept may go further and bind the meeting to a hall slot the speaker then
+/// confirms. The twin of <see cref="DelegationMeetingRequest"/>, which runs the
+/// same lifecycle against a delegation rather than a speaker.
 /// </summary>
 public sealed class SpeakerMeetingRequest
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>The speaker the request is for. Real FK to
-    /// <see cref="Speaker"/> on the App DB (cascade — a deleted speaker
-    /// removes its requests).</summary>
+    /// <summary>A real foreign key: the speaker lives in the same DbContext.</summary>
     public Guid SpeakerId { get; set; }
     public Speaker? Speaker { get; set; }
 
-    /// <summary>The authenticated user who submitted the request.
-    /// Logical FK to <c>SimfUser.Id</c> on the Identity DB (bare Guid,
-    /// resolved on read — no cross-DB relation, D-157).</summary>
+    /// <summary>A bare Guid rather than a navigation: the user lives in the Identity
+    /// database, so there is no foreign key across the two.</summary>
     public Guid RequestedByUserId { get; set; }
 
-    /// <summary>The display name the requester typed into the form — may
-    /// differ from their profile name if they represent someone else.</summary>
+    /// <summary>Typed into the form, so it can differ from the requester's profile
+    /// name when they are asking on someone else's behalf.</summary>
     public string RequesterName { get; set; } = string.Empty;
 
-    /// <summary>The meeting topic — free text up to 1000 chars.</summary>
+    /// <summary>The meeting topic. Free text, capped at 1000 characters.</summary>
     public string Subject { get; set; } = string.Empty;
 
-    /// <summary>D-474 (#11) — the slot the requester picked from the speaker's
-    /// availability windows. Null for a legacy topic-only request (D-269); set
-    /// for a VIP slot request. The pair is validated to fall inside an active
-    /// window and to be free at submit time.</summary>
-    public DateTimeOffset? SlotStart { get; set; }
-    public DateTimeOffset? SlotEnd { get; set; }
+    /// <summary>The slot the requester picked out of the speaker's availability
+    /// windows, checked at submit time to fall inside an active window and to be free.
+    /// Null on a topic-only request, which asks for a meeting without naming a time.
+    /// Once an accept binds a hall this pair holds the bound hall slot instead: the
+    /// meeting's time of record, and what the speaker and hall uniqueness indexes read
+    /// as booked. A check constraint keeps the two ordered.</summary>
+    public DateTime? SlotStart { get; set; }
+    public DateTime? SlotEnd { get; set; }
 
-    /// <summary>D-611 (Wave B) — the <see cref="SpeakerAvailabilityWindow"/> the
-    /// picked slot belongs to, now persisted as a real FK (OnDelete SetNull)
-    /// instead of only being validated at submit time. Null for a legacy
-    /// topic-only request or when the window is later removed.</summary>
+    /// <summary>The <see cref="SpeakerAvailabilityWindow"/> the picked slot came out
+    /// of. Null on a topic-only request, and cleared if that window is later deleted,
+    /// so the booked time is <see cref="SlotStart"/>, never this.</summary>
     public Guid? AvailabilityWindowId { get; set; }
 
-    /// <summary>Lifecycle state. Pending on create; Accepted or Rejected
-    /// after an admin reviews. D-716 adds AwaitingSpeaker for an accept that also
-    /// bound the request to a hall slot (awaiting the speaker's own confirmation).</summary>
+    /// <summary>Pending on create. An admin's review lands it on Accepted or Rejected,
+    /// or on AwaitingSpeaker when the accept also bound a hall slot the speaker has
+    /// still to confirm. Accepted, AwaitingSpeaker and Done all HOLD the booked slot;
+    /// <see cref="MeetingRequestStatuses.SlotHolding"/> is the authority for that set,
+    /// and every overlap check and index filter has to agree with it.</summary>
     public MeetingRequestStatus Status { get; set; } = MeetingRequestStatus.Pending;
 
-    /// <summary>D-716 (item 7, FDS-013 §15 GAP-2) — the hall the admin bound the
-    /// meeting to on Accept. Real FK to <see cref="Hall"/> on the App DB (SetNull —
-    /// a deleted hall clears the binding rather than blocking). Null for a legacy
-    /// accept-without-hall (the meeting is confirmed but not placed in a hall). When
-    /// set, <see cref="SlotStart"/>/<see cref="SlotEnd"/> hold the bound hall
-    /// slot (Option A — the hall slot is the meeting time of record).</summary>
+    /// <summary>The <see cref="Hall"/> an accept bound the meeting to. Null leaves a
+    /// confirmed meeting with no room of its own.</summary>
     public Guid? HallId { get; set; }
 
-    /// <summary>D-716 — the optional meeting table inside <see cref="HallId"/> the
-    /// meeting was placed at. Real FK to <see cref="MeetingTable"/> (SetNull). Null
-    /// when the admin bound a hall but no specific table.</summary>
+    /// <summary>The <see cref="MeetingTable"/> inside <see cref="HallId"/> it was
+    /// placed at. Null when a hall was bound but no particular table.</summary>
     public Guid? MeetingTableId { get; set; }
 
-    /// <summary>D-716 — when the speaker confirmed (or declined) the bound meeting
-    /// via the double-opt-in link. Null while <see cref="MeetingRequestStatus.AwaitingSpeaker"/>;
-    /// set by Slice C's public token flow. Persisted now as an additive column.</summary>
-    public DateTimeOffset? SpeakerDecisionAt { get; set; }
+    /// <summary>When the speaker's own answer arrived, by following the approve or
+    /// reject link emailed to them, or stamped by the admin recording a confirmation
+    /// given verbally. Null while the request sits in AwaitingSpeaker.</summary>
+    public DateTime? SpeakerDecisionAt { get; set; }
 
-    /// <summary>Optional admin response note shown to the requester.</summary>
+    /// <summary>The admin's note on the decision. It is shown to the requester, so it
+    /// is not the place for an internal remark.</summary>
     public string? ResponseNote { get; set; }
 
-    /// <summary>Bi-Meeting rework — once-only dedup stamp for the 15-minute reminder
-    /// worker (mirrors <c>Session.ReminderSent</c>). Null until the reminder fires.</summary>
-    public DateTimeOffset? ReminderSent { get; set; }
+    /// <summary>Stamped by the reminder worker 15 minutes ahead of
+    /// <see cref="SlotStart"/> and committed before the notification goes out, so the
+    /// null check is its once-only guard. The two cannot share a transaction: the
+    /// notification rows live in the Identity database.</summary>
+    public DateTime? ReminderSent { get; set; }
 
-    /// <summary>Bi-Meeting rework — when an operator checked the meeting in at the hall
-    /// (flips it to <see cref="MeetingRequestStatus.Done"/>). Null until checked in.</summary>
-    public DateTimeOffset? CheckedInAt { get; set; }
+    // Stamped when an operator checks the meeting in at the hall, the only route to
+    // Done and one only an Accepted meeting may take. The operator is a bare Guid for
+    // the same reason as RequestedByUserId above.
+    public DateTime? CheckedInAt { get; set; }
 
-    /// <summary>Bi-Meeting rework — the operator who checked it in. Logical FK
-    /// (Identity); no cross-DB relation (D-157).</summary>
     public Guid? CheckedInByUserId { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    /// <summary>When the admin moved the row off Pending. Null while still
-    /// Pending.</summary>
-    public DateTimeOffset? RespondedAt { get; set; }
+    // When the admin moved the row off Pending, and who moved it. Both null while it
+    // is still Pending, and both cleared again, along with the slot and the hall
+    // binding, when a rejected or cancelled request is reopened.
+    public DateTime? RespondedAt { get; set; }
 
-    /// <summary>The admin who responded. Null while still Pending.</summary>
     public Guid? RespondedByUserId { get; set; }
 }

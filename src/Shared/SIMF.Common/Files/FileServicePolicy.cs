@@ -4,7 +4,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Common.Files;
 
-/// <summary>D-568 — how the single download-by-GUID endpoint authorizes a file,
+/// <summary>How the single download-by-GUID endpoint authorizes a file,
 /// derived from the file's own <see cref="FileService"/> (never the URL), so a
 /// guessed/leaked GUID for a private file is still rejected.</summary>
 public enum FileAccessClass
@@ -23,7 +23,7 @@ public enum FileAccessClass
     OwnerOrAdmin = 3,
 }
 
-/// <summary>D-568 — the immutable policy a <see cref="FileService"/> resolves to:
+/// <summary>The immutable policy a <see cref="FileService"/> resolves to:
 /// the single source of every per-file protection (classification, authorization,
 /// encryption-at-rest default, the upload allow-list, retention, deletability and
 /// the owner-entity family). Consumed by both the upload pipeline and the
@@ -41,7 +41,7 @@ public enum FileAccessClass
 /// <param name="OwnerRequired">When true, an upload MUST carry a (server-derived)
 /// owner id and the download owner-check can never silently fall through to admin.</param>
 /// <param name="Retention">Retention period from which RetainUntil is computed;
-/// null = indefinite. (The concrete schedule is open owner decision D-568 #7.)</param>
+/// null = indefinite. (The concrete schedule is still an open owner decision.)</param>
 /// <param name="DeletableDefault">Default for StoredFile.IsDeletable.</param>
 public sealed record FileServicePolicy(
     FileService Service,
@@ -55,7 +55,7 @@ public sealed record FileServicePolicy(
     TimeSpan? Retention,
     bool DeletableDefault);
 
-/// <summary>D-568 — the per-<see cref="FileService"/> policy registry. The single
+/// <summary>The per-<see cref="FileService"/> policy registry. The single
 /// source of truth for file authorization, encryption and the upload allow-list.
 /// <see cref="Resolve"/> hard-fails on an unmapped service (default-deny), and the
 /// guard test asserts every enum value is mapped to a deliberate, reviewed policy
@@ -96,7 +96,7 @@ public static class FileServicePolicies
                 AdminPermission: null, EncryptAtRest: true, Documents, FileOwnerEntityType.SpeakerPresentation,
                 OwnerRequired: false, Retention: null, DeletableDefault: true),
 
-            // EncryptAtRest:false (D-568 Wave C S7): a conference recording is
+            // EncryptAtRest:false: a conference recording is
             // Internal-tier (not PII), and Range/seek streaming (HTTP 206) needs a
             // SEEKABLE plaintext file — AES-GCM is not seekable. This matches the
             // posture of the legacy plaintext recording store it replaces (no
@@ -107,7 +107,7 @@ public static class FileServicePolicies
                 OwnerRequired: false, Retention: null, DeletableDefault: true),
 
             // ── Public video (plaintext, seekable) ───────────────────────────
-            // D-768 — the landing/home hero background video. Public-tier (shown to
+            // The landing/home hero background video. Public-tier (shown to
             // anonymous guests on the app home + the website landing) and, like a
             // recording, EncryptAtRest:false so it stays seekable for Range/HTTP-206
             // streaming (AES-GCM is not seekable). It is public branding content,

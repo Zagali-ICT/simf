@@ -20,7 +20,7 @@ namespace SIMF.Infrastructure.Notifications;
 /// <see cref="ProcessNextPendingAsync"/>. Recipients are resolved at send time —
 /// a session's active seat-holders (App DB) or a broad audience (Identity DB) —
 /// and their emails via <see cref="IIdentityUserDirectory"/>, so no recipient
-/// data is ever copied across the D-157 boundary and the two DBs never share a
+/// data is ever copied across the App/Identity boundary and the two DBs never share a
 /// transaction. Modelled on <c>AdminInvitationService.NotifyVipsAsync</c>, made
 /// durable + paced.
 /// </summary>
@@ -98,7 +98,7 @@ internal sealed class NotificationBroadcastService(
                 "يجب أن يكون نص الرسالة (إنجليزي + عربي) بين 1 و2000 حرفاً.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var broadcast = new NotificationBroadcast
         {
             Id = Guid.NewGuid(),
@@ -119,13 +119,11 @@ internal sealed class NotificationBroadcastService(
 
         var estimate = await CountRecipientsAsync(mode, sessionId, scope, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BroadcastQueued,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"broadcastId={broadcast.Id}; mode={mode}; sessionId={sessionId}; scope={scope}; estimate={estimate}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BroadcastQueued,
+            actorUserId,
+            $"broadcastId={broadcast.Id}; mode={mode}; sessionId={sessionId}; scope={scope}; estimate={estimate}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {Actor} queued broadcast {BroadcastId} (mode={Mode}, estimate={Estimate}).",
@@ -185,7 +183,7 @@ internal sealed class NotificationBroadcastService(
             return false;
         }
 
-        var startedAt = timeProvider.GetUtcNow();
+        var startedAt = timeProvider.SimfNow();
         var claimed = await appDbContext.NotificationBroadcasts
             .Where(row => row.Id == broadcastId && row.Status == BroadcastStatus.Pending)
             .ExecuteUpdateAsync(setters => setters
@@ -212,7 +210,7 @@ internal sealed class NotificationBroadcastService(
             broadcast.Error = ex.Message.Length > 1024 ? ex.Message[..1024] : ex.Message;
             logger.LogError(ex, "Broadcast {BroadcastId} failed during fan-out.", broadcast.Id);
         }
-        broadcast.CompletedAt = timeProvider.GetUtcNow();
+        broadcast.CompletedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -239,7 +237,7 @@ internal sealed class NotificationBroadcastService(
         // (a crash/restart mid-send) — it is never re-picked (only Pending is), so
         // mark it Failed so it surfaces in history instead of sitting Processing
         // forever. ExecuteUpdate — no row is loaded or tracked.
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var cutoff = now - StalledProcessingAge;
         return await appDbContext.NotificationBroadcasts
             .Where(row => row.Status == BroadcastStatus.Processing
@@ -291,11 +289,11 @@ internal sealed class NotificationBroadcastService(
             // queue drop+log what it cannot hold (the in-app rows still land).
             if (!pacingAbandoned)
             {
-                var pacingDeadline = timeProvider.GetUtcNow() + MaxPacingWait;
+                var pacingDeadline = timeProvider.SimfNow() + MaxPacingWait;
                 while (emailQueue.PendingCount > EmailQueueHighWatermark
                     && !cancellationToken.IsCancellationRequested)
                 {
-                    if (timeProvider.GetUtcNow() >= pacingDeadline)
+                    if (timeProvider.SimfNow() >= pacingDeadline)
                     {
                         pacingAbandoned = true;
                         logger.LogWarning(
@@ -357,7 +355,7 @@ internal sealed class NotificationBroadcastService(
     }
 
     // Builds the distinct recipient-user-id query for a target — a single-context
-    // query per branch (no cross-DB JOIN, D-157). Session/EventAttendees read the
+    // query per branch (no cross-DB JOIN). Session/EventAttendees read the
     // App-DB seat reservations; the audience scopes read the Identity-DB users. All
     // reads are AsNoTracking so the Identity context (shared with the dispatcher's
     // writes) is never dirtied by a read. Returned as an IQueryable so the caller

@@ -21,7 +21,7 @@ public sealed class MediaAddEditTests : CpComponentTestBase
         HasImage: false, HasThumbnail: false,
         Url: kind == MediaKind.Video ? "https://youtu.be/abc" : null,
         DisplayOrder: 3, IsActive: true,
-        CreatedAt: DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        CreatedAt: DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Add_mode_shows_the_save_first_hint_for_an_image()

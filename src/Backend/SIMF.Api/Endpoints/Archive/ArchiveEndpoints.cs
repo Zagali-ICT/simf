@@ -1,16 +1,16 @@
 // Tests: SIMF.Api.Tests/ArchiveTests.cs, SIMF.Api.Tests/AdminArchiveTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Archive.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Archive;
 
 namespace SIMF.Api.Endpoints.Archive;
 
-/// <summary>D-199 (Mockup screen 24) — public anonymous list of active
+/// <summary>Public anonymous list of active
 /// archive editions. Returns an empty list when the archive-visibility
-/// operations toggle (D-166) is off; the gate lives in the service.</summary>
+/// operations toggle is off; the gate lives in the service.</summary>
 public sealed class ListPublicArchiveEndpoint(IPublicArchiveService service)
     : EndpointWithoutRequest<ApiResult<PublicArchive>>
 {
@@ -28,8 +28,8 @@ public sealed class ListPublicArchiveEndpoint(IPublicArchiveService service)
 
 public sealed class GetPublicArchiveEditionRoute { public Guid Id { get; set; } }
 
-/// <summary>§9 (Mockup screen 24-01 "تفاصيل النسخة") — public anonymous detail
-/// for one past edition. Gated by the archive-visibility toggle (D-166): 404
+/// <summary>The "تفاصيل النسخة" screen — public anonymous detail
+/// for one past edition. Gated by the archive-visibility toggle: 404
 /// when the archive is hidden, the edition is missing, or it is inactive.</summary>
 public sealed class GetPublicArchiveEditionEndpoint(IPublicArchiveService service)
     : Endpoint<GetPublicArchiveEditionRoute, ApiResult<PublicArchiveEditionDetail>>
@@ -109,11 +109,7 @@ public sealed class CreateArchiveEditionEndpoint(IAdminArchiveService service)
     public override async Task HandleAsync(
         CreateArchiveEditionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -139,11 +135,7 @@ public sealed class UpdateArchiveEditionEndpoint(IAdminArchiveService service)
     public override async Task HandleAsync(
         UpdateArchiveEditionRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -166,21 +158,17 @@ public sealed class DeleteArchiveEditionEndpoint(IAdminArchiveService service)
     public override async Task HandleAsync(
         DeleteArchiveEditionRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }
 
-/// <summary>D-275 (§9) — "make this year history": one-click snapshot of the
+/// <summary>"Make this year history": one-click snapshot of the
 /// current live event into a new archive edition. Year + bilingual title are
 /// generated, and the counters (attendees = distinct gate-scan arrivals,
 /// sessions, speakers) are computed server-side. The optional
-/// <c>MakeVisible</c> flips the archive-visibility toggle (D-166) on.</summary>
+/// <c>MakeVisible</c> flips the archive-visibility toggle on.</summary>
 public sealed class SnapshotCurrentArchiveEndpoint(IAdminArchiveService service)
     : Endpoint<SnapshotCurrentEditionRequest, ApiResult<AdminArchiveEditionDetail>>
 {
@@ -196,11 +184,7 @@ public sealed class SnapshotCurrentArchiveEndpoint(IAdminArchiveService service)
     public override async Task HandleAsync(
         SnapshotCurrentEditionRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(
             await service.SnapshotCurrentAsync(actorId, req, ct)), ct);
     }

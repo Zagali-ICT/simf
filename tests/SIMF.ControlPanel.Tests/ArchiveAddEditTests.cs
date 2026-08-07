@@ -14,7 +14,7 @@ public sealed class ArchiveAddEditTests : CpComponentTestBase
     private static AdminArchiveEditionSummary Summary() => new(
         Guid.NewGuid(), 2024, "SIMF 2024", "Ø³ÙŠÙ…Ù 2024",
         "Summary EN", "Summary AR", 1200, 30, 18,
-        "/media/archive/2024.jpg", IsActive: true, DateTimeOffset.UnixEpoch,
+        "/media/archive/2024.jpg", IsActive: true, DateTime.UnixEpoch,
         false, // HasCover (D-357)
         "Riyadh", "Ø§Ù„Ø±ÙŠØ§Ø¶", "Mar 2024", "Ù…Ø§Ø±Ø³ 2024");
 
@@ -40,7 +40,7 @@ public sealed class ArchiveAddEditTests : CpComponentTestBase
         JSInterop.Mode = JSRuntimeMode.Loose;
         var created = new AdminArchiveEditionDetail(
             Guid.NewGuid(), 2025, "SIMF 2025", "Ø³ÙŠÙ…Ù 2025",
-            null, null, 0, 0, 0, null, true, DateTimeOffset.UnixEpoch, null);
+            null, null, 0, 0, 0, null, true, DateTime.UnixEpoch, null);
         var handler = JSInterop.Setup<ApiResult<AdminArchiveEditionDetail>>(
             "simfAccount.postJson", _ => true)
             .SetResult(ApiResult<AdminArchiveEditionDetail>.Ok(created));

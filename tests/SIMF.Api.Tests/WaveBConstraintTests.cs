@@ -8,6 +8,7 @@ using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -61,7 +62,7 @@ public sealed class WaveBConstraintTests : IClassFixture<SimfApiFactory>
             NameArabic = "المتحدث",
         });
 
-        var start = DateTimeOffset.UtcNow;
+        var start = SimfClock.Now;
 
         // End <= Start violates CK_SpeakerAvailabilityWindows_TimeWindow.
         await Assert.ThrowsAsync<DbUpdateException>(() => AddAndSaveAsync(new SpeakerAvailabilityWindow

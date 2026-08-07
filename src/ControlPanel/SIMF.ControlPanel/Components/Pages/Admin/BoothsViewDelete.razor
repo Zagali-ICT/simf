@@ -1,4 +1,4 @@
-@* D-353 — reusable Booth View/Delete form, hosted by CrudShell (popup or full
+@* Reusable Booth View/Delete form, hosted by CrudShell (popup or full
    page) from BoothsList. Inherits CrudViewDeleteFormBase so it exposes the
    standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show; when IsDelete=true a Delete button appears and a
@@ -34,7 +34,7 @@
         <dd>@Initial.NameArabic</dd>
         <dt>@L["Admin.Booths.Col.Exhibitor"]</dt>
         <dd>@ExhibitorName(Initial.ExhibitorId)</dd>
-        @* D-673 — exhibitor-owned, read-only (resolved from the linked
+        @* Exhibitor-owned, read-only (resolved from the linked
            Exhibitor / its Contact); not editable on the booth form. *@
         <dt>@L["Admin.Booths.Field.Website"]</dt>
         <dd>@(string.IsNullOrWhiteSpace(Initial.Website) ? "—" : Initial.Website)</dd>
@@ -90,5 +90,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
-                 OnCancel="@(() => _confirming = false)" />
+                 OnCancel="@(() => _confirming = false)" 
+                 Permission="@PermissionCatalog.Booths.Delete"/>
 }

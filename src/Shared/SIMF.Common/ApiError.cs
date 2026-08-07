@@ -1,15 +1,13 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// The error detail carried by a failed <see cref="ApiResult{T}"/>
-/// (SIMF-API-001 section 7).
+/// The error detail carried by a failed <see cref="ApiResult{T}"/>.
 /// </summary>
 /// <remarks>
 /// Every SIMF error carries the message in both English and Arabic — the
-/// client picks the one its current culture asks for. Decision D-030
-/// (2026-05-23): the API returns both languages on every error, mandated
-/// by the customer (myComment item #14), reversing the earlier
-/// one-language-per-Accept-Language stance of SIMF-API-001 section 7.
+/// client picks the one its current culture asks for. Returning both
+/// languages on every error is a customer requirement, reversing an earlier
+/// one-language-per-Accept-Language stance.
 /// </remarks>
 public sealed class ApiError
 {
@@ -36,12 +34,11 @@ public sealed class ApiError
 /// <summary>
 /// Pairs an HTTP status with an <see cref="ApiResult{T}"/> body so a proxy
 /// can forward the upstream status verbatim — a 401 / 423 / 429 from the
-/// API stays a 401 / 423 / 429 to the browser, not a generic 400 (5-agent
-/// review SEV-1.3 / D-037 follow-up).
+/// API stays a 401 / 423 / 429 to the browser, not a generic 400.
 /// </summary>
 public sealed record ApiCallResult<T>(int StatusCode, ApiResult<T> Body);
 
-/// <summary>One field-level error entry (SIMF-API-001 section 7.1).</summary>
+/// <summary>One field-level error entry.</summary>
 public sealed class ApiErrorDetail
 {
     /// <summary>The request body field the error applies to.</summary>

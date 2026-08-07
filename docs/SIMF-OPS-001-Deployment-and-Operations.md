@@ -108,12 +108,59 @@ Configuration follows SIMF-SES-001 section 4.4.
   environment variables, set by a per-service `set-env-<service>.ps1` script.
 - The `set-env-<service>.ps1` committed to the repository is a placeholder
   template with empty values; the real secret values are never committed.
+- **The API script is tracked under a different name.** Its filled form carries
+  every production secret, so the repository tracks
+  `deploy/set-env-api.template.ps1` (all values empty) while `.gitignore`
+  deliberately ignores `deploy/set-env-api.ps1`, the filled overlay created on
+  the server with
+  `Copy-Item deploy\set-env-api.template.ps1 deploy\set-env-api.ps1`. **Never
+  remove that ignore entry to make the filled script trackable — that commits
+  live production credentials.** The Control Panel and Website scripts
+  (`set-env-cp.ps1`, `set-env-web.ps1`) hold only non-secret shared config, so
+  they stay tracked under their own names.
+- Every value in the API template is annotated with what breaks when it is
+  missing. Three of them are **Production boot gates** — the API refuses to
+  start without `SIMF_FileStorage__EncryptionKey` (the centralized file-store
+  KEK, D-568), `SIMF_Storage__UserIdDocumentEncryptionKey` (the PII column key,
+  NCA A2-10) or `SIMF_Ai__PromptHash__Secret` (the AI audit HMAC secret). A
+  fourth, `SIMF_Storage__AvatarBase`, is validated with `ValidateOnStart`, so
+  the host fails to build without it.
+- First-time provisioning uses the runbook `deploy/configure-prod-env.ps1`
+  (§B.3): it generates the missing base64 32-byte AES keys with
+  `System.Security.Cryptography.RandomNumberGenerator` without printing them,
+  **never overwrites an existing encryption key** (rotating the file-store KEK
+  makes every stored file undecryptable — it warns and skips, and there is no
+  `-Force`), prompts for the non-generatable values without echoing them,
+  verifies by reporting each key's name and set/missing state only, then
+  restarts the IIS app pools and health-checks the API. It is safe to re-run,
+  and `-VerifyOnly` audits without changing anything.
 - Variables use the ASP.NET Core double-underscore convention with a `SIMF_`
   prefix (`SIMF_ConnectionStrings__SimfAppDb`). Each host registers
   `builder.Configuration.AddEnvironmentVariables("SIMF_")`, which strips the
   prefix at bind time so the value lands on `ConnectionStrings:SimfAppDb`
   (D-355). The prefix keeps SIMF's variables from colliding with other apps' on
   a shared host.
+
+### 6.0 Meeting confirmation links (`SIMF_MeetingLinks__PublicWebBaseUrl`) — REQUIRED
+
+The speaker double-opt-in flow (D-717) emails the speaker an Approve / Decline link
+that lands on the public Website page `{PublicWebBaseUrl}/meeting/confirm?token=…`.
+The value is bound from `MeetingLinks:PublicWebBaseUrl` and overridden per
+environment with the Machine-scope variable:
+
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `SIMF_MeetingLinks__PublicWebBaseUrl` | the public Website origin, e.g. `https://simf.zagali-ict.com` | no trailing slash needed; trimmed when the link is built |
+| `SIMF_MeetingLinks__TokenTtlHours` | `72` (default) | link lifetime, §15.7 |
+
+`appsettings.json` ships the key **empty**; `appsettings.Development.json` defaults it
+to the Website's local origin (`http://localhost:5115`). **It must be set explicitly in
+QA and in Production.** When it is empty the Control Panel's **Approve** and **Resend
+speaker confirmation** actions now fail with `MEETING_LINKS_NOT_CONFIGURED` (409) rather
+than silently parking the request in `AwaitingSpeaker` with a confirmation email that was
+never sent. The same guard refuses `SPEAKER_MEETING_CONTACT_MISSING` (409) when the
+speaker has no `Email` on file — add the speaker's email in `/admin/speakers`, or use
+**Confirm** when the admin already has the speaker's verbal agreement.
 
 ### 6.1 AI provider go-live (turning the AI features from echo to real)
 

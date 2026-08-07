@@ -203,6 +203,12 @@ window.simfAccount = {
 
     // POSTs a JSON body to a binary endpoint and saves the response as a
     // file download (used by the SimfDataGrid Export, decision D-044 b).
+    //
+    // §6.16 (F-U5-005) — returns null when the download starts, and an
+    // ApiResult-shaped FAILURE envelope when it does not, so the calling page
+    // can toast it. This used to `return` silently on any non-OK status: the
+    // admin clicked Export, no file arrived, and nothing on the page changed —
+    // indistinguishable from a dead button, on every list page that has one.
     async downloadXlsx(url, body) {
         const response = await fetch(url, {
             method: 'POST',
@@ -214,9 +220,29 @@ window.simfAccount = {
         // through it, so the session-expired redirect is repeated here.
         if (response.status === 401) {
             window.location.assign('/login');
-            return;
+            return await new Promise(() => { });
         }
-        if (!response.ok) return;
+        if (!response.ok) {
+            // The failure body is the API's own bilingual ApiResult error; a
+            // framework error page is turned into BAD_RESPONSE by the shared
+            // reader. An empty body carries no error at all, so synthesize one
+            // rather than hand the caller a null that reads as success.
+            const envelope = await simfReadEnvelope(response);
+            if (envelope && envelope.error) {
+                return { ...envelope, success: false };
+            }
+            return {
+                success: false,
+                data: null,
+                error: {
+                    code: 'EXPORT_FAILED',
+                    message: 'The export could not be generated (HTTP ' + response.status + ').',
+                    messageArabic: 'تعذر إنشاء ملف التصدير (HTTP ' + response.status + ').',
+                    details: [],
+                },
+                meta: null,
+            };
+        }
         const blob = await response.blob();
 
         // D-045 H1: tightened filename parsing — accept only filename-safe
@@ -236,6 +262,9 @@ window.simfAccount = {
         // D-045 H1: defer revocation so slow disks have time to start the
         // download before the blob URL is reclaimed.
         setTimeout(() => URL.revokeObjectURL(url2), 60_000);
+        // §6.16 (F-U5-005) — null == the download started. Explicit, so the
+        // caller's `is { Success: false }` check reads as success.
+        return null;
     },
 };
 

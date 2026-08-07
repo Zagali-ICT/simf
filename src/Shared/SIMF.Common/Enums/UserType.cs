@@ -4,8 +4,8 @@ using SIMF.Common.Resources.Enums;
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// The hardcoded SIMF user type. D-186 collapsed the previous three-way
-/// (Visitor / Other / Admin) into a two-way (Visitor / Admin):
+/// The hardcoded SIMF user type. The previous three-way
+/// (Visitor / Other / Admin) was collapsed into a two-way (Visitor / Admin):
 ///
 /// <list type="bullet">
 ///   <item><see cref="Visitor"/> — every non-administrator account.
@@ -21,11 +21,11 @@ namespace SIMF.Common.Enums;
 ///     today; future fine-grained roles plug in here).</item>
 /// </list>
 ///
-/// <para><b>D-186 freeze-break note.</b> The previous enum had
+/// <para><b>Reserved value.</b> The previous enum had
 /// <c>Other = 1</c> between <see cref="Visitor"/> and <see cref="Admin"/>.
 /// The integer 1 is now reserved — Admin stays at 2 so every existing
 /// Admin row in the DB keeps its persisted column value. A data
-/// migration converts every pre-D-186 <c>UserType = 1</c> (Other) row
+/// migration converts every legacy <c>UserType = 1</c> (Other) row
 /// to <c>UserType = 0</c> (Visitor) and stamps <c>IsVisitor = false</c>
 /// on the linked <c>ProfileType</c> row.</para>
 ///
@@ -42,7 +42,7 @@ public enum UserType
     [Display(Description = nameof(ResUserType.Visitor), ResourceType = typeof(ResUserType))]
     Visitor = 0,
 
-    // 1 is reserved — used to be `Other` (D-186 removal).
+    // 1 is reserved — used to be `Other`.
 
     /// <summary>Control Panel administrator — RBAC-gated.</summary>
     [Display(Description = nameof(ResUserType.Admin), ResourceType = typeof(ResUserType))]

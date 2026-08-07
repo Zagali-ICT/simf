@@ -6,108 +6,91 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Files;
 
 /// <summary>
-/// D-568 — the single, unified file record for the whole system: <b>one table,
-/// one upload API, one download-by-GUID API</b>. Every uploaded or linked file —
-/// avatar, ID document, VIP photo, media-gallery image, speaker photo, speaker
-/// presentation, session recording, every logo, news / archive / banner image —
-/// is one row here, distinguished only by metadata. It supersedes the seven
-/// bespoke filesystem stores and the D-357 <c>Asset</c> store.
+/// The one file record for the whole system: one table, one upload API, one
+/// download-by-GUID API. Avatars, ID documents, speaker photos, presentations,
+/// session recordings, logos and banners are all rows here, told apart only by
+/// their metadata. There is no second file store.
 ///
-/// <para><b>Bytes live OUTSIDE the row</b> (D-90): an
-/// <see cref="FileSourceType.Upload"/> file stores its bytes on disk under
-/// <see cref="StorageKey"/> (encrypted at rest when <see cref="IsEncrypted"/>);
-/// an <see cref="FileSourceType.ExternalLink"/> file references
-/// <see cref="ExternalUrl"/> and stores no bytes.</para>
+/// <para><b>The bytes are not in the row</b>: they sit on disk under
+/// <see cref="StorageKey"/>, or at somebody else's <see cref="ExternalUrl"/>.</para>
 ///
-/// <para><b>No cross-database / cross-table FK</b> (D-157):
-/// <see cref="OwnerEntityId"/> is a polymorphic <b>bare Guid</b> (its meaning is
-/// fixed by <see cref="OwnerEntityType"/>), resolved on read; the uploader is the
-/// inherited <see cref="BaseAuditEntity.CreatedBy"/> (a bare Guid to
-/// <c>SimfUser.Id</c> in the Identity DB). The actor's display name is captured
-/// in <c>OperationLog</c> at write time, never copied onto this live row.</para>
+/// <para>The uploader is the inherited <see cref="BaseAuditEntity.CreatedBy"/>, a
+/// bare Guid rather than a navigation because that user lives in the Identity
+/// database and no foreign key crosses the two. Their display name is captured in
+/// <c>OperationLog</c> at write time, never copied onto this live row.</para>
 ///
-/// <para>Soft-deleted via the inherited <see cref="BaseAuditEntity.IsActive"/> /
-/// <see cref="BaseAuditEntity.Deactivate"/>. <see cref="IsDeletable"/> is a
-/// separate gate: a legally-retained file (e.g. an ID document under a retention
-/// hold) cannot be deleted until <see cref="RetainUntil"/> passes. All
-/// server-controlled fields (<see cref="StorageKey"/>, <see cref="IsEncrypted"/>,
-/// <see cref="SensitivityTier"/>, owner) are set by the file service from the
-/// resolved <c>FileServicePolicy</c> — never from client input.</para>
+/// <para>Every server-controlled field, <see cref="StorageKey"/> and
+/// <see cref="IsEncrypted"/> and <see cref="SensitivityTier"/> and the owner among
+/// them, comes from the file's resolved <c>FileServicePolicy</c> and never from
+/// client input. Read that policy before changing one.</para>
 /// </summary>
 public sealed class StoredFile : BaseAuditEntity
 {
-    /// <summary>The business category — the one dimension that drives access
-    /// control, encryption, the upload allow-list, retention and disposal.</summary>
+    /// <summary>The single dimension that decides access control, encryption at
+    /// rest, the upload allow-list, retention and disposal.</summary>
     public FileService Service { get; set; }
 
-    /// <summary>Data-classification tier, derived from <see cref="Service"/> at
-    /// write time and persisted so the classification is auditable.</summary>
+    /// <summary>Derived from <see cref="Service"/> at write time, not chosen, and
+    /// persisted so the tier a file was stored under survives a policy change.</summary>
     public FileSensitivityTier SensitivityTier { get; set; }
 
-    /// <summary>The media kind — drives the per-type upload allow-list.</summary>
+    /// <summary>Checked against the per-service upload allow-list.</summary>
     public FileType FileType { get; set; }
 
-    /// <summary>Uploaded bytes vs an external URL.</summary>
     public FileSourceType SourceType { get; set; }
 
-    /// <summary>True when the on-disk bytes are envelope AES-256-GCM encrypted.
-    /// Server-set from the <c>FileServicePolicy</c>; never client-downgradable.</summary>
+    /// <summary>True when the bytes on disk are AES-256-GCM envelope encrypted.
+    /// Server-set from the service policy; a client cannot downgrade it.</summary>
     public bool IsEncrypted { get; set; }
 
-    /// <summary>On-disk blob layout discriminator: <c>0</c> = plaintext / legacy
-    /// single-key format; <c>1</c> = envelope format. The read path selects the
-    /// decryptor by this value.</summary>
+    /// <summary>Which on-disk blob layout was written: 0 plaintext, 1 the current
+    /// envelope format. Persisted so a later format change can still read blobs
+    /// written under the old one.</summary>
     public byte CipherFormatVersion { get; set; }
 
-    /// <summary>Server-built relative key <c>{Service}/{Id:N}.{ext}</c> under the
-    /// file-storage root — set when <see cref="SourceType"/> is
-    /// <see cref="FileSourceType.Upload"/>. Never derived from client input.</summary>
+    // Exactly one of these is set, according to SourceType; switching a row
+    // between the modes clears the other. StorageKey is built by the server as
+    // {Service}/{Id:N}.{ext} beneath the storage root and takes nothing from the
+    // client, so an uploaded name cannot steer a write out of the root.
     public string? StorageKey { get; set; }
-
-    /// <summary>The external URL — set when <see cref="SourceType"/> is
-    /// <see cref="FileSourceType.ExternalLink"/>.</summary>
     public string? ExternalUrl { get; set; }
 
-    /// <summary>The sanitized original file name, for display / download only
-    /// (never used to build <see cref="StorageKey"/>).</summary>
+    /// <summary>The sanitized name the file arrived with, for display and the
+    /// download filename only. It never feeds <see cref="StorageKey"/>.</summary>
     public string? OriginalFileName { get; set; }
 
-    /// <summary>Server-detected MIME type of the stored bytes (Upload only).</summary>
+    // Upload-only, all null for an external link. ContentType is server-detected
+    // from the bytes, not the client's declaration; SizeBytes and the hex Sha256
+    // describe the PLAINTEXT, so an encrypted blob on disk is larger and hashes
+    // differently. The hash is re-checked on private download and by the sweep.
     public string? ContentType { get; set; }
-
-    /// <summary>Size of the plaintext bytes, in bytes (Upload only).</summary>
     public long? SizeBytes { get; set; }
-
-    /// <summary>Hex SHA-256 of the plaintext at ingest — integrity verification
-    /// on private download and on the scheduled integrity sweep (Upload only).</summary>
     public string? Sha256 { get; set; }
 
-    /// <summary>Whether deletion is permitted. <c>false</c> blocks delete while a
-    /// retention hold is in force; the delete endpoint returns 409.</summary>
+    // Retention and disposal. IsDeletable false holds the file against deletion
+    // while a legal hold is in force, and the delete endpoint answers 409.
+    // RetainUntil comes from the service's retention period at write time and
+    // drives the secure-erase sweep; null means keep indefinitely, not expired.
+    // SecureDestroyed marks the bytes going for good, by crypto-shredding the key
+    // or overwriting the plaintext, and is what separates a securely erased row
+    // from a merely soft-deleted one.
     public bool IsDeletable { get; set; } = true;
+    public DateTime? RetainUntil { get; set; }
+    public DateTime? SecureDestroyed { get; set; }
 
-    /// <summary>End-of-retention timestamp computed from the <see cref="Service"/>
-    /// retention policy at write time; drives the secure-erase sweep. Null = indefinite.</summary>
-    public DateTimeOffset? RetainUntil { get; set; }
-
-    /// <summary>Set when the bytes / key were crypto-shredded (encrypted) or
-    /// securely overwritten (plaintext); distinguishes secure-erased from soft-deleted.</summary>
-    public DateTimeOffset? SecureDestroyed { get; set; }
-
-    /// <summary>Which entity family this file belongs to (fixes the meaning of
-    /// <see cref="OwnerEntityId"/>). <see cref="FileOwnerEntityType.None"/> when standalone.</summary>
+    // OwnerEntityId is a bare Guid with no foreign key because it is polymorphic:
+    // OwnerEntityType fixes which table it points into, and one column cannot be
+    // constrained to a dozen of them. None means the file is standalone and the id
+    // is null. For the owner-scoped services (Avatar, IdDocument, VipPhoto) the id
+    // is mandatory and the server derives it from the authenticated subject rather
+    // than accepting it from the request; the file service enforces that.
     public FileOwnerEntityType OwnerEntityType { get; set; } = FileOwnerEntityType.None;
-
-    /// <summary>The owning entity's id — a polymorphic <b>bare Guid</b> logical
-    /// reference with no DB FK (D-157), resolved on read. For owner-scoped
-    /// services (<see cref="FileService.Avatar"/> / <see cref="FileService.IdDocument"/>
-    /// / <see cref="FileService.VipPhoto"/>) this is non-null and server-derived
-    /// from the authenticated subject; the file service enforces that invariant.</summary>
     public Guid? OwnerEntityId { get; set; }
 
-    /// <summary>Stamp the file as securely destroyed (DEK crypto-shredded or bytes
-    /// overwritten). Idempotent.</summary>
-    public void MarkSecurelyDestroyed(DateTimeOffset whenUtc)
+    /// <summary>Stamps the moment the bytes were destroyed and soft-deletes the
+    /// row with it. The timestamp is written once, so a repeated erase keeps the
+    /// original moment rather than moving it forward.</summary>
+    public void MarkSecurelyDestroyed(DateTime whenUtc)
     {
         SecureDestroyed ??= whenUtc;
         IsActive = false;

@@ -8,9 +8,9 @@ using SIMF.Contracts.Sessions;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/bookings/export</c> — the D-356 grid export for the
-/// booking monitor (#6/#17). <b>Export only:</b> bookings are created by visitors
-/// in the app and auto-confirm (there is no approval step, #6) — there is no bulk
+/// <c>POST /api/v1/admin/bookings/export</c> — the grid export for the
+/// booking monitor. <b>Export only:</b> bookings are created by visitors
+/// in the app and auto-confirm (there is no approval step) — there is no bulk
 /// import, so no generic import endpoint is added here. Columns mirror the CP grid
 /// (session + start + seat + attendee + booked-at); the seat is split into its row
 /// label + number and the seat-kind enum is resolved to its text. Lists via the
@@ -32,12 +32,12 @@ public sealed class ExportBookingsEndpoint(ISeatReservationService service, IGri
     [
         new("SessionTitle", row => row.SessionTitle),
         new("SessionTitleArabic", row => row.SessionTitleArabic),
-        new("SessionStart", row => row.SessionStart.UtcDateTime),
+        new("SessionStart", row => row.SessionStart),
         new("Row", row => row.RowLabel),
         new("Seat", row => row.SeatNumber),
         new("Kind", row => row.Kind.ToString()),
         new("Attendee", row => row.AttendeeName),
-        new("BookedAt", row => row.CreatedAt.UtcDateTime),
+        new("BookedAt", row => row.CreatedAt),
     ];
 
     protected override async Task<IReadOnlyList<ActiveBookingRow>> ListAsync(

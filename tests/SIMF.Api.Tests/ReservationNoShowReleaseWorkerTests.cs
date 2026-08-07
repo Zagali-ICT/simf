@@ -8,6 +8,7 @@ using SIMF.Domain.Programme;
 using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -33,7 +34,7 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
     [Fact]
     public async Task Releases_only_past_deadline_no_show_holds_booked_ahead()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var (sessionId, hallId) = await SeedSessionAsync();
 
         // (a) Approved, deadline passed, booked ahead, NO check-in → released.
@@ -103,7 +104,7 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
     [Fact]
     public async Task Notifies_the_freed_no_show_holder()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var (sessionId, _) = await SeedSessionAsync();
         // A real Identity user — the Notification row FKs to the user, so a random
         // id would make the (swallowed) dispatch fail silently.
@@ -160,7 +161,7 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
             NameArabic = "قاعة",
             Capacity = 10,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -170,10 +171,10 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
             Title = "Live",
             TitleArabic = "مباشر",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddMinutes(2),
-            End = DateTimeOffset.UtcNow.AddHours(2),
+            Start = SimfClock.Now.AddMinutes(2),
+            End = SimfClock.Now.AddHours(2),
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -182,8 +183,8 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
 
     private async Task<Guid> SeedReservationAsync(
         Guid sessionId, string? row, int? seat,
-        BookingStatus status, DateTimeOffset createdAt, DateTimeOffset? expires,
-        Guid? reservedForUserId = default, DateTimeOffset? releasedAt = null,
+        BookingStatus status, DateTime createdAt, DateTime? expires,
+        Guid? reservedForUserId = default, DateTime? releasedAt = null,
         SeatReservationKind kind = SeatReservationKind.UserBooking)
     {
         using var scope = _factory.Services.CreateScope();
@@ -211,7 +212,7 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
     }
 
     private async Task SeedCheckInAsync(
-        Guid sessionId, Guid hallId, Guid userId, DateTimeOffset enter)
+        Guid sessionId, Guid hallId, Guid userId, DateTime enter)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -223,7 +224,7 @@ public sealed class ReservationNoShowReleaseWorkerTests : IClassFixture<SimfApiF
             UserId = userId,
             Method = AttendanceMethod.QrScan,
             Enter = enter,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }

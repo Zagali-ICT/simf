@@ -3,7 +3,7 @@ using SIMF.Contracts.Recommendations;
 namespace SIMF.Application.Recommendations.Abstractions;
 
 /// <summary>
-/// D-170 (gap doc G9, PDF §2.8) — "Meet People Like You" matcher.
+/// The "Meet People Like You" matcher.
 /// Read-only service over the shared <see cref="SIMF.Domain.Profiles.UserProfile.Interests"/>
 /// M-to-M. Ranks candidate profiles by Jaccard similarity over their
 /// interest sets, with a small same-ProfileType bonus to break ties.
@@ -18,5 +18,15 @@ public interface IRecommendationService
     Task<RecommendationsResponse> MeetPeopleLikeYouAsync(
         Guid callerUserId,
         int take,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>FR-803 — only the candidates whose normalised match score reaches
+    /// the stated <b>80%</b> threshold. The ordinary
+    /// <see cref="MeetPeopleLikeYouAsync"/> browse read is unchanged (it still
+    /// returns the best N regardless of strength, which is right for a browse
+    /// surface); this is the stricter set the auto-recommendation push is allowed
+    /// to interrupt someone with. Empty when nothing reaches the bar.</summary>
+    Task<RecommendationsResponse> StrongMatchesAsync(
+        Guid callerUserId,
         CancellationToken cancellationToken = default);
 }

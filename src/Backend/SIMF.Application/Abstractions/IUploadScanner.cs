@@ -56,7 +56,7 @@ public static class UploadScannerExtensions
         }
     }
 
-    /// <summary>D-568 / D-494 — the fail-closed variant used by the centralized
+    /// <summary>The fail-closed variant used by the centralized
     /// file pipeline. Rejects an infected file (400) and, when
     /// <paramref name="failClosed"/> is true, also rejects a
     /// <see cref="UploadScanVerdict.Skipped"/> / scanner-unavailable verdict (409)

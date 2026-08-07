@@ -5,11 +5,10 @@ using SIMF.Domain.Programme;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
-/// D-134 Sprint B — Theme entity configuration (D-135 freeze-lift; first
-/// new app-side table). EF HasMaxLength is the length source of truth;
-/// server-side required + length validation is enforced in the admin service
-/// layer (AdminThemeService, bilingual coded errors), not via FluentValidation
-/// (SIMF-SES-001 §7 alignment). Unique index on <c>Code</c>.
+/// Theme entity configuration — the first new app-side table. EF HasMaxLength
+/// is the length source of truth; server-side required + length validation is
+/// enforced in the admin service layer (AdminThemeService, bilingual coded
+/// errors), not via FluentValidation. Unique index on <c>Code</c>.
 /// </summary>
 internal sealed class ThemeConfiguration : IEntityTypeConfiguration<Theme>
 {

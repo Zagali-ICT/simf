@@ -1,7 +1,7 @@
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// D-148 — the stable denial reason emitted by the gate constraint engine
+/// The stable denial reason emitted by the gate constraint engine
 /// (SIMF-FDS-003 §5.6.1, SIMF-API-GATES-001 §8.2). Each value is wire-stable
 /// and once published does not change meaning. Localised display strings
 /// live in <c>Strings.resx</c> / <c>Strings.ar.resx</c> and are picked by the

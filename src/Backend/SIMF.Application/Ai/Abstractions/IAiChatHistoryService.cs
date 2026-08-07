@@ -2,10 +2,10 @@ using SIMF.Contracts.Ai;
 
 namespace SIMF.Application.Ai.Abstractions;
 
-/// <summary>Per-user AI-assistant chat history (Page 036). Persists the
+/// <summary>Per-user AI-assistant chat history. Persists the
 /// visitor's conversation so it survives navigation / app-restart and gives the
 /// assistant short-term memory of earlier turns. Stored in SIMF_App keyed by a
-/// bare Guid user id (D-157 — no cross-DB FK to Identity).</summary>
+/// bare Guid user id — there is no cross-DB FK to Identity.</summary>
 public interface IAiChatHistoryService
 {
     /// <summary>The visitor's full saved transcript, oldest-first.</summary>

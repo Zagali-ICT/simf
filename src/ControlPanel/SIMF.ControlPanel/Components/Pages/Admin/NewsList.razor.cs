@@ -1,17 +1,9 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
 using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
 using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -42,7 +34,7 @@ public partial class NewsList
 
     // The article's image thumbnail URL, or null so SimfIdentityCell shows an
     // initials tile (never a broken image). Only when HasImage — the /assets proxy
-    // resolves the NewsImage StoredFile for this article (D-357).
+    // resolves the NewsImage StoredFile for this article.
     private static string? ImageUrl(AdminNewsSummary row) =>
         row.HasImage ? CpAssetUrls.AdminImage(nameof(AssetCategory.NewsImage), row.Id) : null;
 
@@ -160,7 +152,7 @@ public partial class NewsList
         _target = null;
     }
 
-    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    // Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminNewsSummary> selected) =>
         _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
 

@@ -12,9 +12,17 @@
 > **Page permission:** `@attribute [RequirePermission(PermissionCatalog.Others.View)]`.
 > The `CpNavigation` item `Module.AdminOthersPending` sets the same `RequiredPermission: PermissionCatalog.Others.View`.
 > Approve / reject actions are enforced **server-side** on their own codes — see the
-> permission map at the bottom of §Coverage matrix. The page does **not** wrap the
-> Approve/Reject buttons in `<AuthorizedAction>`; the gate is the API policy, so the
-> cross-permission scenario below asserts at the network layer.
+> permission map at the bottom of §Coverage matrix. **D-830 added the matching CP gate**,
+> and **D-834 aligned the two halves onto one pair of codes**: every button on this page
+> acts on a partner account, so every one of them answers to `Others.Approve` /
+> `Others.Reject`. The toolbar's bulk pair calls `/admin/others/bulk-approve|bulk-reject`
+> and is gated through the grid's `ApprovePermission` / `RejectPermission`; the per-row
+> pair calls `/admin/others/{id}/approve|reject` and is wrapped in `<AuthorizedAction>`
+> on the same two codes. D-830 mirrored a per-row gate of `Admins.Approve` /
+> `Admins.Reject`, which the owner ruled a bug: `ApproveOtherEndpoint` had kept the
+> policy line it was copy-pasted with, against a permission catalogue that had specified
+> `Others.*` for both routes all along. The cross-permission scenario below still asserts
+> at the network layer, which remains the security boundary.
 
 ## Coverage matrix
 
@@ -36,6 +44,8 @@
 | E2E-OPN-014 | RTL / Arabic render — page + reject modal mirror to RTL | i18n | P1 | _to author_ |
 | E2E-OPN-015 | Per-column filter narrows the grid (`Filters["email"]` / `Filters["displayName"]`, Skip reset, debounced) | happy | P1 | _to author_ |
 | E2E-OPN-016 | Column sort toggles (`Sort`/`SortDescending` on email + displayName; Created not sortable) | happy | P2 | _to author_ |
+| E2E-OPN-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-OPN-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 **Server-side permission map (asserted by E2E-OPN-008 / the `PermissionEnforcementTests`):**
 
@@ -43,8 +53,8 @@
 |--------|-----------|-----------------|
 | Load queue | `POST /account/api/admin/others/pending/list` | `Others.View` (page gate) |
 | View profile | `GET /account/api/admin/others/{id}/profile-for-approval` | `Others.View` |
-| Approve | `POST /account/api/admin/others/{id}/approve` | `Admins.Approve` |
-| Reject | `POST /account/api/admin/others/{id}/reject` | `Admins.Reject` |
+| Approve | `POST /account/api/admin/others/{id}/approve` | `Others.Approve` (D-834) |
+| Reject | `POST /account/api/admin/others/{id}/reject` | `Others.Reject` (D-834) |
 | Bulk approve | `POST /account/api/admin/others/bulk-approve` | `Others.Approve` |
 | Bulk reject | `POST /account/api/admin/others/bulk-reject` | `Others.Reject` |
 
@@ -144,6 +154,9 @@ Scenario: Select multiple pending rows and approve them in one batch
   Given the grid shows at least 3 pending Other rows
   When the administrator ticks the select-row checkbox on 3 rows
   And clicks "Approve selected"
+  Then a SimfConfirm dialog opens titled "Approve selected accounts" naming the count (D-809)
+  And no request has been sent yet
+  When they click "Confirm approval"
   Then a POST /account/api/admin/others/bulk-approve fires with body { "Ids": [<3 guids>] }
   And the API returns 200 with ApiResult.Data = { Approved: 3, Skipped: 0, Failures: [] }
   And a green toast reads "Approved 3 user(s). Skipped 0."
@@ -206,12 +219,21 @@ Scenario: Signed-in admin lacking Others.View is denied the page
   And no /account/api/admin/others/pending/list request fires
 
 Scenario: An admin with Others.View but lacking approve rights cannot approve at the API
-  Given a signed-in admin who holds Others.View but neither Admins.Approve nor Others.Approve
+  Given a signed-in admin who holds Others.View but not Others.Approve
   When they open the page and click "Approve" then "Confirm approval"
   Then the BFF forwards POST /admin/others/{id}/approve
-  And the API returns 403 (policy PermissionCatalog.PolicyFor(Admins.Approve) denies it)
+  And the API returns 403 (policy PermissionCatalog.PolicyFor(Others.Approve) denies it)
   And a red error toast surfaces the bilingual server message
   And the row stays in the queue
+
+Scenario: Holding the ADMIN tier's approve code grants nothing on the partner queue
+  Given a signed-in admin who holds Others.View plus Admins.Approve and Admins.Reject
+  And who holds neither Others.Approve nor Others.Reject
+  When they open /admin/others/pending
+  Then no Approve, Reject, Bulk approve or Bulk reject button renders
+  And the read-only "View" action still renders, because Others.View bought it
+  # D-834 — before the fix this admin could approve partner accounts one at a time,
+  # a tier they were never granted, while an Others.Approve holder could not.
 ```
 
 ### E2E-OPN-009 — Reject reason validation
@@ -270,6 +292,7 @@ Scenario: API 500 on /others/pending/list degrades gracefully
 Scenario: Bulk approve over a mix of valid and stale ids reports the skipped count
   Given the administrator selects 5 rows, one of which was approved/rejected in another session
   When they click "Approve selected"
+  And they accept the "Approve selected accounts" confirmation (D-809)
   Then POST /account/api/admin/others/bulk-approve returns 200
   And ApiResult.Data = { Approved: 4, Skipped: 1, Failures: [ { UserId, Email, ReasonCode, ... } ] }
   And an amber/warning toast reads "Approved 4 user(s). Skipped 1."
@@ -386,11 +409,15 @@ confirmed in the manual Chrome DevTools MCP smoke.
 - **Convert to Playwright** when the runner lands: copy each Gherkin block into a
   `.feature` file under `tests/SIMF.E2E.Tests/` (project to be created) plus a
   step-definition class. The steps are already runner-agnostic.
-- **Permission caveat worth a regression note:** the single Approve/Reject endpoints
-  gate on `Admins.Approve` / `Admins.Reject` while the bulk endpoints gate on
-  `Others.Approve` / `Others.Reject` and the page gate is `Others.View`. E2E-OPN-008's
-  second scenario exercises this asymmetry; flag any future code that aligns these so
-  the catalogue is updated in the same changeset.
+- **Permission note (resolved by D-834):** this file used to record an asymmetry — the
+  single Approve/Reject endpoints gating on `Admins.*` while the bulk ones gated on
+  `Others.*` — and asked that any future change aligning them update the catalogue in
+  the same changeset. That change is D-834: all four routes now gate on
+  `Others.Approve` / `Others.Reject`, the page gate stays `Others.View`, and
+  E2E-OPN-008's scenarios were rewritten to assert the aligned behaviour plus the
+  cross-tier denial the old mapping allowed. `PermissionEnforcementTests`
+  `.An_approval_route_is_gated_on_the_permission_for_the_tier_it_acts_on` derives the
+  required code from the route, so a regression fails the build.
 
 ---
 

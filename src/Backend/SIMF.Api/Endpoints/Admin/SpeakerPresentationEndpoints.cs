@@ -1,14 +1,14 @@
 // Tests: SIMF.Api.Tests/SpeakerPresentationsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P2.3 — D-228 (FR-407, SIMF-FDS-004 §5.3): speaker presentation
+/// <summary>Speaker presentation
 /// files. Management is gated by the existing Speakers.* permissions (View to
 /// read/list/download, Edit to upload/delete). Bytes are stored out-of-row.</summary>
 public sealed class ListSpeakerPresentationsRoute { public Guid SpeakerId { get; set; } }
@@ -53,11 +53,7 @@ public sealed class UploadSpeakerPresentationEndpoint(IAdminSpeakerPresentationS
 
     public override async Task HandleAsync(UploadSpeakerPresentationRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = req.File;
         if (file is null || file.Length == 0)
@@ -127,11 +123,7 @@ public sealed class DeleteSpeakerPresentationEndpoint(IAdminSpeakerPresentationS
     }
     public override async Task HandleAsync(DeleteSpeakerPresentationRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeleteAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

@@ -5,7 +5,7 @@ using SIMF.Common;
 namespace SIMF.Web.Content;
 
 /// <summary>
-/// D-755 — resolves the CP-editable forum event dates
+/// Resolves the CP-editable forum event dates
 /// (<c>OrganizationProfile.EventStartDate</c> / <c>EventEndDate</c>) once per short
 /// cache window and formats them as the shared bilingual <see cref="EventDateRange"/>,
 /// so every public page renders the same config-driven date instead of a hardcoded

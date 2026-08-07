@@ -1,4 +1,4 @@
-@* D-758 (#10 Phase 2) — persisted bulk-badge batches desk. Lists every
+@* Persisted bulk-badge batches desk. Lists every
    bulk-generate run (BadgeBatch) newest-first; a batch can be re-emailed (re-render
    its QR pack + send to an organiser) or revoked (disable every account it minted +
    mark it inactive). SimfDataGrid (server-paged); quiet row actions shown only for
@@ -15,7 +15,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="AdminBadgeBatchSummary"
@@ -119,7 +121,8 @@
 @if (_reEmailTarget is not null)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BadgeBatches.ReEmail.Title"]"
-               OnClose="@(() => _reEmailTarget = null)">
+               OnClose="@(() => _reEmailTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <dl class="simf-dl">
@@ -141,7 +144,7 @@
                         OnClick="@(() => _reEmailTarget = null)">
                 @L["Admin.BadgeBatches.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="ReEmailAsync" Loading="_busy">
+            <SimfButton Type="button" OnClick="ReEmailAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.BadgeBatches.ReEmail.Send"]
             </SimfButton>
         </Footer>
@@ -151,7 +154,8 @@
 @if (_revokeTarget is not null)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.BadgeBatches.Revoke.Title"]"
-               OnClose="@(() => _revokeTarget = null)">
+               OnClose="@(() => _revokeTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.BadgeBatches.Revoke.Body"], _revokeTarget.TotalCount, _revokeTarget.CountsSummary)</p>
         </ChildContent>
@@ -160,7 +164,7 @@
                         OnClick="@(() => _revokeTarget = null)">
                 @L["Admin.BadgeBatches.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" Variant="danger" OnClick="RevokeAsync" Loading="_busy">
+            <SimfButton Type="button" Variant="danger" OnClick="RevokeAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.BadgeBatches.Revoke.Confirm"]
             </SimfButton>
         </Footer>

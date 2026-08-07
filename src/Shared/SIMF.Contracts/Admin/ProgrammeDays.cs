@@ -1,8 +1,8 @@
 namespace SIMF.Contracts.Admin;
 
-// D-452 — programme-days admin CRUD (Figma 883:2308 "تفاصيل اليوم"). Mirrors the
+// Programme-days admin CRUD ("تفاصيل اليوم"). Mirrors the
 // session-category lookup shape + a Date and a HasImage flag (the day's logo
-// rides the unified D-357 asset pipeline — AssetCategory.ProgrammeDayImage owned
+// rides the unified asset pipeline — AssetCategory.ProgrammeDayImage owned
 // by the day's Id; there is no logo column).
 
 /// <summary>One programme-day row in the admin grid.</summary>
@@ -24,8 +24,8 @@ public sealed record AdminProgrammeDayDetail(
     int DisplayOrder,
     bool HasImage,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>Admin create payload.</summary>
 public sealed class AdminCreateProgrammeDayRequest

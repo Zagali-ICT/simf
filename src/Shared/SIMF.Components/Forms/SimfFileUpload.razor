@@ -1,9 +1,9 @@
-@* SimfFileUpload — a labelled file picker on the SIMF field shell
-   (decision D-044 c). The client picks the file; the server validates by
-   magic bytes (same pattern as the avatar — decision D-039). For
-   ID-card images on the visitor profile (myComment #18).
+@* SimfFileUpload — a labelled file picker on the SIMF field shell.
+   The client picks the file; the server validates by
+   magic bytes (the same pattern as the avatar). For
+   ID-card images on the visitor profile.
 
-   H14 — D-069: the picked-file status (`PickedFilename` parameter) is
+   The picked-file status (`PickedFilename` parameter) is
    rendered inside an aria-live region. Sighted keyboard users see a
    visible "Picked: foo.png" line; screen readers hear it announced
    without focus moving. `aria-describedby` includes the status region
@@ -55,7 +55,7 @@
     {
         get
         {
-            // H14 — D-069: compose every relevant id so screen readers
+            // Compose every relevant id so screen readers
             // announce error (or helper) AND the picked-file status.
             var ids = new List<string>(3);
             if (HasError) ids.Add(_errorId);
@@ -77,20 +77,20 @@
     /// <summary>The MIME / extension filter passed to <c>accept</c>. E.g. <c>image/*,.pdf</c>.</summary>
     [Parameter] public string? Accept { get; set; }
 
-    /// <summary>H14 — D-069: the name of the most-recently-picked file,
+    /// <summary>The name of the most-recently-picked file,
     /// supplied by the parent after reading it via JS interop. Renders
     /// inside an aria-live region so the choice is announced to screen
     /// readers and visible to sighted keyboard users.</summary>
     [Parameter] public string? PickedFilename { get; set; }
 
-    /// <summary>H14 — D-069: localised prefix for the picked-file
+    /// <summary>Localised prefix for the picked-file
     /// status (e.g. "Picked:" / "تم الاختيار:"). Defaults to English so
     /// the component works without a caller-provided label.</summary>
     [Parameter] public string? PickedLabel { get; set; }
 
     /// <summary>The DOM element id — useful so the page can read the chosen
     /// file from JS interop and POST it to a CP proxy (mirrors the avatar
-    /// upload pattern from D-039).</summary>
+    /// upload pattern).</summary>
     public string ElementId => _id;
 
     /// <summary>Raised when the user picks a file — the parent reads

@@ -6,16 +6,16 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.PublicRelations;
 
-/// <summary>D-199 (Mockup page 31) — read-only public projection of active
+/// <summary>Read-only public projection of active
 /// media partners for the mobile app + website. The service just returns
 /// active rows ordered by (DisplayOrder asc, NameArabic asc). Mirrors
 /// <c>PublicDelegationService</c>.
 ///
 /// <para>The public card's identity-card fields (name / logo / website /
 /// contact / social / location) are sourced from the partner's own inlined
-/// columns — superseding the removed shared <c>Contact</c> directory
-/// (SIMF-FDS-014 / D-281). The JSON field names are unchanged, preserving the
-/// shipped mobile/public wire contract (D-219).</para></summary>
+/// columns — superseding the removed shared <c>Contact</c> directory.
+/// The JSON field names are unchanged, preserving the
+/// shipped mobile/public wire contract.</para></summary>
 internal sealed class PublicMediaPartnerService(SimfAppDbContext appDbContext)
     : IPublicMediaPartnerService
 {

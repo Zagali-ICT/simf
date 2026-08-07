@@ -6,7 +6,7 @@ using System.Resources;
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// D-110: resolves the localised display name for any enum value carrying a
+/// Resolves the localised display name for any enum value carrying a
 /// <see cref="DisplayAttribute"/> with <c>ResourceType</c> + <c>Description</c>.
 /// Reads the resource string via the resource type's static <c>ResourceManager</c>,
 /// using <see cref="CultureInfo.CurrentUICulture"/>. Falls back to the raw enum

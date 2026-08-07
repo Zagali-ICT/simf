@@ -4,7 +4,8 @@
 |--|--|
 | **Pages covered** | [`cp/login.md`](../../pages/cp/login.md), [`cp/login-totp.md`](../../pages/cp/login-totp.md), [`cp/login-recovery.md`](../../pages/cp/login-recovery.md), [`cp/forgot-password.md`](../../pages/cp/forgot-password.md), [`cp/auth-pending.md`](../../pages/cp/auth-pending.md), [`cp/auth-rejected.md`](../../pages/cp/auth-rejected.md) |
 | **Surface** | Control Panel |
-| **Last reviewed** | 2026-05-28 |
+| **Related** | #2 / Q1 (2026-07-30) added a **fourth** outcome to the password step: an admin with no authenticator paired is routed to `/login/enrol-2fa` instead of receiving a token. That page has its own file — [`cp-2fa-enrolment.md`](cp-2fa-enrolment.md), `E2E-TFE-001..013`. |
+| **Last reviewed** | 2026-07-30 |
 
 ## Coverage matrix
 
@@ -22,24 +23,34 @@
 | E2E-AUTH-010 | RTL toggle on login page works | login | P2 |
 | E2E-AUTH-011 | D-443 idle warning: modal → "Stay signed in" silently refreshes; ignore → auto sign-out | (CP shell) | P1 |
 | E2E-AUTH-012 | D-443 absolute 24h cap: a continuously active session is still forced to re-sign-in after 24h | (CP shell) | P1 |
+| E2E-AUTH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-AUTH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
 ### E2E-AUTH-001 — Happy sign-in
+
+> **Pre-requisite as of #2 / Q1 (2026-07-30).** This scenario reaches
+> `/login/totp` only for an account that **already has an authenticator secret
+> paired**. An admin with none — which is what the production super-admin was
+> recorded as — is now routed to `/login/enrol-2fa` and issued no token; see
+> `E2E-TFE-001`. If this scenario lands on `/login/enrol-2fa`, the fixture
+> account is unenrolled, not the flow broken.
 
 ```gherkin
 Feature: Administrator sign-in
   Background:
     Given the API is reachable on http://localhost:5175
     And the Control Panel is reachable on http://localhost:5158
+    And the super-admin account has an authenticator secret paired
 
   Scenario: Super-admin signs in (password + TOTP)
     Given an administrator opens /login
     When they fill Email="superadmin@zagali-ict.com"
-    And they fill Password="Aa@123456789"
+    And they fill Password="[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"
     And they click "Sign in"
     Then they land on /login/totp
-    When they generate a TOTP via Get-Totp 'dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3'
+    When they generate a TOTP via Get-Totp '[REDACTED - supply via SIMF_SuperAdmin__TotpSecret]'
     And they fill that 6-digit code
     And they click "Verify"
     Then they land on /

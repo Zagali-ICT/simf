@@ -4,7 +4,7 @@ using SIMF.Domain.Ai;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-176 (gap doc G12) — AiInvocation EF config. Append-only
+/// <summary>AiInvocation EF config. Append-only
 /// telemetry. Indexes support the admin grid filters (by feature, by
 /// caller, by time) + an error-only filter.</summary>
 internal sealed class AiInvocationConfiguration : IEntityTypeConfiguration<AiInvocation>

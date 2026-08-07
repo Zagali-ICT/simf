@@ -1,4 +1,4 @@
-@* D-353 — reusable Other (partner / event-team account) Add/Edit form, hosted
+@* Reusable Other (partner / event-team account) Add/Edit form, hosted
    by CrudShell (popup or full page) from OthersList. Inherits
    CrudAddEditFormBase<AdminUserProfileView> so it exposes the standard CRUD-form
    surface (IsEdit / Initial / OnSuccess / OnCancel). This is an account/security
@@ -12,7 +12,7 @@
 
 @if (!IsEdit)
 {
-    @* Add — the D-127 walk-in Other registration wizard (POST
+    @* Add — the walk-in Other registration wizard (POST
        /account/api/admin/others/register-onsite, auto-approved + QR minted).
        Identical to the component the inline Add SimfModal hosted. *@
     <CreateOtherForm OnSuccess="OnCreatedAsync"

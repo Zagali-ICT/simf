@@ -17,12 +17,25 @@
 > the question composer: the "الاسئلة" / Questions section label (`945:3756`), a
 > tinted **borderless** navy multiline question box (`934:3668`, `اكتب سؤالك هنا…`
 > placeholder, `maxLength=500`), a gold full-width submit (`942:3746`), and a centred
-> gold-bulleted "ملاحظة" / Note review note (`943:3750`). The session-data block
+> gold-bulleted "ملاحظة" / Note note (`943:3750`). The session-data block
 > reads the **anonymous** detail (`GET /app/programme/sessions/{id}` — the shipped
 > endpoint, **no new API**) and is **non-blocking context**: a failed read just hides
-> the block and the composer still works. The old Speaker/Host recipient selector was
-> **removed**; the form submits to the default recipient (Speaker = 0) and the
-> `recipient` wire field is preserved.
+> the block and the composer still works.
+>
+> **B7 (2026-07-27) — the "إلى من؟" recipient choice is back and wired.** The screen
+> had hardcoded `QuestionRecipient.speaker`, so `recipient` was **always 0**: the Host
+> half of `SessionQuestionRecipient` could not be produced by any client, and the three
+> "إلى من؟" / المتحدث / المضيف strings were unreferenced. The composer now shows two
+> pills (shared `SimfRadioPill`) above the question box. **Speaker stays the default**,
+> so a user who never taps sends exactly what the shipped app sent.
+>
+> **A17 (2026-07-27) — the ملاحظة note no longer promises a review that does not
+> happen.** It read "تتم مراجعة الأسئلة قبل عرضها على الهواء" / "Questions are reviewed
+> before going on air", which is false for a **live** question: once the session has
+> started the question skips the AI filter and the Scientific Committee and lands
+> **Approved** (E2E-MOB026-014). The note now names the gate that is always real — the
+> moderator: "يختار مشرف الجلسة الأسئلة التي تُعرض على الهواء" / "The session moderator
+> picks which questions go on air."
 
 | | |
 |--|--|
@@ -37,19 +50,22 @@
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-MOB026-001 | No `sessionId` → "open from a live session" empty state | edge | P1 | authored ✓ (screen `no session id shows the open-from-a-session empty state`) |
-| E2E-MOB026-002 | Pick recipient (Host) + type + Submit → 200, sent toast, field cleared | happy | P0 | authored ✓ (screen `typing + Host + submit sends and shows the sent toast`) |
+| E2E-MOB026-002 | Pick recipient (Host) + type + Submit → 200, sent toast, `recipient = 1` | happy | P0 | authored ✓ (screen `choosing Host submits recipient = 1`) |
 | E2E-MOB026-003 | Empty question → inline prompt, no call | validation | P0 | authored ✓ (screen `empty question shows the inline prompt, no submit`) |
 | E2E-MOB026-004 | 400 `SESSION_NOT_LIVE_FOR_QUESTIONS` (outside window) → not-open toast | edge | P0 | authored ✓ (screen `a 400 SESSION_NOT_LIVE_FOR_QUESTIONS shows the not-open toast`) |
 | E2E-MOB026-005 | A server-500 / transport failure → generic error toast | resilience | P0 | authored ✓ (screen `a generic failure shows the generic error toast`) |
 | E2E-MOB026-006 | RTL — the screen renders right-to-left in Arabic | i18n | P2 | covered (l10n AR/EN pairs; `Directionality` from the locale) |
-| E2E-MOB026-007 | Figma form chrome — الاسئلة label + tinted box + gold submit + ملاحظة note all render | layout | P1 | _to author_ |
+| E2E-MOB026-007 | Figma form chrome — الاسئلة label + tinted box + gold submit + ملاحظة note all render | layout | P1 | authored ✓ (screen `golden render — label, question box, submit, note`) |
 | E2E-MOB026-008 | Question box accepts multiline + `اكتب سؤالك هنا…` placeholder, caps at 500 chars | layout | P1 | _to author_ |
-| E2E-MOB026-009 | No recipient selector is shown; submit still posts default recipient (Speaker=0) | edge | P0 | _to author_ |
+| E2E-MOB026-009 | **B7** — the "إلى من؟" picker renders both pills; a user who never taps still posts the default recipient (Speaker = 0), and switching Host → Speaker posts 0 again | edge | P0 | authored ✓ (screen `golden render — label, question box, submit, note` asserts Send to / Speaker / Host; `typing + submit sends to the default recipient + sent toast` → 0; `switching back to Speaker submits recipient = 0`) |
+| E2E-MOB026-015 | **A17** — the ملاحظة note names the moderator, and the old "reviewed before going on air" copy is gone (it was false for a live question) | validation | P1 | authored ✓ (screen `golden render — label, question box, submit, note` asserts the moderator copy present + the review copy absent) |
 | E2E-MOB026-010 | بيانات الجلسة block renders the session description as a numbered list | layout | P1 | authored ✓ (screen `renders the بيانات الجلسة block as a numbered list`) |
 | E2E-MOB026-011 | Session-detail read fails → block hidden, composer still works | resilience | P1 | authored ✓ (screen `hides the بيانات الجلسة block when the detail read fails`) |
 | E2E-MOB026-012 | **Advisory AI filter (D-714 GAP-1), PRE-questions only (two-path Q&A, 2026-07-19)** — for a question asked **before** the session goes live the server runs stage 1: default the offline stub (`stub-clean`), or the real `AiQuestionFilter` (via `IAiService` + the seeded `question-filter` prompt → `ai-clean`/`ai-flagged`, `ai-unavailable` fallback) when `SessionQuestions:AiFilterEnabled=true`. **Advisory only** — the verdict is recorded for the Committee and NEVER changes the question's Pending status. A **LIVE** question skips the AI filter entirely (verdict null) — see E2E-MOB026-014 | happy/resilience | P1 | authored ✓ (backend `QuestionAiFilterTests` — verdict map + all fallbacks; `SessionQuestionsTests.Pre_question_is_AI_screened_and_waits_for_the_committee`) |
 | E2E-MOB026-013 | **Venue gate — no self-assert (S-5)** — the app always sends `isAtVenue: false`; the server is the authoritative LIVE gate. A **geofenced** hall requires a real `HallAttendance` arrival (else 403 `NOT_AT_VENUE`); a **non-geofenced** hall has no arrival mechanism, so the question is accepted (remote Q&A). Before start the venue gate is skipped entirely | validation | P0 | authored ✓ (app `questions_repository_test.dart` posts `isAtVenue: false`; backend `QuestionArrivalGatingTests` + `SessionQuestionsTests.Submit_without_at_venue_flag_accepts_remote_question_on_a_non_geofenced_hall`) |
 | E2E-MOB026-014 | **Two-path routing (owner 2026-07-19)** — the server routes a submission by phase. A **LIVE** question (asked once the session has started) skips the AI filter **and** the Scientific Committee and lands **Approved**, straight on the per-session moderator desk for accept (push) / reject (hide). A **PRE** question (asked before start) runs the advisory AI filter and lands **Pending** for the Committee → then the desk. The composer screen is identical for both (the server decides) | happy | P0 | authored ✓ (backend `SessionQuestionsTests.Live_question_skips_AI_and_lands_directly_on_the_moderator_desk` + `Pre_question_is_AI_screened_and_waits_for_the_committee`) |
+| E2E-MOB026-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB026-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -74,16 +90,26 @@ Scenario: Opened without a live session
 ```gherkin
 Scenario: Send a question to the host
   Given the screen is opened with a live session id
-  And the recipient is set to Host
-  And the question text is "How deep is the reef?"
+  And the attendee taps the "المضيف" / Host pill in the "إلى من؟" picker
+  And the question text is "Who chairs the panel?"
   When the attendee taps Send question
   Then the app calls POST /api/v1/app/sessions/{id}/questions
-  And the body has questionText, isAtVenue=true, recipient=1
+  And the body has questionText, isAtVenue=false, recipient=1
   And a "question sent" toast is shown and the field is cleared
+
+Scenario: Send a question to the speaker (the default — B7)
+  Given the screen is opened with a live session id
+  And the attendee does NOT tap the recipient picker
+  And the question text is "How deep is the reef?"
+  When the attendee taps Send question
+  Then the body carries recipient=0, exactly as the shipped app sent
 ```
 
-**Evidence:** screen test `typing + Host + submit sends and shows the sent toast`;
-API `SessionQuestionsTests`.
+**Evidence:** screen tests `choosing Host submits recipient = 1`,
+`switching back to Speaker submits recipient = 0`, and
+`typing + submit sends to the default recipient + sent toast`;
+API `SessionQuestionsTests`. (`isAtVenue` is always `false` from the app —
+the server is the authoritative venue gate, E2E-MOB026-013.)
 
 ### E2E-MOB026-003 — Empty question / E2E-MOB026-004 — Not open / E2E-MOB026-005 — Generic error
 
@@ -100,7 +126,12 @@ Scenario: The session is over (#7 — phase-based window)
   # returns SESSION_NOT_LIVE_FOR_QUESTIONS (the after-view is a recording).
   Given the submit returns 400 SESSION_NOT_LIVE_FOR_QUESTIONS
   When the attendee submits a question
-  Then the "questions are only open around the session" not-open toast is shown
+  Then the not-open toast reads "الأسئلة مغلقة لهذه الجلسة." /
+       "Questions are closed for this session."
+  # DEF-MOD-006 — the old copy promised a 5-minute pre-start window that
+  # SessionQuestionService has never enforced (there is no lower bound at all;
+  # questions simply close at the session End). The string now describes the
+  # real behaviour — the server rule is intentional and was NOT changed.
 
 Scenario: A server / transport failure
   Given the submit fails with a 500 (or transport error)
@@ -120,7 +151,7 @@ Scenario: Arabic renders right-to-left
   Given the app locale is Arabic
   Then the title shows "معلومات عن الجلسة"
   And the "بيانات الجلسة" section header + the "الاسئلة" composer lay out right-to-left
-  And there is no recipient selector
+  And the "إلى من؟" picker shows المتحدث / المضيف, laid out right-to-left
 ```
 
 **Evidence:** the l10n getters pair AR/EN (`sendQuestion*`); `Directionality`
@@ -131,18 +162,22 @@ follows the active locale, as on every shipped mobile screen.
 ```gherkin
 Scenario: The re-skinned form renders every Figma section
   Given the screen is opened with a live session id
-  Then the section label reads "الاسئلة" (EN "Questions"), inline-end aligned
+  Then an "إلى من؟" (EN "Send to") label sits above two pills, المتحدث / المضيف
+  And the section label reads "الاسئلة" (EN "Questions"), inline-end aligned
   And a tinted navy multiline question box is shown below it
   And a gold full-width button reads "إرسال السؤال" (EN "Send question")
-  And a centred note reads "ملاحظة سيتم..." — "ملاحظة" (EN "Note") gold/bold,
-      then "تتم مراجعة الأسئلة قبل عرضها على الهواء."
-      (EN "Questions are reviewed before going on air.") in beige
+  And a centred note reads "ملاحظة …" — "ملاحظة" (EN "Note") gold/bold, then
+      "يختار مشرف الجلسة الأسئلة التي تُعرض على الهواء."
+      (EN "The session moderator picks which questions go on air.") in beige
+  And the old "تتم مراجعة الأسئلة قبل عرضها على الهواء." copy is NOT shown
 ```
 
-**Evidence:** screen `_form` renders `sendQuestionSectionLabel`, the navy box,
-`sendQuestionSubmit`, and the `_ReviewNote` with `sendQuestionNoteLabel` +
-`sendQuestionWindowHint`. Matches Figma frame `934:3636` (sub-frames `945:3756`,
-`934:3668`, `942:3746`, `943:3750`).
+**Evidence:** screen test `golden render — label, question box, submit, note`
+asserts the moderator copy present and the old review copy absent, plus the three
+picker strings. The form renders `sendQuestionSectionLabel`, the navy box,
+`sendQuestionSubmit`, the `SendQuestionRecipientPicker`, and the `ReviewNote` with
+`sendQuestionNoteLabel` + `sendQuestionWindowHint`. Matches Figma frame `934:3636`
+(sub-frames `945:3756`, `934:3668`, `942:3746`, `943:3750`).
 
 ### E2E-MOB026-008 — Question box (multiline, placeholder, 500 cap)
 
@@ -160,18 +195,25 @@ Scenario: The tinted question box accepts a multiline question
 **Evidence:** `TextField` `hintText = sendQuestionHint`, `minLines: 4`,
 `maxLines: 6`, `maxLength: 500`, `counterText: ''`.
 
-### E2E-MOB026-009 — Recipient selector removed (default still posted)
+### E2E-MOB026-009 — Recipient picker wired, Speaker still the default (B7)
 
 ```gherkin
-Scenario: No recipient picker, default recipient still submitted
+Scenario: The picker renders and defaults to Speaker
   Given the screen is opened with a live session id
-  Then no Speaker / Host recipient selector is shown
+  Then an "إلى من؟" picker shows the المتحدث and المضيف pills
+  And المتحدث (Speaker) is pre-selected
   And the question text is "ما عمق الشعاب المرجانية؟"
-  When the attendee taps "إرسال السؤال"
+  When the attendee taps "إرسال السؤال" without touching the picker
   Then the app calls POST /api/v1/app/sessions/{id}/questions
   And the body has recipient=0 (Speaker, the default)
   And the "تم إرسال سؤالك" (EN "Your question was sent") toast is shown
   And the question box is cleared
+
+Scenario: Switching Host then back to Speaker posts 0 again
+  Given the screen is opened with a live session id
+  When the attendee taps المضيف and then المتحدث
+  And types a question and taps "إرسال السؤال"
+  Then the body has recipient=0
 ```
 
 **Evidence:** the static `_recipient = QuestionRecipient.speaker` (`wireIndex == 0`)
@@ -257,7 +299,11 @@ committee mechanics are covered by `cp-session-moderate.md` / `cp-admin-question
 
 ---
 
-_Last reviewed:_ `2026-07-19` by `Claude` — **Two-path Q&A (owner): the server now
+_Last reviewed:_ `2026-07-26` by `Claude` — **DEF-MOD-006: `sendQuestionNotOpen`
+claimed a 5-minute pre-start window the server never enforced; the AR+EN string now
+says "Questions are closed for this session." The server rule is unchanged (no lower
+bound; closes at the session End). E2E-MOB026-004 reworded.**
+_Prior:_ `2026-07-19` by `Claude` — **Two-path Q&A (owner): the server now
 routes a submission by phase — a LIVE question skips the AI filter + the Scientific
 Committee and lands Approved straight on the moderator desk; a PRE question runs the
 advisory AI filter and lands Pending for the Committee. Composer screen unchanged

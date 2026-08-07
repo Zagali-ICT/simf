@@ -111,9 +111,9 @@ internal static class SiteContentEndpoints
             return Results.File(bytes, contentType);
         });
 
-        // Re-streams one media-asset image same-origin (the unified Asset
-        // pipeline, D-357) so a public page's <img>/CSS background loads it
-        // without reaching the API origin directly. `category` is the
+        // Re-streams one media-asset image same-origin (through the unified asset
+        // pipeline) so a public page's <img>/CSS background loads it without
+        // reaching the API origin directly. `category` is the
         // AssetCategory enum name; `ownerId` is the owning row's id. The API
         // serves the bytes, 302s to an external link, or 404s when none.
         routes.MapGet("/content/assets/{category}/{ownerId:guid}/image",
@@ -188,7 +188,7 @@ internal static class SiteContentEndpoints
         AddIfAny(result, "archive", MapArchive(archive));
         AddIfAny(result, "spirit", MapSpirit(media));
 
-        // D-466 — CP-editable footer social links (only configured URLs).
+        // CP-editable footer social links (only configured URLs).
         var social = MapSocial(siteSettings);
         if (social.Count > 0)
         {
@@ -251,9 +251,9 @@ internal static class SiteContentEndpoints
             PutBilingual(item, "role", sp.RankArabic, sp.Rank);
             PutBilingual(item, "org", sp.CountryNameAr, sp.CountryNameEn);
             // Portrait URL — prefer an uploaded/linked SpeakerPhoto asset from the
-            // unified media-asset pipeline (D-357), served same-origin through the
-            // /content/assets proxy; otherwise fall back to the legacy portrait path
-            // (D-346). The card renders whichever is present, else its SVG silhouette.
+            // unified media-asset pipeline, served same-origin through the
+            // /content/assets proxy; otherwise fall back to the older portrait path.
+            // The card renders whichever is present, else its SVG silhouette.
             if (sp.HasPhotoAsset)
             {
                 item["photo"] = $"/content/assets/SpeakerPhoto/{sp.Id}/image";
@@ -331,8 +331,8 @@ internal static class SiteContentEndpoints
         foreach (var a in archive.Items)
         {
             var item = new Dictionary<string, object?> { ["year"] = a.Year };
-            // D-347 — id + full detail so the per-year archive page renders the
-            // mockup (screen 24-01) layout from the data already in /content/site.
+            // Id + full detail so the per-year archive page renders its whole
+            // layout from the data already in /content/site.
             item["id"] = a.Id;
             item["date"] = $"{a.Attendees} حضور · {a.Speakers} متحدث";
             item["date_en"] = $"{a.Attendees} attendees · {a.Speakers} speakers";
@@ -348,8 +348,8 @@ internal static class SiteContentEndpoints
         return rows;
     }
 
-    // D-466 — the CP-editable footer social links. Only non-empty URLs are
-    // emitted; the landing's footer renderer hides any platform that is absent.
+    // The CP-editable footer social links. Only non-empty URLs are emitted; the
+    // landing's footer renderer hides any platform that is absent.
     private static Dictionary<string, object?> MapSocial(SiteSettingsResponse? settings)
     {
         var social = new Dictionary<string, object?>();
@@ -477,7 +477,7 @@ internal static class SiteContentEndpoints
         item[field + "_en"] = en.Length > 0 ? en : ar;
     }
 
-    private static string FormatDate(DateTimeOffset value, CultureInfo culture) =>
+    private static string FormatDate(DateTime value, CultureInfo culture) =>
         value.ToString("d MMMM yyyy", culture);
 
     private static void AddIfAny(Dictionary<string, object?> result, string key, List<object> rows)

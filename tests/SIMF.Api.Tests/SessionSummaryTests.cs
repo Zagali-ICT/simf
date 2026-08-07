@@ -114,7 +114,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
     {
         var sessionId = await SeedSummaryAsync(
             published: true, sessionActive: true, summaryActive: true, aiModel: "echo",
-            start: DateTimeOffset.UtcNow.AddDays(1));
+            start: SimfClock.Now.AddDays(1));
 
         var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -125,7 +125,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
     {
         var sessionId = await SeedSummaryAsync(
             published: true, sessionActive: true, summaryActive: true, aiModel: "echo",
-            start: DateTimeOffset.UtcNow.AddHours(-1));
+            start: SimfClock.Now.AddHours(-1));
 
         var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -178,7 +178,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         session.LiveStreamUrl = liveStreamUrl;
         db.Halls.Add(NewHallFor(session));
         db.Sessions.Add(session);
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         db.SessionSummaries.Add(new SessionSummary
         {
             Id = Guid.NewGuid(),
@@ -201,7 +201,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
 
     private async Task<Guid> SeedSummaryAsync(
         bool published, bool sessionActive, bool summaryActive, string? aiModel,
-        DateTimeOffset? start = null, bool approved = true)
+        DateTime? start = null, bool approved = true)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -212,7 +212,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         // check constraint requires ReviewSubmittedAt whenever ApprovedAt is set, so an
         // approved summary carries both stamps. A "published but unapproved" legacy row
         // (approved: false, published: true) is the shape the read guard must hide.
-        var reviewedAt = approved ? DateTimeOffset.UtcNow : (DateTimeOffset?)null;
+        var reviewedAt = approved ? SimfClock.Now : (DateTime?)null;
         db.SessionSummaries.Add(new SessionSummary
         {
             Id = Guid.NewGuid(),
@@ -225,8 +225,8 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
             IsActive = summaryActive,
             ReviewSubmittedAt = reviewedAt,
             ApprovedAt = reviewedAt,
-            PublishedAt = published ? DateTimeOffset.UtcNow : null,
-            CreatedAt = DateTimeOffset.UtcNow,
+            PublishedAt = published ? SimfClock.Now : null,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return session.Id;
@@ -243,11 +243,11 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         return session.Id;
     }
 
-    private static Session NewSession(bool active, DateTimeOffset? start = null)
+    private static Session NewSession(bool active, DateTime? start = null)
     {
         // S-6 — the public summary read gates on the CLOCK (Start <= now), so the
         // published-read tests seed a STARTED session (past start) by default.
-        var startValue = start ?? DateTimeOffset.UtcNow.AddMinutes(-90);
+        var startValue = start ?? SimfClock.Now.AddMinutes(-90);
         return new Session
         {
             Id = Guid.NewGuid(),
@@ -256,7 +256,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
             HallId = Guid.Empty, // set by NewHallFor
             Start = startValue,
             End = startValue.AddHours(1),
-            IsActive = active, CreatedAt = DateTimeOffset.UtcNow,
+            IsActive = active, CreatedAt = SimfClock.Now,
         };
     }
 
@@ -267,7 +267,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Summary Hall", NameArabic = "قاعة الملخص",
-            Capacity = 100, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = 100, IsActive = true, CreatedAt = SimfClock.Now,
         };
         session.HallId = hall.Id;
         return hall;

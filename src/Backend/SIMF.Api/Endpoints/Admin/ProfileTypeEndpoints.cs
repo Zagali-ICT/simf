@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-115 — <c>POST /api/v1/admin/profile-types/list</c>. Paged + filtered
+/// <c>POST /api/v1/admin/profile-types/list</c>. Paged + filtered
 /// grid of every ProfileType row. Mirrors the InterestEndpoints shape so
 /// the CP can use the same SimfDataGrid primitive.
 /// </summary>
@@ -31,7 +31,7 @@ public sealed class ListAdminProfileTypesEndpoint(IAdminProfileTypeCommandServic
     }
 }
 
-/// <summary>D-115 — <c>GET /api/v1/admin/profile-types/{id}</c>.</summary>
+/// <summary><c>GET /api/v1/admin/profile-types/{id}</c>.</summary>
 public sealed class GetAdminProfileTypeRequest
 {
     public Guid Id { get; set; }
@@ -63,7 +63,7 @@ public sealed class GetAdminProfileTypeEndpoint(IAdminProfileTypeCommandService 
     }
 }
 
-/// <summary>D-115 — <c>POST /api/v1/admin/profile-types</c>. Create a new row.
+/// <summary><c>POST /api/v1/admin/profile-types</c>. Create a new row.
 /// UserType is restricted to Visitor or Other; per-UserType name uniqueness
 /// is enforced server-side.</summary>
 public sealed class CreateAdminProfileTypeEndpoint(IAdminProfileTypeCommandService service)
@@ -82,33 +82,27 @@ public sealed class CreateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
     public override async Task HandleAsync(
         AdminCreateProfileTypeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var summary = await service.CreateAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminProfileTypeSummary>.Ok(summary), ct);
     }
 }
 
-/// <summary>D-115 — <c>PUT /api/v1/admin/profile-types/{id}</c>. UserType is
-/// NOT updatable post-creation — the route body does not carry it.
-/// D-186: IsVisitor IS updatable (audience-vs-partner queue routing).</summary>
-public sealed class UpdateAdminProfileTypeRouteRequest
+/// <summary><c>PUT /api/v1/admin/profile-types/{id}</c>. UserType is NOT
+/// updatable post-creation. IsVisitor IS updatable (audience-vs-partner
+/// queue routing).
+///
+/// <para>Inherits the contract (see <c>UpdateHallRoute</c>). It
+/// used to re-declare the fields and the endpoint hand-copied them; it omitted
+/// <c>ShowInPartnerDirectory</c>, whose contract default is <c>true</c>, so the
+/// drop failed OPEN: unticking "show in partner directory" returned a success
+/// toast and silently re-exposed the type in the networking surfaces. The same
+/// class had already cost this DTO <c>IsVisitor</c> once before. UserType stays
+/// non-updatable because the CONTRACT omits it, which is where that rule
+/// belongs — not in a hand-maintained copy of the field list.</para></summary>
+public sealed class UpdateAdminProfileTypeRouteRequest : AdminUpdateProfileTypeRequest
 {
     public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public string PageColor { get; set; } = string.Empty;
-    /// <summary>D-161 — mobile-app authority assigned to this type.</summary>
-    public string? MobileAppRole { get; set; }
-    public bool IsActive { get; set; } = true;
-    /// <summary>D-186 — audience (true) or partner / staff (false).</summary>
-    public bool IsVisitor { get; set; } = true;
-    /// <summary>D-725 — whether the type appears in the app sign-up picker
-    /// (false = CP-only, e.g. Staff / Moderator).</summary>
-    public bool IsAppRegisterable { get; set; } = true;
 }
 
 public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandService service)
@@ -127,27 +121,15 @@ public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
     public override async Task HandleAsync(
         UpdateAdminProfileTypeRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
-        var summary = await service.UpdateAsync(actorId, req.Id,
-            new AdminUpdateProfileTypeRequest
-            {
-                Name = req.Name,
-                NameArabic = req.NameArabic,
-                PageColor = req.PageColor,
-                MobileAppRole = req.MobileAppRole,
-                IsActive = req.IsActive,
-                IsVisitor = req.IsVisitor,
-                IsAppRegisterable = req.IsAppRegisterable,
-            }, ct);
+        var actorId = User.ActorId();
+        // Pass the bound request straight through. No hand-copy, so no
+        // field can be dropped from it.
+        var summary = await service.UpdateAsync(actorId, req.Id, req, ct);
         await Send.OkAsync(ApiResult<AdminProfileTypeSummary>.Ok(summary), ct);
     }
 }
 
-/// <summary>D-115 — <c>DELETE /api/v1/admin/profile-types/{id}</c>.
+/// <summary><c>DELETE /api/v1/admin/profile-types/{id}</c>.
 /// Soft-delete (Idempotent). 409 if any UserProfile still references the
 /// row.</summary>
 public sealed class DeactivateAdminProfileTypeRequest
@@ -171,11 +153,7 @@ public sealed class DeactivateAdminProfileTypeEndpoint(IAdminProfileTypeCommandS
     public override async Task HandleAsync(
         DeactivateAdminProfileTypeRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

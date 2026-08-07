@@ -4,7 +4,7 @@ using SIMF.Domain.Ai;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-188 — append-only snapshot table for
+/// <summary>Append-only snapshot table for
 /// <see cref="AiPrompt"/> edit history. One row per
 /// (AiPromptId, Version) captured BEFORE the version bump that
 /// produced the change. The unique composite index guards against a
@@ -37,7 +37,7 @@ internal sealed class AiPromptHistoryConfiguration
         builder.HasIndex(x => new { x.AiPromptId, x.Version }).IsUnique();
         builder.HasIndex(x => x.CapturedAt);
 
-        // D-611 (Wave B) — AiPromptId becomes a real FK to AiPrompt (both on the
+        // AiPromptId becomes a real FK to AiPrompt (both on the
         // App DB). RESTRICT, never Cascade: a snapshot must survive the live
         // row's lifecycle (the live AiPrompt is soft-deleted, so Restrict never
         // actually fires). The unique (AiPromptId, Version) index above covers it.

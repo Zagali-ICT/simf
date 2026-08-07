@@ -4,7 +4,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// D-115 — admin-side CRUD over the ProfileType lookup table. Read-only
+/// Admin-side CRUD over the ProfileType lookup table. Read-only
 /// surface for the CP picker lives in
 /// <see cref="IAdminProfileTypeQueryService"/>; this interface adds the
 /// mutating verbs (Create / Update / Deactivate) plus the paged list +

@@ -126,4 +126,5 @@ successful save there routes to the success screen with the issued
 ## L-7 — Dependencies
 - Country / organisation / profile-type lookup data must be seeded for the pickers to populate (organisation via the D-220 module; profile types via D-190 — the C5 lock expects the seeded "Normal" row).
 - Account must be signed-in; the screen is reached after OTP and whenever the server-computed `profileComplete` flag on `GET /app/users/me` is false (D-374 — the post-sign-in / cold-start gate).
+- **BUG-018:** the completeness rule (and the male face-photo hard reject on save) is a **visitor** rule. An account whose `ProfileType.IsForVisitor` is false — an operational partner type such as a gate operator or a moderator — is exempt from the interest / ID-document / face-photo evidence and reads `profileComplete = true` once both names are present, so it is never diverted to this screen. Names stay required for everyone.
 - **[Page 007‑01](../Page_007-01/README.md)** is the required next step and owns the interests rule + the save + the image upload.

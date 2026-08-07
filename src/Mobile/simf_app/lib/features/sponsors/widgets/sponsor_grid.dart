@@ -94,6 +94,7 @@ class _SponsorGridTile extends StatelessWidget {
                   baseUrl: baseUrl,
                   fallbackInitials: initials,
                   hero: false,
+                  name: name,
                 ),
               ),
               const SizedBox(height: SimfTokens.space2),

@@ -56,7 +56,7 @@
 | E2E-OPL-004 | Filter by date range (From / To, inclusive of To day) | happy | P1 | _to author_ |
 | E2E-OPL-005 | Subject email contains filter narrows by subject | happy | P2 | _to author_ |
 | E2E-OPL-006 | Clear filters resets every input and reloads full list | happy | P1 | _to author_ |
-| E2E-OPL-007 | Sort by Event / Outcome / Timestamp columns | happy | P2 | _to author_ |
+| E2E-OPL-007 | Sort by Event / Outcome / Timestamp columns. **Timestamp ascending must reach the oldest entry** — the log defaults to newest-first, and tracing an incident forward from its start is exactly the view that was unreachable | happy | P2 | authored ✓ (`GridDateSortKeyTests.Operation_log_sorts_on_timestamp_honours_the_ascending_direction`) |
 | E2E-OPL-008 | Pager — page size, Next / Prev / First / Last | happy | P2 | _to author_ |
 | E2E-OPL-009 | Details modal renders the full record (correlation id, user agent, detail) | happy | P0 | _to author_ |
 | E2E-OPL-010 | Export — XLSX downloads + audit row minted | happy | P0 | _to author_ |
@@ -68,6 +68,8 @@
 | E2E-OPL-016 | Server 500 on `/list` → bilingual load-failed toast | resilience | P2 | _to author_ |
 | E2E-OPL-017 | RTL / Arabic render mirrors page + Details modal | i18n | P1 | _to author_ |
 | E2E-OPL-018 | Per-column grid filter on Source IP narrows the grid (coexists with toolbar form) | happy | P1 | _to author_ |
+| E2E-OPL-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-OPL-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

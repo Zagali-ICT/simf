@@ -59,6 +59,8 @@
 | E2E-MBSU-013 | Cancel the device-credential sheet → NOT enrolled, inline "confirmation cancelled" message, retry works | edge | P0 | authored ✓ (screen test — cancelled outcome) |
 | E2E-MBSU-014 | No device screen lock → blocked with the "set a device screen lock" message; no code consumed | edge | P0 | authored ✓ (screen test — noDeviceCredential outcome) |
 | E2E-MBSU-015 | Sign-in Face-ID offers a device-PIN fallback and surfaces explicit lockout/unavailable errors (no silent password fallback) | edge | P1 | source-verified (sign_in_screen `_biometricSignIn`; `confirmDeviceIdentity` `biometricOnly:false`) |
+| E2E-MBSU-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MBSU-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

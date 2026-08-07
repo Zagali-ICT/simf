@@ -1,5 +1,5 @@
 // Tests: SIMF.Api.Tests/SessionQuestionsTests.cs
-// Tests: SIMF.Api.Tests/QuestionArrivalGatingTests.cs (P5.1c — D-242 FR-704)
+// Tests: SIMF.Api.Tests/QuestionArrivalGatingTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -13,14 +13,14 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.SessionQuestions;
 
 /// <summary>
-/// D-169 (gap doc G6, PDF §2.7.2 + §2.10) — public submission service.
-/// #7 (owner) — the acceptance window is **phase-based**: a FUTURE session
+/// Public submission service for audience questions.
+/// The acceptance window is **phase-based**: a FUTURE session
 /// (before start) takes questions from any approved user with **no** venue gate
 /// (asking ahead of time); once **LIVE** (<c>now &gt;= Start</c>) the attendee
 /// must be at the hall; after <c>End</c> the session is done (a recording, not
-/// a live broadcast) and no question is taken. P5.1 — D-242 (FR-704) is the LIVE
-/// venue gate: when the session's hall has a geofence (D-240) the attendee must
-/// have a <c>HallAttendance</c> arrival record (D-241). S-5 — when the hall has
+/// a live broadcast) and no question is taken. The LIVE venue gate is this:
+/// when the session's hall has a geofence the attendee must
+/// have a <c>HallAttendance</c> arrival record. When the hall has
 /// no arrival mechanism presence cannot be verified, so the question is accepted
 /// (remote Q&amp;A works); the client-sent <c>isAtVenue</c> flag is no longer
 /// trusted as a gate.
@@ -32,7 +32,7 @@ internal sealed class SessionQuestionService(
     IQuestionAiFilter questionAiFilter,
     ILogger<SessionQuestionService> logger) : ISessionQuestionService
 {
-    /// <summary>#7 (owner) — questions CLOSE at the end of the session: zero
+    /// <summary>Questions CLOSE at the end of the session: zero
     /// grace after <c>End</c>. After that the session view is a recording /
     /// archive, not a live broadcast, so no asking once the session is done.
     /// There is deliberately **no** lower bound now: a FUTURE (active,
@@ -61,9 +61,9 @@ internal sealed class SessionQuestionService(
             .Select(s => new
             {
                 s.Id, s.IsActive, s.Start, s.End, s.Code,
-                // P5.1 — D-242 (FR-704): does this session's hall have a geofence
-                // (D-240)? If so, hall arrival is the authoritative gate; if not,
-                // we fall back to the D-171 self-assert toggle.
+                // Does this session's hall have a geofence?
+                // If so, hall arrival is the authoritative gate; if not,
+                // presence cannot be verified and the question is accepted.
                 HasGeofence = s.Hall!.GeofenceRadiusMeters != null,
             })
             .SingleOrDefaultAsync(cancellationToken)
@@ -80,8 +80,8 @@ internal sealed class SessionQuestionService(
                 "الجلسة غير مفعّلة.");
         }
 
-        var now = timeProvider.GetUtcNow();
-        // #7 (owner) — a FUTURE session (before start) accepts questions from any
+        var now = timeProvider.SimfNow();
+        // A FUTURE session (before start) accepts questions from any
         // approved user (asking ahead of time); questions only CLOSE once the
         // session is over. No lower bound — the whole pre-start slice is open.
         // The venue (check-in) gate below then applies only once the session is LIVE.
@@ -93,24 +93,24 @@ internal sealed class SessionQuestionService(
                 "انتهت الجلسة ولم تعد تستقبل الأسئلة.");
         }
 
-        // P5.1 — D-242 (FR-704): questions are gated by hall arrival. When the
-        // hall has a geofence (D-240) the authoritative gate is a HallAttendance
-        // arrival record (D-241); when it has none the question is accepted (S-5 —
-        // remote Q&A works, the client self-assert is not trusted). The session-end
-        // close is the time-window check above (FR-704).
+        // Questions are gated by hall arrival. When the
+        // hall has a geofence the authoritative gate is a HallAttendance
+        // arrival record; when it has none the question is accepted (remote
+        // Q&A works, the client self-assert is not trusted). The session-end
+        // close is the time-window check above.
         //
-        // Intentionally NO `Leave == null` filter: FDS-007 FR-704 gates on
+        // Intentionally NO `Leave == null` filter: the rule is
         // "has a HallAttendance enter record for the session" — i.e. arrived at
         // any point this session, not "currently inside". A visitor who briefly
         // stepped out (closing their row) keeps the right to ask within the
         // window, and the future QR-door-scan path's closed rows also satisfy
         // the gate. (This is a deliberate divergence from the present-tense
         // `HallAttendanceStatus.Arrived`, which reports current presence.)
-        // S-5 (owner) — the LIVE venue gate is REAL hall arrival, never a client
+        // The LIVE venue gate is REAL hall arrival, never a client
         // self-assert. It applies only once the session is LIVE (now >= Start);
         // before start any approved user may ask (the `!isLive` short-circuit
         // skips the arrival query). When the hall has an arrival mechanism (a
-        // geofence [D-240]; a hall-door gate feeds the SAME HallAttendance record)
+        // geofence; a hall-door gate feeds the SAME HallAttendance record)
         // the authoritative signal is a HallAttendance row for this session. When
         // the hall has NO arrival mechanism presence cannot be verified, so — per
         // owner — remote Q&A still works and the question is accepted (the earlier
@@ -123,14 +123,12 @@ internal sealed class SessionQuestionService(
                 a => a.SessionId == sessionId && a.UserId == submittedByUserId, cancellationToken);
         if (!atVenue)
         {
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.SessionQuestionRejectedNotAtVenue,
-                Outcome = AuditOutcome.Failure,
-                ActorUserId = submittedByUserId,
-                ErrorCode = ErrorCodes.NotAtVenue,
-                Detail = $"sessionId={sessionId}; gate=hall-arrival",
-            }, cancellationToken);
+            await auditLog.WriteFailureAsync(
+                AuditEvents.SessionQuestionRejectedNotAtVenue,
+                submittedByUserId,
+                errorCode: ErrorCodes.NotAtVenue,
+                detail: $"sessionId={sessionId}; gate=hall-arrival",
+                cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.NotAtVenue, 403,
                 "You must have arrived at the hall to ask a question.",
@@ -143,13 +141,13 @@ internal sealed class SessionQuestionService(
         // the racy "max+1 then insert" pattern that an earlier draft
         // shipped. A moderator who reorders writes explicit Order
         // values to override the natural order.
-        // P3.3 — D-212 / owner 2026-07-19 (two-path Q&A): the phase is pre vs
+        // Two-path Q&A: the phase is pre vs
         // live relative to the session start, and it now ROUTES the question —
         // it is no longer just a display label.
         //
-        //  • PRE (asked before the session goes live): stage 1 is the AI filter
-        //    (P4.2 — D-236, ADVISORY — it tags a verdict for the Committee but
-        //    never blocks a submit), then the row lands Pending for the
+        //  • PRE (asked before the session goes live): stage 1 is the AI filter.
+        //    It tags a verdict for the Committee but never blocks a
+        //    submit, then the row lands Pending for the
         //    Scientific Committee (stage 2) → the moderator desk (stage 3).
         //  • LIVE (asked once the session has started): owner directive — NO AI,
         //    NO committee. A live question goes STRAIGHT to the per-session
@@ -181,13 +179,11 @@ internal sealed class SessionQuestionService(
         appDbContext.SessionQuestions.Add(question);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionQuestionSubmitted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = submittedByUserId,
-            Detail = $"sessionId={sessionId}; questionId={question.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionQuestionSubmitted,
+            submittedByUserId,
+            $"sessionId={sessionId}; questionId={question.Id}",
+            cancellationToken);
 
         logger.LogInformation(
             "Audience question {QuestionId} submitted on session {SessionId} ({Code}) by {UserId}",

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -13,8 +13,7 @@ namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
 /// Implements the session lifecycle — refresh-token rotation with stolen-token
-/// reuse detection, and sign-out (SIMF-API-001 section 12.4, SIMF-FDS-001
-/// section 5.3 and Amendment A.6).
+/// reuse detection, and sign-out.
 /// </summary>
 public sealed class SessionService(
     IUserAccountRepository accounts,
@@ -31,7 +30,7 @@ public sealed class SessionService(
         RefreshRequest request,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var presented = await refreshTokenRepository.GetByTokenHashAsync(
             OpaqueToken.Hash(request.RefreshToken), cancellationToken);
 
@@ -46,7 +45,7 @@ public sealed class SessionService(
 
         // A token that was already revoked is being presented again — it has
         // been rotated away, so its reuse means it was stolen. Kill every
-        // session for the account (SIMF-FDS-001 section 5.3).
+        // session for the account.
         if (presented.RevokedAt is not null)
         {
             await refreshTokenRepository.RevokeAllForUserAsync(
@@ -93,7 +92,7 @@ public sealed class SessionService(
                 "هذا الحساب غير نشط.");
         }
 
-        // H19 — D-080: a refresh-token holder cannot mint new access tokens
+        // A refresh-token holder cannot mint new access tokens
         // after an admin sets PasswordChangeRequired. Pre-H19 the only check
         // was at the password step, so any live refresh token rotated forever.
         if (user.PasswordChangeRequired)
@@ -130,7 +129,7 @@ public sealed class SessionService(
                         UserId = user.Id,
                         TokenHash = OpaqueToken.Hash(refreshValue),
                         CreatedAt = now,
-                        // D-443 (NCA finding): absolute 24h session cap. The
+                        // The NCA-required absolute 24h session cap. The
                         // replacement inherits the chain's original deadline
                         // (sign-in + Jwt:SessionLifetimeHours) instead of
                         // sliding a fresh window, so rotation can never push a
@@ -171,9 +170,9 @@ public sealed class SessionService(
 
         // Revoke every refresh token and roll the security stamp — this ends all
         // sessions, since the stamp is per-account and every access token carries
-        // it (SIMF-FDS-001 Amendment A.6, decision D-012).
+        // it.
         await refreshTokenRepository.RevokeAllForUserAsync(
-            user.Id, timeProvider.GetUtcNow(), cancellationToken);
+            user.Id, timeProvider.SimfNow(), cancellationToken);
         await accounts.UpdateSecurityStampAsync(user);
 
         await AuditAsync(AuditEvents.SignOutSucceeded, AuditOutcome.Success,

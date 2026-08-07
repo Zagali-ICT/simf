@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/CurrentUserEndpointTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -9,13 +9,13 @@ namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
 /// <c>GET /api/v1/app/users/me</c> — the signed-in user the Flutter app decodes
-/// into its <c>CurrentUserDto</c> (SIMF-MOB-API-001 §5.1): identity, the
+/// into its <c>CurrentUserDto</c>: identity, the
 /// resolved mobile app-role, the preferred language and the registration
 /// status. Available to ANY signed-in account — including not-yet-approved
 /// ones — so the app can poll the approval state on the Registration-Status
-/// screen (Page 011). Mirrors <see cref="ProfileEndpoint"/>'s auth model
+/// screen. Mirrors <see cref="ProfileEndpoint"/>'s auth model
 /// (signed-in, own <c>sub</c>); no permission code (app self-read, not an admin
-/// action). D-249.
+/// action).
 /// </summary>
 public sealed class CurrentUserEndpoint(IAccountService accountService)
     : EndpointWithoutRequest<ApiResult<CurrentUserResponse>>
@@ -30,11 +30,7 @@ public sealed class CurrentUserEndpoint(IAccountService accountService)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var response = await accountService.GetCurrentUserAsync(userId, ct);
         await Send.OkAsync(ApiResult<CurrentUserResponse>.Ok(response), ct);

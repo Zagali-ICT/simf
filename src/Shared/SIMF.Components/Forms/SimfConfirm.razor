@@ -1,4 +1,4 @@
-@* SimfConfirm — a small must-decide confirmation dialog (D-353). Wraps
+@* SimfConfirm — a small must-decide confirmation dialog. Wraps
    SimfModal with RequireExplicitClose so a destructive action (the Delete
    step of a View/Delete form) cannot be dismissed by an accidental backdrop
    click. Reusable across every CRUD page's delete confirmation. *@
@@ -19,10 +19,12 @@
                         Disabled="Busy" OnClick="OnCancel">
                 @CancelLabel
             </SimfButton>
-            <SimfButton Type="button" Variant="@(Danger ? "danger" : "primary")"
-                        Loading="Busy" LoadingLabel="@ConfirmLabel" OnClick="OnConfirm">
-                @ConfirmLabel
-            </SimfButton>
+            <SimfActionGate Permission="@Permission">
+                <SimfButton Type="button" Variant="@(Danger ? "danger" : "primary")"
+                            Loading="Busy" LoadingLabel="@ConfirmLabel" OnClick="OnConfirm">
+                    @ConfirmLabel
+                </SimfButton>
+            </SimfActionGate>
         </Footer>
     </SimfModal>
 }
@@ -55,6 +57,17 @@
 
     /// <summary>Raised when the user confirms.</summary>
     [Parameter] public EventCallback OnConfirm { get; set; }
+
+    /// <summary>The permission that gates the action this dialog commits.
+    ///
+    /// <para>The confirm button is rendered HERE, not by the page, so a page cannot
+    /// wrap it in a gate: the same structural gap that was closed on SimfDataGrid. Set
+    /// the code that gates the endpoint the confirmed action calls; null (the
+    /// default) leaves the button ungated, so an un-opted caller is unchanged.</para>
+    ///
+    /// <para>Cancel is never gated. A holder who should not commit must still be able
+    /// to close the dialog.</para></summary>
+    [Parameter] public string? Permission { get; set; }
 
     /// <summary>Raised when the user cancels / closes.</summary>
     [Parameter] public EventCallback OnCancel { get; set; }

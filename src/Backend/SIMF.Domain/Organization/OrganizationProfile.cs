@@ -4,27 +4,23 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Organization;
 
 /// <summary>
-/// D-495 — the single, admin-editable "project / about" record for the forum.
-/// One row, fixed <see cref="SingletonId"/>, updated in place by admins on the CP
-/// Organization Profile page. It is the edition-generic source of truth: the app
-/// + website read the forum's name, year, dates, status, location, contact, social
-/// links, live-stream link and about/vision text from here, so the same build
-/// serves previous and future editions by editing data, not code.
+/// The forum's one "project / about" record: a single row, edited in place from
+/// the Control Panel. It is edition-generic, so the app and the website read the
+/// forum's name, year, dates, status, location, contact and social links from
+/// here and the same build serves a past or a future edition by editing data
+/// rather than code.
 ///
-/// <para>The logo lives in the unified <c>Asset</c> table (category
-/// <c>OrganizationLogo</c>, owner = <see cref="SingletonId"/>) — bytes stay out of
-/// the row (D-357). Social links are 7 fixed columns (the shipped
-/// <c>SocialLinks</c> wire contract); the single website is
-/// <see cref="ContactWebsite"/>. The variable lists (<see cref="AboutItems"/>,
-/// <see cref="Details"/>) are child tables.</para>
+/// <para>The constructor stamps <see cref="SingletonId"/> on every instance, so
+/// the primary key is what holds the table to one row. The logo is deliberately
+/// not a column here: it lives in the file store under that same id.</para>
 ///
-/// <para><see cref="BaseAuditEntity.UpdatedAt"/> drives the public read's
-/// <c>Last-Modified</c> / <c>304</c> cache-revalidation (D-173); every admin write —
-/// including a child mutation — touches it so the app refreshes.</para>
+/// <para><see cref="BaseAuditEntity.UpdatedAt"/> is the public read's
+/// <c>Last-Modified</c> token, which the app's cached copy revalidates against
+/// for a 304. An admin save is one full-document upsert, so editing nothing but
+/// a child row still stamps it and the app still refreshes.</para>
 /// </summary>
 public sealed class OrganizationProfile : BaseAuditEntity
 {
-    /// <summary>The one and only profile row's id.</summary>
     public static readonly Guid SingletonId =
         Guid.Parse("00000000-0000-0000-0000-000000000003");
 
@@ -33,94 +29,90 @@ public sealed class OrganizationProfile : BaseAuditEntity
         Id = SingletonId;
     }
 
-    // --- Identity (bilingual) ---
+    // Name and Title are required, the rest optional; Title is the sub-heading
+    // shown under the name, not a page title. Each field pairs with its Arabic twin.
 
-    /// <summary>English forum name.</summary>
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>Arabic forum name — paired with <see cref="Name"/>.</summary>
     public string NameArabic { get; set; } = string.Empty;
 
-    /// <summary>English title / sub-heading shown under the name.</summary>
     public string Title { get; set; } = string.Empty;
 
-    /// <summary>Arabic title — paired with <see cref="Title"/>.</summary>
     public string TitleArabic { get; set; } = string.Empty;
 
-    /// <summary>English short tagline / slogan.</summary>
     public string? Slogan { get; set; }
 
-    /// <summary>Arabic slogan — paired with <see cref="Slogan"/>.</summary>
     public string? SloganArabic { get; set; }
 
-    /// <summary>English long-form biography / description.</summary>
     public string? Bio { get; set; }
 
-    /// <summary>Arabic biography — paired with <see cref="Bio"/>.</summary>
     public string? BioArabic { get; set; }
 
-    // --- Versioning ---
+    // Free-text labels for the About screens. Only Version reaches a screen: the
+    // app's About page shows it when set and drops the row when it is blank.
+    // SysVersion, VersionDate and ReleaseDate are editable in the Control Panel and
+    // ride the public payload, but nothing renders them.
 
-    /// <summary>Public product / app version (e.g. "1.0.0").</summary>
     public string? Version { get; set; }
 
-    /// <summary>The date of <see cref="Version"/>.</summary>
-    public DateTimeOffset? VersionDate { get; set; }
+    public DateTime? VersionDate { get; set; }
 
-    /// <summary>System / build version.</summary>
     public string? SysVersion { get; set; }
 
-    /// <summary>The general "date" of the edition / release.</summary>
-    public DateTimeOffset? ReleaseDate { get; set; }
+    public DateTime? ReleaseDate { get; set; }
 
-    // --- Edition state ---
+    // The current edition. The two dates carry a calendar date only; readers take
+    // the YYYY-MM-DD head, so the time part means nothing. Status is set by hand and
+    // never derived from those dates, so an edition whose end date has passed still
+    // reads Open until an admin archives it.
 
-    /// <summary>The forum's start date.</summary>
-    public DateTimeOffset? EventStartDate { get; set; }
+    public DateTime? EventStartDate { get; set; }
 
-    /// <summary>The forum's end date.</summary>
-    public DateTimeOffset? EventEndDate { get; set; }
+    public DateTime? EventEndDate { get; set; }
 
-    /// <summary>The active edition year (e.g. 2026).</summary>
     public int CurrentYear { get; set; }
 
-    /// <summary>Whether the current edition is coming soon / open / archived.</summary>
     public ForumStatus Status { get; set; } = ForumStatus.Open;
 
-    // --- Location ---
+    // The venue. The coordinates are optional decimal degrees, refused on write
+    // outside ±90 / ±180 and stored to six places; they ride the public payload but
+    // no screen plots them today.
 
-    /// <summary>English location / venue text.</summary>
     public string? LocationText { get; set; }
 
-    /// <summary>Arabic location / venue text — paired with <see cref="LocationText"/>.</summary>
     public string? LocationTextArabic { get; set; }
 
-    /// <summary>Venue latitude (decimal degrees, −90..90).</summary>
     public decimal? Latitude { get; set; }
 
-    /// <summary>Venue longitude (decimal degrees, −180..180).</summary>
     public decimal? Longitude { get; set; }
 
-    // --- Contact ---
+    // There is exactly one website. Every URL column from here down is refused on
+    // write unless it is an absolute http(s) URL, and the social links are sanitised
+    // again on the public read, so a stored value is safe to render as a link.
 
     public string? ContactPhone { get; set; }
     public string? ContactEmail { get; set; }
 
-    /// <summary>The single official website URL.</summary>
     public string? ContactWebsite { get; set; }
 
-    // --- Media ---
+    // Both are links an admin types; the hero-video upload simply points
+    // BackgroundVideoUrl at the file it stored.
 
-    /// <summary>The main home-page live-stream link (a YouTube URL). Distinct from
-    /// the per-session <c>Session.LiveStreamUrl</c> (D-349).</summary>
+    /// <summary>The forum-wide live feed, distinct from the per-session
+    /// <c>Session.LiveStreamUrl</c>. The app's live screen prefers a session's own
+    /// feed and falls back to this one; with neither set it shows an empty
+    /// state.</summary>
     public string? LiveStreamUrl { get; set; }
 
-    /// <summary>The hero-section background video link (a YouTube URL or a direct
-    /// MP4/HLS link). Rendered muted + looping behind the home hero on both the app
-    /// and the website; blank falls back to the bundled hero media (D-756).</summary>
+    /// <summary>The muted, looping video behind the home hero. The website plays a
+    /// YouTube link or a direct MP4/HLS link; the app plays only a direct link and
+    /// falls through to its banner carousel on a YouTube one. Null, or a link the
+    /// hero code will not take, leaves the bundled hero media in place.</summary>
     public string? BackgroundVideoUrl { get; set; }
 
-    // --- Social links (the fixed SocialLinks wire contract) ---
+    // Seven fixed columns rather than a child table: the shipped SocialLinks wire
+    // contract names each network, so adding one costs a column, a contract field
+    // and an app release.
 
     public string? FacebookUrl { get; set; }
     public string? XUrl { get; set; }
@@ -130,32 +122,30 @@ public sealed class OrganizationProfile : BaseAuditEntity
     public string? TikTokUrl { get; set; }
     public string? SnapchatUrl { get; set; }
 
-    // --- Registration welcome message (migrated from the SiteSettings keys) ---
+    // Blank in either language falls back to the in-code default message. These
+    // two, and PartnerDirectoryEnabled below, are the odd ones out: the CP Site
+    // Settings page owns them and the site-settings payload serves them, so the
+    // Organization Profile save never writes them.
 
-    /// <summary>English registration-success message (migrated from
-    /// <c>registration.successMessage.en</c>).</summary>
     public string? RegistrationSuccessMessage { get; set; }
 
-    /// <summary>Arabic registration-success message (migrated from
-    /// <c>registration.successMessage.ar</c>).</summary>
     public string? RegistrationSuccessMessageArabic { get; set; }
 
-    // --- Feature switches ---
+    // Read off this row on each call, so a flip takes effect with no restart.
 
-    /// <summary>Build #13 — whether the app's "Meet People Like You" partner
-    /// directory (<c>GET /app/networking/partner-directory</c>) is enabled.
-    /// Admin-toggled on the CP Site-Settings page. Defaults to true (fail-open):
-    /// when false the directory endpoint returns empty and the app hides the
-    /// feature entry point.</summary>
+    /// <summary>The app's "Meet People Like You" partner directory. Off makes the
+    /// directory endpoint return an empty list and the app hides its entry point.
+    /// Fail-open: a missing profile row reads as enabled.</summary>
     public bool PartnerDirectoryEnabled { get; set; } = true;
 
-    // --- Variable lists (child tables) ---
+    // The two variable-length lists, both child tables cascade-deleted with the
+    // profile and both read in DisplayOrder: free-form "about" cards (mission,
+    // vision) and "name : value" detail rows (year, dates, location). Anything
+    // editorial that changes from edition to edition belongs here, not in a column.
 
-    /// <summary>The ordered "about" items (title + text), e.g. mission / vision.</summary>
     public ICollection<OrganizationAboutItem> AboutItems { get; set; } =
         new List<OrganizationAboutItem>();
 
-    /// <summary>The ordered "details" items (name + value), e.g. year / date / location.</summary>
     public ICollection<OrganizationDetail> Details { get; set; } =
         new List<OrganizationDetail>();
 }

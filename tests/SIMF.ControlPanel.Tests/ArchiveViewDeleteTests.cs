@@ -10,10 +10,17 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class ArchiveViewDeleteTests : CpComponentTestBase
 {
+    public ArchiveViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Archive.Delete);
+    }
+
     private static AdminArchiveEditionSummary Summary() => new(
         Guid.NewGuid(), 2024, "SIMF 2024", "Ø³ÙŠÙ…Ù 2024",
         "Summary EN", "Summary AR", 1200, 30, 18,
-        "/media/archive/2024.jpg", IsActive: true, DateTimeOffset.UnixEpoch,
+        "/media/archive/2024.jpg", IsActive: true, DateTime.UnixEpoch,
         false, // HasCover (D-357)
         "Riyadh", "Ø§Ù„Ø±ÙŠØ§Ø¶", "Mar 2024", "Ù…Ø§Ø±Ø³ 2024");
 

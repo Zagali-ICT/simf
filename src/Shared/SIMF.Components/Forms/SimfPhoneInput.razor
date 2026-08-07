@@ -1,8 +1,8 @@
-@* SimfPhoneInput — a phone-number input with a country-code prefix
-   (decision D-044 c). The Saudi default is +966; the user can pick another
+@* SimfPhoneInput — a phone-number input with a country-code prefix.
+   The Saudi default is +966; the user can pick another
    country code from a small set, then enter the local number. The full
-   string posted is +<dial>-<local>. Used on the visitor profile
-   (myComment #18 — Saudi mobile / international mobile). *@
+   string posted is +<dial>-<local>. Used on the visitor profile for
+   the Saudi mobile / international mobile fields. *@
 @namespace SIMF.Components.Forms
 
 <div class="simf-field @(HasError ? "simf-field--error" : null) @(Disabled ? "simf-field--disabled" : null)">
@@ -70,7 +70,7 @@
     /// <summary>Accessible label for the country-code select.</summary>
     [Parameter] public string CountryCodeLabel { get; set; } = "Country code";
 
-    /// <summary>The current value as a single string: <c>+<dial>-<local></c>.</summary>
+    /// <summary>The current value as a single string: <c>+&lt;dial&gt;-&lt;local&gt;</c>.</summary>
     [Parameter] public string Value { get; set; } = string.Empty;
 
     /// <summary>Raised whenever the user types or changes the country code.</summary>

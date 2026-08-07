@@ -36,6 +36,7 @@ class OnboardingTopBar extends StatelessWidget {
             if (showBack)
               IconButton(
                 onPressed: onBack,
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 icon: const Icon(
                   Icons.arrow_back_ios_new,
                   color: SimfTokens.surface,

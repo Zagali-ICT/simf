@@ -6,11 +6,11 @@ using SIMF.Web.Content;
 
 namespace SIMF.Web.Components.Pages;
 
-// Website — D-717 (item 7, FDS-013 §15 GAP-3) — the public speaker double-opt-in
-// landing page. The email Approve/Reject link opens this (a GET preview — no state
-// change, safe against link prefetch); the speaker then clicks Confirm, which POSTs
-// and applies the decision. Anonymous — the opaque token in the query is the only
-// credential. Markup lives in MeetingConfirm.razor.
+// The public speaker double-opt-in landing page. The email Approve/Reject link
+// opens this as a GET preview — no state change, so a link prefetch cannot decide
+// anything — and the speaker then clicks Confirm, which POSTs and applies the
+// decision. Anonymous: the opaque token in the query is the only credential.
+// Markup lives in MeetingConfirm.razor.
 public partial class MeetingConfirm
 {
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
@@ -54,8 +54,9 @@ public partial class MeetingConfirm
         finally { _submitting = false; }
     }
 
-    // R10 (D-767) — show the slot on the Saudi wall clock via the shared EventTime
-    // helper (the same UTC->Saudi relabel used across the site); stored instants stay UTC.
+    // Show the slot on the Saudi wall clock via the shared EventTime helper, the
+    // same formatter used across the site. Stored instants ARE the Saudi wall
+    // clock, so the helper formats — it does not convert.
     private string FormatSlot(MeetingActionPreview preview) =>
         preview.SlotStart is { } start && preview.SlotEnd is { } end
             ? $"{EventTime.DateTimeText(start)}–{EventTime.Time(end)}"

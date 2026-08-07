@@ -5,7 +5,7 @@ description: SIMF Maritime Forum — the Flutter mobile application for Android 
 # Bumped for the local-time wire rename (*Utc fields dropped, datetimes now
 # Saudi +03:00): installed builds decode the old wire, so the server's
 # minimum-required-version must be set to 1.1.0 at deploy to force the update.
-version: 1.1.0+15
+version: 1.0.1+18
 publish_to: none
 
 environment:
@@ -82,13 +82,17 @@ dependencies:
   # D-736 — semver parse/compare for the server version-policy check (never
   # string-compare versions: "1.10.0" < "1.9.0" lexically). Pure Dart.
   pub_semver: ^2.1.4
+  # D-820 - AES-256-GCM + Crockford base32 for the offline badge decoder, so a
+  # scanner can verify a badge printed by an offline desk with no network. Pure
+  # Dart (no native config, which matters here because android/ios are
+  # generated); already present transitively, now direct because we use it.
+  pointycastle: ^3.9.1
 
   simf_data_pkg:
     path: packages/simf_data_pkg
   simf_auth_pkg:
     path: packages/simf_auth_pkg
   pretty_dio_logger: ^1.4.0
-  firebase_core: ^4.12.1
 
 # D-768 — vendored copy of video_player_android 2.12.0, patched so the hero
 # background video plays on Huawei/HiSilicon devices. Their hardware AVC decoder
@@ -161,9 +165,10 @@ flutter:
   uses-material-design: true
   generate: false
   # Login v2 design-preview logo (Figma KSA-Project 168:2800 — D-358).
-  # D-373: assets/videos/ carries the onboarding background clips
-  # (onboard_01..03.mp4 — the same hero clip ×3 until the owner supplies
-  # the real 2nd/3rd videos; replace in place).
+  # D-373: assets/videos/ carries the onboarding background clip
+  # (onboard_01.mp4). It used to ship three byte-identical copies (one per
+  # step); the duplicates were dropped and the carousel now plays the single
+  # clip on one decoder (DEF-ONB-004).
   assets:
     - assets/images/
     - assets/videos/

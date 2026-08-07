@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/CmsTests.cs
+// Tests: SIMF.Api.Tests/CmsTests.cs, SIMF.Api.Tests/GridDateSortKeyTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Cms;
 
 /// <summary>
-/// D-173 (gap doc G8, PDF §1, §2.1) — admin CRUD over content blocks
+/// Admin CRUD over content blocks
 /// and banners. Both entities live on the App DB; logical FK on
 /// <c>LastUpdatedByUserId</c> to <c>SimfUser</c> on the Identity DB.
 /// </summary>
@@ -37,7 +37,7 @@ internal sealed class AdminCmsService(
                 || EF.Functions.Like(b.ContentArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -59,7 +59,7 @@ internal sealed class AdminCmsService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: Key ascending.
+        // CP grid sortable columns. Default: Key ascending.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("key", true) => rows.OrderByDescending(b => b.Key),
@@ -121,7 +121,7 @@ internal sealed class AdminCmsService(
                 "لا يمكن أن يتجاوز المحتوى 8000 حرف.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var existing = await appDbContext.ContentBlocks
             .SingleOrDefaultAsync(b => b.Key == key, cancellationToken);
 
@@ -150,13 +150,8 @@ internal sealed class AdminCmsService(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ContentBlockUpserted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"key={key}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ContentBlockUpserted, actorUserId, $"key={key}", cancellationToken);
 
         logger.LogInformation(
             "Admin {Actor} upserted content block {Key}", actorUserId, key);
@@ -182,17 +177,15 @@ internal sealed class AdminCmsService(
             return; // idempotent
         }
         existing.IsActive = false;
-        existing.LastUpdatedAt = timeProvider.GetUtcNow();
+        existing.LastUpdatedAt = timeProvider.SimfNow();
         existing.LastUpdatedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ContentBlockDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"key={normalised}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ContentBlockDeactivated,
+            actorUserId,
+            $"key={normalised}",
+            cancellationToken);
     }
 
     public async Task<GridPage<AdminBannerSummary>> ListBannersAsync(
@@ -208,7 +201,7 @@ internal sealed class AdminCmsService(
                 EF.Functions.Like(b.Title, $"%{term}%")
                 || EF.Functions.Like(b.TitleArabic, $"%{term}%"));
         }
-        // CP grid per-column filters (D-256). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -227,15 +220,20 @@ internal sealed class AdminCmsService(
             }
         }
 
-        // CP grid sortable columns (D-256). Default: DisplayOrder, then Start.
+        // CP grid sortable columns. Default: DisplayOrder, then Start.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("title", false) => rows.OrderBy(b => b.Title),
             ("title", true) => rows.OrderByDescending(b => b.Title),
-            ("startutc", false) => rows.OrderBy(b => b.Start),
-            ("startutc", true) => rows.OrderByDescending(b => b.Start),
-            ("endutc", false) => rows.OrderBy(b => b.End),
-            ("endutc", true) => rows.OrderByDescending(b => b.End),
+            // "start" / "end" match the grid column Keys in BannersList.razor. They
+            // used to read "startutc" / "endutc", left behind when the persisted
+            // columns were renamed, so neither date column sorted at all: both
+            // fell through to the catch-all and the grid stayed on DisplayOrder.
+            ("start", false) => rows.OrderBy(b => b.Start),
+            ("start", true) => rows.OrderByDescending(b => b.Start),
+            ("end", false) => rows.OrderBy(b => b.End),
+            ("end", true) => rows.OrderByDescending(b => b.End),
+            ("displayorder", false) => rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.Start),
             ("displayorder", true) => rows.OrderByDescending(b => b.DisplayOrder).ThenBy(b => b.Start),
             ("isactive", false) => rows.OrderBy(b => b.IsActive),
             ("isactive", true) => rows.OrderByDescending(b => b.IsActive),
@@ -247,7 +245,7 @@ internal sealed class AdminCmsService(
             .Select(b => new AdminBannerSummary(
                 b.Id, b.Title, b.TitleArabic,
                 b.Start, b.End, b.DisplayOrder, b.IsActive, b.CreatedAt,
-                // D-506 — round-trip body + image/link through the grid Excel export.
+                // Round-trip body + image/link through the grid Excel export.
                 b.Body, b.BodyArabic, b.ImageUrl, b.LinkUrl))
             .ToListAsync(cancellationToken);
 
@@ -273,7 +271,7 @@ internal sealed class AdminCmsService(
             request.Body, request.BodyArabic, request.Start, request.End,
             request.DisplayOrder);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var banner = new Banner
         {
             Id = Guid.NewGuid(),
@@ -292,13 +290,8 @@ internal sealed class AdminCmsService(
         appDbContext.Banners.Add(banner);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BannerCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"bannerId={banner.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BannerCreated, actorUserId, $"bannerId={banner.Id}", cancellationToken);
 
         return ToBannerDetail(banner);
     }
@@ -328,16 +321,14 @@ internal sealed class AdminCmsService(
         banner.End = request.End;
         banner.DisplayOrder = request.DisplayOrder;
         banner.IsActive = request.IsActive;
-        banner.UpdatedAt = timeProvider.GetUtcNow();
+        banner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BannerUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"bannerId={banner.Id}; active={banner.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BannerUpdated,
+            actorUserId,
+            $"bannerId={banner.Id}; active={banner.IsActive}",
+            cancellationToken);
 
         return ToBannerDetail(banner);
     }
@@ -357,16 +348,11 @@ internal sealed class AdminCmsService(
             return; // idempotent
         }
         banner.IsActive = false;
-        banner.UpdatedAt = timeProvider.GetUtcNow();
+        banner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BannerDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"bannerId={banner.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BannerDeactivated, actorUserId, $"bannerId={banner.Id}", cancellationToken);
     }
 
     // -- helpers --------------------------------------------------------------
@@ -379,7 +365,7 @@ internal sealed class AdminCmsService(
 
     private static void ValidateBanner(
         string title, string titleArabic, string body, string bodyArabic,
-        DateTimeOffset start, DateTimeOffset end, int displayOrder)
+        DateTime start, DateTime end, int displayOrder)
     {
         if (string.IsNullOrWhiteSpace(title) || title.Length > 256
             || string.IsNullOrWhiteSpace(titleArabic) || titleArabic.Length > 256)

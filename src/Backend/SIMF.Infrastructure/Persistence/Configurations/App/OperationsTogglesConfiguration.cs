@@ -4,7 +4,7 @@ using SIMF.Domain.Operations;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-166 (gap doc G4) — singleton tables. Both rows are seeded
+/// <summary>Singleton tables. Both rows are seeded
 /// in EF model data so the gate exists from day-one.</summary>
 internal sealed class RegistrationGateConfiguration
     : IEntityTypeConfiguration<RegistrationGate>
@@ -18,7 +18,7 @@ internal sealed class RegistrationGateConfiguration
             Id = RegistrationGate.SingletonId,
             IsOpen = true,
             AutoClose = null,
-            LastChangedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            LastChangedAt = new DateTime(2026, 1, 1, 0, 0, 0),
             LastChangedByUserId = null,
         });
     }
@@ -35,7 +35,7 @@ internal sealed class ArchiveVisibilityConfiguration
         {
             Id = ArchiveVisibility.SingletonId,
             IsVisible = true,
-            LastChangedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            LastChangedAt = new DateTime(2026, 1, 1, 0, 0, 0),
             LastChangedByUserId = null,
         });
     }

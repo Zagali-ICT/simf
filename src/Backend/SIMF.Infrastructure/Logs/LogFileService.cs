@@ -10,9 +10,8 @@ namespace SIMF.Infrastructure.Logs;
 /// Default implementation of <see cref="ILogFileService"/> — reads the file
 /// tree under <c>{Storage:LogDirectory}</c>. All file-system access is
 /// validated against the root directory to prevent path traversal
-/// (any <c>..</c> or absolute path in <paramref name="project"/> /
-/// <paramref name="fileName"/> is rejected by treating only the bare leaf
-/// name).
+/// (any <c>..</c> or absolute path in a supplied <c>project</c> or
+/// <c>fileName</c> is rejected by treating only the bare leaf name).
 /// </summary>
 public sealed class LogFileService : ILogFileService
 {
@@ -22,7 +21,7 @@ public sealed class LogFileService : ILogFileService
 
     public LogFileService(IOptions<StorageOptions> options)
     {
-        // R1 — D-074: typed options replace the raw IConfiguration[…] read.
+        // Typed options replace the raw IConfiguration[…] read.
         // LogDirectory defaults to "logs" in StorageOptions so the same
         // fallback applies when the config key is unset.
         var configured = options.Value.LogDirectory;

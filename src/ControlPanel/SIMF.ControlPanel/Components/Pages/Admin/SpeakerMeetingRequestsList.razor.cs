@@ -1,18 +1,9 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
 using SIMF.Contracts.Programme;
 using SIMF.Contracts.BusinessMeetings;
 
@@ -31,7 +22,7 @@ public partial class SpeakerMeetingRequestsList
     private bool _busy;
     private Toast? _toast;
 
-    // R10 (D-767) — a confirm dialog for the one-click, state-changing row actions
+    // A confirm dialog for the one-click, state-changing row actions
     // (Check-in flips Accepted→Done; Resend emails fresh links) so a mis-click cannot
     // fire them silently. The work runs from RunConfirmAsync only after the admin OKs.
     private bool _confirmOpen;
@@ -42,12 +33,12 @@ public partial class SpeakerMeetingRequestsList
 
     private bool _respondOpen;
     // PII (requester email) is fetched on demand into the detail shape; list
-    // rows do not carry email (the D-185 pattern).
+    // rows do not carry email.
     private AdminSpeakerMeetingRequestDetail? _respondTarget;
     private bool _loadingDetail;
     private string _respondNote = string.Empty;
 
-    // D-716 (item 7, GAP-2) — optional hall binding on Accept: pick a meeting hall,
+    // Optional hall binding on Accept: pick a meeting hall,
     // one of its free slots, and (optionally) a table. Binding moves the request to
     // AwaitingSpeaker (double-opt-in). Leaving the hall unset keeps the legacy
     // straight-to-Accepted behaviour.
@@ -90,9 +81,9 @@ public partial class SpeakerMeetingRequestsList
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
 
-    // D-716 — a free hall slot as "2026-07-10 09:00 AM–09:30 AM" (Saudi time).
+    // A free hall slot as "2026-07-10 09:00 AM–09:30 AM" (Saudi time).
     private static string FormatSlot(HallAvailableSlot slot) =>
-        $"{slot.Start.ToSaudi():dd-MM-yyyy hh:mm tt}–{slot.End.ToSaudi():hh:mm tt}";
+        $"{slot.Start:dd-MM-yyyy hh:mm tt}–{slot.End:hh:mm tt}";
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
@@ -119,24 +110,29 @@ public partial class SpeakerMeetingRequestsList
         finally { _loading = false; }
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — speaker meeting
     // requests are created from the app + responded to in the CP, so there is
     // no import path.
-    private Task OnExportAsync(IReadOnlyList<AdminSpeakerMeetingRequestRow> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<AdminSpeakerMeetingRequestRow> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/speaker-meeting-requests/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 
     private async Task OnRespondAsync(AdminSpeakerMeetingRequestRow row)
     {
         // Open the modal with what the row carries (no email yet), then fetch
         // the detail (with email) in the background — one audited Viewed event
-        // per click (D-185 pattern).
+        // per click.
         _respondTarget = new AdminSpeakerMeetingRequestDetail(
             row.Id, row.SpeakerId, row.SpeakerName, row.SpeakerNameArabic,
             row.RequestedByUserId, row.RequesterName, RequesterEmail: null,
@@ -210,8 +206,37 @@ public partial class SpeakerMeetingRequestsList
         finally { _busy = false; }
     }
 
-    // R10 (D-767) — open the confirm dialog for a one-click row action; the work runs
+    // QA B20 — reopen a Rejected / Cancelled request back to Pending so a mistaken
+    // decline or cancel is recoverable. Quiet row action behind the same confirm
+    // dialog as Check-in / Resend, gated by the page's Manage permission.
+    private async Task OnReopenAsync(AdminSpeakerMeetingRequestRow row)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSpeakerMeetingRequestDetail>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/speaker-meeting-requests/{row.Id}/reopen",
+                new { });
+            _toast = env is { Success: true }
+                ? new Toast("success", L["Admin.SpeakerMeetingRequests.Reopen.Done"])
+                : new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SpeakerMeetingRequests.LoadFailed"]);
+            if (env is { Success: true }) { await LoadAsync(); }
+        }
+        finally { _busy = false; }
+    }
+
+    // Open the confirm dialog for a one-click row action; the work runs
     // from RunConfirmAsync only after the admin confirms.
+    private void ConfirmReopen(AdminSpeakerMeetingRequestRow row) =>
+        AskConfirm(L["Admin.SpeakerMeetingRequests.Reopen"],
+            L["Admin.SpeakerMeetingRequests.Reopen.ConfirmMsg"],
+            L["Admin.SpeakerMeetingRequests.Reopen"], () => OnReopenAsync(row));
+
     private void ConfirmCheckIn(AdminSpeakerMeetingRequestRow row) =>
         AskConfirm(L["Admin.Meetings.CheckIn"], L["Admin.Meetings.CheckIn.ConfirmMsg"],
             L["Admin.Meetings.CheckIn"], () => OnCheckInAsync(row));
@@ -244,7 +269,7 @@ public partial class SpeakerMeetingRequestsList
 
     private void CancelConfirm() => _confirmOpen = false;
 
-    // D-716 — reset the hall-binding selection (the chosen hall is set separately;
+    // Reset the hall-binding selection (the chosen hall is set separately;
     // this clears the slot/table choice + their loaded lists).
     private void ClearBindSelection()
     {
@@ -254,7 +279,7 @@ public partial class SpeakerMeetingRequestsList
         _hallTables = new();
     }
 
-    // D-716 — pick a hall to bind on Accept; load its free slots + tables. The two
+    // Pick a hall to bind on Accept; load its free slots + tables. The two
     // reads are independent, so they run concurrently (one modal-open round-trip).
     private async Task OnBindHallChangedAsync(ChangeEventArgs e)
     {
@@ -304,6 +329,14 @@ public partial class SpeakerMeetingRequestsList
 
     private Task ConfirmAsync() =>
         SendRespondAsync(MeetingRequestStatus.Accepted, verbal: true, requireHall: true);
+
+    // QA B19 — with no HallAvailabilityWindow configured there is no free slot to bind,
+    // so Approve and Confirm both refuse and Decline was the admin's only usable action.
+    // The service has always supported accepting WITHOUT a hall (straight to Accepted, no
+    // room booked), so offer it explicitly as its own clearly-labelled button.
+    // VerbalConfirmed is only read when a hall IS bound, so it is left false here.
+    private Task AcceptWithoutHallAsync() =>
+        SendRespondAsync(MeetingRequestStatus.Accepted, verbal: false, requireHall: false);
 
     private async Task SendRespondAsync(
         MeetingRequestStatus status, bool verbal, bool requireHall)

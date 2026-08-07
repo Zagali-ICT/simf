@@ -6,8 +6,8 @@ using SIMF.Contracts.Notifications;
 namespace SIMF.Application.Notifications;
 
 /// <summary>
-/// Reads + mutates the actor's notifications (P12 — D-053). R4 — D-095:
-/// moved from <c>SIMF.Infrastructure.Notifications</c>; persistence is
+/// Reads + mutates the actor's notifications. Moved here from
+/// <c>SIMF.Infrastructure.Notifications</c>; persistence is
 /// delegated to <see cref="INotificationRepository"/>.
 /// </summary>
 internal sealed class NotificationService(
@@ -24,7 +24,7 @@ internal sealed class NotificationService(
             && bool.TryParse(unreadFilter, out var parsed)
             && parsed;
 
-        // A8 — optional server-side kinds filter: comma-separated NotificationKind
+        // Optional server-side kinds filter: comma-separated NotificationKind
         // names in Filters["kinds"] (mirrors the unreadOnly key). Unknown tokens are
         // dropped (a newer app kind never 400s an older server); if nothing parses,
         // the filter is treated as absent (all kinds), matching the tolerant
@@ -65,12 +65,12 @@ internal sealed class NotificationService(
         Guid actorUserId, Guid notificationId,
         CancellationToken cancellationToken = default) =>
         notifications.MarkReadForUserAsync(
-            actorUserId, notificationId, timeProvider.GetUtcNow(), cancellationToken);
+            actorUserId, notificationId, timeProvider.SimfNow(), cancellationToken);
 
     public Task MarkAllReadMineAsync(
         Guid actorUserId, CancellationToken cancellationToken = default) =>
         notifications.MarkAllReadForUserAsync(
-            actorUserId, timeProvider.GetUtcNow(), cancellationToken);
+            actorUserId, timeProvider.SimfNow(), cancellationToken);
 
     public Task DeleteMineAsync(
         Guid actorUserId, Guid notificationId,

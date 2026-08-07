@@ -1,13 +1,8 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Archive;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -21,7 +16,7 @@ public partial class ArchiveAddEdit
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
-    // D-432 — true once the rich lists are safe to send (create, or an edit
+    // True once the rich lists are safe to send (create, or an edit
     // whose detail fetch succeeded). False ⇒ send null lists (keep existing).
     private bool _listsLoaded;
 
@@ -50,7 +45,7 @@ public partial class ArchiveAddEdit
         }
         else
         {
-            _model.Year = DateTime.UtcNow.Year;
+            _model.Year = SimfClock.Now.Year;
             _listsLoaded = true; // create authors the lists from scratch
         }
 
@@ -69,7 +64,7 @@ public partial class ArchiveAddEdit
             return;
         }
 
-        // D-432 — the grid summary carries no rich lists; fetch the detail to
+        // The grid summary carries no rich lists; fetch the detail to
         // pre-populate the gallery / session-title / past-speaker textareas.
         try
         {
@@ -104,57 +99,16 @@ public partial class ArchiveAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminArchiveEditionDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/archive",
-                    new CreateArchiveEditionRequest
-                    {
-                        Year = _model.Year,
-                        TitleEn = _model.TitleEn.Trim(),
-                        TitleAr = _model.TitleAr.Trim(),
-                        SummaryEn = _model.SummaryEn,
-                        SummaryAr = _model.SummaryAr,
-                        Attendees = _model.Attendees,
-                        Sessions = _model.Sessions,
-                        Speakers = _model.Speakers,
-                        CoverImageRelativePath = _model.CoverImageRelativePath,
-                        LocationEn = _model.LocationEn,
-                        LocationAr = _model.LocationAr,
-                        DateLabelEn = _model.DateLabelEn,
-                        DateLabelAr = _model.DateLabelAr,
-                        Gallery = ParseGallery(_model.GalleryText),
-                        SessionTitles = ParseSessionTitles(_model.SessionTitlesText),
-                        PastSpeakers = ParsePastSpeakers(_model.PastSpeakersText),
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+            // SendAsync on the base is not usable here: OnSuccess carries the
+            // grid SUMMARY while the API answers with the DETAIL, so the result
+            // has to be mapped through ToSummary before it is raised.
+            var envelope = IsEdit
+                ? await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
                     "simfAccount.putJson", $"/account/api/admin/archive/{Initial!.Id}",
-                    new UpdateArchiveEditionRequest
-                    {
-                        Year = _model.Year,
-                        TitleEn = _model.TitleEn.Trim(),
-                        TitleAr = _model.TitleAr.Trim(),
-                        SummaryEn = _model.SummaryEn,
-                        SummaryAr = _model.SummaryAr,
-                        Attendees = _model.Attendees,
-                        Sessions = _model.Sessions,
-                        Speakers = _model.Speakers,
-                        CoverImageRelativePath = _model.CoverImageRelativePath,
-                        LocationEn = _model.LocationEn,
-                        LocationAr = _model.LocationAr,
-                        DateLabelEn = _model.DateLabelEn,
-                        DateLabelAr = _model.DateLabelAr,
-                        // Null when the detail fetch failed → keep existing rows.
-                        Gallery = _listsLoaded ? ParseGallery(_model.GalleryText) : null,
-                        SessionTitles = _listsLoaded ? ParseSessionTitles(_model.SessionTitlesText) : null,
-                        PastSpeakers = _listsLoaded ? ParsePastSpeakers(_model.PastSpeakersText) : null,
-                        IsActive = _model.IsActive,
-                    });
-            }
+                    BuildUpdateRequest())
+                : await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/archive",
+                    BuildCreateRequest());
 
             if (envelope is { Success: true, Data: not null })
             {
@@ -172,6 +126,48 @@ public partial class ArchiveAddEdit
         }
         finally { _busy = false; }
     }
+
+    private CreateArchiveEditionRequest BuildCreateRequest() => new()
+    {
+        Year = _model.Year,
+        TitleEn = _model.TitleEn.Trim(),
+        TitleAr = _model.TitleAr.Trim(),
+        SummaryEn = _model.SummaryEn,
+        SummaryAr = _model.SummaryAr,
+        Attendees = _model.Attendees,
+        Sessions = _model.Sessions,
+        Speakers = _model.Speakers,
+        CoverImageRelativePath = _model.CoverImageRelativePath,
+        LocationEn = _model.LocationEn,
+        LocationAr = _model.LocationAr,
+        DateLabelEn = _model.DateLabelEn,
+        DateLabelAr = _model.DateLabelAr,
+        Gallery = ParseGallery(_model.GalleryText),
+        SessionTitles = ParseSessionTitles(_model.SessionTitlesText),
+        PastSpeakers = ParsePastSpeakers(_model.PastSpeakersText),
+    };
+
+    private UpdateArchiveEditionRequest BuildUpdateRequest() => new()
+    {
+        Year = _model.Year,
+        TitleEn = _model.TitleEn.Trim(),
+        TitleAr = _model.TitleAr.Trim(),
+        SummaryEn = _model.SummaryEn,
+        SummaryAr = _model.SummaryAr,
+        Attendees = _model.Attendees,
+        Sessions = _model.Sessions,
+        Speakers = _model.Speakers,
+        CoverImageRelativePath = _model.CoverImageRelativePath,
+        LocationEn = _model.LocationEn,
+        LocationAr = _model.LocationAr,
+        DateLabelEn = _model.DateLabelEn,
+        DateLabelAr = _model.DateLabelAr,
+        // Null when the detail fetch failed → keep existing rows.
+        Gallery = _listsLoaded ? ParseGallery(_model.GalleryText) : null,
+        SessionTitles = _listsLoaded ? ParseSessionTitles(_model.SessionTitlesText) : null,
+        PastSpeakers = _listsLoaded ? ParsePastSpeakers(_model.PastSpeakersText) : null,
+        IsActive = _model.IsActive,
+    };
 
     // The save endpoint returns the detail; the host grid is keyed on the
     // summary, so project the saved row back to a summary for OnSuccess.
@@ -227,19 +223,19 @@ public partial class ArchiveAddEdit
         public int Sessions { get; set; }
         public int Speakers { get; set; }
         public string? CoverImageRelativePath { get; set; }
-        // Â§9 (screen 24-01) â€” place + date label.
+        // Place + date label.
         public string? LocationEn { get; set; }
         public string? LocationAr { get; set; }
         public string? DateLabelEn { get; set; }
         public string? DateLabelAr { get; set; }
-        // D-432 — the rich lists as line-delimited text (parsed on save).
+        // The rich lists as line-delimited text (parsed on save).
         public string GalleryText { get; set; } = string.Empty;
         public string SessionTitlesText { get; set; } = string.Empty;
         public string PastSpeakersText { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
 
-    // ---- D-432 list parse / format helpers ----------------------------------
+    // ---- list parse / format helpers ----------------------------------------
 
     private static IEnumerable<string[]> Rows(string text) =>
         text.Replace("\r\n", "\n").Split('\n')
@@ -276,7 +272,7 @@ public partial class ArchiveAddEdit
                 NameAr = p[0],
                 NameEn = p.Length > 1 && p[1].Length > 0 ? p[1] : p[0],
                 PhotoRelativePath = p.Length > 2 && p[2].Length > 0 ? p[2] : null,
-                // D-456 — 4th field: the ISO 3166-1 numeric country code (e.g. 682).
+                // 4th field: the ISO 3166-1 numeric country code (e.g. 682).
                 CountryId = p.Length > 3 && int.TryParse(p[3], out var cid)
                     ? cid
                     : (int?)null,
@@ -293,7 +289,7 @@ public partial class ArchiveAddEdit
     private static string FormatPastSpeakers(IReadOnlyList<ArchivePastSpeakerInput>? items) =>
         items is null ? string.Empty : string.Join("\n", items.Select(FormatPastSpeaker));
 
-    // D-456 — grammar: "name-ar | name-en | photo-url | countryId". The photo
+    // Grammar: "name-ar | name-en | photo-url | countryId". The photo
     // slot is emitted (possibly empty) whenever a country follows it, so the
     // country always lands in the 4th position on re-parse.
     private static string FormatPastSpeaker(ArchivePastSpeakerInput i)

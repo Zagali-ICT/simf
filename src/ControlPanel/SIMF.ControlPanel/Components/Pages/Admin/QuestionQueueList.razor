@@ -1,9 +1,9 @@
-@* P3.3 — D-234 (Completion Programme §5.3): the Scientific-Committee central
+@* The Scientific-Committee central
    Q&A queue (stage 2). Lists Pending questions across sessions; approve / hide /
    escalate-to-a-role. Gated by Questions.* — the approved set then flows to the
    per-session moderator desk (stage 3).
 
-   D-261 — migrated from the raw <table> to the canonical SimfDataGrid. The
+   Migrated from the raw <table> to the canonical SimfDataGrid. The
    backend list endpoint (GET /admin/questions/queue) is a non-paged read that
    returns the full Pending queue (capped at 200 oldest-first), so the grid is
    paged / filtered / sorted client-side over the already-fetched list — the
@@ -20,7 +20,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="SessionQuestionQueueRow"
@@ -46,7 +48,8 @@
                       ActionsHeader="@L["Grid.Actions"]"
                       SelectAllLabel="@L["Grid.SelectAll"]"
                       SelectRowLabel="@L["Grid.SelectRow"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ExportPermission="@PermissionCatalog.Questions.Export">
             <Columns>
                 <SimfDataGridColumn TItem="SessionQuestionQueueRow" Key="session"
                                     Header="@L["Admin.QuestionQueue.Col.Session"]"
@@ -111,13 +114,14 @@
 @if (_escalateId is not null)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.QuestionQueue.Escalate.Title"]"
-               OnClose="@(() => _escalateId = null)">
+               OnClose="@(() => _escalateId = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <SimfTextField Label="@L["Admin.QuestionQueue.Escalate.Role"]"
                            @bind-Value="_escalateRole" Disabled="_busy" />
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Loading="_busy" OnClick="EscalateAsync">
+            <SimfButton Type="button" Loading="_busy" OnClick="EscalateAsync" LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.QuestionQueue.Escalate.Submit"]
             </SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="@(() => _escalateId = null)">

@@ -131,7 +131,7 @@ internal sealed class AdminRatingConfigService(
                 "يوجد نوع تقييم بهذا الرمز بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var type = new RatingType
         {
             Id = Guid.NewGuid(),
@@ -151,7 +151,7 @@ internal sealed class AdminRatingConfigService(
         dbContext.RatingTypes.Add(type);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.RatingTypeCreated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.RatingTypeCreated, actorUserId,
             $"id={type.Id}; code={type.Code}; scope={type.Scope}", cancellationToken);
         logger.LogInformation("Admin {ActorId} created rating type {Code} ({Id})",
             actorUserId, type.Code, type.Id);
@@ -176,10 +176,10 @@ internal sealed class AdminRatingConfigService(
         type.DisplayOrder = RequireNonNegative(request.DisplayOrder);
         // A system type can't be deactivated via the edit form either.
         type.IsActive = type.IsSystem || request.IsActive;
-        type.UpdatedAt = timeProvider.GetUtcNow();
+        type.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.RatingTypeUpdated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.RatingTypeUpdated, actorUserId,
             $"id={type.Id}; code={type.Code}; active={type.IsActive}", cancellationToken);
 
         return (await GetTypeAsync(id, cancellationToken))!;
@@ -200,10 +200,10 @@ internal sealed class AdminRatingConfigService(
         if (!type.IsActive) { return; } // idempotent
 
         type.IsActive = false;
-        type.UpdatedAt = timeProvider.GetUtcNow();
+        type.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.RatingTypeDeactivated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.RatingTypeDeactivated, actorUserId,
             $"id={type.Id}; code={type.Code}", cancellationToken);
     }
 
@@ -275,12 +275,12 @@ internal sealed class AdminRatingConfigService(
             NameArabic = RequireText(request.NameArabic, NameMaxLength, "Arabic name", "الاسم العربي"),
             DisplayOrder = RequireNonNegative(request.DisplayOrder),
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         dbContext.RatingQuestionGroups.Add(group);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.RatingGroupCreated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.RatingGroupCreated, actorUserId,
             $"id={group.Id}; typeId={group.RatingTypeId}", cancellationToken);
 
         return ToGroupSummary(group, questionCount: 0);
@@ -297,10 +297,10 @@ internal sealed class AdminRatingConfigService(
         group.NameArabic = RequireText(request.NameArabic, NameMaxLength, "Arabic name", "الاسم العربي");
         group.DisplayOrder = RequireNonNegative(request.DisplayOrder);
         group.IsActive = request.IsActive;
-        group.UpdatedAt = timeProvider.GetUtcNow();
+        group.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.RatingGroupUpdated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.RatingGroupUpdated, actorUserId,
             $"id={group.Id}; typeId={group.RatingTypeId}; active={group.IsActive}", cancellationToken);
 
         var questionCount = await dbContext.RatingQuestions
@@ -317,10 +317,10 @@ internal sealed class AdminRatingConfigService(
         if (!group.IsActive) { return; } // idempotent
 
         group.IsActive = false;
-        group.UpdatedAt = timeProvider.GetUtcNow();
+        group.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.RatingGroupDeactivated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.RatingGroupDeactivated, actorUserId,
             $"id={group.Id}; typeId={group.RatingTypeId}", cancellationToken);
     }
 
@@ -396,12 +396,12 @@ internal sealed class AdminRatingConfigService(
             IsRequired = request.IsRequired,
             DisplayOrder = RequireNonNegative(request.DisplayOrder),
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         dbContext.RatingQuestions.Add(question);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.RatingQuestionCreated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.RatingQuestionCreated, actorUserId,
             $"id={question.Id}; typeId={question.RatingTypeId}", cancellationToken);
 
         return ToQuestionSummary(question);
@@ -421,10 +421,10 @@ internal sealed class AdminRatingConfigService(
         question.IsRequired = request.IsRequired;
         question.DisplayOrder = RequireNonNegative(request.DisplayOrder);
         question.IsActive = request.IsActive;
-        question.UpdatedAt = timeProvider.GetUtcNow();
+        question.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.RatingQuestionUpdated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.RatingQuestionUpdated, actorUserId,
             $"id={question.Id}; typeId={question.RatingTypeId}; active={question.IsActive}", cancellationToken);
 
         return ToQuestionSummary(question);
@@ -439,10 +439,10 @@ internal sealed class AdminRatingConfigService(
         if (!question.IsActive) { return; } // idempotent
 
         question.IsActive = false;
-        question.UpdatedAt = timeProvider.GetUtcNow();
+        question.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await WriteAuditAsync(AuditEvents.RatingQuestionDeactivated, actorUserId,
+        await auditLog.WriteSuccessAsync(AuditEvents.RatingQuestionDeactivated, actorUserId,
             $"id={question.Id}; typeId={question.RatingTypeId}", cancellationToken);
     }
 
@@ -456,16 +456,6 @@ internal sealed class AdminRatingConfigService(
             .AnyAsync(g => g.Id == gid && g.RatingTypeId == ratingTypeId, cancellationToken);
         if (!ok) { throw GroupNotFound(); }
     }
-
-    private Task WriteAuditAsync(
-        string eventType, Guid actorUserId, string detail, CancellationToken cancellationToken) =>
-        auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = eventType,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = detail,
-        }, cancellationToken);
 
     private static AdminRatingTypeSummary ToTypeSummary(
         RatingType t, int groupCount, int questionCount, int responseCount) =>

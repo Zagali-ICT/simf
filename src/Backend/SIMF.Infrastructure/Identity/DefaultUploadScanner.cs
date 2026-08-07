@@ -7,7 +7,7 @@ using SIMF.Common.Options;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// A6-18 (NCA) — the default upload scanner. Detects the standard EICAR
+/// The NCA-mandated default upload scanner. Detects the standard EICAR
 /// anti-malware test signature anywhere in the file, so the scanning seam is
 /// enforced and verifiable out of the box without an external engine. For full
 /// production coverage, register a real engine (ClamAV / Windows Defender / an
@@ -15,12 +15,12 @@ namespace SIMF.Infrastructure.Identity;
 /// calls the seam, so it is a one-line swap.
 /// </summary>
 /// <remarks>
-/// GO-LIVE GATE (D-494): when wiring the real engine, also decide the
+/// GO-LIVE GATE: when wiring the real engine, also decide the
 /// unavailable-engine policy. Today a <see cref="UploadScanVerdict.Skipped"/>
 /// verdict (scanning disabled or the engine reporting "unavailable") lets the
 /// upload through — fail-open. Production should treat a real engine being
 /// unavailable as fail-closed (reject the upload) rather than silently storing
-/// an unscanned file. See the merge-readiness doc §5.2 and DECISIONS_LOG D-494.
+/// an unscanned file.
 /// </remarks>
 internal sealed class DefaultUploadScanner(
     IOptions<UploadScanningOptions> options,

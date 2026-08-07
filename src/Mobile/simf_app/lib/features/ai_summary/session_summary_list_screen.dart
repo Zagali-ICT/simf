@@ -5,6 +5,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_filter_search_field.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import '../myarea/data/my_sessions_repository.dart';
 import '../sessions/data/session_favourites.dart';
 import '../sessions/data/session_models.dart';
@@ -35,10 +36,7 @@ class _SessionSummaryListScreenState
   String _query = '';
 
   /// Pull-to-refresh — re-fetch the programme (invalidate + await next).
-  Future<void> _refresh() async {
-    ref.invalidate(programmeSessionsProvider);
-    await ref.read(programmeSessionsProvider.future);
-  }
+  Future<void> _refresh() => refreshAsync(ref, programmeSessionsProvider.future);
 
   @override
   Widget build(BuildContext context) {
@@ -78,14 +76,19 @@ class _SessionSummaryListScreenState
           Expanded(
             child: sessions.when(
               loading: () => const SimfLoadingState(),
+              // NO SimfPullableHost here — SimfRefreshableMessage already wraps
+              // its child in one. Nesting two nests a SingleChildScrollView
+              // inside a SingleChildScrollView, so the inner LayoutBuilder is
+              // handed maxHeight: infinity and builds
+              // BoxConstraints(minHeight: infinity) — "BoxConstraints forces an
+              // infinite height", which took the whole screen down whenever the
+              // sessions provider errored.
               error: (_, __) => SimfRefreshableMessage(
                 onRefresh: _refresh,
-                child: SimfPullableHost(
-                  child: SimfErrorState(
-                    message: l10n.aiSummaryError,
-                    retryLabel: l10n.retryLabel,
-                    onRetry: () => ref.invalidate(programmeSessionsProvider),
-                  ),
+                child: SimfErrorState(
+                  message: l10n.aiSummaryError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () => ref.invalidate(programmeSessionsProvider),
                 ),
               ),
               data: (items) => _buildList(context, l10n, items),

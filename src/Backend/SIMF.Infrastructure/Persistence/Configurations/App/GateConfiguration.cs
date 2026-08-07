@@ -4,7 +4,7 @@ using SIMF.Domain.AccessControl;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-148 — EF configuration for <see cref="Gate"/>. Unique index on
+/// <summary>EF configuration for <see cref="Gate"/>. Unique index on
 /// Code (case-insensitive uniqueness is enforced by the service layer via
 /// upper-case normalisation, matching the Hall + Theme pattern).</summary>
 internal sealed class GateConfiguration : IEntityTypeConfiguration<Gate>
@@ -24,11 +24,11 @@ internal sealed class GateConfiguration : IEntityTypeConfiguration<Gate>
         builder.HasIndex(gate => gate.Code).IsUnique();
         builder.HasIndex(gate => new { gate.IsActive, gate.Name });
 
-        // X-1 (chain design) — optional hall-door binding. Real FK to Hall (same
+        // Optional hall-door binding. Real FK to Hall (same
         // DbContext, App DB — no Identity crossing). Restrict mirrors
         // HallAttendance's Hall FK so a hall cannot be hard-deleted out from under
         // a hall-door gate (halls are soft-deleted). Navigation-less HasOne<Hall>
-        // form (D-716 precedent). Null = perimeter gate. Indexed for the
+        // form, as elsewhere. Null = perimeter gate. Indexed for the
         // "list the door gates of hall X" lookup.
         builder.HasIndex(gate => gate.HallId);
         builder.HasOne<SIMF.Domain.Programme.Hall>()
@@ -41,7 +41,7 @@ internal sealed class GateConfiguration : IEntityTypeConfiguration<Gate>
             .HasForeignKey(allow => allow.GateId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // D-611 (Wave B) — Restrict (was Cascade): deleting a Gate must not
+        // Restrict (was Cascade): deleting a Gate must not
         // silently delete its operator assignments; deactivate the Gate instead.
         builder.HasMany(gate => gate.Assignments)
             .WithOne(assignment => assignment.Gate!)

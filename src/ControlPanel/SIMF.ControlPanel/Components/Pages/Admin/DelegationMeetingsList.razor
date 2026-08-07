@@ -1,4 +1,4 @@
-@* D-478 (#11, Group G phase 2) — admin review desk for delegation↔delegation
+@* Admin review desk for delegation↔delegation
    (G2G) meeting requests: a delegate of one invited country asks to meet another
    invited country's delegation ("count X meets country Y"). The team Accepts /
    Rejects with an optional note; on accept the requester is notified + emailed.
@@ -18,7 +18,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="AdminDelegationMeetingRequestRow"
@@ -103,7 +105,8 @@
 @if (_respondOpen && _respondTarget is not null)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.DelegationMeetings.Respond.Title"]"
-               OnClose="@(() => _respondOpen = false)">
+               OnClose="@(() => _respondOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <dl class="simf-dl">
@@ -221,18 +224,25 @@
             </SimfButton>
             @if (_respondTarget.Status == MeetingRequestStatus.Pending)
             {
-                <SimfButton Type="button" OnClick="ApproveAsync" Loading="_busy">
-                    @L["Admin.Meetings.Approve"]
-                </SimfButton>
+                @* The page gates on DelegationMeetings.View; responding to a request is .Manage. *@
+            <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
+            <SimfButton Type="button" OnClick="ApproveAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                        @L["Admin.Meetings.Approve"]
+                    </SimfButton>
+            </AuthorizedAction>
             }
-            <SimfButton Type="button" OnClick="ConfirmAsync" Loading="_busy">
-                @L["Admin.Meetings.Confirm"]
-            </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
+            <SimfButton Type="button" OnClick="ConfirmAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Meetings.Confirm"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
 
-@* R10 (D-767) — must-decide guard for the one-click Check-in row action. *@
+@* Must-decide guard for the one-click Check-in row action. *@
 <SimfConfirm Open="_confirmOpen" Title="@_confirmTitle" Message="@_confirmMessage"
              ConfirmLabel="@_confirmLabel" CancelLabel="@L["Admin.Meetings.Close"]"
-             Busy="_busy" OnConfirm="RunConfirmAsync" OnCancel="CancelConfirm" />
+             Busy="_busy" OnConfirm="RunConfirmAsync" OnCancel="CancelConfirm" 
+             Permission="@PermissionCatalog.DelegationMeetings.Manage"/>

@@ -7,13 +7,12 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin.Grid;
 
 /// <summary>
-/// Generic base for a resource's <c>POST /admin/{resource}/export</c> endpoint
-/// (D-356). A concrete subclass supplies the route, the <c>{Resource}.Export</c>
+/// Generic base for a resource's <c>POST /admin/{resource}/export</c> endpoint.
+/// A concrete subclass supplies the route, the <c>{Resource}.Export</c>
 /// permission, the sheet name + file prefix, the column descriptors, and how to
 /// list + identify its rows; this base owns the auth gate, the ids-or-query
 /// selection (capped), the workbook render and the binary response. Mirrors the
-/// proven <c>ExportUsersEndpoint</c> (D-044 b) so every grid export behaves the
-/// same.
+/// proven <c>ExportUsersEndpoint</c> so every grid export behaves the same.
 /// </summary>
 /// <typeparam name="TRow">The grid summary row type.</typeparam>
 public abstract class AdminGridExportEndpoint<TRow>(IGridExcelExporter exporter)
@@ -40,7 +39,7 @@ public abstract class AdminGridExportEndpoint<TRow>(IGridExcelExporter exporter)
     /// <summary>Lists one clamped page of rows matching <paramref name="query"/>.
     /// The base calls this once per page (advancing <see cref="GridQuery.Skip"/>)
     /// and stops when a page is empty or <see cref="MaxExportRows"/> is reached, so
-    /// the list service keeps its own page-size clamp untouched (D-642).</summary>
+    /// the list service keeps its own page-size clamp untouched.</summary>
     protected abstract Task<IReadOnlyList<TRow>> ListAsync(GridQuery query, CancellationToken ct);
 
     /// <summary>The row's id, used to honour a selected-ids export.</summary>
@@ -61,7 +60,7 @@ public abstract class AdminGridExportEndpoint<TRow>(IGridExcelExporter exporter)
         var source = req.Query ?? new GridQuery();
         // Page through the resource's normal list (each service clamps Top to its
         // own page size) until the whole filtered set is collected or MaxExportRows
-        // is reached — the fix for the D-642 single-page truncation. The list
+        // is reached — an export used to truncate at the first page. The list
         // contract is untouched, so there is no client-reachable escape hatch on
         // the shared GridQuery. This also fixes the selected-ids path: an id beyond
         // the first page is now found because every page is fetched.
@@ -76,7 +75,7 @@ public abstract class AdminGridExportEndpoint<TRow>(IGridExcelExporter exporter)
 
         var bytes = exporter.Export(rows, Columns, SheetName);
         HttpContext.Response.Headers.ContentDisposition =
-            $"attachment; filename=\"{FilePrefix}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx\"";
+            $"attachment; filename=\"{FilePrefix}-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";
         await Send.BytesAsync(bytes,
             contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             cancellation: ct);

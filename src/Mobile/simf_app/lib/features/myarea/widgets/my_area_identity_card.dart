@@ -48,19 +48,12 @@ class MyAreaIdentityCard extends StatelessWidget {
               children: <Widget>[
                 Text(
                   name,
-                  style: const TextStyle(
-                    color: SimfTokens.surface,
-                    fontWeight: FontWeight.w600,
-                    fontSize: SimfTokens.textTitle,
-                  ),
+                  style: SimfTokens.labelWhiteSemiboldTitle,
                 ),
                 const SizedBox(height: SimfTokens.space2),
                 Text(
                   line,
-                  style: const TextStyle(
-                    color: SimfTokens.beigeBorder,
-                    fontSize: SimfTokens.textSm,
-                  ),
+                  style: SimfTokens.labelBeigeSm,
                 ),
                 if (reference != null) ...<Widget>[
                   const SizedBox(height: SimfTokens.space2),
@@ -69,10 +62,7 @@ class MyAreaIdentityCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textDirection: TextDirection.ltr,
-                    style: const TextStyle(
-                      color: SimfTokens.accent,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                    style: SimfTokens.labelGoldSm,
                   ),
                 ],
               ],

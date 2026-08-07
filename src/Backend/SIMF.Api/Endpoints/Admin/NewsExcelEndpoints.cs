@@ -8,7 +8,7 @@ using SIMF.Contracts.PublicRelations;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/news/export</c> — the D-356 grid export for News
+/// <c>POST /api/v1/admin/news/export</c> — the grid export for News
 /// articles (PR / marketing). All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass only declares the
 /// route, permission, sheet/file names, the column layout (mirroring the News
@@ -33,7 +33,7 @@ public sealed class ExportNewsEndpoint(IAdminNewsService service, IGridExcelExpo
         new("PublishedAt", row => row.PublishedAt),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the Arabic body + excerpt (appended so the existing
+        // Round-trip the Arabic body + excerpt (appended so the existing
         // column order is unchanged; import binds by header name and already reads
         // these cells in ApplyRowAsync).
         new("BodyArabic", row => row.BodyArabic),
@@ -48,7 +48,7 @@ public sealed class ExportNewsEndpoint(IAdminNewsService service, IGridExcelExpo
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/news/import</c> — the D-356 grid import (insert-only)
+/// <c>POST /api/v1/admin/news/import</c> — the grid import (insert-only)
 /// for News articles. The base does the upload defence, parse and per-row error
 /// aggregation; this subclass binds one row to <see cref="CreateNewsRequest"/>
 /// and creates it (the service rejects a duplicate English title → a per-row
@@ -119,10 +119,10 @@ public sealed class ImportNewsEndpoint(IAdminNewsService service, IGridExcelImpo
                 "التصنيف بالعربية مطلوب.");
         }
 
-        var publishedAt = DateTimeOffset.TryParse(
+        var publishedAt = DateTime.TryParse(
             row.Cells.GetValueOrDefault("PublishedAt", string.Empty), out var parsed)
             ? parsed
-            : DateTimeOffset.UtcNow;
+            : SimfClock.Now;
 
         await service.CreateAsync(actorId, new CreateNewsRequest
         {

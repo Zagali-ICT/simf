@@ -11,12 +11,12 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Contacts;
 
 /// <summary>
-/// SIMF-FDS-014 §5.4–5.7 (D-284, Track 2) — visitor-to-visitor contact sharing.
+/// Visitor-to-visitor contact sharing.
 /// Mints / rotates a visitor's dedicated share token, resolves a token to a live
 /// card projected from the owner's <c>UserProfile</c> (+ Organisation / Country
-/// lookups on the App DB + a permitted email round-trip on the Identity DB,
-/// OI-2), and manages the caller's <em>My Contacts</em>. Cross-DB references are
-/// bare-Guid logical FKs resolved on read — no EF join, no PII snapshot (D-157).
+/// lookups on the App DB + a permitted email round-trip on the Identity DB),
+/// and manages the caller's <em>My Contacts</em>. Cross-DB references are
+/// bare-Guid logical FKs resolved on read — no EF join, no PII snapshot.
 /// </summary>
 internal sealed class VisitorShareService(
     SimfAppDbContext appDbContext,
@@ -50,7 +50,7 @@ internal sealed class VisitorShareService(
             UserId = userId,
             Token = minted,
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         });
         await appDbContext.SaveChangesAsync(cancellationToken);
         return new VisitorShareTokenResponse(minted);
@@ -59,7 +59,7 @@ internal sealed class VisitorShareService(
     public async Task<VisitorShareTokenResponse> RotateTokenAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var actives = await appDbContext.VisitorShareTokens
             .Where(token => token.UserId == userId && token.IsActive)
             .ToListAsync(cancellationToken);
@@ -132,7 +132,7 @@ internal sealed class VisitorShareService(
         if (existing is not null)
         {
             existing.Note = trimmed;
-            existing.UpdatedAt = timeProvider.GetUtcNow();
+            existing.UpdatedAt = timeProvider.SimfNow();
             await appDbContext.SaveChangesAsync(cancellationToken);
             return ToRow(existing, card);
         }
@@ -144,7 +144,7 @@ internal sealed class VisitorShareService(
             SubjectUserId = card.UserId,
             Note = trimmed,
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         appDbContext.SavedContacts.Add(saved);
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -196,7 +196,7 @@ internal sealed class VisitorShareService(
             return; // idempotent
         }
         saved.Deactivate();
-        saved.UpdatedAt = timeProvider.GetUtcNow();
+        saved.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -272,7 +272,7 @@ internal sealed class VisitorShareService(
                 .ToListAsync(cancellationToken))
                 .ToDictionary(c => c.Id, c => (En: c.Name, Ar: c.NameArabic));
 
-        // Email is Identity-owned — one cross-DB round-trip (D-157: no join).
+        // Email is Identity-owned — one cross-DB round-trip.
         var emails = await userDirectory.GetEmailsAsync(userIds, cancellationToken);
 
         foreach (var userId in userIds.Distinct())

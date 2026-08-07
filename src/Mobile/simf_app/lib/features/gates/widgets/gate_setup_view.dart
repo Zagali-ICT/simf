@@ -71,6 +71,28 @@ class GateSetupView extends StatelessWidget {
             gate: gate,
             onGate: onGate,
           ),
+          // DEF-STF-006 — a selected inactive gate denies every scan, so say so
+          // BEFORE the operator waves the first badge at it.
+          if (!gate.isActive) ...<Widget>[
+            const SizedBox(height: SimfTokens.space2),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Icon(
+                  Icons.warning_amber_outlined,
+                  color: SimfTokens.danger,
+                  size: 18,
+                ),
+                const SizedBox(width: SimfTokens.space2),
+                Expanded(
+                  child: Text(
+                    l10n.gateInactiveWarning,
+                    style: SimfTokens.bodyWhiteMd,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: SimfTokens.space6),
           _label(l10n.gateMovementType),
           const SizedBox(height: SimfTokens.space4),

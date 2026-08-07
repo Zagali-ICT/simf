@@ -49,6 +49,8 @@
 | E2E-PRF-014 | Disable 2FA with wrong code → bilingual flash error, 2FA stays on | error | P1 | _to author_ |
 | E2E-PRF-015 | Server 500 resilience — `/account/api/profile` fails → loading copy persists, no crash | resilience | P2 | _to author_ |
 | E2E-PRF-016 | RTL / Arabic render — page + cards + cropper modal mirror | i18n | P1 | _to author_ |
+| E2E-PRF-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-PRF-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -86,6 +88,9 @@ Scenario: Page loads, shows status + roles, then a full avatar round-trip
   And the top-bar chrome avatar refreshes to the same image
 
   When the user clicks "Remove avatar"
+  Then a SimfConfirm dialog opens titled "Remove profile photo" (D-809)
+  And no DELETE has been sent yet
+  When they click "Remove avatar" in the dialog
   Then DELETE /account/api/avatar returns HTTP 200
   And a green SimfAlert reads "Avatar removed." / "تمت إزالة الصورة الشخصية."
   And the avatar card falls back to the placeholder icon
@@ -171,7 +176,7 @@ Scenario: Regenerate the recovery-code batch
 ```gherkin
 Scenario: A valid password change signs the user out
   Given the user is on /account/profile
-  When they fill Current password = "Aa@123456789"
+  When they fill Current password = "[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"
   And New password = "Bb@987654321"
   And Confirm new password = "Bb@987654321"
   And click "Update password"
@@ -257,7 +262,7 @@ Scenario: Confirming enrolment with a wrong code shows a bilingual error
 ```gherkin
 Scenario: Mismatched new password is rejected without signing out
   Given the user is on /account/profile
-  When they fill Current password = "Aa@123456789"
+  When they fill Current password = "[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"
   And New password = "Bb@987654321"
   And Confirm new password = "different"
   And click "Update password"

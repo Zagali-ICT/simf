@@ -1,4 +1,4 @@
-﻿// Tests cover the 13-step constraint engine in GateOperatorService:
+// Tests cover the 13-step constraint engine in GateOperatorService:
 // step 2 (operator not assigned → 403); step 3 (QR_UNKNOWN); step 6
 // (HOLDER_NOT_APPROVED); step 11 (PROFILE_TYPE_NOT_ALLOWED + L-15 empty-
 // filtered-list denies all); step 12 (5-second duplicate absorption + Both-
@@ -266,7 +266,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
                 RequestHash = "stale-request-hash",
                 ResponseHash = "stale-response-hash",
                 ScanId = null,
-                StoredAt = _factory.Time.GetUtcNow() - TimeSpan.FromHours(25),
+                StoredAt = _factory.Time.SimfNow() - TimeSpan.FromHours(25),
             });
             await appDb.SaveChangesAsync();
         }
@@ -437,7 +437,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             var operatorId = (await users.FindByEmailAsync(email))!.Id;
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             // Seed at the service's clock so the scans fall inside today's window.
-            var now = _factory.Time.GetUtcNow();
+            var now = _factory.Time.SimfNow();
 
             GateScan Scan(ScanOutcome outcome, DenialReasonCode? reason) => new()
             {
@@ -472,7 +472,55 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
         Assert.Equal(500, report.Rows.Count);                        // grid still capped
     }
 
+    [Fact]
+    public async Task Inactive_gate_records_a_GATE_INACTIVE_AT_SCAN_denial_at_200()
+    {
+        // DEF-STF-008 — GateScanResultKind.GateInactive (HTTP 503 GATE_INACTIVE)
+        // was dead: NOTHING ever returned it. An inactive gate is denied by
+        // engine step 5 as a RECORDED denial at HTTP 200, which keeps the
+        // append-only GateScan audit row for the attempt and hands the operator
+        // the localised "This gate is currently inactive." The 503 arm has been
+        // removed; this test pins the behaviour that replaced it.
+        var (token, _) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.Both);
+        var qrId = await CreateVisitorWithQrAsync(approved: true);
+
+        // Deactivating keeps the operator's assignment and invalidates the
+        // config-cache snapshot, so the next scan sees IsActive = false.
+        var deactivate = await DeleteAuthAsync(
+            $"/api/v1/admin/gates/{gate.Id}", token);
+        Assert.Equal(HttpStatusCode.OK, deactivate.StatusCode);
+
+        var response = await PostScanAsync(gate.Id, qr: qrId, token,
+            idempotencyKey: null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        Assert.Equal(ScanOutcome.Denied, body.Outcome);
+        Assert.Equal(DenialReasonCode.GateInactiveAtScan, body.DenialReasonCode);
+        Assert.False(string.IsNullOrWhiteSpace(body.DenialMessage));
+
+        // The attempt is auditable: the denial is persisted, not discarded with
+        // an envelope failure the way a 503 would have been.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var recorded = await db.GateScans.AsNoTracking()
+            .Where(s => s.GateId == gate.Id
+                     && s.DenialReasonCode == DenialReasonCode.GateInactiveAtScan)
+            .CountAsync();
+        Assert.Equal(1, recorded);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
 
     private async Task<HttpResponseMessage> PostScanAsync(
         Guid gateId, string qr, string token, string? idempotencyKey,
@@ -563,7 +611,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             Name = "Test Visitor",
             NationalityId = 682, // ISO 3166-1 numeric — SA
             PlaceOfBirth = "Riyadh",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return qrId;
@@ -581,7 +629,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             NameArabic = name,
             PageColor = "#244A77",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return id;
@@ -611,16 +659,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, email);
+        return (await AuthFlow.SignInControlPanelAsync(_client, _factory, email), email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

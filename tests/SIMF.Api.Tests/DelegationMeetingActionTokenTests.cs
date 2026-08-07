@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.MeetingRequests;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -95,7 +96,81 @@ public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFac
         Assert.Equal(MeetingRequestStatus.Accepted, req.Status);
     }
 
+    [Fact]
+    public async Task An_expired_confirm_link_is_a_neutral_404_and_does_not_book()
+    {
+        // B9 — the 72h TTL is the only thing standing between an emailed link and an
+        // indefinitely valid credential, so expiry must be enforced on BOTH the GET
+        // preview and the POST apply.
+        var (requestId, _) = await SeedAwaitingConfirmRequestAsync();
+        var token = await MintConfirmAsync(requestId);
+        await ExpireTokensAsync(requestId);
+
+        await AssertNeutralInvalidAsync(await PreviewAsync(token));
+        await AssertNeutralInvalidAsync(await ConfirmAsync(token));
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await db.DelegationMeetingRequests.AsNoTracking()
+            .SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.AwaitingSpeaker, req.Status);
+    }
+
+    [Fact]
+    public async Task A_secret_that_matches_no_token_of_either_kind_is_a_neutral_404()
+    {
+        // B9 — one public endpoint serves the SPEAKER and the DELEGATION token tables.
+        // A secret shaped like a token but belonging to neither must be the same
+        // neutral 404, never a hint about which family it failed to match.
+        var secret = MeetingActionTokenHasher.NewSecret();
+
+        await AssertNeutralInvalidAsync(await PreviewAsync(secret));
+        await AssertNeutralInvalidAsync(await ConfirmAsync(secret));
+    }
+
+    [Fact]
+    public async Task A_delegation_secret_cannot_decide_a_speaker_request()
+    {
+        // B9 (wrong-type) — a delegation confirm token whose request left
+        // AwaitingSpeaker is dead; it must not fall through to the speaker branch or
+        // touch any speaker request.
+        var (requestId, _) = await SeedAwaitingConfirmRequestAsync();
+        var token = await MintConfirmAsync(requestId);
+        await SetStatusAsync(requestId, MeetingRequestStatus.Cancelled);
+
+        await AssertNeutralInvalidAsync(await PreviewAsync(token));
+        await AssertNeutralInvalidAsync(await ConfirmAsync(token));
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(MeetingRequestStatus.Cancelled,
+            (await db.DelegationMeetingRequests.AsNoTracking()
+                .SingleAsync(r => r.Id == requestId)).Status);
+        // The token was NOT consumed — an unusable token is never claimed.
+        Assert.False(await db.DelegationMeetingActionTokens.AsNoTracking()
+            .AnyAsync(t => t.DelegationMeetingRequestId == requestId && t.UsedAt != null));
+    }
+
     // -- helpers --------------------------------------------------------------
+
+    private async Task ExpireTokensAsync(Guid requestId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        await db.DelegationMeetingActionTokens
+            .Where(t => t.DelegationMeetingRequestId == requestId)
+            .ExecuteUpdateAsync(s => s.SetProperty(
+                t => t.ExpiresAt, SimfClock.Now.AddHours(-1)));
+    }
+
+    private async Task SetStatusAsync(Guid requestId, MeetingRequestStatus status)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        await db.DelegationMeetingRequests
+            .Where(r => r.Id == requestId)
+            .ExecuteUpdateAsync(s => s.SetProperty(r => r.Status, status));
+    }
 
     private Task<HttpResponseMessage> PreviewAsync(string token) =>
         _client.GetAsync($"/api/v1/app/meeting-actions/{Uri.EscapeDataString(token)}");
@@ -147,11 +222,11 @@ public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFac
             Code = "MH-" + suffix,
             Name = "Meeting Hall", NameArabic = "قاعة الاجتماعات",
             Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
 
-        var start = new DateTimeOffset(2031, 6, 1, 10, 0, 0, TimeSpan.Zero);
+        var start = new DateTime(2031, 6, 1, 10, 0, 0);
         var req = new DelegationMeetingRequest
         {
             Id = Guid.NewGuid(),
@@ -162,7 +237,7 @@ public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFac
             Subject = "Naval cooperation",
             HallId = hall.Id, SlotStart = start, SlotEnd = start.AddMinutes(30),
             Status = MeetingRequestStatus.AwaitingSpeaker,
-            CreatedAt = DateTimeOffset.UtcNow, RespondedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now, RespondedAt = SimfClock.Now,
         };
         db.DelegationMeetingRequests.Add(req);
         await db.SaveChangesAsync();
@@ -177,7 +252,7 @@ public sealed class DelegationMeetingActionTokenTests : IClassFixture<SimfApiFac
             country = new Country
             {
                 Id = id, Code = code, Name = code, NameArabic = code,
-                IsActive = true, IsInvited = true, CreatedAt = DateTimeOffset.UtcNow,
+                IsActive = true, IsInvited = true, CreatedAt = SimfClock.Now,
             };
             db.Countries.Add(country);
             await db.SaveChangesAsync();

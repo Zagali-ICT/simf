@@ -24,8 +24,8 @@ public sealed class SessionsListModerationTests : CpComponentTestBase
     private static readonly AdminSessionSummary Row = new(
         Guid.NewGuid(), "S-1", "Opening Session", "الجلسة الافتتاحية",
         Guid.NewGuid(), "Main Hall", "القاعة الرئيسية",
-        DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddHours(1), 100, true,
-        DateTimeOffset.UtcNow);
+        SimfClock.Now, SimfClock.Now.AddHours(1), 100, true,
+        SimfClock.Now);
 
     // Registers the page's CpPreferences dependency (reads a JS preference in Loose
     // mode → default), optionally grants the Questions.Moderate policy the

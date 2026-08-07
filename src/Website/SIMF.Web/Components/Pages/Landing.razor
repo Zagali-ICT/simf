@@ -13,14 +13,14 @@
 
 @{
     var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
-    // D-755 — the forum date is driven by OrganizationProfile config (ForumDate),
-    // falling back to the resx label when the profile is unavailable; the meta
-    // description embeds the same value via its {0} placeholder.
+    // The forum date is driven by OrganizationProfile config (ForumDate), falling
+    // back to the resx label when the profile is unavailable; the meta description
+    // embeds the same value via its {0} placeholder.
     var forumDate = ForumDate ?? L["Landing.Subnav.Date"].Value;
     var metaDescription = L["Landing.MetaDescription", forumDate].Value;
-    // D-756 — the hero background is the CP-configured video when set: a YouTube
-    // link → a muted/looping/no-controls embed iframe; a direct MP4/HLS link → the
-    // bundled <video> pointed at that URL; nothing configured → the bundled asset.
+    // The hero background is the CP-configured video when set: a YouTube link → a
+    // muted/looping/no-controls embed iframe; a direct MP4/HLS link → the bundled
+    // <video> pointed at that URL; nothing configured → the bundled asset.
     var heroYouTubeId = HeroVideo?.YouTubeId;
     var heroVideoSrc = HeroVideo?.FileUrl ?? "assets/hero-video.mp4";
 }
@@ -30,9 +30,9 @@
 
         @* =============================== HERO ============================== *@
         <section class="ln-hero" aria-label="@L["Landing.Hero.Title"]">
-            @* D-756 — CP-configured hero background video: a YouTube link renders a
+            @* CP-configured hero background video: a YouTube link renders a
                muted/looping/no-controls embed; a direct MP4/HLS link (or the bundled
-               fallback) renders the <video>. Poster is the Figma hero still. *@
+               fallback) renders the <video>. Poster is the hero still. *@
             @if (heroYouTubeId is { } ytId)
             {
                 <iframe class="ln-hero__video--yt"

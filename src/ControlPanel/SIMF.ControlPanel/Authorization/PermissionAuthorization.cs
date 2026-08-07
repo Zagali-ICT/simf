@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using SIMF.Common;
@@ -5,7 +6,7 @@ using SIMF.Common;
 namespace SIMF.ControlPanel.Authorization;
 
 /// <summary>
-/// Requires the caller to hold one permission code (SIMF-RPM-001 §8). Satisfied
+/// Requires the caller to hold one permission code. Satisfied
 /// by a <c>perm</c> claim — copied from the JWT into the auth cookie at sign-in
 /// — equal to <see cref="Code"/> or to the Administrator wildcard
 /// <see cref="PermissionCatalog.Wildcard"/>.
@@ -45,6 +46,23 @@ public sealed class PermissionPolicyProvider : IAuthorizationPolicyProvider
 {
     private readonly DefaultAuthorizationPolicyProvider fallback;
 
+    /// <summary>One built policy per code, for the lifetime of the process.
+    ///
+    /// <para>A permission policy is immutable and there are at most as many of them
+    /// as there are catalogue codes, but this provider is asked for one on EVERY
+    /// authorization check and rebuilt it each time: a builder, two backing lists,
+    /// two requirement objects, a substring and the policy itself, about ten
+    /// allocations per check. Once per-button permission gating landed on the CP
+    /// data grid the Control Panel started asking far more often — every gated grid
+    /// button is an AuthorizeView, and the row-end Edit and Delete gates are
+    /// instantiated once per row, so a 100-row page re-checks 200 times on every
+    /// sort, filter, page change and even a checkbox tick.</para>
+    ///
+    /// <para>The provider is registered as a singleton, so the cache is safe and
+    /// bounded. It changes no decision: the same policy object is handed back
+    /// instead of an equal new one.</para></summary>
+    private readonly ConcurrentDictionary<string, AuthorizationPolicy> permissionPolicies = new(StringComparer.Ordinal);
+
     public PermissionPolicyProvider(IOptions<AuthorizationOptions> options) =>
         fallback = new DefaultAuthorizationPolicyProvider(options);
 
@@ -56,10 +74,11 @@ public sealed class PermissionPolicyProvider : IAuthorizationPolicyProvider
     {
         if (PermissionCatalog.IsPermissionPolicy(policyName))
         {
-            var policy = new AuthorizationPolicyBuilder()
-                .RequireAuthenticatedUser()
-                .AddRequirements(new PermissionRequirement(PermissionCatalog.CodeFromPolicy(policyName)))
-                .Build();
+            var policy = permissionPolicies.GetOrAdd(policyName, static name =>
+                new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(PermissionCatalog.CodeFromPolicy(name)))
+                    .Build());
             return Task.FromResult<AuthorizationPolicy?>(policy);
         }
 

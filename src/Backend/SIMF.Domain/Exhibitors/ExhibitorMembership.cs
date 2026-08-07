@@ -3,31 +3,29 @@ using SIMF.Domain.Common;
 namespace SIMF.Domain.Exhibitors;
 
 /// <summary>
-/// D-199 #3 (additive schema) — one login account provisioned under an
-/// <see cref="Exhibitor"/>. <see cref="UserId"/> is a <b>logical</b> FK to
-/// <c>SimfUser.Id</c> on the Identity database (decision D-157 keeps the two
-/// physical databases separate, so there is NO navigation property and NO
-/// DB-level FK constraint across the database boundary — the link is by Guid
-/// only). The account itself is provisioned through the existing admin
-/// provisioning pipeline (a least-privilege Visitor account); this row tags it
-/// to its exhibitor. Soft-deleted via <see cref="IsActive"/>.
+/// One login account provisioned under an <see cref="Exhibitor"/>. The account
+/// itself is created through the ordinary admin provisioning pipeline and
+/// carries the exhibitor profile type; this row ties it to its company.
+///
+/// <para>The row is half of the authorisation, not merely a label. The profile
+/// type lives on the person and outlives the booth, so lead capture requires an
+/// active membership of an active exhibitor as well as the role. Deactivating
+/// this row, or the exhibitor, is what revokes an officer's badge scanning and
+/// their access to the booth's captured contacts.</para>
 /// </summary>
 public sealed class ExhibitorMembership : BaseAuditEntity
 {
-
-    /// <summary>FK to <see cref="Exhibitor.Id"/> on the App database.</summary>
     public Guid ExhibitorId { get; set; }
     public Exhibitor? Exhibitor { get; set; }
 
-    /// <summary>Logical FK to <c>SimfUser.Id</c> on the Identity database.
-    /// No navigation property, no DB-level FK constraint (cross-database).</summary>
+    /// <summary>A bare Guid: the user lives in the Identity database, so there is
+    /// no navigation and no foreign key across the two.</summary>
     public Guid UserId { get; set; }
 
-    /// <summary>The contact person's name on this account (1–256 chars).</summary>
+    /// <summary>The contact person's name on this account.</summary>
     public string ContactName { get; set; } = string.Empty;
 
-    /// <summary>Optional free-text role label inside the exhibitor
-    /// (e.g. "Booth Manager") (≤128 chars).</summary>
+    /// <summary>A free-text role inside the company, such as "Booth
+    /// Manager".</summary>
     public string? RoleLabel { get; set; }
-
 }

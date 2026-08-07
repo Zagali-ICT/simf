@@ -89,7 +89,10 @@ void main() {
       expect(item.localizedCategory(true), 'جلسة رئيسية');
       expect(item.status, SessionStatus.published);
       expect(item.hasPublishedSummary, isTrue);
-      expect(item.start.isUtc, isTrue);
+      // Saudi wall-clock carries no zone, so a decoded value must NOT be
+      // left untagged: tagging it would let a later toLocal() shift it by the
+      // device offset (owner decision 2026-07-31).
+      expect(item.start.isUtc, isFalse);
 
       expect(item.speakers, hasLength(1));
       final speaker = item.speakers.single;
@@ -116,6 +119,34 @@ void main() {
       expect(item.localizedCategory(false), isNull);
       // Append-only wire default: absent hasPublishedSummary decodes to false.
       expect(item.hasPublishedSummary, isFalse);
+    });
+
+    test('a missing start surfaces a decode error instead of 1970', () {
+      // BUG-011 — a dropped / renamed timestamp field used to fall back to the
+      // Unix epoch, so a broken contract rendered 03:00 AM on every agenda row
+      // with no error and no empty state. It must fail loudly instead.
+      expect(
+        () => SessionListItem.fromJson(<String, dynamic>{
+          'id': 's3',
+          'code': 'X',
+          'title': 'No start',
+          'end': '2026-11-23T07:00:00Z',
+        }),
+        throwsFormatException,
+      );
+    });
+
+    test('an unparseable start surfaces a decode error', () {
+      expect(
+        () => SessionListItem.fromJson(<String, dynamic>{
+          'id': 's4',
+          'code': 'X',
+          'title': 'Bad start',
+          'start': 'not-a-timestamp',
+          'end': '2026-11-23T07:00:00Z',
+        }),
+        throwsFormatException,
+      );
     });
   });
 
@@ -178,7 +209,8 @@ void main() {
     });
 
     test('a day filter keeps only that local calendar day', () {
-      // Use the session's own local day so the assertion is timezone-independent.
+      // Use the session's own local day so the assertion is
+      // timezone-independent.
       final localDay = DateTime(
         future.startLocal.year,
         future.startLocal.month,

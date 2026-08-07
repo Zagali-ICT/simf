@@ -1,26 +1,27 @@
 // Tests: SIMF.Api.Tests/StaffWalkInRegistrationTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin; // AuthorizationPolicies
+using SIMF.Api.RequestContext;
 using SIMF.Application.Abstractions;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Staff;
 
 /// <summary>
-/// D-509 — <c>POST /app/staff/visitors/register-onsite</c>. The staff-app twin
+/// <c>POST /app/staff/visitors/register-onsite</c>. The staff-app twin
 /// of the Control-Panel walk-in desk (<c>RegisterVisitorOnSiteEndpoint</c>):
 /// exhibition staff register a walk-in visitor straight from the mobile/tablet
-/// app (Figma 1467:12357). It reuses the shared on-site provisioning service —
+/// app. It reuses the shared on-site provisioning service —
 /// creating a <see cref="AccountState.PendingApproval"/> visitor with no QR
-/// until an admin approves it (D-425) — and is gated by the SAME
+/// until an admin approves it — and is gated by the SAME
 /// <c>Visitors.RegisterOnsite</c> permission so a person authorised to register
 /// walk-ins has the capability on both surfaces. App tokens carry the JWT
-/// permission claims (same model the gate-operator console uses, D-207/D-208),
+/// permission claims (the same model the gate-operator console uses),
 /// so the gate is the real authority; the app role-gate is only a UX guard.
 /// </summary>
 public sealed class StaffRegisterVisitorEndpoint(IAdminUserProvisioningService service)
@@ -33,19 +34,15 @@ public sealed class StaffRegisterVisitorEndpoint(IAdminUserProvisioningService s
             PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite),
             nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Staff");
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Summary(s => s.Summary =
-            "Staff-app on-site walk-in visitor registration. Creates a PENDING account (D-425); the QR is minted on approval.");
+            "Staff-app on-site walk-in visitor registration. Creates a PENDING account; the QR is minted on approval.");
     }
 
     public override async Task HandleAsync(
         AdminWalkInRegistrationRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         // Audience-side: the desk creates a Visitor-typed account; the guard
         // rejects a partner ProfileType (parity with the CP visitors desk).
         var response = await service.RegisterOnSiteAsync(
@@ -56,7 +53,7 @@ public sealed class StaffRegisterVisitorEndpoint(IAdminUserProvisioningService s
 }
 
 /// <summary>
-/// D-509 — <c>POST /app/staff/visitors/{id}/id-document</c>. Staff-app twin of
+/// <c>POST /app/staff/visitors/{id}/id-document</c>. Staff-app twin of
 /// <c>UploadVisitorIdDocumentEndpoint</c>: attaches the freshly registered
 /// visitor's ID-document image (national ID / Iqama / passport). Multipart, one
 /// "file" field; same 5 MB + MIME + magic-byte + human-face gate as the CP /
@@ -76,7 +73,7 @@ public sealed class StaffUploadVisitorIdDocumentEndpoint(
             PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite),
             nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Staff");
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         AllowFileUploads();
         Summary(s => s.Summary =
             "Staff-app upload of a walk-in visitor's ID-document image.");
@@ -84,11 +81,7 @@ public sealed class StaffUploadVisitorIdDocumentEndpoint(
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)
@@ -119,8 +112,8 @@ public sealed class StaffUploadVisitorIdDocumentEndpoint(
                 "يجب أن تكون صورة الهوية بصيغة PNG أو JPEG أو WebP.");
         }
 
-        // C7 (D-371) parity — the offline server-side human-face gate; the
-        // staff device runs no on-device pre-check on this path.
+        // The offline server-side human-face gate; the staff device runs
+        // no on-device pre-check on this path.
         if (!await faceDetection.ContainsHumanFaceAsync(bytes, ct))
         {
             throw new ApiException(
@@ -137,7 +130,7 @@ public sealed class StaffUploadVisitorIdDocumentEndpoint(
 }
 
 /// <summary>
-/// D-509 — <c>POST /app/staff/visitors/{id}/avatar</c>. Staff-app twin of
+/// <c>POST /app/staff/visitors/{id}/avatar</c>. Staff-app twin of
 /// <c>UploadVisitorAvatarEndpoint</c>: attaches the walk-in visitor's profile
 /// photo. Reuses <see cref="IAccountService.SetAvatarAsync"/> (id-parameterised,
 /// 2 MB + MIME + magic-byte gate, no face requirement — it is a profile photo).
@@ -152,7 +145,7 @@ public sealed class StaffUploadVisitorAvatarEndpoint(IAccountService accountServ
             PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite),
             nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Staff");
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         AllowFileUploads();
         Summary(s => s.Summary =
             "Staff-app upload of a walk-in visitor's profile photo (avatar).");
@@ -160,11 +153,7 @@ public sealed class StaffUploadVisitorAvatarEndpoint(IAccountService accountServ
 
     public override async Task HandleAsync(EmptyRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out _))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        User.RequireActor();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)

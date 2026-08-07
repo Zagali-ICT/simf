@@ -7,8 +7,8 @@ using SIMF.Domain.Auditing;
 namespace SIMF.Application.Email;
 
 /// <summary>
-/// H23 — D-083: the H10 try / catch + EmailEnqueueFailed audit pattern
-/// (D-065) was duplicated verbatim at four sites in
+/// The try / catch + EmailEnqueueFailed audit pattern
+/// was duplicated verbatim at four sites in
 /// <c>PasswordService</c> / <c>RegistrationService</c> /
 /// <c>SignInService</c>. Each repeat copied the same shape: try the
 /// Enqueue, on any exception log + audit with a per-purpose <c>Detail</c>.
@@ -17,7 +17,7 @@ namespace SIMF.Application.Email;
 /// email argument, missed audit) becomes the bug.
 ///
 /// <para>This extension consolidates the pattern. Each caller becomes a
-/// single line; the H10 invariant ("persist row inside the TX, dispatch
+/// single line; the invariant ("persist row inside the TX, dispatch
 /// outside") stays in the caller, only the failure handling moves.</para>
 /// </summary>
 public static class EmailQueueExtensions

@@ -1,9 +1,9 @@
 // Tests: SIMF.Api.Tests/MyAreaDashboardTests.cs
 using System.Globalization;
-using System.Security.Claims;
 using System.Text;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.MyArea;
 using SIMF.Common;
 using SIMF.Contracts.Account;
@@ -12,9 +12,9 @@ namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
 /// <c>GET /api/v1/app/account/dashboard</c> — the My-Area (منطقتي) personal
-/// dashboard, App Screen 14 (Page_014): identity card + the two counters +
+/// dashboard: identity card + the two counters +
 /// today's merged schedule. Approved account, own <c>sub</c>; an additive
-/// read-only aggregate over existing App-DB tables. D-249.
+/// read-only aggregate over existing App-DB tables.
 /// </summary>
 public sealed class MyAreaDashboardEndpoint(IMyAreaService service)
     : EndpointWithoutRequest<ApiResult<MyAreaDashboard>>
@@ -30,11 +30,7 @@ public sealed class MyAreaDashboardEndpoint(IMyAreaService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var dashboard = await service.GetDashboardAsync(userId, ct);
         await Send.OkAsync(ApiResult<MyAreaDashboard>.Ok(dashboard), ct);
@@ -42,8 +38,8 @@ public sealed class MyAreaDashboardEndpoint(IMyAreaService service)
 }
 
 /// <summary>
-/// <c>GET /api/v1/app/account/sessions</c> — the "my sessions" list (App
-/// "تفاصيل الجلسات", Figma 1388:9067): the user's booked / joined sessions across
+/// <c>GET /api/v1/app/account/sessions</c> — the "my sessions" list
+/// ("تفاصيل الجلسات"): the user's booked / joined sessions across
 /// all days, each with the per-user heart + attended flag, time-ordered. The app
 /// partitions them into the القادمة / حضرتها / فاتتني / الأرشيف tabs client-side.
 /// Approved account, own <c>sub</c>; an additive read-only aggregate (no schema).
@@ -62,11 +58,7 @@ public sealed class MyAreaSessionsEndpoint(IMyAreaService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var sessions = await service.GetMySessionsAsync(userId, ct);
         await Send.OkAsync(ApiResult<MyAreaSessions>.Ok(sessions), ct);
@@ -92,23 +84,19 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var events = await service.GetCalendarEventsAsync(userId, ct);
-        var ics = BuildCalendar(events, timeProvider.GetUtcNow());
+        var ics = BuildCalendar(events, timeProvider.SimfNow());
 
         HttpContext.Response.ContentType = "text/calendar; charset=utf-8";
         HttpContext.Response.Headers.ContentDisposition = "attachment; filename=\"simf.ics\"";
         await HttpContext.Response.WriteAsync(ics, ct);
     }
 
-    private static string BuildCalendar(IReadOnlyList<MyAreaCalendarEvent> events, DateTimeOffset stamp)
+    private static string BuildCalendar(IReadOnlyList<MyAreaCalendarEvent> events, DateTime stamp)
     {
-        var dtstamp = ToIcsUtc(stamp);
+        var dtstamp = ToIcsLocal(stamp);
         var sb = new StringBuilder();
         sb.Append("BEGIN:VCALENDAR\r\n");
         sb.Append("VERSION:2.0\r\n");
@@ -119,10 +107,10 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
             sb.Append("BEGIN:VEVENT\r\n");
             sb.Append("UID:").Append(e.Uid.ToString("N")).Append("@simf\r\n");
             sb.Append("DTSTAMP:").Append(dtstamp).Append("\r\n");
-            sb.Append("DTSTART:").Append(ToIcsUtc(e.Start)).Append("\r\n");
+            sb.Append("DTSTART:").Append(ToIcsLocal(e.Start)).Append("\r\n");
             if (e.End is { } end)
             {
-                sb.Append("DTEND:").Append(ToIcsUtc(end)).Append("\r\n");
+                sb.Append("DTEND:").Append(ToIcsLocal(end)).Append("\r\n");
             }
             sb.Append("SUMMARY:").Append(EscapeText(e.Summary)).Append("\r\n");
             if (!string.IsNullOrWhiteSpace(e.Location))
@@ -135,8 +123,13 @@ public sealed class MyAreaCalendarEndpoint(IMyAreaService service, TimeProvider 
         return sb.ToString();
     }
 
-    private static string ToIcsUtc(DateTimeOffset value) =>
-        value.UtcDateTime.ToString("yyyyMMddTHHmmssZ", CultureInfo.InvariantCulture);
+    // RFC 5545 §3.3.5 FLOATING local time — no trailing Z, no TZID. A Z would
+    // declare the value zoned, and it is the Saudi wall clock, so
+    // every "add to calendar" landed the session three hours early in Outlook
+    // and Google. Floating is right for a fixed-venue event: the calendar shows
+    // the wall time the programme is published at, wherever the attendee is.
+    private static string ToIcsLocal(DateTime value) =>
+        value.ToString("yyyyMMddTHHmmss", CultureInfo.InvariantCulture);
 
     // RFC 5545 §3.3.11 text escaping: backslash, semicolon, comma, newlines.
     private static string EscapeText(string value) => value
@@ -165,11 +158,7 @@ public sealed class MyAreaContactCardEndpoint(IMyAreaService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var userId = User.ActorId();
 
         var card = await service.GetContactCardAsync(userId, ct);
         var vcard = BuildVCard(card);
@@ -181,7 +170,7 @@ public sealed class MyAreaContactCardEndpoint(IMyAreaService service)
 
     private static string BuildVCard(MyAreaContactCard card)
     {
-        // D-470 — requirement #8 ("Name ar, phones"): the Arabic name leads (the
+        // Requirement #8 ("Name ar, phones"): the Arabic name leads (the
         // English name is the fallback), and the mobile numbers become TEL lines.
         // The gate QrId is intentionally NOT emitted — this vCard is encoded in a
         // QR any phone camera can read, so leaking the badge/lead key here would

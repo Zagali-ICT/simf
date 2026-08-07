@@ -6,10 +6,10 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin.Validators;
 
 /// <summary>
-/// D-209 — validates the bulk-reject request. The Ids list is capped at 500
+/// Validates the bulk-reject request. The Ids list is capped at 500
 /// (same window as bulk-delete), and the shared reason follows the same
 /// 10–500 char rule as the single reject (<see cref="RejectRouteRequestValidator"/>)
-/// and the 2FA-reset validator (D-041).
+/// and the 2FA-reset validator.
 /// </summary>
 public sealed class AdminBulkRejectRequestValidator : Validator<AdminBulkRejectRequest>
 {

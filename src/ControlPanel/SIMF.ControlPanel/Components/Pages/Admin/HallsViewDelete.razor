@@ -1,4 +1,4 @@
-@* D-353 â€” reusable Hall View/Delete form, hosted by CrudShell (popup or full
+@* Reusable Hall View/Delete form, hosted by CrudShell (popup or full
    page) from HallsList. Inherits CrudViewDeleteFormBase so it exposes the
    standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
    details always show; when IsDelete=true a Deactivate button appears and a
@@ -22,12 +22,69 @@
         <dt>@L["Admin.Halls.Column.Capacity"]</dt>
         <dd>@Initial.Capacity</dd>
         <dt>@L["Admin.Halls.Column.Floor"]</dt>
-        <dd>@(Initial.Floor ?? "â€”")</dd>
+        <dd>@(Initial.Floor ?? "—")</dd>
         <dt>@L["Admin.Halls.Field.EquipmentNotes"]</dt>
-        <dd>@(Initial.EquipmentNotes ?? "â€”")</dd>
+        <dd>@(Initial.EquipmentNotes ?? "—")</dd>
         <dt>@L["Admin.Halls.Column.Active"]</dt>
         <dd>@(Initial.IsActive ? L["Admin.Halls.Active.Yes"] : L["Admin.Halls.Active.No"])</dd>
     </dl>
+
+    @* The hall's occupancy view: what this hall is actually doing.
+       Without it the session/booking overlap rule only ever surfaced as a 409. *@
+    <h3 class="simf-section-title">@L["Admin.Halls.Schedule.Heading"]</h3>
+    @if (_scheduleLoading)
+    {
+        <p>@L["Admin.Halls.Schedule.Loading"]</p>
+    }
+    else if (_schedule.Count == 0)
+    {
+        <SimfEmptyState Title="@L["Admin.Halls.Schedule.None"]" />
+    }
+    else
+    {
+        <div class="simf-table-wrapper">
+            <table class="simf-table">
+                <caption class="simf-visually-hidden">@L["Admin.Halls.Schedule.Heading"]</caption>
+                <thead>
+                    <tr>
+                        <th>@L["Admin.Halls.Schedule.Col.Code"]</th>
+                        <th>@L["Admin.Halls.Schedule.Col.Title"]</th>
+                        <th>@L["Admin.Halls.Schedule.Col.Start"]</th>
+                        <th>@L["Admin.Halls.Schedule.Col.End"]</th>
+                        <th>@L["Admin.Halls.Schedule.Col.Status"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var session in _schedule)
+                    {
+                        <tr>
+                            <td>@session.Code</td>
+                            <td>@SessionTitle(session)</td>
+                            <td>@Local(session.Start)</td>
+                            <td>@Local(session.End)</td>
+                            <td>
+                                <SimfPill Variant="@StatusPillVariant(session.Status)">
+                                    @StatusLabel(session.Status)
+                                </SimfPill>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <p class="simf-table__summary">
+            @(string.Format(L["Admin.Halls.Schedule.Count"], _schedule.Count))
+        </p>
+        @* The endpoint caps the page, so say when the schedule is partial
+           rather than letting a capped list read as the whole occupancy. *@
+        @if (_scheduleTotal > _schedule.Count)
+        {
+            <SimfAlert Variant="info">
+                @(string.Format(L["Admin.Halls.Schedule.Capped"],
+                                _schedule.Count, _scheduleTotal))
+            </SimfAlert>
+        }
+    }
 
     <div class="simf-form__actions">
         @if (IsDelete)
@@ -51,5 +108,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
-                 OnCancel="@(() => _confirming = false)" />
+                 OnCancel="@(() => _confirming = false)" 
+                 Permission="@PermissionCatalog.Halls.Delete"/>
 }

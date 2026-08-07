@@ -1,10 +1,11 @@
 // Tests: SIMF.Api.Tests/GateScanTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.AccessControl;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Contracts.Gates;
 
 namespace SIMF.Api.Endpoints.Gates;
@@ -21,13 +22,39 @@ public sealed class MyAssignmentsEndpoint(IGateOperatorService service)
     }
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
         await Send.OkAsync(ApiResult<IReadOnlyList<OperatorGateAssignment>>.Ok(
             await service.ListMyAssignmentsAsync(operatorId, ct)), ct);
+    }
+}
+
+/// <summary>
+/// <c>GET /app/gates/offline-config</c>. The snapshot a scanner caches
+/// so it can judge a badge with no network.
+///
+/// <para>Its own endpoint rather than a field on <c>my-assignments</c> because
+/// it carries the badge key: a secret should be visible in the access log as its
+/// own call, and be revocable without also breaking the assignment list.</para>
+/// </summary>
+public sealed class GateOfflineConfigEndpoint(IGateOperatorService service)
+    : EndpointWithoutRequest<ApiResult<GateOfflineConfig>>
+{
+    public override void Configure()
+    {
+        Get("/app/gates/offline-config");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
+                 PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Operate));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
+        Tags("Gates");
+        Summary(summary => summary.Summary =
+            "Offline scanning rules + badge key for this operator's gates.");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var operatorId = User.ActorId();
+        await Send.OkAsync(ApiResult<GateOfflineConfig>.Ok(
+            await service.GetOfflineConfigAsync(operatorId, ct)), ct);
     }
 }
 
@@ -35,12 +62,12 @@ public sealed class PostScanRequest
 {
     public Guid GateId { get; set; }
     public string Qr { get; set; } = string.Empty;
-    public DateTimeOffset? ClientScannedAt { get; set; }
+    public DateTime? ClientScannedAt { get; set; }
     public string? IdempotencyKey { get; set; }
     public SIMF.Common.Enums.ScanSource Source { get; set; }
         = SIMF.Common.Enums.ScanSource.MobileApp;
 
-    /// <summary>D-509 — the operator's دخول/خروج choice (honoured only for a
+    /// <summary>The operator's دخول/خروج choice (honoured only for a
     /// Both-mode gate; fixed In/Out gates ignore it). Null = server infers.</summary>
     public SIMF.Common.Enums.ScanDirection? Direction { get; set; }
 }
@@ -53,16 +80,12 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
         Post("/app/gates/{gateId:guid}/scans");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
                  PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Operate));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Gates");
     }
     public override async Task HandleAsync(PostScanRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
 
         var headerKey = HttpContext.Request.Headers.TryGetValue(
             GateProtocol.IdempotencyKeyHeader, out var hk) ? hk.ToString() : null;
@@ -100,10 +123,11 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
                 throw new ApiException(ErrorCodes.GateOperatorNotAssigned, 403,
                     "You are not assigned to this gate.",
                     "أنت غير معيّن لهذه البوابة.");
-            case GateScanResultKind.GateInactive:
-                throw new ApiException(ErrorCodes.GateInactive, 503,
-                    "This gate is currently inactive.",
-                    "هذه البوابة غير نشطة حالياً.");
+            // DEF-STF-008 — there is deliberately no GATE_INACTIVE (503) arm: an
+            // inactive gate is a RECORDED denial at HTTP 200
+            // (DenialReasonCode.GateInactiveAtScan), so the attempt still lands
+            // in the append-only GateScan audit trail and the operator gets the
+            // designed denial card instead of an envelope failure.
             case GateScanResultKind.IdempotencyConflict:
                 throw new ApiException(ErrorCodes.IdempotencyKeyConflict, 409,
                     "An idempotency key was reused with a different payload.",
@@ -124,7 +148,7 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
     }
 }
 
-// D-160 — `POST /gates/{gateId}/visitors/list` request. GateId binds
+// `POST /gates/{gateId}/visitors/list` request. GateId binds
 // from the route; the rest matches the SIMF.Contracts.Gates contract.
 public sealed class PostGateVisitorsListRequest
 {
@@ -133,8 +157,8 @@ public sealed class PostGateVisitorsListRequest
     public int PageSize { get; set; }
     public SIMF.Common.Enums.ScanDirection? Direction { get; set; }
     public SIMF.Common.Enums.ScanOutcome? Outcome { get; set; }
-    public DateTimeOffset? Since { get; set; }
-    public DateTimeOffset? Until { get; set; }
+    public DateTime? Since { get; set; }
+    public DateTime? Until { get; set; }
 }
 
 public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)
@@ -145,17 +169,13 @@ public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)
         Post("/app/gates/{gateId:guid}/visitors/list");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
                  PermissionCatalog.PolicyFor(PermissionCatalog.Gates.ViewOwnReports));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
         Tags("Gates");
     }
     public override async Task HandleAsync(
         PostGateVisitorsListRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
         var serviceRequest = new GateVisitorsListRequest
         {
             Cursor = req.Cursor,
@@ -196,11 +216,7 @@ public sealed class MyDailyReportEndpoint(IGateOperatorService service)
     }
     public override async Task HandleAsync(MyDailyReportRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var operatorId = User.ActorId();
         await Send.OkAsync(ApiResult<OperatorDailyReport>.Ok(
             await service.GetMyDailyReportAsync(operatorId, req.GateId, ct)), ct);
     }

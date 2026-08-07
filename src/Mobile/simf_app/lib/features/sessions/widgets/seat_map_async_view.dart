@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -14,13 +16,18 @@ import '../data/seat_map_models.dart';
 class SeatMapAsyncView extends StatelessWidget {
   const SeatMapAsyncView({
     required this.value,
-    required this.onRetry,
+    required this.onRefresh,
     required this.builder,
     super.key,
   });
 
   final AsyncValue<SessionSeatMap> value;
-  final VoidCallback onRetry;
+
+  /// Re-fetches the seat map. Drives both the pull-to-refresh gesture (every
+  /// branch, owner rule) and the error state's Retry button — they did the same
+  /// work, so there is one callback rather than two.
+  final Future<void> Function() onRefresh;
+
   final Widget Function(SessionSeatMap map) builder;
 
   @override
@@ -32,22 +39,31 @@ class SeatMapAsyncView extends StatelessWidget {
         // A 404 means the session was removed (L-6); anything else is a wire
         // error the user can retry.
         if (error is ApiFailure && error.httpStatus == 404) {
-          return SimfEmptyState(
-            icon: Icons.event_busy_outlined,
-            message: l10n.sessionNotFound,
+          return SimfRefreshableMessage(
+            onRefresh: onRefresh,
+            child: SimfEmptyState(
+              icon: Icons.event_busy_outlined,
+              message: l10n.sessionNotFound,
+            ),
           );
         }
-        return SimfErrorState(
-          message: l10n.seatMapError,
-          retryLabel: l10n.retryLabel,
-          onRetry: onRetry,
+        return SimfRefreshableMessage(
+          onRefresh: onRefresh,
+          child: SimfErrorState(
+            message: l10n.seatMapError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => unawaited(onRefresh()),
+          ),
         );
       },
       data: (map) => map.hasLayout
-          ? builder(map)
-          : SimfEmptyState(
-              icon: Icons.event_seat_outlined,
-              message: l10n.seatMapUnavailable,
+          ? SimfPullToRefresh(onRefresh: onRefresh, child: builder(map))
+          : SimfRefreshableMessage(
+              onRefresh: onRefresh,
+              child: SimfEmptyState(
+                icon: Icons.event_seat_outlined,
+                message: l10n.seatMapUnavailable,
+              ),
             ),
     );
   }

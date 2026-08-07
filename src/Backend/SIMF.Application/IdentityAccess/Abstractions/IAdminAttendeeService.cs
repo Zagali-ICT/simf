@@ -4,7 +4,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// D-134 Sprint A — read-only roster of every event attendee. Joins
+/// Read-only roster of every event attendee. Joins
 /// <c>SimfUser</c> + <c>UserProfile</c> + <c>ProfileType</c>. Filters by
 /// UserType (Visitor / Other — default both; Admin excluded),
 /// ProfileTypeId, AccountState, and free-text search across email +

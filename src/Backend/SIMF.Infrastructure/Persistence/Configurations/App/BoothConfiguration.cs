@@ -6,7 +6,7 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-199 — Booth (Exhibition) entity configuration. Bilingual,
+/// <summary>Booth (Exhibition) entity configuration. Bilingual,
 /// Code is unique, soft-delete via IsActive. Mirrors HallConfiguration /
 /// SpeakerConfiguration. <c>HallId</c> is a real same-DB FK to
 /// <c>Hall.Id</c> with <c>OnDelete.Restrict</c> (same soft-delete policy
@@ -31,7 +31,7 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
 
         builder.Property(booth => booth.ExhibitorName).HasMaxLength(256);
         builder.Property(booth => booth.ExhibitorNameArabic).HasMaxLength(256);
-        // B1 — D-222: booth-officer contact.
+        // Booth-officer contact.
         builder.Property(booth => booth.OfficerName).HasMaxLength(256);
         builder.Property(booth => booth.OfficerPhone).HasMaxLength(32);
         builder.Property(booth => booth.OfficerEmail).HasMaxLength(320);
@@ -51,14 +51,14 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
 
         builder.HasIndex(booth => booth.Code).IsUnique();
 
-        // D-199 — real same-DB FK to Hall. Restrict matches the soft-delete
+        // Real same-DB FK to Hall. Restrict matches the soft-delete
         // policy. HasForeignKey creates the FK index automatically.
         builder.HasOne(booth => booth.Hall)
             .WithMany()
             .HasForeignKey(booth => booth.HallId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // B1 — D-222: real same-DB FK to the Exhibitor. Restrict
+        // Real same-DB FK to the Exhibitor. Restrict
         // (admins soft-delete exhibitors via IsActive, never hard-delete a row
         // a booth points at). HasForeignKey creates the FK index automatically.
         builder.HasOne(booth => booth.Exhibitor)

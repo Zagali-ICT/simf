@@ -35,14 +35,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasMaxLength(1024)
@@ -71,8 +71,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -98,8 +98,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("CreateBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("GateId")
                         .HasColumnType("uniqueidentifier");
@@ -107,8 +107,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<DateTimeOffset?>("RevokedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("RevokedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -152,8 +152,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTimeOffset?>("ClientScannedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ClientScannedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CorrelationId")
                         .HasMaxLength(64)
@@ -181,11 +181,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<string>("QrIdAtScan")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasMaxLength(96)
+                        .HasColumnType("nvarchar(96)");
 
-                    b.Property<DateTimeOffset>("ScannedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("ScannedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("ScannedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -261,8 +261,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<long?>("ScanId")
                         .HasColumnType("bigint");
 
-                    b.Property<DateTimeOffset>("StoredAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("StoredAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Key", "GateId");
 
@@ -283,8 +283,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -315,8 +315,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("CallerUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("ErrorCode")
                         .HasMaxLength(64)
@@ -374,8 +374,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasMaxLength(512)
@@ -424,8 +424,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<double>("Temperature")
                         .HasColumnType("float");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -456,11 +456,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("AiPromptId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CapturedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CapturedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("CapturedFromUpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CapturedFromUpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("ContentHash")
                         .IsRequired()
@@ -521,8 +521,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -535,8 +535,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -573,8 +573,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -744,8 +744,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("SubjectUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("UserAgent")
                         .HasMaxLength(512)
@@ -795,8 +795,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("NewValuesJson")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("OldValuesJson")
                         .HasColumnType("nvarchar(max)");
@@ -838,14 +838,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -860,8 +860,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("TotalCount")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -883,17 +883,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("CancelledByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("End")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
@@ -908,14 +908,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("ScheduledByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("Start")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -938,8 +938,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("BusinessMeetingId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("DisplayNameSnapshot")
                         .IsRequired()
@@ -986,14 +986,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("CountryId")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("End")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1001,11 +1001,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("SlotMinutes")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("Start")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -1027,22 +1027,22 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("DelegationMeetingRequestId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("ExpiresUtc")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTimeOffset?>("UsedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -1066,20 +1066,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("AvailabilityWindowId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("CheckedInAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("CheckedInAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("CheckedInByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("ConfirmedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("ConfirmedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("HallId")
                         .HasColumnType("uniqueidentifier");
@@ -1087,8 +1087,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("ReminderSent")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ReminderSent")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("RequestedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -1096,8 +1096,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("RequestingCountryId")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("RespondedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("RespondedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -1106,11 +1106,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<DateTimeOffset?>("SlotEnd")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("SlotEnd")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("SlotStart")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("SlotStart")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -1151,14 +1151,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("End")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("HallId")
                         .HasColumnType("uniqueidentifier");
@@ -1173,15 +1173,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Purpose")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("ReleasedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ReleasedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("RowColumnSpec")
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset>("Start")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("UnitCount")
                         .HasColumnType("int");
@@ -1202,14 +1202,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("End")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("HallId")
                         .HasColumnType("uniqueidentifier");
@@ -1220,11 +1220,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("SlotMinutes")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("Start")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -1249,11 +1249,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Action")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("Expires")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("Expires")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("SpeakerMeetingRequestId")
                         .HasColumnType("uniqueidentifier");
@@ -1263,8 +1263,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTimeOffset?>("UsedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -1293,8 +1293,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int?>("ColumnNumber")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("HallId")
                         .HasColumnType("uniqueidentifier");
@@ -1306,8 +1306,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(8)
                         .HasColumnType("nvarchar(8)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -1326,14 +1326,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("End")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1344,11 +1344,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("SpeakerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("Start")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -1373,14 +1373,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("AvailabilityWindowId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("CheckedInAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("CheckedInAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("CheckedInByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("HallId")
                         .HasColumnType("uniqueidentifier");
@@ -1388,8 +1388,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("MeetingTableId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("ReminderSent")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ReminderSent")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("RequestedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -1399,8 +1399,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("RespondedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("RespondedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -1409,14 +1409,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<DateTimeOffset?>("SlotEnd")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("SlotEnd")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("SlotStart")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("SlotStart")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("SpeakerDecisionAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("SpeakerDecisionAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("SpeakerId")
                         .HasColumnType("uniqueidentifier");
@@ -1469,20 +1469,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("End")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(1024)
@@ -1495,8 +1495,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
-                    b.Property<DateTimeOffset>("Start")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1508,8 +1508,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -1540,8 +1540,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1551,8 +1551,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset>("LastUpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("LastUpdatedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -1577,8 +1577,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2)
                         .HasColumnType("nvarchar(2)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateOnly?>("DelegationArrivalDate")
                         .HasColumnType("date");
@@ -1612,8 +1612,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(8)
                         .HasColumnType("nvarchar(8)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -1631,7 +1631,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 48,
                             Code = "BH",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 10,
                             IsActive = true,
                             IsInvited = false,
@@ -1643,7 +1643,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 414,
                             Code = "KW",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 20,
                             IsActive = true,
                             IsInvited = false,
@@ -1655,7 +1655,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 512,
                             Code = "OM",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 30,
                             IsActive = true,
                             IsInvited = false,
@@ -1667,7 +1667,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 634,
                             Code = "QA",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 40,
                             IsActive = true,
                             IsInvited = false,
@@ -1679,7 +1679,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 682,
                             Code = "SA",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 50,
                             IsActive = true,
                             IsInvited = false,
@@ -1691,7 +1691,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 784,
                             Code = "AE",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 60,
                             IsActive = true,
                             IsInvited = false,
@@ -1703,7 +1703,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 818,
                             Code = "EG",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 70,
                             IsActive = true,
                             IsInvited = false,
@@ -1715,7 +1715,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 400,
                             Code = "JO",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 80,
                             IsActive = true,
                             IsInvited = false,
@@ -1727,7 +1727,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 422,
                             Code = "LB",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 90,
                             IsActive = true,
                             IsInvited = false,
@@ -1739,7 +1739,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 504,
                             Code = "MA",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 100,
                             IsActive = true,
                             IsInvited = false,
@@ -1751,7 +1751,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 792,
                             Code = "TR",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 110,
                             IsActive = true,
                             IsInvited = false,
@@ -1763,7 +1763,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 729,
                             Code = "SD",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 120,
                             IsActive = true,
                             IsInvited = false,
@@ -1775,7 +1775,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 887,
                             Code = "YE",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 130,
                             IsActive = true,
                             IsInvited = false,
@@ -1787,7 +1787,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 364,
                             Code = "IR",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 140,
                             IsActive = true,
                             IsInvited = false,
@@ -1799,7 +1799,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 368,
                             Code = "IQ",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 150,
                             IsActive = true,
                             IsInvited = false,
@@ -1811,7 +1811,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 275,
                             Code = "PS",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 160,
                             IsActive = true,
                             IsInvited = false,
@@ -1823,7 +1823,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 262,
                             Code = "DJ",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 170,
                             IsActive = true,
                             IsInvited = false,
@@ -1835,7 +1835,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 840,
                             Code = "US",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 200,
                             IsActive = true,
                             IsInvited = false,
@@ -1847,7 +1847,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 826,
                             Code = "GB",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 210,
                             IsActive = true,
                             IsInvited = false,
@@ -1859,7 +1859,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 250,
                             Code = "FR",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 220,
                             IsActive = true,
                             IsInvited = false,
@@ -1871,7 +1871,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 276,
                             Code = "DE",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 230,
                             IsActive = true,
                             IsInvited = false,
@@ -1883,7 +1883,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 380,
                             Code = "IT",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 240,
                             IsActive = true,
                             IsInvited = false,
@@ -1895,7 +1895,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 724,
                             Code = "ES",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 250,
                             IsActive = true,
                             IsInvited = false,
@@ -1907,7 +1907,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 620,
                             Code = "PT",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 260,
                             IsActive = true,
                             IsInvited = false,
@@ -1919,7 +1919,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 528,
                             Code = "NL",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 270,
                             IsActive = true,
                             IsInvited = false,
@@ -1931,7 +1931,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 56,
                             Code = "BE",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 280,
                             IsActive = true,
                             IsInvited = false,
@@ -1943,7 +1943,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 756,
                             Code = "CH",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 290,
                             IsActive = true,
                             IsInvited = false,
@@ -1955,7 +1955,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 40,
                             Code = "AT",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 300,
                             IsActive = true,
                             IsInvited = false,
@@ -1967,7 +1967,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 752,
                             Code = "SE",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 310,
                             IsActive = true,
                             IsInvited = false,
@@ -1979,7 +1979,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 578,
                             Code = "NO",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 320,
                             IsActive = true,
                             IsInvited = false,
@@ -1991,7 +1991,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 208,
                             Code = "DK",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 330,
                             IsActive = true,
                             IsInvited = false,
@@ -2003,7 +2003,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 246,
                             Code = "FI",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 340,
                             IsActive = true,
                             IsInvited = false,
@@ -2015,7 +2015,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 372,
                             Code = "IE",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 350,
                             IsActive = true,
                             IsInvited = false,
@@ -2027,7 +2027,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 300,
                             Code = "GR",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 360,
                             IsActive = true,
                             IsInvited = false,
@@ -2039,7 +2039,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 643,
                             Code = "RU",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 370,
                             IsActive = true,
                             IsInvited = false,
@@ -2051,7 +2051,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 392,
                             Code = "JP",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 400,
                             IsActive = true,
                             IsInvited = false,
@@ -2063,7 +2063,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 410,
                             Code = "KR",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 410,
                             IsActive = true,
                             IsInvited = false,
@@ -2075,7 +2075,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 156,
                             Code = "CN",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 420,
                             IsActive = true,
                             IsInvited = false,
@@ -2087,7 +2087,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 356,
                             Code = "IN",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 430,
                             IsActive = true,
                             IsInvited = false,
@@ -2099,7 +2099,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 586,
                             Code = "PK",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 440,
                             IsActive = true,
                             IsInvited = false,
@@ -2111,7 +2111,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 50,
                             Code = "BD",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 450,
                             IsActive = true,
                             IsInvited = false,
@@ -2123,7 +2123,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 360,
                             Code = "ID",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 460,
                             IsActive = true,
                             IsInvited = false,
@@ -2135,7 +2135,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 458,
                             Code = "MY",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 470,
                             IsActive = true,
                             IsInvited = false,
@@ -2147,7 +2147,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 702,
                             Code = "SG",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 480,
                             IsActive = true,
                             IsInvited = false,
@@ -2159,7 +2159,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 764,
                             Code = "TH",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 490,
                             IsActive = true,
                             IsInvited = false,
@@ -2171,7 +2171,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 704,
                             Code = "VN",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 500,
                             IsActive = true,
                             IsInvited = false,
@@ -2183,7 +2183,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 608,
                             Code = "PH",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 510,
                             IsActive = true,
                             IsInvited = false,
@@ -2195,7 +2195,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 36,
                             Code = "AU",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 520,
                             IsActive = true,
                             IsInvited = false,
@@ -2207,7 +2207,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 554,
                             Code = "NZ",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 530,
                             IsActive = true,
                             IsInvited = false,
@@ -2219,7 +2219,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 124,
                             Code = "CA",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 600,
                             IsActive = true,
                             IsInvited = false,
@@ -2231,7 +2231,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 76,
                             Code = "BR",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 610,
                             IsActive = true,
                             IsInvited = false,
@@ -2243,7 +2243,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 484,
                             Code = "MX",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 620,
                             IsActive = true,
                             IsInvited = false,
@@ -2255,7 +2255,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 32,
                             Code = "AR",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 630,
                             IsActive = true,
                             IsInvited = false,
@@ -2267,7 +2267,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 710,
                             Code = "ZA",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 700,
                             IsActive = true,
                             IsInvited = false,
@@ -2279,7 +2279,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 566,
                             Code = "NG",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 710,
                             IsActive = true,
                             IsInvited = false,
@@ -2291,7 +2291,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 404,
                             Code = "KE",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 720,
                             IsActive = true,
                             IsInvited = false,
@@ -2303,7 +2303,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = 231,
                             Code = "ET",
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DisplayOrder = 730,
                             IsActive = true,
                             IsInvited = false,
@@ -2319,14 +2319,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasMaxLength(512)
@@ -2340,8 +2340,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -2366,14 +2366,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -2388,8 +2388,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("SubjectUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -2409,28 +2409,28 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<DateTimeOffset?>("RevokedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -2464,8 +2464,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -2480,8 +2480,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(48)
                         .HasColumnType("nvarchar(48)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -2508,14 +2508,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2048)
@@ -2623,8 +2623,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -2670,14 +2670,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int?>("CountryId")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("FacebookUrl")
                         .HasMaxLength(256)
@@ -2717,8 +2717,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int?>("Tier")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -2751,14 +2751,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("ExhibitorId")
                         .HasColumnType("uniqueidentifier");
@@ -2770,8 +2770,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -2796,14 +2796,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ExhibitorId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ExhibitorUserId")
                         .HasColumnType("uniqueidentifier");
@@ -2815,8 +2818,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -2826,9 +2829,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExhibitorUserId", "VisitorUserId")
+                    b.HasIndex("ExhibitorId", "VisitorUserId")
                         .IsUnique()
-                        .HasFilter("[IsActive] = 1");
+                        .HasFilter("[IsActive] = 1 AND [ExhibitorId] IS NOT NULL");
+
+                    b.HasIndex("ExhibitorUserId", "VisitorUserId");
 
                     b.ToTable("ExhibitorVisitorScans", (string)null);
                 });
@@ -2849,14 +2854,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -2877,8 +2882,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -2896,14 +2901,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -2921,8 +2926,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -2968,14 +2973,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -3002,8 +3007,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3023,14 +3028,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -3051,8 +3056,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("RatingTypeId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3074,14 +3079,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -3095,8 +3100,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("TargetId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3139,14 +3144,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -3173,8 +3178,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Scope")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3202,14 +3207,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("ExternalUrl")
                         .HasMaxLength(1024)
@@ -3237,11 +3242,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("OwnerEntityType")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("RetainUntil")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RetainUntil")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("SecureDestroyed")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("SecureDestroyed")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("SensitivityTier")
                         .HasColumnType("int");
@@ -3263,8 +3268,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3298,14 +3303,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -3330,8 +3335,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3355,14 +3360,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -3370,8 +3375,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("RequesterUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("RespondedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("State")
                         .HasColumnType("int");
@@ -3379,8 +3384,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("TargetUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3414,11 +3419,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -3444,8 +3449,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Skipped")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("StartedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -3486,8 +3491,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsVisible")
                         .HasColumnType("bit");
 
-                    b.Property<DateTimeOffset>("LastChangedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("LastChangedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("LastChangedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -3501,7 +3506,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000002"),
                             IsVisible = true,
-                            LastChangedAt = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                            LastChangedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         });
                 });
 
@@ -3511,14 +3516,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("AutoClose")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("AutoClose")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsOpen")
                         .HasColumnType("bit");
 
-                    b.Property<DateTimeOffset>("LastChangedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("LastChangedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("LastChangedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -3532,7 +3537,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000001"),
                             IsOpen = true,
-                            LastChangedAt = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                            LastChangedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         });
                 });
 
@@ -3550,14 +3555,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .HasMaxLength(320)
@@ -3583,8 +3588,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3610,14 +3615,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -3648,8 +3653,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3667,14 +3672,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -3695,8 +3700,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("OrganizationProfileId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3747,8 +3752,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3756,14 +3761,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("CurrentYear")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("EventEndDate")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("EventEndDate")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("EventStartDate")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("EventStartDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("FacebookUrl")
                         .HasMaxLength(1024)
@@ -3823,8 +3828,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
-                    b.Property<DateTimeOffset?>("ReleaseDate")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ReleaseDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Slogan")
                         .HasMaxLength(512)
@@ -3859,8 +3864,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3869,8 +3874,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTimeOffset?>("VersionDate")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("VersionDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("XUrl")
                         .HasMaxLength(1024)
@@ -3888,11 +3893,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000003"),
-                            CreatedAt = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
                             CurrentYear = 2026,
-                            EventEndDate = new DateTimeOffset(new DateTime(2026, 4, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            EventStartDate = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            EventEndDate = new DateTime(2026, 4, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            EventStartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             LocationText = "Saudi Arabia",
                             LocationTextArabic = "السعودية",
@@ -3914,14 +3919,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -3939,8 +3944,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3961,6 +3966,36 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("AccessibilityCaptions")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("AccessibilityConfiguredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("AccessibilityHighContrast")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("AccessibilityReduceMotion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("AccessibilityScreenReaderAssist")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("AccessibilityTextSize")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasDefaultValue("normal");
+
                     b.Property<bool>("AllowsDelegationMeeting")
                         .HasColumnType("bit");
 
@@ -3970,8 +4005,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("BadgeBatchId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -3979,8 +4014,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateOnly?>("DateOfBirth")
                         .HasColumnType("date");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("Gender")
                         .HasColumnType("int");
@@ -4106,8 +4141,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -4168,14 +4203,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<short>("Code")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0);
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -4217,13 +4257,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1 AND [Code] <> 0");
 
                     b.HasIndex("Name")
                         .IsUnique()
@@ -4234,11 +4278,53 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("ProfileTypes", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Programme.DevicePositionPing", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double?>("AccuracyMeters")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("CapturedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("HallId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HallId", "CapturedAt");
+
+                    b.HasIndex("UserId", "CapturedAt");
+
+                    b.ToTable("DevicePositionPings", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.Programme.Hall", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("ArrivalGraceMinutes")
+                        .HasColumnType("int");
 
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
@@ -4248,14 +4334,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("EquipmentNotes")
                         .HasMaxLength(1024)
@@ -4293,8 +4379,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("SeatSelectionMode")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -4308,6 +4394,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("Halls", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Halls_ArrivalGrace", "[ArrivalGraceMinutes] IS NULL OR ([ArrivalGraceMinutes] >= 0 AND [ArrivalGraceMinutes] <= 240)");
+
                             t.HasCheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceRadiusMeters] > 0)");
                         });
                 });
@@ -4318,17 +4406,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset>("Enter")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("Enter")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("HallId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("Leave")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("Leave")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("Method")
                         .HasColumnType("int");
@@ -4336,8 +4424,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -4361,8 +4449,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -4370,8 +4458,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -4379,8 +4467,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<DateTimeOffset?>("RatingPromptSent")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RatingPromptSent")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -4392,8 +4480,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -4415,6 +4503,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("ArrivalGraceMinutesOverride")
+                        .HasColumnType("int");
+
                     b.Property<int?>("CapacityOverride")
                         .HasColumnType("int");
 
@@ -4426,14 +4517,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2048)
@@ -4443,8 +4534,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2048)
                         .HasColumnType("nvarchar(2048)");
 
-                    b.Property<DateTimeOffset>("End")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("HallId")
                         .HasColumnType("uniqueidentifier");
@@ -4468,6 +4559,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(2048)
                         .HasColumnType("nvarchar(2048)");
 
+                    b.Property<string>("LiveNotice")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<string>("LiveNoticeArabic")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<string>("LiveSignLanguageUrl")
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
@@ -4476,11 +4575,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
-                    b.Property<DateTimeOffset?>("PublishedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("RatingPromptSent")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RatingPromptSent")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("RecordingContentType")
                         .HasMaxLength(128)
@@ -4497,20 +4596,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTimeOffset?>("RecordingUploadedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RecordingUploadedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("RecordingUploadedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("ReminderSent")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ReminderSent")
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("SeatSelectionModeOverride")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("Start")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -4528,8 +4627,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int?>("Type")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -4549,6 +4648,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.ToTable("Sessions", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Sessions_ArrivalGrace", "[ArrivalGraceMinutesOverride] IS NULL OR ([ArrivalGraceMinutesOverride] >= 0 AND [ArrivalGraceMinutesOverride] <= 240)");
+
                             t.HasCheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
                         });
                 });
@@ -4559,14 +4660,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -4584,8 +4685,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -4607,8 +4708,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
@@ -4632,14 +4733,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -4660,8 +4761,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -4704,21 +4805,21 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset?>("AiDraftGeneratedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("AiDraftGeneratedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("AiModel")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTimeOffset?>("ApprovedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("ApprovedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("FullText")
                         .IsRequired()
@@ -4743,8 +4844,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<DateTimeOffset?>("PublishedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("PublishedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -4759,8 +4860,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<DateTimeOffset?>("ReviewSubmittedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ReviewSubmittedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("ReviewSubmittedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -4782,8 +4883,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -4860,14 +4961,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int?>("CountryId")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -4943,8 +5044,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -4985,14 +5086,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -5016,8 +5117,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -5045,14 +5146,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasMaxLength(1024)
@@ -5083,8 +5184,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -5105,14 +5206,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -5121,8 +5222,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<DateTimeOffset?>("RespondedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("SentByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -5133,8 +5234,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("State")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -5167,14 +5268,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int?>("CountryId")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -5226,8 +5327,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -5275,14 +5376,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -5302,8 +5403,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<DateTimeOffset>("PublishedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("PublishedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -5315,8 +5416,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -5339,14 +5440,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -5363,8 +5464,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -5385,8 +5486,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CurrentJobTitle")
                         .HasMaxLength(128)
@@ -5404,8 +5505,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("RespondedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("RespondedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -5432,8 +5533,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DocumentType")
                         .HasColumnType("int");
@@ -5445,8 +5546,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("RequestedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("RespondedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("RespondedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -5473,8 +5574,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("HallId")
                         .HasColumnType("uniqueidentifier");
@@ -5488,11 +5589,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("SeatTiers")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<int>("SeatsPerRow")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -5508,14 +5613,22 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("Expires")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("Expires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GuestHint")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("GuestHintArabic")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<int>("Kind")
                         .HasColumnType("int");
@@ -5524,14 +5637,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset?>("ReleasedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ReleasedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("ReservedForUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("ReviewedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("ReviewedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -5579,8 +5692,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("AssignedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("AssignedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -5606,11 +5719,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTimeOffset?>("EscalatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("EscalatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("EscalatedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -5627,8 +5740,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Phase")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("PushedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("PushedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("QuestionText")
                         .IsRequired()
@@ -5642,6 +5755,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StatusBeforeHidden")
                         .HasColumnType("int");
 
                     b.Property<Guid>("SubmittedByUserId")
@@ -5685,14 +5801,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int?>("CountryId")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -5755,8 +5871,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Tier")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -5784,22 +5900,22 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTimeOffset?>("HandledAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("HandledAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("HandledByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -5823,8 +5939,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("SubmittedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -5845,14 +5961,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("BoothId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("HallId")
                         .HasColumnType("uniqueidentifier");
@@ -5873,8 +5989,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
@@ -6233,6 +6349,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("ExhibitorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Exhibitor");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Exhibitors.ExhibitorVisitorScan", b =>
+                {
+                    b.HasOne("SIMF.Domain.Exhibitors.Exhibitor", "Exhibitor")
+                        .WithMany()
+                        .HasForeignKey("ExhibitorId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Exhibitor");
                 });

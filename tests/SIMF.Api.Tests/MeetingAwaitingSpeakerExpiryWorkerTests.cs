@@ -4,13 +4,16 @@
 // request that still has a live token, and any decided request, are left untouched.
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Notifications;
 using SIMF.Common.Enums;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Operations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -27,7 +30,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
     [Fact]
     public async Task Reverts_an_AwaitingSpeaker_request_whose_tokens_all_expired_back_to_Pending_and_clears_the_hall_binding()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         // A hall-bound AwaitingSpeaker request whose only token pair has expired.
         var requestId = await SeedBoundAwaitingRequestAsync(
             slotStart: now.AddDays(3), tokenExpires: now.AddHours(-1), tokenUsed: false);
@@ -58,7 +61,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
     [Fact]
     public async Task Does_not_revert_an_AwaitingSpeaker_request_that_still_has_an_unused_unexpired_token()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         // The token pair is still live (unused + 48h left).
         var requestId = await SeedBoundAwaitingRequestAsync(
             slotStart: now.AddDays(3), tokenExpires: now.AddHours(48), tokenUsed: false);
@@ -76,7 +79,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
     [Fact]
     public async Task Does_not_touch_Accepted_or_Rejected_requests()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var acceptedId = await SeedRequestAsync(MeetingRequestStatus.Accepted, now.AddDays(3));
         var rejectedId = await SeedRequestAsync(MeetingRequestStatus.Rejected, null);
 
@@ -93,19 +96,25 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
 
     // -- Helpers ---------------------------------------------------------------
 
-    private async Task<int> RunScanAsync(DateTimeOffset now)
+    private async Task<int> RunScanAsync(DateTime now)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var auditLog = scope.ServiceProvider.GetRequiredService<IAuditLog>();
+        // QA A29 — the scan now also notifies the requester on the revert.
+        var notifications = scope.ServiceProvider
+            .GetRequiredService<INotificationDispatcher>();
+        var logger = scope.ServiceProvider
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger(nameof(MeetingAwaitingSpeakerExpiryWorkerTests));
         return await MeetingAwaitingSpeakerExpiryWorker.RunExpiryScanAsync(
-            db, auditLog, now, CancellationToken.None);
+            db, auditLog, notifications, logger, now, CancellationToken.None);
     }
 
     // Seeds a fully hall-bound AwaitingSpeaker request (hall + table + slot + window)
     // plus one Approve token with the given expiry/used state.
     private async Task<Guid> SeedBoundAwaitingRequestAsync(
-        DateTimeOffset slotStart, DateTimeOffset tokenExpires, bool tokenUsed)
+        DateTime slotStart, DateTime tokenExpires, bool tokenUsed)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -117,7 +126,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             Code = "SPK" + suffix,
             Name = "Speaker", NameArabic = "متحدّث",
             IsActive = true, AllowsMeetingRequests = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
 
@@ -127,7 +136,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             Code = "H" + suffix,
             Name = "Meeting Hall", NameArabic = "قاعة",
             Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
 
@@ -137,7 +146,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             HallId = hall.Id,
             Code = "T" + suffix,
             Capacity = 4, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.MeetingTables.Add(table);
 
@@ -148,7 +157,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             Start = slotStart,
             End = slotStart.AddHours(2),
             SlotMinutes = 30, IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.SpeakerAvailabilityWindows.Add(window);
 
@@ -164,10 +173,10 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             SlotStart = slotStart,
             SlotEnd = slotStart.AddMinutes(30),
             AvailabilityWindowId = window.Id,
-            RespondedAt = DateTimeOffset.UtcNow,
+            RespondedAt = SimfClock.Now,
             RespondedByUserId = Guid.NewGuid(),
             ResponseNote = "bound",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.SpeakerMeetingRequests.Add(req);
 
@@ -178,8 +187,8 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             Action = MeetingActionType.Approve,
             TokenHash = "hash-" + Guid.NewGuid().ToString("N"),
             Expires = tokenExpires,
-            UsedAt = tokenUsed ? DateTimeOffset.UtcNow : null,
-            CreatedAt = DateTimeOffset.UtcNow,
+            UsedAt = tokenUsed ? SimfClock.Now : null,
+            CreatedAt = SimfClock.Now,
         });
 
         await db.SaveChangesAsync();
@@ -187,7 +196,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
     }
 
     private async Task<Guid> SeedRequestAsync(
-        MeetingRequestStatus status, DateTimeOffset? slotStart)
+        MeetingRequestStatus status, DateTime? slotStart)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -198,7 +207,7 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             Code = "SPK" + suffix,
             Name = "Speaker", NameArabic = "متحدّث",
             IsActive = true, AllowsMeetingRequests = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         var req = new SpeakerMeetingRequest
@@ -210,8 +219,8 @@ public sealed class MeetingAwaitingSpeakerExpiryWorkerTests : IClassFixture<Simf
             Status = status,
             SlotStart = slotStart,
             SlotEnd = slotStart?.AddMinutes(30),
-            RespondedAt = DateTimeOffset.UtcNow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            RespondedAt = SimfClock.Now,
+            CreatedAt = SimfClock.Now,
         };
         db.SpeakerMeetingRequests.Add(req);
         await db.SaveChangesAsync();

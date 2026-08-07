@@ -1,5 +1,4 @@
 import 'dart:async';
-import '../../../core/utils/saudi_time.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +8,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/utils/gregorian_month_names.dart';
+import '../../../core/utils/saudi_time.dart';
 import '../../../core/utils/weekday_names.dart';
 import '../../speakers/widgets/meeting_slot_pickers.dart';
 import '../data/delegation_models.dart';
@@ -22,9 +22,14 @@ import '../data/delegations_repository.dart';
 ///   null, so a searchable delegation picker is shown first.
 ///
 /// The date + time come from the target delegation's real availability slots
-/// (`GET /app/countries/{id}/available-slots`). With no windows the sheet sends
-/// the request subject-only (the team arranges a time). Eligibility
+/// (`GET /app/countries/{id}/available-slots`). Eligibility
 /// (AllowsDelegationMeeting) is enforced server-side — a 403 surfaces here.
+///
+/// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the request
+/// can no longer be sent subject-only: the sheet shows the "no slots" notice and
+/// the send button is disabled (the API 409s `DELEGATION_MEETING_NO_AVAILABILITY`).
+/// A **failed** slot fetch is a separate state — it shows a load error + Retry, so
+/// a transient network failure never masquerades as "this delegation has no time".
 class DelegationMeetingRequestSheet extends ConsumerStatefulWidget {
   const DelegationMeetingRequestSheet({
     required this.country,
@@ -62,6 +67,10 @@ class _DelegationMeetingRequestSheetState
   // The chosen delegation's real availability slots, loaded once a target is set.
   List<DelegationSlot> _slots = const <DelegationSlot>[];
   bool _slotsLoading = false;
+  // G3 — the slot fetch FAILED (network / server), which is NOT the same as the
+  // delegation having no availability. Kept apart so the sheet can offer a retry
+  // instead of telling the user something untrue and locking the send button.
+  bool _slotsError = false;
   DateTime? _selectedDay;
   DelegationSlot? _selectedSlot;
 
@@ -103,11 +112,14 @@ class _DelegationMeetingRequestSheetState
     }
   }
 
-  /// Load the chosen delegation's real availability slots. A failure is treated as
-  /// "no slots" so the request can still be sent subject-only.
+  /// Load the chosen delegation's real availability slots. G3 — a failure is NO
+  /// LONGER folded into "no slots": now that an empty list disables sending, a
+  /// swallowed network error would tell the user the delegation has no
+  /// availability and leave them stuck, so it gets its own state + a Retry.
   Future<void> _loadSlots(int countryId) async {
     setState(() {
       _slotsLoading = true;
+      _slotsError = false;
       _slots = const <DelegationSlot>[];
       _selectedDay = null;
       _selectedSlot = null;
@@ -128,7 +140,10 @@ class _DelegationMeetingRequestSheetState
       if (!mounted || countryId != _selected?.countryId) {
         return;
       }
-      setState(() => _slotsLoading = false);
+      setState(() {
+        _slotsLoading = false;
+        _slotsError = true;
+      });
     }
   }
 
@@ -178,18 +193,17 @@ class _DelegationMeetingRequestSheetState
       setState(() => _error = l10n.delegationAttendeeCountInvalid);
       return;
     }
-    // A slot is required only when the delegation actually offers slots.
-    DateTime? slotStart;
-    DateTime? slotEnd;
-    if (_slots.isNotEmpty) {
-      final slot = _selectedSlot;
-      if (slot == null) {
-        setState(() => _error = l10n.meetingPickDateTime);
-        return;
-      }
-      slotStart = slot.start;
-      slotEnd = slot.end;
+    // G3 — a slot is now ALWAYS required. The subject-only bypass is gone: the
+    // server 409s a request against a delegation with no free slot, so sending one
+    // could only ever fail. The send button is disabled in that state; this is
+    // the guard for the picked-a-day-but-not-a-time case.
+    final slot = _selectedSlot;
+    if (slot == null) {
+      setState(() => _error = l10n.meetingPickDateTime);
+      return;
     }
+    final slotStart = slot.start;
+    final slotEnd = slot.end;
     // R0 — clear the inline error and submit. Feedback stays inside the sheet.
     setState(() {
       _submitting = true;
@@ -233,17 +247,23 @@ class _DelegationMeetingRequestSheetState
     return '$hh:$mm $meridiem';
   }
 
+  // A35 — the server's own bilingual message wins. The old map hard-coded one
+  // client string per status, so a 409 surfaced the SPEAKER copy ("this
+  // speaker is not accepting meeting requests") on a DELEGATION sheet, and
+  // every distinct 400 (subject too long, bad attendee count, invalid slot,
+  // own delegation) read as "this delegation is not available for meetings".
+  // The envelope already carries the message in the active language
+  // (`ApiFailure.message`); the l10n strings stay as the fallback for a
+  // failure that never reached the server (network / timeout, httpStatus null).
   String _failureText(ApiFailure failure, AppL10n l10n) {
-    if (failure.httpStatus == 403) {
-      return l10n.delegationNotAllowed;
+    if (failure.httpStatus != null && failure.message.trim().isNotEmpty) {
+      return failure.message;
     }
-    if (failure.httpStatus == 400) {
-      return l10n.delegationTargetNotInvited;
-    }
-    if (failure.httpStatus == 409) {
-      return l10n.meetingRequestNotAllowed;
-    }
-    return l10n.meetingRequestFailed;
+    return switch (failure.httpStatus) {
+      403 => l10n.delegationNotAllowed,
+      400 => l10n.delegationTargetNotInvited,
+      _ => l10n.meetingRequestFailed,
+    };
   }
 
   @override
@@ -328,6 +348,9 @@ class _DelegationMeetingRequestSheetState
         ),
       ];
     }
+    if (_slotsError) {
+      return <Widget>[_slotsRetry(l10n)];
+    }
     if (_slots.isEmpty) {
       return <Widget>[_hint(l10n.meetingSlotNone)];
     }
@@ -357,6 +380,32 @@ class _DelegationMeetingRequestSheetState
           child: Text(text, style: SimfTokens.bodyGreySm),
         ),
       );
+
+  /// G3 — the slot fetch failed: say so and offer a Retry. Deliberately different
+  /// copy from [AppL10n.meetingSlotNone] so a network blip is never read as "this
+  /// delegation has no availability", which would be a lie the user cannot act on.
+  Widget _slotsRetry(AppL10n l10n) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _hint(l10n.lookupLoadError), // تعذر تحميل القائمة.
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton(
+              key: const ValueKey<String>('delegation-slots-retry'),
+              onPressed: _retrySlots,
+              child: Text(l10n.retryLabel, style: SimfTokens.labelNavyMediumSm),
+            ),
+          ),
+        ],
+      );
+
+  void _retrySlots() {
+    final target = _selected;
+    if (target == null) {
+      return;
+    }
+    unawaited(_loadSlots(target.countryId));
+  }
 
   /// The عدد الحضور (attendee count) input — a small digits-only field.
   Widget _attendeesField(AppL10n l10n) => TextField(
@@ -555,13 +604,19 @@ class _DelegationMeetingRequestSheetState
     );
   }
 
-  Widget _sendButton(AppL10n l10n) => Material(
+  /// G3 — disabled while the slots load, and disabled once they are loaded and
+  /// EMPTY (no free slot ⇒ the server would 409), so the user is never invited to
+  /// send a request that cannot succeed. A failed fetch ([_slotsError]) also
+  /// leaves it disabled — the Retry in the slot section is the way forward there.
+  Widget _sendButton(AppL10n l10n) {
+    final enabled = !_submitting && !_slotsLoading && _slots.isNotEmpty;
+    return Opacity(
+      opacity: enabled ? 1 : SimfTokens.opacityDisabled,
+      child: Material(
         color: SimfTokens.accent,
         borderRadius: SimfTokens.borderRadiusSmall,
         child: InkWell(
-          onTap: (_submitting || _slotsLoading)
-              ? null
-              : () => unawaited(_submit()),
+          onTap: enabled ? () => unawaited(_submit()) : null,
           borderRadius: SimfTokens.borderRadiusSmall,
           child: Container(
             height: SimfTokens.controlHeight,
@@ -572,7 +627,9 @@ class _DelegationMeetingRequestSheetState
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 /// One selectable delegation row in the picker — flag + localized country name +

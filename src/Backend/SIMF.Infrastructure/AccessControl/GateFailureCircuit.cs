@@ -5,11 +5,12 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Common.Enums;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.AccessControl;
 
 /// <summary>
-/// D-148 — per-gate failure-rate circuit
+/// Per-gate failure-rate circuit
 /// (SIMF-API-GATES-001 §10, SIMF-FDS-003 §5.6.6). Single-process in-memory
 /// state (one process per environment in this increment).
 ///
@@ -37,7 +38,7 @@ internal sealed class GateFailureCircuit(
         if (!states.TryGetValue(gateId, out var state)) { return false; }
         lock (state)
         {
-            if (state.OpenUntil is { } until && until > timeProvider.GetUtcNow())
+            if (state.OpenUntil is { } until && until > timeProvider.SimfNow())
             {
                 return true;
             }
@@ -51,7 +52,7 @@ internal sealed class GateFailureCircuit(
         bool justOpened = false;
         lock (state)
         {
-            var now = timeProvider.GetUtcNow();
+            var now = timeProvider.SimfNow();
             state.RecentDenials.Enqueue(now);
             while (state.RecentDenials.TryPeek(out var oldest) && now - oldest > Window)
             {
@@ -100,7 +101,7 @@ internal sealed class GateFailureCircuit(
         bool wasOpen = false;
         lock (state)
         {
-            if (state.OpenUntil is { } until && until > timeProvider.GetUtcNow())
+            if (state.OpenUntil is { } until && until > timeProvider.SimfNow())
             {
                 wasOpen = true;
                 state.OpenUntil = null;
@@ -121,7 +122,7 @@ internal sealed class GateFailureCircuit(
 
     private sealed class CircuitState
     {
-        public Queue<DateTimeOffset> RecentDenials { get; } = new();
-        public DateTimeOffset? OpenUntil { get; set; }
+        public Queue<DateTime> RecentDenials { get; } = new();
+        public DateTime? OpenUntil { get; set; }
     }
 }

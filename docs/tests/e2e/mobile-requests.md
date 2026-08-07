@@ -38,8 +38,11 @@
   bilingual title, a status pill (`MeetingRequestStatus`), the date
   (`eventDate` when present, else `createdAt`), and — for the user's **own
   pending** speaker / document / badge requests — a **Cancel** affordance. The
-  `DelegationMeeting` and `SessionAttendance` kinds are **read-only** on this
-  screen (no Cancel; `canCancel = false`).
+  `SessionAttendance` kind is **read-only** on this screen (no Cancel;
+  `canCancel = false` — a seat is released from the seat screens). **B11
+  (2026-07-26):** a `DelegationMeeting` is now withdrawable on exactly the
+  speaker rule (Pending **or** AwaitingConfirmation), so the two meeting kinds
+  behave the same inside one feed.
 - **Cancel** confirms in a dialog, then `POST /app/my-requests/cancel` flips the
   request to **ملغى** (Cancelled) and shows a success toast.
 - **States**: spinner while loading; an inline retry surface on a wire error; and
@@ -52,7 +55,7 @@
 | E2E-REQ-001 | Golden path — open feed → طلب جديد → submit a document request → submit a badge request → both show Pending → filter by chip → cancel a pending one → toast + status becomes ملغى | happy | P0 | authored ✓ (`MyRequestsTests` + `ParticipationDocumentRequestsTests` + `BadgeUpdateRequestsTests`, API) |
 | E2E-REQ-002 | The feed unifies all five kinds and is scoped to the caller (never another user's requests) | happy | P0 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-003 | Status filter chips show per-status counts and narrow the feed; الكل clears the filter | happy | P1 | _to author_ |
-| E2E-REQ-004 | `SessionAttendance` (from seat bookings) + `DelegationMeeting` are read-only — no Cancel; cancel attempt → 409 `APP_REQUEST_NOT_CANCELLABLE` | data | P0 | authored ✓ (`MyRequestsTests`, API) |
+| E2E-REQ-004 | `SessionAttendance` (from seat bookings) is read-only — no Cancel; cancel attempt → 409 `APP_REQUEST_NOT_CANCELLABLE` (B11 moved `DelegationMeeting` off this list) | data | P0 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-005 | Empty state — the user has no requests → the empty state, no error | empty | P1 | _to author_ |
 | E2E-REQ-006 | Auth gate — an unauthenticated client → 401 on every requests endpoint | auth | P0 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-007 | Validation — submit a badge request with an empty job title → 400 `BADGE_UPDATE_REQUEST_INVALID` | error | P1 | authored ✓ (`BadgeUpdateRequestsTests`, API) |
@@ -60,6 +63,13 @@
 | E2E-REQ-009 | Cancel a non-owned request → 404 `APP_REQUEST_NOT_FOUND` | auth | P1 | authored ✓ (`MyRequestsTests`, API) |
 | E2E-REQ-010 | Server 500 on `GET /app/my-requests` → inline retry surface, no rows | resilience | P2 | _to author_ |
 | E2E-REQ-011 | RTL render (Arabic) — header, طلب جديد button, status chips, cards + Cancel mirror right-to-left | i18n | P1 | _to author_ |
+| E2E-REQ-014 | A checked-in speaker meeting reads **Attended** (QA B12) — the server sets the append-only `checkedIn: true` while `status` still folds Done → Accepted (1), so the card label switches from "Accepted"/"مقبول" to "Attended"/"تم الحضور" without breaking the shipped 0–3 wire contract | happy | P1 | authored ✓ (`SpeakerMeetingQaTests.B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`, API) |
+| E2E-REQ-018 | B11 — a Pending or AwaitingConfirmation `DelegationMeeting` reports `canCancel = true` (still folded to Pending on the wire) | data | P0 | authored ✓ (`MyRequestsTests`, API) |
+| E2E-REQ-015 | B11 — withdrawing an AwaitingConfirmation delegation meeting sets Cancelled and releases the hall + table | happy | P0 | authored ✓ (`MyRequestsTests`, API) |
+| E2E-REQ-016 | B11 — withdrawing an already-confirmed delegation meeting is 409 and leaves it Accepted; another user's is 404 | conflict / auth | P1 | authored ✓ (`MyRequestsTests`, API) |
+| E2E-REQ-017 | D1 — withdrawing an AwaitingConfirmation delegation meeting retracts the target delegation's "please confirm" card; withdrawing a Pending one tells them nothing | data | P0 | authored ✓ (`DelegationMeetingQaFixesTests.D1_*`, API) |
+| E2E-REQ-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-REQ-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -120,8 +130,8 @@ Scenario: The feed returns the user's own requests across all five kinds, never 
   Then the response is 200
   And it returns AppRequestItem rows for all five of the caller's kinds (kind, id, title, titleArabic, status, eventDate?, createdAt, canCancel)
   And it does NOT return the other user's request
-  And only the caller's pending SpeakerMeeting / ParticipationDocument / BadgeUpdate rows carry canCancel = true
-  And the DelegationMeeting and SessionAttendance rows carry canCancel = false
+  And the caller's pending SpeakerMeeting / DelegationMeeting / ParticipationDocument / BadgeUpdate rows carry canCancel = true
+  And the SessionAttendance row carries canCancel = false
 ```
 
 **Evidence:** `MyRequestsTests` (green) — the feed is caller-scoped and projects the five kinds with the correct `canCancel` per kind.
@@ -143,14 +153,13 @@ Scenario: The status chips show counts and filter the feed
 ### E2E-REQ-004 — Read-only kinds are not cancellable
 
 ```gherkin
-Scenario: SessionAttendance and DelegationMeeting are read-only on this screen
-  Given the user has a SessionAttendance request (surfaced from a seat booking) and a DelegationMeeting request
-  Then neither card shows a Cancel affordance (canCancel = false)
+Scenario: SessionAttendance is read-only on this screen
+  Given the user has a SessionAttendance request (surfaced from a seat booking)
+  Then its card shows no Cancel affordance (canCancel = false)
   When a scripted client POSTs /api/v1/app/my-requests/cancel with { kind: 2, id: <sessionAttendanceId> } (SessionAttendance)
   Then the API returns 409 with error code APP_REQUEST_NOT_CANCELLABLE
-  When a scripted client POSTs /api/v1/app/my-requests/cancel with { kind: 1, id: <delegationId> } (DelegationMeeting)
-  Then the API returns 409 with error code APP_REQUEST_NOT_CANCELLABLE
   # SessionAttendance is managed from the seat screens, not cancelled here.
+  # B11: DelegationMeeting (kind 1) is now cancellable - see E2E-REQ-012a/b/c.
 ```
 
 **Evidence:** `MyRequestsTests` (green) — cancel of a non-cancellable kind returns 409 `APP_REQUEST_NOT_CANCELLABLE`.
@@ -276,6 +285,42 @@ Scenario: The rejection reason is shown in the expanded card
 
 ---
 
+### E2E-REQ-014 — A checked-in meeting reads "Attended" (QA B12)
+
+```gherkin
+Scenario: The requester can see they were checked in
+  Given the user holds a Confirmed speaker meeting
+  When an operator checks it in at the hall
+  Then GET /app/my-requests returns that row with checkedIn = true
+  And status is still Accepted (1) — the server folds its internal Done (5) so the
+      shipped mobile wire contract (0–3) is untouched and old clients keep working
+  And the card status label reads "Attended" / "تم الحضور"
+  And the user also receives a "Meeting attendance recorded" /
+      "تم تسجيل حضور الاجتماع" notification (in-app + email)
+  # Before the fix check-in was a bare status flip: no notification, and the feed
+  # folded Done back onto "accepted", so the requester could never tell.
+
+Scenario: Cancelling an AwaitingSpeaker meeting also tells the speaker
+  Given the user holds a speaker meeting whose speaker was emailed confirmation links
+  When the user withdraws it from الطلبات
+  Then every live MeetingActionToken for the request is voided
+  And the speaker is emailed "SIMF — a meeting request was withdrawn"
+
+Scenario: Cancelling a still-Pending meeting tells the speaker nothing
+  Given the user holds a Pending speaker meeting no admin has approved yet
+  When the user withdraws it from الطلبات
+  Then the request becomes Cancelled
+  And the speaker is emailed nothing — they never saw the request, so a withdrawal
+      notice would leak the requester's name and the subject to an outsider
+```
+
+**Evidence:** `SpeakerMeetingQaTests.B12_Check_in_notifies_the_requester_and_surfaces_as_CheckedIn_on_their_feed`,
+`SpeakerMeetingQaTests.B13_Cancelling_voids_the_live_speaker_tokens_and_emails_the_speaker`
+and `SpeakerMeetingQaTests.B13_Cancelling_a_still_Pending_request_emails_the_speaker_nothing`
+(API) — green. App side: `AppRequestItem.checkedIn` + `requestStatusLabel(..., checkedIn:)`.
+
+---
+
 ## Implementation notes
 
 - **API integration tests** at
@@ -301,8 +346,12 @@ Scenario: The rejection reason is shown in the expanded card
     (`{ requestedJobTitle: string 1–128 (required), note?: string ≤ 1000 }`); on
     admin **Accept** the title is applied to the user's profile `JobTitle`.
   - Self-cancel — `POST /api/v1/app/my-requests/cancel` (`{ kind: int, id: guid }`)
-    — only **own pending** speaker(0) / document(3) / badge(4); delegation(1) /
-    session-attendance(2) → 409.
+    — own speaker(0) **and delegation(1)** while Pending or AwaitingConfirmation
+    (B11), own pending document(3) / badge(4); session-attendance(2) → 409. A
+    delegation cancel is a conditional `UPDATE ... WHERE Status IN (Pending,
+    AwaitingSpeaker)` that also clears `HallId` / `MeetingTableId`, so the other
+    delegation's confirm wins the race (409) instead of being silently
+    overwritten.
   - Status — `MeetingRequestStatus` = Pending (قيد المراجعة) / Accepted (مقبول) /
     Rejected (مرفوض) / Cancelled (ملغى — added in D-500, additive value `3`).
   - Error codes — `PARTICIPATION_DOCUMENT_REQUEST_INVALID` / `_NOT_FOUND` /
@@ -320,8 +369,65 @@ Scenario: The rejection reason is shown in the expanded card
   [`cp-document-requests.md`](cp-document-requests.md) and
   [`cp-badge-requests.md`](cp-badge-requests.md).
 
+### E2E-REQ-014/015/016 — Withdrawing a delegation meeting (B11)
+
+```gherkin
+Scenario: The feed offers Cancel on a delegation meeting
+  Given the user submitted a delegation meeting request that is Pending
+  Or it was approved and is AwaitingConfirmation (folded to Pending on the app wire)
+  When the app calls GET /api/v1/app/my-requests
+  Then the DelegationMeeting row carries status Pending and canCancel = true
+
+Scenario: The requester withdraws it
+  Given the user's delegation meeting is AwaitingConfirmation and holds a hall + table
+  When they confirm Cancel and the app POSTs /app/my-requests/cancel { kind: 1, id }
+  Then the response is 200 and the request status is Cancelled
+  And its HallId and MeetingTableId are cleared, so the hall slot frees immediately
+
+Scenario: The other delegation confirmed first
+  Given the delegation meeting is already Accepted
+  When the requester POSTs /app/my-requests/cancel { kind: 1, id }
+  Then the response is 409 APP_REQUEST_NOT_CANCELLABLE
+  And the request is still Accepted (the confirm is never overwritten)
+
+Scenario: Cancelling somebody else's delegation meeting
+  When another signed-in user posts the same cancel
+  Then the response is 404 APP_REQUEST_NOT_FOUND
+```
+
+**Evidence:** `MyRequestsTests.My_requests_marks_a_pending_delegation_meeting_as_cancellable`,
+`My_requests_marks_an_awaiting_delegation_meeting_as_cancellable_but_reports_Pending`,
+`Cancelling_an_awaiting_delegation_meeting_sets_Cancelled_and_frees_the_hall`,
+`Cancelling_an_already_confirmed_delegation_meeting_is_a_conflict`,
+`Cancelling_another_users_delegation_meeting_is_a_404`.
+
+### E2E-REQ-017 — The withdraw retracts the other delegation's prompt (D1)
+
+```gherkin
+Scenario: The target delegation is not left tapping a dead prompt
+  Given an admin approved the meeting, so every eligible member of the TARGET
+        delegation holds a "please confirm" card deep-linking to /meeting-confirm
+        plus an emailed confirm link
+  When the requester withdraws it from "My requests"
+  Then each of those members receives a MeetingCancelled notification for the
+       same request (bilingual EN + AR), so the dead prompt is retracted
+  And re-tapping the old card would have returned 409 APP_REQUEST_ALREADY_RESPONDED
+
+Scenario: A withdraw from Pending stays silent
+  Given the meeting was never approved, so the target delegation was never told
+  When the requester withdraws it
+  Then no notification is sent to the target delegation
+```
+
+**Evidence:** `DelegationMeetingQaFixesTests.D1_a_requester_withdraw_retracts_the_target_delegations_prompt`,
+`D1_withdrawing_a_still_pending_meeting_tells_the_target_nothing`.
+
 ---
 
-_Last reviewed:_ `2026-07-11` by `Claude` — on-site W2b (R-1c AwaitingSpeaker speaker meeting is cancellable + R-3 admin response-note surfacing; added E2E-REQ-012/013). Prior: `2026-06-26` by `SIMF Team` — D-500 Wave 5 unified requests feed
+_Last reviewed:_ `2026-07-26` by `Claude` — QA B12/B13: a checked-in meeting reads "Attended" via the append-only `checkedIn` flag, and cancelling voids the speaker's emailed links (added E2E-REQ-014). Prior: `2026-07-11` by `Claude` — on-site W2b (R-1c AwaitingSpeaker speaker meeting is cancellable + R-3 admin response-note surfacing; added E2E-REQ-012/013). Prior: `2026-06-26` by `SIMF Team` — D-500 Wave 5 unified requests feed
 (الطلبات, Figma `1408:9726`): five-kind feed + document/badge submit + self-cancel;
 supersedes the D-479 My-meetings screen.
+
+_Last reviewed:_ 2026-07-26 by Claude — B11: a delegation meeting is withdrawable on the speaker rule (E2E-REQ-014/015/016); E2E-REQ-004 narrowed to SessionAttendance.
+
+_Last reviewed:_ 2026-07-27 by Claude — D1: the B11 withdraw now retracts the target delegation's confirm prompt (E2E-REQ-017).

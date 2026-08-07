@@ -51,7 +51,7 @@ internal sealed class AdminOrganisationService(
                 || EF.Functions.Like(org.City, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored; the
+        // CP grid per-column filters. Unknown columns are ignored; the
         // boolean isActive filter is parsed from its text value.
         foreach (var (column, raw) in query.Filters)
         {
@@ -142,7 +142,7 @@ internal sealed class AdminOrganisationService(
             }
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var org = new Organisation
         {
             Id = Guid.NewGuid(),
@@ -160,13 +160,11 @@ internal sealed class AdminOrganisationService(
         db.Organisations.Add(org);
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganisationCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={org.Id}; nameAr={v.NameAr}; cr={v.CommercialRegistration}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganisationCreated,
+            actorUserId,
+            $"id={org.Id}; nameAr={v.NameAr}; cr={v.CommercialRegistration}",
+            ct);
 
         logger.LogInformation(
             "Admin {ActorId} created Organisation {NameAr} ({Id})",
@@ -210,16 +208,14 @@ internal sealed class AdminOrganisationService(
         org.Email = v.Email;
         org.Website = v.Website;
         org.IsActive = request.IsActive;
-        org.UpdatedAt = timeProvider.GetUtcNow();
+        org.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganisationUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={org.Id}; nameAr={v.NameAr}; active={org.IsActive}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganisationUpdated,
+            actorUserId,
+            $"id={org.Id}; nameAr={v.NameAr}; active={org.IsActive}",
+            ct);
 
         return ToDetail(org);
     }
@@ -239,16 +235,14 @@ internal sealed class AdminOrganisationService(
         }
 
         org.Deactivate();
-        org.UpdatedAt = timeProvider.GetUtcNow();
+        org.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(ct);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganisationDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={org.Id}; nameAr={org.NameArabic}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganisationDeactivated,
+            actorUserId,
+            $"id={org.Id}; nameAr={org.NameArabic}",
+            ct);
     }
 
     public async Task<OrganisationImportResult> ImportAsync(
@@ -304,7 +298,7 @@ internal sealed class AdminOrganisationService(
                 : await db.Organisations
                     .SingleOrDefaultAsync(o => o.IsActive && o.NameArabic == nameArClamped, ct);
 
-            var now = timeProvider.GetUtcNow();
+            var now = timeProvider.SimfNow();
             if (existing is null)
             {
                 db.Organisations.Add(new Organisation
@@ -349,13 +343,11 @@ internal sealed class AdminOrganisationService(
             await db.SaveChangesAsync(ct);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganisationImported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"read={importRows.Count}; inserted={inserted}; updated={updated}; skipped={skipped}",
-        }, ct);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganisationImported,
+            actorUserId,
+            $"read={importRows.Count}; inserted={inserted}; updated={updated}; skipped={skipped}",
+            ct);
 
         logger.LogInformation(
             "Admin {ActorId} imported organisations: read={Read} inserted={Inserted} updated={Updated} skipped={Skipped}",

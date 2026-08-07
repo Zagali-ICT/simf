@@ -86,7 +86,7 @@ public sealed class ExhibitorsTests : IClassFixture<SimfApiFactory>
             City = "Jeddah",
             CityArabic = "جدة",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         if (withLogo)
         {
@@ -96,7 +96,7 @@ public sealed class ExhibitorsTests : IClassFixture<SimfApiFactory>
                 Service = FileService.ExhibitorLogo,
                 OwnerEntityId = exhibitorId,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
         }
         await appDb.SaveChangesAsync();
@@ -127,16 +127,7 @@ public sealed class ExhibitorsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

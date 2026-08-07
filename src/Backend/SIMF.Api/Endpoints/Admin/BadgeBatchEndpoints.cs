@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-758 (#10 Phase 2) — <c>POST /api/v1/admin/visitors/badge-batches/list</c>. The
+/// <c>POST /api/v1/admin/visitors/badge-batches/list</c>. The
 /// server-paged list of persisted bulk-badge batches (each a
 /// <see cref="BulkGenerateVisitorBadgesEndpoint"/> run), newest first. A revoked batch
 /// keeps its row with <c>IsActive = false</c>.
@@ -28,18 +28,14 @@ public sealed class ListBadgeBatchesEndpoint(IAdminUserBulkService adminAccountS
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var page = await adminAccountService.ListBadgeBatchesAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<GridPage<AdminBadgeBatchSummary>>.Ok(page), ct);
     }
 }
 
 /// <summary>
-/// D-758 (#10 Phase 2) — <c>POST /api/v1/admin/visitors/badge-batches/re-email</c>.
+/// <c>POST /api/v1/admin/visitors/badge-batches/re-email</c>.
 /// Re-renders the batch's QR pack and emails a fresh copy to the supplied organiser
 /// address; the badges themselves are unchanged.
 /// </summary>
@@ -58,18 +54,14 @@ public sealed class ReEmailBadgeBatchEndpoint(IAdminUserBulkService adminAccount
 
     public override async Task HandleAsync(AdminReEmailBadgeBatchRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.ReEmailBadgeBatchAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminReEmailBadgeBatchResponse>.Ok(response), ct);
     }
 }
 
 /// <summary>
-/// D-758 (#10 Phase 2) — <c>POST /api/v1/admin/visitors/badge-batches/revoke</c>.
+/// <c>POST /api/v1/admin/visitors/badge-batches/revoke</c>.
 /// Disables every account the batch minted (reusing the type-scoped bulk-delete path)
 /// and marks the batch inactive. Not reversible.
 /// </summary>
@@ -88,11 +80,7 @@ public sealed class RevokeBadgeBatchEndpoint(IAdminUserBulkService adminAccountS
 
     public override async Task HandleAsync(AdminRevokeBadgeBatchRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.RevokeBadgeBatchAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminRevokeBadgeBatchResponse>.Ok(response), ct);
     }

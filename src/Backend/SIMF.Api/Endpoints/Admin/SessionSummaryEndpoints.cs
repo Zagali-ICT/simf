@@ -1,14 +1,14 @@
 // Tests: SIMF.Api.Tests/SessionSummaryCommitteeTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P4.1 — D-238 (Completion Programme §6.4.1, Mockup screen 34): the
-/// Scientific-Committee session-summary / محضر desk. List + read are gated by
+/// <summary>The Scientific-Committee session-summary / محضر desk.
+/// List + read are gated by
 /// <c>SessionSummaries.View</c>, generate + save by <c>.Edit</c>, publish +
 /// un-publish by <c>.Publish</c> — all on top of RequireApprovedAccount.</summary>
 public sealed class ListSessionSummariesEndpoint(IAdminSessionSummaryService service)
@@ -64,11 +64,7 @@ public sealed class GenerateSessionSummaryEndpoint(IAdminSessionSummaryService s
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.GenerateAsync(actorId, sessionId, ct)), ct);
@@ -89,11 +85,7 @@ public sealed class SaveSessionSummaryEndpoint(IAdminSessionSummaryService servi
 
     public override async Task HandleAsync(SaveSessionSummaryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.SaveAsync(actorId, sessionId, req, ct)), ct);
@@ -114,11 +106,7 @@ public sealed class PublishSessionSummaryEndpoint(IAdminSessionSummaryService se
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.PublishAsync(actorId, sessionId, ct)), ct);
@@ -139,18 +127,14 @@ public sealed class UnpublishSessionSummaryEndpoint(IAdminSessionSummaryService 
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.UnpublishAsync(actorId, sessionId, ct)), ct);
     }
 }
 
-// -- D-472 (#9) — the team review/approval workflow ---------------------------
+// -- The team review/approval workflow ----------------------------------------
 // Submit (the editing team, .Edit) → Approve / Return-to-draft (the approving
 // team, .Approve). The approved محضر becomes readable by the host/moderator.
 
@@ -168,11 +152,7 @@ public sealed class SubmitSessionSummaryForReviewEndpoint(IAdminSessionSummarySe
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.SubmitForReviewAsync(actorId, sessionId, ct)), ct);
@@ -193,11 +173,7 @@ public sealed class ApproveSessionSummaryEndpoint(IAdminSessionSummaryService se
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.ApproveAsync(actorId, sessionId, ct)), ct);
@@ -218,11 +194,7 @@ public sealed class ReturnSessionSummaryToDraftEndpoint(IAdminSessionSummaryServ
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var sessionId = Route<Guid>("sessionId");
         await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
             await service.ReturnToDraftAsync(actorId, sessionId, ct)), ct);

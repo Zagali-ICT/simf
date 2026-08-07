@@ -3,7 +3,6 @@ using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -61,16 +60,21 @@ public partial class BookingsList
         finally { _loading = false; }
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — bookings are created
     // by visitors in the app and auto-confirm (#6), so there is no import path.
     // The booking's key is ReservationId.
-    private Task OnExportAsync(IReadOnlyList<ActiveBookingRow> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+    private async Task OnExportAsync(IReadOnlyList<ActiveBookingRow> selected)
+    {
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/bookings/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.ReservationId).ToList(),
                 Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
+    }
 }

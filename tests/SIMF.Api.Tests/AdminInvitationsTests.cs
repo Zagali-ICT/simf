@@ -276,7 +276,7 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
                 PageColor = "#FFD700",
                 MobileAppRole = MobileAppRole.None,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDb.ProfileTypes.Add(profileType);
             await appDb.SaveChangesAsync();
@@ -293,7 +293,7 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
             IsSaudi = true,
             NationalId = "1234567890",
             NationalityId = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.UserProfiles.Add(profile);
         await appDb.SaveChangesAsync();
@@ -330,16 +330,7 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, role);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

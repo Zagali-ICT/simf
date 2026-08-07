@@ -144,7 +144,7 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
     private async Task<(string Token, string DisplayName)> SeedApprovedVisitorAsync()
     {
         var email = $"asker-{Guid.NewGuid():N}@simf.test";
-        var displayName = "Asker " + Guid.NewGuid().ToString("N")[..4];
+        var displayName = "Asker " + Guid.NewGuid().ToString("N")[..8];
         using (var scope = _factory.Services.CreateScope())
         {
             var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
@@ -173,7 +173,7 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Archive Hall", NameArabic = "قاعة الأرشيف",
-            Capacity = 100, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = 100, IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -182,13 +182,13 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Archive Session", TitleArabic = "جلسة الأرشيف",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddMinutes(-15),
-            End = DateTimeOffset.UtcNow.AddMinutes(45),
+            Start = SimfClock.Now.AddMinutes(-15),
+            End = SimfClock.Now.AddMinutes(45),
             // S-7 — the archive flow marks the session Recorded/Published, which now
             // requires an attached recording (the past start already clears the Held
             // clock guard); stamp a pointer so the publish transitions succeed.
             RecordingStoredFileName = Guid.NewGuid().ToString(),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -216,14 +216,7 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

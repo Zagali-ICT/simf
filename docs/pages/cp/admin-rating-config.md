@@ -24,6 +24,14 @@ Three-level master-detail (`SimfDataGrid`s, mirrors `FaqManager`):
 
 CRUD runs through three `SimfModal`s. Soft-delete (Deactivate → `IsActive=false`).
 
+All three grids also offer a read-only **Details** view (D-835), which carries no
+permission of its own — reading a row is what `RatingConfig.View` already bought.
+It matters most on the **types** grid, where seven fields have no column at all:
+the Arabic name, the overall-stars and comment settings with both comment labels,
+the display order and the creation date. Before it, a holder without
+`RatingConfig.Edit` could open a type through **Manage** and still not read any
+of them.
+
 ## Rules
 
 - **System types** (`App`, `Session`) are seeded by `RatingSeeder`, **cannot be
@@ -36,6 +44,16 @@ CRUD runs through three `SimfModal`s. Soft-delete (Deactivate → `IsActive=fals
   (the optional end comment) + optional bilingual comment label.
 - Deleting a **group** leaves its questions flat (`SetNull`), never cascade-deletes
   them.
+- **Dialog validation surface (BUG-004).** The page-level `_toast` `SimfAlert`
+  lives inside `.simf-surface`, which sits **under** the modal backdrop
+  (`.simf-modal { position: fixed; inset: 0; z-index: 100 }`), so while a dialog
+  is open a toast is invisible and Save read as a dead button. All three dialogs
+  (type / group / question) now carry their own `_error`, rendered as a
+  `SimfAlert Variant="error"` in the dialog body — the same shape the canonical
+  CRUD forms use — and a blank required field is caught client-side before the
+  request goes out (`Admin.RatingConfig.{Type|Group|Question}.Required`). `Code`
+  is required on Create only, since it is locked on Edit. `_error` is cleared
+  when a dialog is re-opened.
 
 ## Endpoints
 
@@ -51,3 +69,4 @@ All gated `RatingConfig.{View|Create|Edit|Delete}` + `RequireApprovedAccount`.
 - E2E: [`e2e/cp-admin-rating-config.md`](../../tests/e2e/cp-admin-rating-config.md).
 
 _Last reviewed:_ 2026-06-25 (D-496).
+_Last reviewed:_ 2026-07-26 by Claude (BUG-004 — dialog validation surface).

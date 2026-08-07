@@ -10,14 +10,21 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using SIMF.Application.AccessControl.Abstractions;
+using SIMF.Application.Auditing;
+using SIMF.Application.Notifications;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Gates;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Programme;
+using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Infrastructure.Programme;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -48,6 +55,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
         var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        // D-819 (step 11.5) — a session hall admits only a registered attendee.
+        await SeedSeatReservationAsync(sessionId, attendeeUserId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -89,6 +98,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
         var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
         var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        // D-819 (step 11.5) — a session hall admits only a registered attendee.
+        await SeedSeatReservationAsync(sessionId, attendeeUserId);
 
         var checkIn = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, checkIn.StatusCode);
@@ -122,6 +133,262 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Hall_door_gate_with_no_live_session_returns_an_allowed_scan_carrying_a_notice()
+    {
+        // DEF-CHK-004 — a hall-door scan outside every session window admits the
+        // holder but records no attendance. That used to be silent (a plain
+        // "Allowed"), so the attendance was lost with no signal. The scan is still
+        // Allowed, but now carries the advisory NoticeMessage.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var hallId = await SeedHallWithoutSessionAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        // The allow/deny outcome is unchanged — the person is admitted.
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.Null(body.DenialReasonCode);
+        Assert.False(string.IsNullOrWhiteSpace(body.NoticeMessage));
+        Assert.Contains("attendance", body.NoticeMessage!, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Hall_door_gate_bound_to_a_live_session_carries_no_notice()
+    {
+        // DEF-CHK-004 — the notice is the exception, not the norm: a scan that DID
+        // bind to a live session records attendance and reports nothing extra.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        // D-819 (step 11.5) — a session hall admits only a registered attendee.
+        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.Null(body.NoticeMessage);
+    }
+
+    [Fact]
+    public async Task Session_hall_denies_an_attendee_who_is_not_registered_for_the_session()
+    {
+        // D-819 (gate engine step 11.5) — the third access rule: a MAIN gate
+        // requires an approved account, ANY gate requires an allowed profile
+        // type, and a SESSION HALL requires the attendee to be registered for
+        // the session behind the door.
+        //
+        // This rule previously had no implementation at all:
+        // DenialReasonCode.BookingRequiredMissing existed as a reserved hook
+        // with no writer, so any valid badge opened every hall.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        // Deliberately NO seat reservation.
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        // A denial is a RECORDED outcome at HTTP 200, not an envelope failure.
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Denied, body.Outcome);
+        Assert.Equal(DenialReasonCode.BookingRequiredMissing, body.DenialReasonCode);
+
+        // Denied entry must not record attendance.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.SessionId == sessionId));
+    }
+
+    [Fact]
+    public async Task Admitted_attendee_gets_an_open_seating_hold_so_the_seating_desk_can_see_them()
+    {
+        // D-819 — without a hold the staff seating desk reports "no seat" for a
+        // badge standing in front of it and the seat map under-reports the hall.
+        // The hold carries no row/seat: it records THAT they are here, not WHERE,
+        // which keeps it clear of the per-seat unique index and out of the
+        // SERIALIZABLE seat-picking path that would deadlock a door rush.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var holds = await db.SeatReservations
+            .Where(r => r.SessionId == sessionId
+                && r.ReservedForUserId == attendeeUserId
+                && r.ReleasedAt == null)
+            .ToListAsync();
+
+        // Exactly one: the attendee already held a reservation, so the walk-in
+        // hold must not add a second.
+        var hold = Assert.Single(holds);
+        Assert.Null(hold.Expires);
+    }
+
+    [Fact]
+    public async Task Perimeter_gate_admits_an_attendee_with_no_session_registration()
+    {
+        // D-819 — step 11.5 is a SESSION HALL rule. A perimeter gate has no
+        // HallId, so venue entry must stay unaffected by session bookings.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId: null);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+    }
+
+    [Fact]
+    public async Task Session_hall_never_blocks_someone_already_inside_from_leaving()
+    {
+        // D-819 — step 11.5 applies to ENTRIES only. Someone already inside must
+        // always be able to leave, whatever their booking state.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+
+        var checkIn = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, checkIn.StatusCode);
+
+        // Release the reservation while they are inside, then scan out.
+        using (var releaseScope = _factory.Services.CreateScope())
+        {
+            var releaseDb = releaseScope.ServiceProvider
+                .GetRequiredService<SimfAppDbContext>();
+            var reservation = await releaseDb.SeatReservations
+                .SingleAsync(r => r.SessionId == sessionId
+                    && r.ReservedForUserId == attendeeUserId);
+            reservation.ReleasedAt = SimfClock.Now;
+            await releaseDb.SaveChangesAsync();
+        }
+
+        var checkOut = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckOut);
+        Assert.Equal(HttpStatusCode.OK, checkOut.StatusCode);
+        var body = (await checkOut.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+    }
+
+    [Fact]
+    public async Task Perimeter_gate_carries_no_notice()
+    {
+        // DEF-CHK-004 — a perimeter gate (HallId null) never feeds hall attendance,
+        // so the "no attendance recorded" advisory must not fire there.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId: null);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.Null(body.NoticeMessage);
+    }
+
+    [Fact]
+    public async Task Fixed_out_gate_with_no_open_row_carries_the_advisory_notice()
+    {
+        // DEF-CHK-004 (A4) — a fixed OUT gate is authoritative, so the chain takes
+        // the departure branch. When the attendee has no open attendance row that
+        // departure closes NOTHING, yet the chain used to report success and the
+        // operator read a plain "Allowed" as "counted". The session IS live here, so
+        // the only way a notice can appear is the honest check-out return value.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var gateId = await CreateGateAsync(
+            token, operatorUserId, hallId, DirectionMode.Out);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckOut);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.False(string.IsNullOrWhiteSpace(body.NoticeMessage));
+        Assert.Contains("attendance", body.NoticeMessage!, StringComparison.OrdinalIgnoreCase);
+
+        // Nothing was opened or closed — the advisory is telling the truth.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.SessionId == sessionId));
+    }
+
+    [Fact]
+    public async Task Fixed_out_gate_that_closes_an_open_row_carries_no_notice()
+    {
+        // DEF-CHK-004 (A4) — the counterpart: the SAME fixed OUT gate, but this time
+        // there IS an open row, so the departure really is recorded and the operator
+        // must NOT be warned. Guards the honest return value against over-reporting.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var inGateId = await CreateGateAsync(
+            token, operatorUserId, hallId, DirectionMode.In);
+        var outGateId = await CreateGateAsync(
+            token, operatorUserId, hallId, DirectionMode.Out);
+        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        // D-819 (step 11.5) — a session hall admits only a registered attendee.
+        await SeedSeatReservationAsync(sessionId, attendeeUserId);
+
+        var checkIn = await PostScanAsync(inGateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, checkIn.StatusCode);
+
+        var checkOut = await PostScanAsync(outGateId, qrId, token, ScanDirection.CheckOut);
+        Assert.Equal(HttpStatusCode.OK, checkOut.StatusCode);
+        var body = (await checkOut.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.Null(body.NoticeMessage);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.HallAttendances
+            .SingleAsync(a => a.SessionId == sessionId && a.UserId == attendeeUserId);
+        Assert.NotNull(row.Leave);
+    }
+
+    [Fact]
+    public async Task Notice_is_Arabic_for_a_regional_ar_SA_accept_language()
+    {
+        // DEF-CHK-004 (A5) — the notice resolves language by an exact "ar" compare,
+        // so a regional tag such as ar-SA (or a q-weighted list) would fall back to
+        // English IF the raw header reached the service. It does not:
+        // OperatorGateEndpoints normalises Accept-Language to exactly "ar" or "en"
+        // before building the GateScanContext, and that endpoint is the ONLY
+        // producer of the context. This test pins that normalisation so the strict
+        // compare stays safe.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var hallId = await SeedHallWithoutSessionAsync();
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+
+        var scan = await PostScanAsync(
+            gateId, qrId, token, ScanDirection.CheckIn, acceptLanguage: "ar-SA,ar;q=0.9,en;q=0.8");
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content.ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.False(string.IsNullOrWhiteSpace(body.NoticeMessage));
+        Assert.Contains("تم السماح بالدخول", body.NoticeMessage!, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Hall_door_gate_scan_within_grace_before_the_session_starts_records_attendance()
     {
         // FIX B — a session starting in 10 min is inside the ±15 min arrival grace,
@@ -132,6 +399,8 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             startOffsetMin: 10, endOffsetMin: 70);
         var gateId = await CreateGateAsync(token, operatorUserId, hallId);
         var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        // D-819 (step 11.5) — a session hall admits only a registered attendee.
+        await SeedSeatReservationAsync(sessionId, attendeeUserId);
 
         var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
         Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
@@ -286,10 +555,77 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             a => a.SessionId == sessionId && a.Leave == null));
     }
 
+    [Fact]
+    public async Task Gate_door_arrival_that_persisted_no_row_does_not_report_attendance_recorded()
+    {
+        // DEF-CHK-004 (A4, round 3) — the ARRIVAL branch used to `return true`
+        // unconditionally, so a scan whose insert never landed still told the gate
+        // "attendance recorded" and the operator saw a plain "Allowed". The shared
+        // create path swallows a DbUpdateException on the advisory (gate-door)
+        // insert and hands back an UNSAVED row when no rival row can be re-read —
+        // a deadlock victim, a command timeout, or the one-open-row race whose
+        // rival has since closed. Nothing is then on the store for this attendee,
+        // so the chain must report false and let the gate raise its advisory.
+        // The failing SaveChanges is simulated at the DbContext boundary because
+        // none of those store faults can be provoked deterministically against
+        // LocalDB; every other query the service runs still hits the real database.
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync();
+        var (_, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        await using var failingDb = new AttendanceInsertFailsDbContext(
+            services.GetRequiredService<DbContextOptions<SimfAppDbContext>>(),
+            services.GetRequiredService<SIMF.Application.Abstractions.IPiiEncryptor>());
+        var attendance = new HallAttendanceService(
+            failingDb,
+            services.GetRequiredService<IQrResolver>(),
+            services.GetRequiredService<IAuditLog>(),
+            services.GetRequiredService<INotificationDispatcher>(),
+            services.GetRequiredService<TimeProvider>(),
+            services.GetRequiredService<
+                Microsoft.Extensions.Options.IOptionsMonitor<
+                    SIMF.Common.Options.WalkInModeOptions>>(),
+            services.GetRequiredService<
+                SIMF.Application.SeatReservations.Abstractions.ISeatReservationService>(),
+            services.GetRequiredService<ILogger<HallAttendanceService>>());
+
+        // A fixed In gate (directionInferred: false) keeps this on the arrival branch.
+        var recorded = await attendance.RecordGateDoorScanAsync(
+            attendeeUserId, hallId, ScanDirection.CheckIn,
+            directionInferred: false, operatorUserId: Guid.NewGuid());
+
+        Assert.False(recorded);
+        var db = services.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(0, await db.HallAttendances.CountAsync(a => a.SessionId == sessionId));
+    }
+
     // -- Helpers --------------------------------------------------------------
 
+    /// <summary>Fails ONLY the attendance insert, with the <see cref="DbUpdateException"/>
+    /// the service's own catch block is written against. Every other query — the
+    /// live-session lookup, the capacity read, the post-failure open-row re-read —
+    /// runs against the real database, so the service takes exactly the production
+    /// path up to the store rejecting the write.</summary>
+    private sealed class AttendanceInsertFailsDbContext(
+        DbContextOptions<SimfAppDbContext> options,
+        SIMF.Application.Abstractions.IPiiEncryptor pii)
+        : SimfAppDbContext(options, pii)
+    {
+        public override Task<int> SaveChangesAsync(
+            bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            if (ChangeTracker.Entries<HallAttendance>().Any(e => e.State == EntityState.Added))
+            {
+                throw new DbUpdateException("Simulated store failure on the attendance insert.");
+            }
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+    }
+
     private Task<HttpResponseMessage> PostScanAsync(
-        Guid gateId, string qr, string token, ScanDirection direction)
+        Guid gateId, string qr, string token, ScanDirection direction,
+        string? acceptLanguage = null)
     {
         var request = new HttpRequestMessage(
             HttpMethod.Post, $"/api/v1/app/gates/{gateId}/scans")
@@ -303,10 +639,16 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             }),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        if (acceptLanguage is not null)
+        {
+            request.Headers.TryAddWithoutValidation("Accept-Language", acceptLanguage);
+        }
         return _client.SendAsync(request);
     }
 
-    private async Task<Guid> CreateGateAsync(string token, Guid operatorUserId, Guid? hallId)
+    private async Task<Guid> CreateGateAsync(
+        string token, Guid operatorUserId, Guid? hallId,
+        DirectionMode directionMode = DirectionMode.Both)
     {
         var create = await PostAuthAsync(
             "/api/v1/admin/gates",
@@ -315,7 +657,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
                 Code = $"HD-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
                 Name = "Hall Door Gate",
                 NameArabic = "بوابة باب القاعة",
-                DirectionMode = DirectionMode.Both,
+                DirectionMode = directionMode,
                 HallId = hallId,
                 AllowedProfileTypeIds = new List<Guid>(),
                 AssignedOperatorUserIds = new List<Guid> { operatorUserId },
@@ -326,6 +668,83 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminGateDetail>>())!.Data!;
         Assert.Equal(hallId, detail.HallId);
         return detail.Id;
+    }
+
+    [Fact]
+    public async Task Session_hall_admits_a_booking_for_the_session_about_to_start()
+    {
+        // D-823 regression. Halls run back to back. Session A is running and
+        // session B starts in 10 minutes; the attendee holds a booking for B and
+        // is at the door now, which is exactly what the arrival grace exists to
+        // allow. Step 11.5 used to ask only about the RUNNING session, so every
+        // early arrival for B was denied BookingRequiredMissing — and widening
+        // ArrivalGraceMinutes, the documented lever for a queue forming before a
+        // keynote, widened the denial instead of the admission.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, _) = await SeedHallWithLiveSessionAsync(
+            startOffsetMin: -50, endOffsetMin: 10);
+        var nextSessionId = await SeedSessionInHallAsync(
+            hallId, startOffsetMin: 10, endOffsetMin: 70);
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        // Booked for the NEXT session, not the one currently running.
+        await SeedSeatReservationAsync(nextSessionId, attendeeUserId);
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+    }
+
+    [Fact]
+    public async Task Session_hall_still_refuses_a_booking_outside_the_admitting_window()
+    {
+        // The widening has a bound. A booking for a session three hours out is
+        // not a ticket through the door now — otherwise "registered for that
+        // session" would degrade into "holds any booking in this hall, ever".
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, _) = await SeedHallWithLiveSessionAsync(
+            startOffsetMin: -15, endOffsetMin: 45);
+        var farSessionId = await SeedSessionInHallAsync(
+            hallId, startOffsetMin: 180, endOffsetMin: 240);
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        await SeedSeatReservationAsync(farSessionId, attendeeUserId);
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Denied, body.Outcome);
+        Assert.Equal(DenialReasonCode.BookingRequiredMissing, body.DenialReasonCode);
+    }
+
+    [Fact]
+    public async Task Session_hall_still_requires_a_booking_in_the_post_end_grace_tail()
+    {
+        // D-823 — widening step 11.5 to the whole admitting window must NOT turn
+        // the tail after a session ends into an ungated door. The session is over
+        // but still inside the arrival grace, so it is still what this hall is
+        // admitting for and an unregistered badge is still refused. Dropping
+        // ended sessions from the set would return NoLiveSession here, which the
+        // gate does not deny on — every valid badge would walk in.
+        var (token, operatorUserId) = await CreateAdminAsync();
+        var (hallId, _) = await SeedHallWithLiveSessionAsync(
+            startOffsetMin: -60, endOffsetMin: -5);
+        var gateId = await CreateGateAsync(token, operatorUserId, hallId);
+        var (qrId, _) = await CreateApprovedVisitorWithQrAsync();
+        // Deliberately NO seat reservation.
+
+        var scan = await PostScanAsync(gateId, qrId, token, ScanDirection.CheckIn);
+        Assert.Equal(HttpStatusCode.OK, scan.StatusCode);
+        var body = (await scan.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        Assert.Equal(ScanOutcome.Denied, body.Outcome);
+        Assert.Equal(DenialReasonCode.BookingRequiredMissing, body.DenialReasonCode);
     }
 
     private async Task<(Guid HallId, Guid SessionId)> SeedHallWithLiveSessionAsync(
@@ -342,13 +761,60 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Chain Session", TitleArabic = "جلسة السلسلة",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
-            End = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Start = SimfClock.Now.AddMinutes(startOffsetMin),
+            End = SimfClock.Now.AddMinutes(endOffsetMin),
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
         return (hall.Id, session.Id);
+    }
+
+    /// <summary>D-823 — adds a SECOND session to an existing hall, so the
+    /// back-to-back handover the arrival grace has to cope with can be
+    /// exercised. A hall runs its programme without gaps; the interesting
+    /// moment is the one where two sessions are both inside the window.</summary>
+    private async Task<Guid> SeedSessionInHallAsync(
+        Guid hallId, int startOffsetMin, int endOffsetMin)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Next Session", TitleArabic = "الجلسة التالية",
+            HallId = hallId,
+            Start = SimfClock.Now.AddMinutes(startOffsetMin),
+            End = SimfClock.Now.AddMinutes(endOffsetMin),
+            IsActive = true, CreatedAt = SimfClock.Now,
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+        return session.Id;
+    }
+
+    /// <summary>
+    /// D-819 — registers an attendee for a session so a hall-door scan admits
+    /// them. Step 11.5 makes "registered for this session" a real entry rule at
+    /// a session hall; before D-819 it was a reserved hook with no writer, so
+    /// any valid badge opened any hall and these chain tests needed no booking.
+    /// </summary>
+    private async Task SeedSeatReservationAsync(Guid sessionId, Guid attendeeUserId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.SeatReservations.Add(new SeatReservation
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            ReservedForUserId = attendeeUserId,
+            Kind = SeatReservationKind.OpenSeating,
+            Status = BookingStatus.Approved,
+            CreatedByUserId = attendeeUserId,
+            CreatedAt = SimfClock.Now,
+        });
+        await db.SaveChangesAsync();
     }
 
     private async Task<Guid> SeedHallWithoutSessionAsync()
@@ -367,7 +833,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Chain Hall", NameArabic = "قاعة السلسلة",
-            Capacity = capacity, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = capacity, IsActive = true, CreatedAt = SimfClock.Now,
             GeofenceCenterLat = withGeofence ? CenterLat : null,
             GeofenceCenterLon = withGeofence ? CenterLon : null,
             GeofenceRadiusMeters = withGeofence ? RadiusMeters : null,
@@ -398,7 +864,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             Name = "Chain Visitor",
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return (qrId, user.Id);
@@ -427,14 +893,7 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
             userId = user.Id;
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return (body.Data!.Tokens!.AccessToken, userId);
+        return (await AuthFlow.SignInControlPanelAsync(_client, _factory, email), userId);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

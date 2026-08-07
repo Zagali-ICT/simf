@@ -4,12 +4,12 @@ using SIMF.Components.Forms;
 namespace SIMF.ControlPanel;
 
 /// <summary>Per-user, per-page Control Panel UI preferences, persisted in the
-/// browser's localStorage via the <c>simfPrefs</c> JS helper (D-353). Today it
+/// browser's localStorage via the <c>simfPrefs</c> JS helper. Today it
 /// stores the CRUD presentation mode (dialog vs full page); the per-page blob
 /// is versioned so grid page-size and column widths can be added later without
 /// breaking older saved values. Scoped per circuit (it depends on the circuit's
 /// <see cref="IJSRuntime"/>). Pure browser storage — no API, no server state,
-/// no schema (respects the D-110 freeze).</summary>
+/// no schema (it respects the persistence freeze).</summary>
 public sealed class CpPreferences
 {
     // Every CP preference key starts with this so ClearAll can wipe exactly the

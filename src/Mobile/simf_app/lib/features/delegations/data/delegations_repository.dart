@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'delegation_models.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Data layer for the Delegations screen — App "الوفود" (Figma 1426:10771). One
 /// read of the public invited-country delegations (`GET /app/delegations`,
@@ -51,9 +52,9 @@ class DelegationsRepository {
         'attendeeCount': attendeeCount,
         'subject': subject,
         if (slotStart != null)
-          'slotStart': slotStart.toUtc().toIso8601String(),
+          'slotStart': formatWire(slotStart),
         if (slotEnd != null)
-          'slotEnd': slotEnd.toUtc().toIso8601String(),
+          'slotEnd': formatWire(slotEnd),
       },
       decodeData: (_) => true,
     );
@@ -73,6 +74,21 @@ class DelegationsRepository {
       ),
     );
   }
+
+  /// B8 — `POST /app/delegation-meeting-requests/{id}/decline`, the exact
+  /// mirror of [confirmMeeting]. An eligible member of the TARGET delegation
+  /// may decline an Approved (awaiting) meeting instead of waiting for an
+  /// admin to cancel it. Returns the same summary shape (no requester PII).
+  /// Maps 403 (not the other party) / 409 (not awaiting confirmation).
+  Future<DelegationMeetingSummary> declineMeeting(String requestId) {
+    return _client.post<DelegationMeetingSummary>(
+      '/app/delegation-meeting-requests/$requestId/decline',
+      body: const <String, dynamic>{},
+      decodeData: (data) => DelegationMeetingSummary.fromJson(
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
+      ),
+    );
+  }
 }
 
 /// Bi-Meeting rework — one bookable meeting slot offered by a delegation
@@ -81,8 +97,8 @@ class DelegationSlot {
   const DelegationSlot({required this.start, required this.end});
 
   factory DelegationSlot.fromJson(Map<String, dynamic> json) => DelegationSlot(
-        start: DateTime.parse(json['start'] as String).toUtc(),
-        end: DateTime.parse(json['end'] as String).toUtc(),
+        start: DateTime.parse(json['start'] as String),
+        end: DateTime.parse(json['end'] as String),
       );
 
   final DateTime start;
@@ -106,7 +122,7 @@ class DelegationMeetingSummary {
         subject: (json['subject'] as String?) ?? '',
         slotStart: json['slotStart'] == null
             ? null
-            : DateTime.tryParse(json['slotStart'] as String)?.toUtc(),
+            : parseWireOrNull(json['slotStart'] as String),
       );
 
   final String requestingCountry;

@@ -1,9 +1,9 @@
-@* D-169 (gap doc G6) — moderator's live Q&A desk for one session.
+@* Moderator's live Q&A desk for one session.
    Routed by session id; the API enforces the per-session permission
    grant (or Administrator bypass). *@
 @page "/sessions/{SessionId:guid}/moderate"
 @layout CpShellLayout
-@* M6 (security) — per-page permission gate (was [Authorize] only). The API also
+@* Per-page permission gate (was [Authorize] only). The API also
    enforces the per-session moderator / Administrator check; this keeps the CP
    convention (only Questions.Moderate holders reach the desk + see the actions). *@
 @attribute [RequirePermission(PermissionCatalog.Questions.Moderate)]
@@ -56,6 +56,16 @@
                                 @if (row.IsHidden)
                                 {
                                     <span>@L["Admin.SessionModeration.State.Hidden"]</span>
+                                }
+                                else if (row.Status == QuestionStatus.Answered)
+                                {
+                                    @* The desk list carries the
+                                       moderator's persisted "answered" mark; it is
+                                       the terminal desk state, so it wins over the
+                                       pushed marker (an answered question was
+                                       pushed first). Without this branch the row
+                                       rendered as "Queued". *@
+                                    <span>@L["Admin.SessionModeration.State.Answered"]</span>
                                 }
                                 else if (row.IsPushed)
                                 {

@@ -7,7 +7,7 @@ using SIMF.Contracts.Media;
 
 namespace SIMF.Api.Endpoints.Public;
 
-/// <summary>D-199 (Mockup page 30 — معرض الصور والفيديوهات) — public anonymous
+/// <summary>The public gallery (معرض الصور والفيديوهات) — an anonymous
 /// paged list of active media items, optionally narrowed to one album and/or a
 /// single <see cref="MediaKind"/> (image / video).
 /// Anonymous to match the other public reads (ListPublicDelegations).</summary>
@@ -17,8 +17,8 @@ public sealed class ListPublicMediaRequest
     public int Skip { get; set; }
     public int Top { get; set; } = 25;
 
-    /// <summary>A8 — optional kind filter (<c>?kind=Image</c> / <c>?kind=Video</c>);
-    /// null = both kinds. Appended (append-only, D-219).</summary>
+    /// <summary>Optional kind filter (<c>?kind=Image</c> / <c>?kind=Video</c>);
+    /// null = both kinds. Appended, so the wire contract stays append-only.</summary>
     public MediaKind? Kind { get; set; }
 }
 
@@ -30,7 +30,7 @@ public sealed class ListPublicMediaEndpoint(IPublicMediaService service)
         Get("/app/media");
         AllowAnonymous();
         Tags("Public");
-        // A6d — 45s output cache; varies by all query keys so ?album/?skip/?top
+        // 45s output cache; varies by all query keys so ?album/?skip/?top
         // variants keep distinct entries (no-op under Testing). Only the JSON list
         // is cached here — the image/thumbnail byte endpoints keep their own
         // client Cache-Control and are not output-cached.
@@ -44,8 +44,8 @@ public sealed class ListPublicMediaEndpoint(IPublicMediaService service)
 
 public sealed class PublicMediaImageRoute { public Guid Id { get; set; } }
 
-/// <summary>D-199 — stream an active item's primary image bytes (out-of-row,
-/// D-90). 404 when the item is missing / inactive / has no stored image.
+/// <summary>Stream an active item's primary image bytes (out-of-row).
+/// 404 when the item is missing / inactive / has no stored image.
 /// Anonymous: gallery images are public (matches the anonymous list).</summary>
 public sealed class PublicMediaImageEndpoint(IPublicMediaService service)
     : Endpoint<PublicMediaImageRoute>
@@ -74,7 +74,7 @@ public sealed class PublicMediaImageEndpoint(IPublicMediaService service)
 
 public sealed class PublicMediaThumbnailRoute { public Guid Id { get; set; } }
 
-/// <summary>D-199 — stream an active item's thumbnail / poster bytes
+/// <summary>Stream an active item's thumbnail / poster bytes
 /// (out-of-row). 404 when missing / inactive / no thumbnail.</summary>
 public sealed class PublicMediaThumbnailEndpoint(IPublicMediaService service)
     : Endpoint<PublicMediaThumbnailRoute>

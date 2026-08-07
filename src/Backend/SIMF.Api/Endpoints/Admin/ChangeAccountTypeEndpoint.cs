@@ -1,17 +1,16 @@
 // Tests: SIMF.Api.Tests/AdminChangeAccountTypeTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Auth.Validators;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-728 (owner item 9) — the route id + body for the change-type
-/// endpoint. The account id comes from the path, the target profile type from
-/// the JSON body.</summary>
+/// <summary>The route id + body for the change-type endpoint. The account id
+/// comes from the path, the target profile type from the JSON body.</summary>
 public sealed class ChangeAccountTypeRouteRequest
 {
     public Guid Id { get; set; }
@@ -32,7 +31,7 @@ public sealed class ChangeAccountTypeRouteRequestValidator
     }
 }
 
-/// <summary>D-728 (owner item 9) — <c>POST /api/v1/admin/accounts/{id}/change-type</c>.
+/// <summary><c>POST /api/v1/admin/accounts/{id}/change-type</c>.
 /// Flips an existing account between the audience (Visitor) and partner (Other)
 /// scope by reassigning its profile type to one in the opposite scope. Gated by
 /// the dedicated <c>Accounts.ChangeType</c> code. The flip rolls the security
@@ -55,11 +54,7 @@ public sealed class ChangeAccountTypeEndpoint(IAdminUserProvisioningService serv
     public override async Task HandleAsync(
         ChangeAccountTypeRouteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.ChangeAccountTypeAsync(
             actorId, req.Id, req.NewProfileTypeId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);

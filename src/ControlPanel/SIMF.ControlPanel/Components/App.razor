@@ -23,20 +23,26 @@
         })();
     </script>
     <ResourcePreloader />
+    @* QA-LIVE-001 — with no icon declared the browser falls back to requesting
+       /favicon.ico, which nothing serves, so EVERY Control Panel page load logged
+       a 404 in the network panel and the tab carried the blank default glyph. The
+       mark is the product's own 64x64 SIMF emblem (the same file the app ships as
+       its web favicon) — one brand mark across surfaces rather than new artwork. *@
+    <link rel="icon" type="image/png" href="@Assets["favicon.png"]" />
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/theme.tokens.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/simf-components.css"]" />
     <link rel="stylesheet" href="@Assets["SIMF.ControlPanel.styles.css"]" />
-    @* D-116: Cropper.Blazor static assets (image cropping modal). *@
+    @* Cropper.Blazor static assets (image cropping modal). *@
     <link rel="stylesheet" href="@Assets["_content/Cropper.Blazor/cropper.min.css"]" />
     <script src="@Assets["_content/SIMF.Components/js/simf-theme.js"]"></script>
-    @* D-353 — per-page UI preference store (CRUD dialog/full-page choice). *@
+    @* Per-page UI preference store (CRUD dialog/full-page choice). *@
     <script src="@Assets["_content/SIMF.Components/js/simf-prefs.js"]"></script>
     <script src="@Assets["js/simf-account.js"]"></script>
-    @* D-443 — token-driven session-expiry guard (started by SessionTimeoutGuard). *@
+    @* Token-driven session-expiry guard (started by SessionTimeoutGuard). *@
     <script src="@Assets["js/session-timeout.js"]"></script>
-    @* D-123: the underlying cropperjs global MUST load before the Cropper.Blazor
-       JS interop bridge — V10 ERP App.razor lines 32-33 do the same. Without
+    @* The underlying cropperjs global MUST load before the Cropper.Blazor
+       JS interop bridge. Without
        cropper.min.js the bridge throws "Could not find 'cropper.destroy'
        ('cropper' was undefined)" on component dispose. *@
     <script src="@Assets["_content/Cropper.Blazor/cropper.min.js"]"></script>

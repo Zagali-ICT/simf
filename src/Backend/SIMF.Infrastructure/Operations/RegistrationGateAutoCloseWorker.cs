@@ -7,11 +7,12 @@ using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Domain.Operations;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
-/// D-166 (gap doc G4, PDF §2.3) — background worker that flips
+/// Background worker that flips
 /// <see cref="RegistrationGate.IsOpen"/> to false the first time
 /// <see cref="RegistrationGate.AutoClose"/> passes. Runs once per
 /// minute; cheap query on a single-row table.
@@ -91,20 +92,18 @@ internal sealed class RegistrationGateAutoCloseWorker(
         if (row is null) { return; }
         if (!row.IsOpen) { return; }
         if (row.AutoClose is not { } closeAt) { return; }
-        if (closeAt > timeProvider.GetUtcNow()) { return; }
+        if (closeAt > timeProvider.SimfNow()) { return; }
 
         row.IsOpen = false;
-        row.LastChangedAt = timeProvider.GetUtcNow();
+        row.LastChangedAt = timeProvider.SimfNow();
         row.LastChangedByUserId = null; // worker, not a person
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.RegistrationGateAutoClosed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = null,
-            Detail = $"autoClose={closeAt:O}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.RegistrationGateAutoClosed,
+            null,
+            $"autoClose={closeAt:O}",
+            cancellationToken);
 
         logger.LogInformation(
             "RegistrationGate auto-closed (AutoClose {CloseAt} passed).", closeAt);

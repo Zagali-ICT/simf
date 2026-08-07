@@ -1,6 +1,5 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
@@ -38,6 +37,16 @@ public partial class MeetingTablesList
 
     private bool _busy;
     private Toast? _toast;
+
+    /// <summary>The records being read. Both grids already hold the whole
+    /// row, so Details opens with no second fetch and no permission of its own:
+    /// seeing the row is what MeetingTables.View already bought.</summary>
+    private MeetingTableRow? _tableDetails;
+    private HallAllocationRow? _allocationDetails;
+
+    private void OnTableDetails(MeetingTableRow table) => _tableDetails = table;
+
+    private void OnAllocationDetails(HallAllocationRow allocation) => _allocationDetails = allocation;
 
     private bool _tableOpen;
     private bool _isEditTable;
@@ -256,13 +265,13 @@ public partial class MeetingTablesList
         finally { _busy = false; }
     }
 
-    // D-356 — Excel export (selected rows, or the current filtered set) of the
+    // Excel export (selected rows, or the current filtered set) of the
     // hall's meeting tables. The grid is hall-scoped, so the hall id rides
     // GridQuery.Filters["hallId"]; the API resolves it back to ListTablesAsync.
     // No hall selected → nothing to export.
-    private Task OnExportTablesAsync(IReadOnlyList<MeetingTableRow> selected)
+    private async Task OnExportTablesAsync(IReadOnlyList<MeetingTableRow> selected)
     {
-        if (_hallId is not { } hid) return Task.CompletedTask;
+        if (_hallId is not { } hid) return;
         var query = new GridQuery
         {
             Skip = 0,
@@ -275,13 +284,16 @@ public partial class MeetingTablesList
                 ["hallId"] = hid.ToString(),
             },
         };
-        return JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/meeting-tables/export",
             new AdminGridExportRequest
             {
                 Ids = selected.Select(row => row.Id).ToList(),
                 Query = query,
-            }).AsTask();
+            }, L);
+        if (error is not null) _toast = new Toast("error", error);
     }
 
     private void OnGenerate()
@@ -330,7 +342,7 @@ public partial class MeetingTablesList
     private async Task SaveAllocationAsync()
     {
         if (_busy || _hallId is not { } hid) return;
-        if (!TryParseUtc(_allocStartText, out var start) || !TryParseUtc(_allocEndText, out var end) || end <= start)
+        if (!TryParseSaudiWallClock(_allocStartText, out var start) || !TryParseSaudiWallClock(_allocEndText, out var end) || end <= start)
         {
             _toast = new Toast("error", L["Admin.MeetingTables.Validation.Slot"]);
             return;
@@ -418,7 +430,7 @@ public partial class MeetingTablesList
     private static string? Trimmed(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static bool TryParseUtc(string text, out DateTimeOffset value)
+    private static bool TryParseSaudiWallClock(string text, out DateTime value)
     {
         value = default;
         if (DateTime.TryParse(text, CultureInfo.InvariantCulture,
@@ -430,7 +442,7 @@ public partial class MeetingTablesList
         return false;
     }
 
-    // R10 (D-767) — the resx key for a hall purpose / allocation mode, so the
+    // The resx key for a hall purpose / allocation mode, so the
     // allocations grid renders the localized label instead of the raw enum name
     // (e.g. "RandomByCount"). Mirrors the option keys the pickers already use.
     private static string PurposeKey(HallPurpose purpose) => purpose switch

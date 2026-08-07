@@ -1,13 +1,13 @@
 // Tests: SIMF.Api.Tests/AdminBulkAdminTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P1.3 (D-214) — <c>POST /api/v1/admin/admins/bulk-approve</c>. The
+/// <summary><c>POST /api/v1/admin/admins/bulk-approve</c>. The
 /// admin-queue counterpart of <see cref="BulkApproveVisitorsEndpoint"/>:
 /// bulk-approve a batch of pending admin (staff) accounts. Each subject is
 /// approved in its own step; per-subject failures are reported and do not block
@@ -30,11 +30,7 @@ public sealed class BulkApproveAdminsEndpoint(IAdminUserApprovalService service)
     public override async Task HandleAsync(
         AdminBulkApprovalRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         if (req.Ids is null || req.Ids.Count == 0)
         {
             throw new ApiException(
@@ -47,7 +43,7 @@ public sealed class BulkApproveAdminsEndpoint(IAdminUserApprovalService service)
     }
 }
 
-/// <summary>P1.3 (D-214) — <c>POST /api/v1/admin/admins/bulk-reject</c>. The
+/// <summary><c>POST /api/v1/admin/admins/bulk-reject</c>. The
 /// reject counterpart of <see cref="BulkApproveAdminsEndpoint"/>: bulk-reject
 /// the selected pending admins with a shared reason. Ids + reason are validated
 /// by <c>AdminBulkRejectRequestValidator</c>. Gated by <c>Admins.Reject</c>.</summary>
@@ -68,11 +64,7 @@ public sealed class BulkRejectAdminsEndpoint(IAdminUserApprovalService service)
     public override async Task HandleAsync(
         AdminBulkRejectRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var result = await service.BulkRejectAdminsAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminBulkRejectResponse>.Ok(result), ct);
     }

@@ -3,11 +3,11 @@ using SIMF.Contracts.Programme;
 namespace SIMF.Application.MeetingRequests.Abstractions;
 
 /// <summary>
-/// D-715 (item 7, FDS-013 §15 GAP-1) — the team-defined hall availability windows
+/// The team-defined hall availability windows
 /// and the free slots derived from them. A window is chopped into fixed-length
 /// slots; a slot is "free" when it is in the future and not already taken by a
-/// meeting bound to that hall + slot (the binding lands in GAP-2). The admin
-/// meeting-review flow (GAP-2) picks a free slot to bind an accepted request to.
+/// meeting bound to that hall + slot. The admin
+/// meeting-review flow picks a free slot to bind an accepted request to.
 /// Symmetric with <see cref="ISpeakerAvailabilityService"/>.
 /// </summary>
 public interface IHallAvailabilityService

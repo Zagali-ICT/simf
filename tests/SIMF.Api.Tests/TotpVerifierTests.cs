@@ -71,7 +71,7 @@ public sealed class TotpVerifierTests
         var result = verifier.Verify(SecretWithSpaces, code);
 
         // The TOTP time-step is the Unix epoch second divided by the 30-second window.
-        var expectedStep = ((DateTimeOffset)now.ToUniversalTime()).ToUnixTimeSeconds() / 30;
+        var expectedStep = new DateTimeOffset(now, TimeSpan.Zero).ToUnixTimeSeconds() / 30;
         Assert.True(result.IsValid);
         Assert.InRange(result.TimeStep, expectedStep - 1, expectedStep + 1);
     }

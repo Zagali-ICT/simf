@@ -7,11 +7,12 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Operations;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
-/// D-166 (gap doc G4) — admin + public read for the two operations
+/// Admin + public read for the two operations
 /// singletons. Both rows are seeded in EF model data; the service
 /// never creates rows, only updates them.
 /// </summary>
@@ -36,7 +37,7 @@ internal sealed class OperationsToggleService(
             .SingleOrDefaultAsync(g => g.Id == RegistrationGate.SingletonId, cancellationToken);
         if (row is null) { return true; } // fail-open if seeding lost the row
         if (!row.IsOpen) { return false; }
-        if (row.AutoClose is { } closeAt && closeAt <= timeProvider.GetUtcNow())
+        if (row.AutoClose is { } closeAt && closeAt <= timeProvider.SimfNow())
         {
             return false;
         }
@@ -49,7 +50,7 @@ internal sealed class OperationsToggleService(
         CancellationToken cancellationToken = default)
     {
         var row = await LoadRegistrationGateAsync(cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var changed = row.IsOpen != request.IsOpen
             || row.AutoClose != request.AutoClose;
 
@@ -60,13 +61,11 @@ internal sealed class OperationsToggleService(
             row.LastChangedAt = now;
             row.LastChangedByUserId = actorUserId;
             await dbContext.SaveChangesAsync(cancellationToken);
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.RegistrationGateUpdated,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = actorUserId,
-                Detail = $"isOpen={row.IsOpen}; autoClose={row.AutoClose?.ToString("O") ?? "null"}",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.RegistrationGateUpdated,
+                actorUserId,
+                $"isOpen={row.IsOpen}; autoClose={row.AutoClose?.ToString("O") ?? "null"}",
+                cancellationToken);
             logger.LogInformation(
                 "RegistrationGate updated by {ActorId}: IsOpen={IsOpen}, AutoClose={AutoClose}",
                 actorUserId, row.IsOpen, row.AutoClose);
@@ -87,20 +86,18 @@ internal sealed class OperationsToggleService(
         CancellationToken cancellationToken = default)
     {
         var row = await LoadArchiveVisibilityAsync(cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         if (row.IsVisible != request.IsVisible)
         {
             row.IsVisible = request.IsVisible;
             row.LastChangedAt = now;
             row.LastChangedByUserId = actorUserId;
             await dbContext.SaveChangesAsync(cancellationToken);
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.ArchiveVisibilityUpdated,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = actorUserId,
-                Detail = $"isVisible={row.IsVisible}",
-            }, cancellationToken);
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.ArchiveVisibilityUpdated,
+                actorUserId,
+                $"isVisible={row.IsVisible}",
+                cancellationToken);
             logger.LogInformation(
                 "ArchiveVisibility updated by {ActorId}: IsVisible={IsVisible}",
                 actorUserId, row.IsVisible);
@@ -119,7 +116,7 @@ internal sealed class OperationsToggleService(
                 Id = RegistrationGate.SingletonId,
                 IsOpen = true,
                 AutoClose = null,
-                LastChangedAt = timeProvider.GetUtcNow(),
+                LastChangedAt = timeProvider.SimfNow(),
                 LastChangedByUserId = null,
             };
             dbContext.RegistrationGate.Add(row);
@@ -138,7 +135,7 @@ internal sealed class OperationsToggleService(
             {
                 Id = ArchiveVisibility.SingletonId,
                 IsVisible = true,
-                LastChangedAt = timeProvider.GetUtcNow(),
+                LastChangedAt = timeProvider.SimfNow(),
                 LastChangedByUserId = null,
             };
             dbContext.ArchiveVisibility.Add(row);

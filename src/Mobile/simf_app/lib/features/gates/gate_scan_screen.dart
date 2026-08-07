@@ -41,6 +41,12 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   bool _loading = true;
   bool _forbidden = false;
   bool _error = false;
+
+  /// DEF-STF-005 — the server's own bilingual 403 text, when it sent one. A
+  /// missing `Gates.Operate` grant and "you are not assigned to this gate" are
+  /// both 403 but need DIFFERENT operator actions, so the specific message must
+  /// not be flattened into the generic one.
+  String? _forbiddenMessage;
   // The console has two stages: the setup card (gate + movement) and, once the
   // operator taps "Scan code", the live camera / manual-entry scanner.
   bool _scanning = false;
@@ -66,6 +72,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     setState(() {
       _loading = true;
       _forbidden = false;
+      _forbiddenMessage = null;
       _error = false;
     });
     try {
@@ -85,12 +92,17 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       // Opening the console is a good moment to drain any backlog left by a
       // prior offline session (G-4).
       unawaited(_flushPending());
+      // D-821 — and to refresh the rules this device falls back on when the
+      // link drops. Fire-and-forget: it keeps its previous cache on failure,
+      // and the console must open either way.
+      unawaited(ref.read(gatesRepositoryProvider).refreshOfflineConfig());
     } on ApiFailure catch (e) {
       if (!mounted) {
         return;
       }
       setState(() {
         _forbidden = e.httpStatus == 403;
+        _forbiddenMessage = _serverMessage(e);
         _error = e.httpStatus != 403;
         _loading = false;
       });
@@ -149,7 +161,14 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         // key and retried automatically, so the admitted person is not lost
         // (G-4).
         setState(() => _pending = repo.pendingCount());
-        messenger.showSnackBar(SnackBar(content: Text(l10n.gateSavedOffline)));
+        // D-821 — give the operator an answer instead of only "saved". The
+        // device decrypts the badge and checks it against this gate's cached
+        // rules; null means it could not decide, which is the pre-D-821
+        // behaviour and still the honest answer.
+        final verdict = repo.judgeOffline(gateId: gate.gateId, qr: trimmed);
+        messenger.showSnackBar(
+          SnackBar(content: Text(_offlineText(l10n, verdict))),
+        );
         return;
       }
       setState(() => _result = result);
@@ -159,21 +178,55 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       if (!mounted) {
         return;
       }
-      messenger.showSnackBar(
-        SnackBar(content: Text(_failureText(l10n, e.httpStatus))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(_failureText(l10n, e))));
     }
   }
 
-  String _failureText(AppL10n l10n, int? status) {
-    switch (status) {
+  /// DEF-STF-005 — a 403 carries the reason the operator has to act on: either
+  /// "you do not have permission to operate gates" (ask an admin for the
+  /// `Gates.Operate` grant) or "you are not assigned to this gate" (ask for the
+  /// assignment, or pick a gate you DO hold). The console used to render both
+  /// as the first one, so the second was undiagnosable. The server's own
+  /// bilingual text wins; the generic copy is the fallback when it sent none.
+  String _failureText(AppL10n l10n, ApiFailure failure) {
+    switch (failure.httpStatus) {
       case 403:
-        return l10n.gateForbidden;
+        return _serverMessage(failure) ?? l10n.gateForbidden;
       case 429:
         return l10n.gateRateLimited;
       default:
         return l10n.gateError;
     }
+  }
+
+  /// D-821 — what to tell the operator about a scan the server never saw.
+  ///
+  /// Every branch also says the scan was saved: whatever the device concluded,
+  /// the authoritative decision is the server's when the queue drains, and an
+  /// operator who reads an offline verdict as final would be misled.
+  static String _offlineText(AppL10n l10n, OfflineGateVerdict? verdict) {
+    if (verdict == null) {
+      // The device could not decide — no cached rules, no key, or a hall door
+      // whose booking check needs live data. Unchanged from before D-821.
+      return l10n.gateSavedOffline;
+    }
+    if (verdict.isAllowed) {
+      return l10n.gateOfflineAllowed;
+    }
+    final reason = switch (verdict.reason) {
+      OfflineDenialReason.profileTypeNotAllowed =>
+        l10n.gateOfflineDeniedProfileType,
+      OfflineDenialReason.gateInactive => l10n.gateOfflineDeniedGateInactive,
+      _ => l10n.gateOfflineDeniedBadge,
+    };
+    return '$reason ${l10n.gateSavedOffline}';
+  }
+
+  /// The server's message when it actually sent one — `ApiFailure.message` is
+  /// already picked for the app's locale by the envelope decoder.
+  static String? _serverMessage(ApiFailure failure) {
+    final message = failure.message.trim();
+    return message.isEmpty ? null : message;
   }
 
   /// Drains the offline scan backlog (G-4): retries each queued scan with its
@@ -305,23 +358,34 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         child: CircularProgressIndicator(color: SimfTokens.accent),
       );
     }
+    // Both gate-less branches: a staff member granted the gate assignment
+    // after this screen opened must be able to re-check without restarting.
     if (_forbidden) {
-      return SimfEmptyState(
-        icon: Icons.lock_outline,
-        message: l10n.gateForbidden,
+      return SimfRefreshableMessage(
+        onRefresh: _loadGates,
+        child: SimfEmptyState(
+          icon: Icons.lock_outline,
+          message: _forbiddenMessage ?? l10n.gateForbidden,
+        ),
       );
     }
     if (_error) {
-      return SimfErrorState(
-        message: l10n.gateError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_loadGates()),
+      return SimfRefreshableMessage(
+        onRefresh: _loadGates,
+        child: SimfErrorState(
+          message: l10n.gateError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_loadGates()),
+        ),
       );
     }
     if (_gate == null) {
-      return SimfEmptyState(
-        icon: Icons.sensor_door_outlined,
-        message: l10n.gateNotAssigned,
+      return SimfRefreshableMessage(
+        onRefresh: _loadGates,
+        child: SimfEmptyState(
+          icon: Icons.sensor_door_outlined,
+          message: l10n.gateNotAssigned,
+        ),
       );
     }
     final result = _result;

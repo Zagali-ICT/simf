@@ -8,8 +8,8 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/invitations/export</c> — the D-356 grid export for the
-/// public-relations invitation desk (D-168). <b>Export only:</b> invitations are
+/// <c>POST /api/v1/admin/invitations/export</c> — the grid export for the
+/// public-relations invitation desk. <b>Export only:</b> invitations are
 /// created/edited from the CP forms, so no generic import endpoint is added here.
 /// Columns mirror the grid; the recipient is rendered by English name (the
 /// summary already carries both names) and the state enum is resolved to its
@@ -35,8 +35,8 @@ public sealed class ExportInvitationsEndpoint(IAdminInvitationService service, I
         new("State", row => row.State.ToString()),
         new("Notes", row => row.Notes ?? string.Empty),
         new("SentBy", row => row.SentByDisplayName),
-        new("CreatedAt", row => row.CreatedAt.UtcDateTime),
-        new("RespondedAt", row => row.RespondedAt.HasValue ? row.RespondedAt.Value.UtcDateTime : (DateTime?)null),
+        new("CreatedAt", row => row.CreatedAt),
+        new("RespondedAt", row => row.RespondedAt.HasValue ? row.RespondedAt.Value : (DateTime?)null),
         new("IsActive", row => row.IsActive),
     ];
 

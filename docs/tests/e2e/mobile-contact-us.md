@@ -45,6 +45,8 @@
 | E2E-MOB203-005 | `POST /app/contact-inquiry` persists anonymously; bad input → 400 | api | P0 | pending (`ContactInquiryTests` — deferred until API freed) |
 | E2E-MOB203-006 | CP inbox lists inquiries; mark-handled toggles + gates on perms | cp | P1 | pending (CP inbox page — deferred until API/CP build freed) |
 | E2E-MOB203-007 | RTL — Arabic labels + LTR phone/email values | rtl | P2 | covered (`textDirection.ltr` on phone/email) |
+| E2E-MOB203-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOB203-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

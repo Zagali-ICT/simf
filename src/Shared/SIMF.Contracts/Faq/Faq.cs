@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Faq;
 
-// P2.1 (D-211) — FAQ management contracts (two-level: group → entry).
+// FAQ management contracts (two-level: group → entry).
 
 /// <summary>One FAQ group row in the admin grid (with its live entry count).</summary>
 public sealed record AdminFaqGroupSummary(
@@ -10,7 +10,7 @@ public sealed record AdminFaqGroupSummary(
     int DisplayOrder,
     bool IsActive,
     int EntryCount,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 public sealed class CreateFaqGroupRequest
 {
@@ -38,7 +38,7 @@ public sealed record AdminFaqEntrySummary(
     string AnswerArabic,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 public sealed class CreateFaqEntryRequest
 {

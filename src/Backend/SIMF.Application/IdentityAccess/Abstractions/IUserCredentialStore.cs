@@ -3,7 +3,7 @@ using SIMF.Domain.IdentityAccess;
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
 /// <summary>
-/// R3.5 — D-094: password + security-stamp credential surface for the
+/// Password + security-stamp credential surface for the
 /// <see cref="SimfUser"/> aggregate. Split out of the 22-method
 /// <see cref="IUserAccountRepository"/> so a sign-in service does not also
 /// have to inject the role / 2FA seams it never uses.

@@ -11,7 +11,7 @@ namespace SIMF.Infrastructure.Organisations;
 /// data to show before the government Excel import has run. Idempotent — keyed
 /// on the commercial-registration number, so re-running inserts only the rows
 /// that are missing. NOT run in production: there the lookup is populated by the
-/// real gov Excel import (B3 / D-220).
+/// real gov Excel import.
 /// </summary>
 public sealed class OrganisationSeeder(
     SimfAppDbContext appDbContext,

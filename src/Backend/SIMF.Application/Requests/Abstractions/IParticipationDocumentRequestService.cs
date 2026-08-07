@@ -3,8 +3,8 @@ using SIMF.Contracts.Requests;
 
 namespace SIMF.Application.Requests.Abstractions;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب وثيقة المشاركة") — participation-document
-/// requests: login-required submission + admin review. Mirrors
+/// <summary>Participation-document requests on the الطلبات screen
+/// ("طلب وثيقة المشاركة"): login-required submission + admin review. Mirrors
 /// <c>ISpeakerMeetingRequestService</c>; no counterparty (the document is issued
 /// off-band).</summary>
 public interface IParticipationDocumentRequestService

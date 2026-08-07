@@ -1,20 +1,8 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
-using SIMF.Contracts.Faq;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -26,6 +14,30 @@ public partial class GatesViewDelete
     private bool _busy;
     private bool _confirming;
     private string? _error;
+
+    /// <summary>BUG-018 (18-6) — the detail view listed only the operator COUNT, so
+    /// an assignment could not be audited from the CP. The gate's assignments
+    /// (operator name + email) are loaded from the existing Gates.Manage-gated
+    /// assignments endpoint.</summary>
+    private IReadOnlyList<AdminGateAssignmentRow> _operators =
+        Array.Empty<AdminGateAssignmentRow>();
+    private bool _operatorsFailed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Initial is null) return;
+
+        var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminGateAssignmentRow>>>(
+            "simfAccount.getJson", $"/account/api/admin/gates/{Initial.Id}/assignments");
+        if (envelope is { Success: true, Data: { } rows })
+        {
+            _operators = rows;
+        }
+        else
+        {
+            _operatorsFailed = true;
+        }
+    }
 
     private async Task ConfirmDeleteAsync()
     {

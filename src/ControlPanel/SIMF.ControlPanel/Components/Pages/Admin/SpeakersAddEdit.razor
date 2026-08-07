@@ -1,8 +1,8 @@
-@* D-353 — reusable Speaker Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Speaker Add/Edit form, hosted by CrudShell (popup or full
    page) from SpeakersList. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Branch
    Create vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when
-   IsEdit). Supersedes SpeakerForm.razor (D-153), which keyed off Initial==null.
+   IsEdit). Supersedes SpeakerForm.razor, which keyed off Initial==null.
    Country picker is populated from /admin/countries/list (active rows only) on
    first render. The long field set is grouped into titled SimfFormSection steps
    with a responsive two-column grid (bilingual pairs sit side by side). *@
@@ -20,7 +20,7 @@
                      Hint="@L["Admin.Speakers.Section.IdentityHint"]">
         <div class="simf-identity-row">
             <div class="simf-identity-row__photo">
-                @* D-357 — speaker photo via the unified media-asset pipeline
+                @* Speaker photo via the unified media-asset pipeline
                    (edit only; the row must exist before bytes can attach). *@
                 @if (IsEdit && Initial is not null)
                 {
@@ -135,7 +135,7 @@
         </div>
     </SimfFormSection>
 
-    @* Section 4 — Contact information (D-766: identity-card fields inlined from
+    @* Section 4 — Contact information (identity-card fields inlined from
        the removed shared Contact directory). Nationality reuses the country
        picker in Section 1. *@
     <SimfFormSection Number="4" Title="@L["Admin.ContactField.Heading"]">

@@ -4,9 +4,9 @@ using SIMF.Domain.Requests;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-500 (Wave 5, الطلبات) — BadgeUpdateRequest EF config.
-/// RequestedByUserId is a logical FK to SimfUser on the Identity DB (no cross-DB
-/// relation, D-157). The requested title length matches UserProfile.JobTitle
+/// <summary>BadgeUpdateRequest EF config, backing the الطلبات desk.
+/// RequestedByUserId is a logical FK to SimfUser on the Identity DB — there is
+/// no cross-DB relation. The requested title length matches UserProfile.JobTitle
 /// (128). Mirrors <see cref="SpeakerMeetingRequestConfiguration"/>.</summary>
 internal sealed class BadgeUpdateRequestConfiguration
     : IEntityTypeConfiguration<BadgeUpdateRequest>

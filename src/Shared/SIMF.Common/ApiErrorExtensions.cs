@@ -4,7 +4,7 @@ namespace SIMF.Common;
 
 /// <summary>
 /// Helpers for picking the right-language message from an <see cref="ApiError"/>
-/// or <see cref="ApiErrorDetail"/> based on the current UI culture (D-030).
+/// or <see cref="ApiErrorDetail"/> based on the current UI culture.
 /// </summary>
 public static class ApiErrorExtensions
 {
@@ -40,7 +40,7 @@ public static class ApiErrorExtensions
     /// <summary>
     /// Returns the English or Arabic text for <see cref="CultureInfo.CurrentUICulture"/>.
     /// Use it for hard-coded fallback strings, the equivalent of an
-    /// <c>ApiError</c> for an inline message (D-030).
+    /// <c>ApiError</c> for an inline message.
     /// </summary>
     public static string Bilingual(string english, string arabic) =>
         IsArabic(CultureInfo.CurrentUICulture) ? arabic : english;

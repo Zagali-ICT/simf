@@ -13,8 +13,8 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-209 (A2 split): the approve / reject workers of
-/// <see cref="AdminAccountService"/> (P4 + P7c + D-186 scope guards),
+/// The approve / reject workers of
+/// <see cref="AdminAccountService"/>,
 /// plus their shared helpers (<c>LoadPendingSubjectAsync</c>,
 /// <c>EnsureUserProfileAsync</c>, scope checks). The public per-scope
 /// dispatchers + the bulk-approve loop stay in the main / bulk parts and
@@ -23,19 +23,26 @@ namespace SIMF.Infrastructure.Identity;
 /// </summary>
 internal sealed partial class AdminAccountService
 {
+    /// <param name="sendApprovalEmail">
+    /// Whether the approval notification also sends an email. Defaults
+    /// to true, so every existing caller is unchanged. The walk-in desk passes
+    /// false when it synthesized a placeholder address: at an event with a large
+    /// crowd that would queue one dead send per registration.
+    /// </param>
     private async Task ApproveAsync(
         Guid actorUserId, Guid subjectUserId, ApprovalScope scope,
-        CancellationToken cancellationToken, Guid? profileTypeId = null)
+        CancellationToken cancellationToken, Guid? profileTypeId = null,
+        bool sendApprovalEmail = true)
     {
         var subject = await LoadPendingSubjectAsync(
             actorUserId, subjectUserId, scope, cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         subject.AccountState = AccountState.Approved;
         subject.UpdatedAt = now;
         subject.StateChangedAt = now;
         subject.StateChangedByUserId = actorUserId;
 
-        // D-106: QR + rejection text live on UserProfile now. Ensure the
+        // QR + rejection text live on UserProfile now. Ensure the
         // profile row exists (it usually does — the visitor filled in
         // their form — but an admin-created Visitor / Other might be
         // approved before any profile data is captured). Clear any
@@ -45,7 +52,7 @@ internal sealed partial class AdminAccountService
         profile.RejectionReasonArabic = null;
         await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
 
-        // CS-D (D-386) — optional tier assignment on approve. Only the
+        // Optional tier assignment on approve. Only the
         // AudienceVisitor dispatcher passes a non-null id; the Other /
         // Admin dispatchers always pass null. A supplied id must be an
         // active, audience-side (IsForVisitor=true) ProfileType — the
@@ -68,8 +75,8 @@ internal sealed partial class AdminAccountService
             assignedProfileTypeId = chosenTypeId;
         }
 
-        // FIX #4 (R-1 data-integrity) — cross-DB ordering under D-157 (there is
-        // NO distributed transaction spanning the two databases). Persist the
+        // Cross-DB ordering: there is
+        // NO distributed transaction spanning the two databases. Persist the
         // App-DB unit of work (the minted QR + the cleared rejection text +
         // the optional tier) FIRST, then flip the Identity account to Approved.
         // A transient App-save failure now leaves the account PendingApproval
@@ -79,13 +86,13 @@ internal sealed partial class AdminAccountService
         // the visitor permanently un-scannable). The reverse window (a minted
         // QR on a still-Pending account) is fail-closed: a gate scan denies it
         // as HolderNotApproved (GateOperatorService), so it grants no access.
-        // D-167: UserProfile lives on the App DB, saved separately from the
+        // UserProfile lives on the App DB, saved separately from the
         // Identity-side user-state flip.
         await appDbContext.SaveChangesAsync(cancellationToken);
         await accounts.UpdateAsync(subject).EnsureSuccessAsync();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // P10 — revoke every refresh token so the subject's next API
+        // Revoke every refresh token so the subject's next API
         // call gets a fresh access token with account_state=Approved.
         // Without this, a previously-pending session could keep using
         // its stale token for ≤ 15 minutes.
@@ -99,14 +106,14 @@ internal sealed partial class AdminAccountService
             ActorUserId = actorUserId,
             SubjectUserId = subject.Id,
             SubjectEmail = subject.Email,
-            // CS-D (D-386) — record the assigned tier when one was set so the
+            // Record the assigned tier when one was set so the
             // approve-time tier assignment is auditable alongside the QR id.
             Detail = assignedProfileTypeId is { } tierId
                 ? $"{profile.QrId}; profileType={tierId}"
                 : profile.QrId,
         }, cancellationToken);
 
-        // P13 — D-054: notify the approved user (with their QR id) +
+        // Notify the approved user (with their QR id) +
         // email.
         var approvedTokens = new Dictionary<string, string>
         {
@@ -122,7 +129,7 @@ internal sealed partial class AdminAccountService
             Body = $"Your event QR id is {profile.QrId}. Sign in to view it on your profile.",
             BodyArabic = $"رمز QR الخاص بك للفعالية هو {profile.QrId}. سجّل الدخول لعرضه في ملفك الشخصي.",
             Severity = NotificationSeverity.Success,
-            SendEmail = true,
+            SendEmail = sendApprovalEmail,
             PreRenderedEmailHtml = NotificationEmailTemplates.Render(
                 NotificationKind.AccountApproved, "en", approvedTokens),
         }, cancellationToken);
@@ -134,26 +141,26 @@ internal sealed partial class AdminAccountService
     {
         var subject = await LoadPendingSubjectAsync(
             actorUserId, subjectUserId, scope, cancellationToken);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         subject.AccountState = AccountState.Rejected;
         subject.UpdatedAt = now;
         subject.StateChangedAt = now;
         subject.StateChangedByUserId = actorUserId;
 
-        // D-106: persist the rejection text on UserProfile (was on the
-        // user row pre-D-106). EN-only admin input mirrors to the Arabic
-        // column as a graceful fallback (R1 default).
+        // Persist the rejection text on UserProfile (it used to live on the
+        // user row). EN-only admin input mirrors to the Arabic
+        // column as a graceful fallback.
         var profile = await EnsureUserProfileAsync(subject.Id, now, cancellationToken);
         profile.RejectionReason = request.Reason;
         profile.RejectionReasonArabic = request.Reason;
 
         await accounts.UpdateAsync(subject).EnsureSuccessAsync();
-        // D-167: UserProfile lives on App DB.
+        // UserProfile lives on App DB.
         await appDbContext.SaveChangesAsync(cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // P10 — revoke every refresh token so the subject's next API
-        // call mints a token with account_state=Rejected (and the P11
+        // Revoke every refresh token so the subject's next API
+        // call mints a token with account_state=Rejected (and the
         // authorization handler then routes them to the rejected page).
         await refreshTokenRepository.RevokeAllForUserAsync(
             subject.Id, now, cancellationToken);
@@ -168,7 +175,7 @@ internal sealed partial class AdminAccountService
             Detail = request.Reason,
         }, cancellationToken);
 
-        // P13 — D-054: notify the rejected user (with the reason) +
+        // Notify the rejected user (with the reason) +
         // email.
         var rejectedTokens = new Dictionary<string, string>
         {
@@ -190,10 +197,9 @@ internal sealed partial class AdminAccountService
         }, cancellationToken);
     }
 
-    /// <summary>P7c — maps an approval scope + outcome to the right
-    /// audit event name. D-186 reframed the discriminator from UserType
-    /// (Visitor / Other / Admin) to ApprovalScope (AudienceVisitor /
-    /// PartnerOther / Admin) so the audit-event names stay the same
+    /// <summary>Maps an approval scope + outcome to the right
+    /// audit event name. The discriminator is ApprovalScope (AudienceVisitor /
+    /// PartnerOther / Admin) rather than UserType, so the audit-event names stay the same
     /// even though Other accounts are now Visitor-typed under the
     /// hood.</summary>
     private static string ApprovalEventType(ApprovalScope scope, bool approved) => scope switch
@@ -207,10 +213,10 @@ internal sealed partial class AdminAccountService
     };
 
     /// <summary>Loads a user that must currently be in PendingApproval
-    /// **and** match the expected approval scope (D-186) — any other
+    /// **and** match the expected approval scope — any other
     /// state or a scope-mismatch throws <see cref="ApiException"/>.
     /// Shared by every approve/reject path; the scope check closes the
-    /// "approve an admin via the visitor URL" hole AND the new D-186
+    /// "approve an admin via the visitor URL" hole AND the
     /// "approve a sponsor via the visitors URL" hole.</summary>
     private async Task<SimfUser> LoadPendingSubjectAsync(
         Guid actorUserId, Guid subjectUserId, ApprovalScope scope,
@@ -226,9 +232,9 @@ internal sealed partial class AdminAccountService
                 "The target account is not of the expected type.",
                 "نوع الحساب المستهدف لا يطابق المتوقع.");
         }
-        // D-186: within the Visitor scope, also enforce the
+        // Within the Visitor scope, also enforce the
         // audience-vs-partner queue match via the linked ProfileType.
-        // D-186 review-pass (threat-detection H-2): emit a dedicated
+        // Emit a dedicated
         // audit row on the scope-mismatch branch so SOC rule
         // m-004-approval-scope-probe can fire on a probe pattern
         // (the 404 itself is indistinguishable from a missing id).
@@ -261,7 +267,7 @@ internal sealed partial class AdminAccountService
         return subject;
     }
 
-    // D-186 — checks the subject's linked ProfileType.IsVisitor matches
+    // Checks the subject's linked ProfileType.IsVisitor matches
     // the expected scope flag. Audience scope (true) accepts a missing
     // ProfileType (a self-signed-up visitor without an admin-assigned
     // type still lands on the audience queue); partner scope (false)
@@ -289,7 +295,7 @@ internal sealed partial class AdminAccountService
     }
 
     /// <summary>
-    /// D-106: returns the tracked <see cref="UserProfile"/> for the user,
+    /// Returns the tracked <see cref="UserProfile"/> for the user,
     /// creating a stub row if none exists. The approve/reject flows need
     /// a profile row to write the QR / rejection text onto. Admin-typed
     /// users normally never reach approve/reject (Admins don't carry a
@@ -300,7 +306,7 @@ internal sealed partial class AdminAccountService
     /// the unit of work completes.
     /// </summary>
     private async Task<UserProfile> EnsureUserProfileAsync(
-        Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
+        Guid userId, DateTime now, CancellationToken cancellationToken)
     {
         var profile = await appDbContext.UserProfiles
             .SingleOrDefaultAsync(p => p.UserId == userId, cancellationToken);

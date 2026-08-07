@@ -1,4 +1,4 @@
-@* P5.1d — D-244 (FDS-003 §5.4): the hall-door arrival console. An operator picks
+@* The hall-door arrival console. An operator picks
    an active session, then scans/enters an attendee's badge QR to record a
    QrScan hall arrival. Gated by HallArrivals.* . *@
 @page "/admin/hall-arrivals"
@@ -42,10 +42,10 @@
                                MaxLength="64"
                                @bind-Value="_qrId" Disabled="_busy" />
                 <div class="simf-form__actions">
-                    <SimfButton Type="button" Loading="_busy" OnClick="RecordAsync">
+                    <SimfButton Type="button" Loading="_busy" OnClick="RecordAsync" LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.HallArrivals.Action.Record"]
                     </SimfButton>
-                    <SimfButton Type="button" Loading="_busy" OnClick="DepartAsync">
+                    <SimfButton Type="button" Loading="_busy" OnClick="DepartAsync" LoadingLabel="@L["Grid.Working"]">
                         @L["Admin.HallArrivals.Action.CheckOut"]
                     </SimfButton>
                 </div>

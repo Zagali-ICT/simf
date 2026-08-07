@@ -2,32 +2,32 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات 1408:9726) — which kind of request a unified
+/// <summary>Used by the الطلبات feed: which kind of request a unified
 /// "My requests" row is. Display discriminator only (not persisted as such —
 /// each kind has its own table); safe to extend. The app renders the type
 /// headline (طلب لقاء مع متحدث / طلب حضور جلسة VIP / …) from this value.</summary>
 public enum AppRequestKind
 {
-    /// <summary>A meeting the user requested with a speaker (D-269/D-475).</summary>
+    /// <summary>A meeting the user requested with a speaker.</summary>
     SpeakerMeeting = 0,
 
-    /// <summary>A delegation↔delegation meeting the user requested (D-478).
+    /// <summary>A delegation↔delegation meeting the user requested.
     /// Read-only in the app — managed on the Control Panel.</summary>
     DelegationMeeting = 1,
 
-    /// <summary>A seat booking for a session (D-175/D-227) — the "طلب حضور جلسة
+    /// <summary>A seat booking for a session — the "طلب حضور جلسة
     /// VIP" row. Surfaced from the user's own seat reservations; no new entity
-    /// (owner decision, D-500). Cancelled/managed from the join-session flow.</summary>
+    /// by owner decision. Cancelled/managed from the join-session flow.</summary>
     SessionAttendance = 2,
 
-    /// <summary>A participation-document request (D-500, طلب وثيقة المشاركة).</summary>
+    /// <summary>A participation-document request (طلب وثيقة المشاركة).</summary>
     ParticipationDocument = 3,
 
-    /// <summary>A badge-update request (D-500, طلب تحديث البادج).</summary>
+    /// <summary>A badge-update request (طلب تحديث البادج).</summary>
     BadgeUpdate = 4,
 }
 
-/// <summary>D-500 (Wave 5, الطلبات 1408:9726) — one row on the mobile unified
+/// <summary>One row on the mobile الطلبات unified
 /// "My requests" screen: a request the signed-in user submitted, with its
 /// current status. <see cref="Status"/> is the unified display state — seat
 /// bookings map their <c>BookingStatus</c> onto this enum
@@ -43,42 +43,49 @@ public sealed record AppRequestItem(
     MeetingRequestStatus Status,
     /// <summary>The date shown on the card — the session start / meeting slot;
     /// null falls back to <see cref="CreatedAt"/>.</summary>
-    DateTimeOffset? EventDate,
-    DateTimeOffset CreatedAt,
+    DateTime? EventDate,
+    DateTime CreatedAt,
     /// <summary>True when the signed-in user may cancel this request from the app
     /// (their own, still Pending, and a cancellable kind — speaker / document /
     /// badge; never delegation or session-attendance, which cancel elsewhere).</summary>
     bool CanCancel,
-    /// <summary>D-590 — optional secondary descriptor shown under the name on the
-    /// المقابلات card (Figma 1701:9406). For a speaker meeting this carries the
+    /// <summary>Optional secondary descriptor shown under the name on the
+    /// المقابلات card. For a speaker meeting this carries the
     /// speaker's <c>Rank</c> (e.g. "باحث بيئي"), the same descriptor the public
     /// speaker profile shows; null for the other kinds, where the app falls back
-    /// to the meeting-type headline. Append-only (D-219): the app reads it by
+    /// to the meeting-type headline. Append-only: the app reads it by
     /// name and older clients ignore it.</summary>
     string? Subtitle = null,
-    /// <summary>D-745 — for a <see cref="AppRequestKind.SpeakerMeeting"/> row, the
+    /// <summary>For a <see cref="AppRequestKind.SpeakerMeeting"/> row, the
     /// speaker's <c>Id</c> so the bilateral-meetings card can render the speaker's
     /// photo from the existing public asset route
     /// (<c>GET /app/assets/SpeakerPhoto/{id}/image</c>). Null for the other kinds
-    /// (delegation carries no speaker photo). Append-only (D-219): older clients
+    /// (delegation carries no speaker photo). Append-only: older clients
     /// ignore it.</summary>
     Guid? SpeakerId = null,
-    /// <summary>D-745 — the ISO 3166-1 numeric country id for the bilateral-meetings
+    /// <summary>The ISO 3166-1 numeric country id for the bilateral-meetings
     /// card's flag: the speaker's nationality on a speaker meeting, the target
     /// country on a delegation meeting. Null for the non-meeting kinds / when unset.
-    /// Append-only (D-219): older clients ignore it.</summary>
+    /// Append-only: older clients ignore it.</summary>
     int? CountryId = null,
-    /// <summary>R-3 — the admin's response note for a decided speaker / document / badge
-    /// request (e.g. the rejection reason). Null when none. Append-only (D-219): the app
+    /// <summary>The admin's response note for a decided speaker / document / badge
+    /// request (e.g. the rejection reason). Null when none. Append-only: the app
     /// reads it by name and older clients ignore it.</summary>
     string? ResponseNote = null,
     /// <summary>2026-07-19 (owner) — the Arabic twin of <see cref="Subtitle"/>
     /// (from <c>Speaker.RankArabic</c>), so the المقابلات card shows the speaker's
     /// rank in the active locale. Null for the non-speaker kinds / when unset.
-    /// Append-only (D-219): older clients ignore it.</summary>
-    string? SubtitleArabic = null);
+    /// Append-only: older clients ignore it.</summary>
+    string? SubtitleArabic = null,
+    /// <summary>True once an operator checked the meeting in at the hall
+    /// (the request is <see cref="MeetingRequestStatus.Done"/> server-side). The
+    /// <see cref="Status"/> itself still folds Done → Accepted so the shipped mobile
+    /// wire contract (values 0–3) is preserved; this append-only flag is how a client
+    /// tells "confirmed" from "attended". Always false for the non-meeting kinds.
+    /// Append-only: older clients ignore it.</summary>
+    bool CheckedIn = false);
 
-/// <summary>D-500 — body for <c>POST /app/my-requests/cancel</c>: the requester
+/// <summary>Body for <c>POST /app/my-requests/cancel</c>: the requester
 /// withdraws one of their own still-pending requests.</summary>
 public sealed class CancelMyRequestBody
 {

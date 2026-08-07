@@ -17,6 +17,8 @@
 | E2E-MOBSAVED-005 | Empty state when nothing is saved; count row = 0 | empty | P2 | authored ✓ (widget — empty) |
 | E2E-MOBSAVED-006 | Auth-gate — a guest deep-linking `/saved-sessions` is redirected to sign-in | auth | P2 | authored (route `_routeRoles[205]`) |
 | E2E-MOBSAVED-007 | RTL — the header, count row, chips and cards mirror right-to-left under Arabic | i18n | P2 | authored (RTL render) |
+| E2E-MOBSAVED-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOBSAVED-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

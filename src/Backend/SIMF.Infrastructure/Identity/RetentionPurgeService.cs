@@ -3,15 +3,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// A4 (NCA data-minimisation) — periodic purge of dead security artifacts. Each
+/// NCA data-minimisation — periodic purge of dead security artifacts. Each
 /// table is a single set-based <c>ExecuteDelete</c> against its own context, so
 /// the Identity DB (refresh tokens, 2FA tickets, account codes) and the App DB
 /// (gate-scan idempotency records) are swept independently — no cross-database
-/// transaction (D-157). The retention windows are grace periods past each
+/// transaction. The retention windows are grace periods past each
 /// artifact's functional lifetime, all clearly beyond any replay /
 /// reuse-detection / rate-limit / forensic use.
 /// </summary>
@@ -21,7 +22,7 @@ internal sealed class RetentionPurgeService(
     TimeProvider timeProvider,
     ILogger<RetentionPurgeService> logger) : IRetentionPurgeService
 {
-    // Refresh tokens expire at the 24h session cap (D-443); keep them a further
+    // Refresh tokens expire at the 24h session cap; keep them a further
     // week so reuse-detection + short-term forensics still resolve a presented
     // token before it is purged.
     private static readonly TimeSpan RefreshTokenRetention = TimeSpan.FromDays(7);
@@ -39,9 +40,9 @@ internal sealed class RetentionPurgeService(
     public async Task<RetentionPurgeResult> PurgeExpiredAsync(
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
-        // Precompute each cutoff as a plain DateTimeOffset so the query is an
-        // unambiguous `column < @cutoff` (no in-query DateTimeOffset arithmetic).
+        var now = timeProvider.SimfNow();
+        // Precompute each cutoff as a plain DateTime so the query is an
+        // unambiguous `column < @cutoff` (no in-query DateTime arithmetic).
         var refreshCutoff = now - RefreshTokenRetention;
         var secondFactorCutoff = now - SecondFactorTokenRetention;
         var accountCodeCutoff = now - AccountCodeRetention;

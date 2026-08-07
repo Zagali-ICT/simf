@@ -79,8 +79,7 @@ Solution file: `SIMF.slnx`.
 | `SIMF.Domain` | `SIMF.Common` | Entities, aggregates, enums, domain rules. No framework deps. |
 | `SIMF.Application` | `SIMF.Domain`, `SIMF.Common`, `SIMF.Contracts` | Use cases, service abstractions. No ASP.NET/EF. |
 | `SIMF.Infrastructure` | `SIMF.Domain`, `SIMF.Application` | EF Core contexts, storage, e-mail, identity, JWT, audit interceptors. |
-| `SIMF.Api` | `SIMF.Application`, `SIMF.Infrastructure`, `SIMF.RealTime`, `SIMF.Common`, `SIMF.Contracts` | FastEndpoints host, middleware, auth, policies, workers. |
-| `SIMF.RealTime` | `SIMF.Application` | Reserved for SignalR push. **Placeholder** (csproj only) on this branch. |
+| `SIMF.Api` | `SIMF.Application`, `SIMF.Infrastructure`, `SIMF.Common`, `SIMF.Contracts` | FastEndpoints host, middleware, auth, policies, workers. |
 
 **Shared (`src/Shared/`)**
 
@@ -562,7 +561,7 @@ anonymous); the website has no per-page permission policies.
 ### 10.1 Layout and packages
 
 - App: `src/Mobile/simf_app` (Flutter, Riverpod, go_router, Dio).
-- Local packages (`src/Mobile/packages/`, tracked): **`simf_data_pkg`** (single HTTP layer:
+- Local packages (`src/Mobile/simf_app/packages/`, tracked): **`simf_data_pkg`** (single HTTP layer:
   `SimfApiClient`, `ApiResult`, `ApiFailure`, secure/prefs storage) and **`simf_auth_pkg`**
   (auth controller/state, session, `AppRole`, biometric ES256 device keys).
 
@@ -770,8 +769,9 @@ canonical, timestamped list.)
 
 ### 14.4 As-built deltas / open items
 
-- **SignalR / `SIMF.RealTime`** is a placeholder — no hubs are wired into the API on this
-  branch; clients use REST. Closing this is outstanding work.
+- **Real-time push is not implemented** — no SignalR hubs are registered and clients use REST.
+  The empty `SIMF.RealTime` placeholder project was removed on 2026-08-05; hubs would be hosted
+  by `SIMF.Api` when push is built. Closing this is outstanding work.
 - The mobile **self-signed-TLS bypass** and **committed development secrets** are flagged
   security items for owner/operations action before handover.
 - Specific **load-test thresholds** and the **monitoring/alerting toolchain** are unset.

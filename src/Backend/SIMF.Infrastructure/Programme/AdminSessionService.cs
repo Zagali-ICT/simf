@@ -1,15 +1,20 @@
-// Tests: SIMF.Api.Tests/AdminSessionsTests.cs (+ D-349 live-URL validation)
-// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
-// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording)
+// Tests: SIMF.Api.Tests/AdminSessionsTests.cs,
+//        SIMF.Api.Tests/GridDateSortKeyTests.cs
+// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
+// Tests: SIMF.Api.Tests/SessionRecordingTests.cs
+// Tests: SIMF.Api.Tests/SessionLiveNoticeTests.cs (informational live notice)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Application.Programme.Abstractions;
+using Microsoft.Extensions.Options;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Sessions;
 using SIMF.Domain.Programme;
 using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
@@ -17,11 +22,11 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// D-165 (gap doc G3, PDF §2.9) — admin CRUD over <see cref="Session"/>.
+/// Admin CRUD over <see cref="Session"/>.
 /// Real DB FK to <see cref="Hall"/>, M-to-M joins via
 /// <see cref="SessionSpeaker"/> + <see cref="SessionTheme"/>. Effective
-/// capacity = <c>CapacityOverride ?? Hall.SeatCount</c> (PDF §2.9 —
-/// reconfigured rooms override; most sessions inherit).
+/// capacity = <c>CapacityOverride ?? Hall.SeatCount</c> — a reconfigured
+/// room overrides it; most sessions inherit.
 /// </summary>
 internal sealed class AdminSessionService(
     SimfAppDbContext dbContext,
@@ -29,8 +34,23 @@ internal sealed class AdminSessionService(
     TimeProvider timeProvider,
     IFileService fileService,
     INotificationDispatcher notifications,
+    IOptionsMonitor<WalkInModeOptions> walkInMode,   // the grace fallback
     ILogger<AdminSessionService> logger) : IAdminSessionService
 {
+    /// <summary>The grace a session inherits when neither it nor its hall
+    /// sets one. Read per call so arming the walk-in mode needs no restart.</summary>
+    private int GlobalArrivalGraceMinutes =>
+        walkInMode.CurrentValue.ResolveArrivalGraceMinutes(timeProvider.SimfNow());
+
+    // The page that can actually release a held seat. The old copy sent the
+    // admin to the Bookings desk, which is an explicitly read-only monitor with no
+    // row actions, so the instruction could not be carried out. Named once here so
+    // the deactivate-via-update and the delete path stay in step.
+    private const string SeatPlanPageEnglish =
+        "the Session seat plans page (/admin/sessions/seat-plans)";
+    private const string SeatPlanPageArabic =
+        "صفحة مخططات مقاعد الجلسات (/admin/sessions/seat-plans)";
+
     public async Task<GridPage<AdminSessionSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
@@ -74,12 +94,23 @@ internal sealed class AdminSessionService(
             ("code", false) => rows.OrderBy(session => session.Code),
             ("title", true) => rows.OrderByDescending(session => session.Title),
             ("title", false) => rows.OrderBy(session => session.Title),
-            ("endutc", true) => rows.OrderByDescending(session => session.End),
-            ("endutc", false) => rows.OrderBy(session => session.End),
+            // "start" / "end" match the grid column Keys in SessionsList.razor. They
+            // used to read an older persisted key, left behind when those columns
+            // were renamed, and no caller ever sent it. The effect was worse than
+            // a dead sort: BOTH date columns fell through to the catch-all, so Start
+            // could only ever sort ascending and clicking End sorted the grid by
+            // START. Add a column here and you must add its key here too.
+            ("start", true) => rows.OrderByDescending(session => session.Start),
+            ("start", false) => rows.OrderBy(session => session.Start),
+            ("end", true) => rows.OrderByDescending(session => session.End),
+            ("end", false) => rows.OrderBy(session => session.End),
             _ => rows.OrderBy(session => session.Start),
         };
 
         var total = await rows.CountAsync(cancellationToken);
+        // Hoisted to a local so it rides the query as a parameter (the option
+        // monitor cannot be translated to SQL).
+        var globalGraceMinutes = GlobalArrivalGraceMinutes;
         var page = await rows
             .Skip(skip)
             .Take(top)
@@ -99,14 +130,29 @@ internal sealed class AdminSessionService(
                 session.CategoryId,
                 session.Status,
                 session.Type,
-                // D-506 — carried so the grid Excel export round-trips them.
+                // Carried so the grid Excel export round-trips them.
                 session.Description,
                 session.DescriptionArabic,
                 session.LiveStreamUrl,
                 session.LiveSignLanguageUrl,
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
-                session.SeatSelectionModeOverride))
+                session.SeatSelectionModeOverride,
+                // Same reason: the Excel lane is the only bulk authoring
+                // path, so a notice absent here is a notice destroyed by a
+                // round-trip through it.
+                session.LiveNotice,
+                session.LiveNoticeArabic,
+                // The raw override for the Excel round-trip, then the
+                // resolved value the Hall-Arrivals console filters its session
+                // picker by. The SAME shared rule the hall door applies, so the
+                // picker and the door cannot disagree about which sessions are
+                // open; evaluated client-side in this top-level projection.
+                session.ArrivalGraceMinutesOverride,
+                WalkInModeOptions.ResolveArrivalGraceMinutes(
+                    session.ArrivalGraceMinutesOverride,
+                    session.Hall!.ArrivalGraceMinutes,
+                    globalGraceMinutes)))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSessionSummary>.Of(page, total,
@@ -123,7 +169,38 @@ internal sealed class AdminSessionService(
             .Include(row => row.Themes)
             .Include(row => row.Outcomes)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
-        return session is null ? null : ToDetail(session);
+        if (session is null)
+        {
+            return null;
+        }
+        // Stamp the current seat holding so the CP edit form can warn,
+        // with a real number, that changing the hall or the window will destroy
+        // it. One grouped round-trip; no extra endpoint and no extra permission.
+        var (reservations, adminBlocks) = await CountActiveHoldingAsync(id, cancellationToken);
+        return ToDetail(session) with
+        {
+            ActiveReservationCount = reservations,
+            ActiveAdminBlockCount = adminBlocks,
+        };
+    }
+
+    /// <summary>The session's live seat holding split into the two things a
+    /// hall-or-time change destroys: visitor registrations (an attendee to notify)
+    /// and admin row-blocks (no attendee — the admin must re-paint them). Released
+    /// rows are excluded; a single grouped query serves both counts.</summary>
+    private async Task<(int Reservations, int AdminBlocks)> CountActiveHoldingAsync(
+        Guid sessionId, CancellationToken cancellationToken)
+    {
+        var held = await dbContext.SeatReservations
+            .AsNoTracking()
+            .Where(reservation =>
+                reservation.SessionId == sessionId && reservation.ReleasedAt == null)
+            .GroupBy(reservation => reservation.ReservedForUserId == null)
+            .Select(group => new { IsAdminBlock = group.Key, Count = group.Count() })
+            .ToListAsync(cancellationToken);
+        return (
+            held.SingleOrDefault(row => !row.IsAdminBlock)?.Count ?? 0,
+            held.SingleOrDefault(row => row.IsAdminBlock)?.Count ?? 0);
     }
 
     public async Task<AdminSessionDetail> CreateAsync(
@@ -135,11 +212,13 @@ internal sealed class AdminSessionService(
             request.Code, request.Title, request.TitleArabic);
         ValidateTimeWindow(request.Start, request.End);
         ValidateCapacity(request.CapacityOverride);
+        EnsureArrivalGraceInRange(request.ArrivalGraceMinutesOverride);
         ValidateLiveUrls(request.LiveStreamUrl, request.LiveSignLanguageUrl);
         ValidateTextLengths(
             request.Description, request.DescriptionArabic,
             request.LiveCaptions, request.LiveCaptionsArabic,
-            request.LiveStreamUrl, request.LiveSignLanguageUrl);
+            request.LiveStreamUrl, request.LiveSignLanguageUrl,
+            request.LiveNotice, request.LiveNoticeArabic);
         ValidateSessionDetailFields(
             request.Language, request.LanguageArabic, request.Outcomes);
 
@@ -148,7 +227,7 @@ internal sealed class AdminSessionService(
         await EnsureThemesExistAsync(request.ThemeIds, cancellationToken);
         await EnsureCategoryIsValidAsync(request.CategoryId, cancellationToken);
 
-        // #3 — a new session must declare its type (Workshop / Session / Event).
+        // A new session must declare its type (Workshop / Session / Event).
         if (request.Type is null)
         {
             throw new ApiException(
@@ -156,7 +235,7 @@ internal sealed class AdminSessionService(
                 "A session type is required (Workshop, Session or Event).",
                 "نوع الجلسة مطلوب (ورشة عمل أو جلسة أو حدث).");
         }
-        // #4 — a new non-Event session must have at least one speaker.
+        // A new non-Event session must have at least one speaker.
         if (!SatisfiesSpeakerRule(request.Type, request.Speakers.Count))
         {
             throw new ApiException(
@@ -165,7 +244,7 @@ internal sealed class AdminSessionService(
                 "يجب أن يكون للجلسة (غير الحدث) متحدّث واحد على الأقل.");
         }
 
-        // S-2 — reject a new session that overlaps another in the same hall.
+        // Reject a new session that overlaps another in the same hall.
         await EnsureNoHallTimeOverlapAsync(
             hall.Id, request.Start, request.End, Guid.Empty, cancellationToken);
 
@@ -180,7 +259,7 @@ internal sealed class AdminSessionService(
                 $"توجد جلسة بالرمز '{code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var session = new Session
         {
             Id = Guid.NewGuid(),
@@ -194,19 +273,24 @@ internal sealed class AdminSessionService(
             LanguageArabic = NullIfBlank(request.LanguageArabic),
             HallId = hall.Id,
             CategoryId = request.CategoryId,
-            // D-452 — session type for the app's type tabs.
+            // Session type for the app's type tabs.
             Type = request.Type,
-            // D-485 — optional per-session seat-selection-mode override.
+            // Optional per-session seat-selection-mode override.
             SeatSelectionModeOverride = request.SeatSelectionModeOverride,
+            ArrivalGraceMinutesOverride = request.ArrivalGraceMinutesOverride,
             Start = request.Start,
             End = request.End,
             CapacityOverride = request.CapacityOverride,
-            // §8 — live broadcast stream URLs (manual stub provider).
+            // Live broadcast stream URLs (manual stub provider).
             LiveStreamUrl = NullIfBlank(request.LiveStreamUrl),
             LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl),
-            // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+            // AI live-caption text (manual stub provider, bilingual).
             LiveCaptions = NullIfBlank(request.LiveCaptions),
             LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic),
+            // The informational live notice (bilingual). Blank = no notice;
+            // it never gates the feed.
+            LiveNotice = NullIfBlank(request.LiveNotice),
+            LiveNoticeArabic = NullIfBlank(request.LiveNoticeArabic),
             IsActive = true,
             CreatedAt = now,
         };
@@ -248,13 +332,11 @@ internal sealed class AdminSessionService(
         dbContext.Sessions.Add(session);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={code}; hall={hall.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionCreated,
+            actorUserId,
+            $"id={session.Id}; code={code}; hall={hall.Id}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Session {Code} ({Id})",
@@ -283,11 +365,13 @@ internal sealed class AdminSessionService(
             request.Code, request.Title, request.TitleArabic);
         ValidateTimeWindow(request.Start, request.End);
         ValidateCapacity(request.CapacityOverride);
+        EnsureArrivalGraceInRange(request.ArrivalGraceMinutesOverride);
         ValidateLiveUrls(request.LiveStreamUrl, request.LiveSignLanguageUrl);
         ValidateTextLengths(
             request.Description, request.DescriptionArabic,
             request.LiveCaptions, request.LiveCaptionsArabic,
-            request.LiveStreamUrl, request.LiveSignLanguageUrl);
+            request.LiveStreamUrl, request.LiveSignLanguageUrl,
+            request.LiveNotice, request.LiveNoticeArabic);
         ValidateSessionDetailFields(
             request.Language, request.LanguageArabic, request.Outcomes);
 
@@ -324,9 +408,10 @@ internal sealed class AdminSessionService(
         var timeChanged = session.Start != request.Start
             || session.End != request.End;
 
-        // S-1 — soft-deleting via update (IsActive true -> false) must not orphan
+        // Soft-deleting via update (IsActive true -> false) must not orphan
         // active visitor bookings (same rule as DeactivateAsync).
-        if (session.IsActive && !request.IsActive)
+        var deactivating = session.IsActive && !request.IsActive;
+        if (deactivating)
         {
             var heldVisitorBookings = await dbContext.SeatReservations
                 .CountAsync(reservation =>
@@ -338,19 +423,21 @@ internal sealed class AdminSessionService(
             {
                 throw new ApiException(
                     ErrorCodes.SessionHasActiveBookings, 409,
-                    $"This session has {heldVisitorBookings} active booking(s) — cancel or reject them before deactivating it.",
-                    $"لهذه الجلسة {heldVisitorBookings} حجز نشط — يجب إلغاؤها أو رفضها قبل إلغاء تفعيلها.");
+                    // Name the page that can actually do it. The Bookings monitor
+                    // (/admin/bookings) is read-only with no row actions; releasing a
+                    // held seat is done on the Session seat plans page.
+                    $"This session has {heldVisitorBookings} active booking(s) — release them on {SeatPlanPageEnglish} before deactivating it.",
+                    $"لهذه الجلسة {heldVisitorBookings} حجز نشط — يجب تحريرها من {SeatPlanPageArabic} قبل إلغاء تفعيلها.");
             }
         }
 
-        // S-1 — never shrink the effective capacity below the seats already held
+        // Never shrink the effective capacity below the seats already held
         // (visitor bookings + admin row-blocks), which would silently oversell.
         // Effective capacity = CapacityOverride ?? Hall.Capacity, so CLEARING the
-        // override to null lowers it exactly like reducing it (#7 — a null override
-        // must not bypass this guard); resolve the effective value and check that,
+        // override to null lowers it exactly like reducing it — a null override
+        // must not bypass this guard; resolve the effective value and check that,
         // never just the non-null override. Skipped when the hall or time is
-        // changing, because that path cascade-releases every held seat anyway
-        // (verify correction).
+        // changing, because that path cascade-releases every held seat anyway.
         if (!(hallChanged || timeChanged))
         {
             var effectiveCapacity = request.CapacityOverride ?? hall.Capacity;
@@ -381,14 +468,24 @@ internal sealed class AdminSessionService(
             }
         }
 
-        // S-2 — reject the update if the new hall/time overlaps another session.
-        // Only checked when the slot actually moves (verify correction): a
+        // Reject the update if the new hall/time overlaps another session.
+        // Only checked when the slot actually moves: a
         // title-only edit of a session with a pre-existing overlapping sibling
         // (legacy data) must stay saveable, and deactivation must not be blocked.
         if (hallChanged || timeChanged)
         {
             await EnsureNoHallTimeOverlapAsync(
                 hall.Id, request.Start, request.End, id, cancellationToken);
+        }
+
+        // Unticking Active on the edit form cancels the session exactly as the
+        // Deactivate action does, so it owes the same notice. Resolve the audience
+        // BEFORE the row is hidden and before the cascade releases anything; the
+        // dispatch itself happens after the commit, in the shared announce step.
+        List<Guid> cancellationAudience = [];
+        if (deactivating)
+        {
+            cancellationAudience = await ResolveCancellationAudienceAsync(id, cancellationToken);
         }
 
         session.Code = code;
@@ -401,19 +498,35 @@ internal sealed class AdminSessionService(
         session.LanguageArabic = NullIfBlank(request.LanguageArabic);
         session.HallId = hall.Id;
         session.CategoryId = request.CategoryId;
-        session.Type = request.Type; // D-452
-        session.SeatSelectionModeOverride = request.SeatSelectionModeOverride; // D-485
+        session.Type = request.Type;
+        session.SeatSelectionModeOverride = request.SeatSelectionModeOverride;
+        session.ArrivalGraceMinutesOverride = request.ArrivalGraceMinutesOverride;
         session.Start = request.Start;
         session.End = request.End;
+        // A rescheduled session must stay remindable and rateable. Both workers
+        // treat a non-null stamp as "already done" (SessionReminderWorker filters on
+        // ReminderSent == null, SessionRatingPromptWorker on RatingPromptSent ==
+        // null), so a session moved after its reminder fired would never fire again
+        // for the new time. Cleared ONLY when the window actually moves — an unrelated
+        // save (title, speakers, captions) must not re-arm an already-sent reminder.
+        if (timeChanged)
+        {
+            session.ReminderSent = null;
+            session.RatingPromptSent = null;
+        }
         session.CapacityOverride = request.CapacityOverride;
-        // §8 — live broadcast stream URLs (manual stub provider).
+        // Live broadcast stream URLs (manual stub provider).
         session.LiveStreamUrl = NullIfBlank(request.LiveStreamUrl);
         session.LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl);
-        // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+        // AI live-caption text (manual stub provider, bilingual).
         session.LiveCaptions = NullIfBlank(request.LiveCaptions);
         session.LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic);
+        // The informational live notice (bilingual). Clearing the CP input
+        // stores null again, which simply removes the banner.
+        session.LiveNotice = NullIfBlank(request.LiveNotice);
+        session.LiveNoticeArabic = NullIfBlank(request.LiveNoticeArabic);
         session.IsActive = request.IsActive;
-        session.UpdatedAt = timeProvider.GetUtcNow();
+        session.UpdatedAt = timeProvider.SimfNow();
 
         ReplaceSpeakerLinks(session, request.Speakers);
         ReplaceThemeLinks(session, request.ThemeIds);
@@ -439,22 +552,54 @@ internal sealed class AdminSessionService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={code}; active={session.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionUpdated,
+            actorUserId,
+            $"id={session.Id}; code={code}; active={session.IsActive}",
+            cancellationToken);
 
-        // S-1 — notify each affected visitor AFTER the commit (best-effort; the
-        // dispatcher writes to the Identity DB via its own context, D-157).
+        // The cascade release used to leave no trace anywhere: the admin saw
+        // only the generic "was updated" toast and the admin row-blocks vanished
+        // silently (they have no attendee, so even the notify path early-returns).
+        // Record WHAT was destroyed as its own audit row, and hand the counts back on
+        // the response so the Control Panel can say so.
+        var releasedForVisitors = releasedReservations
+            .Count(reservation => reservation.ReservedForUserId is not null);
+        var releasedAdminBlocks = releasedReservations.Count - releasedForVisitors;
+        if (releasedReservations.Count > 0)
+        {
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.SeatReservationReleased,
+                actorUserId,
+                $"session={session.Id}; code={code}; reason="
+                    + $"{(hallChanged ? "HallChanged" : "Rescheduled")}; "
+                    + $"reservations={releasedForVisitors}; adminBlocks={releasedAdminBlocks}",
+                cancellationToken);
+        }
+
+        // Notify each affected visitor AFTER the commit (best-effort; the
+        // dispatcher writes to the Identity DB via its own context).
         foreach (var reservation in releasedReservations)
         {
             await TryNotifyBookingReleasedAsync(reservation, session, cancellationToken);
         }
 
-        return (await GetAsync(session.Id, cancellationToken))!;
+        // The edit form's Active checkbox is a fully reachable cancellation path,
+        // so it takes the SAME announce step as DeactivateAsync: the notified=N audit
+        // row plus the bilingual in-app + email notice. Without this the admin who
+        // unticks Active instead of pressing Deactivate reproduces the exact silence
+        // this step was written to end.
+        if (deactivating)
+        {
+            await AnnounceSessionCancelledAsync(
+                actorUserId, session, cancellationAudience, cancellationToken);
+        }
+
+        return (await GetAsync(session.Id, cancellationToken))! with
+        {
+            ReleasedReservationCount = releasedForVisitors,
+            ReleasedAdminBlockCount = releasedAdminBlocks,
+        };
     }
 
     public async Task DeactivateAsync(
@@ -486,24 +631,113 @@ internal sealed class AdminSessionService(
         {
             throw new ApiException(
                 ErrorCodes.SessionHasActiveBookings, 409,
-                $"This session has {activeBookings} active booking(s) — cancel or reject them before deleting it.",
-                $"لهذه الجلسة {activeBookings} حجز نشط — يجب إلغاؤها أو رفضها قبل حذفها.");
+                // Name the page that can actually do it (see UpdateAsync).
+                $"This session has {activeBookings} active booking(s) — release them on {SeatPlanPageEnglish} before deleting it.",
+                $"لهذه الجلسة {activeBookings} حجز نشط — يجب تحريرها من {SeatPlanPageArabic} قبل حذفها.");
         }
 
+        // Resolve the audience BEFORE the row is hidden. Cancelling a session
+        // used to write an audit row and nothing else: the card just disappeared from
+        // the app's "my sessions" list and the public agenda with no message at all.
+        var audience = await ResolveCancellationAudienceAsync(id, cancellationToken);
+
         session.IsActive = false;
-        session.UpdatedAt = timeProvider.GetUtcNow();
+        session.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={session.Code}",
-        }, cancellationToken);
+        await AnnounceSessionCancelledAsync(actorUserId, session, audience, cancellationToken);
     }
 
-    // P3.2 — D-231: the legal adjacent lifecycle moves. Any pair not listed
+    /// <summary>The single "this session is cancelled" step, shared by BOTH ways an
+    /// admin can cancel one: the Deactivate action and unticking Active on the edit form
+    /// (<see cref="UpdateAsync"/>). Call it AFTER the commit, with an audience resolved
+    /// BEFORE the row was hidden. Writes the SessionDeactivated audit row carrying
+    /// notified=N, then tells each recipient — best-effort, because the dispatcher
+    /// writes to the Identity DB via its own context and cannot share this
+    /// transaction.</summary>
+    private async Task AnnounceSessionCancelledAsync(
+        Guid actorUserId,
+        Session session,
+        IReadOnlyList<Guid> audience,
+        CancellationToken cancellationToken)
+    {
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionDeactivated,
+            actorUserId,
+            $"id={session.Id}; code={session.Code}; notified={audience.Count}",
+            cancellationToken);
+
+        foreach (var userId in audience)
+        {
+            await TryNotifySessionCancelledAsync(userId, session, cancellationToken);
+        }
+    }
+
+    /// <summary>Everyone who must be told a session was cancelled: the holders of
+    /// an active seat reservation, plus everyone who favourited it. Both audiences lose
+    /// the session card from their app agenda the moment the row is hidden, and neither
+    /// was told anything before. Distinct user ids, both queries on the App DB only
+    /// (a favourite / reservation carries a bare Guid to the Identity DB).</summary>
+    private async Task<List<Guid>> ResolveCancellationAudienceAsync(
+        Guid sessionId, CancellationToken cancellationToken)
+    {
+        var booked = await dbContext.SeatReservations
+            .AsNoTracking()
+            .Where(reservation =>
+                reservation.SessionId == sessionId
+                && reservation.ReleasedAt == null
+                && reservation.ReservedForUserId != null)
+            .Select(reservation => reservation.ReservedForUserId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var favourited = await dbContext.SessionFavourites
+            .AsNoTracking()
+            .Where(favourite => favourite.SessionId == sessionId)
+            .Select(favourite => favourite.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        return booked.Union(favourited).ToList();
+    }
+
+    /// <summary>The "this session was cancelled" notice: an in-app row AND an
+    /// email (a visitor who never opens the app would otherwise turn up to a cancelled
+    /// session). Bilingual; the time is the Saudi wall clock, never a zoned stamp. Best-effort —
+    /// one failed recipient never aborts the rest, and the session is already
+    /// cancelled either way.</summary>
+    private async Task TryNotifySessionCancelledAsync(
+        Guid userId, Session session, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await notifications.DispatchAsync(new NotificationRequest
+            {
+                UserId = userId,
+                Kind = NotificationKind.SessionCancelled,
+                Title = "Session cancelled",
+                TitleArabic = "تم إلغاء الجلسة",
+                Body = $"\"{session.Title}\", scheduled for {session.Start.FormatSaudi()}, has been cancelled. It no longer appears in the programme.",
+                BodyArabic = $"تم إلغاء جلسة \"{session.TitleArabic}\" المقرّرة بتاريخ {session.Start.FormatSaudi()}. لم تعد تظهر في البرنامج.",
+                Severity = NotificationSeverity.Warning,
+                RelatedEntityType = "Session",
+                RelatedEntityId = session.Id,
+                // No DeduplicateByRelatedEntity: the audience is already a distinct
+                // set, so a user who both booked AND favourited is notified once, and
+                // a genuine second cancellation (re-activated, then cancelled again)
+                // must not be silently swallowed — that is the very failure this fixes.
+                SendEmail = true,
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Session-cancelled notification failed for user {UserId} on session {SessionId}",
+                userId, session.Id);
+        }
+    }
+
+    // The legal adjacent lifecycle moves. Any pair not listed
     // (and not a same-status no-op) is rejected — so the Committee cannot
     // skip a step (e.g. Scheduled → Published) by hand.
     private static readonly HashSet<(SessionStatus From, SessionStatus To)> AllowedTransitions =
@@ -541,8 +775,8 @@ internal sealed class AdminSessionService(
                 $"لا يمكن نقل الجلسة من {from} إلى {status}.");
         }
 
-        var now = timeProvider.GetUtcNow();
-        // S-7 — adjacency alone is not enough: a session cannot be marked Held
+        var now = timeProvider.SimfNow();
+        // Adjacency alone is not enough: a session cannot be marked Held
         // before it has started, nor Recorded/Published without an attached
         // recording. Default guard (no admin override in this increment).
         ValidateStatusGuards(session, status, now);
@@ -558,13 +792,11 @@ internal sealed class AdminSessionService(
                 => AuditEvents.SessionUnpublished,
             _ => AuditEvents.SessionStatusChanged,
         };
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = eventType,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={session.Code}; {from}->{status}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            eventType,
+            actorUserId,
+            $"id={session.Id}; code={session.Code}; {from}->{status}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} moved Session {Code} ({Id}) {From} -> {To}",
@@ -584,7 +816,7 @@ internal sealed class AdminSessionService(
     {
         var session = await LoadFullAsync(id, cancellationToken);
 
-        // D-568 (S7) — stream the bytes into the unified StoredFile store (Internal
+        // Stream the bytes into the unified StoredFile store (Internal
         // tier, plaintext + seekable for Range streaming, owner = the session). The
         // store never buffers the whole video and computes the SHA-256 on the fly;
         // RecordingStoredFileName is repurposed as the bare-Guid pointer + "has
@@ -594,7 +826,7 @@ internal sealed class AdminSessionService(
             FileService.SessionRecording, session.Id, content, fileName, contentType,
             System.IO.Path.GetExtension(fileName), actorUserId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         session.RecordingStoredFileName = result.Id.ToString();
         session.RecordingFileName = fileName;
         session.RecordingContentType = contentType;
@@ -608,13 +840,11 @@ internal sealed class AdminSessionService(
         // source of truth; SessionRecording is DeletableDefault:true).
         await RetireRecordingAsync(priorPointer, result.Id, actorUserId, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionRecordingUploaded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={session.Code}; file={fileName}; bytes={sizeBytes}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionRecordingUploaded,
+            actorUserId,
+            $"id={session.Id}; code={session.Code}; file={fileName}; bytes={sizeBytes}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} uploaded recording for Session {Code} ({Id}), {Bytes} bytes",
@@ -642,25 +872,23 @@ internal sealed class AdminSessionService(
         session.RecordingSizeBytes = null;
         session.RecordingUploadedAt = null;
         session.RecordingUploadedByUserId = null;
-        session.UpdatedAt = timeProvider.GetUtcNow();
+        session.UpdatedAt = timeProvider.SimfNow();
         // Clear the metadata first, then drop the file: if the file delete
         // fails the app already sees "no recording" and only an orphan file
         // is left behind (harmless), never a row pointing at a missing file.
         await dbContext.SaveChangesAsync(cancellationToken);
         await RetireRecordingAsync(storedFileName, null, actorUserId, cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionRecordingDeleted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={session.Id}; code={session.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionRecordingDeleted,
+            actorUserId,
+            $"id={session.Id}; code={session.Code}",
+            cancellationToken);
 
         return ToDetail(session);
     }
 
-    /// <summary>D-568 (S7) — best-effort retirement of a recording's <c>StoredFile</c>
+    /// <summary>Best-effort retirement of a recording's <c>StoredFile</c>
     /// (soft-delete + byte-unlink). The row is already updated (source of truth), so a
     /// delete failure must not fail the operation — worst case leaves one orphan blob.
     /// No-op when the pointer is absent/unparseable or is the just-uploaded file.</summary>
@@ -681,7 +909,7 @@ internal sealed class AdminSessionService(
 
     // -- helpers --------------------------------------------------------------
 
-    // P3.2 — loads the session with the navigations ToDetail needs, tracked
+    // Loads the session with the navigations ToDetail needs, tracked
     // (callers mutate it). Shared by SetStatus / Upload / Delete recording.
     private async Task<Session> LoadFullAsync(Guid id, CancellationToken cancellationToken) =>
         await dbContext.Sessions
@@ -699,7 +927,7 @@ internal sealed class AdminSessionService(
         string codeRaw, string titleRaw, string titleArabicRaw)
     {
         var code = (codeRaw ?? string.Empty).Trim().ToUpperInvariant();
-        if (code.Length is < 2 or > 16)
+        if (code.Length is < SessionRules.MinCodeLength or > SessionRules.MaxCodeLength)
         {
             throw new ApiException(
                 ErrorCodes.SessionInvalid, 400,
@@ -707,7 +935,7 @@ internal sealed class AdminSessionService(
                 "يجب أن يتراوح طول رمز الجلسة بين 2 و 16 حرفاً.");
         }
         var title = (titleRaw ?? string.Empty).Trim();
-        if (title.Length is < 1 or > 256)
+        if (title.Length is < SessionRules.MinTitleLength or > SessionRules.MaxTitleLength)
         {
             throw new ApiException(
                 ErrorCodes.SessionInvalid, 400,
@@ -715,7 +943,7 @@ internal sealed class AdminSessionService(
                 "يجب أن يتراوح طول العنوان الإنجليزي للجلسة بين 1 و 256 حرفاً.");
         }
         var titleArabic = (titleArabicRaw ?? string.Empty).Trim();
-        if (titleArabic.Length is < 1 or > 256)
+        if (titleArabic.Length is < SessionRules.MinTitleLength or > SessionRules.MaxTitleLength)
         {
             throw new ApiException(
                 ErrorCodes.SessionInvalid, 400,
@@ -725,12 +953,12 @@ internal sealed class AdminSessionService(
         return (code, title, titleArabic);
     }
 
-    // S-7 — the clock + recording guards for a FORWARD lifecycle move. Reverse
+    // The clock + recording guards for a FORWARD lifecycle move. Reverse
     // (undo) moves (Held->Scheduled, Recorded->Held, Published->Recorded) carry no
     // guard. No admin override flag in this increment — an admin who must publish
     // pre-recorded content adjusts the session's start time / uploads a recording.
     private static void ValidateStatusGuards(
-        Session session, SessionStatus target, DateTimeOffset now)
+        Session session, SessionStatus target, DateTime now)
     {
         if (target == SessionStatus.Held && now < session.Start)
         {
@@ -749,7 +977,7 @@ internal sealed class AdminSessionService(
         }
     }
 
-    private static void ValidateTimeWindow(DateTimeOffset start, DateTimeOffset end)
+    private static void ValidateTimeWindow(DateTime start, DateTime end)
     {
         if (end <= start)
         {
@@ -771,7 +999,23 @@ internal sealed class AdminSessionService(
         }
     }
 
-    // §8 / D-349 — a non-blank live feed URL must be a YouTube link or a direct
+    /// <summary>The per-session arrival-grace override is optional (null =
+    /// inherit the hall) but, when given, must be inside the one shared bound.
+    /// Rejected rather than clamped, for the same reason as the hall's: quietly
+    /// storing 240 when an admin typed 2400 would misreport how long the doors are
+    /// open.</summary>
+    private static void EnsureArrivalGraceInRange(int? minutes)
+    {
+        if (!WalkInModeOptions.IsValidArrivalGrace(minutes))
+        {
+            throw new ApiException(
+                ErrorCodes.SessionInvalid, 400,
+                $"Arrival grace must be between 0 and {WalkInModeOptions.MaxArrivalGraceMinutes} minutes.",
+                $"يجب أن تكون مهلة الوصول بين 0 و{WalkInModeOptions.MaxArrivalGraceMinutes} دقيقة.");
+        }
+    }
+
+    // A non-blank live feed URL must be a YouTube link or a direct
     // HLS/MP4 stream (the same rule the CP form enforces, LiveStreamUrlPolicy).
     // Blank stays "no feed" and is persisted as null (NullIfBlank below).
     private static void ValidateLiveUrls(string? liveStreamUrl, string? signLanguageUrl)
@@ -793,17 +1037,19 @@ internal sealed class AdminSessionService(
         }
     }
 
-    // §7 (validation triple-lock) — the free-text + live-feed fields carry EF
+    // Validation triple-lock — the free-text + live-feed fields carry EF
     // column caps (SessionConfiguration: Description / DescriptionArabic /
     // LiveCaptions / LiveCaptionsArabic = nvarchar(2048); LiveStreamUrl /
-    // LiveSignLanguageUrl = nvarchar(1024)). Enforce those caps here so
+    // LiveSignLanguageUrl = nvarchar(1024); LiveNotice / LiveNoticeArabic =
+    // nvarchar(512)). Enforce those caps here so
     // over-length input returns a clean 400 instead of a SaveChanges
-    // "string or binary data would be truncated" 500 (#19). Measured on the
+    // "string or binary data would be truncated" 500. Measured on the
     // trimmed value actually persisted by NullIfBlank, mirroring AdminHallService.
     private static void ValidateTextLengths(
         string? description, string? descriptionArabic,
         string? liveCaptions, string? liveCaptionsArabic,
-        string? liveStreamUrl, string? liveSignLanguageUrl)
+        string? liveStreamUrl, string? liveSignLanguageUrl,
+        string? liveNotice, string? liveNoticeArabic)
     {
         EnsureMaxLength(description, 2048,
             "The session description must be 2048 characters or fewer.",
@@ -823,6 +1069,13 @@ internal sealed class AdminSessionService(
         EnsureMaxLength(liveSignLanguageUrl, 1024,
             "The sign-language stream URL must be 1024 characters or fewer.",
             "يجب أن يكون رابط بث لغة الإشارة 1024 حرفاً أو أقل.");
+        // The informational live notice is a one-line banner (512).
+        EnsureMaxLength(liveNotice, 512,
+            "The live notice must be 512 characters or fewer.",
+            "يجب أن يكون إشعار البث المباشر 512 حرفاً أو أقل.");
+        EnsureMaxLength(liveNoticeArabic, 512,
+            "The Arabic live notice must be 512 characters or fewer.",
+            "يجب أن يكون الإشعار العربي للبث المباشر 512 حرفاً أو أقل.");
     }
 
     private static void EnsureMaxLength(
@@ -835,11 +1088,11 @@ internal sealed class AdminSessionService(
         }
     }
 
-    // S-2 — two active sessions must not occupy the same hall at overlapping
+    // Two active sessions must not occupy the same hall at overlapping
     // times. Half-open overlap: existing.Start < newEnd AND newStart < existing.End.
     // Excludes the session being updated (excludeSessionId) and soft-deleted rows.
     private async Task EnsureNoHallTimeOverlapAsync(
-        Guid hallId, DateTimeOffset start, DateTimeOffset end,
+        Guid hallId, DateTime start, DateTime end,
         Guid excludeSessionId, CancellationToken cancellationToken)
     {
         var overlaps = await dbContext.Sessions
@@ -876,7 +1129,7 @@ internal sealed class AdminSessionService(
         return hall;
     }
 
-    // #4 — a non-Event session must carry at least one speaker; an Event may have
+    // A non-Event session must carry at least one speaker; an Event may have
     // none (an opening ceremony etc.). Kept as a pure predicate so create (strict)
     // and update (no-regression grandfather) both read from the one rule.
     private static bool SatisfiesSpeakerRule(SessionType? type, int speakerCount) =>
@@ -930,7 +1183,7 @@ internal sealed class AdminSessionService(
         }
     }
 
-    // B9b — D-226: the session category, when set, must be an active row in the
+    // The session category, when set, must be an active row in the
     // dynamic SessionCategory lookup. Mirrors ResolveHallAsync's active check.
     private async Task EnsureCategoryIsValidAsync(
         Guid? categoryId, CancellationToken cancellationToken)
@@ -1002,10 +1255,10 @@ internal sealed class AdminSessionService(
         }
     }
 
-    // §7 (validation) — the Website Session-detail fields: the bilingual language
+    // Validation — the Website Session-detail fields: the bilingual language
     // label (EF nvarchar(64)) and each outcome bullet (EF nvarchar(512), both
     // languages required). Over-length / blank input → a clean 400 instead of a
-    // SaveChanges truncation 500 (#19), mirroring ValidateTextLengths.
+    // SaveChanges truncation 500, mirroring ValidateTextLengths.
     private static void ValidateSessionDetailFields(
         string? language, string? languageArabic,
         IEnumerable<AdminSessionOutcomeEntry> outcomes)
@@ -1053,12 +1306,16 @@ internal sealed class AdminSessionService(
                 Kind = NotificationKind.BookingRejected,
                 Title = "Seat reservation released",
                 TitleArabic = "تم إلغاء حجز المقعد",
-                Body = $"\"{session.Title}\" was rescheduled or moved to another hall, so your seat was released. Please book again.",
-                BodyArabic = $"تم تغيير موعد أو قاعة جلسة \"{session.TitleArabic}\"، لذا تم إلغاء حجز مقعدك. يرجى الحجز من جديد.",
+                Body = $"\"{session.Title}\" was rescheduled or moved to another hall (it now starts {session.Start.FormatSaudi()}), so your seat was released. Please book again.",
+                BodyArabic = $"تم تغيير موعد أو قاعة جلسة \"{session.TitleArabic}\" (تبدأ الآن {session.Start.FormatSaudi()})، لذا تم إلغاء حجز مقعدك. يرجى الحجز من جديد.",
                 Severity = NotificationSeverity.Warning,
                 RelatedEntityType = "Session",
                 RelatedEntityId = session.Id,
-                SendEmail = false,
+                // An in-app row alone reached nobody who does not open the app,
+                // and losing a booked seat is exactly the news that must not be
+                // missed. Email it too (same dispatch convention as every other
+                // must-not-miss kind: the dispatcher renders the body, no template).
+                SendEmail = true,
             }, cancellationToken);
         }
         catch (Exception ex)
@@ -1072,10 +1329,17 @@ internal sealed class AdminSessionService(
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static AdminSessionDetail ToDetail(Session session)
+    private AdminSessionDetail ToDetail(Session session)
     {
         var hallSeats = session.Hall?.Capacity ?? 0;
         var effective = session.CapacityOverride ?? hallSeats;
+        // What this session would INHERIT if its override were cleared:
+        // the hall's grace, else the global value. Deliberately EXCLUDES the
+        // override itself, because the edit form offers this as "leave blank to
+        // get this" — the resolved-including-override value would tell an admin
+        // who has an override that clearing it keeps the same number.
+        var inheritedGrace = WalkInModeOptions.ResolveArrivalGraceMinutes(
+            null, session.Hall?.ArrivalGraceMinutes, GlobalArrivalGraceMinutes);
         var speakers = session.Speakers
             .OrderBy(link => link.DisplayOrder)
             .Select(link => new AdminSessionSpeakerEntry(
@@ -1121,16 +1385,25 @@ internal sealed class AdminSessionService(
             session.RecordingUploadedAt,
             session.LiveStreamUrl,
             session.LiveSignLanguageUrl,
-            // P5 — D-439: AI live-caption text.
+            // AI live-caption text.
             session.LiveCaptions,
             session.LiveCaptionsArabic,
-            // D-452 — session type for the app's type tabs.
+            // Session type for the app's type tabs.
             session.Type,
-            // D-485 — per-session seat-selection-mode override (null = inherit).
+            // Per-session seat-selection-mode override (null = inherit).
             session.SeatSelectionModeOverride,
             // Website Session-detail — language label + outcome bullets.
             session.Language,
             session.LanguageArabic,
-            outcomes);
+            outcomes,
+            // The informational live notice. Named so the four seat-holding
+            // counts keep their defaults (GetAsync/UpdateAsync stamp those with a
+            // `with` once the counts are known).
+            LiveNotice: session.LiveNotice,
+            LiveNoticeArabic: session.LiveNoticeArabic,
+            // The stored override (null = inherit the hall) and the number
+            // clearing it would fall back to, which is what the edit form names.
+            ArrivalGraceMinutesOverride: session.ArrivalGraceMinutesOverride,
+            InheritedArrivalGraceMinutes: inheritedGrace);
     }
 }

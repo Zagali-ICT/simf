@@ -1,7 +1,7 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// D-349 — the single rule that decides which live-broadcast feed URLs SIMF
+/// The single rule that decides which live-broadcast feed URLs SIMF
 /// accepts. The live-video provider is <b>YouTube</b> (proof of concept), with
 /// a direct <b>HLS/MP4</b> stream kept as a fallback. A YouTube URL is accepted
 /// only when a well-formed 11-character video id can be extracted (a channel /
@@ -12,8 +12,8 @@ namespace SIMF.Common;
 ///
 /// <para>The Flutter live screen mirrors this rule in
 /// <c>src/Mobile/simf_app/lib/features/live/youtube_url.dart</c> — a separate
-/// runtime, so the duplicate is unavoidable and is kept equivalent on purpose
-/// (see DECISIONS_LOG D-349). Change one, change the other.</para>
+/// runtime, so the duplicate is unavoidable and is kept equivalent on purpose.
+/// Change one, change the other.</para>
 /// </summary>
 public static class LiveStreamUrlPolicy
 {
@@ -31,7 +31,7 @@ public static class LiveStreamUrlPolicy
     /// <b>https</b> URL that is either a YouTube link with a well-formed video id
     /// or a direct HLS/MP4 stream (path ending <c>.m3u8</c> or <c>.mp4</c>).
     /// Cleartext <c>http</c> is rejected so a feed cannot be silently downgraded /
-    /// man-in-the-middled (D-349 security hardening). A blank URL is NOT allowed —
+    /// man-in-the-middled. A blank URL is NOT allowed —
     /// callers treat blank as "no feed" and skip the check, so this method only
     /// ever sees a value the admin actually typed.
     /// </summary>
@@ -45,7 +45,7 @@ public static class LiveStreamUrlPolicy
     }
 
     /// <summary>
-    /// D-578 — extracts the 11-character YouTube video id from a watch /
+    /// Extracts the 11-character YouTube video id from a watch /
     /// youtu.be / live / embed / shorts URL. Returns false for a non-YouTube or
     /// id-less link. Public so the server-side subtitle extractor
     /// (<c>YoutubeTranscriptService</c>) reuses the one parsing rule instead of

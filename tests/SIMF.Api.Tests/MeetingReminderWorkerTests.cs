@@ -15,6 +15,7 @@ using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Operations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -31,7 +32,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Scan_reminds_a_confirmed_speaker_meeting_in_the_lead_window_exactly_once()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var (speakerId, userId) = await SeedSpeakerAndRequesterAsync();
         // Confirmed (Accepted) with a bound slot 10 minutes out — inside the 15-min lead.
         var requestId = await SeedConfirmedSpeakerMeetingAsync(speakerId, userId, now.AddMinutes(10));
@@ -71,7 +72,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Scan_ignores_a_meeting_beyond_the_lead_window()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var (speakerId, userId) = await SeedSpeakerAndRequesterAsync();
         // Starts in two hours — well beyond the 15-minute lead window.
         var requestId = await SeedConfirmedSpeakerMeetingAsync(speakerId, userId, now.AddHours(2));
@@ -87,7 +88,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Scan_reminds_a_confirmed_delegation_meeting_and_its_requester()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         var homeId = await EnsureCountryAsync("SA", 682);
         var targetId = await EnsureCountryAsync("EG", 818);
         var userId = await SeedRequesterAsync();
@@ -114,7 +115,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
 
     // -- Helpers ---------------------------------------------------------------
 
-    private async Task<int> RunScanAsync(DateTimeOffset now)
+    private async Task<int> RunScanAsync(DateTime now)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -157,7 +158,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
             AllowsMeetingRequests = true,
             IsActive = true,
             DisplayOrder = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         await db.SaveChangesAsync();
@@ -165,7 +166,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task<Guid> SeedConfirmedSpeakerMeetingAsync(
-        Guid speakerId, Guid userId, DateTimeOffset slotStart)
+        Guid speakerId, Guid userId, DateTime slotStart)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -179,8 +180,8 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
             SlotStart = slotStart,
             SlotEnd = slotStart.AddMinutes(30),
             Status = MeetingRequestStatus.Accepted,
-            CreatedAt = DateTimeOffset.UtcNow,
-            RespondedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
+            RespondedAt = SimfClock.Now,
         };
         db.SpeakerMeetingRequests.Add(req);
         await db.SaveChangesAsync();
@@ -188,7 +189,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task<Guid> SeedConfirmedDelegationMeetingAsync(
-        Guid userId, int requestingCountryId, int targetCountryId, DateTimeOffset slotStart)
+        Guid userId, int requestingCountryId, int targetCountryId, DateTime slotStart)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -203,8 +204,8 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
             SlotStart = slotStart,
             SlotEnd = slotStart.AddMinutes(30),
             Status = MeetingRequestStatus.Accepted,
-            CreatedAt = DateTimeOffset.UtcNow,
-            RespondedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
+            RespondedAt = SimfClock.Now,
         };
         db.DelegationMeetingRequests.Add(req);
         await db.SaveChangesAsync();
@@ -225,7 +226,7 @@ public sealed class MeetingReminderWorkerTests : IClassFixture<SimfApiFactory>
                 Name = code,
                 NameArabic = code,
                 IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             db.Countries.Add(country);
             await db.SaveChangesAsync();

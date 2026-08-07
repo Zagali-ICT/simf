@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminAttendeesTests.cs, SIMF.Api.Tests/AdminAttendeesExportTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-134 Sprint A — read-only attendee roster across Visitors + Others.
+/// Read-only attendee roster across Visitors + Others.
 /// Administrator-only; no rate-limit (read endpoint).
 /// </summary>
 public sealed class ListAttendeesEndpoint(IAdminAttendeeService service)
@@ -51,14 +51,10 @@ public sealed class ExportAttendeesEndpoint(IAdminAttendeeService service)
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var bytes = await service.ExportAsync(actorId, req, ct);
         HttpContext.Response.Headers.ContentDisposition =
-            $"attachment; filename=\"simf-attendees-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx\"";
+            $"attachment; filename=\"simf-attendees-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";
         await Send.BytesAsync(bytes,
             contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             cancellation: ct);

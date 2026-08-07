@@ -5,9 +5,9 @@ using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-148 / D-167 — composite key (GateId, ProfileTypeId).
-/// After D-167 moved <c>ProfileType</c> onto <c>SimfAppDbContext</c>,
-/// the <c>ProfileTypeId</c> FK is real (same-DB) with Restrict.</summary>
+/// <summary>Composite key (GateId, ProfileTypeId).
+/// <c>ProfileType</c> lives on <c>SimfAppDbContext</c> too, so the
+/// <c>ProfileTypeId</c> FK is real (same-DB) with Restrict.</summary>
 internal sealed class GateProfileTypeAllowConfiguration
     : IEntityTypeConfiguration<GateProfileTypeAllow>
 {

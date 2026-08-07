@@ -1,4 +1,4 @@
-// Tests: SIMF.ControlPanel.Tests/PendingApprovalQueueTests.cs
+﻿// Tests: SIMF.ControlPanel.Tests/PendingApprovalQueueTests.cs
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -14,7 +14,7 @@ namespace SIMF.ControlPanel.Components.Pages.Admin;
 /// state, and the toast + pager formatters. Each queue's <c>.razor</c> keeps its
 /// own divergent RowActions and (Others/Visitors) profile-review modal — only the
 /// admin API user-type segment differs, exposed as <see cref="ApiBase"/>. Mirrors
-/// the established <c>CrudAddEditFormBase</c> base-class pattern (D-641).
+/// the established <c>CrudAddEditFormBase</c> base-class pattern.
 /// </summary>
 public abstract class PendingApprovalPageBase : ComponentBase
 {
@@ -27,13 +27,14 @@ public abstract class PendingApprovalPageBase : ComponentBase
     protected abstract string ApiBase { get; }
 
     // Popup/full-page presentation for the profile-review "View" modal, extending
-    // the D-353 CRUD framing to the pending queues so it matches /admin/visitors.
-    // Only the visitors + others queues have a review modal (admins approve
-    // one-click); a queue opts in via PresentationPageKey (null = dialog only).
+    // the shared CRUD framing to the pending queues so it matches /admin/visitors.
+    // Only the visitors + others queues have a review modal; the admins queue
+    // has no profile to review and confirms instead. A queue opts in
+    // via PresentationPageKey (null = dialog only).
     protected CrudPresentation _presentation = CrudPresentation.Dialog;
 
-    /// <summary>The localStorage key the popup/full-page choice persists under
-    /// (D-353), or null for queues without a review modal (the admins queue).</summary>
+    /// <summary>The localStorage key the popup/full-page choice persists under,
+    /// or null for queues without a review modal (the admins queue).</summary>
     protected virtual string? PresentationPageKey => null;
 
     protected GridQuery _query = new() { Top = 20 };
@@ -44,6 +45,11 @@ public abstract class PendingApprovalPageBase : ComponentBase
     protected string _rejectReason = string.Empty;
     protected IReadOnlyList<AdminPendingUserSummary>? _bulkRejectSelected;
     protected string _bulkRejectReason = string.Empty;
+
+    // Bulk approve confirms on every queue. (Single-approve confirmation
+    // is the admins queue's alone and lives in PendingStaff: the visitors/others
+    // queues stage a single approval through their profile-review modal.)
+    protected IReadOnlyList<AdminPendingUserSummary>? _bulkApproveSelected;
     protected string? _toast;
     protected string _toastVariant = "success";
 
@@ -138,9 +144,22 @@ public abstract class PendingApprovalPageBase : ComponentBase
         finally { _busy = false; }
     }
 
-    protected async Task OnBulkApproveAsync(IReadOnlyList<AdminPendingUserSummary> selected)
+    /// <summary>Stages the selected rows for confirmation — mirrors
+    /// <see cref="OnBulkRejectAsync"/>, which has always confirmed.</summary>
+    protected void OnBulkApproveAsync(IReadOnlyList<AdminPendingUserSummary> selected)
     {
         if (_busy || selected.Count == 0) return;
+        _bulkApproveSelected = selected;
+        _toast = null;
+    }
+
+    protected void CancelBulkApprove() => _bulkApproveSelected = null;
+
+    protected async Task ConfirmBulkApproveAsync()
+    {
+        if (_busy || _bulkApproveSelected is null) return;
+        var selected = _bulkApproveSelected;
+        _bulkApproveSelected = null;
         _busy = true;
         try
         {

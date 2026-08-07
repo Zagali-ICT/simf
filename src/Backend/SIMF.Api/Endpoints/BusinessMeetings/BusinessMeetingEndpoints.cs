@@ -1,14 +1,14 @@
 // Tests: SIMF.Api.Tests/BusinessMeetingsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.BusinessMeetings.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.BusinessMeetings;
 
 namespace SIMF.Api.Endpoints.BusinessMeetings;
 
-// SIMF-FDS-013 — D-248: Control Panel endpoints for flexible hall configuration +
+// Control Panel endpoints for flexible hall configuration +
 // admin-arranged B2B/B2C business meetings. All admin-only, gated by the
 // PermissionCatalog policy + RequireApprovedAccount, mirroring BoothEndpoints.
 
@@ -30,14 +30,11 @@ public sealed class SetHallPurposeEndpoint(IBusinessMeetingService service)
 
     public override async Task HandleAsync(SetHallPurposeRoute req, CancellationToken ct)
     {
-        if (!TryActor(out var actorId)) { await Send.UnauthorizedAsync(ct); return; }
+        var actorId = User.ActorId();
         await service.SetHallPurposeAsync(actorId, req.Id,
             new SetHallPurposeRequest { Purpose = req.Purpose }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
-
-    private bool TryActor(out Guid actorId) =>
-        Guid.TryParse(User.FindFirstValue("sub"), out actorId);
 }
 
 // ── Meeting tables ───────────────────────────────────────────────────────────
@@ -82,8 +79,7 @@ public sealed class CreateMeetingTableEndpoint(IBusinessMeetingService service)
 
     public override async Task HandleAsync(CreateMeetingTableRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        { await Send.UnauthorizedAsync(ct); return; }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<MeetingTableRow>.Ok(
             await service.CreateTableAsync(actorId, req.HallId,
                 new CreateMeetingTableRequest
@@ -112,8 +108,7 @@ public sealed class UpdateMeetingTableEndpoint(IBusinessMeetingService service)
 
     public override async Task HandleAsync(UpdateMeetingTableRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        { await Send.UnauthorizedAsync(ct); return; }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<MeetingTableRow>.Ok(
             await service.UpdateTableAsync(actorId, req.Id,
                 new UpdateMeetingTableRequest
@@ -142,8 +137,7 @@ public sealed class DeleteMeetingTableEndpoint(IBusinessMeetingService service)
 
     public override async Task HandleAsync(DeleteMeetingTableRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        { await Send.UnauthorizedAsync(ct); return; }
+        var actorId = User.ActorId();
         await service.DeleteTableAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -165,8 +159,7 @@ public sealed class GenerateMeetingTablesEndpoint(IBusinessMeetingService servic
 
     public override async Task HandleAsync(GenerateMeetingTablesRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        { await Send.UnauthorizedAsync(ct); return; }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<MeetingTablesGenerated>.Ok(
             await service.GenerateTablesAsync(actorId, req.HallId,
                 new GenerateMeetingTablesRequest
@@ -222,8 +215,7 @@ public sealed class CreateHallAllocationEndpoint(IBusinessMeetingService service
 
     public override async Task HandleAsync(CreateHallAllocationRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        { await Send.UnauthorizedAsync(ct); return; }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<HallAllocationRow>.Ok(
             await service.CreateAllocationAsync(actorId, req.HallId,
                 new CreateHallAllocationRequest
@@ -255,8 +247,7 @@ public sealed class ReleaseHallAllocationEndpoint(IBusinessMeetingService servic
 
     public override async Task HandleAsync(ReleaseHallAllocationRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        { await Send.UnauthorizedAsync(ct); return; }
+        var actorId = User.ActorId();
         await service.ReleaseAllocationAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -312,8 +303,7 @@ public sealed class ScheduleBusinessMeetingEndpoint(IBusinessMeetingService serv
 
     public override async Task HandleAsync(ScheduleMeetingRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        { await Send.UnauthorizedAsync(ct); return; }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<BusinessMeetingScheduled>.Ok(
             await service.ScheduleMeetingAsync(actorId, req, ct)), ct);
     }
@@ -335,8 +325,7 @@ public sealed class CancelBusinessMeetingEndpoint(IBusinessMeetingService servic
 
     public override async Task HandleAsync(CancelBusinessMeetingRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        { await Send.UnauthorizedAsync(ct); return; }
+        var actorId = User.ActorId();
         await service.CancelMeetingAsync(actorId, req.Id,
             new CancelMeetingRequest { Reason = req.Reason }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);

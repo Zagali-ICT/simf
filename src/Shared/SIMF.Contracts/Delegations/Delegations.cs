@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Delegations;
 
-/// <summary>D-499 (Figma 1426:10771 الوفود) — the public delegations view: the
+/// <summary>The public delegations view (الوفود): the
 /// invited countries' delegations with the screen's two aggregate stats. Public /
 /// anonymous (only the designated head + a member count are exposed, no member PII).</summary>
 public sealed record AppDelegations(
@@ -29,5 +29,5 @@ public sealed record AppDelegationItem(
     /// <summary>2026-07-19 (owner) — the Arabic twin of <see cref="HeadTitle"/>
     /// (from the head profile's JobTitleArabic ?? HonorificArabic), so the app
     /// renders the head title in the active locale. Null when unset. Append-only
-    /// (D-219): older clients ignore it and keep <see cref="HeadTitle"/>.</summary>
+    /// Older clients ignore it and keep <see cref="HeadTitle"/>.</summary>
     string? HeadTitleArabic = null);

@@ -58,7 +58,7 @@
     // Path to the hero background photo (anchored to the inline-end side). Required.
     [Parameter, EditorRequired] public string ImageSrc { get; set; } = "";
 
-    // Optional override for the date pill (e.g. the CP-editable forum date range,
-    // D-755). Null/blank falls back to the static Landing.Subnav.Date resx label.
+    // Optional override for the date pill (e.g. the CP-editable forum date
+    // range). Null/blank falls back to the static Landing.Subnav.Date resx label.
     [Parameter] public string? DateText { get; set; }
 }

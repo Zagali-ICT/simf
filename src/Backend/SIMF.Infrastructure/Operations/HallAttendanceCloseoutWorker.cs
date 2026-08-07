@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Operations;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -73,7 +74,7 @@ internal sealed class HallAttendanceCloseoutWorker(
     {
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var closed = await CloseEndedSessionsAsync(db, timeProvider.GetUtcNow(), cancellationToken);
+        var closed = await CloseEndedSessionsAsync(db, timeProvider.SimfNow(), cancellationToken);
         if (closed > 0)
         {
             logger.LogInformation(
@@ -84,7 +85,7 @@ internal sealed class HallAttendanceCloseoutWorker(
     /// <summary>Closes every open attendance row whose session has ended, setting
     /// Leave to the session's End. Extracted for direct unit testing.</summary>
     internal static async Task<int> CloseEndedSessionsAsync(
-        SimfAppDbContext db, DateTimeOffset now, CancellationToken cancellationToken)
+        SimfAppDbContext db, DateTime now, CancellationToken cancellationToken)
     {
         var open = await db.HallAttendances
             .Where(a => a.Leave == null && a.Session!.End <= now)

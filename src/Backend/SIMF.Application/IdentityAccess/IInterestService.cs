@@ -5,7 +5,7 @@ using SIMF.Contracts.UserProfile;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// Interests CRUD (P9 — D-050; الاهتمامات). Two read surfaces — the
+/// Interests CRUD (الاهتمامات). Two read surfaces — the
 /// visitor picker (active only, ordered for the UI) and the admin grid
 /// (every row, paged + filtered). Mutations are admin-only; every one
 /// writes an audit row.

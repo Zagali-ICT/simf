@@ -15,6 +15,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -190,6 +191,135 @@ public sealed class PermissionEnforcementTests : IClassFixture<SimfApiFactory>
             Environment.NewLine + string.Join(Environment.NewLine, ungated));
     }
 
+    /// <summary>
+    /// D-834 — an approval route must be gated on the permission for the TIER IT
+    /// ACTS ON.
+    ///
+    /// <para>The test above proves every admin endpoint carries <i>a</i> permission
+    /// gate. It cannot see whether that gate is the RIGHT one, which is how this bug
+    /// survived: <c>ApproveOtherEndpoint</c> and <c>RejectOtherEndpoint</c> were
+    /// copy-pasted from the admin pair above them in the same file and kept the
+    /// admin policy line, so approving a PARTNER account demanded
+    /// <c>Admins.Approve</c> — the code that exists to approve ADMINS. An admin
+    /// granted only the partner queue could not approve a partner one at a time
+    /// (only in bulk), and an admin granted only the admin queue could.</para>
+    ///
+    /// <para>The expectation is DERIVED from the route rather than listed, so a
+    /// fourth tier, or a new bulk variant, is covered the day it is mapped. The
+    /// three tiers are symmetric by construction: 3 tiers x approve/reject x
+    /// single/bulk = the 12 routes asserted here.</para>
+    /// </summary>
+    [Fact]
+    public void An_approval_route_is_gated_on_the_permission_for_the_tier_it_acts_on()
+    {
+        // Every approval route on the admin surface is classified into exactly one
+        // of these two sets, and an unclassified one FAILS. The first version of
+        // this test filtered to the tier map before counting, so a new approval
+        // route on an unrecognised segment — /admin/accounts/{id}/approve, say, and
+        // /admin/accounts/ is already a live segment — was dropped silently while
+        // the count stayed at 12 and the test stayed green. Classify, then count.
+        var accountTiers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["admins"] = "Admins",
+            ["others"] = "Others",
+            ["visitors"] = "Visitors",
+        };
+
+        // Approval routes that do NOT act on an account queue, so the tier rule does
+        // not apply. Each entry needs a reason, and a new one has to be argued for
+        // here rather than slipping through unnoticed.
+        var notAnAccountTier = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["questions"] =
+                "PUT /admin/questions/{id}/approve moderates a QUESTION, not an account "
+                + "(Questions.Moderate).",
+            ["session-summaries"] =
+                "PUT /admin/session-summaries/{id}/approve publishes a session SUMMARY, "
+                + "not an account (SessionSummaries.Approve).",
+        };
+
+        var approvalRoutes = _factory.Services
+            .GetServices<EndpointDataSource>()
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Distinct()
+            .Select(endpoint => (endpoint, path: AdminPath(endpoint)))
+            .Where(candidate => candidate.path is not null
+                && ApprovalVerb(candidate.path!) is not null)
+            .ToList();
+
+        var unclassified = approvalRoutes
+            .Select(route => (route.path, tier: TierSegment(route.path!)))
+            .Where(route => !accountTiers.ContainsKey(route.tier)
+                && !notAnAccountTier.ContainsKey(route.tier))
+            .ToList();
+
+        Assert.True(unclassified.Count == 0,
+            "These approval routes are neither an account tier nor a reviewed "
+            + "exception, so nothing checks which permission gates them. Add the "
+            + "segment to accountTiers (if it is an account queue) or to "
+            + "notAnAccountTier with a reason:" + Environment.NewLine
+            + string.Join(Environment.NewLine,
+                unclassified.Select(route => $"{route.path} — segment '{route.tier}'")));
+
+        var tierRoutes = approvalRoutes
+            .Where(route => accountTiers.ContainsKey(TierSegment(route.path!)))
+            .ToList();
+
+        // 3 tiers x {approve, reject} x {single, bulk}. A rename that silently
+        // stops matching would otherwise leave this test vacuously green.
+        Assert.True(tierRoutes.Count == 12,
+            $"Expected the 12 account-tier approval routes but matched {tierRoutes.Count}. "
+            + "If a tier or a variant was added or renamed, update the count "
+            + "deliberately — do not let the sweep match nothing:"
+            + Environment.NewLine
+            + string.Join(Environment.NewLine, tierRoutes.Select(r => r.path)));
+
+        var wrongTier = new List<string>();
+        foreach (var (endpoint, path) in tierRoutes)
+        {
+            var expected = $"{accountTiers[TierSegment(path!)]}.{ApprovalVerb(path!)}";
+            var codes = endpoint.Metadata
+                .GetOrderedMetadata<IAuthorizeData>()
+                .Select(data => data.Policy)
+                .Where(policy => !string.IsNullOrEmpty(policy)
+                    && PermissionCatalog.IsPermissionPolicy(policy!))
+                .Select(policy => PermissionCatalog.CodeFromPolicy(policy!))
+                .ToList();
+
+            if (!codes.Contains(expected, StringComparer.Ordinal))
+            {
+                wrongTier.Add($"POST {path} acts on the {TierSegment(path!)} tier so it must gate on "
+                    + $"{expected}, but gates on [{string.Join(", ", codes)}].");
+            }
+        }
+
+        Assert.True(wrongTier.Count == 0,
+            "These approval routes gate on another tier's permission, so the wrong "
+            + "admins can act on the queue:" + Environment.NewLine
+            + string.Join(Environment.NewLine, wrongTier));
+    }
+
+    /// <summary>"Approve" / "Reject" for an approval route (single or bulk), else null.</summary>
+    private static string? ApprovalVerb(string path)
+    {
+        var last = path.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? string.Empty;
+        if (last.EndsWith("approve", StringComparison.OrdinalIgnoreCase)) { return "Approve"; }
+        if (last.EndsWith("reject", StringComparison.OrdinalIgnoreCase)) { return "Reject"; }
+        return null;
+    }
+
+    /// <summary>The segment straight after "/admin/" — the tier the route acts on.</summary>
+    private static string TierSegment(string path)
+    {
+        var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var adminIndex = Array.FindIndex(segments,
+            segment => segment.Equals("admin", StringComparison.OrdinalIgnoreCase));
+        return adminIndex >= 0 && adminIndex + 1 < segments.Length
+            ? segments[adminIndex + 1]
+            : string.Empty;
+    }
+
     // The normalised "/admin/…" path for an admin-surface endpoint, or null when
     // the route is not under the admin surface (e.g. an /app/* picker that lives
     // in the Endpoints/Admin folder).
@@ -221,6 +351,159 @@ public sealed class PermissionEnforcementTests : IClassFixture<SimfApiFactory>
     // grants are `grantedCodes`, then signs in on the CP audience and returns
     // the access token. The seeder does not run under the Testing host, so the
     // Permission rows for the granted codes are inserted here.
+    /// <summary>
+    /// D-836 — a tier permission must not reach across into the other tier's
+    /// subjects. The national ID / Iqama / passport image is the most sensitive
+    /// PII in the system, and the ID-document routes guarded the subject on
+    /// <c>UserType</c> alone. D-186 folded Other into <c>UserType.Visitor</c>, so
+    /// BOTH <c>/admin/visitors/{id}/id-document</c> and
+    /// <c>/admin/others/{id}/id-document</c> passed <c>UserType.Visitor</c> and the
+    /// guard separated Admin from everyone else and nothing else.
+    ///
+    /// <para>The upload path is what makes this provable without a face-gated
+    /// image: the family check runs BEFORE the file check, so posting no file at
+    /// all returns 400 (missing file) when the subject is in the caller's family
+    /// and 404 when it is not. Before the fix both returned 400.</para>
+    /// </summary>
+    [Theory]
+    [InlineData("visitors", PermissionCatalog.Visitors.Edit)]
+    [InlineData("others", PermissionCatalog.Others.Edit)]
+    public async Task An_id_document_upload_refuses_a_subject_from_the_other_tier(
+        string routeTier, string grantedCode)
+    {
+        var token = await CreateAdminWithCustomRoleAsync(grantedCodes: [grantedCode]);
+        var (audienceId, partnerId) = await CreateOneSubjectPerTierAsync();
+        var ownTier = routeTier == "visitors" ? audienceId : partnerId;
+        var otherTier = routeTier == "visitors" ? partnerId : audienceId;
+
+        // Own tier: the guard passes and the request reaches the file check.
+        var own = await PostDummyFileAsync(
+            $"/api/v1/admin/{routeTier}/{ownTier}/id-document", token);
+        Assert.Equal(HttpStatusCode.BadRequest, own.StatusCode);
+
+        // Other tier: refused before any file handling, and 404 rather than 403 so
+        // the response does not confirm that the subject exists.
+        var crossing = await PostDummyFileAsync(
+            $"/api/v1/admin/{routeTier}/{otherTier}/id-document", token);
+        Assert.Equal(HttpStatusCode.NotFound, crossing.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("visitors", PermissionCatalog.Visitors.View)]
+    [InlineData("others", PermissionCatalog.Others.View)]
+    public async Task An_id_document_read_refuses_a_subject_from_the_other_tier(
+        string routeTier, string grantedCode)
+    {
+        // The disclosure half. Neither subject has an image on file, so both
+        // answer 404 and this alone cannot tell the guard from "no image" - what
+        // it pins is that the cross-tier read is never a 200, and it fails loudly
+        // if the route is ever changed to answer 403 (which would confirm the
+        // subject exists to an admin outside its tier).
+        var token = await CreateAdminWithCustomRoleAsync(grantedCodes: [grantedCode]);
+        var (audienceId, partnerId) = await CreateOneSubjectPerTierAsync();
+        var otherTier = routeTier == "visitors" ? partnerId : audienceId;
+
+        var crossing = await GetAuthAsync(
+            $"/api/v1/admin/{routeTier}/{otherTier}/id-document", token);
+
+        Assert.Equal(HttpStatusCode.NotFound, crossing.StatusCode);
+    }
+
+    /// <summary>One audience-tier and one partner-tier subject, each with the
+    /// linked ProfileType that <c>IsSubjectInFamilyAsync</c> reads to tell them
+    /// apart (partner = a UserProfile whose ProfileType has IsForVisitor=false).</summary>
+    private async Task<(Guid AudienceId, Guid PartnerId)> CreateOneSubjectPerTierAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        var audienceType = await EnsureProfileTypeAsync(appDb, forVisitor: true);
+        var partnerType = await EnsureProfileTypeAsync(appDb, forVisitor: false);
+
+        var audienceId = await CreateSubjectAsync(users, appDb, audienceType);
+        var partnerId = await CreateSubjectAsync(users, appDb, partnerType);
+        return (audienceId, partnerId);
+    }
+
+    private static async Task<Guid> EnsureProfileTypeAsync(SimfAppDbContext appDb, bool forVisitor)
+    {
+        var existing = await appDb.ProfileTypes
+            .FirstOrDefaultAsync(p => p.IsForVisitor == forVisitor && p.IsActive);
+        if (existing is not null) { return existing.Id; }
+
+        var fresh = new UserProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = forVisitor ? "Visitor — D836Seed" : "Other — D836Seed",
+            NameArabic = forVisitor ? "زائر — اختبار" : "أخرى — اختبار",
+            PageColor = forVisitor ? "#3B82F6" : "#10B981",
+            IsForVisitor = forVisitor,
+            IsActive = true,
+            CreatedAt = SimfClock.Now,
+        };
+        appDb.ProfileTypes.Add(fresh);
+        await appDb.SaveChangesAsync();
+        return fresh.Id;
+    }
+
+    private static async Task<Guid> CreateSubjectAsync(
+        UserManager<SimfUser> users, SimfAppDbContext appDb, Guid profileTypeId)
+    {
+        var email = $"d836-{Guid.NewGuid():N}@simf.test";
+        var user = new SimfUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            UserType = UserType.Visitor,
+            AccountState = AccountState.Approved,
+            DisplayName = "D836 Subject",
+        };
+        // A fixed password, not a GUID-derived one: SIMF's Identity policy rejects
+        // three sequential characters, which a random hex string hits often enough
+        // to make the seed flaky (it did, on the first run of these tests).
+        var created = await users.CreateAsync(user, "Zx9#Qm4$Vk7!");
+        Assert.True(created.Succeeded,
+            "Could not seed the D-836 subject: "
+            + string.Join("; ", created.Errors.Select(e => e.Description)));
+
+        appDb.UserProfiles.Add(new UserProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            ProfileTypeId = profileTypeId,
+            CreatedAt = SimfClock.Now,
+        });
+        await appDb.SaveChangesAsync();
+        return user.Id;
+    }
+
+    /// <summary>A multipart body carrying a deliberately non-image "file" part.
+    /// It gets past FastEndpoints' form binding (a body with no parts at all
+    /// faults the pipeline) and is then rejected by the MIME/magic-byte gate with
+    /// a 400 - which is precisely the "the family guard let me through" signal
+    /// these tests need, without a face-gated real photograph.</summary>
+    private async Task<HttpResponseMessage> PostDummyFileAsync(string url, string token)
+    {
+        using var content = new MultipartFormDataContent();
+        var bytes = new ByteArrayContent("not-an-image"u8.ToArray());
+        bytes.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        content.Add(bytes, "file", "not-an-image.bin");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await _client.SendAsync(request);
+    }
+
+    private async Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await _client.SendAsync(request);
+    }
+
     private async Task<string> CreateAdminWithCustomRoleAsync(string[] grantedCodes)
     {
         var email = $"perm-{Guid.NewGuid():N}@simf.test";
@@ -306,16 +589,7 @@ public sealed class PermissionEnforcementTests : IClassFixture<SimfApiFactory>
 
     private async Task<string> SignInCpAsync(string email)
     {
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

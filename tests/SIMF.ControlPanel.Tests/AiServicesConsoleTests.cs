@@ -16,7 +16,7 @@ public sealed class AiServicesConsoleTests : CpComponentTestBase
     private static AdminAiPromptSummary Prompt(
         AiFeature feature, AiProvider provider, string key, bool active, int version) =>
         new(Guid.NewGuid(), key, feature, key, key, provider, "model", 0.2, 512,
-            active, version, DateTimeOffset.UnixEpoch, null);
+            active, version, DateTime.UnixEpoch, null);
 
     [Fact]
     public void Aggregates_prompts_into_one_row_per_service_and_flags_sensitive_on_cloud()

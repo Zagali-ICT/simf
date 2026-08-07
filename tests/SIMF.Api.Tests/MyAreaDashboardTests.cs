@@ -81,7 +81,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
         // D-485 regression — a general-admission (OpenSeating) join must show in
         // the user's booked-sessions count + today's schedule, like a seat booking.
         var (token, userId) = await CreateApprovedVisitorAsync();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         using (var scope = _factory.Services.CreateScope())
         {
             var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -189,7 +189,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow();
+            var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().SimfNow();
             var hall = new Hall
             {
                 Id = Guid.NewGuid(),
@@ -318,7 +318,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow();
+        var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().SimfNow();
         // QrId is unique system-wide and ProfileType names may be too — make both
         // unique per test so repeated seeding does not collide.
         var qrId = Guid.NewGuid().ToString("N")[..12].ToUpperInvariant();
@@ -346,7 +346,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
         var profileType = new UserProfileType
         {
             Id = Guid.NewGuid(),
-            Name = "VVIP " + Guid.NewGuid().ToString("N")[..4], NameArabic = "كبار الشخصيات",
+            Name = "VVIP " + Guid.NewGuid().ToString("N")[..8], NameArabic = "كبار الشخصيات",
             PageColor = "#FFD700",
             IsForVisitor = true,
             MobileAppRole = MobileAppRole.None, IsActive = true, CreatedAt = now,

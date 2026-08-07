@@ -14,9 +14,9 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.PublicRelations;
 
 /// <summary>
-/// D-168 (gap doc G5, PDF §2.7.3) — public-relations service. Real DB FK
-/// links <see cref="Invitation"/> to <c>UserProfile</c> (both on App DB
-/// since D-167); SimfUser lookups for sender display-name and recipient
+/// Public-relations service. A real DB FK
+/// links <see cref="Invitation"/> to <c>UserProfile</c> (both live on the App
+/// DB); SimfUser lookups for sender display-name and recipient
 /// email cross into the Identity DB via an in-memory merge — same
 /// pattern as <c>AdminAttendeeService</c>.
 /// </summary>
@@ -221,7 +221,7 @@ internal sealed class AdminInvitationService(
                 $"الملف المستهدف '{request.SentToUserProfileId}' غير موجود.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var invitation = new Invitation
         {
             Id = Guid.NewGuid(),
@@ -298,7 +298,7 @@ internal sealed class AdminInvitationService(
         var stateChanged = invitation.State != request.State;
         invitation.State = request.State;
         invitation.Notes = NullIfBlank(request.Notes);
-        invitation.UpdatedAt = timeProvider.GetUtcNow();
+        invitation.UpdatedAt = timeProvider.SimfNow();
         // Every settled-state transition is a response — including a
         // correction (Confirmed → Declined) — so RespondedAt always
         // reflects the latest response. Pending → Pending stays null.
@@ -308,15 +308,13 @@ internal sealed class AdminInvitationService(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = stateChanged
+        await auditLog.WriteSuccessAsync(
+            stateChanged
                 ? AuditEvents.InvitationStateChanged
                 : AuditEvents.InvitationUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"invitationId={invitation.Id}; state={invitation.State}",
-        }, cancellationToken);
+            actorUserId,
+            $"invitationId={invitation.Id}; state={invitation.State}",
+            cancellationToken);
 
         return (await GetAsync(invitation.Id, cancellationToken))!;
     }
@@ -338,16 +336,14 @@ internal sealed class AdminInvitationService(
             return; // idempotent
         }
         invitation.IsActive = false;
-        invitation.UpdatedAt = timeProvider.GetUtcNow();
+        invitation.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.InvitationDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"invitationId={invitation.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.InvitationDeactivated,
+            actorUserId,
+            $"invitationId={invitation.Id}",
+            cancellationToken);
     }
 
     public async Task<GridPage<AdminVipSummary>> ListVipsAsync(
@@ -506,13 +502,11 @@ internal sealed class AdminInvitationService(
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.VipNotificationSent,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"dispatched={dispatched}; emails={emailsEnqueued}; skipped={skipped.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.VipNotificationSent,
+            actorUserId,
+            $"dispatched={dispatched}; emails={emailsEnqueued}; skipped={skipped.Count}",
+            cancellationToken);
 
         logger.LogInformation(
             "PR rep {Actor} dispatched VIP broadcast to {Count} VIPs ({Emails} emails enqueued)",

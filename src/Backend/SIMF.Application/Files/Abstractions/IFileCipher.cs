@@ -1,6 +1,6 @@
 namespace SIMF.Application.Files.Abstractions;
 
-/// <summary>D-568 — envelope encryption for stored-file bytes. Each file is
+/// <summary>Envelope encryption for stored-file bytes. Each file is
 /// sealed under its own random Data-Encryption-Key (DEK), which is itself wrapped
 /// by a versioned Key-Encryption-Key (KEK). The wrapped DEK travels in the blob
 /// header, so destroying one file's header crypto-shreds that file alone, and a

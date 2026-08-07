@@ -11,7 +11,7 @@ namespace SIMF.Infrastructure.Identity;
 /// <summary>
 /// Reads Identity-owned user attributes from <c>SimfIdentityDbContext</c> for
 /// App-side callers that reference a user by its logical (bare-<c>Guid</c>) id
-/// across the DB boundary (D-157). One context per call, no cross-database JOIN.
+/// across the DB boundary. One context per call, no cross-database JOIN.
 /// </summary>
 internal sealed class IdentityUserDirectory(SimfIdentityDbContext identityDbContext)
     : IIdentityUserDirectory

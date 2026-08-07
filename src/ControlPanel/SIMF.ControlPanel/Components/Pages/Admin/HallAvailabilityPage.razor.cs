@@ -5,7 +5,6 @@ using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -26,7 +25,7 @@ public partial class HallAvailabilityPage
     private bool _busy;
     private Toast? _toast;
 
-    // R10 (D-767) — a must-decide guard for the destructive window delete.
+    // A must-decide guard for the destructive window delete.
     private bool _confirmOpen;
     private Guid _confirmWindowId;
 
@@ -104,7 +103,7 @@ public partial class HallAvailabilityPage
         finally { _busy = false; }
     }
 
-    // R10 (D-767) — open the delete confirm; RunDeleteAsync does the work on OK.
+    // Open the delete confirm; RunDeleteAsync does the work on OK.
     private void ConfirmDelete(Guid windowId)
     {
         _confirmWindowId = windowId;
@@ -144,7 +143,7 @@ public partial class HallAvailabilityPage
         finally { _busy = false; }
     }
 
-    private static bool TryParseUtc(string value, out DateTimeOffset result)
+    private static bool TryParseUtc(string value, out DateTime result)
     {
         if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var dt))

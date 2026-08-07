@@ -11,7 +11,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Email;
 
-/// <summary>D-735 — CP admin service for the transactional email templates. The
+/// <summary>CP admin service for the transactional email templates. The
 /// catalogue owns the fixed set + defaults; the DB owns only admin overrides.
 /// Save validates that the copy references no unknown token, upserts the override
 /// row and bumps its version; reset deletes the override (reverting to the code
@@ -22,7 +22,7 @@ internal sealed class AdminEmailTemplateService(
     TimeProvider timeProvider) : IAdminEmailTemplateService
 {
     // Bounds the stored copy so an Edit admin cannot plant a multi-MB body that
-    // is read + allocated on every OTP/reset render (D-735 security review).
+    // is read + allocated on every OTP/reset render.
     // Subject aligns with the EF nvarchar(256) column; bodies stay nvarchar(max)
     // in EF but are capped here + in the CP textarea maxlength.
     private const int MaxSubjectLength = 256;
@@ -99,7 +99,7 @@ internal sealed class AdminEmailTemplateService(
                 $"يشير القالب إلى عناصر نائبة غير معروفة: {names}.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var row = await appDbContext.EmailTemplates
             .SingleOrDefaultAsync(t => t.Type == type, cancellationToken);
 
@@ -132,18 +132,14 @@ internal sealed class AdminEmailTemplateService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(
-            new AuditEntry
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.EmailTemplateUpdated,
+            actorUserId,
+            JsonSerializer.Serialize(new
             {
-                EventType = AuditEvents.EmailTemplateUpdated,
-                Outcome = AuditOutcome.Success,
-                ActorUserId = actorUserId,
-                Detail = JsonSerializer.Serialize(new
-                {
-                    type = type.ToString(),
-                    version = row.Version,
-                }),
-            },
+                type = type.ToString(),
+                version = row.Version,
+            }),
             cancellationToken);
 
         return ToDetail(type, row);
@@ -162,14 +158,10 @@ internal sealed class AdminEmailTemplateService(
             appDbContext.EmailTemplates.Remove(row);
             await appDbContext.SaveChangesAsync(cancellationToken);
 
-            await auditLog.WriteAsync(
-                new AuditEntry
-                {
-                    EventType = AuditEvents.EmailTemplateReset,
-                    Outcome = AuditOutcome.Success,
-                    ActorUserId = actorUserId,
-                    Detail = JsonSerializer.Serialize(new { type = type.ToString() }),
-                },
+            await auditLog.WriteSuccessAsync(
+                AuditEvents.EmailTemplateReset,
+                actorUserId,
+                JsonSerializer.Serialize(new { type = type.ToString() }),
                 cancellationToken);
         }
 

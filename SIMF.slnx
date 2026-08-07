@@ -8,7 +8,6 @@
     <Project Path="src/Backend/SIMF.Application/SIMF.Application.csproj" />
     <Project Path="src/Backend/SIMF.Domain/SIMF.Domain.csproj" />
     <Project Path="src/Backend/SIMF.Infrastructure/SIMF.Infrastructure.csproj" />
-    <Project Path="src/Backend/SIMF.RealTime/SIMF.RealTime.csproj" />
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/SIMF.ApiClient/SIMF.ApiClient.csproj" />
@@ -28,6 +27,7 @@
     <Project Path="tests/SIMF.Application.Tests/SIMF.Application.Tests.csproj" />
     <Project Path="tests/SIMF.ControlPanel.Tests/SIMF.ControlPanel.Tests.csproj" />
     <Project Path="tests/SIMF.Domain.Tests/SIMF.Domain.Tests.csproj" />
+    <Project Path="tests/SIMF.E2E.Tests/SIMF.E2E.Tests.csproj" />
     <Project Path="tests/SIMF.Web.Tests/SIMF.Web.Tests.csproj" />
   </Folder>
 </Solution>

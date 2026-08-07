@@ -1,4 +1,4 @@
-﻿// D-161 — ProfileType.MobileAppRole + JWT mobile_app_role claim.
+// D-161 — ProfileType.MobileAppRole + JWT mobile_app_role claim.
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -255,7 +255,7 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
             IsForVisitor = false,
             MobileAppRole = role,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(profileType);
         await appDb.SaveChangesAsync();
@@ -281,7 +281,7 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
             NameArabic = "مستخدم شريك",
             PlaceOfBirth = "Riyadh",
             NationalityId = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
 
@@ -318,16 +318,7 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private async Task<(string Token, Guid UserId)> CreateVisitorAndSignInAsync()

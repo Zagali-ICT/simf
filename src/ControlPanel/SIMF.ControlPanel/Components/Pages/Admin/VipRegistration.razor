@@ -44,8 +44,10 @@ else
                           RowLabel="@(r => RecipientLabel(r))"
                           OnAdd="@(_canRegister ? EventCallback.Factory.Create(this, OnAddVip) : default)"
                           OnEditOne="@(_canEdit ? EventCallback.Factory.Create<AdminVipSummary>(this, OnEditVip) : default)"
+                          OnDetailsOne="OnVipDetails"
                           AddLabel="@L["Admin.Vips.Action.AddVip"]"
                           EditLabel="@L["Admin.Users.Action.Edit"]"
+                          DetailsLabel="@L["Admin.Vips.Action.Details"]"
                           Caption="@L["Admin.VipRegistration.ListTitle"]"
                           FilterColumnLabel="@L["Grid.FilterColumn"]"
                           FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
@@ -78,6 +80,26 @@ else
             </SimfDataGrid>
         </div>
     </div>
+
+@* The read affordance. This page resolved its permissions into booleans
+   and passed `default` for a denied action, so a reader holding neither Register
+   nor Edit saw a grid with no actions column at all, and the Arabic name and job
+   title the row carries were reachable only through the edit form. Details is
+   unconditional: the page gate already decided who may read this list. *@
+<SimfDetails Open="@(_vipDetails is not null)"
+             Title="@(_vipDetails is null ? string.Empty : RecipientLabel(_vipDetails))"
+             CloseLabel="@L["Grid.Close"]"
+             OnClose="@(() => _vipDetails = null)">
+    @if (_vipDetails is not null)
+    {
+        <SimfDetailRow Label="@L["Admin.Vips.Col.Name"]" Value="@_vipDetails.EnglishName" />
+        <SimfDetailRow Label="@L["Admin.Vips.Col.NameAr"]" Value="@_vipDetails.ArabicName" />
+        <SimfDetailRow Label="@L["Admin.Vips.Col.JobTitle"]" Value="@_vipDetails.JobTitle" />
+        <SimfDetailRow Label="@L["Admin.Vips.Col.JobTitleAr"]" Value="@_vipDetails.JobTitleArabic" />
+        <SimfDetailRow Label="@L["Admin.Vips.Col.ProfileType"]" Value="@TypeLabel(_vipDetails)" />
+        <SimfDetailRow Label="@L["Admin.Vips.Col.Email"]" Value="@_vipDetails.Email" />
+    }
+</SimfDetails>
 }
 
 @* Edit VIP — change this VIP's name / email / tier / photo / ID / welcome photo
@@ -85,7 +107,8 @@ else
 @if (_editOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@L["Admin.Vips.Edit.Title"]"
-               OnClose="@(() => _editOpen = false)">
+               OnClose="@(() => _editOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <EditAccountForm AccountId="_editUserId" Scope="visitors" IsVisitorScope="true"
                              ShowVipPhoto="true"

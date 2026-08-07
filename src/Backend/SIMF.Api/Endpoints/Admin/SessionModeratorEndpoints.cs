@@ -1,13 +1,13 @@
 // Tests: SIMF.Api.Tests/AdminSessionModeratorsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.SessionQuestions.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-169 (gap doc G6) — admin CRUD over per-session moderator
+/// <summary>Admin CRUD over per-session moderator
 /// grants. AdministratorOnly — admins assign, moderators do not
 /// self-promote.</summary>
 public sealed class ListSessionModeratorsEndpoint(IAdminSessionModeratorService service)
@@ -26,6 +26,26 @@ public sealed class ListSessionModeratorsEndpoint(IAdminSessionModeratorService 
             await service.ListAllAsync(req, ct)), ct);
 }
 
+/// <summary>DEF-MOD-005 — the assign dialog's two pickers (active sessions +
+/// eligible accounts). Gated by the same <c>SessionModerators.Assign</c>
+/// permission as the write it feeds, so whoever may assign a moderator can
+/// always reach the lookups.</summary>
+public sealed class ListSessionModeratorAssignOptionsEndpoint(IAdminSessionModeratorService service)
+    : EndpointWithoutRequest<ApiResult<SessionModeratorAssignOptions>>
+{
+    public override void Configure()
+    {
+        Get("/admin/session-moderators/assign-options");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SessionModerators.Assign),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<SessionModeratorAssignOptions>.Ok(
+            await service.ListAssignOptionsAsync(ct)), ct);
+}
+
 public sealed class AssignSessionModeratorEndpoint(IAdminSessionModeratorService service)
     : Endpoint<AssignSessionModeratorRequest, ApiResult<AdminSessionModeratorRow>>
 {
@@ -40,11 +60,7 @@ public sealed class AssignSessionModeratorEndpoint(IAdminSessionModeratorService
 
     public override async Task HandleAsync(AssignSessionModeratorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSessionModeratorRow>.Ok(
             await service.AssignAsync(actorId, req, ct)), ct);
     }
@@ -70,11 +86,7 @@ public sealed class RevokeSessionModeratorEndpoint(IAdminSessionModeratorService
 
     public override async Task HandleAsync(RevokeSessionModeratorRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.RevokeAsync(actorId, req.SessionId, req.UserId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

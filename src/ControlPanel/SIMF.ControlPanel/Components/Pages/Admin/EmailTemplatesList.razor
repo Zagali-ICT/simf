@@ -1,4 +1,4 @@
-@* D-735 — transactional email-template editor list page. The DB holds only
+@* Transactional email-template editor list page. The DB holds only
    overrides; the code catalogue backs every read, so the grid always shows the
    full fixed set of six identity emails (SignInOtp / EmailVerification /
    AccountExists / PasswordReset / BadgeActivation / BiometricStepUp). There is
@@ -21,7 +21,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminEmailTemplateSummary"

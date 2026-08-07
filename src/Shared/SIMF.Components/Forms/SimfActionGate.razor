@@ -1,0 +1,41 @@
+@* The one implementation of "render this control only if the signed-in
+   user holds this permission".
+
+   It lives in the shared component library rather than the Control Panel because
+   SimfDataGrid renders its own toolbar, row and context-menu buttons: a page
+   cannot wrap them from the outside, so the gate has to be reachable from inside
+   the grid. The Control Panel's <AuthorizedAction> is now a thin alias over this
+   component, so page markup is unchanged and there is still exactly one place
+   where a permission code becomes a policy decision.
+
+   Permission = null  -> transparent: the content renders, unconditionally. This
+   is the default on every parameter, so adding the gate cannot change a screen
+   that has not opted in.
+
+   Permission = ""    -> gated, and refused. PolicyFor("") names no registered
+   policy, so AuthorizeView denies. That is the behaviour <AuthorizedAction> has
+   always had for an empty code, and it is deliberately NOT treated as "ungated" —
+   a blank permission must never widen access.
+
+   This is a usability layer, not the security boundary: the API enforces the same
+   permission on the endpoint each button calls. *@
+@namespace SIMF.Components.Forms
+
+@if (Permission is null)
+{
+    @ChildContent
+}
+else
+{
+    <AuthorizeView Policy="@PermissionCatalog.PolicyFor(Permission)">
+        <Authorized>@ChildContent</Authorized>
+    </AuthorizeView>
+}
+
+@code {
+    /// <summary>The permission code that gates the content, e.g.
+    /// <c>PermissionCatalog.Sessions.Edit</c>. Null renders the content ungated.</summary>
+    [Parameter] public string? Permission { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

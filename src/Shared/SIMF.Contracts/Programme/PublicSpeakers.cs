@@ -1,12 +1,12 @@
 namespace SIMF.Contracts.Programme;
 
-/// <summary>D-199 (Mockup page 19 "Speakers") — one row in the public
-/// speakers list. Only the fields the visitor-facing list card shows: the
-/// avatar (resolved from <see cref="PhotoRelativePath"/> by the client),
-/// the rank line, and the bilingual name. <see cref="DisplayOrder"/> is
-/// carried so the client can keep a stable order if it re-sorts locally.
-/// Served by <c>GET /api/v1/app/speakers</c>. Mirrors the
-/// <c>PublicBoothSummary</c> public-read shape (D-199).</summary>
+/// <summary>One row in the public speakers list. Only the fields the
+/// visitor-facing list card shows: the avatar (resolved from
+/// <see cref="PhotoRelativePath"/> by the client), the rank line, and the
+/// bilingual name. <see cref="DisplayOrder"/> is carried so the client can keep
+/// a stable order if it re-sorts locally. Served by
+/// <c>GET /api/v1/app/speakers</c>. Mirrors the <c>PublicBoothSummary</c>
+/// public-read shape.</summary>
 public sealed record PublicSpeakerSummary(
     Guid Id,
     string Name,
@@ -18,19 +18,18 @@ public sealed record PublicSpeakerSummary(
     string? CountryNameAr,
     string? PhotoRelativePath,
     int DisplayOrder,
-    // D-357 — true when the speaker has an active SpeakerPhoto asset in the
+    // True when the speaker has an active SpeakerPhoto asset in the
     // unified media-asset pipeline; the client/website prefers serving that
     // (via /content/assets or /app/assets) over the legacy PhotoRelativePath.
     // Appended with a default so the shipped mobile wire contract is preserved.
     bool HasPhotoAsset = false);
 
-/// <summary>D-199 — envelope for the public speakers list.</summary>
+/// <summary>Envelope for the public speakers list.</summary>
 public sealed record PublicSpeakers(IReadOnlyList<PublicSpeakerSummary> Items);
 
-/// <summary>D-199 (Mockup page 20 "Speaker profile") — full public view of
-/// one speaker: the bilingual name + rank, nationality, the four
-/// bilingual rich-text tabs (Bio / Qualifications / Training experience /
-/// Awards — the four tabs on the mockup profile screen), the consent
+/// <summary>Full public view of one speaker: the bilingual name + rank,
+/// nationality, the four bilingual rich-text tabs (Bio / Qualifications /
+/// Training experience / Awards — the four tabs on the profile screen), the consent
 /// toggle the client uses to show/hide the "Request meeting" affordance,
 /// the opted-in social URLs, and the speaker's sessions.
 ///
@@ -64,20 +63,21 @@ public sealed record PublicSpeakerDetail(
     string? FacebookUrl,
     string? LinkedInUrl,
     string? XUrl,
-    // D-544 — opted-in website URL, gated by AllowsDataSharing like the social
+    // Opted-in website URL, gated by AllowsDataSharing like the social
     // URLs. Name-keyed JSON, so older app builds simply ignore it (wire-safe).
     string? WebsiteUrl,
     string? PhotoRelativePath,
     int DisplayOrder,
     IReadOnlyList<PublicSpeakerSession> Sessions);
 
-/// <summary>D-199 — one of the speaker's scheduled sessions, shown on the
+/// <summary>One of the speaker's scheduled sessions, shown on the
 /// speaker profile. A deliberately lean line (bilingual title + hall +
 /// time window) — the speaker profile does not need the theme chip or the
 /// seat summary that the full agenda session detail
 /// (<see cref="PublicSessionDetail"/>) carries, so it is not coupled to
-/// that contract. Ordered by <see cref="Start"/>. Times are UTC; the
-/// Flutter client renders local time per the device tz.</summary>
+/// that contract. Ordered by <see cref="Start"/>. Times are the <b>Saudi wall
+/// clock</b>, serialised zone-free; the Flutter client renders them
+/// verbatim and must not convert by the device timezone.</summary>
 public sealed record PublicSpeakerSession(
     Guid Id,
     string Code,
@@ -86,5 +86,5 @@ public sealed record PublicSpeakerSession(
     Guid HallId,
     string HallName,
     string HallNameArabic,
-    DateTimeOffset Start,
-    DateTimeOffset End);
+    DateTime Start,
+    DateTime End);

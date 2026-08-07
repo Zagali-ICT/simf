@@ -1,16 +1,9 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
 using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
 using SIMF.Contracts.Archive;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -45,7 +38,7 @@ public partial class ArchiveList
 
     // The edition's cover thumbnail URL, or null so SimfIdentityCell shows an
     // initials tile (never a broken image). Only when HasCover — the /assets proxy
-    // resolves the ArchiveCover StoredFile for this edition (D-357).
+    // resolves the ArchiveCover StoredFile for this edition.
     private static string? CoverImageUrl(AdminArchiveEditionSummary row) =>
         row.HasCover ? CpAssetUrls.AdminImage(nameof(AssetCategory.ArchiveCover), row.Id) : null;
 
@@ -149,7 +142,7 @@ public partial class ArchiveList
         _target = null;
     }
 
-    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    // Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminArchiveEditionSummary> selected) =>
         _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
 

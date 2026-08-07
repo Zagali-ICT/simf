@@ -10,8 +10,8 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace SIMF.Infrastructure.Identity;
 
-/// <summary>Binds the <c>FaceDetection</c> configuration section
-/// (C7 — D-371). <see cref="Enabled"/> defaults to true — the production
+/// <summary>Binds the <c>FaceDetection</c> configuration
+/// section. <see cref="Enabled"/> defaults to true — the production
 /// posture; tests / constrained environments may disable the gate, which
 /// turns the check into a logged pass-through.</summary>
 public sealed class FaceDetectionOptions
@@ -26,7 +26,7 @@ public sealed class FaceDetectionOptions
 }
 
 /// <summary>
-/// C7 (D-371) — offline human-face detection over the FaceAiSharp SCRFD
+/// Offline human-face detection over the FaceAiSharp SCRFD
 /// ONNX model (bundled in the <c>FaceAiSharp.Bundle</c> package; no
 /// external service, NCA-compatible). The detector is created lazily once
 /// (the ONNX session is expensive) and guarded by a lock — uploads are
@@ -40,7 +40,7 @@ public sealed class FaceAiSharpFaceDetectionService(
     private readonly Lock _gate = new();
     private IFaceDetector? _detector;
 
-    // Security finding H3 — reject decompression-bomb uploads before they
+    // Reject decompression-bomb uploads before they
     // allocate. A small file can declare an enormous canvas that decodes to
     // multiple GB of Rgb24; Image.Identify reads only the header (no pixel
     // allocation), so an over-large image is rejected before Image.Load
@@ -70,7 +70,7 @@ public sealed class FaceAiSharpFaceDetectionService(
     private bool Detect(byte[] imageBytes, CancellationToken cancellationToken)
     {
         // Header-only inspection (no pixel allocation) — reject an over-large
-        // canvas before the full decode commits memory (security finding H3).
+        // canvas before the full decode commits memory.
         try
         {
             var info = Image.Identify(imageBytes);

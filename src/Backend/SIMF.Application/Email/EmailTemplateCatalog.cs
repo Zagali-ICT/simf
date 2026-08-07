@@ -2,14 +2,14 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Application.Email;
 
-/// <summary>D-735 — one editable placeholder a template exposes: its
+/// <summary>One editable placeholder a template exposes: its
 /// <see cref="Name"/> (used as <c>{Name}</c>), bilingual display labels for the
 /// CP editor's token chips, and a <see cref="Sample"/> value used to render the
 /// live preview.</summary>
 public sealed record EmailTemplateToken(
     string Name, string DisplayEn, string DisplayAr, string Sample);
 
-/// <summary>D-735 — the code-owned default for one transactional email: subject +
+/// <summary>The code-owned default for one transactional email: subject +
 /// bilingual body templates plus the tokens the body may reference. This is the
 /// always-present fallback the resolver uses when no active DB override exists,
 /// and the source of the CP editor's token chips, preview samples, and
@@ -21,7 +21,7 @@ public sealed record EmailTemplateDefinition(
     string BodyAr,
     IReadOnlyList<EmailTemplateToken> Tokens);
 
-/// <summary>D-735 — the fixed catalogue of transactional-email defaults. Mirrors
+/// <summary>The fixed catalogue of transactional-email defaults. Mirrors
 /// how the AI-prompt catalogue (and the V10 notification-template catalogue)
 /// works: the code owns the defaults, the DB owns only admin overrides. The
 /// subject / body strings reproduce the original hard-coded bilingual copy (the
@@ -38,7 +38,7 @@ public static class EmailTemplateCatalog
     private static readonly IReadOnlyList<EmailTemplateToken> CodeTokens =
         [CodeToken, ExpiryToken];
 
-    // D-751 — tokens for the bulk-badge cover note. No one-time code: the badges
+    // Tokens for the bulk-badge cover note. No one-time code: the badges
     // themselves ride the message as a ZIP attachment.
     private static readonly EmailTemplateToken CountToken =
         new("Count", "Badge count", "عدد الشارات", "8");
@@ -56,6 +56,24 @@ public static class EmailTemplateCatalog
 
     private static readonly IReadOnlyList<EmailTemplateToken> NewEmailTokens =
         [NewEmailToken];
+
+    // BUG-024 — the lead card emailed to the exhibitor after a booth badge scan.
+    // Each displayed field is a bilingual PAIR so the English block renders the
+    // English value and the Arabic block the Arabic one (the service falls the
+    // other way round, then to a "not provided" placeholder, when one is missing).
+    // Deliberately absent: the national ID (encrypted at rest, never emailed) and
+    // the raw badge QR id (no existing template carries one).
+    private static readonly IReadOnlyList<EmailTemplateToken> ExhibitorLeadTokens =
+    [
+        new("VisitorName", "Visitor name", "اسم الزائر", "Sara Al-Otaibi"),
+        new("VisitorNameArabic", "Visitor name (Arabic)", "اسم الزائر (بالعربية)", "سارة العتيبي"),
+        new("JobTitle", "Job title", "المسمى الوظيفي", "Operations Manager"),
+        new("JobTitleArabic", "Job title (Arabic)", "المسمى الوظيفي (بالعربية)", "مدير العمليات"),
+        new("Organisation", "Organisation", "جهة العمل", "Red Sea Shipping"),
+        new("OrganisationArabic", "Organisation (Arabic)", "جهة العمل (بالعربية)", "الشحن البحري الأحمر"),
+        new("ScannedAt", "Scanned at (Saudi time)", "وقت المسح (بتوقيت السعودية)", "20-07-2026 09:30 AM"),
+        new("Note", "Your note", "ملاحظتك", "Interested in the fleet package"),
+    ];
 
     private static readonly IReadOnlyList<EmailTemplateDefinition> Definitions =
     [
@@ -148,6 +166,22 @@ public static class EmailTemplateCatalog
             "<p>إذا كنت أنت من أجرى هذا التغيير فلا حاجة لأي إجراء. وإذا لم تكن أنت، " +
             "فقد يكون حسابك معرّضاً للخطر — تواصل مع دعم سيمف فوراً.</p>",
             NewEmailTokens),
+
+        new(EmailTemplateType.ExhibitorLeadCapture,
+            "SIMF visitor captured at your booth: {VisitorName}",
+            "<p>You scanned a visitor badge at your booth. The visitor was added to " +
+            "your <strong>My Booth Visitors</strong> list in the SIMF app.</p>" +
+            "<p><strong>{VisitorName}</strong><br/>{JobTitle}<br/>{Organisation}</p>" +
+            "<p>Scanned at {ScannedAt} (Saudi time).<br/>Your note: {Note}</p>" +
+            "<p>The full card, with the visitor's contact details, is in " +
+            "<strong>My Booth Visitors</strong> in the app.</p>",
+            "<p>قمت بمسح بطاقة زائر في جناحك، وتمت إضافته إلى قائمة " +
+            "<strong>زوار جناحي</strong> في تطبيق سيمف.</p>" +
+            "<p><strong>{VisitorNameArabic}</strong><br/>{JobTitleArabic}<br/>{OrganisationArabic}</p>" +
+            "<p>وقت المسح {ScannedAt} (بتوقيت السعودية).<br/>ملاحظتك: {Note}</p>" +
+            "<p>البطاقة الكاملة مع بيانات التواصل متاحة في <strong>زوار جناحي</strong> " +
+            "داخل التطبيق.</p>",
+            ExhibitorLeadTokens),
     ];
 
     private static readonly IReadOnlyDictionary<EmailTemplateType, EmailTemplateDefinition> Map =

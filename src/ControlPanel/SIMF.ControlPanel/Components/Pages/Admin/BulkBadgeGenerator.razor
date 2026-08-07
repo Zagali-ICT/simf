@@ -1,4 +1,4 @@
-@* D-473 / D-751 (#10) — reusable bulk badge generator. Redesigned (2026-07-22)
+@* Reusable bulk badge generator. Redesigned
    from the flat "count box per profile type" grid into a batch-builder: pick a
    profile type + count and press Add to build a batch list (e.g. VIP × 5,
    Delegate × 3), then Generate → confirm popup (summary + optional organiser
@@ -90,7 +90,7 @@ else
     </div>
 }
 
-@* D-751 (#10) — confirm step: the batch summary + an optional organiser email;
+@* Confirm step: the batch summary + an optional organiser email;
    on confirm the QR badges are zipped and emailed to that address. *@
 <SimfModal Open="_confirmOpen"
            RequireExplicitClose="true"

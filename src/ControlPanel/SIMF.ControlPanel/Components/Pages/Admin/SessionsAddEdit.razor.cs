@@ -1,3 +1,4 @@
+using SIMF.Contracts.Sessions;
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -18,16 +20,36 @@ public partial class SessionsAddEdit
     private string _hallIdInput = string.Empty;
     private string _categoryIdInput = string.Empty;
     private string _typeInput = string.Empty;
-    // D-485 — per-session seat-mode override ("" = inherit, "0" = Assigned, "1" = Open).
+    // Per-session seat-mode override ("" = inherit, "0" = Assigned, "1" = Open).
     private string _seatModeInput = string.Empty;
     private string _startInput = string.Empty;
     private string _endInput = string.Empty;
     private string _capacityInput = string.Empty;
+    // Blank means "inherit the hall" (which may itself inherit the global
+    // value); the placeholder shows what that currently resolves to.
+    private string _arrivalGraceInput = string.Empty;
     private string _speakerPickInput = string.Empty;
     private string _themePickInput = string.Empty;
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
+
+    // A1 — a hall move or a start/end change cascade-releases EVERY seat already
+    // held for the session. The admin used to get no warning at all and only the
+    // generic "was updated" toast afterwards, so nudging an end time by half an hour
+    // silently wiped the room. _confirmRelease opens the must-decide dialog naming
+    // the real count; _releaseAccepted records that the admin said yes, so the
+    // second pass through HandleSubmitAsync actually submits.
+    private bool _confirmRelease;
+    private bool _releaseAccepted;
+
+    /// <summary>A1/A6 — how many active attendee registrations the pending change
+    /// would release (stamped on the loaded detail by the admin API).</summary>
+    private int ReleasedReservations => Initial?.ActiveReservationCount ?? 0;
+
+    /// <summary>A6 — how many admin-reserved row blocks the pending change would
+    /// destroy. They carry no attendee, so nothing else reports them.</summary>
+    private int ReleasedAdminBlocks => Initial?.ActiveAdminBlockCount ?? 0;
 
     private string[] _hallIds = Array.Empty<string>();
     private Dictionary<string, AdminHallSummary> _hallsById = new();
@@ -38,10 +60,10 @@ public partial class SessionsAddEdit
     private string[] _categoryIds = Array.Empty<string>();
     private Dictionary<string, AdminSessionCategorySummary> _categoriesById = new();
 
-    // D-452 — fixed session-type options (Workshop=0 / Session=1 / Event=2).
+    // Fixed session-type options (Workshop=0 / Session=1 / Event=2).
     private static readonly string[] _typeOptions = { "0", "1", "2" };
 
-    // D-485 — seat-mode override options ("0" = AssignedSeat, "1" = OpenSeating);
+    // Seat-mode override options ("0" = AssignedSeat, "1" = OpenSeating);
     // the empty placeholder selection inherits the hall's mode.
     private static readonly string[] _seatModeOptions = { "0", "1" };
 
@@ -72,6 +94,8 @@ public partial class SessionsAddEdit
             _model.LanguageArabic = Initial.LanguageArabic ?? string.Empty;
             _model.LiveStreamUrl = Initial.LiveStreamUrl ?? string.Empty;
             _model.LiveSignLanguageUrl = Initial.LiveSignLanguageUrl ?? string.Empty;
+            _model.LiveNotice = Initial.LiveNotice ?? string.Empty;
+            _model.LiveNoticeArabic = Initial.LiveNoticeArabic ?? string.Empty;
             _model.LiveCaptions = Initial.LiveCaptions ?? string.Empty;
             _model.LiveCaptionsArabic = Initial.LiveCaptionsArabic ?? string.Empty;
             _model.IsActive = Initial.IsActive;
@@ -83,9 +107,10 @@ public partial class SessionsAddEdit
             _seatModeInput = Initial.SeatSelectionModeOverride.HasValue
                 ? ((int)Initial.SeatSelectionModeOverride.Value).ToString()
                 : string.Empty;
-            _startInput = Initial.Start.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
-            _endInput = Initial.End.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
+            _startInput = Initial.Start.ToString("yyyy-MM-ddTHH:mm");
+            _endInput = Initial.End.ToString("yyyy-MM-ddTHH:mm");
             _capacityInput = Initial.CapacityOverride?.ToString() ?? string.Empty;
+            _arrivalGraceInput = Initial.ArrivalGraceMinutesOverride?.ToString() ?? string.Empty;
             _selectedSpeakers.AddRange(Initial.Speakers);
             _selectedThemes.AddRange(Initial.ThemeIds);
             if (Initial.Outcomes is not null)
@@ -128,8 +153,23 @@ public partial class SessionsAddEdit
                     .Select(h => h.Id.ToString())
                     .ToArray();
             }
+            else
+            {
+                // §6.16 (F-U5-003) — the commoner failure is a RETURNED failed
+                // envelope, not a throw: simfReadEnvelope converts an HTTP error
+                // or a non-JSON error page into ApiResult.Fail instead of
+                // throwing, so the catch above never sees it.
+                ReportLookupFailure();
+            }
         }
-        catch { }
+        catch
+        {
+            // §6.16 (F-U5-003) — a bare `catch { }` left the Hall / Speaker /
+            // Theme / Category picker silently EMPTY. HandleSubmitAsync then
+            // hard-fails on the missing hall, so the form cannot be saved and
+            // nothing on screen says why. The dialog already renders _error.
+            ReportLookupFailure();
+        }
     }
 
     private async Task LoadSpeakersAsync()
@@ -144,8 +184,23 @@ public partial class SessionsAddEdit
                 _speakersById = envelope.Data.Items.ToDictionary(s => s.Id.ToString(), s => s);
                 RefreshSpeakerOptions();
             }
+            else
+            {
+                // §6.16 (F-U5-003) — the commoner failure is a RETURNED failed
+                // envelope, not a throw: simfReadEnvelope converts an HTTP error
+                // or a non-JSON error page into ApiResult.Fail instead of
+                // throwing, so the catch above never sees it.
+                ReportLookupFailure();
+            }
         }
-        catch { }
+        catch
+        {
+            // §6.16 (F-U5-003) — a bare `catch { }` left the Hall / Speaker /
+            // Theme / Category picker silently EMPTY. HandleSubmitAsync then
+            // hard-fails on the missing hall, so the form cannot be saved and
+            // nothing on screen says why. The dialog already renders _error.
+            ReportLookupFailure();
+        }
     }
 
     private async Task LoadThemesAsync()
@@ -160,8 +215,23 @@ public partial class SessionsAddEdit
                 _themesById = envelope.Data.Items.ToDictionary(t => t.Id.ToString(), t => t);
                 RefreshThemeOptions();
             }
+            else
+            {
+                // §6.16 (F-U5-003) — the commoner failure is a RETURNED failed
+                // envelope, not a throw: simfReadEnvelope converts an HTTP error
+                // or a non-JSON error page into ApiResult.Fail instead of
+                // throwing, so the catch above never sees it.
+                ReportLookupFailure();
+            }
         }
-        catch { }
+        catch
+        {
+            // §6.16 (F-U5-003) — a bare `catch { }` left the Hall / Speaker /
+            // Theme / Category picker silently EMPTY. HandleSubmitAsync then
+            // hard-fails on the missing hall, so the form cannot be saved and
+            // nothing on screen says why. The dialog already renders _error.
+            ReportLookupFailure();
+        }
     }
 
     private async Task LoadCategoriesAsync()
@@ -179,8 +249,23 @@ public partial class SessionsAddEdit
                     .Select(c => c.Id.ToString())
                     .ToArray();
             }
+            else
+            {
+                // §6.16 (F-U5-003) — the commoner failure is a RETURNED failed
+                // envelope, not a throw: simfReadEnvelope converts an HTTP error
+                // or a non-JSON error page into ApiResult.Fail instead of
+                // throwing, so the catch above never sees it.
+                ReportLookupFailure();
+            }
         }
-        catch { }
+        catch
+        {
+            // §6.16 (F-U5-003) — a bare `catch { }` left the Hall / Speaker /
+            // Theme / Category picker silently EMPTY. HandleSubmitAsync then
+            // hard-fails on the missing hall, so the form cannot be saved and
+            // nothing on screen says why. The dialog already renders _error.
+            ReportLookupFailure();
+        }
     }
 
     private string CategoryLabel(string id)
@@ -191,7 +276,7 @@ public partial class SessionsAddEdit
             : c.Name;
     }
 
-    // D-452 — localized label for a session-type option id ("0"/"1"/"2").
+    // Localized label for a session-type option id ("0"/"1"/"2").
     private string TypeLabel(string id) => id switch
     {
         "0" => L["Admin.Sessions.Type.Workshop"],
@@ -200,13 +285,13 @@ public partial class SessionsAddEdit
         _ => id,
     };
 
-    // D-452 — empty selection = unset; otherwise the parsed SessionType.
+    // Empty selection = unset; otherwise the parsed SessionType.
     private static SessionType? ParseType(string raw) =>
         int.TryParse(raw, out var n) && Enum.IsDefined(typeof(SessionType), n)
             ? (SessionType)n
             : null;
 
-    // D-485 — the per-session seat-mode override select ("0"/"1"); empty = inherit.
+    // The per-session seat-mode override select ("0"/"1"); empty = inherit.
     private string SeatModeLabel(string id) => id switch
     {
         "1" => L["Admin.Sessions.SeatMode.Open"],
@@ -305,7 +390,7 @@ public partial class SessionsAddEdit
         RefreshSpeakerOptions();
     }
 
-    // B9 — D-225: set a speaker's per-session role (speaker / host).
+    // Set a speaker's per-session role (speaker / host).
     private void OnSpeakerRoleChanged(int index, ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var raw)
@@ -381,7 +466,7 @@ public partial class SessionsAddEdit
         RefreshThemeOptions();
     }
 
-    // #3 / #4 — a lightweight "required" marker for the Type + Speakers fields.
+    // A lightweight "required" marker for the Type + Speakers fields.
     // Appended at render time so the underlying resx label stays reusable elsewhere.
     private string RequiredLabel(string key) => $"{L[key]} *";
 
@@ -390,43 +475,93 @@ public partial class SessionsAddEdit
         if (_busy) return;
         _error = null;
 
-        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Length is < 2 or > 16)
+        var form = ReadForm();
+        if (form is null) { return; }
+
+        // A1 / A6 — the API cascade-releases every held seat when the hall or the
+        // start/end window moves. Mirror its exact trigger (same field comparison)
+        // so the dialog appears precisely when seats really would be destroyed, and
+        // never on an edit that leaves the slot alone.
+        if (WouldReleaseHeldSeats(form.HallId, form.Start, form.End) && !_releaseAccepted)
         {
-            _error = L["Admin.Sessions.Field.CodeInvalid"]; return;
+            _confirmRelease = true;
+            return;
         }
-        if (string.IsNullOrWhiteSpace(_model.Title) || _model.Title.Length > 256)
+
+        _busy = true;
+        try
         {
-            _error = L["Admin.Sessions.Field.TitleInvalid"]; return;
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/sessions",
+                $"/account/api/admin/sessions/{Initial?.Id}",
+                BuildCreateRequest(form),
+                BuildUpdateRequest(form));
+
+            if (!result.Succeeded)
+            {
+                _error = result.ServerMessage ?? L["Admin.Sessions.Fallback"];
+            }
         }
-        if (string.IsNullOrWhiteSpace(_model.TitleArabic) || _model.TitleArabic.Length > 256)
+        finally { _busy = false; }
+    }
+
+    /// <summary>Validates the form and returns its parsed values, or null after
+    /// setting <see cref="_error"/> to the first problem found.</summary>
+    private FormValues? ReadForm()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Length is < SessionRules.MinCodeLength or > SessionRules.MaxCodeLength)
         {
-            _error = L["Admin.Sessions.Field.TitleArabicInvalid"]; return;
+            _error = L["Admin.Sessions.Field.CodeInvalid"];
+            return null;
+        }
+        if (string.IsNullOrWhiteSpace(_model.Title) || _model.Title.Length > SessionRules.MaxTitleLength)
+        {
+            _error = L["Admin.Sessions.Field.TitleInvalid"];
+            return null;
+        }
+        if (string.IsNullOrWhiteSpace(_model.TitleArabic) || _model.TitleArabic.Length > SessionRules.MaxTitleLength)
+        {
+            _error = L["Admin.Sessions.Field.TitleArabicInvalid"];
+            return null;
         }
         if (!Guid.TryParse(_hallIdInput, out var hallId))
         {
-            _error = L["Admin.Sessions.Field.HallRequired"]; return;
+            _error = L["Admin.Sessions.Field.HallRequired"];
+            return null;
         }
         if (!DateTime.TryParse(_startInput, out var startLocal)
             || !DateTime.TryParse(_endInput, out var endLocal))
         {
-            _error = L["Admin.Sessions.Field.TimeInvalid"]; return;
+            _error = L["Admin.Sessions.Field.TimeInvalid"];
+            return null;
         }
         var start = SaudiTime.FromSaudiWallClock(startLocal);
         var end = SaudiTime.FromSaudiWallClock(endLocal);
         if (end <= start)
         {
-            _error = L["Admin.Sessions.Field.TimeWindowInvalid"]; return;
+            _error = L["Admin.Sessions.Field.TimeWindowInvalid"];
+            return null;
         }
         int? capacityOverride = null;
         if (!string.IsNullOrWhiteSpace(_capacityInput))
         {
             if (!int.TryParse(_capacityInput, out var parsed) || parsed < 0)
             {
-                _error = L["Admin.Sessions.Field.CapacityInvalid"]; return;
+                _error = L["Admin.Sessions.Field.CapacityInvalid"];
+                return null;
             }
             capacityOverride = parsed;
         }
-        // §8 / D-349 — each non-blank live URL must be a YouTube link or an HLS/MP4
+        // Blank = inherit the hall; otherwise a whole number inside the
+        // shared bound. Same rule object the server validates with.
+        if (!WalkInModeOptions.TryParseArrivalGrace(
+                _arrivalGraceInput, out var arrivalGraceOverride))
+        {
+            _error = L["Admin.Sessions.Field.ArrivalGraceInvalid"];
+            return null;
+        }
+        // Each non-blank live URL must be a YouTube link or an HLS/MP4
         // stream. Shared rule (LiveStreamUrlPolicy); the API enforces the same.
         var liveUrlInvalid =
             (!string.IsNullOrWhiteSpace(_model.LiveStreamUrl)
@@ -435,112 +570,163 @@ public partial class SessionsAddEdit
                 && !LiveStreamUrlPolicy.IsAllowed(_model.LiveSignLanguageUrl));
         if (liveUrlInvalid)
         {
-            _error = L["Admin.Sessions.Field.LiveUrlInvalid"]; return;
+            _error = L["Admin.Sessions.Field.LiveUrlInvalid"];
+            return null;
         }
-        // B9b — D-226: optional category (empty selection = no category).
+        // Optional category (empty selection = no category).
         Guid? categoryId = Guid.TryParse(_categoryIdInput, out var cid) ? cid : null;
 
-        // #3 / #4 — mirror the API's two rules with the same no-regression
-        // grandfather (Initial holds the stored row on edit): a new session must
-        // declare a type and, unless it is an Event, carry at least one speaker.
-        // On edit a legacy violating row stays saveable, but a compliant row cannot
-        // be regressed (clear a set type / drop the last speaker of a non-Event).
+        var type = ParseType(_typeInput);
+        return ValidateTypeAndSpeakers(type)
+            ? new FormValues(hallId, start, end, capacityOverride, categoryId, type, arrivalGraceOverride)
+            : null;
+    }
+
+    /// <summary>
+    /// Mirrors the API's two rules with the same no-regression
+    /// grandfather (<c>Initial</c> holds the stored row on edit): a new session
+    /// must declare a type and, unless it is an Event, carry at least one
+    /// speaker. On edit a legacy violating row stays saveable, but a compliant
+    /// row cannot be regressed (clear a set type / drop the last speaker of a
+    /// non-Event).
+    /// </summary>
+    private bool ValidateTypeAndSpeakers(SessionType? type)
+    {
         static bool SpeakerRuleMet(SessionType? t, int count) =>
             t == SessionType.Event || count >= 1;
-        var type = ParseType(_typeInput);
+
         if ((!IsEdit || Initial?.Type is not null) && type is null)
         {
-            _error = L["Admin.Sessions.Field.TypeRequired"]; return;
+            _error = L["Admin.Sessions.Field.TypeRequired"];
+            return false;
         }
         var speakerRuleApplied = !IsEdit
             || SpeakerRuleMet(Initial?.Type, Initial?.Speakers.Count ?? 0);
         if (speakerRuleApplied && !SpeakerRuleMet(type, _selectedSpeakers.Count))
         {
-            _error = L["Admin.Sessions.Field.SpeakerRequired"]; return;
+            _error = L["Admin.Sessions.Field.SpeakerRequired"];
+            return false;
         }
-
-        _busy = true;
-        try
-        {
-            ApiResult<AdminSessionDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/sessions",
-                    new AdminCreateSessionRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Title = _model.Title.Trim(),
-                        TitleArabic = _model.TitleArabic.Trim(),
-                        Description = NullIfBlank(_model.Description),
-                        DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
-                        HallId = hallId,
-                        CategoryId = categoryId,
-                        Type = ParseType(_typeInput),
-                        Start = start,
-                        End = end,
-                        CapacityOverride = capacityOverride,
-                        Speakers = _selectedSpeakers.ToList(),
-                        ThemeIds = _selectedThemes.ToList(),
-                        LiveStreamUrl = NullIfBlank(_model.LiveStreamUrl),
-                        LiveSignLanguageUrl = NullIfBlank(_model.LiveSignLanguageUrl),
-                        LiveCaptions = NullIfBlank(_model.LiveCaptions),
-                        LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
-                        SeatSelectionModeOverride = ParseSeatModeOverride(),
-                        Language = NullIfBlank(_model.Language),
-                        LanguageArabic = NullIfBlank(_model.LanguageArabic),
-                        Outcomes = BuildOutcomes(),
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/sessions/{Initial!.Id}",
-                    new AdminUpdateSessionRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Title = _model.Title.Trim(),
-                        TitleArabic = _model.TitleArabic.Trim(),
-                        Description = NullIfBlank(_model.Description),
-                        DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
-                        HallId = hallId,
-                        CategoryId = categoryId,
-                        Type = ParseType(_typeInput),
-                        Start = start,
-                        End = end,
-                        CapacityOverride = capacityOverride,
-                        Speakers = _selectedSpeakers.ToList(),
-                        ThemeIds = _selectedThemes.ToList(),
-                        IsActive = _model.IsActive,
-                        LiveStreamUrl = NullIfBlank(_model.LiveStreamUrl),
-                        LiveSignLanguageUrl = NullIfBlank(_model.LiveSignLanguageUrl),
-                        LiveCaptions = NullIfBlank(_model.LiveCaptions),
-                        LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
-                        SeatSelectionModeOverride = ParseSeatModeOverride(),
-                        Language = NullIfBlank(_model.Language),
-                        LanguageArabic = NullIfBlank(_model.LanguageArabic),
-                        Outcomes = BuildOutcomes(),
-                    });
-            }
-
-            if (envelope is { Success: true, Data: not null })
-            {
-                await OnSuccess.InvokeAsync(envelope.Data);
-            }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Sessions.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Sessions.Fallback"];
-        }
-        finally { _busy = false; }
+        return true;
     }
 
-    // D-578 — subtitle import (upload .srt/.vtt parsed server-side, or fetch from the
+    private AdminCreateSessionRequest BuildCreateRequest(FormValues form) => new()
+    {
+        Code = _model.Code.Trim().ToUpperInvariant(),
+        Title = _model.Title.Trim(),
+        TitleArabic = _model.TitleArabic.Trim(),
+        Description = NullIfBlank(_model.Description),
+        DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
+        HallId = form.HallId,
+        CategoryId = form.CategoryId,
+        Type = form.Type,
+        Start = form.Start,
+        End = form.End,
+        CapacityOverride = form.CapacityOverride,
+        Speakers = _selectedSpeakers.ToList(),
+        ThemeIds = _selectedThemes.ToList(),
+        LiveStreamUrl = NullIfBlank(_model.LiveStreamUrl),
+        LiveSignLanguageUrl = NullIfBlank(_model.LiveSignLanguageUrl),
+        LiveNotice = NullIfBlank(_model.LiveNotice),
+        LiveNoticeArabic = NullIfBlank(_model.LiveNoticeArabic),
+        LiveCaptions = NullIfBlank(_model.LiveCaptions),
+        LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
+        SeatSelectionModeOverride = ParseSeatModeOverride(),
+        ArrivalGraceMinutesOverride = form.ArrivalGraceMinutesOverride,
+        Language = NullIfBlank(_model.Language),
+        LanguageArabic = NullIfBlank(_model.LanguageArabic),
+        Outcomes = BuildOutcomes(),
+    };
+
+    private AdminUpdateSessionRequest BuildUpdateRequest(FormValues form) => new()
+    {
+        Code = _model.Code.Trim().ToUpperInvariant(),
+        Title = _model.Title.Trim(),
+        TitleArabic = _model.TitleArabic.Trim(),
+        Description = NullIfBlank(_model.Description),
+        DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
+        HallId = form.HallId,
+        CategoryId = form.CategoryId,
+        Type = form.Type,
+        Start = form.Start,
+        End = form.End,
+        CapacityOverride = form.CapacityOverride,
+        Speakers = _selectedSpeakers.ToList(),
+        ThemeIds = _selectedThemes.ToList(),
+        IsActive = _model.IsActive,
+        LiveStreamUrl = NullIfBlank(_model.LiveStreamUrl),
+        LiveSignLanguageUrl = NullIfBlank(_model.LiveSignLanguageUrl),
+        // NullIfBlank is what CLEARS a notice: emptying either box sends null,
+        // so a notice an admin no longer wants can actually be taken down.
+        LiveNotice = NullIfBlank(_model.LiveNotice),
+        LiveNoticeArabic = NullIfBlank(_model.LiveNoticeArabic),
+        LiveCaptions = NullIfBlank(_model.LiveCaptions),
+        LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
+        SeatSelectionModeOverride = ParseSeatModeOverride(),
+        ArrivalGraceMinutesOverride = form.ArrivalGraceMinutesOverride,
+        Language = NullIfBlank(_model.Language),
+        LanguageArabic = NullIfBlank(_model.LanguageArabic),
+        Outcomes = BuildOutcomes(),
+    };
+
+
+    /// <summary>The shared 0..240 bound as the input's own `max`, so the
+    /// browser refuses out-of-range values before the parser has to.</summary>
+    private static string ArrivalGraceMax =>
+        WalkInModeOptions.MaxArrivalGraceMinutes.ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>The helper under the arrival-grace box. On edit it names
+    /// the number the server would actually use if the box is left blank, so an
+    /// admin can see what they are inheriting instead of guessing whether the hall
+    /// or the global value is in force.</summary>
+    private string ArrivalGraceHint() => Initial is null
+        ? L["Admin.Sessions.Field.ArrivalGraceHint"]
+        : string.Format(
+            CultureInfo.CurrentCulture,
+            L["Admin.Sessions.Field.ArrivalGraceInheritHint"],
+            Initial.InheritedArrivalGraceMinutes);
+
+    /// <summary>The form's validated, parsed values — everything the two request
+    /// builders need that is not read straight off <see cref="_model"/>.</summary>
+    private sealed record FormValues(
+        Guid HallId,
+        DateTime Start,
+        DateTime End,
+        int? CapacityOverride,
+        Guid? CategoryId,
+        SessionType? Type,
+        // Null = inherit the hall.
+        int? ArrivalGraceMinutesOverride);
+
+    /// <summary>A1/A6 — true when saving would destroy seats: this is an edit, the
+    /// hall or the start/end window actually moves, and something is currently held.
+    /// The comparison is the same one <c>AdminSessionService.UpdateAsync</c> makes
+    /// (<c>HallId</c> / <c>Start</c> / <c>End</c> against the stored row), so the
+    /// warning and the cascade can never disagree.</summary>
+    private bool WouldReleaseHeldSeats(Guid hallId, DateTime start, DateTime end)
+    {
+        if (!IsEdit || Initial is null)
+        {
+            return false;
+        }
+        var slotMoves = Initial.HallId != hallId
+            || Initial.Start != start
+            || Initial.End != end;
+        return slotMoves && (ReleasedReservations + ReleasedAdminBlocks) > 0;
+    }
+
+    /// <summary>A1 — the admin accepted the consequence; re-run the submit, which now
+    /// falls through the guard.</summary>
+    private async Task ConfirmReleaseAsync()
+    {
+        _confirmRelease = false;
+        _releaseAccepted = true;
+        await HandleSubmitAsync();
+    }
+
+    private void CancelRelease() => _confirmRelease = false;
+
+    // Subtitle import (upload .srt/.vtt parsed server-side, or fetch from the
     // video) feedback banner. Variant is one of SimfAlert's error/success/info.
     private string? _subtitleMessage;
     private string _subtitleVariant = "info";
@@ -666,15 +852,24 @@ public partial class SessionsAddEdit
         public string TitleArabic { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string DescriptionArabic { get; set; } = string.Empty;
-        // Website Session-detail "at a glance" language label (Figma 5991-85840).
+        // Website Session-detail "at a glance" language label.
         public string Language { get; set; } = string.Empty;
         public string LanguageArabic { get; set; } = string.Empty;
-        // §8 — live broadcast stream URLs (manual stub provider).
+        // Live broadcast stream URLs (manual stub provider).
         public string LiveStreamUrl { get; set; } = string.Empty;
         public string LiveSignLanguageUrl { get; set; } = string.Empty;
-        // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+        // Bilingual informational notice shown with the live stream.
+        // Blank in both languages = no notice; it never withholds the stream.
+        public string LiveNotice { get; set; } = string.Empty;
+        public string LiveNoticeArabic { get; set; } = string.Empty;
+        // AI live-caption text (manual stub provider, bilingual).
         public string LiveCaptions { get; set; } = string.Empty;
         public string LiveCaptionsArabic { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
+
+    /// <summary>§6.16 (F-U5-003) — surface a lookup failure once, into the
+    /// dialog's own error area. Uses ??= so a validation message the admin is
+    /// already acting on is never overwritten by a background load failure.</summary>
+    private void ReportLookupFailure() => _error ??= L["Admin.Sessions.LookupsFailed"];
 }

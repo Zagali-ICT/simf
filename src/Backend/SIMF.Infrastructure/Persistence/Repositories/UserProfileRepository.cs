@@ -7,7 +7,7 @@ using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Repositories;
 
-/// <summary>R4 — D-209: EF-backed <see cref="IUserProfileRepository"/>. Spans
+/// <summary>EF-backed <see cref="IUserProfileRepository"/>. Spans
 /// both contexts (App DB for the profile + lookups; Identity DB for the
 /// account reads + the transactional save). Query shapes are lifted verbatim
 /// from the pre-move <c>UserProfileService</c>.</summary>
@@ -55,7 +55,7 @@ internal sealed class UserProfileRepository(
     public async Task<long> NextRegistrationReferenceAsync(
         CancellationToken cancellationToken = default)
     {
-        // D-373 — a SQL sequence is the concurrency-safe issuer for the
+        // A SQL sequence is the concurrency-safe issuer for the
         // human-quotable registration reference. Raw ADO because SQL Server
         // forbids NEXT VALUE FOR inside the derived table EF wraps
         // SqlQueryRaw results into.
@@ -134,7 +134,11 @@ internal sealed class UserProfileRepository(
             .Where(p => p.UserId == userId)
             .Select(p => new ProfileCompletenessFacts(
                 p.Name, p.NameArabic, p.Gender,
-                p.IdImageRelativePath, p.Interests.Any()))
+                p.IdImageRelativePath, p.Interests.Any(),
+                // BUG-018 (18-3) — audience side = no profile type yet, or one
+                // flagged IsForVisitor. Partner/operational types are exempt from
+                // the visitor evidence rules.
+                p.ProfileType == null || p.ProfileType.IsForVisitor))
             .SingleOrDefaultAsync(cancellationToken);
 
     public Task<ProfileTypeRole?> GetAssignedProfileTypeRoleAsync(

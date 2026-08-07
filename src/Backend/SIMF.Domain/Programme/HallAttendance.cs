@@ -3,47 +3,44 @@ using SIMF.Common.Enums;
 namespace SIMF.Domain.Programme;
 
 /// <summary>
-/// P5.1 — D-241 (FDS-003 §5.4, FR-305/506): one attendee's arrival at a hall for
-/// a session — an enter time and (once they leave or the session ends) a leave
-/// time. Recorded by a GPS geofence crossing (<see cref="AttendanceMethod.Geofence"/>,
-/// the attendee's own device) or a QR scan at the hall door
-/// (<see cref="AttendanceMethod.QrScan"/>, an operator). There is at most one
-/// <b>open</b> row (Leave null) per attendee per session — a door scan and a
-/// geofence crossing for the same session update the one row rather than
-/// creating two (enforced by a filtered unique index).
+/// One attendee's arrival at a hall for a session: an enter time and, once they
+/// leave or the session ends, a leave time. Recorded either by the attendee's own
+/// device crossing a geofence or by an operator scanning at the hall door.
 ///
-/// <para>Feeds session attendance (FR-506) and gates audience questions
-/// (FR-704). GPS is <b>sensitive personal data</b> (FDS-003 §10): only the
-/// derived enter/leave times are stored here — never the raw coordinates or a
-/// continuous track (that is the deferred movement/dwell feature, FR-1103).</para>
+/// <para>There is at most one open row — one with no leave time — per attendee
+/// per session, enforced by a filtered unique index, so a door scan and a
+/// geofence crossing for the same session update the one row instead of creating
+/// two.</para>
+///
+/// <para>GPS is sensitive personal data, so only the derived enter and leave
+/// times are kept here, never the raw coordinates. The continuous track lives in
+/// <see cref="DevicePositionPing"/> instead.</para>
 /// </summary>
 public sealed class HallAttendance
 {
     public Guid Id { get; set; }
 
-    /// <summary>The session attended. Real FK (same DbContext).</summary>
     public Guid SessionId { get; set; }
     public Session? Session { get; set; }
 
-    /// <summary>The hall the session is in (denormalised from the session at
-    /// record time for the live-attendance per-hall counts). Real FK.</summary>
+    /// <summary>Denormalised from the session at record time, so the live
+    /// per-hall counts need no join.</summary>
     public Guid HallId { get; set; }
     public Hall? Hall { get; set; }
 
-    /// <summary>Bare <c>Guid</c> of the attendee — cross-context (Identity DB),
-    /// no FK (D-157).</summary>
+    /// <summary>A bare Guid: the attendee lives in the Identity database, so
+    /// there is no foreign key across the two.</summary>
     public Guid UserId { get; set; }
 
-    /// <summary>How this arrival was recorded.</summary>
     public AttendanceMethod Method { get; set; }
 
-    /// <summary>When the attendee entered (UTC).</summary>
-    public DateTimeOffset Enter { get; set; }
+    /// <summary>Saudi local time.</summary>
+    public DateTime Enter { get; set; }
 
-    /// <summary>When the attendee left — set on departure or at session end.
-    /// Null while the attendee is still considered present (the open row).</summary>
-    public DateTimeOffset? Leave { get; set; }
+    /// <summary>Set on departure or at session end. Null while the attendee is
+    /// still considered present, which is what makes the row open.</summary>
+    public DateTime? Leave { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

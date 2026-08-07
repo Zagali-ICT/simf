@@ -13,13 +13,13 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Media;
 
 /// <summary>
-/// D-199 (Mockup page 30) — admin CRUD over <see cref="MediaItem"/>, built on
+/// Admin CRUD over <see cref="MediaItem"/>, built on
 /// <see cref="SimfAppDbContext"/>. Modelled on <c>AdminSpeakerService</c>:
 /// soft-delete via <c>IsActive</c>, an audit entry per mutation, and the same
 /// validation-then-persist flow. There is no unique business key on a media
 /// item (unlike Speaker.Code), so there is no 409-duplicate path — see
 /// <c>AdminMediaTests</c> and the module notes. Image bytes are written to the
-/// unified <see cref="IFileService"/> store (D-568 Wave C S2), pointed at by
+/// unified <see cref="IFileService"/> store, pointed at by
 /// <c>MediaItem.ImageFileId</c>.
 /// </summary>
 internal sealed class AdminMediaService(
@@ -45,7 +45,7 @@ internal sealed class AdminMediaService(
                 || (item.Album != null && EF.Functions.Like(item.Album, $"%{term}%"))
                 || (item.AlbumArabic != null && EF.Functions.Like(item.AlbumArabic, $"%{term}%")));
         }
-        // CP grid per-column filters (D-256). Keys match the SimfDataGrid
+        // CP grid per-column filters. Keys match the SimfDataGrid
         // column Key values on MediaList.razor; unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
@@ -74,7 +74,7 @@ internal sealed class AdminMediaService(
             }
         }
 
-        // CP grid sortable columns (D-256). Default preserves DisplayOrder,
+        // CP grid sortable columns. Default preserves DisplayOrder,
         // then newest-first by CreatedAt.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
@@ -128,7 +128,7 @@ internal sealed class AdminMediaService(
         Validate(request.Kind, request.Title, request.TitleArabic,
             request.Album, request.AlbumArabic, request.Url, request.DisplayOrder);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var item = new MediaItem
         {
             Id = Guid.NewGuid(),
@@ -145,13 +145,11 @@ internal sealed class AdminMediaService(
         dbContext.MediaItems.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={item.Id}; kind={item.Kind}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaCreated,
+            actorUserId,
+            $"id={item.Id}; kind={item.Kind}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created MediaItem {Id} ({Kind})",
@@ -184,16 +182,14 @@ internal sealed class AdminMediaService(
         item.Url = NullIfBlank(request.Url);
         item.DisplayOrder = request.DisplayOrder;
         item.IsActive = request.IsActive;
-        item.UpdatedAt = timeProvider.GetUtcNow();
+        item.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={item.Id}; active={item.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaUpdated,
+            actorUserId,
+            $"id={item.Id}; active={item.IsActive}",
+            cancellationToken);
 
         return ToDetail(item);
     }
@@ -216,16 +212,11 @@ internal sealed class AdminMediaService(
         }
 
         item.IsActive = false;
-        item.UpdatedAt = timeProvider.GetUtcNow();
+        item.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={item.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaDeactivated, actorUserId, $"id={item.Id}", cancellationToken);
     }
 
     public async Task<AdminMediaDetail> SetImageAsync(
@@ -242,7 +233,7 @@ internal sealed class AdminMediaService(
                 "The media item was not found.",
                 "لم يتم العثور على عنصر الوسائط.");
 
-        // D-568 (S2) — store the bytes in the unified StoredFile store. IFileService
+        // Store the bytes in the unified StoredFile store. IFileService
         // runs the full pipeline (malware scan, magic-byte allow-list, canonical
         // MIME, SHA-256, audit); a non-image is rejected there (400).
         var result = await fileService.UploadAsync(
@@ -253,7 +244,7 @@ internal sealed class AdminMediaService(
         // "One active image per item" — retire the replaced file's bytes.
         var priorFileId = item.ImageFileId;
         item.ImageFileId = result.Id;
-        item.UpdatedAt = timeProvider.GetUtcNow();
+        item.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         if (priorFileId is { } old && old != result.Id)
@@ -261,13 +252,11 @@ internal sealed class AdminMediaService(
             await fileService.DeleteAsync(old, actorUserId, cancellationToken);
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaImageSet,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={item.Id}; fileId={result.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaImageSet,
+            actorUserId,
+            $"id={item.Id}; fileId={result.Id}",
+            cancellationToken);
 
         return ToDetail(item);
     }

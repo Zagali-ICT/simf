@@ -5,16 +5,17 @@ using SIMF.Application.MyArea;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Account;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.MyArea;
 
 /// <summary>
-/// Builds the My-Area dashboard (App Screen 14) read model. Three read-only
-/// aggregates over the App DB — held seat bookings (Page_014 L-2), accepted
-/// speaker meetings + confirmed business meetings (L-3), merged into today's
-/// schedule (L-4) — plus the user's profile / tier and the account avatar. The
+/// Builds the My-Area dashboard read model. Three read-only
+/// aggregates over the App DB — held seat bookings, accepted
+/// speaker meetings + confirmed business meetings, merged into today's
+/// schedule — plus the user's profile / tier and the account avatar. The
 /// avatar comes from the Identity side via <see cref="IAccountService"/>, a
-/// second read on the other context (D-157 — no cross-DB join). D-249.
+/// second read on the other context (no cross-DB join).
 /// </summary>
 internal sealed class MyAreaService(
     SimfAppDbContext appDbContext,
@@ -24,8 +25,8 @@ internal sealed class MyAreaService(
     private const string KindSession = "Session";
     private const string KindMeeting = "Meeting";
 
-    /// <summary>The event runs in Riyadh — Arabia Standard Time (UTC+3, no DST)
-    /// — so "today" on the dashboard is the AST calendar day, not the UTC day
+    /// <summary>The event runs in Riyadh — Arabia Standard Time (+03:00, no DST)
+    /// — so "today" on the dashboard is the AST calendar day, not the calendar day elsewhere
     /// (otherwise an evening session would slip to the next day's card).</summary>
     private static readonly TimeSpan EventTimeZoneOffset = TimeSpan.FromHours(3);
 
@@ -94,7 +95,8 @@ internal sealed class MyAreaService(
         CancellationToken cancellationToken = default)
     {
         // The user's booked / joined sessions — the same active seat-bookings the
-        // dashboard counts (D-485 kinds, not released, active session). Project the
+        // dashboard counts (the booking kinds below, not released, active
+        // session). Project the
         // card fields + the primary speaker (DisplayOrder 0) to an anonymous type;
         // distinct by session, since a user may hold more than one active row.
         var rows = await appDbContext.SeatReservations.AsNoTracking()
@@ -179,8 +181,8 @@ internal sealed class MyAreaService(
                 TierAr = p.ProfileType != null ? p.ProfileType.NameArabic : null,
                 Color = p.ProfileType != null ? p.ProfileType.PageColor : null,
                 // Audience types are visitors; partner/exhibitor ("Other")
-                // types are not (UserProfileType.IsForVisitor, D-186). No
-                // ProfileType → treated as a visitor (D-426).
+                // types are not (UserProfileType.IsForVisitor). No
+                // ProfileType → treated as a visitor.
                 IsVisitor = p.ProfileType == null || p.ProfileType.IsForVisitor,
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -209,7 +211,7 @@ internal sealed class MyAreaService(
     {
         var sessions = await appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.ReservedForUserId == userId
-                // D-485 — include OpenSeating joins (general admission) alongside
+                // Include OpenSeating joins (general admission) alongside
                 // the seat-specific kinds so a joined session shows in the user's
                 // schedule + booked-sessions count. AdminReservedRow has a null
                 // ReservedForUserId, so it is already excluded.
@@ -261,14 +263,13 @@ internal sealed class MyAreaService(
         return items;
     }
 
-    /// <summary>Today's window in the event timezone (AST, UTC+3), as a
-    /// half-open UTC interval. Deterministic via the injected
+    /// <summary>Today's window in the event timezone (AST, +03:00), as a
+    /// half-open Saudi-local interval. Deterministic via the injected
     /// <see cref="TimeProvider"/>.</summary>
-    private (DateTimeOffset Start, DateTimeOffset End) TodayWindow()
+    private (DateTime Start, DateTime End) TodayWindow()
     {
-        var nowLocal = timeProvider.GetUtcNow().ToOffset(EventTimeZoneOffset);
-        var startLocal = new DateTimeOffset(
-            nowLocal.Year, nowLocal.Month, nowLocal.Day, 0, 0, 0, EventTimeZoneOffset);
+        var nowLocal = timeProvider.SimfNow();
+        var startLocal = new DateTime(nowLocal.Year, nowLocal.Month, nowLocal.Day, 0, 0, 0);
         return (startLocal, startLocal.AddDays(1));
     }
 }

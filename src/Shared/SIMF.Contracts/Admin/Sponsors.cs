@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>D-199 (Mockup page 23) — one row in the admin Sponsors grid.
+/// <summary>One row in the admin Sponsors grid.
 /// Mirrors AdminDelegationSummary. <c>Tier</c> carries both the int value and a
 /// display name so the grid renders the tier column without a second lookup.</summary>
 public sealed record AdminSponsorSummary(
@@ -13,14 +13,14 @@ public sealed record AdminSponsorSummary(
     string? Url,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    // D-502 — carried so the grid Excel export can round-trip them (not rendered
+    DateTime CreatedAt,
+    // Carried so the grid Excel export can round-trip them (not rendered
     // as grid columns). Optional; blank when unset.
     string? Tagline = null,
     string? TaglineArabic = null,
     string? About = null,
     string? AboutArabic = null,
-    // D-740 — "an active SponsorLogo asset exists" so the grid renders the real
+    // "an active SponsorLogo asset exists" so the grid renders the real
     // logo thumbnail, else an initials tile (set on read via a batched query).
     bool HasLogo = false);
 
@@ -35,16 +35,16 @@ public sealed record AdminSponsorDetail(
     string? Url,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
-    // D-432 — optional bilingual tagline (Figma 922:2824).
+    DateTime CreatedAt,
+    DateTime? UpdatedAt,
+    // Optional bilingual tagline (Figma 922:2824).
     string? Tagline = null,
     string? TaglineArabic = null,
     // Optional bilingual about paragraph (≤2048 chars each).
     string? About = null,
     string? AboutArabic = null,
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality is CountryId with its
+    // directory. All optional; nationality is CountryId with its
     // display names (CountryNameEn / CountryNameAr) projected alongside.
     // Trailing-optional so any other constructor call stays valid.
     int? CountryId = null,
@@ -73,7 +73,7 @@ public sealed class AdminCreateSponsorRequest
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
 
-    /// <summary>D-432 — optional bilingual tagline (≤256 chars each).</summary>
+    /// <summary>Optional bilingual tagline (≤256 chars each).</summary>
     public string? Tagline { get; set; }
     public string? TaglineArabic { get; set; }
 
@@ -82,7 +82,7 @@ public sealed class AdminCreateSponsorRequest
     public string? AboutArabic { get; set; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality is CountryId. The website
+    // directory. All optional; nationality is CountryId. The website
     // slot is the existing Url above (never re-added).
     public int? CountryId { get; set; }
     public string? Email { get; set; }
@@ -100,7 +100,7 @@ public sealed class AdminCreateSponsorRequest
 
 /// <summary>Update payload (adds IsActive to the create shape).
 /// Not sealed: the admin update endpoint binds {id}+body via a derived route
-/// class (D-504, mirroring <c>UpdateExhibitorRoute</c>) so it cannot drop a
+/// class (mirroring <c>UpdateExhibitorRoute</c>) so it cannot drop a
 /// field at bind time.</summary>
 public class AdminUpdateSponsorRequest
 {
@@ -111,7 +111,7 @@ public class AdminUpdateSponsorRequest
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
 
-    /// <summary>D-432 — optional bilingual tagline (≤256 chars each).</summary>
+    /// <summary>Optional bilingual tagline (≤256 chars each).</summary>
     public string? Tagline { get; set; }
     public string? TaglineArabic { get; set; }
 
@@ -120,7 +120,7 @@ public class AdminUpdateSponsorRequest
     public string? AboutArabic { get; set; }
 
     // Contact identity-card fields inlined from the removed shared Contact
-    // directory (D-766). All optional; nationality is CountryId. The website
+    // directory. All optional; nationality is CountryId. The website
     // slot is the existing Url above (never re-added).
     public int? CountryId { get; set; }
     public string? Email { get; set; }

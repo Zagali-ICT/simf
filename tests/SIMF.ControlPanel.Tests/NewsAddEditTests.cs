@@ -17,8 +17,8 @@ public sealed class NewsAddEditTests : CpComponentTestBase
         "Body text", "نص المحتوى",
         "Announcements", "إعلانات",
         "news/cover.jpg",
-        DateTimeOffset.UnixEpoch, 1,
-        IsActive: true, DateTimeOffset.UnixEpoch, UpdatedAt: null);
+        DateTime.UnixEpoch, 1,
+        IsActive: true, DateTime.UnixEpoch, UpdatedAt: null);
 
     [Fact]
     public void Add_mode_hides_the_Active_checkbox()

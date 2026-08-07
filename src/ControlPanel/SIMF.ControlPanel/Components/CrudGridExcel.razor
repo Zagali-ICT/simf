@@ -1,4 +1,4 @@
-@* D-356 — reusable Excel export/import bar for any CRUD grid. The page wires
+@* Reusable Excel export/import bar for any CRUD grid. The page wires
    its SimfDataGrid OnExport/OnImport to this component's ExportAsync /
    TriggerImportAsync (via @ref); the component owns the hidden .xlsx file input
    and the import-result modal and talks to the generic
@@ -9,11 +9,29 @@
 @using SIMF.Contracts.Admin
 
 <input type="file" id="@InputId" accept=".xlsx" class="simf-hidden-input"
-       aria-label="@L["Grid.Import.Picker"]" @onchange="OnFileSelectedAsync" />
+       aria-label="@L["Grid.Import.Picker"]" disabled="@_importing"
+       @onchange="OnFileSelectedAsync" />
+
+@* §6.16 (F-U5-008) — an import upload had no busy state at all: the page just
+   looked frozen and the Import button stayed live, so the same file could be
+   imported twice. RequireExplicitClose with no close handler makes this modal
+   genuinely blocking — Esc and backdrop clicks cannot dismiss it. *@
+@if (_importing)
+{
+    <SimfModal Open="true" RequireExplicitClose="true" HideClose="true"
+               Title="@L["Grid.Import.BusyTitle"]">
+        <ChildContent>
+            <p class="simf-modal__busy">
+                <SimfSpinner Label="@L["Grid.Import.BusyTitle"]" />
+                <span>@L["Grid.Import.BusyBody"]</span>
+            </p>
+        </ChildContent>
+    </SimfModal>
+}
 
 @if (_result is not null)
 {
-    <SimfModal Open="true" Title="@L["Grid.Import.ResultTitle"]" OnClose="CloseResult">
+    <SimfModal Open="true" Title="@L["Grid.Import.ResultTitle"]" OnClose="CloseResult" CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Grid.Import.ResultBody"],
                 _result.Created, _result.Updated, _result.Skipped)</p>

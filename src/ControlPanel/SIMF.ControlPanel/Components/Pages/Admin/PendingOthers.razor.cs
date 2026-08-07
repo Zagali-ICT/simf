@@ -2,20 +2,19 @@ using SIMF.Common;
 using SIMF.Components.Forms;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
-using SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes;
 using Microsoft.JSInterop;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
-/// <summary>P7e (D-055) — the pending Other-typed approval queue. The shared grid /
-/// approve / reject / bulk logic lives in <see cref="PendingApprovalPageBase"/>
-/// (D-641); this partial pins the <c>others</c> API segment and adds the
-/// profile-review modal (D-124 preview, D-128 review-then-approve).</summary>
+/// <summary>The pending Other-typed approval queue. The shared grid /
+/// approve / reject / bulk logic lives in <see cref="PendingApprovalPageBase"/>;
+/// this partial pins the <c>others</c> API segment and adds the
+/// profile-review modal (preview, then review-then-approve).</summary>
 public partial class PendingOthers
 {
     protected override string ApiBase => "others";
 
-    // D-353 parity — the review "View" modal honours the popup/full-page toggle,
+    // The review "View" modal honours the popup/full-page toggle,
     // persisted per-user under this key. ViewFullPage hides the grid while the
     // review takes the full page.
     protected override string? PresentationPageKey => "pending-others";
@@ -24,7 +23,7 @@ public partial class PendingOthers
         _viewTarget is not null && _presentation == CrudPresentation.Page;
 
     // The pending row's avatar thumbnail URL, or null so SimfIdentityCell shows an
-    // initials tile (never a broken image). Only when HasAvatar is set (D-568).
+    // initials tile (never a broken image). Only when HasAvatar is set.
     private static string? AvatarImageUrl(AdminPendingUserSummary row) =>
         row.HasAvatar ? $"/account/api/admin/others/{row.Id}/avatar" : null;
 

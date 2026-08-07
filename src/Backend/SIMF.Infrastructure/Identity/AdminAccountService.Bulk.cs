@@ -20,8 +20,8 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-209 (A2 split): the bulk + duplicate + export + import surface of
-/// <see cref="AdminAccountService"/> (D-113 / D-164 / D-045). Bulk-approve
+/// The bulk + duplicate + export + import surface of
+/// <see cref="AdminAccountService"/>. Bulk-approve
 /// delegates to the approval workers; duplicate delegates to the create
 /// workers; export re-runs the list query. Split into its own partial-class
 /// file for navigability; behaviour and DI are unchanged.
@@ -47,7 +47,7 @@ internal sealed partial class AdminAccountService
         Guid actorUserId, AdminBulkApprovalRequest request, ApprovalScope scope,
         CancellationToken cancellationToken)
     {
-        // D-164 — distinct ids; cap at 500 per request so the batch fits
+        // Distinct ids; cap at 500 per request so the batch fits
         // inside one reasonable transaction window without dragging the
         // hot path. The endpoint rejects empty arrays at the validator.
         var ids = request.Ids.Distinct().Take(500).ToList();
@@ -106,7 +106,7 @@ internal sealed partial class AdminAccountService
         Guid actorUserId, AdminBulkRejectRequest request, ApprovalScope scope,
         CancellationToken cancellationToken)
     {
-        // D-209 — mirror of BulkApproveAsync. Distinct ids, capped at 500;
+        // Mirror of BulkApproveAsync. Distinct ids, capped at 500;
         // each subject is rejected in its own step via the single-reject
         // worker (which owns the scope guard + state flip + token revoke +
         // audit + notification), so per-subject behaviour is identical to a
@@ -146,7 +146,7 @@ internal sealed partial class AdminAccountService
         return new AdminBulkRejectResponse(rejected, failures.Count, failures);
     }
 
-    // D-186 — duplicate helper that inspects the source's linked
+    // Duplicate helper that inspects the source's linked
     // ProfileType to decide whether the duplicate lands on the
     // audience queue or the partner queue. Partner duplicates require
     // the source to have an explicit ProfileTypeId.
@@ -187,7 +187,7 @@ internal sealed partial class AdminAccountService
         AdminBulkDeleteRequest request,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var deleted = 0;
         var skipped = 0;
 
@@ -198,7 +198,7 @@ internal sealed partial class AdminAccountService
             var target = await accounts.FindByIdAsync(targetId, cancellationToken);
             if (target is null)
             {
-                // D-045 H1: unknown-id is now audited (an enumeration probe
+                // Unknown-id is now audited (an enumeration probe
                 // against the user table is the exact signature of admin
                 // abuse) — was a silent skip before.
                 await auditLog.WriteAsync(new AuditEntry
@@ -235,7 +235,7 @@ internal sealed partial class AdminAccountService
                 continue;
             }
 
-            // D-045 H1: every subject wipes state + revokes sessions inside
+            // Every subject wipes state + revokes sessions inside
             // one transaction; check UpdateAsync.Succeeded so a silent
             // Identity error doesn't pretend success. The audit row is
             // committed in the same transaction as the state change so SOC
@@ -315,10 +315,10 @@ internal sealed partial class AdminAccountService
                 "The source account was not found.",
                 "لم يتم العثور على الحساب المصدر.");
 
-        // P7c — the duplicate keeps the source's UserType + role-membership
+        // The duplicate keeps the source's UserType + role-membership
         // shape: an Admin source duplicates as an Admin (with the same roles);
-        // an Other / Visitor source duplicates as the same UserType. P8 — the
-        // source's ProfileTypeId now lives on the source's UserProfile row;
+        // an Other / Visitor source duplicates as the same UserType. The
+        // source's ProfileTypeId lives on the source's UserProfile row;
         // look it up and pass it through.
         var sourceRoles = await accounts.GetRolesAsync(source);
         var sourceProfileTypeId = await appDbContext.UserProfiles
@@ -326,7 +326,7 @@ internal sealed partial class AdminAccountService
             .Where(p => p.UserId == source.Id)
             .Select(p => p.ProfileTypeId)
             .SingleOrDefaultAsync(cancellationToken);
-        // D-186: source UserType is now Admin or Visitor. For Visitor
+        // Source UserType is now Admin or Visitor. For Visitor
         // sources we check the linked ProfileType.IsVisitor to decide
         // whether to route through CreateOther (partner scope) or
         // CreateVisitor (audience scope) so the duplicate inherits the
@@ -360,7 +360,7 @@ internal sealed partial class AdminAccountService
     // The whole-grid user export is bounded to this many rows so an accidental
     // "export everything" never loads the entire table into memory. Each page is
     // built via GridExportPaging.Page (a fresh GridQuery, so the caller's own live
-    // query is never mutated — D-045 H1, the CP page passes its own `_query` in).
+    // query is never mutated — the CP page passes its own `_query` in).
     private const int ExportRowCap = 5_000;
 
     public async Task<byte[]> ExportUsersAsync(
@@ -372,7 +372,7 @@ internal sealed partial class AdminAccountService
         if (request.Ids.Count > 0)
         {
             // Selected-ids path — pull, with the role flag projected in one
-            // query (D-045 H1, kills the per-row IsInRoleAsync N+1).
+            // query, which kills the per-row IsInRoleAsync N+1.
             var idSet = request.Ids.ToHashSet();
             var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
             var projected = await dbContext.Users
@@ -398,11 +398,11 @@ internal sealed partial class AdminAccountService
             // Whole-result-set path — page through the same query the grid used
             // (ListAdminsAsync clamps Top to its 200-row page size) until the whole
             // set is collected or the export cap is reached, so a >200-row grid is
-            // not silently truncated to the first page (D-642). Bounded to
+            // not silently truncated to the first page. Bounded to
             // ExportRowCap rows so an accidental "export everything" never loads the
             // entire table into memory.
             //
-            // P7c — export operates on the Admin family today (the /admin/admins
+            // Export operates on the Admin family today (the /admin/admins
             // grid is the only consumer that triggers it). When the Other / Visitor
             // grids grow their own export, this branches on a request-side
             // `UserType` filter.
@@ -415,13 +415,8 @@ internal sealed partial class AdminAccountService
 
         var bytes = excel.Export(rows);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminUsersExported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"count={rows.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminUsersExported, actorUserId, $"count={rows.Count}", cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} exported {Count} users to XLSX",
@@ -465,7 +460,7 @@ internal sealed partial class AdminAccountService
             }
             try
             {
-                // P7c — the XLSX import is the Admin-family bulk-create
+                // The XLSX import is the Admin-family bulk-create
                 // path. The `IsAdministrator` flag on the imported row
                 // chooses whether the new admin gets the Administrator
                 // RBAC role; the UserType is always Admin here.
@@ -490,13 +485,11 @@ internal sealed partial class AdminAccountService
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminUsersImported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"created={created}, skipped={skipped}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminUsersImported,
+            actorUserId,
+            $"created={created}, skipped={skipped}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} imported {Created} users from XLSX (skipped {Skipped})",
@@ -504,10 +497,10 @@ internal sealed partial class AdminAccountService
         return new AdminImportUsersResponse(created, skipped, errors);
     }
 
-    // -- D-113 — type-scoped bulk operations for /admin/visitors/* and
-    //            /admin/others/*. Each method narrows the existing helper
-    //            by SimfUser.UserType so the Admin grid surface above
-    //            stays bit-for-bit unchanged.
+    // -- Type-scoped bulk operations for /admin/visitors/* and
+    //    /admin/others/*. Each method narrows the existing helper
+    //    by SimfUser.UserType so the Admin grid surface above
+    //    stays bit-for-bit unchanged.
 
     public async Task<AdminBulkDeleteResponse> BulkDeleteUsersByKindAsync(
         Guid actorUserId,
@@ -516,7 +509,7 @@ internal sealed partial class AdminAccountService
         AdminBulkDeleteRequest request,
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var deleted = 0;
         var skipped = 0;
 
@@ -667,7 +660,7 @@ internal sealed partial class AdminAccountService
         CancellationToken cancellationToken = default)
     {
         IReadOnlyList<AdminUserSummary> rows;
-        // D-186: convert the new partner-scope flag to the audience-vs-
+        // Convert the new partner-scope flag to the audience-vs-
         // partner profileScope notion ListAccountsAsync uses.
         bool? profileScope = requirePartnerScope switch
         {
@@ -679,7 +672,7 @@ internal sealed partial class AdminAccountService
         {
             // Selected-ids path — narrow by both id AND UserType so a
             // smuggled wrong-type id never appears in the workbook.
-            // D-186: also narrow by the profile-scope id set so a
+            // Also narrow by the profile-scope id set so a
             // wrong-scope id (e.g. an audience-side visitor smuggled
             // into the Others export) does not leak in either.
             var idSet = request.Ids.ToHashSet();
@@ -722,13 +715,11 @@ internal sealed partial class AdminAccountService
 
         var bytes = excel.Export(rows);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminUsersExported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"kind={kind}; count={rows.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminUsersExported,
+            actorUserId,
+            $"kind={kind}; count={rows.Count}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} exported {Count} {Kind} to XLSX",
@@ -736,7 +727,7 @@ internal sealed partial class AdminAccountService
         return bytes;
     }
 
-    // D-186 — bulk-import always creates Visitor-typed accounts;
+    // Bulk-import always creates Visitor-typed accounts;
     // partnerScope=true additionally requires a ProfileTypeId per row
     // and the chosen ProfileType.IsVisitor must be false.
     public async Task<AdminImportUsersResponse> ImportUsersByKindAsync(
@@ -775,7 +766,7 @@ internal sealed partial class AdminAccountService
                 skipped++;
                 continue;
             }
-            // D-186: partner-side imports require a parseable
+            // Partner-side imports require a parseable
             // ProfileTypeId (matches AdminCreateOtherRequest validator).
             // Audience-side imports accept null (tier is optional).
             if (partnerScope && row.ProfileTypeId is null)
@@ -829,13 +820,11 @@ internal sealed partial class AdminAccountService
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminUsersImported,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"kind={kind}; created={created}; skipped={skipped}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminUsersImported,
+            actorUserId,
+            $"kind={kind}; created={created}; skipped={skipped}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} imported {Created} {Kind} from XLSX (skipped {Skipped})",
@@ -847,7 +836,7 @@ internal sealed partial class AdminAccountService
         Guid actorUserId, UserType kind, AdminBulkGenerateBadgesRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-473 (#10) — bounded so a typo can't generate a runaway number of rows.
+        // Bounded so a typo can't generate a runaway number of rows.
         const int MaxPerRequest = 1000;
 
         var batches = (request.Batches ?? new List<BulkBadgeBatch>())
@@ -868,10 +857,10 @@ internal sealed partial class AdminAccountService
                 $"يمكن توليد {MaxPerRequest} شارة كحدّ أقصى في الطلب الواحد.");
         }
 
-        // D-751 (#10) — validate the optional organiser recipient in the SAME
+        // Validate the optional organiser recipient in the SAME
         // pre-write pass as the empty / cap / profile-type checks below, so an
         // invalid address is a clean 400 with zero accounts created (a 4xx must
-        // have no side effects — SIMF-API-001). Empty / whitespace = no email.
+        // have no side effects). Empty / whitespace = no email.
         const int MaxRecipientEmailLength = 256;
         string? recipient = null;
         if (!string.IsNullOrWhiteSpace(request.RecipientEmail))
@@ -888,16 +877,16 @@ internal sealed partial class AdminAccountService
             }
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var created = 0;
 
         // Pre-validate EVERY batch's profile type BEFORE creating any account, so an
         // invalid later batch is a clean 400 with nothing persisted (mirrors the
         // up-front empty / cap checks above). Without this pass an invalid Nth batch
         // would 400 while earlier batches' Approved badges were already committed —
-        // and a 4xx must have no side effects (SIMF-API-001). No cross-DB transaction
-        // (D-157): this only reads the App DB up front; nothing is written until every
-        // batch has passed.
+        // and a 4xx must have no side effects. There is no transaction spanning the
+        // two databases to roll that back, so this pass only READS the App DB up
+        // front; nothing is written until every batch has passed.
         var plan = new List<(BulkBadgeBatch Batch, UserProfileType ProfileType)>(batches.Count);
         foreach (var batch in batches)
         {
@@ -923,12 +912,12 @@ internal sealed partial class AdminAccountService
             plan.Add((batch, profileType));
         }
 
-        // D-758 (#10 Phase 2) — persist the batch so this generated set can be
+        // Persist the batch so this generated set can be
         // re-emailed / revoked together later. Created + saved BEFORE the badge loop
         // so each profile's BadgeBatchId FK resolves. CountsSummary is built
         // invariant-culture (an ar-SA request culture would otherwise store
         // Arabic-Indic digits). × is the multiplication sign, kept per the house
-        // doc rule. Same App DB only — no cross-DB write (D-157).
+        // doc rule. Same App DB only — no cross-DB write.
         var badgeBatch = new BadgeBatch
         {
             Id = Guid.NewGuid(),
@@ -943,7 +932,7 @@ internal sealed partial class AdminAccountService
         appDbContext.BadgeBatches.Add(badgeBatch);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        // D-751 — collected only when an organiser recipient is supplied; drives the
+        // Collected only when an organiser recipient is supplied; drives the
         // ZIP-of-PNGs built after the badges commit. (profile-type name, 1-based seq,
         // minted QR id) per badge.
         var badgeArtifacts = recipient is null
@@ -953,7 +942,8 @@ internal sealed partial class AdminAccountService
         foreach (var (batch, profileType) in plan)
         {
             // NOTE: each badge writes a SimfUser (Identity DB) then its UserProfile
-            // (App DB) with no distributed transaction (D-157). A mid-loop failure
+            // (App DB) with no distributed transaction — the two databases are
+            // physically separate. A mid-loop failure
             // can leave the last user without a profile — the established walk-in
             // trade-off; the already-created badges stay valid.
             for (var i = 0; i < batch.Count; i++)
@@ -995,7 +985,7 @@ internal sealed partial class AdminAccountService
                     // Placeholder default data — filled in when the badge is assigned.
                     NationalityId = 0,
                     IsDelegate = request.IsDelegate,
-                    // D-758 (#10 Phase 2) — back-reference to the persisted batch.
+                    // Back-reference to the persisted batch.
                     BadgeBatchId = badgeBatch.Id,
                     CreatedAt = now,
                 };
@@ -1008,20 +998,18 @@ internal sealed partial class AdminAccountService
             }
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBulkBadgesGenerated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"created={created}; isDelegate={request.IsDelegate}; batchId={badgeBatch.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBulkBadgesGenerated,
+            actorUserId,
+            $"created={created}; isDelegate={request.IsDelegate}; batchId={badgeBatch.Id}",
+            cancellationToken);
         logger.LogInformation(
             "Admin {ActorId} bulk-generated {Created} badges (isDelegate={IsDelegate}).",
             actorUserId, created, request.IsDelegate);
 
-        // D-751 — when an organiser recipient was supplied, render the QR pack and email
+        // When an organiser recipient was supplied, render the QR pack and email
         // it. The badges are already committed; a mail-side failure must NOT roll them
-        // back (the helper dispatches through the swallow-and-audit path, D-083).
+        // back (the helper dispatches through the swallow-and-audit path).
         var emailQueued = false;
         if (recipient is not null && badgeArtifacts is { Count: > 0 })
         {
@@ -1063,7 +1051,7 @@ internal sealed partial class AdminAccountService
                 "لم يتم العثور على دفعة الشارات.");
 
         // Validate the organiser address the same way BulkGenerateBadgesAsync does — a
-        // 400 must leave nothing sent (SIMF-API-001).
+        // 400 must leave nothing sent.
         var recipient = (request.RecipientEmail ?? string.Empty).Trim();
         if (recipient.Length == 0 || recipient.Length > 256
             || !System.Net.Mail.MailAddress.TryCreate(recipient, out var parsed)
@@ -1093,7 +1081,7 @@ internal sealed partial class AdminAccountService
                 "لا توجد شارات في هذه الدفعة لإرسالها.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var badgeArtifacts = members
             .Select((member, index) => (member.Name, Seq: index + 1, QrId: member.QrId!))
             .ToList();
@@ -1105,13 +1093,11 @@ internal sealed partial class AdminAccountService
         batch.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBulkBadgesGenerated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"re-email batchId={batch.Id}; count={badgeArtifacts.Count}; to={recipient}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBulkBadgesGenerated,
+            actorUserId,
+            $"re-email batchId={batch.Id}; count={badgeArtifacts.Count}; to={recipient}",
+            cancellationToken);
         return new AdminReEmailBadgeBatchResponse(badgeArtifacts.Count, true);
     }
 
@@ -1128,9 +1114,9 @@ internal sealed partial class AdminAccountService
 
         // Disable every account the batch minted, reusing the type-scoped bulk-delete
         // path (audience Visitors) so each account's disable + token-revoke + audit is
-        // identical to a manual bulk delete. Cross-DB (D-157): these SimfUsers live in
-        // the Identity DB — disabled first, THEN the App-DB batch is deactivated as a
-        // separate unit of work (no distributed transaction).
+        // identical to a manual bulk delete. This crosses databases: these SimfUsers
+        // live in the Identity DB — disabled first, THEN the App-DB batch is
+        // deactivated as a separate unit of work (no distributed transaction).
         var memberIds = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(profile => profile.BadgeBatchId == batch.Id)
@@ -1152,35 +1138,34 @@ internal sealed partial class AdminAccountService
         }
 
         batch.Deactivate();
-        batch.UpdatedAt = timeProvider.GetUtcNow();
+        batch.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBulkBadgesGenerated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"revoke batchId={batch.Id}; disabled={revoked}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBulkBadgesGenerated,
+            actorUserId,
+            $"revoke batchId={batch.Id}; disabled={revoked}",
+            cancellationToken);
         return new AdminRevokeBadgeBatchResponse(revoked);
     }
 
-    // D-751 / D-758 — render the batch's QR pack and enqueue it to the organiser as a
-    // single email. Extracted so bulk-generate and the D-758 re-email build the
+    // Render the batch's QR pack and enqueue it to the organiser as a
+    // single email. Extracted so bulk-generate and the re-email build the
     // identical pack. Invariant formatting throughout — an ar-SA request culture would
     // otherwise render the filename / body tokens with a Hijri year + Arabic-Indic
-    // digits. `attachments` is a list so Phase 3 (D-759) can add the PDF sheet beside
-    // the ZIP without touching either caller.
+    // digits. `attachments` is a list so a second file could be added beside the ZIP
+    // without touching either caller — which is how the printable contact-sheet PDF
+    // came to sit next to the ZIP of individual QR PNGs.
     private async Task EnqueueBadgePackEmailAsync(
         string recipient,
         IReadOnlyList<(string ProfileTypeName, int Seq, string QrId)> badgeArtifacts,
-        int count, DateTimeOffset generatedAt, Guid actorUserId, CancellationToken cancellationToken)
+        int count, DateTime generatedAt, Guid actorUserId, CancellationToken cancellationToken)
     {
         var stamp = generatedAt.ToString("yyyyMMdd-HHmm", CultureInfo.InvariantCulture);
         var attachments = new List<EmailAttachment>
         {
             new($"badges-{stamp}.zip", "application/zip", BuildBadgeZip(badgeArtifacts)),
-            // D-759 (#10 Phase 3) — a printable contact-sheet PDF beside the ZIP of
+            // A printable contact-sheet PDF beside the ZIP of
             // individual PNGs, so the organiser can print all badges on one page.
             new($"badges-{stamp}.pdf", "application/pdf", BuildBadgeSheetPdf(badgeArtifacts)),
         };
@@ -1198,7 +1183,7 @@ internal sealed partial class AdminAccountService
             "Admin {ActorId} emailed {Count} badges to {Recipient}.", actorUserId, count, recipient);
     }
 
-    // D-751 — one ZIP entry per badge (an individual QR PNG). No System.Drawing
+    // One ZIP entry per badge (an individual QR PNG). No System.Drawing
     // dependency; PngByteQRCode emits raw PNG bytes.
     private static byte[] BuildBadgeZip(
         IReadOnlyList<(string ProfileTypeName, int Seq, string QrId)> badges)
@@ -1218,7 +1203,7 @@ internal sealed partial class AdminAccountService
         return buffer.ToArray();
     }
 
-    // D-759 (#10 Phase 3) — a printable contact-sheet PDF: a 3-column grid of badge
+    // A printable contact-sheet PDF: a 3-column grid of badge
     // cards (QR + tier + #N + QR id) via QuestPDF, reusing the same QRCoder PNGs as the
     // ZIP. LICENCE (owner-accepted follow-up): QuestPDF's free Community licence covers
     // organisations under ~$1M revenue; a paid QuestPDF licence is required for the
@@ -1281,7 +1266,7 @@ internal sealed partial class AdminAccountService
         return document.GeneratePdf();
     }
 
-    // D-751 / D-759 — one QR PNG (ECC level Q, same as PrintBag), shared by the ZIP
+    // One QR PNG (ECC level Q, same as PrintBag), shared by the ZIP
     // entries and the PDF sheet cells.
     private static byte[] RenderQrPng(string qrId)
     {

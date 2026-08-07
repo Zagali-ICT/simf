@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// D-500 (Wave 5, الطلبات 1408:9726) — which kind a unified "My requests" row is.
 /// Mirrors the `AppRequestKind` contract (int on the wire). The app renders the
@@ -69,6 +70,7 @@ class AppRequestItem {
     this.speakerId,
     this.countryId,
     this.responseNote,
+    this.checkedIn = false,
   });
 
   final AppRequestKind kind;
@@ -102,6 +104,12 @@ class AppRequestItem {
   /// R-3 — the admin's response note for a decided request (e.g. the rejection
   /// reason). Null when none. Append-only wire field.
   final String? responseNote;
+
+  /// QA B12 — true once an operator checked the meeting in at the hall. The
+  /// server still folds its internal `Done` state onto `accepted` for [status]
+  /// (the shipped wire contract is 0-3), so this append-only flag is the only
+  /// way the requester can tell "confirmed" from "attended". False otherwise.
+  final bool checkedIn;
 
   /// The context line under the type headline, in the active locale (AR/EN with
   /// a fallback).
@@ -140,9 +148,9 @@ class AppRequestItem {
       titleArabic: json['titleArabic'] as String? ?? '',
       status: AppRequestStatus.fromIndex(json['status'] as int?),
       eventDate:
-          eventRaw == null ? null : DateTime.tryParse(eventRaw)?.toUtc(),
+          eventRaw == null ? null : parseWireOrNull(eventRaw),
       createdAt:
-          (createdRaw == null ? null : DateTime.tryParse(createdRaw)?.toUtc()) ??
+          (createdRaw == null ? null : parseWireOrNull(createdRaw)) ??
               DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       canCancel: json['canCancel'] as bool? ?? false,
       subtitle: (json['subtitle'] as String?)?.trim().isEmpty ?? true
@@ -158,6 +166,7 @@ class AppRequestItem {
       responseNote: (json['responseNote'] as String?)?.trim().isEmpty ?? true
           ? null
           : (json['responseNote'] as String).trim(),
+      checkedIn: json['checkedIn'] as bool? ?? false,
     );
   }
 

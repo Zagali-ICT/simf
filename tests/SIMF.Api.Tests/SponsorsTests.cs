@@ -233,7 +233,7 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
         // removed) plus the Sponsor→Country join for the country name.
         const int countryId = 682; // SA
         var sponsorId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         string expectedCountryEn;
         string expectedCountryAr;
 
@@ -289,7 +289,7 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
         // country name through the Sponsor→Country join in one query.
         const int countryId = 826; // GB
         var sponsorId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
         string expectedCountryEn;
         string expectedCountryAr;
 
@@ -425,15 +425,7 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

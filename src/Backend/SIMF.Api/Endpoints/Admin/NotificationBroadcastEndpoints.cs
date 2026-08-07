@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/NotificationBroadcastTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -31,11 +31,7 @@ public sealed class CreateBroadcastEndpoint(INotificationBroadcastService servic
 
     public override async Task HandleAsync(AdminCreateBroadcastRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminBroadcastResult>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }

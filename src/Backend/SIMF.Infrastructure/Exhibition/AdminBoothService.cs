@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Exhibition;
 
 /// <summary>
-/// D-199 — admin CRUD over <see cref="Booth"/> (Exhibition module, Mockup
+/// Admin CRUD over <see cref="Booth"/> (Exhibition module, Mockup
 /// page 22 + the 2D venue map). Built on <see cref="SimfAppDbContext"/>.
 /// Mirrors <c>AdminSpeakerService</c>: bilingual (Name/NameArabic), unique
 /// Code (409 on duplicate), soft-delete (IsActive), audited via
@@ -43,7 +43,7 @@ internal sealed class AdminBoothService(
                 || EF.Functions.Like(booth.NameArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         // The Exhibitor + Hall columns are resolved client-side from cached
         // lookups (the summary carries only the ids), so they are NOT
         // server-filterable and are intentionally absent here.
@@ -68,7 +68,7 @@ internal sealed class AdminBoothService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: Code. The Exhibitor + Hall
+        // CP grid sortable columns. Default: Code. The Exhibitor + Hall
         // columns sort on a client-resolved value, so they are not server-
         // sortable and are absent here.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
@@ -132,7 +132,7 @@ internal sealed class AdminBoothService(
     public async Task<AdminBoothDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        // D-673 — pull the linked exhibitor so the detail can surface the
+        // Pull the linked exhibitor so the detail can surface the
         // exhibitor-owned Website / City / Tier (the fields the app booth detail
         // shows; City is now inlined on the Exhibitor). AsNoTracking → LEFT JOIN,
         // single row. The create/update paths do not load this navigation, so
@@ -178,7 +178,7 @@ internal sealed class AdminBoothService(
                 $"يوجد جناح بالرمز '{v.Code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var booth = new Booth
         {
             Id = Guid.NewGuid(),
@@ -214,13 +214,11 @@ internal sealed class AdminBoothService(
         dbContext.Booths.Add(booth);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BoothCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={booth.Id}; code={v.Code}; name={v.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BoothCreated,
+            actorUserId,
+            $"id={booth.Id}; code={v.Code}; name={v.Name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Booth {Code} ({Id})",
@@ -300,16 +298,14 @@ internal sealed class AdminBoothService(
         booth.MapX = request.MapX;
         booth.MapY = request.MapY;
         booth.IsActive = request.IsActive;
-        booth.UpdatedAt = timeProvider.GetUtcNow();
+        booth.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BoothUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={booth.Id}; code={v.Code}; active={booth.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BoothUpdated,
+            actorUserId,
+            $"id={booth.Id}; code={v.Code}; active={booth.IsActive}",
+            cancellationToken);
 
         var (officerCountryEn, officerCountryAr) =
             await ResolveOfficerCountryAsync(booth.OfficerCountryId, cancellationToken);
@@ -349,16 +345,14 @@ internal sealed class AdminBoothService(
         }
 
         booth.Deactivate();
-        booth.UpdatedAt = timeProvider.GetUtcNow();
+        booth.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BoothDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={booth.Id}; code={booth.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BoothDeactivated,
+            actorUserId,
+            $"id={booth.Id}; code={booth.Code}",
+            cancellationToken);
     }
 
     private sealed record BoothDraft(
@@ -400,7 +394,7 @@ internal sealed class AdminBoothService(
 
         // Optional fields — lengths mirror BoothConfiguration.HasMaxLength
         // (Officer name = 256 / phone = 32 / email = 320, Sector* = 128,
-        // Description* = 2048). B1 — D-222: booth-officer contact.
+        // Description* = 2048).
         var officerName = OptionalText(
             officerNameRaw, 256, "Booth officer name", "اسم مسؤول الجناح");
         var officerPhone = OptionalText(
@@ -443,7 +437,7 @@ internal sealed class AdminBoothService(
         return value;
     }
 
-    // D-766 — validates the NEW inline booth-officer identity-card fields (the
+    // Validates the NEW inline booth-officer identity-card fields (the
     // shared Contact directory was removed). Lengths mirror the EF configuration;
     // latitude and longitude are an all-or-nothing pair with real-world ranges.
     // OfficerName / OfficerPhone / OfficerEmail are validated in
@@ -521,7 +515,7 @@ internal sealed class AdminBoothService(
         }
     }
 
-    // B1 — D-222: the exhibitor must be an active Exhibitor row. Mirrors
+    // The exhibitor must be an active Exhibitor row. Mirrors
     // EnsureHallIsValidAsync. Inactive exhibitors are rejected so a booth never
     // points at a soft-deleted row.
     private async Task EnsureExhibitorIsValidAsync(
@@ -541,7 +535,7 @@ internal sealed class AdminBoothService(
         }
     }
 
-    // D-766 — the booth officer's country is a logical FK to the live Country
+    // The booth officer's country is a logical FK to the live Country
     // table (same App context). Mirrors AdminSpeakerService.EnsureCountryIsValid.
     private async Task EnsureOfficerCountryIsValidAsync(
         int? countryId, CancellationToken cancellationToken)
@@ -607,7 +601,7 @@ internal sealed class AdminBoothService(
         MapX = b.MapX,
         MapY = b.MapY,
         IsActive = b.IsActive,
-        // D-673 — read-only exhibitor-resolved fields (mirrors PublicBoothService):
+        // Read-only exhibitor-resolved fields (mirrors PublicBoothService):
         // Website + Tier from the linked Exhibitor, City/CityArabic now inlined on
         // the Exhibitor. Null when the Exhibitor navigation was not loaded (create /
         // update paths) or the booth has no linked exhibitor. ExhibitorContactId is

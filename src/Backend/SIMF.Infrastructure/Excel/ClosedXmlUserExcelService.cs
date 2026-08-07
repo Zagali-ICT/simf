@@ -10,8 +10,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Excel;
 
 /// <summary>
-/// ClosedXML-backed implementation of the user-management Excel workbook
-/// (decision D-044 b, hardened D-045 H1).
+/// ClosedXML-backed implementation of the user-management Excel workbook.
 ///
 /// <para>Workbook layout:</para>
 /// <code>
@@ -20,7 +19,7 @@ namespace SIMF.Infrastructure.Excel;
 ///   Row 2…  — one user per row, up to <see cref="MaxImportRows"/>
 /// </code>
 ///
-/// <para>Defence-in-depth (D-045 H1):</para>
+/// <para>Defence-in-depth:</para>
 /// <list type="bullet">
 ///   <item><description>Export sanitises every string cell — values starting with
 ///     <c>=</c> / <c>+</c> / <c>-</c> / <c>@</c> / TAB / CR are prefixed with
@@ -61,7 +60,7 @@ internal sealed class ClosedXmlUserExcelService : IUserExcelService
             sheet.Cell(row, 3).Value = SanitiseForExcel(user.AccountState);
             sheet.Cell(row, 4).Value = user.IsAdministrator ? "Administrator" : "User";
             sheet.Cell(row, 5).Value = user.TwoFactorEnabled ? "On" : "Off";
-            sheet.Cell(row, 6).Value = user.CreatedAt.UtcDateTime.ToString("O");
+            sheet.Cell(row, 6).Value = user.CreatedAt.ToString("O");
             row++;
         }
         sheet.Columns(1, 6).AdjustToContents();
@@ -118,7 +117,7 @@ internal sealed class ClosedXmlUserExcelService : IUserExcelService
                     "يجب أن يبدأ رأس المصنف بـ Email ثم DisplayName.");
             }
 
-            // D-113: locate an optional ProfileTypeId column for the
+            // Locate an optional ProfileTypeId column for the
             // Visitor / Other imports; -1 means the workbook has none
             // (e.g. the Admin import, which has never carried it).
             var profileTypeColumn = -1;

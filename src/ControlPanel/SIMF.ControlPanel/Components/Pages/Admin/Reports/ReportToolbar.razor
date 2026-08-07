@@ -1,0 +1,74 @@
+@* ReportToolbar — the strip every report page carries above its grid: the date
+   range, the headline totals for the whole filtered set, the export action, and
+   the load-failure message.
+
+   Shared rather than repeated per page so a change to the reporting header is
+   one edit, and so the three reports cannot drift apart visually. *@
+@namespace SIMF.ControlPanel.Components.Pages.Admin.Reports
+@using SIMF.Components.Forms
+@using SIMF.Contracts.Reporting
+
+<div class="simf-report-toolbar">
+    <SimfDateRange From="From"
+                   FromChanged="FromChanged"
+                   To="To"
+                   ToChanged="ToChanged"
+                   FromLabel="@L["Admin.Reports.From"]"
+                   ToLabel="@L["Admin.Reports.To"]"
+                   ApplyLabel="@L["Admin.Reports.Apply"]"
+                   ClearLabel="@L["Admin.Reports.Clear"]"
+                   InvalidRangeLabel="@L["Admin.Reports.InvalidRange"]"
+                   OnApply="OnApply"
+                   OnClear="OnClear" />
+
+    <div class="simf-report-toolbar__spacer"></div>
+
+    @* Export is a separate permission from viewing: taking the data off the
+       premises as a file is a bigger act than reading a page of it. *@
+    <AuthorizedAction Permission="@PermissionCatalog.Reports.Export">
+        <SimfButton Variant="neutral" Type="button" OnClick="OnExport">
+            @L["Admin.Reports.Export"]
+        </SimfButton>
+    </AuthorizedAction>
+</div>
+
+@if (Error is not null)
+{
+    <SimfAlert Variant="error">@Error</SimfAlert>
+}
+
+@if (Totals.Count > 0)
+{
+    @* These describe the whole filtered set, not the visible page. *@
+    <div class="simf-stat-grid simf-report-totals">
+        @foreach (var total in Totals)
+        {
+            <SimfStatCard Title="@TotalLabelResolver(total)" Value="@total.Value" />
+        }
+    </div>
+}
+
+@code {
+    [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
+
+    [Parameter] public DateOnly? From { get; set; }
+    [Parameter] public EventCallback<DateOnly?> FromChanged { get; set; }
+
+    [Parameter] public DateOnly? To { get; set; }
+    [Parameter] public EventCallback<DateOnly?> ToChanged { get; set; }
+
+    /// <summary>Headline figures for the whole filtered set.</summary>
+    [Parameter] public IReadOnlyList<ReportTotal> Totals { get; set; } = [];
+
+    /// <summary>Load-failure message, or null.</summary>
+    [Parameter] public string? Error { get; set; }
+
+    [Parameter] public EventCallback OnApply { get; set; }
+    [Parameter] public EventCallback OnClear { get; set; }
+    [Parameter] public EventCallback OnExport { get; set; }
+
+    /// <summary>Turns a total's resource key into display text. Supplied by the
+    /// page so the API can keep returning keys rather than sentences.</summary>
+    [Parameter, EditorRequired] public Func<ReportTotal, string> TotalLabelResolver { get; set; }
+        = _ => string.Empty;
+}

@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Organization;
 
-/// <summary>D-495 — the public Organization / About profile served by
+/// <summary>The public Organization / About profile served by
 /// <c>GET /api/v1/app/organization-profile</c>: the edition-generic forum config
 /// (name, title, slogan, bio, dates, status, location, contact, live-stream link,
 /// social links, logo) plus the variable about-items + details lists. Anonymous /
@@ -16,11 +16,11 @@ public sealed record OrganizationProfileResponse(
     string? Bio,
     string? BioArabic,
     string? Version,
-    DateTimeOffset? VersionDate,
+    DateTime? VersionDate,
     string? SysVersion,
-    DateTimeOffset? ReleaseDate,
-    DateTimeOffset? EventStartDate,
-    DateTimeOffset? EventEndDate,
+    DateTime? ReleaseDate,
+    DateTime? EventStartDate,
+    DateTime? EventEndDate,
     int CurrentYear,
     string Status,
     string? LocationText,

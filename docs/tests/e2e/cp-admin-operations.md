@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-08-02 |
 
 > **Page shape (read from `OperationsToggles.razor`).** This is **not** a CRUD
 > grid — it is two **singleton** toggle sections on one surface (D-166, gap
@@ -22,12 +22,16 @@
 > 4. **Archive visibility → "Archive is visible to the public"** checkbox (`_archiveIsVisible`).
 > 5. **Archive visibility → "Save"** button → `SaveArchiveAsync` → `PUT /account/api/admin/archive/visibility`.
 >
-> Each section also renders a read-only **"Last changed"** `<dl>` (UTC string).
+> Each section also renders a read-only **"Last changed"** `<dl>`, formatted in
+> **Saudi local time**, 12-hour (`FormatSaudi("dd-MM-yyyy hh:mm tt")`). Since
+> D-823 the stored column IS the Saudi wall clock, so this is formatting with no
+> conversion.
 > The page is gated by `PermissionCatalog.Operations.View`; the two **PUT**
 > endpoints require `PermissionCatalog.Operations.Edit` — so a View-only admin
-> can open the page and read both states but cannot save (the BFF forwards the
-> API 403). This split is the page's most important non-obvious behaviour and
-> is exercised in E2E-OPS-005.
+> can open the page and read both states but gets **no Save button at all**
+> (D-828 wrapped both in `<AuthorizedAction>`; before that they rendered and the
+> denial arrived as a 403 toast). This split is the page's most important
+> non-obvious behaviour and is exercised in E2E-OPS-005.
 
 ## Coverage matrix
 
@@ -35,15 +39,17 @@
 |----|----------|------|----------|--------|
 | E2E-OPS-001 | Golden round-trip — toggle registration gate closed → save → reload → reopen → save | happy | P0 | _to author_ |
 | E2E-OPS-002 | Schedule auto-close — set "Auto-close (Saudi time)" → save → field round-trips | happy | P1 | _to author_ |
-| E2E-OPS-003 | Toggle archive visibility — hide → save → public `GET /archive/visibility` reflects `IsVisible=false` | happy | P0 | _to author_ |
+| E2E-OPS-003 | Toggle archive visibility — hide → save → public `GET /api/v1/app/archive/visibility` reflects `IsVisible=false` | happy | P0 | _to author_ |
 | E2E-OPS-004 | Auth gate — admin lacking `Operations.View` → `/not-permitted` | auth | P0 | _to author_ |
-| E2E-OPS-005 | Edit gate — View-only admin can load but Save is rejected (403 → fallback toast) | auth | P0 | _to author_ |
+| E2E-OPS-005 | Edit gate — View-only admin sees both sections but NO Save button (D-828); granting Edit restores both | auth | P0 | _to author_ |
 | E2E-OPS-006 | Validation — malformed "Auto-close (Saudi time)" → client bilingual error, no PUT fires | error | P1 | _to author_ |
 | E2E-OPS-007 | Idempotent no-op — Save with no change writes no audit row + still shows success toast | edge | P2 | _to author_ |
 | E2E-OPS-008 | Singleton self-heal — missing seed row → page loads a default (open / visible), no error | edge | P2 | _to author_ |
 | E2E-OPS-009 | Server 500 on load — `GET registration-gate` 500 → bilingual load-failed toast | resilience | P2 | _to author_ |
 | E2E-OPS-010 | Server 500 on save — `PUT registration-gate` 500 → bilingual save-failed toast, state unchanged | resilience | P2 | _to author_ |
 | E2E-OPS-011 | RTL render — Arabic toggle mirrors page, headings, checkboxes, Save buttons | i18n | P1 | _to author_ |
+| E2E-OPS-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-OPS-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -65,7 +71,7 @@ Background:
 
 Scenario: Close registration, persist across reload, then reopen
   Given the "Registration gate" section shows the "Registration is open" checkbox TICKED
-  And the "Last changed" value shows a UTC timestamp
+  And the "Last changed" value shows a Saudi-local timestamp (dd-MM-yyyy hh:mm AM/PM)
   When the administrator UNTICKS "Registration is open"
   And clicks the "Save" button in the Registration gate section
   Then the BFF forwards PUT /account/api/admin/registration-gate
@@ -104,22 +110,24 @@ Scenario: Close registration, persist across reload, then reopen
 Scenario: Set a future auto-close moment and confirm it round-trips
   Given the "Registration is open" checkbox is TICKED
   And the "Auto-close (Saudi time)" field is empty
-  When the administrator types a future UTC datetime into "Auto-close (Saudi time)"
-    (e.g. "2026-12-31T23:59")
+  When the administrator types a future Saudi-local datetime into
+    "Auto-close (Saudi time)" (e.g. "2026-12-31T23:59")
   And clicks "Save" in the Registration gate section
   Then the BFF forwards PUT /account/api/admin/registration-gate
-    with body { "isOpen": true, "autoClose": "2026-12-31T23:59:00+00:00" }
+    with body { "isOpen": true, "autoClose": "2026-12-31T23:59:00" }
   And the API returns HTTP 200
   And the green "Registration gate updated." toast appears
 
   When the administrator reloads /admin/operations
   Then the "Auto-close (Saudi time)" field is pre-filled with "2026-12-31T23:59"
-    (the page formats AutoClose as "yyyy-MM-ddTHH:mm")
+    (the page renders AutoClose.ToSaudi() as "yyyy-MM-ddTHH:mm")
 
   # Past auto-close behaviour (verified at the API layer, see OperationsTogglesTests):
   # an auto-close moment <= now makes the gate behave closed even when IsOpen=true
-  And the value the page sent is interpreted as UTC (the input has no zone; the
-    page wraps it via DateTime.SpecifyKind(..., Utc) before sending)
+  And what the administrator typed is stored and served UNCHANGED - since
+    D-823 SIMF carries the Saudi wall clock end to end, the wire format is
+    zone-free ISO-8601 (no Z, no offset) and FromSaudiWallClock only normalises
+    the DateTimeKind, so no value is ever shifted
 ```
 
 **Evidence captured:**
@@ -135,7 +143,7 @@ Scenario: Set a future auto-close moment and confirm it round-trips
 Scenario: Hide the past-events archive and confirm the public endpoint follows
   Given the "Archive visibility" section shows the
     "Archive is visible to the public" checkbox TICKED
-  And the public GET http://localhost:5175/api/v1/archive/visibility
+  And the public GET http://localhost:5175/api/v1/app/archive/visibility
     (no auth header) returns ApiResult.Data.IsVisible = true
   When the administrator UNTICKS "Archive is visible to the public"
   And clicks the "Save" button in the Archive visibility section
@@ -145,7 +153,7 @@ Scenario: Hide the past-events archive and confirm the public endpoint follows
   And a green SimfAlert reads "Archive visibility updated." / "تم تحديث إظهار الأرشيف."
   And the section's "Last changed" timestamp advances
 
-  When an unauthenticated client calls GET /api/v1/archive/visibility again
+  When an unauthenticated client calls GET /api/v1/app/archive/visibility again
   Then it returns HTTP 200 with ApiResult.Data.IsVisible = false (no auth needed)
 
   # Restore so later runs start from the visible state
@@ -157,7 +165,7 @@ Scenario: Hide the past-events archive and confirm the public endpoint follows
 - Screenshot before/after: `docs/screenshots/cp-admin-operations-archive-before.png`,
   `docs/screenshots/cp-admin-operations-archive-after.png`
 - Network: `PUT /account/api/admin/archive/visibility` returns 200; the anonymous
-  `GET /api/v1/archive/visibility` returns 200 and mirrors the saved value
+  `GET /api/v1/app/archive/visibility` returns 200 and mirrors the saved value
 - Audit row: `ArchiveVisibilityUpdated`, `Outcome = Success`, actor id,
   `Detail = "isVisible=False"`
 
@@ -175,28 +183,47 @@ Scenario: A signed-in admin lacking Operations.View is denied the page
   And no /account/api/admin/archive/visibility request fires
 ```
 
-### E2E-OPS-005 — Edit gate (View-only admin cannot Save)
+### E2E-OPS-005 — Edit gate (View-only admin gets no Save button)
+
+**Rewritten for D-828.** This scenario used to assert that a View-only admin
+clicks Save and receives a 403. Both Save buttons are now wrapped in
+`<AuthorizedAction Permission="@PermissionCatalog.Operations.Edit">`, so there is
+no button to click — the old wording would now fail on a step that can never
+happen.
 
 ```gherkin
-Scenario: A View-only admin loads both sections but Save is rejected
+Scenario: A View-only admin reads both sections and cannot act on either
   Given a signed-in admin whose role grants Operations.View but NOT Operations.Edit
   When they navigate to /admin/operations
   Then the page renders normally and BOTH sections load their current state
     (GET registration-gate and GET archive/visibility return 200)
-  When they change "Registration is open" and click "Save"
-  Then the BFF forwards PUT /account/api/admin/registration-gate
-  And the API returns HTTP 403 (the PUT endpoint requires Operations.Edit)
-  And the page shows a red SimfAlert with the fallback message
-    "The change could not be saved." / "تعذّر حفظ التغيير."
-    (or the server's bilingual MessageForCurrentCulture() if one is returned)
-  And the persisted gate state is unchanged on reload
+  And the current values are visible and readable:
+    the "Registration is open" checkbox, the "Auto-close (Saudi time)" field
+    and both "Last changed" timestamps
+  But NEITHER section renders a "Save" button
+    (0 matches for .simf-form__actions button.simf-button--primary)
+  And no PUT is ever sent, because there is nothing to press
+
+Scenario: The same admin granted Operations.Edit gets both buttons back
+  Given the same admin's role is granted Operations.Edit
+  When they reload /admin/operations
+  Then exactly TWO "Save" buttons render, one per section
 ```
 
-> **Grounding:** `RegistrationGateEndpoints.cs` / `ArchiveVisibilityEndpoints.cs`
-> gate the GET with `Operations.View` and the PUT with `Operations.Edit`; the
-> integration test `OperationsTogglesTests.Non_admin_caller_cannot_toggle_either_gate`
-> asserts the PUT 403 for a non-admin. The wildcard `superadmin` holds both, so to
-> exercise this row use a purpose-made role with `Operations.View` only.
+> **Grounding:** `OperationsToggles.razor` wraps each `.simf-form__actions` block
+> in `<AuthorizedAction>`; `AuthorizedAction.razor` renders its content only
+> inside `<AuthorizeView Policy="...">`, so an absent permission removes the
+> markup rather than disabling it. The API still gates the PUTs with
+> `Operations.Edit` — the button gate is a UX layer, never the boundary.
+>
+> Pinned at component level by
+> `tests/SIMF.ControlPanel.Tests/ActionPermissionRenderTests.cs`
+> (`Operations_save_is_hidden_from_a_view_only_holder` /
+> `Operations_save_is_shown_to_an_edit_holder`), which stubs both loads so the
+> page reaches its LOADED state — otherwise the button is missing because the
+> load failed, and the assertion proves nothing. The wildcard `superadmin` holds
+> both permissions, so driving this row in a browser needs a purpose-made role
+> with `Operations.View` only.
 
 ### E2E-OPS-006 — Validation (malformed auto-close)
 
@@ -207,7 +234,7 @@ Scenario: A malformed Auto-close value is rejected client-side before any PUT
     into "Auto-close (Saudi time)" (e.g. via a forced non-date string)
   And clicks "Save" in the Registration gate section
   Then a red SimfAlert reads
-    "Auto-close must be a valid UTC datetime." / "يجب أن يكون الإغلاق التلقائي وقتاً UTC صحيحاً."
+    "Auto-close must be a valid date and time." / "يجب أن يكون الإغلاق التلقائي وقتاً صحيحاً."
   And NO PUT /account/api/admin/registration-gate request fires
   And the Save button returns from its Loading state
 ```
@@ -321,7 +348,7 @@ Scenario: Arabic toggle mirrors the whole page
   [`tests/SIMF.Api.Tests/OperationsTogglesTests.cs`](../../../tests/SIMF.Api.Tests/OperationsTogglesTests.cs)
   asserts: admin GET returns the seeded open state; closing the gate (and a
   past auto-close) makes `POST /auth/sign-up` return `403 REGISTRATION_CLOSED`;
-  sign-up succeeds when open; the public `GET /archive/visibility` needs no auth;
+  sign-up succeeds when open; the public `GET /api/v1/app/archive/visibility` needs no auth;
   admin toggling archive visibility is reflected on the public endpoint; and a
   non-admin caller gets `403` on both PUTs (the `Operations.Edit` gate). The
   related public archive read is also touched by
@@ -344,4 +371,7 @@ Scenario: Arabic toggle mirrors the whole page
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-08-02 by Claude — corrected the UTC-vs-Saudi-time statements
+and the public archive route (it is `/app/archive/visibility`, not
+`/archive/visibility`), and linked the now-authored page doc. Original catalogue
+rebuild 2026-06-02.

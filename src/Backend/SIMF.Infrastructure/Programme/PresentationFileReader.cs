@@ -4,7 +4,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
 
-/// <summary>D-568 (Wave C S6) — resolves a speaker presentation's bytes from the
+/// <summary>Resolves a speaker presentation's bytes from the
 /// unified <c>StoredFile</c> store. <c>SpeakerPresentation.StoredFileName</c> is
 /// repurposed as the bare-Guid pointer to the <c>StoredFile</c>; the bytes are read
 /// (and decrypted — the presentation is Internal/encrypted-at-rest) via the storage

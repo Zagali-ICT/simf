@@ -6,6 +6,7 @@ import '../../../app/widgets/simf_page_shell.dart';
 import '../data/session_models.dart';
 import 'programme_day_banner.dart';
 import 'session_state_chip.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One المواعيد timeline row (frame 1310:3213 collapsed / 1310:3232 featured):
 /// a navy radius-8 card holding, inline-start→end, the content column (a 14px
@@ -34,7 +35,7 @@ class SessionTimelineRow extends StatelessWidget {
     // Owner 2026-07-14 — state chips (live now / summary available / recorded)
     // let the agenda reflect each session's state at a glance.
     final stateChips = sessionStateChips(
-      phase: session.phase(DateTime.now().toUtc()),
+      phase: session.phase(saudiNow()),
       hasPublishedSummary: session.hasPublishedSummary,
       status: session.status,
     );

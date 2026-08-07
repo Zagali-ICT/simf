@@ -65,6 +65,8 @@
 | E2E-PGD-016 | Per-column filter narrows the grid (Title EN / Title AR) | function | P2 | _to author_ |
 | E2E-PGD-017 | Column sort toggles (Date / Order) | function | P2 | _to author_ |
 | E2E-PGD-018 | App parity: an authored day + its logo appear on `/app/programme/days` (day-strip + banner) | happy | P0 | _to author_ |
+| E2E-PGD-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-PGD-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

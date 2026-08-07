@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Time.Testing;
 using SIMF.Application.Email;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests;
 
@@ -35,24 +36,45 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     // Started near real time so a test-issued JWT — whose lifetime the bearer
     // middleware validates against the real system clock — is not seen as
     // expired. Tests advance this clock explicitly when they need to.
-    public FakeTimeProvider Time { get; } = new(DateTimeOffset.UtcNow);
+    //
+    // D-848 — the offset is named rather than inferred. SimfClock.Now is a
+    // Saudi wall-clock reading with Kind = Unspecified, and the implicit
+    // DateTime → DateTimeOffset conversion resolves that against
+    // TimeZoneInfo.Local — so the fake clock was seeded at
+    // realUtc + (3h − hostOffset), and "near real time" held only on a
+    // UTC+03:00 machine. Anywhere else every authenticated test minted a
+    // token the bearer middleware then rejected as not-yet-valid or expired.
+    // Identical on a +03:00 host; correct on all the others.
+    public FakeTimeProvider Time { get; } = new(new DateTimeOffset(SimfClock.Now, SimfClock.Offset));
 
-    /// <summary>
-    /// Per-test-run temp directory the FilesystemAvatarStorage writes into,
-    /// cleaned up on <see cref="Dispose(bool)"/>.
-    /// </summary>
-    public string AvatarStorageDirectory { get; } =
-        Path.Combine(Path.GetTempPath(), $"simf-avatars-{Guid.NewGuid():N}");
-
-    /// <summary>Temp dir for encrypted user ID-document files (decisions
-    /// D-046 b, P8 — D-049; renamed from <c>VisitorIdStorageDirectory</c>).</summary>
-    public string UserIdDocumentStorageDirectory { get; } =
-        Path.Combine(Path.GetTempPath(), $"simf-user-id-documents-{Guid.NewGuid():N}");
+    // AvatarStorageDirectory and UserIdDocumentStorageDirectory lived here until
+    // 2026-08-06. They were the per-asset temp roots for FilesystemAvatarStorage
+    // and its ID-document sibling, both of which D-568 deleted in favour of the
+    // unified StoredFile store; no type of either name survives, nothing wrote to
+    // the directories, and no test read them. FileStorageDirectory below is the
+    // one root the fixture still needs.
 
     /// <summary>D-568 — per-test-run root for the centralized file store
     /// (<c>FileStorage:RootPath</c>), cleaned up on <see cref="Dispose(bool)"/>.</summary>
     public string FileStorageDirectory { get; } =
         Path.Combine(Path.GetTempPath(), $"simf-files-{Guid.NewGuid():N}");
+
+    /// <summary>
+    /// DEF-SEC-001 — the shared password the demo @simf.local accounts are
+    /// seeded with (<c>Seed:DemoPassword</c>). D-585 seeds those accounts in
+    /// every environment, so the value must NOT be committed: it is read from
+    /// <c>SIMF_TEST_DEMO_PASSWORD</c> when a developer or CI supplies one, and
+    /// otherwise generated once per test process so the suite still runs
+    /// offline with no configuration. Generated once (static) so every factory
+    /// in a run agrees. No test asserts the literal — the demo accounts are
+    /// only checked for existence, role and profile — so a per-run value is
+    /// safe. The shape satisfies the Identity password policy (upper, lower,
+    /// digit, non-alphanumeric).
+    /// </summary>
+    private static readonly string DemoSeedPassword =
+        Environment.GetEnvironmentVariable("SIMF_TEST_DEMO_PASSWORD") is { Length: > 0 } supplied
+            ? supplied
+            : $"TestOnly!{Guid.NewGuid():N}Aa1";
 
     public SimfApiFactory()
     {
@@ -64,9 +86,30 @@ public class SimfApiFactory : WebApplicationFactory<Program>
             "ConnectionStrings__SimfAppDb",
             $"Server=(localdb)\\MSSQLLocalDB;Database={_appDatabaseName};" +
             "Trusted_Connection=True;TrustServerCertificate=True");
-        Environment.SetEnvironmentVariable("SuperAdmin__Email", "superadmin@simf.test");
-        Environment.SetEnvironmentVariable("SuperAdmin__TempPassword", "ChangeMe!Test1");
-        Environment.SetEnvironmentVariable("SuperAdmin__TotpSecret", "JBSWY3DPEHPK3PXP");
+        // The super-admin seed settings, pinned so the suite is hermetic.
+        //
+        // Each is set TWICE, unprefixed and `SIMF_`-prefixed, because Program.cs
+        // adds `AddEnvironmentVariables("SIMF_")` AFTER the host's default
+        // unprefixed provider — so for any key that has a `SIMF_` form on the
+        // machine, that form wins and an unprefixed pin here is silently ignored.
+        // A developer box is documented to export
+        // `SIMF_SuperAdmin__PasswordChangeRequired=false` (so the seeded CP login
+        // is not forced to rotate), which overrode the `SuperAdminOptions` default
+        // of true and failed `IdentitySeederTests.SeedAsync_creates_the_super_admin`
+        // — a test whose result depended on whose machine ran it. Pinning both
+        // forms closes that for every one of these settings, not just the one that
+        // happened to be set here.
+        foreach (var (key, value) in new[]
+        {
+            ("SuperAdmin__Email", "superadmin@simf.test"),
+            ("SuperAdmin__TempPassword", "ChangeMe!Test1"),
+            ("SuperAdmin__TotpSecret", "JBSWY3DPEHPK3PXP"),
+            ("SuperAdmin__PasswordChangeRequired", "true"),
+        })
+        {
+            Environment.SetEnvironmentVariable(key, value);
+            Environment.SetEnvironmentVariable("SIMF_" + key, value);
+        }
         Environment.SetEnvironmentVariable("RateLimit__PermitLimit", "100000");
         // H7 — D-062: the new per-email partition (auth-email policy)
         // would otherwise cap test scenarios that intentionally retry
@@ -90,14 +133,28 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // A1-19 — dormant-account auto-disable OFF by default (reset the process-wide
         // var so a prior DormantAccountApiFactory cannot leak its threshold).
         Environment.SetEnvironmentVariable("IdentityLifecycle__DormantAccountDisableDays", "0");
+        // #2 (Q1, 2026-07-31) — mandatory Control-Panel 2FA enrolment ON, which is
+        // the production default (IdentityLifecycleOptions initialises it true and
+        // appsettings.json states it). This used to be pinned OFF, because the ~150
+        // admin fixtures in this assembly created their user straight through
+        // UserManager and then read `Tokens.AccessToken` off a Cp-audience password
+        // sign-in — a flow the gate correctly answers with an enrolment challenge
+        // and no token — which meant those tests all exercised the pre-fix path.
+        // They now go through AuthFlow.SignInControlPanelAsync, which enrols the
+        // fixture admin and completes a real TOTP step, so the whole suite runs the
+        // shipping posture. Pinned explicitly (a process-wide var) so a future
+        // opt-out factory cannot leak "false" into a later test class.
+        Environment.SetEnvironmentVariable(
+            "IdentityLifecycle__RequireControlPanelTwoFactorEnrolment", "true");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
-        Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);
+        // Storage__AvatarBase and Storage__UserIdDocumentBase were set here until
+        // 2026-08-06. Both config keys were removed when the unified StoredFile
+        // store replaced the bespoke per-asset stores, so setting them bound to
+        // nothing; the file store's own root is what the fixture configures below.
+        //
         // A fixed base64-encoded 32-byte AES key for the test environment so
         // the encrypted ID-image round-trip is deterministic across runs.
-        // P8 renamed the config keys off Storage__VisitorId* to
-        // Storage__UserIdDocument*.
-        Environment.SetEnvironmentVariable("Storage__UserIdDocumentBase", UserIdDocumentStorageDirectory);
         Environment.SetEnvironmentVariable(
             "Storage__UserIdDocumentEncryptionKey",
             "VnY3R0V2YnFwT0ZQUE1XdjJxQjJlbzVwUFp4MnNYbWY=");
@@ -131,9 +188,10 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // "Testing" (not Development), so opt IN explicitly and supply the
         // demo password. Reset here (process-wide vars) so a prior
         // DemoAccountsDisabledApiFactory cannot leak EnableDemoAccounts=false
-        // into later classes.
+        // into later classes. DEF-SEC-001 — the password itself is never
+        // committed; see DemoSeedPassword above.
         Environment.SetEnvironmentVariable("Seed__EnableDemoAccounts", "true");
-        Environment.SetEnvironmentVariable("Seed__DemoPassword", "Simf@Demo2026#");
+        Environment.SetEnvironmentVariable("Seed__DemoPassword", DemoSeedPassword);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -183,6 +241,12 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         services.GetRequiredService<SIMF.Infrastructure.Seeding.SqlContentSeeder>()
             .RunAsync(SIMF.Infrastructure.Seeding.SqlContentSeeder.RosterFiles)
             .GetAwaiter().GetResult();
+        // BUG-023 — the demo OPERATIONAL configuration (gates + operator
+        // assignment, per-session moderator grants, the main hall's seat grid).
+        // Mirrors Program.cs: it runs LAST because it configures the content the
+        // SQL seed above creates. Idempotent.
+        services.GetRequiredService<SIMF.Infrastructure.Seeding.DemoOperationalConfigSeeder>()
+            .SeedAsync().GetAwaiter().GetResult();
     }
 
     protected override void Dispose(bool disposing)
@@ -205,10 +269,6 @@ public class SimfApiFactory : WebApplicationFactory<Program>
 
             try
             {
-                if (Directory.Exists(AvatarStorageDirectory))
-                {
-                    Directory.Delete(AvatarStorageDirectory, recursive: true);
-                }
                 if (Directory.Exists(FileStorageDirectory))
                 {
                     Directory.Delete(FileStorageDirectory, recursive: true);

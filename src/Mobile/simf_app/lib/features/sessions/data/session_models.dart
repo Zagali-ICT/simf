@@ -169,8 +169,9 @@ class SessionSpeaker {
 }
 
 /// One row in the cached programme — mirrors
-/// `SIMF.Contracts.Programme.PublicSessionListItem` (`GET /app/programme/sessions`).
-/// [start]/[end] are UTC on the wire — the UI renders device-local
+/// `SIMF.Contracts.Programme.PublicSessionListItem` (`GET
+/// /app/programme/sessions`).
+/// [start]/[end] are zone-free on the wire — the UI renders device-local
 /// (Page_016 L-3/L-8). Bilingual fields are paired; [categoryName] is the
 /// "main session" / type tag (null until the team seeds the category list —
 /// L-4); [speakers] is always a list (empty, never null — L-7) and carries the
@@ -220,24 +221,28 @@ class SessionListItem {
   final String? primaryThemeColor;
 
   /// A8 (D-237, wire `hasPublishedSummary`) — true when this session has an
-  /// active summary carrying a PublishedAt stamp (the محضر the app renders). Its
+  /// active summary carrying a PublishedAt stamp (the محضر the app renders).
+  /// Its
   /// OWN editorial publish state, orthogonal to [status]; drives whether the
   /// session belongs in the summaries list + the "summary ready" badge, without
   /// a per-session `/summary` probe.
   final bool hasPublishedSummary;
 
-  /// The session's start on the Saudi event-local wall clock (wire value UTC).
+  /// The session's start on the Saudi event-local wall clock (zone-free on the
+  /// wire).
   DateTime get startLocal => saudiOf(start);
 
   /// The session's time-phase (upcoming / live / ended) against [nowUtc].
   SessionPhase phase(DateTime nowUtc) => sessionPhase(start, end, nowUtc);
 
   /// The session's end on the Saudi event-local wall clock — drives the agenda
-  /// time-rail's bottom value (Figma 883:2308) and the summary duration (1072:13518).
+  /// time-rail's bottom value (Figma 883:2308) and the summary duration
+  /// (1072:13518).
   DateTime get endLocal => saudiOf(end);
 
   /// The session length in whole minutes, floored at 0 — the summary card's
-  /// duration label (Figma 1072:13518). Mirrors `MyAreaSessionItem.durationMinutes`.
+  /// duration label (Figma 1072:13518). Mirrors
+  /// `MyAreaSessionItem.durationMinutes`.
   int get durationMinutes {
     final minutes = end.difference(start).inMinutes;
     return minutes < 0 ? 0 : minutes;
@@ -263,8 +268,8 @@ class SessionListItem {
         hallId: json['hallId'] as String? ?? '',
         hallName: json['hallName'] as String? ?? '',
         hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: _parseUtc(json['start']),
-        end: _parseUtc(json['end']),
+        start: parseWireDateTime(json['start'], 'start'),
+        end: parseWireDateTime(json['end'], 'end'),
         status: SessionStatus.fromJson(json['status']),
         speakers: _decodeSpeakers(json['speakers']),
         description: json['description'] as String?,
@@ -362,7 +367,8 @@ class ProgrammeDaysPage {
 }
 
 /// The full detail for one session — mirrors
-/// `SIMF.Contracts.Programme.PublicSessionDetail` (`GET /app/programme/sessions/{id}`,
+/// `SIMF.Contracts.Programme.PublicSessionDetail` (`GET
+/// /app/programme/sessions/{id}`,
 /// anonymous). Page_017 renders the header (code/time/title), the description,
 /// the ordered speaker cards (each with the D-271 country flag + photo, reusing
 /// [SessionSpeaker]), and — per Figma 889:2450 — a **رابط الجلسة** button when
@@ -388,8 +394,10 @@ class SessionDetail {
     this.categoryId,
     this.categoryName,
     this.categoryNameArabic,
+    this.type,
     this.liveStreamUrl,
     this.displayOrder = 0,
+    this.arrivalGraceMinutes = defaultArrivalGraceMinutes,
   });
 
   final String id;
@@ -408,10 +416,18 @@ class SessionDetail {
   final String? categoryName;
   final String? categoryNameArabic;
 
+  /// #29 — the session's kind (the same wire field the list carries, D-452). A
+  /// **workshop** detail is reduced to its title + time only (no description,
+  /// speakers, seat/join block or live/summary actions). Null on an older API
+  /// or an untyped session, which renders the full detail as before.
+  final SessionType? type;
+
   /// The live-broadcast feed URL (YouTube / direct HLS·MP4 — D-349), or null
   /// when the session has no live feed. Drives the Figma 889:2450 **رابط
   /// الجلسة** button: shown only when non-null, opening the live screen (25).
   final String? liveStreamUrl;
+
+  /// FR-702 (owner 2026-07-31) — the free-text notice the Control Panel authors
 
   /// True when the session has a live feed the app can open (the رابط الجلسة
   /// button's visibility gate).
@@ -419,13 +435,32 @@ class SessionDetail {
       liveStreamUrl != null && liveStreamUrl!.trim().isNotEmpty;
 
   /// The session's time-phase (upcoming / live / ended) against [nowUtc] — the
-  /// header buttons gate off this (summary = ended; live = live + hasLiveStream).
+  /// header buttons gate off this (summary = ended; live = live +
+  /// hasLiveStream).
   SessionPhase phase(DateTime nowUtc) => sessionPhase(start, end, nowUtc);
 
   /// The session's 1-based position within its day (D-567, Figma 889:2604) —
   /// the gold index badge shows it zero-padded ("02"). 0 = unknown (an older
   /// API), in which case the badge falls back to the [code].
   final int displayOrder;
+
+  /// D-840 — how many minutes before the start (and after the end) the
+  /// SERVER will accept an arrival for this session, already resolved by it
+  /// (the session's own override, else its hall's, else the global value).
+  ///
+  /// Read from the wire rather than assumed: D-839 made the grace configurable
+  /// per hall and per session, so there is no single server constant left to
+  /// mirror by hand. Falls back to [defaultArrivalGraceMinutes] on an older
+  /// API — the value this screen used to hard-code — so nothing changes until
+  /// the team actually configures a hall.
+  final int arrivalGraceMinutes;
+
+  /// The grace the system used before it was configurable, and the value an
+  /// older API implies by omitting the field.
+  static const int defaultArrivalGraceMinutes = 15;
+
+  /// [arrivalGraceMinutes] as a Duration, for comparing against a start time.
+  Duration get arrivalGrace => Duration(minutes: arrivalGraceMinutes);
 
   DateTime get startLocal => saudiOf(start);
   DateTime get endLocal => saudiOf(end);
@@ -442,6 +477,7 @@ class SessionDetail {
   String? localizedCategory(bool isArabic) =>
       _pickOptional(categoryNameArabic, categoryName, isArabic);
 
+
   static SessionDetail fromJson(Map<String, dynamic> json) => SessionDetail(
         id: json['id'] as String? ?? '',
         code: json['code'] as String? ?? '',
@@ -450,23 +486,28 @@ class SessionDetail {
         hallId: json['hallId'] as String? ?? '',
         hallName: json['hallName'] as String? ?? '',
         hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: _parseUtc(json['start']),
-        end: _parseUtc(json['end']),
+        start: parseWireDateTime(json['start'], 'start'),
+        end: parseWireDateTime(json['end'], 'end'),
         speakers: _decodeSpeakers(json['speakers']),
         description: json['description'] as String?,
         descriptionArabic: json['descriptionArabic'] as String?,
         categoryId: json['categoryId'] as String?,
         categoryName: json['categoryName'] as String?,
         categoryNameArabic: json['categoryNameArabic'] as String?,
+        type: SessionType.fromJson(json['type']),
         liveStreamUrl: json['liveStreamUrl'] as String?,
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        arrivalGraceMinutes: (json['arrivalGraceMinutes'] as num?)?.toInt() ??
+            defaultArrivalGraceMinutes,
       );
 }
 
 /// The caller's own active seat for a session — the `myCell` cell of
 /// `SIMF.Contracts.Sessions.SessionSeatMap` (`GET /app/sessions/{id}/seats`,
-/// approved account). The Page_017 card shows `الصف {rowLabel} · مقعد {seatNumber}`
-/// — there is **no column axis** (Page_017 L-3.1). The full grid + the cell `kind`
+/// approved account). The Page_017 card shows `الصف {rowLabel} · مقعد
+/// {seatNumber}`
+/// — there is **no column axis** (Page_017 L-3.1). The full grid + the cell
+/// `kind`
 /// belong to the My-Seat screen (18).
 @immutable
 class MySeat {
@@ -480,7 +521,8 @@ class MySeat {
   final String rowLabel;
   final int seatNumber;
 
-  /// Reads `myCell` from a `SessionSeatMap` payload; null when the caller has no
+  /// Reads `myCell` from a `SessionSeatMap` payload; null when the caller has
+  /// no
   /// active reservation (the card is hidden — Page_017 L-3).
   static MySeat? fromSeatMap(Object? data) {
     final cell = (data is Map ? data['myCell'] : null);
@@ -535,13 +577,16 @@ List<SessionListItem> filterSessions(
 }
 
 /// The distinct device-local calendar days present in [items], ascending — the
-/// data-driven day strip (Page_016: the event's "remaining days"). Each entry is
+/// data-driven day strip (Page_016: the event's "remaining days"). Each entry
+/// is
 /// a midnight-local [DateTime].
 List<DateTime> sessionDays(List<SessionListItem> items) =>
     distinctLocalDays(items, (session) => session.startLocal);
 
-/// The distinct device-local calendar days spanned by [items], ascending, each a
-/// midnight-local [DateTime]. [localStart] pulls the device-local start out of an
+/// The distinct device-local calendar days spanned by [items], ascending, each
+/// a
+/// midnight-local [DateTime]. [localStart] pulls the device-local start out of
+/// an
 /// item, so every day-grouped list (sessions, presentations, …) shares one
 /// algorithm instead of re-declaring it.
 List<DateTime> distinctLocalDays<T>(
@@ -558,36 +603,25 @@ List<DateTime> distinctLocalDays<T>(
 }
 
 /// Whether [a] and [b] fall on the same device-local calendar day (time-of-day-
-/// and argument-order-independent) — the one home for the day-equality predicate.
+/// and argument-order-independent) — the one home for the day-equality
+/// predicate.
 bool sameLocalDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// Decodes a `speakers[]` array (shared by the list item + the detail). A
-/// missing / null array decodes to an empty list — never null on the wire (L-7).
+/// missing / null array decodes to an empty list — never null on the wire
+/// (L-7).
 List<SessionSpeaker> _decodeSpeakers(Object? data) =>
     (data as List? ?? const <dynamic>[])
         .whereType<Map<dynamic, dynamic>>()
         .map((e) => SessionSpeaker.fromJson(e.cast<String, dynamic>()))
         .toList(growable: false);
 
-/// Parses an ISO-8601 wire timestamp into a UTC [DateTime] (the contract is
-/// always UTC). A missing / unparseable value falls back to the epoch in UTC so
-/// the model never holds a local-zone instant by accident.
-DateTime _parseUtc(Object? value) {
-  if (value is String && value.isNotEmpty) {
-    final parsed = DateTime.tryParse(value);
-    if (parsed != null) {
-      return parsed.toUtc();
-    }
-  }
-  return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-}
-
 /// Parses a date-only wire value (`yyyy-MM-dd`, the .NET `DateOnly`
 /// serialisation) into a local-midnight [DateTime] for the day strip / banner.
 DateTime _parseDate(Object? value) {
   if (value is String && value.isNotEmpty) {
-    final parsed = DateTime.tryParse(value);
+    final parsed = parseWireOrNull(value);
     if (parsed != null) {
       return DateTime(parsed.year, parsed.month, parsed.day);
     }

@@ -1,4 +1,4 @@
-@* D-735 — the reusable email-template editor, hosted by CrudShell from
+@* The reusable email-template editor, hosted by CrudShell from
    EmailTemplatesList.razor (popup or full page per CpPreferences). Inherits
    CrudAddEditFormBase<AdminEmailTemplateDetail> so it exposes the standard
    CRUD-form parameter surface (Initial / OnSuccess / OnCancel); IsEdit is
@@ -59,7 +59,10 @@
 
             <label class="simf-field">
                 <span class="simf-field__label">@L["Admin.EmailTemplates.Field.BodyEn"]</span>
-                <textarea id="@BodyEnId" class="simf-field__input" rows="8"
+                @* §6.16 (RTL-003) — pin LTR the way the Arabic twin below pins RTL.
+                   Without it the root dir="rtl" cascades into this box in the Arabic
+                   CP, so the English template body is authored right-to-left. *@
+                <textarea id="@BodyEnId" class="simf-field__input" rows="8" dir="ltr"
                           maxlength="8000"
                           value="@_bodyEn"
                           @onfocus="@(() => { _lastFocused = BodyEnId; })"
@@ -97,7 +100,7 @@
                 {
                     <div class="simf-email-template__preview">
                         <div class="simf-email-template__preview-subject">@_preview.Subject</div>
-                        @* Security (D-735 review): the body is admin-authored raw HTML —
+                        @* Security: the body is admin-authored raw HTML —
                            render it in a sandboxed iframe with NO allow-scripts so it
                            displays like a mail client but cannot execute script in the CP
                            origin (stored-XSS defence). srcdoc is HTML-attribute-encoded by
@@ -153,5 +156,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmResetAsync"
-                 OnCancel="@(() => _confirmingReset = false)" />
+                 OnCancel="@(() => _confirmingReset = false)" 
+                 Permission="@PermissionCatalog.EmailTemplates.Edit"/>
 }

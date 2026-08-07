@@ -6,11 +6,11 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-153 / D-157 / D-167 — Speaker entity configuration.
+/// <summary>Speaker entity configuration.
 /// <c>CountryId</c> is a real DB-enforced FK to <c>Country.Id</c>
 /// (same DbContext, same physical database — App DB).
-/// <c>UserProfileId</c> became a real DB FK after D-167 moved
-/// <c>UserProfile</c> onto <c>SimfAppDbContext</c>.</summary>
+/// <c>UserProfileId</c> is a real DB FK too, because
+/// <c>UserProfile</c> lives on <c>SimfAppDbContext</c>.</summary>
 internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
 {
     public void Configure(EntityTypeBuilder<Speaker> builder)
@@ -43,8 +43,8 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.Property(speaker => speaker.WebsiteUrl).HasMaxLength(256);
 
         // Contact identity-card fields inlined from the removed shared Contact
-        // directory (supersedes SIMF-FDS-014 / D-260). Latitude/Longitude are
-        // double? and need no length. The Website slot is WebsiteUrl above.
+        // directory. Latitude/Longitude are double? and need no length.
+        // The Website slot is WebsiteUrl above.
         builder.Property(speaker => speaker.Email).HasMaxLength(320);
         builder.Property(speaker => speaker.PhonePrimary).HasMaxLength(32);
         builder.Property(speaker => speaker.PhoneSecondary).HasMaxLength(32);
@@ -54,7 +54,7 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.Property(speaker => speaker.PhotoRelativePath).HasMaxLength(256);
 
         builder.HasIndex(speaker => speaker.Code).IsUnique();
-        // D-159 — real DB FK on the same-DB reference. OnDelete=Restrict
+        // Real DB FK on the same-DB reference. OnDelete=Restrict
         // matches the soft-delete policy (admins deactivate countries via
         // IsActive=false; they never hard-delete a row a speaker points at).
         // The HasForeignKey call creates the FK index automatically, so the
@@ -63,7 +63,7 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
             .WithMany()
             .HasForeignKey(speaker => speaker.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
-        // D-167: real FK to UserProfile (now same-DB). Restrict because
+        // Real FK to UserProfile (now same-DB). Restrict because
         // a speaker keyed to a deactivated user profile should still
         // surface in the public speakers list — admins remove the
         // linkage by clearing the UserProfileId on the speaker, not by

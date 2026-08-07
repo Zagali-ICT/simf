@@ -3,7 +3,7 @@ using SIMF.Contracts.Organization;
 
 namespace SIMF.Application.Configuration.Abstractions;
 
-/// <summary>D-495 — the admin write-path for the singleton Organization Profile.
+/// <summary>The admin write-path for the singleton Organization Profile.
 /// A single full-document upsert: updates the scalar branding fields and reconciles
 /// the about-items + details child lists by id (update existing / insert new /
 /// soft-delete removed). Every change touches the row's <c>UpdatedAt</c>, audits the

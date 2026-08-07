@@ -75,6 +75,37 @@ public sealed class LandingHeroTests : WebComponentTestBase
         Assert.Empty(cut.FindAll("iframe.ln-hero__video--yt"));
     }
 
+    // The test above proves the MARKUP falls back to assets/hero-video.mp4, but a
+    // green render says nothing about the file being there — delete the asset and
+    // that test still passes while the public landing hero 404s. This asserts the
+    // bundled fallback actually ships, so the pair covers both halves.
+    [Fact]
+    public void The_bundled_fallback_asset_exists()
+    {
+        var asset = Path.Combine(
+            RepoRoot(), "src", "Website", "SIMF.Web", "wwwroot", "assets", "hero-video.mp4");
+
+        Assert.True(
+            File.Exists(asset),
+            $"The bundled hero fallback is missing: {asset}. Landing.razor renders "
+            + "`HeroVideo?.FileUrl ?? \"assets/hero-video.mp4\"`, so without this file "
+            + "the public landing hero 404s whenever the CP has no video configured "
+            + "or the organization profile is unavailable (D-756).");
+    }
+
+    private static string RepoRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null
+            && !File.Exists(Path.Combine(directory.FullName, "SIMF.slnx")))
+        {
+            directory = directory.Parent;
+        }
+        return directory?.FullName
+            ?? throw new InvalidOperationException(
+                "Could not locate the SIMF repo root from " + AppContext.BaseDirectory);
+    }
+
     private void RegisterProfile(string? backgroundVideoUrl)
     {
         var client = new SimfPublicClient(new HttpClient(new StubHandler(backgroundVideoUrl))

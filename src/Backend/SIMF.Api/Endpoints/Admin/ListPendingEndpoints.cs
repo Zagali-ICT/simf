@@ -67,7 +67,7 @@ public sealed class ListPendingVisitorsEndpoint(IAdminUserProvisioningService ad
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
-            "List pending visitors. Requires the Administrator role.");
+            "List pending visitors. Requires the Visitors.View permission.");
     }
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)

@@ -77,6 +77,22 @@
                         <div class="ln-glance__row"><dt>@L["SessionDetail.Glance.Capacity"]</dt><dd>@string.Format(L["SessionDetail.Glance.CapacityValue"].Value, s.Seats.Capacity)</dd></div>
                         <div class="ln-glance__row"><dt>@L["SessionDetail.Glance.Live"]</dt><dd>@(string.IsNullOrWhiteSpace(s.LiveStreamUrl) ? L["SessionDetail.Glance.No"] : L["SessionDetail.Glance.Yes"])</dd></div>
                     </dl>
+                    @* The organiser's free-text notice for this session's
+                       broadcast, shown WITH the live row above. Informational
+                       only — nothing on this page restricts, gates or geo-checks the
+                       stream. Omitted entirely when the Control Panel left it blank. *@
+                    @* Gated on the session actually HAVING a stream, not just on the text
+                       being set. The row directly above reads "Live broadcast: No" when
+                       LiveStreamUrl is blank, and following that with a notice about the
+                       broadcast contradicts it — a leftover notice on a session whose feed
+                       was later removed would otherwise read as though a stream existed. *@
+                    @{ var liveNotice = string.IsNullOrWhiteSpace(s.LiveStreamUrl)
+                           ? null
+                           : PickOrNull(s.LiveNotice, s.LiveNoticeArabic); }
+                    @if (liveNotice is not null)
+                    {
+                        <p class="ln-glance__notice" role="note">@liveNotice</p>
+                    }
                 </aside>
                 <div class="ln-sessabout ln-reveal">
                     <header class="ln-sessabout__head">

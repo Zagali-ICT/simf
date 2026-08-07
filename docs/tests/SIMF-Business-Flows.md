@@ -1291,7 +1291,7 @@ Scenario: Booking desk, seat picker and my-seat all render correctly in Arabic
 
 ## BF-06 — Meeting requests → CP review desks
 
-This cross-page flow exercises the three physically distinct meeting models SIMF ships and the Control-Panel desks that review them. **(1) Business meetings** are admin-arranged only: there is *no* attendee request queue — an admin schedules a `BusinessMeeting` at a `MeetingTable` (in a Meeting/General hall) for a from–to slot with **two or more** `BusinessMeetingParticipant`s, and the row is created `Confirmed` from `/admin/business-meetings` (create endpoint `POST /admin/business-meetings`, list `POST /admin/business-meetings/list`, detail `GET /admin/business-meetings/{id}`, plus a cancel endpoint); tables live under `/admin/meeting-tables`. **(2) Speaker meeting requests** (`SpeakerMeetingRequest`, D-269) flow attendee → speaker from the app (`meeting_request_sheet.dart` + `meeting_slot_pickers.dart`, reachable from routes `/meet`, `/bilateral-meetings`, `/saved-meetings`) into the **SMR desk** at `/admin/speaker-meeting-requests` (`SimfDataGrid` + Respond modal: Accept/Reject + optional note; D-716 hall binding on Accept moves the row to `AwaitingSpeaker`). **(3) Delegation meeting requests** (`DelegationMeetingRequest`, delegation ↔ delegation) are worked from `/admin/delegation-meetings` (team accept/reject + notify/email). Two sibling desks mirror the SMR pattern (D-500 Wave 5): `/admin/document-requests` and `/admin/badge-requests` — accepting a badge request applies the requested title to `UserProfile.JobTitle`. Speaker free-slots derive from availability windows at `/admin/speaker-availability` (D-474/476) and halls at `/admin/hall-availability` (D-715). Every desk is permission-gated (`SpeakerMeetingRequests.View`/`.Manage`, `DelegationMeetings.View`, `ParticipationDocumentRequests.View`, `BadgeUpdateRequests.View`/`.Manage`, `BusinessMeetings.View`). **Critical invariant this flow guards:** meetings are only ever `Scheduled`/`Confirmed` — there is *no* meeting check-in / arrival / attendance concept anywhere in the system.
+This cross-page flow exercises the three physically distinct meeting models SIMF ships and the Control-Panel desks that review them. **(1) Business meetings** are admin-arranged only: there is *no* attendee request queue — an admin schedules a `BusinessMeeting` at a `MeetingTable` (in a Meeting/General hall) for a from–to slot with **two or more** `BusinessMeetingParticipant`s, and the row is created `Confirmed` from `/admin/business-meetings` (create endpoint `POST /admin/business-meetings`, list `POST /admin/business-meetings/list`, detail `GET /admin/business-meetings/{id}`, plus a cancel endpoint); tables live under `/admin/meeting-tables`. **(2) Speaker meeting requests** (`SpeakerMeetingRequest`, D-269) flow attendee → speaker from the app (`meeting_request_sheet.dart` + `meeting_slot_pickers.dart`, reachable from routes `/meet` and the VIP `/meetings` — B18 deleted the dead `/bilateral-meetings` and `/saved-meetings` sentinels, which never hosted the sheet) into the **SMR desk** at `/admin/speaker-meeting-requests` (`SimfDataGrid` + Respond modal: Accept/Reject + optional note; D-716 hall binding on Accept moves the row to `AwaitingSpeaker`). **(3) Delegation meeting requests** (`DelegationMeetingRequest`, delegation ↔ delegation) are worked from `/admin/delegation-meetings` (team accept/reject + notify/email). Two sibling desks mirror the SMR pattern (D-500 Wave 5): `/admin/document-requests` and `/admin/badge-requests` — accepting a badge request applies the requested title to `UserProfile.JobTitle`. Speaker free-slots derive from availability windows at `/admin/speaker-availability` (D-474/476) and halls at `/admin/hall-availability` (D-715). Every desk is permission-gated (`SpeakerMeetingRequests.View`/`.Manage`, `DelegationMeetings.View`, `ParticipationDocumentRequests.View`, `BadgeUpdateRequests.View`/`.Manage`, `BusinessMeetings.View`). **Critical invariant this flow guards:** meetings are only ever `Scheduled`/`Confirmed` — there is *no* meeting check-in / arrival / attendance concept anywhere in the system.
 
 ### Coverage matrix
 
@@ -2236,6 +2236,19 @@ Scenario: RTL and bilingual render of the archived edition
 
 ## BF-10 — Full Control-Panel smoke — no dead button, no crash, permission gate
 
+> **Automated coverage as of 2026-07-29 (WS2/WS4).** `CpElementSweepTests` drives
+> all 94 sweepable CP routes signed in as an Administrator and asserts each renders
+> without bouncing, with **zero console errors**, no broken image, every same-origin
+> link/asset < 400, and no horizontal overflow — that is **E2E-BF-10-001**, executed:
+> 92 passed, 2 skipped (`/admin/meeting-tables`, `/admin/speaker-presentations` keep
+> their grids behind a parent selection). **E2E-BF-10-003** is covered only in the
+> "present and correctly gated" sense: the run diffs each page against
+> `predicted-inventory.json`, so a toolbar button that vanished or lost its
+> selection-gating fails the build — it does **not** click anything, so "the dialog
+> actually opens" is still unexecuted. **E2E-BF-10-006** is held by the two build
+> guards named above plus the sweep's own no-bounce assertion.
+> **Still unexecuted: -002, -004, -005** — they need interaction, not a page load.
+
 This flow is a systematic **smoke sweep over every ✅ Real Control-Panel route** listed in [`docs/pages/PAGE-INDEX.md`](../../pages/PAGE-INDEX.md) — the `/` dashboard plus the full `/admin/*` catalogue (`/admin/admins`, `/admin/visitors`, `/admin/roles`, `/admin/sessions`, `/admin/speakers`, `/admin/sponsors`, `/admin/organisations`, `/admin/programme-days`, `/admin/configuration`, `/admin/email/templates`, `/admin/statistics`, … through every row marked ✅ Real). It is driven on the CP surface (`http://localhost:5158`) against the admin API (`http://localhost:5175`). The flow exercises four cross-cutting rules that every CP page must honour: **(1)** each page renders with no error boundary and a clean console; **(2)** every list page is a `SimfDataGrid` (`src/Shared/SIMF.Components/Forms/SimfDataGrid.razor` — per-column filter + sort + select-all + row checkbox + quiet icon actions) and an empty list renders `SimfEmptyState` with bilingual copy; **(3)** primary action buttons are enabled and actually do something (open a working dialog / navigate / mutate — never dead); **(4)** the **permission gate** — every CP page carries `@attribute [RequirePermission(PermissionCatalog.X.Y)]` (`src/ControlPanel/SIMF.ControlPanel/Authorization/PermissionAuthorization.cs` — `RequirePermissionAttribute : AuthorizeAttribute`), so a signed-in user whose role lacks the page permission is redirected to `/not-permitted` with **HTTP 200** (the `AccessDeniedPath` wired in `Program.cs`). `PermissionCatalog` (`src/Shared/SIMF.Common/PermissionCatalog.cs`) is the single source of truth — `Administrator` resolves to the wildcard `"*"` (`PermissionCatalog.Wildcard`) and holds every code implicitly; the matching API endpoint gates with `Policies(PermissionCatalog.PolicyFor(code))` → the `perm:{code}` policy. Two build guards, `tests/SIMF.ControlPanel.Tests/CpNavigationPermissionTests.cs` and `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs`, fail the build if any gate is missing. One known render trap is also swept: a CP `SimfTextField` **without** `ValueExpression` (i.e. not `@bind-Value`, or `Numeric=true`) **freezes the page mid-render** (D-648).
 
 ### Coverage matrix
@@ -2469,6 +2482,16 @@ Scenario: Arabic toggle mirrors every swept page with no overflow
 
 ## BF-11 — Full mobile-App smoke — every screen, every role, no crash
 
+> **Automated coverage as of 2026-07-29 (WS1.4).**
+> `test/app/screen_element_contract_test.dart` drives **56 of 61** parameterless
+> routes by path (5 correctly redirect for the test account) and asserts none throws
+> during render and no icon-only control lacks an accessible name — 0 routes threw.
+> Alongside it: `flutter analyze` 0 errors / 0 warnings, and `flutter test`
+> **1247 passed / 0 failed** including every golden. Two screens remain **excluded
+> and open**: `/sessions/join` and `/session-summaries` throw "BoxConstraints forces
+> an infinite height" (nested scroll hosts; the fix belongs in `SimfPageShell` and
+> touches ~40 screens — D-792, owner decision pending).
+
 A **manual, human-driven** regression over EVERY screen of the SIMF Flutter app (`src/Mobile/simf_app`), one role at a time, proving nothing crashes and no navigation is dead. The authority for what exists is the route table in `lib/app/router.dart` (39 in-app mockup screens + the aux auth + FDS-014/role sentinel routes) and the per-page catalogue files `docs/tests/e2e/mobile-*.md`. The sweep exercises the five persistent bottom-nav tabs (Home `/`, Sessions `/sessions`, Badge `/badge`, Venue map `/map`, My Area `/my-area` — a single `StatefulShellRoute.indexedStack`, D-422), the public anonymous reads (`/speakers`, `/sponsors`, `/booths`, `/delegations`, `/archive`, `/news`, `/media`, `/about`, `/faq`, `/session-summaries`, `/live`, `/ai-summary`), and the role-restricted routes behind `redirectDecision` in `router.dart`. Key rules under test: the **login gate** on Sessions (#16) + session detail (#17) that router-redirects a guest to `/sign-in` (D-576); the **in-screen** login prompt on Live (#25) that never redirects and keeps `GET /api/v1/app/programme/sessions/{id}` `AllowAnonymous` (D-577); the **effective-Guest** collapse of an unapproved account via `CurrentUser.effectiveAppRole` (D-666); the **D-519 role gate** (attendee = Visitor + Exhibitor; Staff and Moderator are focused, not an attendee superset) that sends a wrong-role signed-in user home (`/`); the persistent bottom nav that **never dead-bounces**; pull-to-refresh on every data page (`SimfPullToRefresh` + `SimfPullableHost`, always-scrollable body); flexible/responsive width in portrait (the owner is on a **tablet** — content stretches, icons/avatars/QR stay fixed); authenticated-Dio image bytes with an `errorBuilder` (never `Image.network` for bearer/self-signed, D-422); and correct RTL. Endpoints touched incidentally by the write paths inside the sweep: `POST /api/v1/app/sessions/{sessionId}/questions`, `GET /app/gates/my-assignments`, `POST /app/gates/{gateId}/scans`. **Auth setup (manual):** an approved Visitor session via the email OTP read from `SIMF_Identity.AccountCodes` at run time; Staff/Moderator/admin second factor via the `Get-Totp` helper. No literal secrets — read the OTP/TOTP at run time.
 
 ### Coverage matrix
@@ -2621,8 +2644,9 @@ Scenario: Submitting a question to a closed session shows the not-open toast
   When they submit POST /api/v1/app/sessions/{id}/questions
   Then the server returns HTTP 400 with error code "SESSION_NOT_LIVE_FOR_QUESTIONS"
   And the screen shows a bilingual not-open toast — a SnackBar rendering l10n.sendQuestionNotOpen
-       ("Questions are only open from 5 minutes before the session until it ends." /
-        "الأسئلة مفتوحة فقط من 5 دقائق قبل بدء الجلسة حتى انتهائها.")
+       ("Questions are closed for this session." / "الأسئلة مغلقة لهذه الجلسة.")
+  # DEF-MOD-006 — the old copy claimed a 5-minute pre-start window the server
+  # has never enforced (there is no lower bound; questions close at the End).
   And a 404 for the same submit maps to the same not-open toast
   And the question box keeps the typed text (nothing is lost)
 ```
@@ -2699,9 +2723,12 @@ Scenario: Every navigation target from every surface resolves
        every side-drawer entry, every "More" hub entry, every Home tile, and any deep-link
        (a notification clickUrl, a booth "أرشدني" → "/booths/{boothId}/map", a rate link "/rate?code=...")
   Then each target navigates to a real, matching route (no unmatched-route crash, no white screen)
-  And a screen that legitimately falls through to ComingSoonScreen (an undesigned entry such as
-       Bilateral meetings "/bilateral-meetings" #204 or Saved meetings "/saved-meetings" #206)
-       shows the labelled placeholder — that is expected, NOT a defect
+  # B18 (2026-07-27): the two remaining ComingSoon sentinels — Bilateral meetings
+  # "/bilateral-meetings" #204 and Saved meetings "/saved-meetings" #206 — were DELETED.
+  # Both had no screen, no inbound navigation and nothing persisted behind them: #204's
+  # Home tile went to the real VIP "/meetings" #116 with D-745, and #206's My-Area stat
+  # tile became display-only (D-653) after D-609 retired the drill-down screens.
+  And no declared route falls through to ComingSoonScreen with no inbound caller
   And a role never sees a menu entry that would only bounce it home
 ```
 
@@ -2729,6 +2756,40 @@ Scenario: Switching tabs keeps the bar fixed and preserves each tab's state
 ---
 
 ## BF-12 — Website smoke + auth flows
+
+> **Automated coverage as of 2026-07-29 (WS2).** `WebElementSweepTests` drives all
+> 17 parameterless public routes and asserts HTTP < 400, zero console errors, no
+> broken image, every same-origin link/asset < 400, and no horizontal overflow —
+> **34 passed / 0 failed** (each route in LTR and Arabic). The run found and closed a
+> real defect: `App.razor` linked `SIMF.Web.styles.css`, a scoped-CSS bundle this
+> project can never generate, so every page 404'd it and logged a MIME-type refusal
+> (D-795). **Not covered:** the auth flows in this flow's later scenarios, and
+> `/sessions/{id}` + `/meeting/confirm`, which need seeded data or a token and are
+> not reachable by URL alone.
+
+> ### ⚠ PARTIALLY RETIRED 2026-07-27 — D-774
+>
+> **Owner decision: the public Website has no login and no account area.** The
+> routes `/login`, `/login/verify`, `/forgot-password`, `/reset-password`,
+> `/account`, `/account/profile`, `/account/notifications`, `/account/pending`
+> and `/account/rejected` were deleted, together with the Website's cookie
+> authentication, the `/auth/complete` + `/auth/sign-out` + `/session/status`
+> endpoints and the `/account/api/*` BFF proxy. The per-page catalogue files this
+> section cites (`web-login.md`, `web-otp-verify.md`, `web-forgot-password.md`,
+> `web-reset-password.md`, `web-home.md`, `web-account-*.md`) were deleted with
+> them.
+>
+> **Still live and still in scope:** the public smoke over `/`, `/programme`,
+> `/visit` and the other anonymous marketing routes, and the anonymous
+> token-addressed `/meeting/confirm` journey.
+>
+> **Retired — do NOT run:** every scenario below that signs a visitor in or
+> asserts an account-area route, i.e. `E2E-BF-12-003` onward wherever it touches
+> `/login`, `/login/verify` or `/account*`, plus the `/account` self-guard clause
+> of `E2E-BF-12-001`. The equivalent visitor journeys are covered by the Flutter
+> app catalogue (`mobile-sign-in.md`) and the admin journeys by `cp-auth-flow.md`.
+> The text below is kept verbatim as the historical record; a clean re-issue of
+> BF-12 as a pure public-site smoke is a tracked follow-up.
 
 This cross-page business flow drives the **Website** surface (SIMF.Web) end-to-end as a production-readiness smoke: every ✅ *Real* Website route from the `web-*.md` catalogue is opened and asserted, then the visitor authentication journeys are run to completion. It exercises the four AllowAnonymous public routes — `/` (marketing landing, `web-landing`, fed by `GET /content/site`), `/programme` (`web-programme`, anonymous `SimfPublicClient` over `GET /api/v1/app/programme/sessions` + `GET /api/v1/app/speakers`), `/visit` (`web-visit`, static SSR), and `/account` (`web-home`, an AllowAnonymous route that self-guards to `/login` when unauthenticated) — plus the auth routes `/login`, `/login/verify`, `/forgot-password`, `/reset-password`, `/account/profile`, `/account/notifications`, `/account/pending`, `/account/rejected` and the public `/meeting/confirm`. The endpoints under test are `POST /api/v1/app/auth/sign-in` (`{ email, password, audience: "Web" }`), `POST /api/v1/app/auth/verify-otp` (`{ otpToken, code }`), the BFF hand-off `/auth/complete?reference=…`, `/auth/sign-out`, and `GET/POST /api/v1/app/meeting-actions/{token}`. The key rules it proves: **D-033** — a Visitor's second factor is an emailed OTP (read at run time from `SIMF_Identity.AccountCodes`, `Purpose = SignInOtp`, latest unconsumed — never a literal), whereas an admin uses TOTP; the **audience gate** — an Administrator account signing in on the Website is rejected by `SignInService.EnforceAudienceAsync` with `AUTH_WRONG_SURFACE_WEB` (the Website is the visitor surface; `/login` is AllowAnonymous, so the gate is audience + account-state routing, not a permission redirect); and, on every route, **page renders, zero console errors, zero broken assets (no 404 `<img>`), `scrollWidth == clientWidth` (no horizontal overflow), and the RTL toggle mirrors the layout**.
 
@@ -3041,6 +3102,65 @@ Scenario: The Arabic toggle mirrors the landing and the sign-in card without ove
 
 ## BF-13 — Permission / security matrix
 
+> **Automated coverage as of 2026-07-29 (WS3).** Eleven of the twelve scenarios
+> now execute in CI, across three files:
+>
+> | Scenario | Where | State |
+> |---|---|---|
+> | -001 Administrator wildcard | `PermissionEnforcementTests` | executed |
+> | -002 custom role, API half | `PermissionEnforcementTests` | executed |
+> | -003 role-less admin forbidden | `PermissionEnforcementTests` | executed |
+> | -004 app/visitor token on admin endpoint → 403 | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -005 anonymous → 401, **and the anonymous auth set is pinned** | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -006 over-posting an unmapped field is ignored | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -007 baseline grant reaches News, not Sessions | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -009 a grant needs a fresh token mint | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -010 a token this API did not mint → 401 | `BusinessFlow13PermissionMatrixTests` | executed |
+> | -011 build guards fail CI on an ungated surface | `PermissionEnforcementTests` + `CpNavigationPermissionTests` | executed |
+> | -012 `/not-permitted` in Arabic | `CpElementSweepTests` | executed |
+> | -008 deep-link bypass → `/not-permitted` | browser | **not executed — see below** |
+>
+> **-008 cannot be automated from the browser suite, and the reason is concrete.**
+> It needs a signed-in admin who LACKS a permission. The sweep account is the
+> super-admin, whose wildcard `"*"` satisfies every gate, so it can never be
+> redirected and can never exercise the deny path. Creating a restricted admin does
+> not help: `SignInService` forces TOTP for any user holding a role
+> (`roles.Count > 0`), and a freshly created admin has no enrolled authenticator
+> key, so a black-box suite cannot complete its sign-in. It needs a fixture that
+> seeds a restricted admin **with a known TOTP secret** — database access this
+> suite deliberately does not have. Note what is and is not missing: the API half
+> of the same rule IS proven (`PermissionEnforcementTests` returns 403 for an
+> ungranted role), so the unproven part is specifically the Control Panel's
+> redirect, not the gate behind it.
+>
+> **Two corrections to this flow's text came out of executing it.**
+>
+> 1. **The anonymous auth surface is 17 endpoints, not 3.** Scenario -005 is
+>    written as "the anonymous auth set is exactly {sign-in, sign-up,
+>    forgot-password}", restating CLAUDE.md §4. The real set also contains
+>    `verify-email`, `resend-code`, `verify-otp`, `verify-totp`, `resend-otp`,
+>    `verify-recovery-code`, `reset-password`, `complete-password-change`,
+>    `refresh`, `resolve-badge`, `badge-sign-in`, `badge-activation/start`,
+>    `badge-activation/complete`, `device-keys/{id}/challenge` and
+>    `sign-in-with-device-key`. **None is a defect** — each carries its own
+>    credential (an emailed code, a reset token, a refresh token, a badge code, a
+>    device-key signature) rather than a bearer token, and gating them on a bearer
+>    would break sign-up, 2FA and password reset outright. The test pins the full
+>    reviewed list, so an 18th still breaks the build. **The §4 wording is stale
+>    and should be corrected by the owner.**
+>
+> 2. **`Code`, `IsActive` and `UserProfileId` are legitimate speaker-update
+>    fields**, not over-posting targets — the over-post surface for -006 is only
+>    what the update DTO does not expose (`id`, `createdAt`).
+>
+> **A real defect fell out of -006:** a speaker create/update carrying an unknown
+> `userProfileId` returned **500**. `Speaker.UserProfileId` is a real same-database
+> FK (`OnDelete.Restrict`), so the unknown id threw at SaveChanges, while the
+> service's own summary claimed the link was cross-context and that a stale id
+> "degrades gracefully" — untrue since `UserProfile` moved onto the App context.
+> Now validated up front and returns 400. Regression tests in the same file.
+
+
 This cross-page flow proves the SIMF **per-page / per-action permission system** (D-207 / D-208) cannot be bypassed on either surface. Assignment is **roles-only**, permission codes are baked into the JWT `perm` claim, and `Administrator` resolves to the wildcard `"*"` at token-mint time (`PermissionCatalog.Wildcard`) so it holds every code implicitly. The single source of truth is `src/Shared/SIMF.Common/PermissionCatalog.cs`. Every CP page carries `@attribute [RequirePermission(PermissionCatalog.X.Y)]` (e.g. `/admin/sessions` → `Sessions.View`, `/admin/themes` → `Themes.View`); a signed-in user who lacks the code is bounced to `/not-permitted`. Every admin endpoint pairs the permission policy with the approval policy — `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.X.Y), nameof(AuthorizationPolicies.RequireApprovedAccount))` — so `perm:Sessions.View` gates `POST /api/v1/admin/sessions/list`, `perm:Themes.View` gates `POST /api/v1/admin/themes/list`, `perm:Speakers.Edit` gates `PUT /api/v1/admin/speakers/{id}`. The flow also exercises the over-posting guard (admin UPDATE endpoints bind their **own** DTO and map explicitly — `UpdateSpeakerRequest` → `AdminUpdateSpeakerRequest`, the D-544 dual-DTO gotcha), the anonymous auth surface (`sign-in` / `sign-up` / `forgot-password`), and the two build-breaking xUnit guards — `tests/SIMF.ControlPanel.Tests/CpNavigationPermissionTests.cs` and `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` — which fail CI if any admin page/endpoint ships ungated (a security defect: an ungated surface is reachable by **any** signed-in admin regardless of role).
 
 ### Coverage matrix
@@ -3259,6 +3379,17 @@ Scenario: The denial page mirrors correctly in Arabic
 
 ## BF-14 — Bilingual / RTL sweep
 
+> **Automated coverage as of 2026-07-29 (WS2/WS3).** Both surfaces now run the full
+> element contract a second time under `?culture=ar`:
+> **Control Panel — 94 of 94 routes passed**, each asserting `document.dir == "rtl"`,
+> zero console errors and `scrollWidth == clientWidth` (no horizontal overflow, which
+> is where RTL layout usually breaks: pinned grid action columns, toolbars, pagers).
+> **Website — 17 of 17 routes passed** under the same contract.
+> This is the structural half of the flow. It proves the pages do not break in RTL;
+> it does **not** check that the Arabic *copy* is right, that glyph-level mirroring is
+> correct, or that no string is left untranslated — those still need a reader, and the
+> ~60 Arabic strings awaiting native review are unaffected by this run.
+
 SIMF is **Arabic-first**, so the RTL render is a **P1 acceptance surface on every screen — not an afterthought**. This flow drives one Arabic toggle across all three surfaces and asserts the direction contract end-to-end. On the **Control Panel** it exercises the `SimfDataGrid` list at `/admin/speakers` plus its `SpeakersAddEdit` modal; on the **Website** the public landing `/` (static `wwwroot/index.html` fed by `GET /content/site`) and the visitor sign-in `/login` (`SignIn.razor`, anonymous); on the **Mobile app** the home screen #13 `/` (`GET /api/v1/app/bootstrap`), the delegations list `/delegations` (`GET /app/delegations`, anonymous — the 12 invited countries seeded in D-687/D-691), and the credentials form screen #5 `/sign-up` (`POST /api/v1/app/auth/sign-up`). The language switch itself is a full navigation to the host `GET /culture?culture=ar&redirectUri=<relative>` endpoint (present on both CP and Website — `CultureEndpoint`), driven from `SimfLanguageSwitch` (globe icon + `العربية` / `English`), which writes the `CookieRequestCultureProvider` culture cookie and `LocalRedirect`s back so the whole document re-renders. Both web hosts set `<html lang="@CurrentUICulture.TwoLetterISOLanguageName" dir="@(IsRightToLeft ? "rtl" : "ltr")">` in `App.razor`. Rules under test: no user-facing string is hardcoded (every label via **resx / l10n**); layout must **mirror** and form actions must **reverse**; the LTR-only islands (**email, phone, national id, plate, URLs**) stay LTR *inside* the RTL page; colour is never the only signal of a state; Arabic must not clip inside fixed-width chips; and no page scrolls horizontally (`scrollWidth == clientWidth`). Two known RTL fixes are regression-checked: **D-686** — the session-summary card used physical `.end` where it must use logical `.start` (Figma `1072:13518`), so Arabic now right-aligns; and Arabic copy must not truncate in fixed-width status/tier chips.
 
 ### Coverage matrix
@@ -3411,7 +3542,9 @@ Scenario: The delegations list shows the 12 invited countries mirrored, Arabic u
   Given GET /app/delegations (anonymous) returns the seeded invited countries (D-687/D-691)
   When the /delegations screen renders in Arabic (TextDirection.rtl)
   Then the stats strip shows the participating-country count and total participants
-  And there is one card per invited country (12 countries: e.g. Saudi Arabia, France, India, United Kingdom)
+  And there is one card per invited country (12 countries: e.g. France, India, United Kingdom,
+      United Arab Emirates — NOT Saudi Arabia: the host is never marked Country.IsInvited, D-768,
+      and the seeded set is AE, BH, KW, OM, QA, EG, GB, US, FR, PK, IN, TR)
   And each card shows the flag, the bilingual country name (Arabic shown, un-clipped in its cell),
       the head of delegation with an initial avatar, an arrival→departure date range, and a member count
   And the card content order is mirrored: flag/name lead the right edge, the count trails the left

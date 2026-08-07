@@ -4,10 +4,10 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>P5.1 — D-241 (FDS-003 §5.4): HallAttendance configuration. Real FKs
+/// <summary>HallAttendance configuration. Real FKs
 /// to Session + Hall (Restrict — sessions/halls are soft-deleted, never hard-
 /// deleted under an attendance row). A <b>filtered unique index</b> enforces the
-/// "one open row per attendee per session" rule (FDS-003 §6 constraint): a door
+/// "one open row per attendee per session" rule: a door
 /// scan and a geofence crossing for the same session can only ever update the
 /// single open row, never insert a second.</summary>
 internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<HallAttendance>
@@ -38,7 +38,7 @@ internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<Hal
         // Live per-hall presence count rides this (open rows in a hall).
         builder.HasIndex(a => new { a.HallId, a.Leave });
 
-        // D-611 (Wave B) — the per-attendee attendance-history lookup by user.
+        // The per-attendee attendance-history lookup by user.
         builder.HasIndex(a => a.UserId);
     }
 }

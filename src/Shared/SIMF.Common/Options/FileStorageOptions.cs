@@ -1,6 +1,6 @@
 namespace SIMF.Common.Options;
 
-/// <summary>D-568 — settings for the centralized file store, bound from the
+/// <summary>Settings for the centralized file store, bound from the
 /// <c>FileStorage</c> configuration section. One root directory for every file;
 /// the <see cref="EncryptionKey"/> is the Key-Encryption-Key (KEK) that wraps
 /// each file's per-file Data-Encryption-Key (envelope encryption). The key is
@@ -11,9 +11,16 @@ public sealed class FileStorageOptions
     public const string SectionName = "FileStorage";
 
     /// <summary>Root directory every stored file's bytes live under (one
-    /// per-<c>Service</c> sub-folder beneath it). Falls back to
-    /// <c>App_Data/files</c> when unset.</summary>
-    public string RootPath { get; set; } = "App_Data/files";
+    /// per-<c>Service</c> sub-folder beneath it).
+    ///
+    /// <para>Empty means "use the machine's shared application-data directory"
+    /// — see <c>FilesystemFileStorageProvider.DefaultRoot</c>. It deliberately
+    /// does NOT default to a relative path: a relative root resolves against
+    /// the process working directory, which during development and testing is
+    /// the project folder inside the repository, so uploaded avatars and
+    /// ID-document scans landed in the source tree and were committed by
+    /// accident. An absolute machine-level default cannot do that.</para></summary>
+    public string RootPath { get; set; } = string.Empty;
 
     /// <summary>Base64-encoded 32-byte AES-256 active KEK. Required before any
     /// encrypted file is read or written; the cipher refuses to construct without

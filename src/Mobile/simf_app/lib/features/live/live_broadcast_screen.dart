@@ -18,6 +18,7 @@ import 'data/live_repository.dart';
 import 'widgets/live_content.dart';
 import 'widgets/live_message_surfaces.dart';
 import 'widgets/live_player_surface.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Page 025 — البث المباشر · Live broadcast (#25, `/live?sessionId=`), rebuilt
 /// to the KSA-Project Figma frame **934:3450** on the shared navy shell.
@@ -40,12 +41,17 @@ import 'widgets/live_player_surface.dart';
 ///
 /// **Frame mapping (934:3450):** the navy header (circled back chevron + centred
 /// title), a **black player surface** carrying the LIVE badge + the gold-bordered
-/// "AI live-caption" strip, then the **"يُبث الآن" now-broadcasting** block (the
-/// session title as a gold bullet), the gold **region-restriction notice card**,
+/// organiser caption strip, then the **"يُبث الآن" now-broadcasting** block (the
+/// session title as a gold bullet)
 /// and the **ask-a-question** entry to Page 026 (`/live/question`). The player
 /// surface + its media engine live in `widgets/live_player_surface.dart` +
 /// `live_video_player.dart` + `live_badges.dart`; the non-live black bands in
 /// `live_message_surfaces.dart`; the info column widgets in `live_content.dart`.
+///
+/// **FR-702 (owner 2026-07-31):** when the session carries a live notice it is
+/// rendered as a calm informational banner ABOVE the player. It is a
+/// notification only — nothing here checks where the viewer is and nothing
+/// withholds the stream.
 ///
 /// **Provider (D-349):** the live-video provider is **YouTube** (POC). Each feed
 /// URL is sniffed by `YoutubeUrl`: a YouTube link plays via the IFrame player,
@@ -215,6 +221,17 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     }
   }
 
+  /// Owner rule: every data page pulls to refresh. Re-reads the session and the
+  /// upcoming strip together; the org profile backs the id-less global feed, so
+  /// it is warmed too.
+  Future<void> _refresh() async {
+    await Future.wait<void>(<Future<void>>[
+      if (_hasId) _load(),
+      _loadUpcoming(),
+      ref.read(orgProfileProvider.notifier).warm(),
+    ]);
+  }
+
   void _askQuestion() {
     context.pushNamed(
       RouteNames.sendQuestion,
@@ -247,7 +264,10 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       title: l10n.liveBroadcastTitle,
       onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
-      body: _buildBody(l10n),
+      body: SimfPullToRefresh(
+        onRefresh: _refresh,
+        child: _buildBody(l10n),
+      ),
     );
   }
 
@@ -287,25 +307,31 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       if (profile != null && globalUrl != null && globalUrl.isNotEmpty) {
         return _content(l10n, _globalLiveSession(profile, globalUrl));
       }
-      return SimfEmptyState(
-        icon: Icons.live_tv_outlined,
-        message: l10n.liveNoSessionSelected,
+      return SimfPullableHost(
+        child: SimfEmptyState(
+          icon: Icons.live_tv_outlined,
+          message: l10n.liveNoSessionSelected,
+        ),
       );
     }
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_notFound) {
-      return SimfEmptyState(
-        icon: Icons.live_tv_outlined,
-        message: l10n.sessionNotFound,
+      return SimfPullableHost(
+        child: SimfEmptyState(
+          icon: Icons.live_tv_outlined,
+          message: l10n.sessionNotFound,
+        ),
       );
     }
     if (_error || _session == null) {
-      return SimfErrorState(
-        message: l10n.liveBroadcastError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return SimfPullableHost(
+        child: SimfErrorState(
+          message: l10n.liveBroadcastError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
+        ),
       );
     }
     return _content(l10n, _session!);
@@ -324,7 +350,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     // back to "a feed is present" so the always-on forum stream still reads live.
     final start = session.start;
     final end = session.end;
-    final nowUtc = DateTime.now().toUtc();
+    final nowUtc = saudiNow();
     final isLive = (start != null && end != null)
         ? !nowUtc.isBefore(start) && nowUtc.isBefore(end)
         : mainUrl != null;
@@ -335,10 +361,26 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     // When the main feed is present, the active feed is the sign-language one
     // only while the toggle is on AND a sign feed exists; otherwise the main feed.
     final activeUrl = (_showSignLanguage && signUrl != null) ? signUrl : mainUrl;
+    // FR-702 (owner 2026-07-31) — the organiser's informational notice for this
+    // broadcast. Null when the CP left both languages blank, and then nothing is
+    // rendered (no empty banner, no reserved space).
+    final notice = session.localizedNotice(isArabic);
 
     return ListView(
       padding: EdgeInsets.zero,
+      physics: const AlwaysScrollableScrollPhysics(),
       children: <Widget>[
+        // FR-702 — the notice sits ABOVE the player and is purely informational:
+        // it never gates, delays or replaces the feed (owner: "no restriction,
+        // this is only notification").
+        //
+        // Shown only when there IS a feed. The branches below are the recording
+        // and not-live surfaces, and a notice about the broadcast printed above
+        // "this session is not being streamed" contradicts it — which is exactly
+        // what a notice left behind on a session whose feed was later cleared
+        // would do.
+        if (notice != null && mainUrl != null) LiveNoticeBanner(text: notice),
+
         // The black player surface (frame 934:3614) — full-bleed, edge to edge.
         if (mainUrl != null)
           LivePlayerSurface(
@@ -417,12 +459,14 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                 SignLanguageNote(label: l10n.liveSignLanguageAvailable),
               ],
 
-              const SizedBox(height: SimfTokens.space5),
-              // The gold region-restriction notice card (frame 934:3619).
-              RegionNoticeCard(
-                noticeLabel: l10n.liveRegionNoticeLabel,
-                noticeBody: l10n.liveRegionNoticeBody,
-              ),
+              // A20 (2026-07-26) — the gold "available only inside the Riyadh
+              // region per regulations" card (frame 934:3619) is gone. Nothing
+              // anywhere checked the viewer's location, so every viewer was told
+              // about a restriction that does not exist. FR-702 was settled by
+              // the owner (2026-07-31) as "no restriction, this is only
+              // notification": the CP-authored notice now renders as the
+              // informational banner above the player, and no viewer is ever
+              // geo-checked or blocked.
 
               // Ask-a-question entry → Page 026 (the frame's L-3 Q&A affordance).
               // Session-specific — only for a real session, not the global main-live.

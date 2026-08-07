@@ -3,7 +3,7 @@ using SIMF.Common.Files;
 
 namespace SIMF.Application.Files.Abstractions;
 
-/// <summary>D-568 — the one service behind the centralized file store. Every
+/// <summary>The one service behind the centralized file store. Every
 /// upload runs the same pipeline (validate → magic-byte allow-list → fail-closed
 /// scan → SHA-256 → encrypt-per-policy → store → persist → audit); every download
 /// authorizes off the file's own <see cref="FileService"/> (never the URL), so a
@@ -14,7 +14,7 @@ public interface IFileService
     /// <c>ApiException</c> (400/409) on a bad size / type / scan.</summary>
     Task<StoredFileResult> UploadAsync(UploadFileCommand command, CancellationToken cancellationToken = default);
 
-    /// <summary>P6 (D-568) — records an EXTERNAL image link (no bytes; the download
+    /// <summary>Records an EXTERNAL image link (no bytes; the download
     /// endpoint 302-redirects to it). Owner-upsert: replaces the owner's existing
     /// active file of this service with the link and frees any orphaned uploaded
     /// bytes. Used for seeded / admin-supplied logo URLs. Throws 400 on a
@@ -22,7 +22,7 @@ public interface IFileService
     Task<StoredFileResult> CreateExternalLinkAsync(
         CreateExternalLinkCommand command, CancellationToken cancellationToken = default);
 
-    /// <summary>D-568 (Wave C S7) — streaming upload for large, admin-trusted media
+    /// <summary>Streaming upload for large, admin-trusted media
     /// (session recordings) that must not be buffered whole in memory. The bytes are
     /// streamed source→disk with an incremental SHA-256; the malware scan is SKIPPED
     /// (size-capped policy — an admin-only, extension+MIME-validated video up to
@@ -34,7 +34,7 @@ public interface IFileService
         string? originalFileName, string contentType, string extension, Guid actorUserId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-568 (Wave C S7) — opens an active stored file as a seekable read
+    /// <summary>Opens an active stored file as a seekable read
     /// stream (+ length) for Range streaming (HTTP 206), or null when the id is not
     /// an active file. A RAW open (no per-call authorization): the caller does its own
     /// authz — the recording stream endpoint gates via its StreamToken scheme + a
@@ -46,6 +46,20 @@ public interface IFileService
     /// uniform 404 <c>ApiException</c> when the file is missing OR the caller is not
     /// allowed (no exists-but-forbidden oracle for private files).</summary>
     Task<FileDownload> DownloadAsync(Guid id, FileAccessContext caller, CancellationToken cancellationToken = default);
+
+    /// <summary>True when <paramref name="id"/> still resolves to content that can
+    /// actually be served: an active row whose bytes are on disk, or an active
+    /// external link. False for an unknown / soft-deleted id, and — the case that
+    /// matters — for a row whose bytes have gone (a storage root that moved, a
+    /// cleaned working folder, a database restored past its files). Authorization is
+    /// NOT applied: this answers "does the content exist", never "may this caller
+    /// have it", so it must not be used to serve bytes. Cheap: no read, no decrypt.
+    ///
+    /// <para>It exists because a pointer column (<c>UserProfile.IdImageRelativePath</c>,
+    /// <c>SimfUser.AvatarRelativePath</c>, …) holding a non-empty id proves only that
+    /// something was uploaded once, which is why repair passes that test the pointer
+    /// for emptiness cannot heal a dangling one.</para></summary>
+    Task<bool> ContentExistsAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>Soft-deletes a file AND removes the on-disk bytes (P7 — deletion
     /// honesty: a "deleted" file's bytes do not linger on disk). 404 if missing,
@@ -64,7 +78,7 @@ public interface IFileService
 
 /// <summary>An upload request. The owner *family* is NOT carried here — it is
 /// forced from the service's policy in the file service, so a caller cannot
-/// over-post a mismatched <see cref="FileOwnerEntityType"/> (P2 — D-568 hardening).
+/// over-post a mismatched <see cref="FileOwnerEntityType"/>.
 /// <paramref name="OwnerEntityId"/> must be server-derived for owner-scoped
 /// services (never trusted from the client); <paramref name="FailClosed"/> is
 /// computed by the endpoint (true in Production).</summary>
@@ -77,7 +91,7 @@ public sealed record UploadFileCommand(
     Guid ActorUserId,
     bool FailClosed);
 
-/// <summary>P6 (D-568) — request to record an external image link. The owner
+/// <summary>Request to record an external image link. The owner
 /// family is forced from the service policy (like <see cref="UploadFileCommand"/>);
 /// only the owner id rides the command.</summary>
 public sealed record CreateExternalLinkCommand(

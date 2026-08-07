@@ -4,7 +4,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Auth.Validators;
 
-/// <summary>Validates the verify-recovery-code request (D-040).</summary>
+/// <summary>Validates the verify-recovery-code request.</summary>
 public sealed class VerifyRecoveryCodeRequestValidator : Validator<VerifyRecoveryCodeRequest>
 {
     public VerifyRecoveryCodeRequestValidator()

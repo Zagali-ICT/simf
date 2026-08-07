@@ -25,7 +25,17 @@
 >    job title, seat, entry time (Saudi time) and method** (QR scan / geofence), ordered
 >    by arrival. Open-seating attendees show "General admission / دخول عام".
 >
-> A **Refresh** button re-pulls both panels. There is **no** create / edit / delete
+> A **Refresh** button re-pulls both panels, and — **QA B17** — while a session is
+> selected both reads also re-run automatically every **15 seconds**
+> (`SessionLiveHall.RefreshInterval`, a `PeriodicTimer` loop mirroring the CP's
+> other live monitor, `ServicesMonitor`). Before B17 the page only ever pulled on
+> session select and on a manual Refresh click, so a door scan stayed invisible
+> until an admin happened to click — misleading for a "live" monitor during an
+> event. The timer starts on selection, is cancelled + disposed when the selection
+> changes or clears and when the component is disposed (`IDisposable`), so a Blazor
+> Server circuit never leaks one. The background tick does **not** disable the
+> session picker or spin the Refresh button, and a response that arrives after the
+> admin switched sessions is dropped. There is **no** create / edit / delete
 > and **no** grid actions — this is a monitor. Seat cells are not clickable (unlike
 > the seat-plan editor at `/admin/sessions/seat-plans`).
 >
@@ -59,6 +69,10 @@
 | E2E-SLH-011 | Open-seating attendee (no specific seat) → seat cell reads "General admission / دخول عام" | edge | P1 | _to author_ |
 | E2E-SLH-012 | Switching session A → B clears the prior hall (no data bleed) | edge | P1 | _to author_ |
 | E2E-SLH-013 | Cross-DB safety — an admin-typed present user with no `UserProfile` → blank profile cells, no error, no Identity join | data | P1 | authored ✓ (API `Present_attendees_are_resolved_from_app_profiles_only`) |
+| E2E-SLH-014 | QA B17 — a door scan appears within one 15 s auto-refresh tick, with no manual Refresh click | happy | P0 | _to author_ |
+| E2E-SLH-015 | QA B17 — the poll starts on selection, stops on clear/switch and is disposed with the page (no leaked timer) | resilience | P0 | authored ✓ (`SessionLiveHallAutoRefreshTests`) |
+| E2E-SLH-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-SLH-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -239,6 +253,51 @@ Scenario: An admin-typed present user with no profile resolves to blank fields
   # Covered at the endpoint layer by SessionAttendanceTests.
 ```
 
+### E2E-SLH-014 — a door scan appears without a manual Refresh (QA B17)
+
+```gherkin
+Scenario: The live monitor refreshes itself while a session is selected
+  # QA B17: the page used to issue its two GETs only on session select and on a
+  # manual Refresh click — no timer, no polling, no push — so a door scan was
+  # invisible until an admin happened to click Refresh.
+  Given the administrator has selected session "SES-OPEN01" on /admin/sessions/live-hall
+  And attendee "Sara Al-Otaibi" is shown "reserved" on seat B4
+  When she scans in at the hall door and the administrator touches nothing
+  Then within 15 seconds a GET /account/api/admin/sessions/{id}/seat-map and a
+      GET /account/api/admin/sessions/{id}/present fire on their own
+  And seat B4 flips from "reserved" to "confirmed"
+  And she appears in the "In the hall now" table
+  And the session picker was never disabled and the Refresh button never showed a
+      spinner (the background tick is silent)
+```
+
+### E2E-SLH-015 — the poll's lifetime (QA B17)
+
+```gherkin
+Scenario: The poll exists only while a session is selected and never outlives the page
+  Given the administrator opens /admin/sessions/live-hall with nothing selected
+  Then no poll runs
+
+  When they select a session
+  Then the poll starts
+
+  When they switch to another session
+  Then the first session's poll is cancelled and disposed before the new one starts
+  And a response from the previous session that arrives late is discarded (no bleed)
+
+  When they clear the selection (the placeholder option)
+  Then the poll stops
+
+  When they navigate away from the page
+  Then the component is disposed and the timer + cancellation source are disposed with it
+  # A PeriodicTimer left running on a Blazor Server circuit is a real leak.
+```
+
+**Evidence:** `tests/SIMF.ControlPanel.Tests/SessionLiveHallAutoRefreshTests.cs` →
+`B17_no_session_selected_means_no_poll_timer`,
+`B17_selecting_a_session_starts_the_poll_and_disposing_stops_it`,
+`B17_clearing_the_selection_stops_the_poll`.
+
 ---
 
 ## Implementation notes
@@ -274,4 +333,4 @@ Scenario: An admin-typed present user with no profile resolves to blank fields
 
 ---
 
-_Last reviewed:_ 2026-07-18 by Claude (page created — live per-session hall view, CP page 2e).
+_Last reviewed:_ 2026-07-26 by Claude (QA B17 — 15 s auto-refresh + disposal; E2E-SLH-014/015). Prior: 2026-07-18 by Claude (page created — live per-session hall view, CP page 2e).

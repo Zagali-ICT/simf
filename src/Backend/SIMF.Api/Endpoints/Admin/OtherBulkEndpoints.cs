@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminGridOthersTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/others/bulk-delete</c> — D-113. Type-scoped variant
+/// <c>POST /api/v1/admin/others/bulk-delete</c> — type-scoped variant
 /// of <see cref="BulkDeleteUsersEndpoint"/>. Soft-deletes Other accounts
 /// only; admin / self / wrong-type ids are silently skipped per target.
 /// </summary>
@@ -28,20 +28,16 @@ public sealed class BulkDeleteOthersEndpoint(IAdminUserBulkService adminAccountS
 
     public override async Task HandleAsync(AdminBulkDeleteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.BulkDeleteUsersByKindAsync(
-            // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
+            // Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
             actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
         await Send.OkAsync(ApiResult<AdminBulkDeleteResponse>.Ok(response), ct);
     }
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/others/duplicate</c> — D-113. Type-scoped variant of
+/// <c>POST /api/v1/admin/others/duplicate</c> — type-scoped variant of
 /// <see cref="DuplicateUserEndpoint"/>. Refuses any source whose
 /// <see cref="UserType"/> is not Other.
 /// </summary>
@@ -60,20 +56,16 @@ public sealed class DuplicateOtherEndpoint(IAdminUserBulkService adminAccountSer
 
     public override async Task HandleAsync(AdminDuplicateUserRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var created = await adminAccountService.DuplicateUserByKindAsync(
-            // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
+            // Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
             actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(created), ct);
     }
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/others/export</c> — D-113. Type-scoped variant of
+/// <c>POST /api/v1/admin/others/export</c> — type-scoped variant of
 /// <see cref="ExportUsersEndpoint"/>. Exports Other accounts only.
 /// </summary>
 public sealed class ExportOthersEndpoint(IAdminUserBulkService adminAccountService)
@@ -91,16 +83,12 @@ public sealed class ExportOthersEndpoint(IAdminUserBulkService adminAccountServi
 
     public override async Task HandleAsync(AdminExportUsersRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var bytes = await adminAccountService.ExportUsersByKindAsync(
-            // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
+            // Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
             actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
         HttpContext.Response.Headers.ContentDisposition =
-            $"attachment; filename=\"simf-others-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx\"";
+            $"attachment; filename=\"simf-others-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";
         await Send.BytesAsync(bytes,
             contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             cancellation: ct);
@@ -108,7 +96,7 @@ public sealed class ExportOthersEndpoint(IAdminUserBulkService adminAccountServi
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/others/import</c> — D-113. Type-scoped variant of
+/// <c>POST /api/v1/admin/others/import</c> — type-scoped variant of
 /// <see cref="ImportUsersEndpoint"/>. Every imported row is forced to
 /// <c>UserType = Other</c>; any Role column is ignored. Rows must carry
 /// a parseable <c>ProfileTypeId</c> column — rows missing it land in the
@@ -133,11 +121,7 @@ public sealed class ImportOthersEndpoint(IAdminUserBulkService adminAccountServi
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)
@@ -167,7 +151,7 @@ public sealed class ImportOthersEndpoint(IAdminUserBulkService adminAccountServi
         }
 
         var response = await adminAccountService.ImportUsersByKindAsync(
-            // D-186: Other import = partner-scope flag.
+            // Other import = partner-scope flag.
             actorId, partnerScope: true, bytes, ct);
         await Send.OkAsync(ApiResult<AdminImportUsersResponse>.Ok(response), ct);
     }

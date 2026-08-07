@@ -8,7 +8,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// the public session-detail page. Real FK to Session (cascade — outcomes belong
 /// to the session). Lookup index on (SessionId, IsActive, DisplayOrder) for the
 /// per-session ordered read. Every HasMaxLength is the single source of truth the
-/// CP form + validator align to (§7). Additive under the D-219 freeze-lift.</summary>
+/// CP form + validator align to. Additive under the schema freeze-lift.</summary>
 internal sealed class SessionOutcomeConfiguration
     : IEntityTypeConfiguration<SessionOutcome>
 {

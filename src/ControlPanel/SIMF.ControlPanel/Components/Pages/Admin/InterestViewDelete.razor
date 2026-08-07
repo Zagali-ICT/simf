@@ -1,4 +1,4 @@
-@* D-353 — reusable Interest View/Delete form, hosted by CrudShell (as a popup
+@* Reusable Interest View/Delete form, hosted by CrudShell (as a popup
    or a full page) from InterestsList.razor. Inherits CrudViewDeleteFormBase so
    it exposes the standard parameter surface (IsDelete / Initial / OnDeleted /
    OnCancel). Read-only details always show; when IsDelete=true a Deactivate
@@ -46,5 +46,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
-                 OnCancel="@(() => _confirming = false)" />
+                 OnCancel="@(() => _confirming = false)" 
+                 Permission="@PermissionCatalog.Interests.Delete"/>
 }

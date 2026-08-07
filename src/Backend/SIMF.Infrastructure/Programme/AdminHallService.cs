@@ -5,13 +5,14 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
 
-/// <summary>D-134 Sprint B — admin CRUD over <see cref="Hall"/>. Mirrors
+/// <summary>Admin CRUD over <see cref="Hall"/>. Mirrors
 /// <see cref="AdminThemeService"/>; case-insensitive unique Code via
 /// upper-case normalisation.</summary>
 internal sealed class AdminHallService(
@@ -41,7 +42,7 @@ internal sealed class AdminHallService(
             rows = rows.Where(hall => hall.IsActive == isActive);
         }
 
-        // CP grid per-column text filters (D-255). Unknown columns are ignored;
+        // CP grid per-column text filters. Unknown columns are ignored;
         // isActive is handled above. Floor is nullable, so guard the null case.
         foreach (var (column, raw) in query.Filters)
         {
@@ -84,11 +85,12 @@ internal sealed class AdminHallService(
                 hall.Id, hall.Code, hall.Name, hall.NameArabic,
                 hall.Capacity, hall.Floor, hall.IsActive, hall.CreatedAt,
                 (int)hall.Purpose,
-                // D-506 — appended for the grid Excel round-trip (positional
+                // Appended for the grid Excel round-trip (positional
                 // order must match the AdminHallSummary record exactly).
                 hall.EquipmentNotes,
                 hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
-                (int)hall.SeatSelectionMode))
+                (int)hall.SeatSelectionMode,
+                hall.ArrivalGraceMinutes))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminHallSummary>.Of(page, total,
@@ -122,7 +124,7 @@ internal sealed class AdminHallService(
                 $"توجد قاعة بالرمز '{code}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var hall = new Hall
         {
             Id = Guid.NewGuid(),
@@ -131,19 +133,18 @@ internal sealed class AdminHallService(
             Floor = floor, EquipmentNotes = equipmentNotes,
             GeofenceCenterLat = geoLat, GeofenceCenterLon = geoLon, GeofenceRadiusMeters = geoRadius,
             SeatSelectionMode = mode,
+            ArrivalGraceMinutes = ValidateArrivalGrace(request.ArrivalGraceMinutes),
             IsActive = true,
             CreatedAt = now,
         };
         dbContext.Halls.Add(hall);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={hall.Id}; code={code}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallCreated,
+            actorUserId,
+            $"id={hall.Id}; code={code}; name={name}",
+            cancellationToken);
 
         logger.LogInformation("Admin {ActorId} created Hall {Code} ({Id})",
             actorUserId, code, hall.Id);
@@ -179,7 +180,7 @@ internal sealed class AdminHallService(
             }
         }
 
-        // H-3 — a Capacity reduction must not drop below what the hall already
+        // A Capacity reduction must not drop below what the hall already
         // commits: its seat-layout total (rows × seats — SetLayoutAsync keeps this
         // ≤ Capacity) or the largest active (held) reservation count on any single
         // session held in this hall. Otherwise a shrink silently over-commits seats.
@@ -188,23 +189,29 @@ internal sealed class AdminHallService(
             await EnsureCapacityNotBelowUsageAsync(id, request.Capacity, cancellationToken);
         }
 
+        // A37 — deactivating via the edit form's Active checkbox is the same
+        // destructive act as the Deactivate action, so it takes the same guard.
+        if (hall.IsActive && !request.IsActive)
+        {
+            await EnsureNoActiveSessionsAsync(id, cancellationToken);
+        }
+
         hall.Code = code; hall.Name = name; hall.NameArabic = nameArabic;
         hall.Capacity = request.Capacity;
         hall.Floor = floor; hall.EquipmentNotes = equipmentNotes;
         hall.GeofenceCenterLat = geoLat; hall.GeofenceCenterLon = geoLon;
         hall.GeofenceRadiusMeters = geoRadius;
         hall.SeatSelectionMode = ParseSeatSelectionMode(request.SeatSelectionMode);
+        hall.ArrivalGraceMinutes = ValidateArrivalGrace(request.ArrivalGraceMinutes);
         hall.IsActive = request.IsActive;
-        hall.UpdatedAt = timeProvider.GetUtcNow();
+        hall.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={hall.Id}; code={code}; active={hall.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallUpdated,
+            actorUserId,
+            $"id={hall.Id}; code={code}; active={hall.IsActive}",
+            cancellationToken);
 
         return ToDetail(hall);
     }
@@ -221,17 +228,17 @@ internal sealed class AdminHallService(
 
         if (!hall.IsActive) return;
 
+        await EnsureNoActiveSessionsAsync(id, cancellationToken);
+
         hall.IsActive = false;
-        hall.UpdatedAt = timeProvider.GetUtcNow();
+        hall.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={hall.Id}; code={hall.Code}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallDeactivated,
+            actorUserId,
+            $"id={hall.Id}; code={hall.Code}",
+            cancellationToken);
     }
 
     private static (string code, string name, string nameArabic, string? floor, string? equipmentNotes)
@@ -287,9 +294,25 @@ internal sealed class AdminHallService(
             hall.Capacity, hall.Floor, hall.EquipmentNotes,
             hall.IsActive, hall.CreatedAt, hall.UpdatedAt,
             hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
-            (int)hall.SeatSelectionMode);
+            (int)hall.SeatSelectionMode,
+            hall.ArrivalGraceMinutes);
 
-    /// <summary>D-485 — validate the incoming seat-selection mode int against the
+    /// <summary>The arrival grace is optional (null = inherit the global
+    /// value) but, when given, must be inside the one shared bound. Rejected rather
+    /// than clamped: silently storing 240 when an admin typed 2400 would tell them
+    /// the doors are open four times longer than they are.</summary>
+    private static int? ValidateArrivalGrace(int? minutes)
+    {
+        if (!WalkInModeOptions.IsValidArrivalGrace(minutes))
+        {
+            throw new ApiException(ErrorCodes.HallInvalid, 400,
+                $"Arrival grace must be between 0 and {WalkInModeOptions.MaxArrivalGraceMinutes} minutes.",
+                $"يجب أن تكون مهلة الوصول بين 0 و{WalkInModeOptions.MaxArrivalGraceMinutes} دقيقة.");
+        }
+        return minutes;
+    }
+
+    /// <summary>Validate the incoming seat-selection mode int against the
     /// defined <see cref="SeatSelectionMode"/> values (the CP dropdown only offers
     /// 0/1, but a hand-crafted request must not store an undefined value).</summary>
     private static SeatSelectionMode ParseSeatSelectionMode(int raw)
@@ -303,7 +326,7 @@ internal sealed class AdminHallService(
         return (SeatSelectionMode)raw;
     }
 
-    /// <summary>P5.1 — D-240 (FDS-003 §5.4): validate the optional hall geofence.
+    /// <summary>Validate the optional hall geofence.
     /// All three values are set together or all null (a partial geofence is
     /// meaningless). When set: latitude −90..90, longitude −180..180, radius in
     /// metres &gt; 0 and ≤ 100 km (a venue-scale sanity cap).</summary>
@@ -335,7 +358,28 @@ internal sealed class AdminHallService(
         return (lat, lon, radius);
     }
 
-    /// <summary>H-3 — guards a hall Capacity reduction. The new capacity must be
+    /// <summary>A37 — refuses to deactivate a hall that active sessions still sit in.
+    /// The flip itself always "worked"; the breakage surfaced later and somewhere else,
+    /// as a 400 <c>SESSION_HALL_NOT_FOUND</c> the next time anyone edited one of those
+    /// sessions (<c>AdminSessionService.ResolveHallAsync</c> rejects an inactive hall).
+    /// The bilingual message names the count so the admin knows how much re-homing the
+    /// change costs. Throws <see cref="ErrorCodes.HallInUse"/> — the code the halls
+    /// docs already reserved for exactly this guard.</summary>
+    private async Task EnsureNoActiveSessionsAsync(
+        Guid hallId, CancellationToken cancellationToken)
+    {
+        var sessionsInHall = await dbContext.Sessions
+            .AsNoTracking()
+            .CountAsync(session => session.HallId == hallId && session.IsActive, cancellationToken);
+        if (sessionsInHall > 0)
+        {
+            throw new ApiException(ErrorCodes.HallInUse, 409,
+                $"This hall is still used by {sessionsInHall} active session(s) — move or deactivate them before deactivating the hall.",
+                $"لا تزال هذه القاعة مستخدمة في {sessionsInHall} جلسة نشطة — انقلها أو ألغِ تفعيلها قبل إلغاء تفعيل القاعة.");
+        }
+    }
+
+    /// <summary>Guards a hall Capacity reduction. The new capacity must be
     /// ≥ the hall's seat-layout total (rows × seats) AND ≥ the largest active
     /// (held, not-released) reservation count on any single session held in this
     /// hall. Throws <see cref="ErrorCodes.HallCapacityBelowUsage"/> otherwise.

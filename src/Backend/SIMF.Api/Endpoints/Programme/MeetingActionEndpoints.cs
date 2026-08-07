@@ -6,10 +6,10 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Programme;
 
-/// <summary>D-717 (item 7, FDS-013 §15.7 GAP-3) — the public speaker
+/// <summary>The public speaker
 /// double-opt-in action links. <c>AllowAnonymous</c>: the speaker is not signed in,
-/// so the opaque single-use token in the path is the only credential (a new
-/// AllowAnonymous exception, owner-approved OI-I). GET previews WITHOUT consuming
+/// so the opaque single-use token in the path is the only credential (an
+/// owner-approved AllowAnonymous exception). GET previews WITHOUT consuming
 /// (safe for email-link prefetch); POST consumes + applies. An unusable token
 /// returns a NEUTRAL 404 (<c>MEETING_ACTION_TOKEN_INVALID</c>) that never leaks
 /// whether it was unknown / expired / used / already decided. Rate-limited.</summary>

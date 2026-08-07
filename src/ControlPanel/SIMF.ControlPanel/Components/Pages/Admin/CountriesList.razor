@@ -1,5 +1,5 @@
-@* D-155 — Countries CRUD (lookup table joined by UserProfile.NationalityId
-   and Speaker.CountryId). Centralized dialog/full-page framing D-353: Add /
+@* Countries CRUD (lookup table joined by UserProfile.NationalityId
+   and Speaker.CountryId). Centralized dialog/full-page framing: Add /
    Edit / View / Delete are hosted by CrudShell, which frames the reusable
    CountryAddEdit and CountryViewDelete forms as a popup or a full page per the
    admin's toolbar choice (persisted in localStorage via CpPreferences). *@
@@ -17,7 +17,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminCountrySummary"
@@ -53,7 +55,12 @@
                           DeleteLabel="@L["Admin.Countries.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Countries.Create"
+                          EditPermission="@PermissionCatalog.Countries.Edit"
+                          DeletePermission="@PermissionCatalog.Countries.Delete"
+                          ImportPermission="@PermissionCatalog.Countries.Import"
+                          ExportPermission="@PermissionCatalog.Countries.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

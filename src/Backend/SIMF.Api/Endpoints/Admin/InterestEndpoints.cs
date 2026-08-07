@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/InterestTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -9,7 +9,7 @@ namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
 /// <c>POST /api/v1/admin/interests/list</c> — paged + filtered grid of
-/// every interest (P9 — D-050). Administrator-only.
+/// every interest. Administrator-only.
 /// </summary>
 public sealed class ListInterestsEndpoint(IInterestService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminInterestSummary>>>
@@ -32,7 +32,7 @@ public sealed class ListInterestsEndpoint(IInterestService service)
 
 /// <summary>
 /// <c>GET /api/v1/admin/interests/{id}</c> — one interest by id, for the
-/// CP edit page (P9 — D-050). Administrator-only.
+/// CP edit page. Administrator-only.
 /// </summary>
 public sealed class GetInterestRequest
 {
@@ -66,8 +66,8 @@ public sealed class GetInterestEndpoint(IInterestService service)
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/interests</c> — creates a new interest (P9 —
-/// D-050). Administrator-only; the name must be unique.
+/// <c>POST /api/v1/admin/interests</c> — creates a new interest.
+/// Administrator-only; the name must be unique.
 /// </summary>
 public sealed class CreateInterestEndpoint(IInterestService service)
     : Endpoint<AdminCreateInterestRequest, ApiResult<AdminInterestSummary>>
@@ -85,28 +85,21 @@ public sealed class CreateInterestEndpoint(IInterestService service)
     public override async Task HandleAsync(
         AdminCreateInterestRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var summary = await service.CreateAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminInterestSummary>.Ok(summary), ct);
     }
 }
 
-/// <summary>
-/// <c>PUT /api/v1/admin/interests/{id}</c> — updates an interest (P9 —
-/// D-050). Administrator-only. Route-id + body shape — FastEndpoints
-/// merges them.
-/// </summary>
-public sealed class UpdateInterestRequest
+/// <summary>Binds {id} + body via a derived route that INHERITS the
+/// contract (see <c>UpdateHallRoute</c>). It used to re-declare the
+/// contract's fields and the endpoint hand-copied them across, which is how
+/// several PUT endpoints — sessions, gates and profile types among them —
+/// silently dropped a field. Passing the bound request straight through
+/// makes that drop impossible.</summary>
+public sealed class UpdateInterestRequest : AdminUpdateInterestRequest
 {
     public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public int DisplayOrder { get; set; }
-    public bool IsActive { get; set; } = true;
 }
 
 public sealed class UpdateInterestEndpoint(IInterestService service)
@@ -125,26 +118,16 @@ public sealed class UpdateInterestEndpoint(IInterestService service)
     public override async Task HandleAsync(
         UpdateInterestRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var summary = await service.UpdateAsync(actorId, req.Id,
-            new AdminUpdateInterestRequest
-            {
-                Name = req.Name,
-                NameArabic = req.NameArabic,
-                DisplayOrder = req.DisplayOrder,
-                IsActive = req.IsActive,
-            }, ct);
+            req, ct);
         await Send.OkAsync(ApiResult<AdminInterestSummary>.Ok(summary), ct);
     }
 }
 
 /// <summary>
 /// <c>DELETE /api/v1/admin/interests/{id}</c> — soft-deletes (deactivates)
-/// an interest (P9 — D-050). Administrator-only; idempotent.
+/// an interest. Administrator-only; idempotent.
 /// </summary>
 public sealed class DeactivateInterestRequest
 {
@@ -167,11 +150,7 @@ public sealed class DeactivateInterestEndpoint(IInterestService service)
     public override async Task HandleAsync(
         DeactivateInterestRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

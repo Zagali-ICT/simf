@@ -1,7 +1,9 @@
-@* Reusable ProfileType form (D-118). Hosted inside the Add modal and the
+@* Reusable ProfileType form. Hosted inside the Add modal and the
    Edit modal on the VisitorProfileTypesList / OtherProfileTypesList pages.
-   UserType is hidden — set by the host page (Visitor or Other) and used
-   only on create. Edit cannot change UserType (the backend rejects it). *@
+   The UserType field is shown read-only: the host page decides whether it
+   reads audience or partner, and create always sends UserType=Visitor with
+   the audience/partner split carried on IsVisitor. Edit cannot change it
+   (the backend rejects it — UserType never appears in the PUT body). *@
 
 @if (_success is not null)
 {
@@ -14,7 +16,7 @@
 
 <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
     <div class="simf-form__fields">
-        @* D-125 — display the UserType so the admin sees which account-type
+        @* Display the UserType so the admin sees which account-type
            this profile-type belongs to. Edit mode is read-only because the
            backend rejects UserType changes (the field never appears in the
            PUT body); Create mode shows the UserType the host page passed in
@@ -33,7 +35,7 @@
         <SimfTextField Label="@L["Admin.ProfileTypes.Field.NameArabic"]"
                        Helper="@L["Admin.ProfileTypes.Field.NameArabicHint"]"
                        @bind-Value="_model.NameArabic" Disabled="_busy" />
-        @* D-120 — PageColor pairs a text input (CSS variable / 3-digit hex friendly)
+        @* PageColor pairs a text input (CSS variable / 3-digit hex friendly)
            with a native colour swatch. The text field stays the source of truth;
            the swatch only writes #rrggbb back into it. *@
         <div class="simf-field">
@@ -52,10 +54,10 @@
             </div>
             <div class="simf-field__helper" id="profile-type-page-color-hint">@L["Admin.ProfileTypes.Field.PageColorHint"]</div>
         </div>
-        @* D-161 — MobileAppRole picker. Only renders for UserType=Other:
-           Visitor profile-types resolve to MobileAppRole.Visitor at JWT
-           issue time regardless of this column, so the field is
-           irrelevant on the Visitor list. *@
+        @* MobileAppRole picker. Only renders for partner profile types
+           (IsVisitor=false): Visitor profile-types resolve to
+           MobileAppRole.Visitor at JWT issue time regardless of this column,
+           so the field is irrelevant on the Visitor list. *@
         @if (ShowMobileAppRolePicker)
         {
             <SimfSelect TValue="string"
@@ -71,14 +73,14 @@
         <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
             @L["Admin.ProfileTypes.Field.IsActive"]
         </SimfCheckbox>
-        @* D-725 (owner item 1) — app sign-up picker visibility. Unchecked =
-           a CP-only (admin-assigned) type, hidden from the mobile registration
-           picker (e.g. Staff / Moderator). CP admin listings always show it. *@
+        @* App sign-up picker visibility. Unchecked = a CP-only
+           (admin-assigned) type, hidden from the mobile registration picker
+           (e.g. Staff / Moderator). CP admin listings always show it. *@
         <SimfCheckbox @bind-Value="_model.IsAppRegisterable" Disabled="_busy">
             @L["Admin.ProfileTypes.Field.ShowInApp"]
         </SimfCheckbox>
         <div class="simf-field__helper">@L["Admin.ProfileTypes.Field.ShowInAppHint"]</div>
-        @* D-760 (owner request) — "Meet People (same interests)" visibility.
+        @* "Meet People (same interests)" visibility.
            Only on the Others (partner) form: unchecked hides ALL accounts of
            this partner type from the networking directory + recommender,
            regardless of each user's own opt-in. *@

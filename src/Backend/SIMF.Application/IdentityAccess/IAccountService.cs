@@ -3,7 +3,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
-/// Account-management use cases for the signed-in user (myComment item #11):
+/// Account-management use cases for the signed-in user:
 /// reading the profile, updating the avatar.
 /// </summary>
 public interface IAccountService
@@ -18,8 +18,7 @@ public interface IAccountService
     /// (<c>GET /api/v1/app/users/me</c>, SIMF-MOB-API-001 §5.1): identity plus
     /// the resolved mobile app-role and the registration status. Available to
     /// any signed-in account — including not-yet-approved ones — so the app can
-    /// poll the approval state on the Registration-Status screen (Page 011).
-    /// D-249.
+    /// poll the approval state on the Registration-Status screen.
     /// </summary>
     Task<CurrentUserResponse> GetCurrentUserAsync(
         Guid userId,
@@ -39,7 +38,7 @@ public interface IAccountService
 
     /// <summary>
     /// Mints a fresh batch of single-use recovery codes for the user,
-    /// invalidating any previous batch (D-040). The plaintext codes are
+    /// invalidating any previous batch. The plaintext codes are
     /// returned exactly once.
     /// </summary>
     Task<RecoveryCodesResponse> RegenerateRecoveryCodesAsync(

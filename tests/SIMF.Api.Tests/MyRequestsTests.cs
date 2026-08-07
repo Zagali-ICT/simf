@@ -161,9 +161,90 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Cancelling_a_non_cancellable_kind_is_a_conflict()
     {
+        // B11 moved DelegationMeeting onto the speaker withdraw rule, so it is no
+        // longer the "not cancellable from the app" example; session attendance
+        // (which has its own seat-release path) is.
         var (token, _) = await SignInApprovedVisitorAsync();
-        var cancel = await CancelAsync(token, AppRequestKind.DelegationMeeting, Guid.NewGuid());
+        var cancel = await CancelAsync(token, AppRequestKind.SessionAttendance, Guid.NewGuid());
         Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
+    }
+
+    // -- B11: a delegation meeting is withdrawable on the speaker rule ---------
+
+    [Fact]
+    public async Task My_requests_marks_a_pending_delegation_meeting_as_cancellable()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        await SeedDelegationMeetingAsync(userId, MeetingRequestStatus.Pending);
+
+        var items = await GetMyRequestsAsync(token);
+
+        var meeting = Assert.Single(items, i => i.Kind == AppRequestKind.DelegationMeeting);
+        Assert.Equal(MeetingRequestStatus.Pending, meeting.Status);
+        Assert.True(meeting.CanCancel);
+    }
+
+    [Fact]
+    public async Task My_requests_marks_an_awaiting_delegation_meeting_as_cancellable_but_reports_Pending()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        await SeedDelegationMeetingAsync(userId, MeetingRequestStatus.AwaitingSpeaker);
+
+        var items = await GetMyRequestsAsync(token);
+
+        var meeting = Assert.Single(items, i => i.Kind == AppRequestKind.DelegationMeeting);
+        // Still folded to Pending on the app feed (wire values 0-3), but cancellable.
+        Assert.Equal(MeetingRequestStatus.Pending, meeting.Status);
+        Assert.True(meeting.CanCancel);
+    }
+
+    [Fact]
+    public async Task Cancelling_an_awaiting_delegation_meeting_sets_Cancelled_and_frees_the_hall()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        var requestId = await SeedDelegationMeetingAsync(
+            userId, MeetingRequestStatus.AwaitingSpeaker);
+
+        var cancel = await CancelAsync(token, AppRequestKind.DelegationMeeting, requestId);
+        Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Cancelled, req.Status);
+        Assert.Null(req.HallId);
+        Assert.Null(req.MeetingTableId);
+    }
+
+    [Fact]
+    public async Task Cancelling_an_already_confirmed_delegation_meeting_is_a_conflict()
+    {
+        // The other delegation may have confirmed while the requester was on the cancel
+        // screen; their confirm must win, exactly as on the speaker arm.
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        var requestId = await SeedDelegationMeetingAsync(
+            userId, MeetingRequestStatus.Accepted);
+
+        var cancel = await CancelAsync(token, AppRequestKind.DelegationMeeting, requestId);
+        Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Accepted, req.Status);
+    }
+
+    [Fact]
+    public async Task Cancelling_another_users_delegation_meeting_is_a_404()
+    {
+        var (_, ownerId) = await SignInApprovedVisitorAsync();
+        var requestId = await SeedDelegationMeetingAsync(
+            ownerId, MeetingRequestStatus.Pending);
+
+        var (otherToken, _) = await SignInApprovedVisitorAsync();
+        var cancel = await CancelAsync(
+            otherToken, AppRequestKind.DelegationMeeting, requestId);
+        Assert.Equal(HttpStatusCode.NotFound, cancel.StatusCode);
     }
 
     // -- R-1c: an AwaitingSpeaker speaker meeting is cancellable --------------
@@ -173,7 +254,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
     {
         var (token, userId) = await SignInApprovedVisitorAsync();
         await SeedSpeakerMeetingWithStatusAsync(
-            userId, MeetingRequestStatus.AwaitingSpeaker, DateTimeOffset.UtcNow.AddDays(2));
+            userId, MeetingRequestStatus.AwaitingSpeaker, SimfClock.Now.AddDays(2));
 
         var items = await GetMyRequestsAsync(token);
 
@@ -188,7 +269,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
     {
         var (token, userId) = await SignInApprovedVisitorAsync();
         var requestId = await SeedSpeakerMeetingWithStatusAsync(
-            userId, MeetingRequestStatus.AwaitingSpeaker, DateTimeOffset.UtcNow.AddDays(2));
+            userId, MeetingRequestStatus.AwaitingSpeaker, SimfClock.Now.AddDays(2));
 
         var cancel = await CancelAsync(token, AppRequestKind.SpeakerMeeting, requestId);
         Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
@@ -209,7 +290,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
         // is the arbiter; here the terminal Accepted state exercises the same guard).
         var (token, userId) = await SignInApprovedVisitorAsync();
         var requestId = await SeedSpeakerMeetingWithStatusAsync(
-            userId, MeetingRequestStatus.Accepted, DateTimeOffset.UtcNow.AddDays(2));
+            userId, MeetingRequestStatus.Accepted, SimfClock.Now.AddDays(2));
 
         var cancel = await CancelAsync(token, AppRequestKind.SpeakerMeeting, requestId);
         Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
@@ -255,7 +336,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
     // -- helpers --------------------------------------------------------------
 
     private async Task<Guid> SeedSpeakerMeetingWithStatusAsync(
-        Guid userId, MeetingRequestStatus status, DateTimeOffset? slotStart)
+        Guid userId, MeetingRequestStatus status, DateTime? slotStart)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -265,7 +346,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "SPK" + suffix,
             Name = "Speaker", NameArabic = "متحدّث",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         var req = new SpeakerMeetingRequest
@@ -277,11 +358,81 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Status = status,
             SlotStart = slotStart,
             SlotEnd = slotStart?.AddMinutes(30),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.SpeakerMeetingRequests.Add(req);
         await db.SaveChangesAsync();
         return req.Id;
+    }
+
+    // B11 — a delegation meeting for the given requester in the given state, bound to a
+    // hall + table so the cancel path's slot release is observable. Countries are
+    // get-or-created by ISO code (NO/SE keep clear of the other suites' codes).
+    private async Task<Guid> SeedDelegationMeetingAsync(
+        Guid userId, MeetingRequestStatus status)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var suffix = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+
+        var requesting = await EnsureCountryAsync(db, "NO", 578);
+        var target = await EnsureCountryAsync(db, "SE", 752);
+
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "MR" + suffix,
+            Name = "Meeting Hall", NameArabic = "قاعة",
+            Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
+            CreatedAt = SimfClock.Now,
+        };
+        db.Halls.Add(hall);
+        var table = new MeetingTable
+        {
+            Id = Guid.NewGuid(),
+            HallId = hall.Id,
+            Code = "MRT" + suffix,
+            Capacity = 4, IsActive = true,
+            CreatedAt = SimfClock.Now,
+        };
+        db.MeetingTables.Add(table);
+
+        var slotStart = SimfClock.Now.AddDays(4);
+        var req = new DelegationMeetingRequest
+        {
+            Id = Guid.NewGuid(),
+            RequestedByUserId = userId,
+            RequestingCountryId = requesting,
+            TargetCountryId = target,
+            AttendeeCount = 4,
+            Subject = "Withdraw probe",
+            Status = status,
+            HallId = hall.Id,
+            MeetingTableId = table.Id,
+            SlotStart = slotStart,
+            SlotEnd = slotStart.AddMinutes(30),
+            CreatedAt = SimfClock.Now,
+        };
+        db.DelegationMeetingRequests.Add(req);
+        await db.SaveChangesAsync();
+        return req.Id;
+    }
+
+    private static async Task<int> EnsureCountryAsync(
+        SimfAppDbContext db, string code, int id)
+    {
+        var country = await db.Countries.FirstOrDefaultAsync(c => c.Code == code);
+        if (country is null)
+        {
+            country = new SIMF.Domain.Common.Country
+            {
+                Id = id, Code = code, Name = code, NameArabic = code,
+                IsActive = true, IsInvited = true, CreatedAt = SimfClock.Now,
+            };
+            db.Countries.Add(country);
+            await db.SaveChangesAsync();
+        }
+        return country.Id;
     }
 
     private async Task<Guid> SeedDocumentRequestAsync(
@@ -296,8 +447,8 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             DocumentType = ParticipationDocumentType.ParticipationLetter,
             Status = status,
             ResponseNote = responseNote,
-            RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            RespondedAt = status == MeetingRequestStatus.Pending ? null : SimfClock.Now,
+            CreatedAt = SimfClock.Now,
         };
         db.ParticipationDocumentRequests.Add(req);
         await db.SaveChangesAsync();
@@ -316,8 +467,8 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             RequestedJobTitle = "Director of Operations",
             Status = status,
             ResponseNote = responseNote,
-            RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
-            CreatedAt = DateTimeOffset.UtcNow,
+            RespondedAt = status == MeetingRequestStatus.Pending ? null : SimfClock.Now,
+            CreatedAt = SimfClock.Now,
         };
         db.BadgeUpdateRequests.Add(req);
         await db.SaveChangesAsync();
@@ -358,7 +509,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             NameArabic = "د. ابراهيم الحامد",
             Rank = rank,
             CountryId = countryId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Speakers.Add(speaker);
         db.SpeakerMeetingRequests.Add(new SpeakerMeetingRequest
@@ -369,7 +520,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             RequesterName = "Test Requester",
             Subject = "Cooperation on marine research",
             Status = MeetingRequestStatus.Accepted,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
         return speaker.Id;
@@ -387,7 +538,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Name = "Main Hall",
             NameArabic = "القاعة الرئيسية",
             Capacity = 100,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -397,9 +548,9 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Title = "Vision 2030 session",
             TitleArabic = "جلسة رؤية 2030",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddDays(1),
-            End = DateTimeOffset.UtcNow.AddDays(1).AddHours(1),
-            CreatedAt = DateTimeOffset.UtcNow,
+            Start = SimfClock.Now.AddDays(1),
+            End = SimfClock.Now.AddDays(1).AddHours(1),
+            CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         db.SeatReservations.Add(new SeatReservation
@@ -410,7 +561,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             ReservedForUserId = userId,
             CreatedByUserId = userId,
             Status = status,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await db.SaveChangesAsync();
     }

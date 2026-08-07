@@ -222,41 +222,41 @@ class SignLanguageNote extends StatelessWidget {
   }
 }
 
-/// The gold region-restriction notice card (frame 934:3619): a bold "إشعار:"
-/// label followed by the static notice body, on a solid gold card.
-class RegionNoticeCard extends StatelessWidget {
-  const RegionNoticeCard({
-    required this.noticeLabel,
-    required this.noticeBody,
-    super.key,
-  });
+// A20 (2026-07-26) — `RegionNoticeCard` (frame 934:3619, the gold "available
+// only inside the Riyadh region per regulations" card) is deleted with its only
+// caller: nothing in the app, API or CP ever checked the viewer's location, so
+// the notice was an unconditional false claim. Geo-fencing the stream for real
+// is a product/legal decision, not a defect fix.
+//
+// FR-702 (owner 2026-07-31) — that product decision was taken, and it is "no
+// restriction, this is only notification": [LiveNoticeBanner] below replaces the
+// hard-coded region claim with the free-text notice the admin authors per
+// session in the Control Panel.
 
-  final String noticeLabel;
-  final String noticeBody;
+/// FR-702 — the session's informational live notice, shown above the player: an
+/// info glyph plus the organiser's text on the shared navy card. Calm by
+/// construction — it reuses [SimfPageNote] (the muted "what is this" line) and
+/// the plain [SimfCard] chrome, so it never reads as an error, and it neither
+/// gates nor delays the feed. The caller renders it only when the notice is set,
+/// so there is no empty-banner state.
+class LiveNoticeBanner extends StatelessWidget {
+  const LiveNoticeBanner({required this.text, super.key});
+
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
-        vertical: SimfTokens.space3,
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
-      child: Text.rich(
-        TextSpan(
-          children: <InlineSpan>[
-            TextSpan(
-              text: '$noticeLabel ',
-              style: SimfTokens.emphasisBold,
-            ),
-            TextSpan(text: noticeBody),
-          ],
+    return Padding(
+      // The banner sits ABOVE the full-bleed player band, and the list around it
+      // has no padding of its own, so it carries all four insets itself. The
+      // BOTTOM one is load-bearing: without it the card's beige hairline sits
+      // flush against the black player with no separation.
+      padding: const EdgeInsets.all(SimfTokens.space4),
+      child: SimfCard(
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space3),
+          child: SimfPageNote(text: text),
         ),
-        textAlign: TextAlign.start,
-        style: SimfTokens.bodyWhiteMediumTall,
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
-/// The notification severity band — mirrors `SIMF.Common.Enums.NotificationSeverity`.
+/// The notification severity band — mirrors
+/// `SIMF.Common.Enums.NotificationSeverity`.
 ///
 /// On the wire this is a **string** name (`Info` / `Success` / `Warning` /
 /// `Error`), not an integer (D-110). Parse tolerantly: an unknown / missing
@@ -27,8 +29,10 @@ enum NotificationSeverity {
 
 /// One notification — mirrors `NotificationDto`.
 ///
-/// `kind` and `severity` are **string** names on the wire (D-110); the localized
-/// title/body pick AR or EN with a fallback. `createdAt` / `readAt` are UTC
+/// `kind` and `severity` are **string** names on the wire (D-110); the
+/// localized
+/// title/body pick AR or EN with a fallback. `createdAt` / `readAt` are
+/// zone-free
 /// strings parsed with [DateTime.tryParse].
 @immutable
 class NotificationItem {
@@ -116,9 +120,9 @@ class NotificationItem {
       bodyArabic: json['bodyArabic'] as String? ?? '',
       severity: NotificationSeverity.fromName(json['severity'] as String?),
       isRead: json['isRead'] as bool? ?? false,
-      readAt: readAtRaw == null ? null : DateTime.tryParse(readAtRaw)?.toUtc(),
+      readAt: readAtRaw == null ? null : parseWireOrNull(readAtRaw),
       createdAt:
-          createdAtRaw == null ? null : DateTime.tryParse(createdAtRaw)?.toUtc(),
+          createdAtRaw == null ? null : parseWireOrNull(createdAtRaw),
       relatedEntityType: json['relatedEntityType'] as String?,
       relatedEntityId: json['relatedEntityId'] as String?,
       clickUrl: json['clickUrl'] as String?,

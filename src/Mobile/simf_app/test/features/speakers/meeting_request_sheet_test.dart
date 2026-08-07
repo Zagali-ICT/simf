@@ -10,7 +10,8 @@ import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 
 // Two local days of real slots: 2026-07-10 (09:00 + 10:00) and 2026-07-11
-// (09:00). Built as local times → UTC so the sheet's toLocal() round-trips to
+// (09:00). Built as local times → a zoned value so the sheet's toLocal()
+// round-trips to
 // the same day/time regardless of the test machine's timezone.
 final List<SpeakerSlot> _twoDaySlots = <SpeakerSlot>[
   SpeakerSlot(
@@ -30,12 +31,36 @@ final List<SpeakerSlot> _twoDaySlots = <SpeakerSlot>[
 /// Fake repo: two speakers for the bilateral picker; a configurable slot list;
 /// records the meeting-request submit so a test can assert the sent slot.
 class _FakeRepo implements SpeakersRepository {
-  _FakeRepo({this.slots = const <SpeakerSlot>[], this.failSubmitStatus});
+  _FakeRepo({
+    this.slots = const <SpeakerSlot>[],
+    this.failSlots = false,
+    this.failSubmitStatus,
+    this.failSubmitCode = 'x',
+    this.failSubmitMessage = 'fail',
+  });
 
   final List<SpeakerSlot> slots;
+  // G3 — the availability fetch itself fails (network / server). Distinct from
+  // an
+  // empty [slots] list, which means the speaker genuinely has no free slot.
+  // NOT final: a test flips it between calls to simulate the network
+  // recovering,
+  // which is the only way to prove Retry actually re-fetches.
+  bool failSlots;
+
+  // G3 — how many times the availability fetch was attempted. Without this a
+  // no-op Retry button would satisfy a test that only checks the button
+  // renders.
+  int slotFetchCalls = 0;
   // When set, submitMeetingRequest throws an ApiFailure with this HTTP status
-  // (e.g. 403 for the VIP-only gate) so the failure mapping can be tested.
+  // (e.g. 403 for the eligibility gate) so the failure mapping can be tested.
   final int? failSubmitStatus;
+
+  // QA A26 — the envelope code + the server's already-localized message, so a
+  // test can prove the sheet renders the SERVER's reason for a 409 instead of
+  // collapsing every conflict onto one hardcoded (and usually wrong) string.
+  final String failSubmitCode;
+  final String failSubmitMessage;
 
   int submitCalls = 0;
   String? lastSpeakerId;
@@ -63,7 +88,16 @@ class _FakeRepo implements SpeakersRepository {
       ];
 
   @override
-  Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) async => slots;
+  Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) async {
+    slotFetchCalls++;
+    if (failSlots) {
+      throw const ApiFailure(
+        code: ApiErrorCodes.clientNetwork,
+        message: 'Network is unreachable.',
+      );
+    }
+    return slots;
+  }
 
   @override
   Future<SpeakerDetail> getSpeaker(String id) => throw UnimplementedError();
@@ -78,8 +112,8 @@ class _FakeRepo implements SpeakersRepository {
   }) async {
     if (failSubmitStatus != null) {
       throw ApiFailure(
-        code: 'x',
-        message: 'fail',
+        code: failSubmitCode,
+        message: failSubmitMessage,
         httpStatus: failSubmitStatus,
       );
     }
@@ -134,7 +168,8 @@ void main() {
       await _pump(tester, speakerId: null);
 
       // The picker label is shown; every speaker is a selectable row (D-745 —
-      // photo + name + country, no longer a bare dropdown); the form is deferred.
+      // photo + name + country, no longer a bare dropdown); the form is
+      // deferred.
       expect(find.text('Select speaker'), findsOneWidget);
       expect(find.text('Dr. Sarah Al-Otaibi'), findsOneWidget);
       expect(find.text('Capt. Omar Nasser'), findsOneWidget);
@@ -224,13 +259,17 @@ void main() {
       expect(find.byType(MeetingTimeChip), findsNWidgets(2));
     });
 
-    testWidgets('no availability → shows the no-slots notice and can still send '
-        'the request subject-only', (tester) async {
+    testWidgets(
+        'G3 — no availability shows the no-slots notice AND disables send, so no '
+        'subject-only request is sent (supersedes D-767 R1)', (tester) async {
       final repo = _FakeRepo();
       await _pump(tester, speakerId: 's1', repo: repo);
 
       expect(find.text('No meeting slots available right now'), findsOneWidget);
       expect(find.byType(MeetingDayCard), findsNothing);
+      // The load succeeded and returned nothing — that is NOT a load error, so
+      // there is no retry offered here.
+      expect(find.text('Retry'), findsNothing);
 
       await tester.enterText(
         find.byKey(const ValueKey<String>('meeting-subject')),
@@ -239,11 +278,65 @@ void main() {
       await tester.tap(find.text('Send request'));
       await tester.pumpAndSettle();
 
+      // The send button is disabled: the server would 409
+      // SPEAKER_MEETING_NO_AVAILABILITY, so the tap must not reach the repo.
+      expect(repo.submitCalls, 0);
+      expect(repo.lastSubject, isNull);
+    });
+
+    testWidgets(
+        'G3 — a FAILED slot fetch shows a load error + Retry, not the '
+        '"no availability" notice', (tester) async {
+      final repo = _FakeRepo(failSlots: true);
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      // A transient network failure must never be presented as the speaker
+      // having no availability — that would be untrue and unactionable.
+      expect(find.text('No meeting slots available right now'), findsNothing);
+      expect(find.text('Could not load the list.'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('meeting-slots-retry')),
+        findsOneWidget,
+      );
+
+      // Sending is still blocked (there is no slot to send).
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('meeting-subject')),
+        'Naval cooperation',
+      );
+      await tester.tap(find.text('Send request'));
+      await tester.pumpAndSettle();
+      expect(repo.submitCalls, 0);
+    });
+
+    testWidgets(
+        'G3 — tapping Retry after a failed fetch re-loads the slots and '
+        'un-blocks Send', (tester) async {
+      // The catalogue (bi-meeting-lifecycle.md E2E-BML-013c) scripts this
+      // recovery, so it needs a test that TAPS the button: asserting the button
+      // merely renders would pass against a no-op or mis-wired onPressed.
+      final repo = _FakeRepo(failSlots: true, slots: _twoDaySlots);
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      expect(repo.slotFetchCalls, 1);
+      expect(find.text('Could not load the list.'), findsOneWidget);
+      expect(find.byType(MeetingDayCard), findsNothing);
+
+      // The network comes back, then the user taps Retry.
+      repo.failSlots = false;
+      await tester.tap(find.byKey(const ValueKey<String>('meeting-slots-retry')));
+      await tester.pumpAndSettle();
+
+      // It genuinely re-fetched, and the error state cleared.
+      expect(repo.slotFetchCalls, 2);
+      expect(find.text('Could not load the list.'), findsNothing);
+      expect(find.byType(MeetingDayCard), findsWidgets);
+
+      // And Send now works, which is the point of recovering.
+      await _submitWithFirstSlot(tester);
+
       expect(repo.submitCalls, 1);
       expect(repo.lastSubject, 'Naval cooperation');
-      // No slot picked (none offered) → the request carries no slot.
-      expect(repo.lastSlotStart, isNull);
-      expect(repo.lastSlotEnd, isNull);
     });
 
     testWidgets("submitting a picked real slot sends that slot's start + end",
@@ -295,25 +388,74 @@ void main() {
       expect(repo.lastSlotStart, DateTime(2026, 7, 10, 9).toUtc());
     });
 
-    testWidgets('a 403 on submit surfaces the VIP-only message', (tester) async {
+    testWidgets(
+        'QA A28 — a 403 on submit describes the real eligibility rule, not the '
+        'stale VIP-only copy', (tester) async {
       final repo = _FakeRepo(slots: _twoDaySlots, failSubmitStatus: 403);
       await _pump(tester, speakerId: 's1', repo: repo);
 
-      await tester.enterText(
-        find.byKey(const ValueKey<String>('meeting-subject')),
-        'Naval cooperation',
-      );
-      await tester.tap(find.byKey(const ValueKey<String>('meeting-day-0')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey<String>('meeting-time-0')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Send request'));
-      await tester.pumpAndSettle();
+      await _submitWithFirstSlot(tester);
 
       expect(
-        find.text('Booking a meeting slot is for VIP guests only'),
+        find.textContaining('not enabled for your account'),
         findsOneWidget,
       );
+      expect(find.textContaining('VIP'), findsNothing);
+    });
+
+    testWidgets(
+        'QA A26 — a 409 surfaces the SERVER reason, not a hardcoded '
+        '"speaker does not accept meeting requests"', (tester) async {
+      // A duplicate-pending / slot-already-taken conflict: before the fix EVERY
+      // 409 was collapsed onto the "does not accept meeting requests" string,
+      // so
+      // the user was told something flatly untrue and the API's own bilingual
+      // text was discarded.
+      final repo = _FakeRepo(
+        slots: _twoDaySlots,
+        failSubmitStatus: 409,
+        failSubmitCode: 'SPEAKER_MEETING_REQUEST_INVALID',
+        failSubmitMessage: 'That slot is no longer available.',
+      );
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      await _submitWithFirstSlot(tester);
+
+      expect(find.text('That slot is no longer available.'), findsOneWidget);
+      expect(
+        find.text('This speaker is not accepting meeting requests'),
+        findsNothing,
+      );
+    });
+
+    testWidgets(
+        'QA A26 — a failure that never reached the server still shows localized '
+        'copy, not the raw dio string', (tester) async {
+      final repo = _FakeRepo(
+        slots: _twoDaySlots,
+        failSubmitStatus: null,
+        failSubmitCode: ApiErrorCodes.clientNetwork,
+        failSubmitMessage: 'Network is unreachable.',
+      );
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      await _submitWithFirstSlot(tester);
+
+      expect(find.text('Network is unreachable.'), findsNothing);
     });
   });
+}
+
+/// Fills the subject, picks the first day + first slot, and taps send.
+Future<void> _submitWithFirstSlot(WidgetTester tester) async {
+  await tester.enterText(
+    find.byKey(const ValueKey<String>('meeting-subject')),
+    'Naval cooperation',
+  );
+  await tester.tap(find.byKey(const ValueKey<String>('meeting-day-0')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey<String>('meeting-time-0')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Send request'));
+  await tester.pumpAndSettle();
 }

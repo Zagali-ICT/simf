@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Programme;
@@ -164,6 +165,44 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- DEF-CHK-002: per-session rating IS reachable without the geofence -------
+
+    [Fact]
+    public async Task Operator_scan_makes_the_per_session_rating_submittable()
+    {
+        // DEF-CHK-002 (refutation) — the audit claimed the per-session rating is
+        // unreachable because RatingFormService requires a HallAttendance row
+        // "nothing in the product creates automatically". It does: the operator's
+        // hall-door QR scan writes one, keyed on the SAME Identity SimfUser.Id the
+        // rating gate reads from the `sub` claim. So the rating unlocks with no
+        // geofence involved (the deferred D-211 self-service path).
+        var operatorToken = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: false);
+        var (qrId, _, visitorToken, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+
+        // Before any check-in the gate refuses the submission.
+        var blocked = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { Code = "Session", TargetId = sessionId, OverallStars = 4 },
+            visitorToken);
+        Assert.Equal(HttpStatusCode.Forbidden, blocked.StatusCode);
+        var blockedBody = (await blocked.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.RatingNotAttended, blockedBody.Error!.Code);
+
+        // The operator scans them in at the hall door — that alone unlocks it.
+        var arrival = await ScanAsync(sessionId, qrId, operatorToken);
+        Assert.True(arrival.Status.Arrived);
+
+        var allowed = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { Code = "Session", TargetId = sessionId, OverallStars = 4 },
+            visitorToken);
+        Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
+        var view = (await allowed.Content.ReadFromJsonAsync<ApiResult<RatingSubmissionView>>())!.Data!;
+        Assert.Equal(sessionId, view.TargetId);
+        Assert.Equal(4, view.OverallStars);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<QrArrivalResult> ScanAsync(Guid sessionId, string qrId, string token)
@@ -197,7 +236,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Scan Hall", NameArabic = "قاعة المسح",
-            Capacity = 100, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = 100, IsActive = true, CreatedAt = SimfClock.Now,
             GeofenceCenterLat = withGeofence ? CenterLat : null,
             GeofenceCenterLon = withGeofence ? CenterLon : null,
             GeofenceRadiusMeters = withGeofence ? RadiusMeters : null,
@@ -209,9 +248,9 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Scan Session", TitleArabic = "جلسة المسح",
             HallId = hall.Id,
-            Start = DateTimeOffset.UtcNow.AddMinutes(-15),
-            End = DateTimeOffset.UtcNow.AddMinutes(45),
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Start = SimfClock.Now.AddMinutes(-15),
+            End = SimfClock.Now.AddMinutes(45),
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
@@ -248,7 +287,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
                 Name = displayName,
                 NationalityId = 682,
                 PlaceOfBirth = "Riyadh",
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }
@@ -286,14 +325,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token)

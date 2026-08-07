@@ -105,6 +105,35 @@ public sealed class FilesystemFileStorageProviderTests : IDisposable
     }
 
     [Fact]
+    public async Task Exists_reports_presence_and_never_escapes_the_root()
+    {
+        // ExistsAsync is what lets a caller tell "this pointer resolves to bytes"
+        // from "this pointer is a corpse" without reading (and decrypting) the file.
+        // It answers off the SAME guarded path resolution as ReadAsync, so it can
+        // never become an out-of-store existence oracle: a traversal key reports
+        // false even when a real file sits at the target.
+        var provider = NewProvider(out var root);
+        var write = await provider.WriteAsync(
+            FileService.Avatar, Guid.NewGuid(), ".png", "here"u8.ToArray(), encrypt: true);
+
+        Assert.True(await provider.ExistsAsync(write.StorageKey));
+        Assert.False(await provider.ExistsAsync($"avatar/{Guid.NewGuid():N}.png"));
+        Assert.False(await provider.ExistsAsync("../escape.bin"));
+
+        var sibling = root + "evil";
+        _tempDirs.Add(sibling);
+        Directory.CreateDirectory(sibling);
+        await File.WriteAllBytesAsync(Path.Combine(sibling, "secret.bin"), "planted"u8.ToArray());
+        Assert.False(
+            await provider.ExistsAsync($"../{Path.GetFileName(root)}evil/secret.bin"),
+            "a key outside the store must report absent, whatever is really there");
+
+        // And once the bytes go, it flips — the dangling-pointer case.
+        await provider.DeleteAsync(write.StorageKey);
+        Assert.False(await provider.ExistsAsync(write.StorageKey));
+    }
+
+    [Fact]
     public async Task Secure_erase_removes_the_file()
     {
         var provider = NewProvider(out var root);

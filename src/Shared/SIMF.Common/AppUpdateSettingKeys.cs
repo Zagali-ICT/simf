@@ -1,7 +1,7 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// D-736 — the whitelisted <c>SystemSetting</c> keys that drive the mobile
+/// The whitelisted <c>SystemSetting</c> keys that drive the mobile
 /// app-update policy served by <c>GET /api/v1/app/version-policy</c>. An admin
 /// edits them on the CP configuration page (<c>/admin/configuration</c>); the
 /// app compares its installed version against them on every launch and from the

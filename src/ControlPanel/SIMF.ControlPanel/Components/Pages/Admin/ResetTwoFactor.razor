@@ -1,7 +1,7 @@
-@* Control Panel — admin-driven 2FA reset (decision D-041). The caller must
+@* Control Panel — admin-driven 2FA reset. The caller must
    hold the Administrator role. Wipes the target's authenticator, recovery
    codes and active sessions, and emails the target out of band. Layout
-   follows the CP form-card convention (D-043). *@
+   follows the CP form-card convention. *@
 @page "/admin/reset-2fa"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Admins.ResetTwoFactor)]

@@ -19,6 +19,8 @@
 | E2E-MOBMTG-007 | Auth-gate + RTL — a guest deep-link redirects to sign-in; Arabic mirrors RTL | auth/i18n | P2 | authored ✓ (router gate + RTL render) |
 | E2E-MOBMTG-008 | Empty status bucket hides its chip (Figma 3-chip parity, D-590) | happy | P1 | authored ✓ (widget — hidden-when-zero) |
 | E2E-MOBMTG-009 | Card secondary line shows the speaker's rank; delegation / no-rank falls back to meeting-type (D-590) | happy | P1 | authored ✓ (widget + api — subtitle) |
+| E2E-MOBMTG-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-MOBMTG-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

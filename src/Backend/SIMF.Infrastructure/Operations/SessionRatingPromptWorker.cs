@@ -7,6 +7,7 @@ using SIMF.Application.Notifications;
 using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
@@ -102,7 +103,7 @@ internal sealed class SessionRatingPromptWorker(
         var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
 
         var prompted = await RunRatingPromptScanAsync(
-            db, notifications, timeProvider.GetUtcNow(), BackfillWindow, logger, cancellationToken);
+            db, notifications, timeProvider.SimfNow(), BackfillWindow, logger, cancellationToken);
         if (prompted > 0)
         {
             logger.LogInformation(
@@ -120,7 +121,7 @@ internal sealed class SessionRatingPromptWorker(
     /// </summary>
     internal static async Task<int> RunRatingPromptScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
-        DateTimeOffset now, TimeSpan backfillWindow, ILogger logger,
+        DateTime now, TimeSpan backfillWindow, ILogger logger,
         CancellationToken cancellationToken)
     {
         // Respect the CP: if an admin deactivated the "Session" rating type in
@@ -178,7 +179,7 @@ internal sealed class SessionRatingPromptWorker(
                         RelatedEntityType = "Session",
                         RelatedEntityId = session.Id,
                         SendEmail = false,
-                        // D-713 — share the one-per-(session, user) guard with the
+                        // Share the one-per-(session, user) guard with the
                         // hall-departure hook (GAP-A): if the attendee already got a
                         // rating prompt for this session when they left the hall,
                         // the clock-end worker does not send a second.

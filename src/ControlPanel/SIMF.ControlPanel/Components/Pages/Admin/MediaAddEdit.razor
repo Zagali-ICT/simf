@@ -1,12 +1,12 @@
-@* D-353 â€” reusable Media Add/Edit form, hosted by CrudShell (popup or full
+@* Reusable Media Add/Edit form, hosted by CrudShell (popup or full
    page) from MediaList.razor. Inherits CrudAddEditFormBase so it exposes the
    standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel).
    IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT against Initial).
-   Supersedes the inline SimfModal form that lived in MediaList (D-199 / D-256).
+   Supersedes the inline SimfModal form that lived in MediaList.
 
-   Image upload is preserved exactly (D-90 out-of-row): bytes can only be
+   Image upload is preserved exactly (out-of-row): bytes can only be
    attached once the row exists, so the upload control shows only in Edit mode
-   for an Image item. Creating an Image therefore does NOT close the shell â€” it
+   for an Image item. Creating an Image therefore does NOT close the shell — it
    flips the same form into Edit mode in place so the admin can attach the
    bitmap next; OnSuccess (which closes the shell + reloads the grid) fires for
    a Video create and for every Edit-mode save. *@
@@ -72,8 +72,10 @@
 
     @if (_isEditing && _model.Kind == MediaKind.Image)
     {
+        @* §6.16 (LQ-008) — see OrganisationsList: a <span> gives the file input no
+           accessible name, and the hint paragraph between them rules out wrapping. *@
         <div class="simf-field">
-            <span class="simf-field__label">@L["Admin.Media.Field.Image"]</span>
+            <label class="simf-field__label" for="media-image-input">@L["Admin.Media.Field.Image"]</label>
             <p class="simf-walkin__hint">
                 @(_hasImage ? L["Admin.Media.Image.Present"] : L["Admin.Media.Image.None"])
             </p>
@@ -88,7 +90,8 @@
             <div class="simf-form__actions">
                 <SimfButton Type="button" Loading="_uploadingImage"
                             Disabled="@(_busy || string.IsNullOrEmpty(_imageName))"
-                            OnClick="UploadImageAsync">
+                            OnClick="UploadImageAsync"
+                            LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.Media.Image.Upload"]
                 </SimfButton>
             </div>

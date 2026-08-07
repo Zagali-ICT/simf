@@ -8,12 +8,12 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// D-199 (Mockup pages 19-20) — public, anonymous reads over the
+/// Public, anonymous reads over the
 /// <see cref="SIMF.Domain.Programme.Speaker"/> surface. Read-only sibling
 /// of <see cref="AdminSpeakerService"/>: only active speakers are returned
 /// (<c>IsActive</c>), ordered by <c>DisplayOrder</c>.
 ///
-/// <para>A5 — the country name is read through the <c>Speaker.Country</c>
+/// <para>The country name is read through the <c>Speaker.Country</c>
 /// navigation in the same query (one LEFT JOIN), replacing the prior
 /// dictionary-stitch that fetched the distinct country ids in a separate
 /// round-trip for the list and a single-row lookup for the detail.</para>
@@ -43,7 +43,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 speaker.Rank,
                 speaker.RankArabic,
                 speaker.CountryId,
-                // A5 — the country name comes through the nav in the same query
+                // The country name comes through the nav in the same query
                 // (was a separate dictionary-stitch round-trip).
                 CountryNameEn = speaker.Country != null ? speaker.Country.Name : null,
                 CountryNameAr = speaker.Country != null ? speaker.Country.NameArabic : null,
@@ -52,11 +52,11 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             })
             .ToListAsync(cancellationToken);
 
-        // D-357 — which of these speakers have an active SpeakerPhoto asset (one
+        // Which of these speakers have an active SpeakerPhoto asset (one
         // batched query; OwnerId is the speaker id, resolved cross-row with no FK
         // so it cannot fold into the main projection's join).
         var speakerIds = rows.Select(row => row.Id).ToList();
-        // D-568 (S1) — the photo now lives in the unified StoredFile store.
+        // The photo now lives in the unified StoredFile store.
         var withPhotoAsset = (await dbContext.StoredFiles
             .AsNoTracking()
             .Where(file => file.Service == FileService.SpeakerPhoto
@@ -92,7 +92,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 row.Rank,
                 row.RankArabic,
                 row.CountryId,
-                // A5 — country name via the nav (was a separate single-row query).
+                // Country name via the nav (was a separate single-row query).
                 CountryNameEn = row.Country != null ? row.Country.Name : null,
                 CountryNameAr = row.Country != null ? row.Country.NameArabic : null,
                 row.Bio,

@@ -6,7 +6,7 @@ using SIMF.Domain.Notifications;
 
 namespace SIMF.Infrastructure.Persistence.Repositories;
 
-/// <summary>R4 — D-095: EF-backed <see cref="INotificationRepository"/>.</summary>
+/// <summary>EF-backed <see cref="INotificationRepository"/>.</summary>
 internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
     : INotificationRepository
 {
@@ -41,8 +41,8 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
             rows = rows.Where(row => row.ReadAt == null);
         }
 
-        // A8 — optional kind narrow, applied BEFORE the count so Total reflects it.
-        // Kind is string-mapped (D-108), so this translates to WHERE Kind IN (...).
+        // Optional kind narrow, applied BEFORE the count so Total reflects it.
+        // Kind is string-mapped, so this translates to WHERE Kind IN (...).
         if (kinds is { Count: > 0 })
         {
             rows = rows.Where(row => kinds.Contains(row.Kind));
@@ -81,7 +81,7 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
             .CountAsync(cancellationToken);
 
     public async Task MarkReadForUserAsync(
-        Guid userId, Guid notificationId, DateTimeOffset readAt,
+        Guid userId, Guid notificationId, DateTime readAt,
         CancellationToken cancellationToken = default)
     {
         var row = await dbContext.Notifications
@@ -94,7 +94,7 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
     }
 
     public Task MarkAllReadForUserAsync(
-        Guid userId, DateTimeOffset readAt,
+        Guid userId, DateTime readAt,
         CancellationToken cancellationToken = default) =>
         dbContext.Notifications
             .Where(row => row.UserId == userId && row.ReadAt == null)

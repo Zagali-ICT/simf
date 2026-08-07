@@ -18,7 +18,7 @@ namespace SIMF.Api.Authentication;
 /// </summary>
 internal static class JwtBearerSetup
 {
-    /// <summary>P3.2b — D-232: the bearer scheme name for recording-stream
+    /// <summary>The bearer scheme name for recording-stream
     /// tokens (distinct from the default user scheme).</summary>
     public const string StreamScheme = "StreamToken";
 
@@ -47,7 +47,7 @@ internal static class JwtBearerSetup
         };
     }
 
-    /// <summary>P3.2b — D-232 (D-213): the dedicated bearer scheme for
+    /// <summary>The dedicated bearer scheme for
     /// short-lived session-recording stream tokens. Validates the distinct
     /// <c>StreamAudience</c> (so a stream token is never accepted as a user
     /// token, nor vice-versa) with HS256 pinned, reads the token from the
@@ -92,7 +92,7 @@ internal static class JwtBearerSetup
     /// Rejects an otherwise-valid token whose security stamp no longer matches
     /// the account — so sign-out and password change revoke live access tokens.
     ///
-    /// H5 — D-060: the stamp claim MUST be present and non-empty in the
+    /// The stamp claim MUST be present and non-empty in the
     /// token; the DB stamp MUST be present and non-empty on the user row;
     /// the comparison runs in constant time. Without these checks, a token
     /// that lacks the claim (or carries an empty one) would compare empty
@@ -111,7 +111,7 @@ internal static class JwtBearerSetup
             return;
         }
 
-        // R3g — D-079: resolve the repository from request services rather
+        // Resolve the repository from request services rather
         // than UserManager directly. Same shape — the bearer events run
         // outside of a constructor injection scope.
         var accounts = context.HttpContext.RequestServices
@@ -183,7 +183,7 @@ internal static class JwtBearerSetup
     }
 
     /// <summary>
-    /// H26 — D-086: per-IP cap on bearer-rejection audit DB writes (the
+    /// Per-IP cap on bearer-rejection audit DB writes (the
     /// rest of the world reaches the API past UseRouting — pre-routing,
     /// the rate limiter is not in scope). An attacker flooding
     /// <c>Authorization: Bearer &lt;garbage&gt;</c> requests would

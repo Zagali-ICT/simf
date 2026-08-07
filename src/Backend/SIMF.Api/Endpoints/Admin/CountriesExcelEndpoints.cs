@@ -9,7 +9,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/countries/export</c> — the D-356 grid export for the
+/// <c>POST /api/v1/admin/countries/export</c> — the grid export for the
 /// Countries lookup. All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>;
 /// this subclass only declares the route, permission, sheet/file names, the
 /// column layout, and how to list a country row.
@@ -37,7 +37,7 @@ public sealed class ExportCountriesEndpoint(IAdminCountryService service, IGridE
         new("PhonePrefix", row => row.PhonePrefix),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the delegation flag + arrival/departure dates
+        // Round-trip the delegation flag + arrival/departure dates
         // (appended so the existing column order is unchanged; import binds by
         // header name). The dates are blank unless the country is invited.
         new("IsInvited", row => row.IsInvited),
@@ -56,17 +56,17 @@ public sealed class ExportCountriesEndpoint(IAdminCountryService service, IGridE
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/countries/import</c> — the D-356 grid import
+/// <c>POST /api/v1/admin/countries/import</c> — the grid import
 /// (insert-only). The base does the upload defence, parse and per-row error
 /// aggregation; this subclass binds one row to <see cref="AdminCreateCountryRequest"/>
 /// and creates it (the service rejects a duplicate id/code and any invalid field
 /// with an <c>ApiException</c>, which the base records as a per-row error rather
 /// than aborting the batch).
-/// <para>D-506 — the delegation flag + arrival/departure dates round-trip through
+/// <para>The delegation flag + arrival/departure dates round-trip through
 /// import (<c>IsInvited</c> accepts Yes/No or true/false; the dates ISO yyyy-MM-dd;
 /// the service drops the dates when the row is not invited).</para>
 /// <para><b>Omitted column:</b> <c>HeadOfDelegationUserProfileId</c> (the head of
-/// delegation, D-499) is a UserProfile directory FK chosen with the CP picker — a
+/// delegation) is a UserProfile directory FK chosen with the CP picker — a
 /// raw GUID is not sane flat-Excel content — so import always leaves it unset; an
 /// admin links the head afterwards via Edit (same reason ContactId is omitted on
 /// the Sponsor/Exhibitor imports).</para>
@@ -127,7 +127,7 @@ public sealed class ImportCountriesEndpoint(IAdminCountryService service, IGridE
             PhonePrefix = string.IsNullOrWhiteSpace(phonePrefix) ? null : phonePrefix,
             DisplayOrder = int.TryParse(
                 row.Cells.GetValueOrDefault("DisplayOrder", string.Empty), out var order) ? order : 0,
-            // D-506 — round-trip the delegation flag + arrival/departure dates.
+            // Round-trip the delegation flag + arrival/departure dates.
             // The service clears the dates when IsInvited is false, so a date on a
             // non-invited row is simply dropped (matching the CP Edit form).
             IsInvited = ParseInvited(row.Cells.GetValueOrDefault("IsInvited", string.Empty)),

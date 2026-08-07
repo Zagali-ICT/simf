@@ -176,6 +176,18 @@ void main() {
       expect(find.text('Sign out'), findsOneWidget);
     });
 
+    testWidgets('BUG-017 — the drawer is titled "Menu", not a second "More"',
+        (tester) async {
+      // The side drawer (a flat list of every destination) and the Profile
+      // "More" hub (My area / Forum info / Settings / Legal — the only home of
+      // the language row) were both labelled "More", so the two different menus
+      // were indistinguishable.
+      await _pump(tester, auth: _RecordingAuthController(signedIn: true));
+
+      expect(find.text('Menu'), findsOneWidget);
+      expect(find.text('More'), findsNothing);
+    });
+
     testWidgets('signed-out hides the calendar + logout, keeps contact + about',
         (tester) async {
       await _pump(tester, auth: _RecordingAuthController(signedIn: false));
@@ -259,14 +271,14 @@ void main() {
       expect(find.text('Gate scanner'), findsOneWidget);
       expect(find.text('Register a visitor'), findsOneWidget);
       expect(find.text('Scan visitor badge'), findsNothing);
-      expect(find.text('My Visitors'), findsNothing);
+      expect(find.text('My Booth Visitors'), findsNothing);
     });
 
     testWidgets('Exhibitor sees the scan + my-visitors entries, not the staff ones',
         (tester) async {
       await pumpRole(tester, AppRole.exhibitor);
       expect(find.text('Scan visitor badge'), findsOneWidget);
-      expect(find.text('My Visitors'), findsOneWidget);
+      expect(find.text('My Booth Visitors'), findsOneWidget);
       expect(find.text('Gate scanner'), findsNothing);
       expect(find.text('Register a visitor'), findsNothing);
     });
@@ -278,7 +290,7 @@ void main() {
       expect(find.text('Gate scanner'), findsNothing);
       expect(find.text('Register a visitor'), findsNothing);
       expect(find.text('Scan visitor badge'), findsNothing);
-      expect(find.text('My Visitors'), findsNothing);
+      expect(find.text('My Booth Visitors'), findsNothing);
     });
 
     testWidgets('Visitor sees none of the operational entries', (tester) async {
@@ -286,7 +298,7 @@ void main() {
       expect(find.text('Gate scanner'), findsNothing);
       expect(find.text('Register a visitor'), findsNothing);
       expect(find.text('Scan visitor badge'), findsNothing);
-      expect(find.text('My Visitors'), findsNothing);
+      expect(find.text('My Booth Visitors'), findsNothing);
     });
   });
 

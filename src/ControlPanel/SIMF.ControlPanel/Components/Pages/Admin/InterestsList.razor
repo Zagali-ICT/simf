@@ -1,5 +1,4 @@
-@* Control Panel — Interests lookup CRUD (P9 — D-050; popup-CRUD D-132;
-   centralized dialog/full-page framing D-353). Administrator-only. SimfBanner
+@* Control Panel — Interests lookup CRUD. Administrator-only. SimfBanner
    page-top, SimfDataGrid with Multiselect + numbered pager. Add / Edit / View /
    Delete are hosted by CrudShell, which frames the reusable InterestAddEdit and
    InterestViewDelete forms either as a popup or a full page per the admin's
@@ -19,7 +18,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminInterestSummary"
@@ -55,7 +56,12 @@
                           DeleteLabel="@L["Admin.Interests.Action.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Interests.Create"
+                          EditPermission="@PermissionCatalog.Interests.Edit"
+                          DeletePermission="@PermissionCatalog.Interests.Delete"
+                          ImportPermission="@PermissionCatalog.Interests.Import"
+                          ExportPermission="@PermissionCatalog.Interests.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

@@ -1,43 +1,54 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using SIMF.Common;
 
 namespace SIMF.Domain.Common;
 
+/// <summary>
+/// The lighter of the two bases: an id, a creating user and a creation stamp,
+/// with no update or soft-delete columns. Entities that need those derive from
+/// <see cref="BaseAuditEntity"/> instead.
+/// </summary>
 public abstract class BaseEntity
 {
     public Guid Id { get; set; }
 
-    /// <summary>The user this key binds to. Real FK to
-    /// <see cref="SimfUser.Id"/> (same Identity DbContext).</summary>/
+    /// <summary>The user who created the row.</summary>
     public Guid CreateBy { get; set; }
 
-    /// <summary>When the row was created (UTC). Defaulted at construction in
-    /// UTC (fixes the prior local-time <c>DateTime.Now</c> default).</summary>
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    /// <summary>Saudi local time, defaulted at construction from the shared
+    /// clock, which is fixed at +03:00 with no daylight saving. Deliberately
+    /// neither <c>DateTime.Now</c>, which depends on the host, nor
+    /// <c>UtcNow</c>, which no surface here displays.</summary>
+    public DateTime CreatedAt { get; set; } = SimfClock.Now;
 }
 
+/// <summary>
+/// The base for entities that carry a full audit trail: who created and last
+/// changed the row, when, and whether it is soft-deleted. The audit
+/// save-changes interceptor fills the stamps that are left unset.
+/// </summary>
 public abstract class BaseAuditEntity
 {
     public Guid Id { get; set; }
 
-    /// <summary>When the row was created (UTC) — stamped by the audit
-    /// SaveChanges interceptor from the shared TimeProvider when left unset.</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    /// <summary>Saudi local time, stamped by the audit interceptor when left
+    /// unset.</summary>
+    public DateTime CreatedAt { get; set; }
 
-    /// <summary>The signed-in user who created the row (JWT <c>sub</c>); stamped
-    /// by the audit interceptor when unset. <c>Guid.Empty</c> for seeder / system
-    /// writes with no bound actor.</summary>
+    /// <summary>The signed-in user who created the row, stamped by the audit
+    /// interceptor when unset. Empty for seeder and system writes, which have no
+    /// actor bound to them.</summary>
     public Guid CreatedBy { get; set; }
 
-    //
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     public Guid? UpdatedBy { get; set; }
 
-    // /// <summary>Soft-delete flag — false hides the group (and is treated as
-    /// hiding its entries) without losing the rows.</summary>
-    public bool IsActive { get; set; } = true;//isDeleted
-    public DateTimeOffset? DeletedAt { get; set; }
+    /// <summary>Soft-delete flag: false hides the row without losing it.</summary>
+    public bool IsActive { get; set; } = true;
+
+    public DateTime? DeletedAt { get; set; }
 
     public void Deactivate() => IsActive = false;
 }

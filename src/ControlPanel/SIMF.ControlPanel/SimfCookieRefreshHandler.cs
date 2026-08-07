@@ -1,5 +1,8 @@
-// Tests: SIMF.ControlPanel.Tests/SimfCookieRefreshHandlerTests.cs (todo).
+// Tests: SIMF.ControlPanel.Tests/SimfCookieRefreshHandlerTests.cs
+using System.Collections.Concurrent;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using SIMF.ApiClient;
@@ -12,11 +15,19 @@ namespace SIMF.ControlPanel;
 /// Cookie-validation hook that keeps the bearer token in the auth cookie
 /// fresh by exchanging the stored refresh_token for a new token pair just
 /// before the access_token expires. Wired into the cookie scheme from
-/// <c>Program.cs</c>. A near-identical copy lives in <c>SIMF.Web</c>
-/// — the file is duplicated by design, matching the existing
-/// SignInTicketStore / AuthEndpoints split between the two host projects.
+/// <c>Program.cs</c>.
 ///
-/// <para>Why this exists (D-121): the auth cookie lives 8 hours with sliding
+/// <para>This paragraph previously read "a near-identical copy lives in
+/// <c>SIMF.Web</c> … the Website copy still rotates once per request". There is
+/// no such copy: the Website holds no <c>expires_at</c>, no cookie-validate
+/// rotation and no equivalent type. Corrected rather than deleted, because the
+/// claim actively misleads — a reader taking it at face value goes hunting for
+/// a second file to change, and may conclude the Website carries an unpatched
+/// variant of whatever bug they are chasing. The cross-request single-flight
+/// (see <see cref="Rotations"/>) is simply this handler's, and exists
+/// because the Control Panel fires several authenticated fetches per page.</para>
+///
+/// <para>Why this exists: the auth cookie lives 8 hours with sliding
 /// renewal but the access token's lifetime is 30 minutes (JwtOptions).
 /// Refresh-token rotation has always existed end-to-end on the API and in
 /// SimfAuthClient — but nothing in either web project ever called it. So
@@ -32,7 +43,7 @@ namespace SIMF.ControlPanel;
 public static class SimfCookieRefreshHandler
 {
     /// <summary>Name of the stored token holding the access_token expiry
-    /// (round-trip ISO-8601 UTC). Written at sign-in and on every successful
+    /// (round-trip ISO-8601, zoned). Written at sign-in and on every successful
     /// refresh; read on every cookie-validate.</summary>
     public const string ExpiresAtTokenName = "expires_at";
 
@@ -41,6 +52,33 @@ public static class SimfCookieRefreshHandler
     /// validator's 30-second clock-skew tolerance so a refresh always lands
     /// well inside the still-valid window — see <c>JwtBearerSetup.cs</c>.</summary>
     private static readonly TimeSpan RefreshThreshold = TimeSpan.FromMinutes(2);
+
+    /// <summary>How long a completed rotation stays replayable to a request that
+    /// still carries the OLD refresh token (see <see cref="Rotations"/>). Matched
+    /// to <see cref="RefreshThreshold"/>: past it, a cookie presenting a rotated
+    /// token is genuinely stale and the API's reuse-detection should see it.</summary>
+    private static readonly TimeSpan RotationGrace = TimeSpan.FromMinutes(2);
+
+    /// <summary>Cross-request single-flight, keyed by a fingerprint of
+    /// the PRESENTED refresh token.
+    ///
+    /// <para>Every Control Panel page loads its data with several same-origin
+    /// authenticated fetches, and this hook runs on each one. Without this map two
+    /// requests carrying the same cookie both present the same refresh token: the
+    /// first rotates it, the second presents a token the API has already revoked,
+    /// and the API treats that as theft — it revokes EVERY session for the account
+    /// (SessionService.RefreshAsync) — so an admin in the middle of working is
+    /// bounced to /login. The same happens when the browser abandons a request
+    /// mid-rotation: the server rotated, the new cookie never landed.</para>
+    ///
+    /// <para>Holding the rotation here means concurrent (and slightly late)
+    /// requests share ONE rotation and all store the same fresh token pair.</para></summary>
+    private static readonly ConcurrentDictionary<string, Rotation> Rotations =
+        new(StringComparer.Ordinal);
+
+    private sealed record Rotation(
+        Lazy<Task<ApiResult<AuthTokens>>> Attempt,
+        DateTime StartedAt);
 
     public static async Task OnValidatePrincipalAsync(CookieValidatePrincipalContext context)
     {
@@ -59,37 +97,81 @@ public static class SimfCookieRefreshHandler
             return;
         }
 
-        var api = context.HttpContext.RequestServices.GetRequiredService<SimfAuthClient>();
-        ApiResult<AuthTokens> envelope;
-        try
+        var envelope = await RotateAsync(context, refreshToken);
+
+        if (envelope.Success && envelope.Data is not null)
         {
-            envelope = await api.RefreshAsync(
-                new RefreshRequest { RefreshToken = refreshToken },
-                context.HttpContext.RequestAborted);
-        }
-        catch (OperationCanceledException)
-            when (context.HttpContext.RequestAborted.IsCancellationRequested)
-        {
-            // The request was abandoned mid-validation. Leave the principal
-            // intact — the user will retry naturally.
+            StoreTokens(properties, envelope.Data, SimfClock.Now);
+            context.ShouldRenew = true;
             return;
         }
 
+        // The API could not be reached (an unreachable service, a
+        // timeout or a proxy error page all surface as INTERNAL_ERROR from
+        // SimfAuthClient). That is not a rejection of the session, so keep the
+        // principal: the access token is still valid for up to RefreshThreshold
+        // and the next request retries. Signing out on a network blip is exactly
+        // the mid-work bounce to /login this fix exists to stop.
+        if (string.Equals(envelope.Error?.Code, ErrorCodes.InternalError, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        // The refresh token was revoked, expired, or rejected. Drop the
+        // principal so the next request is unauthenticated and the user
+        // is sent through /login — the same end state the cookie's own
+        // 8-hour expiry would deliver, just reached sooner.
+        context.RejectPrincipal();
+        await context.HttpContext.SignOutAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme);
+    }
+
+    /// <summary>Runs (or joins) the one rotation for <paramref name="refreshToken"/>
+    /// — see <see cref="Rotations"/>. The API call deliberately does NOT take the
+    /// request's cancellation token: a browser that abandons the request mid-flight
+    /// must not leave the token rotated on the server and un-stored here.</summary>
+    private static async Task<ApiResult<AuthTokens>> RotateAsync(
+        CookieValidatePrincipalContext context,
+        string refreshToken)
+    {
+        var now = SimfClock.Now;
+        PruneExpiredRotations(now);
+
+        var api = context.HttpContext.RequestServices.GetRequiredService<SimfAuthClient>();
+        var key = Fingerprint(refreshToken);
+        var rotation = Rotations.GetOrAdd(key, _ => new Rotation(
+            new Lazy<Task<ApiResult<AuthTokens>>>(() => api.RefreshAsync(
+                new RefreshRequest { RefreshToken = refreshToken },
+                CancellationToken.None)),
+            now));
+
+        var envelope = await rotation.Attempt.Value;
         if (!envelope.Success || envelope.Data is null)
         {
-            // The refresh token was revoked, expired, or rejected. Drop the
-            // principal so the next request is unauthenticated and the user
-            // is sent through /login — the same end state the cookie's own
-            // 8-hour expiry would deliver, just reached sooner.
-            context.RejectPrincipal();
-            await context.HttpContext.SignOutAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme);
-            return;
+            // Only a SUCCESSFUL rotation is worth replaying. Drop a failed one at
+            // once so the next request re-asks the API rather than inheriting a
+            // stale verdict for the whole grace window.
+            Rotations.TryRemove(key, out _);
         }
 
-        StoreTokens(properties, envelope.Data, DateTimeOffset.UtcNow);
-        context.ShouldRenew = true;
+        return envelope;
     }
+
+    private static void PruneExpiredRotations(DateTime now)
+    {
+        foreach (var entry in Rotations)
+        {
+            if (now - entry.Value.StartedAt > RotationGrace)
+            {
+                Rotations.TryRemove(entry.Key, out _);
+            }
+        }
+    }
+
+    /// <summary>A SHA-256 fingerprint of the refresh token, so the in-memory
+    /// single-flight map is keyed by a digest rather than the secret itself.</summary>
+    private static string Fingerprint(string refreshToken) =>
+        Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken)));
 
     /// <summary>
     /// Persists the access_token / refresh_token / expires_at trio onto the
@@ -101,7 +183,7 @@ public static class SimfCookieRefreshHandler
     public static void StoreTokens(
         AuthenticationProperties properties,
         AuthTokens tokens,
-        DateTimeOffset issuedAt)
+        DateTime issuedAt)
     {
         properties.StoreTokens(
         [
@@ -110,7 +192,29 @@ public static class SimfCookieRefreshHandler
             new AuthenticationToken
             {
                 Name = ExpiresAtTokenName,
-                Value = issuedAt.AddSeconds(tokens.AccessTokenExpiresInSeconds)
+                // Stamped WITH its +03:00 offset. issuedAt comes from
+                // SimfClock, whose Kind is Unspecified, and "O" on an
+                // Unspecified value emits no "Z" and no offset at all. That
+                // bare string is handed to the browser by /session/status,
+                // where `new Date(...)` reads an offset-less ISO date-time as
+                // the BROWSER's local time — so the session's apparent length
+                // silently tracked whichever timezone the admin's machine was
+                // set to. Naming the offset makes the value an instant, which
+                // is what both sides are actually comparing against.
+                //
+                // SpecifyKind first: new DateTimeOffset(DateTime, TimeSpan)
+                // THROWS when the value's Kind is Utc or Local and its own
+                // offset disagrees with the one given. This method is public
+                // and that throw would land inside OnValidatePrincipal — i.e.
+                // it would break authentication for every request rather than
+                // degrade. Both callers pass SimfClock.Now today; normalising
+                // means a future one passing DateTime.UtcNow cannot take the
+                // Control Panel down.
+                Value = new DateTimeOffset(
+                        DateTime.SpecifyKind(
+                            issuedAt.AddSeconds(tokens.AccessTokenExpiresInSeconds),
+                            DateTimeKind.Unspecified),
+                        SimfClock.Offset)
                     .ToString("O", CultureInfo.InvariantCulture),
             },
         ]);
@@ -118,11 +222,18 @@ public static class SimfCookieRefreshHandler
 
     private static bool NeedsRefresh(string? expiresAtRaw)
     {
-        // Without a stored expiry (e.g. a cookie minted before D-121 lands)
+        // Without a stored expiry
         // the safest move is to refresh immediately — the alternative is
         // waiting for the next BFF call to 401, which is exactly the bug
         // this hook exists to fix.
         if (string.IsNullOrEmpty(expiresAtRaw)) return true;
+
+        // An older cookie carries no offset, and parsing
+        // that would silently assume THIS host's zone. Treat a zone-free legacy
+        // value as due: one extra rotation on the next request beats a wrong
+        // answer, and it is the same "refresh now" branch an absent value takes.
+        if (!HasZoneDesignator(expiresAtRaw)) return true;
+
         if (!DateTimeOffset.TryParse(expiresAtRaw,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.RoundtripKind,
@@ -130,6 +241,19 @@ public static class SimfCookieRefreshHandler
         {
             return true;
         }
-        return expiresAt - DateTimeOffset.UtcNow <= RefreshThreshold;
+        return expiresAt - DateTimeOffset.Now <= RefreshThreshold;
+    }
+
+    /// <summary>True when a round-trip timestamp names its zone ("…Z" or
+    /// "…+03:00") — i.e. it identifies an instant, rather than a bare
+    /// wall-clock reading whose meaning depends on who reads it.</summary>
+    private static bool HasZoneDesignator(string value)
+    {
+        if (value.EndsWith('Z') || value.EndsWith('z')) return true;
+
+        // "…±HH:mm". Measured from the END, so the date's own '-' separators
+        // can never be mistaken for the offset's sign.
+        var sign = value.LastIndexOfAny(['+', '-']);
+        return sign > 0 && value.Length - sign == 6 && value[sign + 3] == ':';
     }
 }

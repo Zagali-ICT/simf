@@ -49,7 +49,7 @@
                                @bind-Value="_slotMinutes" Disabled="_busy" />
             </div>
             <div class="simf-form__actions">
-                <SimfButton Type="button" Loading="_busy" OnClick="AddWindowAsync">
+                <SimfButton Type="button" Loading="_busy" OnClick="AddWindowAsync" LoadingLabel="@L["Grid.Working"]">
                     @L["Admin.DelegationAvailability.Add"]
                 </SimfButton>
             </div>
@@ -81,8 +81,11 @@
     </div>
 </div>
 
-@* R10 (D-767) — must-decide guard for the destructive availability-window delete. *@
+@* Must-decide guard for the destructive availability-window delete. *@
+@* Same code as the page gate: the API gates this DELETE on
+.Manage too, so there is no split to express. *@
 <SimfConfirm Open="_confirmOpen" Title="@L["Grid.Delete"]"
              Message="@L["Admin.Availability.DeleteConfirmMsg"]"
              ConfirmLabel="@L["Grid.Delete"]" CancelLabel="@L["Admin.Meetings.Close"]"
-             Danger="true" Busy="_busy" OnConfirm="RunDeleteAsync" OnCancel="CancelConfirm" />
+             Danger="true" Busy="_busy" OnConfirm="RunDeleteAsync" OnCancel="CancelConfirm"
+             Permission="@PermissionCatalog.DelegationMeetings.Manage" />

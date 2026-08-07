@@ -10,6 +10,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/refresh.dart';
 import '../exhibition/entity_detail_helpers.dart';
 import '../exhibition/entity_detail_scaffold.dart';
 import '../exhibition/entity_logo_image.dart';
@@ -48,10 +49,14 @@ class ExhibitorDetailScreen extends ConsumerWidget {
       error: (_, __) => SimfPageShell(
         title: l10n.exhibitorDetailTitle,
         onBack: () => backOrHome(context),
-        body: SimfErrorState(
-          message: l10n.entityDetailError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(exhibitorDetailProvider(boothId)),
+        body: SimfRefreshableMessage(
+          onRefresh: () =>
+              refreshAsync(ref, exhibitorDetailProvider(boothId).future),
+          child: SimfErrorState(
+            message: l10n.entityDetailError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(exhibitorDetailProvider(boothId)),
+          ),
         ),
       ),
       data: (booth) => _build(context, ref, l10n, booth),
@@ -69,6 +74,8 @@ class ExhibitorDetailScreen extends ConsumerWidget {
     final name = booth.localizedExhibitor(isArabic) ?? booth.localizedName(isArabic);
 
     return EntityDetailScaffold(
+      onRefresh: () =>
+          refreshAsync(ref, exhibitorDetailProvider(booth.id).future),
       headerTitle: l10n.exhibitorDetailTitle,
       aboutHeader: l10n.exhibitorAboutHeader,
       websiteLabel: l10n.websiteLabel,
@@ -82,6 +89,7 @@ class ExhibitorDetailScreen extends ConsumerWidget {
             ? null
             : '$baseUrl/app/assets/CompanyLogo/${booth.exhibitorContactId}/image',
         initials: entityInitials(name),
+        name: name,
       ),
       name: name,
       locationLine: entityLocationLine(

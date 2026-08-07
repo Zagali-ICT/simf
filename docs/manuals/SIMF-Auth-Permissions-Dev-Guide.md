@@ -569,9 +569,13 @@ new("Module.Awards", "/admin/awards",
 
 Add the matching `Module.Awards` resource key to `Strings` (the `LabelKey`).
 
-### Step 7 — Wrap action buttons in `<AuthorizedAction Permission="...">`
+### Step 7 — Gate every action control, in whichever of the two places renders it
 
-For create/edit/delete controls inside the page, gate each on its specific action code so it disappears for users who can view but not act (`AuthorizedAction.razor`):
+A page has two kinds of action control and they are gated differently. Miss the
+second and the page looks gated while half of its buttons are not — that is
+exactly what happened on 37 pages before D-830.
+
+**7a — buttons the page writes: wrap them.**
 
 ```razor
 <AuthorizedAction Permission="@PermissionCatalog.Awards.Create">
@@ -579,7 +583,143 @@ For create/edit/delete controls inside the page, gate each on its specific actio
 </AuthorizedAction>
 ```
 
-This is UX only ("don't show what you can't do") — the API gate from Step 4 is still the enforcement.
+This includes anything inside `<RowActions>` and inside a modal.
+
+**7b — buttons `SimfDataGrid` renders for you: name the permission (D-830).**
+
+The grid draws its own Add / Edit / Delete / Duplicate / Paste / Import / Export /
+Approve / Reject controls from the callbacks you wire, in the toolbar, at the row
+end and in the right-click menu. `<AuthorizedAction>` cannot reach them, so the
+grid takes a code per action instead:
+
+```razor
+<SimfDataGrid TItem="AdminAwardSummary"
+              OnAdd="OnAddAsync" OnEditOne="OnEditAsync" OnDeleteOne="OnDeleteAsync"
+              OnImport="OnImportAsync" OnExport="OnExportAsync"
+              AddPermission="@PermissionCatalog.Awards.Create"
+              EditPermission="@PermissionCatalog.Awards.Edit"
+              DeletePermission="@PermissionCatalog.Awards.Delete"
+              ImportPermission="@PermissionCatalog.Awards.Import"
+              ExportPermission="@PermissionCatalog.Awards.Export">
+```
+
+Null is the default and means ungated, so an un-opted grid renders as before.
+Seven parameters, not nine: one code covers every render site of its action, so
+`DeletePermission` gates the bulk toolbar button, the row bin and the context-menu
+entry together, and `AddPermission` also covers Duplicate and Paste (all three
+create; the catalogue has no Duplicate or Paste code, and the API gates
+`POST /admin/admins/duplicate` on the same `Admins.Create` as plain create).
+**Export is gated like the rest** — it takes a spreadsheet of the whole result set
+off the premises, and every list has its own `X.Export` code on that endpoint.
+Select all, Copy and Details are the only ungated affordances.
+
+**Use the code that gates the ENDPOINT the button calls, not a name that looks
+right.** The two are often not the same word, and every one of these is real:
+
+- `UsersList`'s Edit opens the roles form: `Admins.AssignRoles`, because there is
+  no `Admins.Edit` and no `PUT /admin/admins/{id}`.
+- `ContentBlocks` Add is an upsert: `ContentBlocks.Edit`.
+- Invitations Add/Edit/Delete are all `Invitations.Manage`.
+- `SessionModerators` Add is `.Assign`; `BusinessMeetings` Add is `.Schedule`.
+- **A page can host two grids over two resources.** `MeetingTablesList`'s second
+  grid is hall allocations, so its Add/Delete are `HallAllocations.Edit`, not the
+  `MeetingTables.Edit` of the grid above it.
+- **Gating the ROUTE is only half of it — check the SUBJECT too (D-836).** A
+  correct permission on the endpoint still lets a caller hand it an id from the
+  other tier. Any `/admin/{visitors|others}/{id}/…` endpoint must call
+  `IAdminUserProvisioningService.IsSubjectInFamilyAsync(id, ExpectedKind,
+  ExpectedIsVisitor)` and answer **404** when it fails — never 403, which would
+  confirm the subject exists to an admin outside its tier. `UserType` alone is
+  **not** a tier check: D-186 made every non-admin account `UserType.Visitor`,
+  so the visitors and the others route pass the same value and a UserType-only
+  guard separates Admin from everyone else and nothing more. That is exactly how
+  the ID-document routes leaked national-ID images across the two desks. Note
+  the deliberate exception: `POST /admin/admins/reset-two-factor` acts on ANY
+  user by design (D-041, help-desk recovery) despite its route and its
+  `Admins.*` code.
+- **An action is gated by the tier it acts on, not by the file it lives in
+  (D-834).** Every button on `/admin/others/pending` is `Others.*`, bulk and
+  per-row alike, because every one of them acts on a partner account. This bullet
+  used to say the opposite - that the per-row pair was `Admins.Approve` /
+  `Admins.Reject` "because `ApproveStaffEndpoint` serves both routes". That was
+  wrong twice over: `ApproveStaffEndpoint.cs` is a FILE holding two separate
+  endpoint classes, and `ApproveOtherEndpoint` had simply kept the policy line it
+  was copy-pasted with. The permission catalogue had specified `Others.*` for both
+  routes all along. `PermissionEnforcementTests`
+  `.An_approval_route_is_gated_on_the_permission_for_the_tier_it_acts_on` now
+  derives the required code from the route, so the next copy-paste fails the build
+  instead of shipping.
+- **The page's own gate is not a shortcut.** `/admin/gates` is gated on
+  `Gates.Manage`, but its Import needs `Gates.Import` and its Export
+  `Gates.Export`.
+
+**7b-ter — you do not have to hide the container yourself (D-837).**
+`SimfDataGrid` resolves its seven action permissions once per parameter set and
+decides the toolbar bar, the actions column and the right-click menu from the
+result, so a holder denied every action on a grid sees none of those containers
+rather than an empty one. Do not add page-level `@if` guards around a grid to
+work around that — set the permission parameters and let the grid decide. The
+booleans default to permitted, so a grid with no permission parameters, or a
+host with no authorization cascade, renders exactly as before.
+
+**7b-bis — leave a way to READ the row (D-835).** Gating a grid's Edit and Delete
+often removes the only two ways to open a row, turning "cannot change this
+record" into "cannot read it" - and the actions column then renders as an empty
+box, because the grid decides whether to draw that column from the callbacks it
+sees synchronously, not from the permissions it does not. So a grid that gates
+Edit or Delete must also wire `OnDetailsOne` and render a `SimfDetails` block:
+
+```razor
+<SimfDataGrid ... OnDetailsOne="OpenEntryDetails"
+                  DetailsLabel="@L["Admin.Faq.Action.Details"]"
+                  EditPermission="@PermissionCatalog.Faq.Edit" />
+
+<SimfDetails Open="@(_entryDetails is not null)" Title="@(_entryDetails?.Question ?? "")"
+             CloseLabel="@L["Grid.Close"]" OnClose="@(() => _entryDetails = null)">
+    <SimfDetailRow Label="@L["Admin.Faq.Col.Answer"]" Value="@_entryDetails.Answer" />
+</SimfDetails>
+```
+
+Details takes **no permission** - reading the row is what the page's own View
+gate already bought - and it opens from the row the grid already holds, so it
+needs no second fetch. The alternative is an ungated control in `RowActions`
+that opens the record; if you take that route, add the grid to
+`ReviewedReadPaths` in `ActionPermissionGuardRatchetTests` naming the control.
+The ratchet enforces this for both gating idioms: the `*Permission` parameters
+**and** a conditional callback (`_canEdit ? … : default`), which is stricter
+because the grid then gets no delegate at all.
+
+**7c — the confirm dialog behind the button (D-831).** `SimfConfirm` renders its
+own Confirm button from `OnConfirm`, for the same reason and with the same fix:
+
+```razor
+<SimfConfirm Open="_confirmOpen" OnConfirm="ConfirmDeleteAsync" OnCancel="Cancel"
+             Permission="@PermissionCatalog.Awards.Delete" />
+```
+
+Cancel is deliberately never gated: a holder who may not commit must still be
+able to close a dialog that opened on them, and `SimfConfirm` sets
+`RequireExplicitClose`. Set the code the **confirmed action** calls, which is not
+always what the dialog is about — `SessionSummariesList`'s "saving will unpublish
+this" confirm only calls the plain save endpoint, so it is `.Edit`, not
+`.Publish`.
+
+> **Never put a Razor comment inside a component tag.** `<SimfConfirm @* why *@
+> Open="...">` compiles and then throws at render time, because Razor reads the
+> comment as an attribute name. D-830 shipped exactly that into a page with no
+> render test, and it reached production-bound `main`. Put the comment on the
+> line above the tag; a ratchet fact now scans for it.
+
+`tests/SIMF.ControlPanel.Tests/ActionPermissionGuardRatchetTests.cs` fails the
+build on **any** permission-gated page that wires a grid action with no matching
+code (not just View-gated ones — that filter is what let `/admin/gates` through),
+on a code that is merely the page's own `View` (which gates nothing), on a NEW
+grid callback nobody has classified, on a new grid parameter no rule requires, on
+a gated page opening a confirm dialog with no `Permission`, and on a Razor comment
+hidden among a component's attributes.
+
+This is UX only ("don't show what you can't do") — the API gate from Step 4 is
+still the enforcement.
 
 ### Step 8 — (Optional) grant to a baseline or custom role
 
@@ -602,7 +742,7 @@ Two suites enforce completeness — run them:
 4. API endpoint(s): `Policies(PermissionCatalog.PolicyFor(...))` + `RequireApprovedAccount`
 5. CP page: `@attribute [RequirePermission(...)]`
 6. Nav item: `RequiredPermission:` (or `null`/`IsStub` only for dashboard/placeholders) + a `Module.*` resource key
-7. Action buttons: `<AuthorizedAction Permission="...">`
+7. Action buttons: page-written ones wrapped in `<AuthorizedAction Permission="...">`; `SimfDataGrid`-rendered ones named via `AddPermission` (also covers Duplicate + Paste) / `EditPermission` / `DeletePermission` / `ImportPermission` / `ExportPermission` / `ApprovePermission` / `RejectPermission` — each set to the code that gates the endpoint it calls
 8. (Optional) baseline-role grant via Step-2 `BaselineRoles`; custom roles via the Roles page
 9. Run `CpNavigationPermissionTests` + `PermissionEnforcementTests` — both green
 
@@ -613,9 +753,13 @@ Relevant files (all under `d:/SIMF/System/V1.0.0`):
 - `src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ThemesList.razor`
 - `src/ControlPanel/SIMF.ControlPanel/CpNavigation.cs`
 - `src/ControlPanel/SIMF.ControlPanel/Components/AuthorizedAction.razor`
+- `src/Shared/SIMF.Components/Forms/SimfActionGate.razor` (the one policy decision; `AuthorizedAction` is an alias over it)
+- `src/Shared/SIMF.Components/Forms/SimfDataGrid.razor` (the eight action-permission parameters)
 - `src/ControlPanel/SIMF.ControlPanel/Authorization/PermissionAuthorization.cs` (`RequirePermissionAttribute`, `PermissionPolicyProvider`)
 - `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs`
 - `tests/SIMF.ControlPanel.Tests/CpNavigationPermissionTests.cs`
+- `tests/SIMF.ControlPanel.Tests/ActionPermissionGuardRatchetTests.cs` (markup ratchet, both kinds of control)
+- `tests/SIMF.ControlPanel.Tests/GridActionPermissionRenderTests.cs` (the gate asserted by rendering)
 
 ---
 

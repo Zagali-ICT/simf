@@ -1,4 +1,4 @@
-@* D-353 — reusable System Configuration View/Delete form, hosted by CrudShell
+@* Reusable System Configuration View/Delete form, hosted by CrudShell
    (popup or full page) from ConfigurationList. Inherits CrudViewDeleteFormBase
    so it exposes the standard surface (IsDelete / Initial / OnDeleted /
    OnCancel). Read-only details always show; when IsDelete=true a Delete button
@@ -45,5 +45,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
-                 OnCancel="@(() => _confirming = false)" />
+                 OnCancel="@(() => _confirming = false)" 
+                 Permission="@PermissionCatalog.Configuration.Delete"/>
 }

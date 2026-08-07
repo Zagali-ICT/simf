@@ -29,7 +29,7 @@ public sealed class AiPromptsAddEditTests : CpComponentTestBase
         MaxOutputTokens: 512,
         IsActive: true,
         Version: 1,
-        DateTimeOffset.UnixEpoch,
+        DateTime.UnixEpoch,
         UpdatedAt: null);
 
     [Fact]

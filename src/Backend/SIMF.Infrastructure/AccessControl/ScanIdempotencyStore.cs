@@ -3,10 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Domain.AccessControl;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.AccessControl;
 
-/// <summary>D-148 — DB-backed 24h idempotency replay store
+/// <summary>DB-backed 24h idempotency replay store
 /// (SIMF-API-GATES-001 §9).</summary>
 internal sealed class ScanIdempotencyStore(
     SimfAppDbContext appDbContext,
@@ -18,7 +19,7 @@ internal sealed class ScanIdempotencyStore(
         string key, Guid gateId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(key)) { return null; }
-        var cutoff = timeProvider.GetUtcNow() - Retention;
+        var cutoff = timeProvider.SimfNow() - Retention;
 
         var record = await appDbContext.ScanIdempotencies.AsNoTracking()
             .Where(r => r.Key == key && r.GateId == gateId && r.StoredAt >= cutoff)
@@ -41,7 +42,7 @@ internal sealed class ScanIdempotencyStore(
             RequestHash = requestHash,
             ResponseHash = responseHash,
             ScanId = scanId,
-            StoredAt = timeProvider.GetUtcNow(),
+            StoredAt = timeProvider.SimfNow(),
         });
         await appDbContext.SaveChangesAsync(cancellationToken);
     }

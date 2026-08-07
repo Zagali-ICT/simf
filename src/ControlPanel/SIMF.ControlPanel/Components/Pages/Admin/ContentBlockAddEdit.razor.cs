@@ -1,20 +1,9 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
-using SIMF.Contracts.Faq;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -53,7 +42,7 @@ public partial class ContentBlockAddEdit
         _busy = true;
         try
         {
-            // Upsert-by-Key â€” one PUT serves both Add and Edit (the row is
+            // Upsert-by-Key — one PUT serves both Add and Edit (the row is
             // created if the Key is new, updated in place if it exists).
             var envelope = await JS.InvokeAsync<ApiResult<AdminContentBlockSummary>>(
                 "simfAccount.putJson", "/account/api/admin/content-blocks",

@@ -8,7 +8,7 @@ using SIMF.Contracts.Organisations;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/organisations/export</c> — the D-356 grid export for
+/// <c>POST /api/v1/admin/organisations/export</c> — the grid export for
 /// the Saudi-companies lookup. <b>Export only:</b> Organisations keeps its
 /// bespoke government-Excel bulk <c>Import</c> (<see cref="PermissionCatalog.Organisations.Import"/>,
 /// <c>OrganisationImportResult</c>), so no generic import endpoint is added here.

@@ -39,7 +39,39 @@ Wired: search filter, card → exhibitor detail, أرشدني → booth map, pul
 retry. **Flagged (feature call):** officer contact boxes show mail/call glyphs but
 wire no `mailto:`/`tel:` launch. No missing API.
 
+## Card header — the company name is never printed twice (PAR-B4, 2026-07-30)
+
+`BoothCompanyHeader` renders the exhibitor (full) name under the gold short name.
+The shipped seed sets `Name` and `ExhibitorName` to the **same** string on every
+booth (`docs/migrations/2026/SIMF_App_SeedGaps.sql`), so every seeded card showed
+the company name twice. The header now skips the beige full-name line when it
+trims to the same value as the short name above it; a genuinely distinct trading
+vs legal name still renders both. Fixing the seed instead would leave the card
+unprotected against the next duplicate row, so the guard lives in the widget.
+
 ## Tests
 
-`test/features/booths/booths_screen_test.dart` (12) + `test/golden/booths_golden_test.dart`.
+`test/features/booths/booths_screen_test.dart` (12) +
+`test/features/booths/booth_company_header_test.dart` (4, PAR-B4) +
+`test/golden/booths_golden_test.dart`.
 E2E: `docs/tests/e2e/mobile-booths.md`.
+
+## Logo / photo boxes (owner 2026-07-26)
+
+Every logo / photo box on this page renders through the shared
+[`SimfLogoImage`](../../../../src/Mobile/simf_app/lib/app/widgets/simf_logo_image.dart):
+a brand mark FITS its box (`BoxFit.contain`, replacing the crop-happy
+`BoxFit.cover`), a portrait still fills its frame (`BoxFit.cover`), and — where
+the box is not inside a tappable row — pressing it opens the picture full size
+in [`SimfImageViewer`](../../../../src/Mobile/simf_app/lib/app/widgets/simf_image_viewer.dart)
+(pinch-zoom, named for a screen reader, close / back to dismiss). The rules and
+their scenarios live once in [`e2e/mobile-logo-viewer.md`](../../../tests/e2e/mobile-logo-viewer.md)
+(E2E-LOGO-001..008).
+
+**DEF-LGO-002 (2026-07-27).** The card header's 48×48 booth-logo tile inset the
+mark horizontally only, so its content box was 40×48 while the image still asked
+for 48×48 — the tile's clip shaved 4px off each side of even a perfectly SQUARE
+logo. The inset is square now (`EdgeInsets.all(space1)`) and the mark is painted
+at the box's real 40×40, so nothing is cropped. Full-size-on-tap stays off here:
+the tile sits inside the tappable booth card, whose tap owns the navigation to
+the exhibitor detail, where the 108px identity logo IS tappable.

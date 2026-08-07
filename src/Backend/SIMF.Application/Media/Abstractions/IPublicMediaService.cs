@@ -3,7 +3,7 @@ using SIMF.Contracts.Media;
 
 namespace SIMF.Application.Media.Abstractions;
 
-/// <summary>D-199 — public (anonymous) read of the active media gallery
+/// <summary>Public (anonymous) read of the active media gallery
 /// (Mockup page 30). Paged; optionally narrowed to a single album and/or a
 /// single <see cref="MediaKind"/> (image / video). Mirrors
 /// <c>IPublicDelegationService</c> but with paging because a gallery can be

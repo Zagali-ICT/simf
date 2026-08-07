@@ -28,7 +28,7 @@
 | E2E-VPN-004 | View modal on a profile with no form data → `Admin.Pending.View.Empty` info alert | happy | P2 | _to author_ |
 | E2E-VPN-005 | Reject one visitor with a 50-char reason → Rejected + reason audited | happy | P0 | _to author_ |
 | E2E-VPN-006 | Reject validation — Submit disabled below 10 / above 500 chars | error | P1 | _to author_ |
-| E2E-VPN-007 | Bulk approve — select rows + "Approve selected" → `Approved {n}. Skipped {m}.` | happy | P1 | _to author_ |
+| E2E-VPN-007 | Bulk approve — select rows + "Approve selected" → confirm (D-809) → `Approved {n}. Skipped {m}.` | happy | P1 | _to author_ |
 | E2E-VPN-008 | Bulk reject — select rows + "Reject selected" → shared-reason modal → `Rejected {n}. Skipped {m}.` | happy | P1 | _to author_ |
 | E2E-VPN-009 | Empty queue renders `SimfEmptyState` (`Admin.Pending.None`) | happy | P1 | _to author_ |
 | E2E-VPN-010 | Auth gate — user lacking `Visitors.View` → `/not-permitted` | auth | P0 | _to author_ |
@@ -46,6 +46,8 @@
 | E2E-VPN-022 | Face photo thumbnail opens full / original-size in the stacked lightbox (D-387) | happy | P1 | _to author_ |
 | E2E-VPN-023 | Face photo downloads via the `<a download>` link (thumbnail + lightbox footer) (D-387) | happy | P2 | _to author_ |
 | E2E-VPN-024 | RTL / Arabic render of the View / Approve modal — all-data `<dl>`, tier picker, photo lightbox (D-385/386/387) | i18n | P1 | _to author_ |
+| E2E-VPN-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-VPN-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -200,6 +202,9 @@ Scenario: Approve several pending visitors in one batch
   Given the queue shows at least 3 pending visitor rows
   When the administrator ticks the "Select all" checkbox (or several per-row checkboxes)
   And clicks "Approve selected"
+  Then a SimfConfirm dialog opens titled "Approve selected accounts" naming the count (D-809)
+  And no request has been sent yet
+  When they click "Confirm approval"
   Then POST /account/api/admin/visitors/bulk-approve fires with body
       { "ids": [ ...selected guids... ] } and returns 200
   And a toast reads "Approved {Approved} user(s). Skipped {Skipped}."

@@ -69,22 +69,20 @@ public sealed class AccessibilityMarkupTests
         Assert.Contains($"id=\"{anchorId}\"", source);
     }
 
-    [Theory]
-    [InlineData("src/Website/SIMF.Web/Components/Pages/Account/PendingApproval.razor",
-                "account-pending-title")]
-    [InlineData("src/Website/SIMF.Web/Components/Pages/Account/Rejected.razor",
-                "account-rejected-title")]
-    public void Website_state_banner_page_uses_section_inside_layout_main(
-        string relativePath, string anchorId)
-    {
-        // H22 — D-081: page uses <section aria-labelledby> because the
-        // layout's <main> is the outer landmark. The section keeps the
-        // labelled-region semantic.
-        var source = ReadSource(relativePath);
-        Assert.Contains("<section", source);
-        Assert.Contains($"aria-labelledby=\"{anchorId}\"", source);
-        Assert.Contains($"id=\"{anchorId}\"", source);
-    }
+    // H22 — D-081 asserted the same <section aria-labelledby> shape on the
+    // WEBSITE's account state-banner pages (Components/Pages/Account/
+    // PendingApproval.razor and Rejected.razor). Those two rows were removed on
+    // 2026-07-28: D-774 ("remove auth from web") deleted the Website's entire
+    // account area, so the theory pointed at files that no longer exist and
+    // failed on "Expected source file not found" — an accusation of a defect in
+    // pages that were removed deliberately, not broken.
+    //
+    // No coverage is lost. The equivalent Control Panel pages
+    // (Components/Pages/Auth/{PendingApproval,Rejected}.razor) still exist and
+    // are still asserted by
+    // Cp_state_banner_page_has_main_landmark_with_matching_aria_labelledby
+    // above, and Website_main_layout_wraps_body_in_main_landmark below still
+    // guards the Website layout's own <main> landmark.
 
     [Fact]
     public void Website_main_layout_wraps_body_in_main_landmark()

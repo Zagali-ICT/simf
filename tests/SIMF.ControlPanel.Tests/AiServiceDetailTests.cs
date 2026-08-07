@@ -15,7 +15,7 @@ public sealed class AiServiceDetailTests : CpComponentTestBase
 {
     private static AdminAiPromptSummary Prompt(AiFeature feature, string key, AiProvider provider) =>
         new(Guid.NewGuid(), key, feature, key, key, provider, "model", 0.2, 512,
-            true, 1, DateTimeOffset.UnixEpoch, null);
+            true, 1, DateTime.UnixEpoch, null);
 
     [Fact]
     public void An_unknown_feature_shows_the_unknown_state()

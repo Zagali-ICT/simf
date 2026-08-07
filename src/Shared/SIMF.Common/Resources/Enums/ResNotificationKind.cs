@@ -3,7 +3,7 @@ using System.Resources;
 
 namespace SIMF.Common.Resources.Enums;
 
-/// <summary>D-110: resource accessor for <c>NotificationKind</c> enum display names.</summary>
+/// <summary>Resource accessor for <c>NotificationKind</c> enum display names.</summary>
 public static class ResNotificationKind
 {
     private static ResourceManager? _resourceManager;
@@ -45,6 +45,8 @@ public static class ResNotificationKind
     public static string MeetingRequested => Get(nameof(MeetingRequested));
     public static string MeetingReminder => Get(nameof(MeetingReminder));
     public static string AdminAnnouncement => Get(nameof(AdminAnnouncement));
+    public static string ExhibitorLeadCaptured => Get(nameof(ExhibitorLeadCaptured));
+    public static string SessionCancelled => Get(nameof(SessionCancelled));
 
     private static string Get(string key) =>
         ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;

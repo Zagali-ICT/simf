@@ -22,10 +22,10 @@ public sealed class EmailOptions
     public string FromName { get; set; } = "SIMF";
 
     /// <summary>
-    /// D-097: comma-, semicolon- or whitespace-separated list of operations
+    /// Comma-, semicolon- or whitespace-separated list of operations
     /// addresses that receive a failure-alert email when the email queue
     /// fails to enqueue a transactional message (the
-    /// <c>Email.EnqueueFailed</c> audit row, H10 — D-065). Empty when the
+    /// <c>Email.EnqueueFailed</c> audit row). Empty when the
     /// alert channel is not configured — the audit row is still written,
     /// the alert email is skipped. Typical values: a Support / IT
     /// distribution list address, or a small set of pager addresses.

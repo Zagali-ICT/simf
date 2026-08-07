@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
+// Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -14,7 +14,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-115 — admin CRUD over the <c>ProfileTypes</c> table. Read-only
+/// Admin CRUD over the <c>ProfileTypes</c> table. Read-only
 /// listings are still served by <see cref="AdminProfileTypeQueryService"/>;
 /// every mutation here audits one row and respects the per-UserType name
 /// uniqueness rule.
@@ -51,7 +51,7 @@ internal sealed class AdminProfileTypeCommandService(
         {
             rows = rows.Where(profileType => profileType.IsActive == isActive);
         }
-        // D-186: the CP Other-profile-types page filters this server-side.
+        // The CP Other-profile-types page filters this server-side.
         if (query.Filters.TryGetValue("isVisitor", out var isVisitorFilter)
             && bool.TryParse(isVisitorFilter, out var isVisitorValue))
         {
@@ -105,7 +105,7 @@ internal sealed class AdminProfileTypeCommandService(
         AdminCreateProfileTypeRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-186: only the Visitor scope is accepted for non-admin
+        // Only the Visitor scope is accepted for non-admin
         // profile types; the audience-vs-partner split lives on
         // request.IsVisitor (true = audience, false = partner / staff).
         if (!Enum.TryParse<UserType>(request.UserType, ignoreCase: true, out var userType)
@@ -138,35 +138,56 @@ internal sealed class AdminProfileTypeCommandService(
 
         var mobileAppRole = ParseMobileAppRole(request.MobileAppRole);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var profileType = new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = name,
             NameArabic = nameArabic,
             PageColor = pageColor,
-            // D-186: IsVisitor drives CP queue routing — true = Visitors
+            // IsVisitor drives CP queue routing — true = Visitors
             // approval queue, false = Others approval queue.
             IsForVisitor = request.IsVisitor,
             MobileAppRole = mobileAppRole,
-            // D-725: app sign-up picker visibility (default true; the CP
+            // App sign-up picker visibility (default true; the CP
             // form sends false for CP-only operational types).
             IsAppRegisterable = request.IsAppRegisterable,
-            // D-760: Meet-People networking visibility (default true).
+            // Meet-People networking visibility (default true).
             ShowInPartnerDirectory = request.ShowInPartnerDirectory,
             IsActive = request.IsActive,
             CreatedAt = now,
+            // The small number the printed badge carries. Allocated, not
+            // entered: it is a wire detail of the QR, not something an
+            // administrator should have to pick or keep unique.
+            Code = await ProfileTypeCodeAllocator.NextAsync(dbContext, cancellationToken),
         };
         dbContext.ProfileTypes.Add(profileType);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        await auditLog.WriteAsync(new AuditEntry
+        try
         {
-            EventType = AuditEvents.ProfileTypeCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={profileType.Id}; userType={userType}; name={name}",
-        }, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        // ProfileTypeCodeAllocator reads MAX(Code) and adds one, which is
+        // a read-then-insert: two admins creating a type at the same instant both
+        // compute the same number and the filtered unique index refuses the
+        // loser. The index is doing its job - a reused code would make a retired
+        // badge read as a different type on a scanner that is offline and cannot
+        // check the database - but an unhandled DbUpdateException surfaced as a
+        // 500. Translated to a typed 409, mirroring how the same changeset
+        // already handles the QrId race (AdminAccountService). Every other
+        // DbUpdateException still rethrows byte-identically.
+        catch (DbUpdateException ex) when (ex.ViolatesAnyIndex("IX_ProfileTypes_Code"))
+        {
+            throw new ApiException(
+                ErrorCodes.ProfileTypeCodeRace, 409,
+                "Another profile type was created at the same moment. Try again.",
+                "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0646\u0648\u0639 \u0645\u0644\u0641 \u0622\u062e\u0631 \u0641\u064a \u0646\u0641\u0633 \u0627\u0644\u0644\u062d\u0638\u0629. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.");
+        }
+
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProfileTypeCreated,
+            actorUserId,
+            $"id={profileType.Id}; userType={userType}; name={name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created ProfileType {Name} ({Id}) for {UserType}",
@@ -207,7 +228,7 @@ internal sealed class AdminProfileTypeCommandService(
             }
         }
 
-        // D-186 review-pass (threat-detection H-1): capture the prior
+        // Capture the prior
         // IsVisitor BEFORE the mutation so the audit Detail records
         // any flip. Silent flips would let an insider mass-launder
         // partner accounts into the audience queue with no SOC trail.
@@ -218,20 +239,20 @@ internal sealed class AdminProfileTypeCommandService(
         profileType.PageColor = (request.PageColor ?? string.Empty).Trim();
         profileType.MobileAppRole = ParseMobileAppRole(request.MobileAppRole);
         profileType.IsActive = request.IsActive;
-        // D-186: IsVisitor is mutable — flipping it re-routes the row
+        // IsVisitor is mutable — flipping it re-routes the row
         // between the CP Visitors and Others approval queues. The
         // underlying user accounts already use UserType.Visitor either way.
         profileType.IsForVisitor = request.IsVisitor;
-        // D-725: app sign-up picker visibility — the admin toggles whether a
+        // App sign-up picker visibility — the admin toggles whether a
         // self-registering user may pick this type.
         profileType.IsAppRegisterable = request.IsAppRegisterable;
-        // D-760: Meet-People networking visibility.
+        // Meet-People networking visibility.
         profileType.ShowInPartnerDirectory = request.ShowInPartnerDirectory;
-        profileType.UpdatedAt = timeProvider.GetUtcNow();
+        profileType.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var isVisitorChanged = oldIsVisitor != profileType.IsForVisitor;
-        // D-186 review-pass: count linked accounts when the flag
+        // Count linked accounts when the flag
         // changed so SOC can prioritise the audit row (a flip on a
         // ProfileType with hundreds of linked accounts is a much
         // larger blast radius than a flip on a freshly-created one).
@@ -240,12 +261,10 @@ internal sealed class AdminProfileTypeCommandService(
                 .CountAsync(profile => profile.ProfileTypeId == id, cancellationToken)
             : 0;
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProfileTypeUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = isVisitorChanged
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProfileTypeUpdated,
+            actorUserId,
+            isVisitorChanged
                 ? $"id={profileType.Id}; name={profileType.Name}; "
                     + $"active={profileType.IsActive}; "
                     + $"isVisitorChanged=true; isVisitorOld={oldIsVisitor}; "
@@ -253,7 +272,7 @@ internal sealed class AdminProfileTypeCommandService(
                     + $"linkedAccountCount={linkedAccountCount}"
                 : $"id={profileType.Id}; name={profileType.Name}; "
                     + $"active={profileType.IsActive}; isVisitorChanged=false",
-        }, cancellationToken);
+            cancellationToken);
 
         return ToSummary(profileType);
     }
@@ -290,16 +309,14 @@ internal sealed class AdminProfileTypeCommandService(
         }
 
         profileType.IsActive = false;
-        profileType.UpdatedAt = timeProvider.GetUtcNow();
+        profileType.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProfileTypeDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={profileType.Id}; name={profileType.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProfileTypeDeactivated,
+            actorUserId,
+            $"id={profileType.Id}; name={profileType.Name}",
+            cancellationToken);
     }
 
     private static AdminProfileTypeSummary ToSummary(UserProfileType profileType) =>
@@ -314,7 +331,7 @@ internal sealed class AdminProfileTypeCommandService(
             profileType.IsAppRegisterable,
             profileType.ShowInPartnerDirectory);
 
-    /// <summary>D-161 — parses the wire-side stringly mobile-app-role,
+    /// <summary>Parses the wire-side stringly mobile-app-role,
     /// rejecting unknown values with a typed 400. Null / empty defaults
     /// to <see cref="MobileAppRole.None"/>. <see cref="MobileAppRole.Visitor"/>
     /// is rejected because the Visitor mapping is resolved from

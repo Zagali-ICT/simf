@@ -100,9 +100,70 @@ Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
 
 | Script | Service | Key groups |
 |--------|---------|-----------|
-| [set-env-api.ps1](set-env-api.ps1) | SimfAPI | `SIMF_ConnectionStrings__*`, `SIMF_Jwt__SigningKey`, `SIMF_Email__*`, `SIMF_SuperAdmin__*`, `SIMF_Storage__*`, `SIMF_Ai__*`, `SIMF_ReverseProxy__KnownProxies__n`, `SIMF_RateLimit__*`, media/presentation/recording roots, `ASPNETCORE_ENVIRONMENT` |
-| [set-env-cp.ps1](set-env-cp.ps1) | SimfCP | `SIMF_Api__BaseUrl`, `SIMF_Storage__LogDirectory`, `ASPNETCORE_ENVIRONMENT` |
-| [set-env-web.ps1](set-env-web.ps1) | SimfWeb | `SIMF_Api__BaseUrl`, `SIMF_Storage__LogDirectory`, `ASPNETCORE_ENVIRONMENT` |
+| [set-env.template.ps1](set-env.template.ps1) | SimfAPI + SimfCP + SimfWeb | Every variable the deployment needs: `SIMF_ConnectionStrings__*`, `SIMF_Jwt__*`, `SIMF_FileStorage__*`, `SIMF_Storage__*`, `SIMF_Email__*`, `SIMF_SuperAdmin__*`, `SIMF_Seed__DemoPassword`, `SIMF_Ai__*`, `SIMF_MeetingLinks__*`, `SIMF_ReverseProxy__KnownProxies__n`, `SIMF_Cors__WebAppOrigins__n`, `SIMF_RateLimit__*`, `SIMF_WalkInMode__*`, `SIMF_Swagger__*`, `SIMF_Api__BaseUrl`, `SIMF_Session__LifetimeHours`, `ASPNETCORE_ENVIRONMENT` |
+| [configure-prod-env.ps1](configure-prod-env.ps1) | SimfAPI (runbook) | Generates the missing crypto keys, prompts for the rest, verifies, restarts the pools, health-checks |
+| [clear-env.ps1](clear-env.ps1) | all | Removes the Machine-scope `SIMF_*` secrets (keeps the shared non-secret config unless `-Full`) |
+
+### One script for all three sites — read this before deploying
+
+Until 2026-08-06 there were three scripts, one per service. They wrote to the
+same Machine-scope namespace and overlapped on `ASPNETCORE_ENVIRONMENT`,
+`SIMF_Api__BaseUrl`, `SIMF_Api__AllowSelfSignedCertificate` and
+`SIMF_Storage__LogDirectory`, each noting that "running both is fine, the last
+writer wins". That holds only while the copies agree; edit one and the box
+silently takes whichever ran last. They are now a single file, so a deployment
+is: **the pipeline publishes, an operator runs one script, restart the pools.**
+
+Its filled form carries every production secret, so the repository tracks
+**`set-env.template.ps1`** and **`.gitignore` deliberately ignores
+`set-env.ps1`**, which is the filled overlay you create on the server:
+
+```powershell
+Copy-Item .\deploy\set-env.template.ps1 .\deploy\set-env.ps1
+# fill the Secret entries in set-env.ps1 on the server, then run as Administrator
+.\deploy\set-env.ps1
+```
+
+Every entry marked `Secret = $true` ships **empty**, and a test fails the build
+if one is ever committed with a value. Non-secret settings that are identical on
+every SIMF box (the environment name, the loopback API URL, the storage roots)
+ship **pre-filled**, so an operator fills roughly a dozen secrets rather than
+sixty variables. Non-secret settings that differ per site — public origins,
+proxy IPs, the SMTP host — are marked `SITE-SPECIFIC` and also ship empty.
+
+**Never delete the `.gitignore` entry for `set-env.ps1` to make it
+trackable — that commits live production credentials.** Edit the template
+instead; it is the shared, reviewable copy. Each variable in the template
+carries a comment saying what breaks when it is missing, including the three
+Production **boot gates** (`SIMF_FileStorage__EncryptionKey`,
+`SIMF_Storage__UserIdDocumentEncryptionKey`, `SIMF_Ai__PromptHash__Secret`) that
+stop the API starting at all.
+
+### First-time provisioning — `configure-prod-env.ps1`
+
+[`configure-prod-env.ps1`](configure-prod-env.ps1) is the runbook for a fresh
+server. Run it **as Administrator**; it is safe to re-run.
+
+1. **Generates** a cryptographically-random base64 32-byte AES key
+   (`RandomNumberGenerator`) for each key that is not already set, and writes it
+   straight to the Machine environment **without printing it**.
+2. **Never overwrites an existing encryption key.** Rotating
+   `FileStorage:EncryptionKey` makes every previously stored file
+   undecryptable, and rotating `Storage:UserIdDocumentEncryptionKey` strands
+   every encrypted PII column — so the script warns loudly and skips. There is
+   no `-Force`: a genuine rotation needs a decrypt-and-re-encrypt migration.
+3. **Prompts** for the values it cannot generate (connection strings, SMTP
+   credentials, the public Website origin) using `Read-Host -AsSecureString`, so
+   nothing is echoed.
+4. **Verifies**, reporting each key's **name** and whether it is set — never a
+   value.
+5. **Restarts** the IIS app pools and **health-checks** the API.
+
+```powershell
+.\deploy\configure-prod-env.ps1                # full provisioning pass
+.\deploy\configure-prod-env.ps1 -VerifyOnly    # audit only, changes nothing
+.\deploy\configure-prod-env.ps1 -SkipPrompts   # keys + verify, no prompts
+```
 
 Naming uses the **`SIMF_` project prefix** + the ASP.NET Core double-underscore
 convention (`SIMF_Section__Key`). Each app registers

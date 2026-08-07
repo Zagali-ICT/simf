@@ -3,7 +3,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Application.Notifications;
 
-/// <summary>D-677 — the single source of truth mapping each
+/// <summary>The single source of truth mapping each
 /// <see cref="NotificationKind"/> to its default group code + app-internal
 /// deep-link. <see cref="NotificationDispatcher"/> stamps every row from here
 /// when the dispatch request leaves the values null, so all ~16 existing call
@@ -47,7 +47,11 @@ public static class NotificationKindCatalog
         NotificationKind.BadgeUpdateDecided or
         // Manual admin broadcast — the default group for an audience-wide announcement.
         // A session-scoped broadcast overrides Group to Sessions at dispatch time.
-        NotificationKind.AdminAnnouncement => Groups.Account,
+        NotificationKind.AdminAnnouncement or
+        // DEF-EXH-002 — "an exhibitor now holds your contact card" is a personal
+        // privacy notice about the holder's own data, so it sits with the account
+        // section (there is no separate privacy chip).
+        NotificationKind.ExhibitorLeadCaptured => Groups.Account,
 
         NotificationKind.InvitationReceived or
         NotificationKind.VipBroadcast => Groups.Vip,
@@ -57,7 +61,14 @@ public static class NotificationKindCatalog
         // M-4 — an admin-released seat is part of the booking lifecycle.
         NotificationKind.BookingReleased => Groups.Bookings,
 
-        NotificationKind.SessionReminder => Groups.Sessions,
+        NotificationKind.SessionReminder or
+        // B2 — an admin-cancelled session is a programme event, not a booking
+        // outcome: it belongs with the app's Sessions filter chip.
+        NotificationKind.SessionCancelled or
+        // FR-903 (C4) — "the session started and you have not arrived" is about a
+        // session the holder already booked, so it reads under Sessions rather than
+        // Bookings: the booking itself is still valid, only the attendance is missing.
+        NotificationKind.SessionNotAttended => Groups.Sessions,
 
         NotificationKind.MeetingScheduled or
         NotificationKind.MeetingCancelled or
@@ -65,7 +76,11 @@ public static class NotificationKindCatalog
         // Bi-Meeting rework — the other-party request-to-confirm + the 15-min reminder
         // both belong with the app's Meetings filter chip.
         NotificationKind.MeetingRequested or
-        NotificationKind.MeetingReminder => Groups.Meetings,
+        NotificationKind.MeetingReminder or
+        // FR-803 (C5) — a scored match is an invitation to meet someone, so it
+        // belongs with the app's Meetings filter chip alongside the rest of the
+        // bilateral-meeting lifecycle.
+        NotificationKind.MatchRecommended => Groups.Meetings,
 
         NotificationKind.SessionRatingRequest or
         NotificationKind.DayRatingRequest or
@@ -87,6 +102,18 @@ public static class NotificationKindCatalog
         // meeting-confirm screen for this delegation request (route wired in the mobile phase).
         NotificationKind.MeetingRequested when relatedId is { } requestId =>
             $"/meeting-confirm?requestId={requestId}",
+        // QA A27 — every meeting-lifecycle tile is navigable: scheduled / cancelled /
+        // confirmed / the 15-minute reminder all open the bilateral-meetings page, where the
+        // requester's speaker AND delegation meetings live. These four kinds are not
+        // per-target (the app has no meeting-detail route), so they carry no id.
+        NotificationKind.MeetingScheduled or
+        NotificationKind.MeetingCancelled or
+        NotificationKind.MeetingRequestConfirmed or
+        NotificationKind.MeetingReminder => "/meetings",
+        // FR-803 (C5) — the recommended candidate is the networking surface's
+        // subject, so the tile opens المقابلات/networking rather than the
+        // bilateral-meetings list: no meeting exists yet, only a suggestion.
+        NotificationKind.MatchRecommended => "/meet",
         NotificationKind.SessionRatingRequest when relatedId is { } sessionId =>
             $"/rate?code=Session&targetId={sessionId}",
         NotificationKind.DayRatingRequest when relatedId is { } dayId =>
@@ -94,6 +121,9 @@ public static class NotificationKindCatalog
         NotificationKind.EventRatingRequest => "/rate?code=Event",
         NotificationKind.AppRatingRequest => "/rate?code=App",
         NotificationKind.ExhibitionRatingRequest => "/rate?code=Exhibition",
+        // B2 — deliberately NO deep link: the cancelled session is soft-deleted, so
+        // its detail screen would 404. The tile is informational only.
+        NotificationKind.SessionCancelled => null,
         _ => null,
     };
 }

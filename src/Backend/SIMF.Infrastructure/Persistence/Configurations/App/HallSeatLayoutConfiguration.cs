@@ -4,7 +4,7 @@ using SIMF.Domain.SeatReservations;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-175 (gap doc G11) — HallSeatLayout EF config. Real FK
+/// <summary>HallSeatLayout EF config. Real FK
 /// to Hall (cascade — a deleted hall removes its layout). Unique
 /// index on HallId enforces 1:1.</summary>
 internal sealed class HallSeatLayoutConfiguration : IEntityTypeConfiguration<HallSeatLayout>
@@ -16,9 +16,13 @@ internal sealed class HallSeatLayoutConfiguration : IEntityTypeConfiguration<Hal
 
         builder.Property(x => x.RowLabels).HasMaxLength(256).IsRequired();
 
-        // D-767 — optional per-row seat-count CSV (nullable → nvarchar(256) NULL),
+        // Optional per-row seat-count CSV (nullable → nvarchar(256) NULL),
         // mirroring the RowLabels(256) convention. Null = uniform SeatsPerRow.
         builder.Property(x => x.SeatCounts).HasMaxLength(256);
+
+        // Optional per-row seat-tier CSV (nullable → nvarchar(256) NULL),
+        // same convention as SeatCounts. Null = an all-Normal (legacy) grid.
+        builder.Property(x => x.SeatTiers).HasMaxLength(256);
 
         builder.HasOne(x => x.Hall)
             .WithMany()

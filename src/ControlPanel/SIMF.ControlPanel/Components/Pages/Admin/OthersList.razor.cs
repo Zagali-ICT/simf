@@ -1,12 +1,8 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
-using SIMF.Common.Enums;
-using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -26,7 +22,7 @@ public partial class OthersList
     private bool _loading;
     private bool _busy;
 
-    // D-353 — centralized Add / Edit / Details framing.
+    // Centralized Add / Edit / Details framing.
     private CrudPresentation _presentation = CrudPresentation.Dialog;
     private FormKind _form = FormKind.None;
     private bool _isEdit;
@@ -45,7 +41,7 @@ public partial class OthersList
     private Toast? _toast;
 
     private bool FormOpen => _form != FormKind.None;
-    // D-393 — the wide Add form (the same WalkInRegistrationForm as visitors)
+    // The wide Add form (the same WalkInRegistrationForm as visitors)
     // opens full-page regardless of the admin's popup/page preference; Edit +
     // Details keep the preference.
     private CrudPresentation EffectivePresentation =>
@@ -84,10 +80,19 @@ public partial class OthersList
         {
             var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminUserSummary>>>(
                 "simfAccount.postJson", "/account/api/admin/others/list", _query);
-            _page = envelope is { Success: true, Data: not null }
-                ? envelope.Data
-                : GridPage<AdminUserSummary>.Of(
-                    Array.Empty<AdminUserSummary>(), 0, _query);
+            // §6.16 (F-U5-002) — a FAILED envelope used to be substituted with an
+            // empty page, so an API 500 / 403 was indistinguishable from "no rows"
+            // and the admin read a working page with no data. Report it instead;
+            // the page already renders a toast surface it never used on this path.
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _page = GridPage<AdminUserSummary>.Of(Array.Empty<AdminUserSummary>(), 0, _query);
+                ShowToast("error", envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Others.LoadFailed"]);
+            }
         }
         finally { _loading = false; }
     }
@@ -121,7 +126,7 @@ public partial class OthersList
 
     // Edit / Details work against the full profile (the grid summary omits the
     // profile fields). Returns null and surfaces a toast on failure. Reuses the
-    // same D-126 admin read the inline Details modal used.
+    // same admin read the inline Details modal used.
     private async Task<AdminUserProfileView?> LoadProfileAsync(Guid id)
     {
         _toast = null;
@@ -286,9 +291,12 @@ public partial class OthersList
     private async Task OnExportAsync(IReadOnlyList<AdminUserSummary> selected)
     {
         var ids = selected.Select(u => u.Id).ToList();
-        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+        // §6.16 (F-U5-005) — a failed export used to return silently, so
+        // the Export button was indistinguishable from an unwired one.
+        var error = await JS.ExportXlsxAsync(
             "/account/api/admin/others/export",
-            new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null });
+            new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null }, L);
+        if (error is not null) ShowToast("error", error);
     }
 
     private async Task OnImportAsync() =>
@@ -324,7 +332,7 @@ public partial class OthersList
 
     // The row's avatar thumbnail URL, or null when the account has no photo so
     // SimfIdentityCell shows an initials tile (never a broken image). Only
-    // requested when HasAvatar is set so the grid never issues a 404 (D-568).
+    // requested when HasAvatar is set so the grid never issues a 404.
     private static string? AvatarImageUrl(AdminUserSummary row) =>
         row.HasAvatar ? $"/account/api/admin/others/{row.Id}/avatar" : null;
 

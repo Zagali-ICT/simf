@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminGridVisitorsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/visitors/bulk-delete</c> — D-113. Type-scoped variant
+/// <c>POST /api/v1/admin/visitors/bulk-delete</c> — type-scoped variant
 /// of <see cref="BulkDeleteUsersEndpoint"/>. Soft-deletes Visitors only;
 /// admin / self / wrong-type ids are silently skipped per target (the SOC
 /// gets one audit row per skip).
@@ -29,20 +29,16 @@ public sealed class BulkDeleteVisitorsEndpoint(IAdminUserBulkService adminAccoun
 
     public override async Task HandleAsync(AdminBulkDeleteRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.BulkDeleteUsersByKindAsync(
-            // D-186: Visitor bulk = audience-scope (ProfileType.IsVisitor=true or none).
+            // Visitor bulk = audience-scope (ProfileType.IsVisitor=true or none).
             actorId, UserType.Visitor, requirePartnerScope: false, req, ct);
         await Send.OkAsync(ApiResult<AdminBulkDeleteResponse>.Ok(response), ct);
     }
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/visitors/duplicate</c> — D-113. Type-scoped variant
+/// <c>POST /api/v1/admin/visitors/duplicate</c> — type-scoped variant
 /// of <see cref="DuplicateUserEndpoint"/>. Refuses any source whose
 /// <see cref="UserType"/> is not Visitor.
 /// </summary>
@@ -61,20 +57,16 @@ public sealed class DuplicateVisitorEndpoint(IAdminUserBulkService adminAccountS
 
     public override async Task HandleAsync(AdminDuplicateUserRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var created = await adminAccountService.DuplicateUserByKindAsync(
-            // D-186: Visitor bulk = audience-scope (ProfileType.IsVisitor=true or none).
+            // Visitor bulk = audience-scope (ProfileType.IsVisitor=true or none).
             actorId, UserType.Visitor, requirePartnerScope: false, req, ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(created), ct);
     }
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/visitors/export</c> — D-113. Type-scoped variant of
+/// <c>POST /api/v1/admin/visitors/export</c> — type-scoped variant of
 /// <see cref="ExportUsersEndpoint"/>. Exports Visitors only; any smuggled
 /// non-Visitor id is silently dropped from the workbook.
 /// </summary>
@@ -93,16 +85,12 @@ public sealed class ExportVisitorsEndpoint(IAdminUserBulkService adminAccountSer
 
     public override async Task HandleAsync(AdminExportUsersRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var bytes = await adminAccountService.ExportUsersByKindAsync(
-            // D-186: Visitor bulk = audience-scope (ProfileType.IsVisitor=true or none).
+            // Visitor bulk = audience-scope (ProfileType.IsVisitor=true or none).
             actorId, UserType.Visitor, requirePartnerScope: false, req, ct);
         HttpContext.Response.Headers.ContentDisposition =
-            $"attachment; filename=\"simf-visitors-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx\"";
+            $"attachment; filename=\"simf-visitors-{SimfClock.Now:yyyyMMddHHmmss}.xlsx\"";
         await Send.BytesAsync(bytes,
             contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             cancellation: ct);
@@ -110,7 +98,7 @@ public sealed class ExportVisitorsEndpoint(IAdminUserBulkService adminAccountSer
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/visitors/import</c> — D-113. Type-scoped variant of
+/// <c>POST /api/v1/admin/visitors/import</c> — type-scoped variant of
 /// <see cref="ImportUsersEndpoint"/>. Every imported row is forced to
 /// <c>UserType = Visitor</c>; any Role column in the workbook is ignored
 /// (the type-smuggling guard). The optional <c>ProfileTypeId</c> column
@@ -138,11 +126,7 @@ public sealed class ImportVisitorsEndpoint(IAdminUserBulkService adminAccountSer
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)
@@ -172,7 +156,7 @@ public sealed class ImportVisitorsEndpoint(IAdminUserBulkService adminAccountSer
         }
 
         var response = await adminAccountService.ImportUsersByKindAsync(
-            // D-186: Visitor import = audience-scope flag.
+            // Visitor import = audience-scope flag.
             actorId, partnerScope: false, bytes, ct);
         await Send.OkAsync(ApiResult<AdminImportUsersResponse>.Ok(response), ct);
     }
@@ -189,7 +173,7 @@ public sealed class ImportVisitorsEndpoint(IAdminUserBulkService adminAccountSer
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/visitors/bulk-generate</c> — D-473 (#10). Bulk-generates
+/// <c>POST /api/v1/admin/visitors/bulk-generate</c> — bulk-generates
 /// placeholder badges by profile type + count (e.g. 10 VIP + 500 Normal), each an
 /// Approved visitor with default data and a minted QR. The request's
 /// <c>IsDelegate</c> flag marks the batch as delegation (وفد) members, so the same
@@ -210,11 +194,7 @@ public sealed class BulkGenerateVisitorBadgesEndpoint(IAdminUserBulkService admi
 
     public override async Task HandleAsync(AdminBulkGenerateBadgesRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var response = await adminAccountService.BulkGenerateBadgesAsync(
             actorId, UserType.Visitor, req, ct);
         await Send.OkAsync(ApiResult<AdminBulkGenerateBadgesResponse>.Ok(response), ct);

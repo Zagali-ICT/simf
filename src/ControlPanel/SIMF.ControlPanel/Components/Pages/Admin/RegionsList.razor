@@ -2,7 +2,7 @@
    lookup (the 13 official Saudi regions). Rows are seeded from
    SaudiRegions.All and can be created/edited/deactivated by hand. A search box
    reloads the grid server-side via GridQuery.Search. Mirrors the
-   Organisation lookup page (D-353): the owner-mandated SimfDataGrid
+   Organisation lookup page: the owner-mandated SimfDataGrid
    (server-paged, sortable + filterable, full pager) plus the CrudShell that
    frames the reusable RegionAddEdit and RegionViewDelete forms as a popup or a
    full page per the admin's toolbar choice (persisted in localStorage via
@@ -22,7 +22,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <div class="simf-toolbar">
@@ -68,7 +70,10 @@
                           EditLabel="@L["Grid.Edit"]"
                           DetailsLabel="@L["Grid.Details"]"
                           DeleteLabel="@L["Grid.Delete"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Regions.Create"
+                          EditPermission="@PermissionCatalog.Regions.Edit"
+                          DeletePermission="@PermissionCatalog.Regions.Delete">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

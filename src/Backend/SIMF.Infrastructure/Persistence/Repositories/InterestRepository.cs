@@ -7,7 +7,7 @@ using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Repositories;
 
-/// <summary>R4 — D-209: EF-backed <see cref="IInterestRepository"/> over
+/// <summary>EF-backed <see cref="IInterestRepository"/> over
 /// <see cref="SimfAppDbContext"/>. Query shapes are lifted verbatim from the
 /// pre-move <c>InterestService</c> so the SQL is unchanged.</summary>
 internal sealed class InterestRepository(SimfAppDbContext dbContext)

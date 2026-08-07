@@ -1,14 +1,14 @@
 // Tests: SIMF.Api.Tests/ProfileEndpointsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Api.Endpoints.Account;
 
-/// <summary>D-568 (Wave C S3) — resolves a user's avatar bytes from the unified
+/// <summary>Resolves a user's avatar bytes from the unified
 /// <c>StoredFile</c> store (App DB, encrypted at rest), owner-scoped by the user id.
 /// It is a RAW decrypt read, not <c>IFileService.DownloadAsync</c>: each serve
 /// endpoint enforces its own authorization (self-only for the app fetch, an admin
@@ -38,7 +38,7 @@ internal static class AvatarBytes
 
 /// <summary>
 /// <c>GET /api/v1/app/account/avatar/{userId:guid}</c> — streams the avatar bytes
-/// for the authenticated caller (myComment #11, D-039). Authentication is
+/// for the authenticated caller. Authentication is
 /// required so the avatar bytes are never enumerable without a token; for the
 /// MVP the only caller is the same signed-in user, so this also acts as an
 /// authorisation check.
@@ -57,11 +57,7 @@ public sealed class AvatarFetchEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var callerId = User.ActorId();
 
         var requestedId = Route<Guid>("userId");
         // For this increment a caller may only fetch their own avatar. A future

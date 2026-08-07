@@ -10,7 +10,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Recommendations;
 
 /// <summary>
-/// D-170 (gap doc G9, PDF §2.8) — "Meet People Like You" ranker.
+/// The "Meet People Like You" ranker.
 /// In-memory Jaccard pass over the caller's and candidates' interest
 /// sets — fine at SIMF scale (target attendance is in the low
 /// thousands, the interest catalog stays under 100). A 24-hour
@@ -27,6 +27,37 @@ internal sealed class RecommendationService(
     /// in favour of the one sharing the caller's tier (VIPs meet VIPs,
     /// Staff meet Staff). Small enough to never override real overlap.</summary>
     private const double SameProfileTypeBonus = 0.05;
+
+    /// <summary>A recommendation requires a <b>&gt;=80% match</b>. Before this
+    /// the ranker had no threshold at all: it sorted by score and simply took the
+    /// top N, so the weakest possible overlap (one shared interest out of fifty)
+    /// ranked as a "recommendation" whenever nothing better existed.</summary>
+    internal const double StrongMatchThreshold = 0.80;
+
+    /// <summary>How deep a strong-match pass ranks before filtering. The threshold
+    /// is what decides inclusion; this only bounds the ranked list the filter runs
+    /// over.</summary>
+    private const int StrongMatchCandidatePool = 100;
+
+    /// <summary>"80%" is a percentage, so it has to be compared against a
+    /// number that cannot exceed 1.0. The raw <c>Score</c> can (a perfect Jaccard
+    /// 1.0 plus <see cref="SameProfileTypeBonus"/>), so the threshold is applied to
+    /// the score CLAMPED to [0,1]. The same-tier bonus is inside the comparison on
+    /// purpose: a candidate in the caller's own tier IS the better match at equal
+    /// overlap, which is why the bonus exists at all.</summary>
+    internal static double NormaliseScore(double score) => Math.Clamp(score, 0d, 1d);
+
+    public async Task<RecommendationsResponse> StrongMatchesAsync(
+        Guid callerUserId, CancellationToken cancellationToken = default)
+    {
+        var ranked = await MeetPeopleLikeYouAsync(
+            callerUserId, StrongMatchCandidatePool, cancellationToken);
+
+        var strong = ranked.Matches
+            .Where(match => NormaliseScore(match.Score) >= StrongMatchThreshold)
+            .ToList();
+        return new RecommendationsResponse(strong);
+    }
 
     public async Task<RecommendationsResponse> MeetPeopleLikeYouAsync(
         Guid callerUserId,
@@ -72,7 +103,7 @@ internal sealed class RecommendationService(
             .AsNoTracking()
             .Where(p => approvedIds.Contains(p.UserId))
             .Where(p => p.ShowInMeetLikeYou)
-            // D-760: honour the per-type "Meet People" master switch too, so a
+            // Honour the per-type "Meet People" master switch too, so a
             // partner type an admin hid drops out of the recommender as well.
             .Where(p => p.ProfileType == null || p.ProfileType.ShowInPartnerDirectory)
             .Select(p => new
@@ -92,7 +123,7 @@ internal sealed class RecommendationService(
             })
             .ToListAsync(cancellationToken);
 
-        // 3b) Shared-session overlap (D-451): the approved, un-released seats
+        // 3b) Shared-session overlap: the approved, un-released seats
         //     the caller and the candidate pool hold. SeatReservation owners are
         //     Identity user ids (like the pool), so the overlap is keyed on user
         //     id; one query covers the whole pool + the caller.
@@ -184,7 +215,7 @@ internal sealed class RecommendationService(
         return new RecommendationsResponse(top);
     }
 
-    /// <summary>D-451 — the bilingual "why this match" line (KSA frame
+    /// <summary>The bilingual "why this match" line (KSA frame
     /// 1072:13409): the session-overlap segment (when any) then the
     /// shared-interest summary, joined by " · ". A single shared interest names
     /// it ("shared interest in X"); two or more are summarised by count.

@@ -2,8 +2,8 @@ namespace SIMF.Common.Options;
 
 /// <summary>
 /// Filesystem-storage settings, bound from the <c>Storage</c> configuration
-/// section. Replaces four scattered <c>IConfiguration["Storage:..."]</c>
-/// reads (R1 — D-074) so a key rename is a single change. The values are
+/// section, so a key rename is a single change here rather than a hunt through
+/// scattered <c>IConfiguration["Storage:..."]</c> reads. The values are
 /// supplied through the environment / <c>set-env</c> scripts and the
 /// encryption key is never committed.
 /// </summary>
@@ -11,24 +11,20 @@ public sealed class StorageOptions
 {
     public const string SectionName = "Storage";
 
-    /// <summary>Root directory the filesystem avatar storage writes into.</summary>
-    public string AvatarBase { get; set; } = string.Empty;
-
-    /// <summary>V-1 (D-429) — root directory the VVIP/VIP welcome-photo storage
-    /// writes into. A store separate from <see cref="AvatarBase"/> so the VIP
-    /// photo never collides with the account avatar (both key files by user id).
-    /// Optional — when unset the storage derives a <c>vip-photos</c> sibling of
-    /// <see cref="AvatarBase"/> so a deploy that predates this key still boots.</summary>
-    public string VipPhotoBase { get; set; } = string.Empty;
-
-    /// <summary>Root directory the encrypted user-ID document storage writes into.</summary>
-    public string UserIdDocumentBase { get; set; } = string.Empty;
+    // AvatarBase, VipPhotoBase and UserIdDocumentBase were removed on
+    // 2026-08-05, when all three stores moved into the unified StoredFile
+    // store under FileStorage:RootPath - avatars, ID documents and VIP photos
+    // are FileService values now, and the bespoke filesystem stores that read
+    // these paths no longer exist. Nothing had read them since that cutover
+    // except a boot gate that refused to start the API unless AvatarBase named
+    // a directory the code would never open. An old deployment may still set
+    // the environment variables; they bind to nothing and are ignored.
 
     /// <summary>Base64-encoded 32-byte AES-256-GCM key for the user-ID document
     /// encryption. Never committed; supplied via environment variable.</summary>
     public string UserIdDocumentEncryptionKey { get; set; } = string.Empty;
 
-    /// <summary>Root directory the per-project log files live in (P6).
+    /// <summary>Root directory the per-project log files live in.
     /// Optional — falls back to <c>"logs"</c> when unset.</summary>
     public string LogDirectory { get; set; } = "logs";
 }

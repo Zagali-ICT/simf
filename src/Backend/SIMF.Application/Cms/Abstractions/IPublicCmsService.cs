@@ -3,7 +3,7 @@ using SIMF.Contracts.Cms;
 namespace SIMF.Application.Cms.Abstractions;
 
 /// <summary>
-/// D-173 (gap doc G8, PDF §1) — public (anonymous) read surface for
+/// The public (anonymous) read surface for
 /// content blocks + active banners. Hot path on every Flutter app
 /// + Website page render — must stay cheap.
 /// </summary>

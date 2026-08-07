@@ -1,11 +1,11 @@
-@* D-168 (gap doc G5, PDF §2.7.3) — public-relations: invitation desk. Lists
-   invitations with a state filter. Centralized dialog/full-page framing D-353:
+@* Public-relations: the invitation desk. Lists
+   invitations with a state filter. Centralized dialog/full-page framing:
    Add / Edit / View / Delete are hosted by CrudShell, which frames the reusable
    InvitationsAddEdit and InvitationsViewDelete forms as a popup or a full page per
    the admin's toolbar choice (persisted in localStorage via CpPreferences). The
    two inline SimfModals (Send + Edit) it used to carry are gone. Gated by
    Administrator OR PublicRelations (the BFF forwards the JWT, the API policy
-   enforces the permission). D-356: Excel EXPORT only (invitations are
+   enforces the permission). Excel EXPORT only (invitations are
    created/edited from the forms — no import). *@
 @page "/admin/invitations"
 @layout CpShellLayout
@@ -21,7 +21,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminInvitationSummary"
@@ -55,7 +57,11 @@
                           DetailsLabel="@L["Grid.Details"]"
                           DeleteLabel="@L["Admin.Invitations.Deactivate"]"
                           ExportLabel="@L["Grid.Export"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Invitations.Manage"
+                          EditPermission="@PermissionCatalog.Invitations.Manage"
+                          DeletePermission="@PermissionCatalog.Invitations.Manage"
+                          ExportPermission="@PermissionCatalog.Invitations.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

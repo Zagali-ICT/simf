@@ -1,6 +1,6 @@
 // Tests: SIMF.Api.Tests/EmailTemplateAdminTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Email;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -8,7 +8,7 @@ using SIMF.Contracts.Email;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-735 — admin list/read/edit/reset/preview over the transactional
+/// <summary>Admin list/read/edit/reset/preview over the transactional
 /// email templates. The DB holds only overrides; the catalogue backs every read
 /// so the grid always shows all six templates. The <c>{type}</c> route segment is
 /// the <see cref="EmailTemplateType"/> name (case-insensitive).</summary>
@@ -79,11 +79,7 @@ public sealed class UpdateEmailTemplateEndpoint(IAdminEmailTemplateService servi
 
     public override async Task HandleAsync(UpdateEmailTemplateRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         await Send.OkAsync(ApiResult<AdminEmailTemplateDetail>.Ok(
             await service.UpdateAsync(
@@ -105,11 +101,7 @@ public sealed class ResetEmailTemplateEndpoint(IAdminEmailTemplateService servic
 
     public override async Task HandleAsync(EmailTemplateRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         await Send.OkAsync(ApiResult<AdminEmailTemplateDetail>.Ok(
             await service.ResetAsync(
@@ -132,7 +124,7 @@ public sealed class PreviewEmailTemplateEndpoint(IAdminEmailTemplateService serv
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         // No rate limit: preview is a read-only, no-side-effect render the CP
         // editor calls on every keystroke — it must NOT drain the shared per-IP
-        // "auth" bucket that sign-in / OTP use (cf. D-731). The View permission
+        // "auth" bucket that sign-in / OTP use. The View permission
         // already gates it to admins.
         Tags("Admin");
     }

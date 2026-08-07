@@ -3,6 +3,7 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Domain.Auditing;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Auditing;
 
@@ -27,16 +28,16 @@ internal sealed class AuditLog(
         var record = new OperationLogEntry
         {
             Id = Guid.NewGuid(),
-            Timestamp = timeProvider.GetUtcNow(),
+            Timestamp = timeProvider.SimfNow(),
             EventType = Clip(entry.EventType, 80) ?? string.Empty,
             Outcome = entry.Outcome,
             SubjectEmail = Clip(entry.SubjectEmail, 256),
             SubjectUserId = entry.SubjectUserId,
-            // D-157 — snapshot the subject name from the caller; null is
+            // Snapshot the subject name from the caller; null is
             // acceptable when the caller doesn't have the name on hand.
             SubjectDisplayName = Clip(entry.SubjectDisplayName, 128),
             ActorUserId = entry.ActorUserId,
-            // D-157 — actor snapshot: prefer the caller's explicit value,
+            // Actor snapshot: prefer the caller's explicit value,
             // fall back to the JWT display_name claim for the typical
             // "actor performed this themselves" case.
             ActorDisplayName = Clip(entry.ActorDisplayName ?? requestContext.ActorDisplayName, 128),

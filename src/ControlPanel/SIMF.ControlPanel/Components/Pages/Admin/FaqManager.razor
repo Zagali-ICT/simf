@@ -1,7 +1,7 @@
-@* P2.1 (D-211) — FAQ management. Two-level: a groups grid (top) and, when a
+@* FAQ management. Two-level: a groups grid (top) and, when a
    group is selected via "Manage entries", its entries grid (below). Migrated
-   from the custom raw <table> pair to the canonical SimfDataGrid (owner-mandated
-   standard, D-338) — server-paged + numbered pager + select-all + per-row icon
+   from the custom raw <table> pair to the canonical SimfDataGrid (the
+   owner-mandated standard) — server-paged + numbered pager + select-all + per-row icon
    actions. Each grid sorts on the columns the FAQ service supports (name /
    question / display-order); per-column text filters are not enabled because
    the service filters only by global search + isActive. Page-level
@@ -20,7 +20,9 @@
     <div class="simf-surface">
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            </div>
         }
 
         <h2 class="simf-section__title">@L["Admin.Faq.Groups.Heading"]</h2>
@@ -37,7 +39,7 @@
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       OnAdd="OpenAddGroup"
                       OnEditOne="OpenEditGroup"
-                      OnDeleteOne="DeactivateGroupAsync"
+                      OnDeleteOne="@(g => AskDelete(L["Admin.Faq.Groups.Delete.Confirm.Title"], string.Format(L["Admin.Faq.Groups.Delete.Confirm.Message"], g.NameEn), () => DeactivateGroupAsync(g)))"
                       PrevLabel="@L["Grid.Prev"]"
                       NextLabel="@L["Grid.Next"]"
                       FirstLabel="@L["Grid.First"]"
@@ -51,7 +53,10 @@
                       AddLabel="@L["Grid.Add"]"
                       EditLabel="@L["Grid.Edit"]"
                       DeleteLabel="@L["Grid.Delete"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      AddPermission="@PermissionCatalog.Faq.Create"
+                      EditPermission="@PermissionCatalog.Faq.Edit"
+                      DeletePermission="@PermissionCatalog.Faq.Delete">
             <Columns>
                 <SimfDataGridColumn TItem="AdminFaqGroupSummary" Key="nameen"
                                     Header="@L["Admin.Faq.Col.NameEn"]" Sortable="true">
@@ -109,7 +114,8 @@
                           Caption="@L["Admin.Faq.Entries.Heading"]"
                           OnAdd="OpenAddEntry"
                           OnEditOne="OpenEditEntry"
-                          OnDeleteOne="DeactivateEntryAsync"
+                          OnDetailsOne="OpenEntryDetails"
+                          OnDeleteOne="@(e => AskDelete(L["Admin.Faq.Entries.Delete.Confirm.Title"], string.Format(L["Admin.Faq.Entries.Delete.Confirm.Message"], e.Question), () => DeactivateEntryAsync(e)))"
                           PrevLabel="@L["Grid.Prev"]"
                           NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]"
@@ -122,8 +128,12 @@
                           SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.Faq.Action.AddEntry"]"
                           EditLabel="@L["Grid.Edit"]"
+                          DetailsLabel="@L["Admin.Faq.Action.Details"]"
                           DeleteLabel="@L["Grid.Delete"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Faq.Create"
+                          EditPermission="@PermissionCatalog.Faq.Edit"
+                          DeletePermission="@PermissionCatalog.Faq.Delete">
                 <Columns>
                     <SimfDataGridColumn TItem="AdminFaqEntrySummary" Key="question"
                                         Header="@L["Admin.Faq.Col.Question"]" Sortable="true">
@@ -159,11 +169,40 @@
     </div>
 </div>
 
+@* The read affordance. The grid shows the question, order and status; the
+   ANSWER is carried on the same summary and shown nowhere else, so before this an
+   admin without Faq.Edit could not read the answer they are responsible for. *@
+<SimfDetails Open="@(_entryDetails is not null)"
+             Title="@(_entryDetails?.Question ?? string.Empty)"
+             CloseLabel="@L["Grid.Close"]"
+             OnClose="@(() => _entryDetails = null)">
+    @if (_entryDetails is not null)
+    {
+        <SimfDetailRow Label="@L["Admin.Faq.Col.Question"]" Value="@_entryDetails.Question" />
+        <SimfDetailRow Label="@L["Admin.Faq.Col.NameAr"]" Value="@_entryDetails.QuestionArabic" />
+        <SimfDetailRow Label="@L["Admin.Faq.Col.Answer"]" Value="@_entryDetails.Answer" />
+        <SimfDetailRow Label="@L["Admin.Faq.Col.AnswerAr"]" Value="@_entryDetails.AnswerArabic" />
+        <SimfDetailRow Label="@L["Admin.Faq.Col.Order"]" Value="@_entryDetails.DisplayOrder.ToString()" />
+        <SimfDetailRow Label="@L["Admin.Faq.Col.Active"]">
+            <SimfPill Variant="@(_entryDetails.IsActive ? "on" : "off")">
+                @(_entryDetails.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])
+            </SimfPill>
+        </SimfDetailRow>
+    }
+</SimfDetails>
+
 @if (_groupModalOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_groupEditId is null ? L["Admin.Faq.Group.Add.Title"] : L["Admin.Faq.Group.Edit.Title"])"
-               OnClose="CloseGroupModal">
+               OnClose="CloseGroupModal"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
+            @* The page-level toast sits under the modal backdrop, so a rejected
+               save must report inside the dialog or it reads as a dead button. *@
+            @if (_error is not null)
+            {
+                <SimfAlert Variant="error">@_error</SimfAlert>
+            }
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.Faq.Field.NameEn"]" MaxLength="128"
                                @bind-Value="_groupNameEn" Disabled="_busy" />
@@ -181,7 +220,16 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy">@L["Admin.Faq.Save"]</SimfButton>
+            @* The page gates on Faq.View; saving needs Create or Edit.
+               Keyed off the modal's own mode so a holder of only one of the two
+               keeps the half they are entitled to, rather than being gated on
+               whichever is stricter. Cancel stays ungated: closing a modal is
+               not a privilege. *@
+            <AuthorizedAction Permission="@(_groupEditId is null
+                                            ? PermissionCatalog.Faq.Create
+                                            : PermissionCatalog.Faq.Edit)">
+                <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.Faq.Save"]</SimfButton>
+            </AuthorizedAction>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseGroupModal" Disabled="_busy">
                 @L["Admin.Faq.Cancel"]
             </SimfButton>
@@ -192,8 +240,13 @@
 @if (_entryModalOpen)
 {
     <SimfModal Open="true" RequireExplicitClose="true" Title="@(_entryEditId is null ? L["Admin.Faq.Entry.Add.Title"] : L["Admin.Faq.Entry.Edit.Title"])"
-               OnClose="CloseEntryModal">
+               OnClose="CloseEntryModal"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
+            @if (_error is not null)
+            {
+                <SimfAlert Variant="error">@_error</SimfAlert>
+            }
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.Faq.Field.QuestionEn"]" MaxLength="512"
                                @bind-Value="_entryQuestionEn" Disabled="_busy" />
@@ -221,10 +274,25 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="SaveEntryAsync" Loading="_busy">@L["Admin.Faq.Save"]</SimfButton>
+            <AuthorizedAction Permission="@(_entryEditId is null
+                                            ? PermissionCatalog.Faq.Create
+                                            : PermissionCatalog.Faq.Edit)">
+                <SimfButton Type="button" OnClick="SaveEntryAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">@L["Admin.Faq.Save"]</SimfButton>
+            </AuthorizedAction>
             <SimfButton Type="button" Variant="secondary" OnClick="CloseEntryModal" Disabled="_busy">
                 @L["Admin.Faq.Cancel"]
             </SimfButton>
         </Footer>
     </SimfModal>
 }
+
+@* These deletes cascade; confirm before running them. *@
+<SimfConfirm Open="@(_pendingDelete is not null)"
+             Danger="true"
+             Title="@(_pendingDelete?.Title ?? string.Empty)"
+             Message="@(_pendingDelete?.Message ?? string.Empty)"
+             ConfirmLabel="@L["Grid.Delete"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmDeleteAsync"
+             OnCancel="CancelDelete" 
+             Permission="@PermissionCatalog.Faq.Delete"/>

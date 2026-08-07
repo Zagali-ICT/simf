@@ -1,10 +1,10 @@
-@* D-353 — reusable Visitor View form, hosted by CrudShell (popup or full page)
+@* Reusable Visitor View form, hosted by CrudShell (popup or full page)
    from VisitorsList. Inherits CrudViewDeleteFormBase so it exposes the standard
    surface (IsDelete / Initial / OnDeleted / OnCancel). This page has NO
    single-row delete path — a row "delete" on the visitors grid opens the
    reason-gated bulk-delete dialog on the list page (preserved there) — so this
    form is DETAILS-ONLY: it never renders a Delete button and never raises
-   OnDeleted. It loads the full profile via the D-126 admin read
+   OnDeleted. It loads the full profile via the admin read
    (/account/api/admin/visitors/{id}/profile) and renders the ID document image
    inline, exactly as the inline SimfModal Details flow did. *@
 @inherits CrudViewDeleteFormBase<AdminUserSummary>
@@ -61,18 +61,18 @@ else if (_profile is not null)
     {
         <div class="simf-walkin__id-image">
             <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
-            <img src="@($"/account/api/admin/visitors/{_profile.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+            <img src="@($"/account/api/admin/visitors/{_profile.Id}/id-document?v={SimfClock.Now.Ticks}")"
                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
         </div>
     }
-    @* D-727 (owner item 5) — the visitor's profile photo (avatar) alongside the
+    @* The visitor's profile photo (avatar) alongside the
        ID image, streamed from the admin avatar-fetch route (Visitors.View). *@
     @if (_profile.HasAvatar)
     {
         <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
-                                Src="@($"/account/api/admin/visitors/{_profile.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
+                                Src="@($"/account/api/admin/visitors/{_profile.Id}/avatar?v={SimfClock.Now.Ticks}")" />
     }
-    @* D-728 (owner item 9) — flip this visitor into a partner (Other) type. *@
+    @* Flip this visitor into a partner (Other) type. *@
     <AuthorizedAction Permission="@PermissionCatalog.Accounts.ChangeType">
         <ChangeAccountTypeBlock AccountId="_profile.Id" IsVisitorScope="true"
                                 OnChanged="OnCancel" />

@@ -8,8 +8,8 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/session-summaries/export</c> — the D-356 grid export
-/// for the Scientific-Committee session-summary / محضر desk (P4.1, D-238).
+/// <c>POST /api/v1/admin/session-summaries/export</c> — the grid export
+/// for the Scientific-Committee session-summary / محضر desk.
 /// <b>Export only:</b> the desk drafts / edits / publishes summaries through its
 /// own bespoke endpoints, so no generic import path is added here. Rows are the
 /// same <see cref="AdminSessionSummaryRow"/> the desk lists, selected by the

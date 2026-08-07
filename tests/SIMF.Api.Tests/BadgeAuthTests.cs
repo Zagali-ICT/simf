@@ -253,7 +253,16 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        var loginEmail = email ?? $"walkin-{Guid.NewGuid():N}@simf.local";
+        // D-819 — the synthesized placeholder here is the BULK-BADGE prefix
+        // ("badge-"), not the walk-in one. Both are @simf.local placeholder
+        // accounts and this activation chain is unchanged for bulk badges, which
+        // are handed out deliberately from a controlled batch.
+        //
+        // Walk-in-minted badges ("walkin-") are a different case: they circulate
+        // openly, so anyone who photographed one could nominate their own email
+        // at the start step and claim the account. Activation is refused for
+        // those by default — covered by WalkInModeTests.
+        var loginEmail = email ?? $"badge-{Guid.NewGuid():N}@simf.local";
         var user = new SimfUser
         {
             UserName = loginEmail,
@@ -276,7 +285,7 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
             Name = "Badge Holder",
             NameArabic = "حامل الشارة",
             QrId = qrId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return (user.Id, qrId);

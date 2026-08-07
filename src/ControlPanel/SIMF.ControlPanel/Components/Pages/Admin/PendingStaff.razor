@@ -1,7 +1,9 @@
-@* Control Panel — pending staff approval queue (P4b). Administrator-only.
-   Each row gets an Approve button (one-click) and a Reject button that
-   opens a reason modal (10–500 chars). Approval mints the QR id; both
-   actions audit one row per click (P4a backend). *@
+﻿@* Control Panel — pending staff approval queue. Administrator-only.
+   Each row gets an Approve button and a Reject button that opens a reason
+   modal (10–500 chars). Approval grants Control Panel access and mints the
+   QR id, so it confirms first: this queue has no profile-review
+   modal to stage it, unlike the visitors/others queues. Both
+   actions audit one row per click. *@
 @page "/admin/admins/pending"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Admins.View)]
@@ -17,7 +19,9 @@
 
         @if (_toast is not null)
         {
-            <SimfAlert Variant="@_toastVariant">@_toast</SimfAlert>
+            <div class="simf-toast">
+                <SimfAlert Variant="@_toastVariant">@_toast</SimfAlert>
+            </div>
         }
 
         <SimfDataGrid TItem="AdminPendingUserSummary"
@@ -44,7 +48,9 @@
                       LoadingLabel="@L["Admin.Users.Loading"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ApprovePermission="@PermissionCatalog.Admins.Approve"
+                      RejectPermission="@PermissionCatalog.Admins.Reject">
             <Columns>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="email"
                                     Header="@L["Admin.Users.Column.Email"]"
@@ -61,17 +67,24 @@
                     <CellTemplate>@context.CreatedAt.FormatSaudi("dd-MM-yyyy hh:mm tt")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
+            @* The row pair matches the bulk pair above it. Gating only the
+               toolbar would have left the same two actions one row lower, which is
+               a half-gated screen rather than a fix. *@
             <RowActions Context="user">
-                <SimfButton Type="button" Variant="primary"
-                            Disabled="_busy"
-                            OnClick="@(() => ApproveAsync(user))">
-                    @L["Admin.Pending.Action.Approve"]
-                </SimfButton>
-                <SimfButton Type="button" Variant="secondary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenReject(user))">
-                    @L["Admin.Pending.Action.Reject"]
-                </SimfButton>
+                <AuthorizedAction Permission="@PermissionCatalog.Admins.Approve">
+                    <SimfButton Type="button" Variant="primary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenApprove(user))">
+                        @L["Admin.Pending.Action.Approve"]
+                    </SimfButton>
+                </AuthorizedAction>
+                <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
+                    <SimfButton Type="button" Variant="secondary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenReject(user))">
+                        @L["Admin.Pending.Action.Reject"]
+                    </SimfButton>
+                </AuthorizedAction>
             </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.Pending.None"]" />
@@ -80,12 +93,37 @@
     </div>
 </div>
 
+@* Approving grants Control Panel access to an administrator-typed
+   account, so it must not commit on a single click. *@
+<SimfConfirm Open="@(_approveTarget is not null)"
+             Title="@L["Admin.Pending.Approve.Confirm.Title"]"
+             Message="@(_approveTarget is null ? string.Empty
+                        : string.Format(L["Admin.Pending.Approve.Confirm.Message"],
+                                        _approveTarget.DisplayName, _approveTarget.Email))"
+             ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmApproveAsync"
+             OnCancel="CancelApprove" 
+             Permission="@PermissionCatalog.Admins.Approve"/>
+
+<SimfConfirm Open="@(_bulkApproveSelected is not null)"
+             Title="@L["Admin.Pending.BulkApprove.Confirm.Title"]"
+             Message="@(_bulkApproveSelected is null ? string.Empty
+                        : string.Format(L["Admin.Pending.BulkApprove.Confirm.Message"],
+                                        _bulkApproveSelected.Count))"
+             ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmBulkApproveAsync"
+             OnCancel="CancelBulkApprove" 
+             Permission="@PermissionCatalog.Admins.Approve"/>
+
 @if (_rejectTarget is not null)
 {
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@L["Admin.Pending.Reject.Title"]"
-               OnClose="@(() => _rejectTarget = null)">
+               OnClose="@(() => _rejectTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Pending.Reject.Confirm"], _rejectTarget.Email)</p>
             <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
@@ -99,23 +137,28 @@
                         OnClick="@(() => _rejectTarget = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_rejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmRejectAsync">
-                @L["Admin.Pending.Reject.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_rejectReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmRejectAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Pending.Reject.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
 
-@* P1.3 (D-214) — bulk reject: shared-reason modal for the selected pending admins. *@
+@* Bulk reject: shared-reason modal for the selected pending admins. *@
 @if (_bulkRejectSelected is not null)
 {
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@L["Admin.Pending.BulkReject.Title"]"
-               OnClose="@(() => _bulkRejectSelected = null)">
+               OnClose="@(() => _bulkRejectSelected = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Pending.BulkReject.Confirm"], _bulkRejectSelected.Count)</p>
             <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
@@ -129,12 +172,16 @@
                         OnClick="@(() => _bulkRejectSelected = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Admins.Reject">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmBulkRejectAsync">
-                @L["Admin.Pending.BulkReject.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmBulkRejectAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Pending.BulkReject.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }

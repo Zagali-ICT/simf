@@ -13,9 +13,9 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Networking;
 
 /// <summary>
-/// B6 — D-224: visitor-to-visitor networking connections over
+/// Visitor-to-visitor networking connections over
 /// <see cref="SimfAppDbContext"/>. Display names are resolved from the
-/// Identity DB in a separate round-trip (no cross-DB JOIN — D-157). In-service
+/// Identity DB in a separate round-trip (no cross-DB JOIN). In-service
 /// validation throws <see cref="ApiException"/> with bilingual messages
 /// (matches the MeetingRequest app-facing services); one
 /// audit row per mutation.
@@ -67,7 +67,7 @@ internal sealed class NetworkingService(
                 "يوجد اتصال مع هذا المستخدم بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var connection = new Connection
         {
             Id = Guid.NewGuid(),
@@ -80,13 +80,11 @@ internal sealed class NetworkingService(
         appDbContext.Connections.Add(connection);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ConnectionRequested,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = requesterUserId,
-            Detail = $"connectionId={connection.Id}; targetUserId={targetUserId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ConnectionRequested,
+            requesterUserId,
+            $"connectionId={connection.Id}; targetUserId={targetUserId}",
+            cancellationToken);
 
         logger.LogInformation(
             "Connection {ConnectionId} requested by {Requester} to {Target}",
@@ -117,16 +115,14 @@ internal sealed class NetworkingService(
         }
 
         connection.State = ConnectionState.Accepted;
-        connection.RespondedAt = timeProvider.GetUtcNow();
+        connection.RespondedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ConnectionAccepted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"connectionId={connection.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ConnectionAccepted,
+            actorUserId,
+            $"connectionId={connection.Id}",
+            cancellationToken);
 
         return ToResult(connection);
     }
@@ -154,16 +150,14 @@ internal sealed class NetworkingService(
         }
 
         connection.Deactivate();
-        connection.RespondedAt = timeProvider.GetUtcNow();
+        connection.RespondedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ConnectionRemoved,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"connectionId={connection.Id}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ConnectionRemoved,
+            actorUserId,
+            $"connectionId={connection.Id}",
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<ConnectionRow>> ListMineAsync(
@@ -191,7 +185,7 @@ internal sealed class NetworkingService(
         }
 
         // The "other" party for each row — resolve their display names in one
-        // Identity round-trip (no cross-DB JOIN, D-157).
+        // Identity round-trip.
         var otherIds = rows
             .Select(r => r.RequesterUserId == actorUserId ? r.TargetUserId : r.RequesterUserId)
             .Distinct()

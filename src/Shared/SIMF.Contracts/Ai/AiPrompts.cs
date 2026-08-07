@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Ai;
 
-/// <summary>D-176 (gap doc G12) — admin grid row.</summary>
+/// <summary>Admin grid row.</summary>
 public sealed record AdminAiPromptSummary(
     Guid Id,
     string Key,
@@ -15,10 +15,10 @@ public sealed record AdminAiPromptSummary(
     int MaxOutputTokens,
     bool IsActive,
     int Version,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
-/// <summary>D-176 — full detail row (read).</summary>
+/// <summary>Full detail row (read).</summary>
 public sealed record AdminAiPromptDetail(
     Guid Id,
     string Key,
@@ -35,10 +35,10 @@ public sealed record AdminAiPromptDetail(
     int MaxOutputTokens,
     bool IsActive,
     int Version,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
-/// <summary>D-188 — one historical snapshot of an
+/// <summary>One historical snapshot of an
 /// <see cref="AdminAiPromptDetail"/> (captured BEFORE the live row
 /// was updated past <see cref="Version"/>). The history endpoint
 /// returns these ordered newest-first.</summary>
@@ -53,22 +53,22 @@ public sealed record AdminAiPromptHistoryEntry(
     double Temperature,
     int MaxOutputTokens,
     bool IsActive,
-    /// <summary>D-181-shaped HMAC of the snapshot's prompt content
+    /// <summary>HMAC of the snapshot's prompt content
     /// (carries the <c>v1:</c> / <c>v2:</c> prefix). Matches the
     /// <c>contentHashOld</c> the audit row emitted at the time.</summary>
     string ContentHash,
     /// <summary>The live row's <c>UpdatedAt</c> from the version
     /// this snapshot captures (or <c>CreatedAt</c> for v1).</summary>
-    DateTimeOffset CapturedFromUpdatedAt,
+    DateTime CapturedFromUpdatedAt,
     /// <summary>The admin who authored the version this snapshot
     /// captures. Null on v1 (the original CreateAsync path).</summary>
     Guid? UpdatedByUserId,
     /// <summary>When the snapshot row was written (i.e. when the
     /// successor version replaced this one).</summary>
-    DateTimeOffset CapturedAt);
+    DateTime CapturedAt);
 
-/// <summary>D-176 — create admin request. Open for inheritance per
-/// D-168 / D-174 / D-175 pattern.</summary>
+/// <summary>Create admin request. Open for inheritance, matching the other
+/// admin request contracts.</summary>
 public class CreateAiPromptRequest
 {
     public string Key { get; set; } = string.Empty;
@@ -85,7 +85,7 @@ public class CreateAiPromptRequest
     public int MaxOutputTokens { get; set; } = 512;
 }
 
-/// <summary>D-176 — update request (same shape as create, no Key
+/// <summary>Update request (same shape as create, no Key
 /// because Key is immutable once written).</summary>
 public class UpdateAiPromptRequest
 {
@@ -103,14 +103,22 @@ public class UpdateAiPromptRequest
     public bool IsActive { get; set; } = true;
 }
 
-/// <summary>D-176 — admin dry-run a prompt with arbitrary inputs.</summary>
+/// <summary>Admin dry-run a prompt with arbitrary inputs.</summary>
 public class TestAiPromptRequest
 {
     public Dictionary<string, string> Inputs { get; set; } = new();
 }
 
-/// <summary>D-176 — result of an AI call shown to the admin tester
-/// + the feature endpoints.</summary>
+/// <summary>Result of an AI call shown to the admin tester
+/// + the feature endpoints.
+///
+/// <para><c>IsStub</c> is APPENDED (append-only wire
+/// contract) and reports that the answer came from the offline stub provider,
+/// which echoes the prompt instead of answering it. <c>Provider</c> cannot be
+/// used for this: it reports the prompt's CONFIGURED provider, which the
+/// routing layer may have redirected. Server-side callers that must not ship
+/// placeholder content branch on this flag; the mobile / website clients simply
+/// ignore the extra field.</para></summary>
 public sealed record AiCallResult(
     Guid InvocationId,
     string PromptKey,
@@ -120,9 +128,10 @@ public sealed record AiCallResult(
     string OutputText,
     int? TokensInput,
     int? TokensOutput,
-    int LatencyMs);
+    int LatencyMs,
+    bool IsStub = false);
 
-/// <summary>D-176 — admin invocations log row.</summary>
+/// <summary>Admin invocations log row.</summary>
 public sealed record AdminAiInvocationRow(
     Guid Id,
     string PromptKey,
@@ -135,10 +144,10 @@ public sealed record AdminAiInvocationRow(
     int? TokensOutput,
     int LatencyMs,
     string? ErrorCode,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
-/// <summary>D-179 (gap doc G12 hardening) — full invocation payload
-/// for SOC threat-hunting. The grid row (<see cref="AdminAiInvocationRow"/>)
+/// <summary>Full invocation payload for SOC threat-hunting. The grid row
+/// (<see cref="AdminAiInvocationRow"/>)
 /// deliberately omits <c>InputJson</c> + <c>OutputText</c> so the
 /// admin grid stays light and non-PII; this drill-down endpoint
 /// returns them for the security-auditor role. Inputs are already
@@ -158,7 +167,7 @@ public sealed record AdminAiInvocationDetail(
     string? ErrorCode,
     string InputJson,
     string? OutputText,
-    DateTimeOffset CreatedAt);
+    DateTime CreatedAt);
 
 /// <summary>CP Phase-1 — the AI Control Center dashboard: rolled-up invocation
 /// health over a recent window (default 24h) plus a per-service breakdown, and

@@ -9,12 +9,12 @@ using SIMF.ControlPanel.Endpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 // Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
-// variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
+// variables (see deploy/set-env-*.ps1). This source strips
 // the prefix, so SIMF_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT
-// stays un-prefixed (the host reads it before configuration sources load). (D-355)
+// stays un-prefixed (the host reads it before configuration sources load).
 builder.Configuration.AddEnvironmentVariables("SIMF_");
 
-// P6 — per-project log files under {Storage:LogDirectory}/SIMF.ControlPanel/log-{Date}.log.
+// Per-project log files under {Storage:LogDirectory}/SIMF.ControlPanel/log-{Date}.log.
 builder.Host.UseSerilog((context, configuration) =>
 {
     var logDir = context.Configuration["Storage:LogDirectory"] ?? "logs";
@@ -43,8 +43,8 @@ builder.Services.AddRazorComponents()
     })
     .AddHubOptions(options =>
     {
-        // D-122 — raised from 256 KB (QR SVG render diff) to 10 MB to match
-        // V10 ERP's cropper image-transfer limit. The D-116 cropper consumes
+        // Raised from 256 KB (QR SVG render diff) to 10 MB to match
+        // V10 ERP's cropper image-transfer limit. The cropper consumes
         // base64 data URLs of the source image (up to the 2 MB avatar policy)
         // through JS interop, which travels over the same SignalR transport.
         options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
@@ -65,7 +65,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         // SIMF_Session__LifetimeHours; default 8h (the NCA-safe baseline the
         // committed deploy template ships). A larger value cannot extend the
         // real session beyond the API's absolute cap Jwt:SessionLifetimeHours
-        // (NCA D-443 = 24h): the refresh token still expires there and forces
+        // (the NCA-driven 24h ceiling): the refresh token still expires there and forces
         // re-login, so this knob is for shorter idle windows / test overrides.
         var sessionLifetimeHours =
             builder.Configuration.GetValue<int>("Session:LifetimeHours", 8);
@@ -88,7 +88,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             context.Response.Redirect(context.RedirectUri);
             return Task.CompletedTask;
         };
-        // D-121 — rotate the cookie's stored access_token using the
+        // Rotate the cookie's stored access_token using the
         // refresh_token before the JWT expires. Without this hook, every
         // /account/api/* BFF call past the 30-minute mark forwards an
         // expired JWT and the API returns 401, even though the cookie is
@@ -96,7 +96,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Events.OnValidatePrincipal = SimfCookieRefreshHandler.OnValidatePrincipalAsync;
     });
 builder.Services.AddAuthorization();
-// Issue-1 — per-page/per-action permission policies (perm:<code>). The dynamic
+// Per-page/per-action permission policies (perm:<code>). The dynamic
 // provider materialises them on demand and the handler matches the required
 // code against the principal's `perm` claims (Administrator's wildcard passes
 // any). Registered after AddAuthorization so this provider wins for perm: names.
@@ -106,7 +106,7 @@ builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHand
     SIMF.ControlPanel.Authorization.PermissionAuthorizationHandler>();
 builder.Services.AddCascadingAuthenticationState();
 
-// D-122 — Cropper.Blazor DI registration (was missing in D-116). Without
+// Cropper.Blazor DI registration. Without
 // this call, CropperComponent crashes at runtime with "no registered
 // service of type 'ICropperJsInterop'" the moment SimfImageCropperModal
 // tries to render. Mirrors V10 ERP's Program.cs line 60.
@@ -123,7 +123,7 @@ builder.Services.AddScoped<SimfAuthSession>();
 // layout (reads to render) and the profile page (writes on load + change).
 builder.Services.AddScoped<SimfUserChrome>();
 
-// D-353 — per-user, per-page CRUD display preferences (dialog vs full page),
+// Per-user, per-page CRUD display preferences (dialog vs full page),
 // persisted in the browser's localStorage. Scoped per circuit (it uses the
 // circuit's IJSRuntime).
 builder.Services.AddScoped<CpPreferences>();
@@ -136,7 +136,7 @@ builder.Services.AddHttpContextAccessor();
 // SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
 // certificate on the server-to-server API calls (the API uses a self-signed
 // cert whose name does not match the host). Default false → normal TLS
-// validation, so dev and any other environment are unaffected. (D-355)
+// validation, so dev and any other environment are unaffected.
 var allowSelfSignedApiCert =
     builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
 Func<HttpMessageHandler> apiPrimaryHandler = () =>
@@ -179,8 +179,8 @@ app.UseHttpsRedirection();
 // frame-ancestors 'none' is enforced (the CP is never framed; matches the
 // X-Frame-Options DENY). The full content policy ships as Report-Only first so the
 // owner can confirm in-browser (Blazor Server's theme-bootstrap inline script + the
-// SignalR socket) before flipping it to the enforcing header — see the gap report
-// Wave 4. 'unsafe-inline'/'unsafe-eval' are present only to keep the report-only
+// SignalR socket) before flipping it to the enforcing header.
+// 'unsafe-inline'/'unsafe-eval' are present only to keep the report-only
 // pass quiet until a nonce is wired for the bootstrap script.
 app.Use(async (context, next) =>
 {

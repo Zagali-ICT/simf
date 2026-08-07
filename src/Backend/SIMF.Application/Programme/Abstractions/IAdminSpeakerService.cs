@@ -3,7 +3,7 @@ using SIMF.Contracts.Admin;
 
 namespace SIMF.Application.Programme.Abstractions;
 
-/// <summary>D-151 — admin CRUD over <c>Speaker</c> (SIMF-DAT-001 §5.4).</summary>
+/// <summary>Admin CRUD over <c>Speaker</c> (SIMF-DAT-001 §5.4).</summary>
 public interface IAdminSpeakerService
 {
     Task<GridPage<AdminSpeakerSummary>> ListAllAsync(

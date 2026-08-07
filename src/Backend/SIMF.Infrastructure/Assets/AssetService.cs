@@ -11,7 +11,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Assets;
 
-/// <summary>D-357 / D-568 (Wave C S1) — the unified media-asset service, now
+/// <summary>The unified media-asset service, now
 /// backed by the centralized <see cref="StoredFile"/> store instead of the legacy
 /// <c>Asset</c> table + <c>IImageAssetStorage</c>. The <see cref="IAssetService"/>
 /// contract, every endpoint route and the <see cref="AdminAssetSummary"/> shape are
@@ -157,7 +157,7 @@ internal sealed class AssetService(
     private Task<bool> OwnerIsActiveAsync(
         AssetCategory category, Guid ownerId, CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         return category switch
         {
             AssetCategory.SpeakerPhoto => dbContext.Speakers
@@ -259,7 +259,7 @@ internal sealed class AssetService(
         if (!file.IsActive) { return; }
         file.Deactivate();
         file.UpdatedBy = actorUserId;
-        file.UpdatedAt = timeProvider.GetUtcNow();
+        file.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -284,7 +284,7 @@ internal sealed class AssetService(
         file.IsActive = true;
         file.DeletedAt = null;
         file.UpdatedBy = actorUserId;
-        file.UpdatedAt = timeProvider.GetUtcNow();
+        file.UpdatedAt = timeProvider.SimfNow();
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

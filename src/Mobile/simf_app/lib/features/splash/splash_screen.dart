@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../../core/organization_profile/organization_profile.dart';
 import '../../core/startup/app_update_checker.dart';
 import 'splash_controller.dart';
 
@@ -62,7 +63,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               ),
               const SizedBox(height: SimfTokens.space6),
               Text(
-                l10n.splashEventLine,
+                _eventLine(l10n, ref.watch(orgProfileProvider)),
                 textAlign: TextAlign.center,
                 style: SimfTokens.bodyBeigeTitleTall,
               ),
@@ -71,6 +72,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         ),
       ),
     );
+  }
+
+  /// The edition + date/location lock-up line (#40-residual). The dates come
+  /// from the CP-configured organization profile — hydrated synchronously from
+  /// the on-device cache, so it is already present on the first splash frame of
+  /// every run after the first. The bundled [AppL10n.splashEventLine] literal is
+  /// the fallback only (first-ever run, or an edition with no dates set), so a
+  /// new edition never ships a stale hardcoded date.
+  String _eventLine(AppL10n l10n, OrgProfile? profile) {
+    final dates = profile?.eventDateRange(l10n.isArabic);
+    if (dates == null || dates.isEmpty) {
+      return l10n.splashEventLine;
+    }
+    final location = profile?.locationFor(l10n.isArabic);
+    if (location == null || location.isEmpty) {
+      return '${l10n.splashEditionLine}\n$dates';
+    }
+    return '${l10n.splashEditionLine}\n$dates · $location';
   }
 
   void _handle(SplashState state) {
@@ -102,6 +121,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     String? location,
   ) async {
     await _showUpdateDialog(hard: false);
+    // ref is unusable once this State is disposed, and _routeOut would no-op
+    // anyway, so bail rather than throw.
+    if (!mounted) {
+      return;
+    }
     // D-736 — however the prompt was dismissed, snooze this version so it
     // doesn't re-nag on every launch (the About manual check still surfaces it).
     unawaited(ref.read(appUpdateCheckerProvider).snoozeOptionalUpdate());

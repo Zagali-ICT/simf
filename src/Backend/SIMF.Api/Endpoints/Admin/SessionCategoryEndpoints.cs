@@ -1,13 +1,13 @@
 // Tests: SIMF.Api.Tests/SessionCategoriesTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-// B9b — D-226: admin CRUD over the dynamic SessionCategory lookup. Validation
+// Admin CRUD over the dynamic SessionCategory lookup. Validation
 // lives in the service (mirrors AdminOrganisationService); endpoints gate +
 // bind + delegate. The PUT reads the route GUID via Route<Guid>("id") (the
 // Organisation/FAQ pattern); the request carries no id.
@@ -68,11 +68,7 @@ public sealed class CreateSessionCategoryEndpoint(IAdminSessionCategoryService s
 
     public override async Task HandleAsync(AdminCreateSessionCategoryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSessionCategoryDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -92,11 +88,7 @@ public sealed class UpdateSessionCategoryEndpoint(IAdminSessionCategoryService s
 
     public override async Task HandleAsync(AdminUpdateSessionCategoryRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSessionCategoryDetail>.Ok(
             await service.UpdateAsync(actorId, Route<Guid>("id"), req, ct)), ct);
     }
@@ -116,11 +108,7 @@ public sealed class DeactivateSessionCategoryEndpoint(IAdminSessionCategoryServi
 
     public override async Task HandleAsync(SessionCategoryByIdRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

@@ -25,8 +25,8 @@ public sealed record AdminOrganisationDetail(
     string? Email,
     string? Website,
     bool IsActive,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
 /// <summary>Admin create payload.</summary>
 public sealed class CreateOrganisationRequest

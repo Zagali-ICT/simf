@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -123,6 +123,27 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         Assert.False(string.IsNullOrWhiteSpace(tokens.RefreshToken));
         Assert.Equal("Bearer", tokens.TokenType);
         Assert.Equal(email, tokens.User.Email);
+    }
+
+    [Fact]
+    public async Task Sending_the_emailed_code_writes_no_in_app_notification()
+    {
+        // BUG-015 — every 2FA sign-in used to write a "Sign-in code sent" row, so
+        // the notification centre filled with OTP notices and buried the
+        // meaningful ones. The code travels by email; the trail is the
+        // SignIn.SecondFactorIssued audit row, not a user-facing notification.
+        var email = await RegisterVerifiedVisitorAsync();
+
+        var challenge = await ExpectChallengeAsync(email, Password);
+        Assert.True(challenge.MfaRequired);
+        Assert.NotNull(challenge.OtpToken);
+
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var userId = database.Users.Single(candidate => candidate.Email == email).Id;
+        Assert.Empty(database.Notifications.Where(notification =>
+            notification.UserId == userId
+            && notification.Kind == NotificationKind.CredentialSignInOtpSent));
     }
 
     [Fact]
@@ -874,13 +895,13 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = SimfClock.Now,
             };
             appDatabase.UserProfiles.Add(profile);
         }
         profile.RejectionReason = reason;
         profile.RejectionReasonArabic = reasonArabic;
-        user.StateChangedAt = DateTimeOffset.UtcNow;
+        user.StateChangedAt = SimfClock.Now;
         database.SaveChanges();
         appDatabase.SaveChanges();
     }

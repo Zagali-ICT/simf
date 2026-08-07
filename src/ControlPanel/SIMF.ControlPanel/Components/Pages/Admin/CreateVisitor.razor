@@ -1,7 +1,7 @@
-@* Control Panel — create a new visitor account (P3; refactored in D-114 to
-   host the reusable CreateVisitorForm so the visitors list page can show the
-   same form inside an Add modal). The URL /admin/visitors/new stays as a
-   deep-link fallback per Q-D. *@
+@* Control Panel — create a new visitor account. Hosts the reusable
+   CreateVisitorForm so the visitors list page can show the
+   same form inside an Add modal. The URL /admin/visitors/new stays as a
+   deep-link fallback. *@
 @page "/admin/visitors/new"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Visitors.Create)]

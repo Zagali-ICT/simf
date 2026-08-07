@@ -18,6 +18,19 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
 {
     private const string AdministratorRole = "Administrator";
 
+    // ISO numeric ids are hand-assigned, and the fixture database is SHARED and
+    // ACCUMULATES across the whole run — so picking one at random from the
+    // 900..997 band, 98 slots shared by every country any test creates,
+    // eventually collides. When it does, the
+    // server's ID-duplicate check fires BEFORE the code / validation rule the
+    // test is actually asserting, and the failure reads like a product bug: on
+    // 2026-07-29 Duplicate_code_is_a_409_COUNTRY_CODE_DUPLICATE reported
+    // COUNTRY_ID_DUPLICATE. Handing ids out from a counter makes each one unique
+    // within the run rather than merely probably-unique.
+    private static int _nextTestCountryId = 900;
+
+    private static int ClaimCountryId() => Interlocked.Increment(ref _nextTestCountryId);
+
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
 
@@ -58,7 +71,7 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         // Pick an id well outside the seed range to avoid collisions.
-        var newId = Random.Shared.Next(900, 998);
+        var newId = ClaimCountryId();
 
         var create = await PostAuthAsync(
             "/api/v1/admin/countries",
@@ -107,7 +120,7 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/countries",
             new AdminCreateCountryRequest
             {
-                Id = Random.Shared.Next(900, 998),
+                Id = ClaimCountryId(),
                 Code = "SA", // already seeded
                 Name = "Duplicate Code",
                 NameArabic = "رمز مكرر",
@@ -127,7 +140,7 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/countries",
             new AdminCreateCountryRequest
             {
-                Id = Random.Shared.Next(900, 998),
+                Id = ClaimCountryId(),
                 Code = "TOO_LONG", // not 2 chars
                 Name = "Bad",
                 NameArabic = "سيء",
@@ -154,7 +167,7 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/countries",
             new AdminCreateCountryRequest
             {
-                Id = Random.Shared.Next(900, 998),
+                Id = ClaimCountryId(),
                 Code = "ZX",
                 Name = "Forbidden",
                 NameArabic = "ممنوع",
@@ -189,16 +202,7 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
 
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private Task<HttpResponseMessage> GetAuthAsync(string url, string token)

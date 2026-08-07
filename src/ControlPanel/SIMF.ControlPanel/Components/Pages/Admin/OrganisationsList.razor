@@ -1,11 +1,11 @@
-@* Organisation lookup (CP UI) â€” admin CRUD over the bilingual Saudi-companies
+@* Organisation lookup (CP UI) — admin CRUD over the bilingual Saudi-companies
    lookup. Rows can be created/edited by hand or bulk-loaded from a government
    Excel sheet via "Import Excel" (POST /admin/organisations/import returns an
    OrganisationImportResult with the rows-read / inserted / updated / skipped
    counts). A search box reloads the grid server-side via GridQuery.Search.
    Migrated from the raw <table> to the owner-mandated SimfDataGrid
    (server-paged, sortable + filterable, full pager). Centralized dialog/full-
-   page framing D-353: Add / Edit / View / Delete are hosted by CrudShell, which
+   page framing: Add / Edit / View / Delete are hosted by CrudShell, which
    frames the reusable OrganisationAddEdit and OrganisationViewDelete forms as a
    popup or a full page per the admin's toolbar choice (persisted in
    localStorage via CpPreferences). The inline SimfModal edit form + native
@@ -16,7 +16,7 @@
 @using SIMF.Contracts.Admin
 @using SIMF.Contracts.Organisations
 
-<PageTitle>@L["Admin.Organisations.Title"] Â· SIMF</PageTitle>
+<PageTitle>@L["Admin.Organisations.Title"] · SIMF</PageTitle>
 
 @if (!GridHidden)
 {
@@ -26,7 +26,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <div class="simf-toolbar">
@@ -76,7 +78,12 @@
                           EditLabel="@L["Grid.Edit"]"
                           DetailsLabel="@L["Grid.Details"]"
                           DeleteLabel="@L["Grid.Delete"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Organisations.Create"
+                          EditPermission="@PermissionCatalog.Organisations.Edit"
+                          DeletePermission="@PermissionCatalog.Organisations.Delete"
+                          ImportPermission="@PermissionCatalog.Organisations.Import"
+                          ExportPermission="@PermissionCatalog.Organisations.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>
@@ -89,22 +96,22 @@
                     <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="nameEn"
                                         Header="@L["Admin.Organisations.Col.NameEn"]"
                                         Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.NameEn) ? "â€”" : context.NameEn)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.NameEn) ? "—" : context.NameEn)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="commercialRegistration"
                                         Header="@L["Admin.Organisations.Col.CommercialRegistration"]"
                                         Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.CommercialRegistration) ? "â€”" : context.CommercialRegistration)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.CommercialRegistration) ? "—" : context.CommercialRegistration)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="sector"
                                         Header="@L["Admin.Organisations.Col.Sector"]"
                                         Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.Sector) ? "â€”" : context.Sector)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.Sector) ? "—" : context.Sector)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="city"
                                         Header="@L["Admin.Organisations.Col.City"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.City) ? "â€”" : context.City)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.City) ? "—" : context.City)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="isActive"
                                         Header="@L["Admin.Organisations.Col.Active"]"
@@ -152,12 +159,19 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@L["Admin.Organisations.Import.Title"]"
-               OnClose="@(() => _importOpen = false)">
+               OnClose="@(() => _importOpen = false)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <div class="simf-form__fields">
                 <p class="simf-walkin__hint">@L["Admin.Organisations.Import.Hint"]</p>
+                @* §6.16 (LQ-008) — a <span> names nothing. The sibling file inputs
+                   elsewhere in the CP are WRAPPED in a <label>, which names them
+                   implicitly; these two sit in a <div> with a bare span between a
+                   hint paragraph, so they had no accessible name at all. An
+                   explicit for= is the right fix here — the hint sits between the
+                   label and the control, so wrapping would swallow it. *@
                 <div class="simf-field">
-                    <span class="simf-field__label">@L["Admin.Organisations.Import.File"]</span>
+                    <label class="simf-field__label" for="organisations-import-input">@L["Admin.Organisations.Import.File"]</label>
                     <input id="organisations-import-input" type="file" class="simf-field__input"
                            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                            @onchange="OnImportFileSelected"
@@ -192,7 +206,8 @@
                 @L["Admin.Organisations.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="UploadImportAsync" Loading="_importing"
-                        Disabled="@(string.IsNullOrEmpty(_importFileName))">
+                        Disabled="@(string.IsNullOrEmpty(_importFileName))"
+                        LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.Organisations.Import.Upload"]
             </SimfButton>
         </Footer>

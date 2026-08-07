@@ -38,6 +38,8 @@
 | E2E-NTF-010 | Idempotent re-delete — already-dismissed row → 200, no error | resilience | P2 | _to author_ |
 | E2E-NTF-011 | Server 500 on `/list` → no rows render, grid leaves loading state | resilience | P2 | _to author_ |
 | E2E-NTF-012 | RTL / Arabic render mirrors page, grid, pager + Details modal | i18n | P1 | _to author_ |
+| E2E-NTF-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-NTF-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -70,6 +72,9 @@ Scenario: View a notification, delete one, then mark all read
   Then the modal closes
 
   When the user clicks the per-row "Delete" (🗑) action on that same row
+  Then a SimfConfirm dialog opens titled "Dismiss notification" naming the row (D-809)
+  And no request has been sent yet
+  When they click "Delete" in the dialog
   Then a DELETE /account/api/notifications/{id} request fires and returns 200
   And the grid reloads via POST /account/api/notifications/list (200)
   And the grid now shows {N - 1} rows
@@ -115,6 +120,9 @@ Scenario: Details modal renders all four read-only fields
 Scenario: Single Delete removes the row
   Given the grid shows {N} rows
   When the user clicks the "Delete" (🗑) action on a target row
+  Then a SimfConfirm dialog opens titled "Dismiss notification" (D-809)
+  And no DELETE has been sent yet
+  When they click "Delete" in the dialog
   Then DELETE /account/api/notifications/{id} fires and returns 200 with ApiResult.Data = true
   And the grid reloads (POST /list, 200)
   And the grid shows {N - 1} rows
@@ -130,6 +138,9 @@ Scenario: Select multiple rows and bulk-dismiss
   When the user ticks the row checkbox on 3 distinct rows
   Then the grid toolbar surfaces a "Delete" bulk action
   When they click the toolbar "Delete"
+  Then a SimfConfirm dialog opens titled "Dismiss selected notifications" naming the count (D-809)
+  And no DELETE has been sent yet
+  When they click "Delete" in the dialog
   Then 3 sequential DELETE /account/api/notifications/{id} requests fire (one per selected row), each 200
   And the grid reloads (POST /list, 200)
   And the 3 selected rows are gone

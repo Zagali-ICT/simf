@@ -2,13 +2,41 @@
    been built yet. The feature modules arrive in their own increments. *@
 @page "/m/{Module}"
 @layout CpShellLayout
-@attribute [Authorize]
+@* cp-stub-modules (Q4, 2026-07-30) — this route used to be gated on [Authorize]
+   alone while its nav item carried no RequiredPermission, so the one remaining
+   stub was advertised to, and openable by, EVERY signed-in admin regardless of
+   role: a GateOperator holding only Gates.Operate saw "Live sessions · Soon" in
+   its menu and could open it. The "Soon" badge is a label, not a gate.
+
+   The catch-all now exists only to serve declared stubs, and the sole declared
+   stub (/m/live-sessions) stands in for a programme-read console, so the route
+   carries the same permission its nav item promises. Nav and page must name the
+   SAME code — CpNavigationPermissionTests pins both halves. When a stub with a
+   different permission is added, this page stops being the right home for it:
+   graduate it to its own route rather than widening this gate. *@
+@attribute [RequirePermission(PermissionCatalog.Sessions.View)]
 
 <PageTitle>@PageTitle · SIMF</PageTitle>
 
 <SimfPageHeader Title="@PageTitle" />
 
-<div class="simf-panel">
-    <h2 class="simf-panel__title">@L["Module.ComingSoon.Title"]</h2>
-    <p class="simf-panel__text">@L["Module.ComingSoon.Text"]</p>
-</div>
+@* §6.16 (NAV-011) — this route is a catch-all, and it used to render "Coming
+   soon" for ANY slug, so a mistyped /m/ URL got a convincing page announcing a
+   module that does not exist and is not coming. Only slugs CpNavigation
+   declares are real; everything else is a 404. *@
+@if (IsKnownModule)
+{
+    <div class="simf-panel">
+        <h2 class="simf-panel__title">@L["Module.ComingSoon.Title"]</h2>
+        <p class="simf-panel__text">@L["Module.ComingSoon.Text"]</p>
+    </div>
+}
+else
+{
+    <div class="simf-panel">
+        <p class="simf-panel__text">@L["NotFound.Text"]</p>
+        <p class="simf-panel__action">
+            <SimfLink Href="/">@L["NotFound.Back"]</SimfLink>
+        </p>
+    </div>
+}

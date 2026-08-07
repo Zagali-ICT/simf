@@ -13,11 +13,11 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// B9b — D-226: admin CRUD over the dynamic <see cref="SessionCategory"/>
-/// lookup (FDS-004 §5.4). Built on <see cref="SimfAppDbContext"/>. Mirrors
+/// Admin CRUD over the dynamic <see cref="SessionCategory"/>
+/// lookup. Built on <see cref="SimfAppDbContext"/>. Mirrors
 /// <c>AdminOrganisationService</c>: bilingual (Name / NameArabic), soft-delete
 /// (IsActive), in-service validation, one audit row per mutation. Ships empty;
-/// the team seeds categories once the client confirms the list (OI-2).
+/// the team seeds categories once the client confirms the list.
 /// </summary>
 internal sealed class AdminSessionCategoryService(
     SimfAppDbContext db,
@@ -40,7 +40,7 @@ internal sealed class AdminSessionCategoryService(
                 || EF.Functions.Like(category.NameArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -62,7 +62,7 @@ internal sealed class AdminSessionCategoryService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: DisplayOrder, then Name.
+        // CP grid sortable columns. Default: DisplayOrder, then Name.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("name", true) => rows.OrderByDescending(category => category.Name),
@@ -108,7 +108,7 @@ internal sealed class AdminSessionCategoryService(
     {
         var (name, nameArabic) = ValidateAndNormalise(request.Name, request.NameArabic);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var category = new SessionCategory
         {
             Id = Guid.NewGuid(),
@@ -121,13 +121,11 @@ internal sealed class AdminSessionCategoryService(
         db.SessionCategories.Add(category);
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionCategoryCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={category.Id}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionCategoryCreated,
+            actorUserId,
+            $"id={category.Id}; name={name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created SessionCategory {Name} ({Id})",
@@ -152,16 +150,14 @@ internal sealed class AdminSessionCategoryService(
         category.NameArabic = nameArabic;
         category.DisplayOrder = request.DisplayOrder;
         category.IsActive = request.IsActive;
-        category.UpdatedAt = timeProvider.GetUtcNow();
+        category.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionCategoryUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={category.Id}; name={name}; active={category.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionCategoryUpdated,
+            actorUserId,
+            $"id={category.Id}; name={name}; active={category.IsActive}",
+            cancellationToken);
 
         return ToDetail(category);
     }
@@ -181,16 +177,14 @@ internal sealed class AdminSessionCategoryService(
         }
 
         category.Deactivate();
-        category.UpdatedAt = timeProvider.GetUtcNow();
+        category.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.SessionCategoryDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={category.Id}; name={category.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.SessionCategoryDeactivated,
+            actorUserId,
+            $"id={category.Id}; name={category.Name}",
+            cancellationToken);
     }
 
     private static (string Name, string NameArabic) ValidateAndNormalise(

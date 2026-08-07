@@ -3,11 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Cms.Abstractions;
 using SIMF.Contracts.Cms;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Cms;
 
 /// <summary>
-/// D-173 (gap doc G8) — public read surface. Hot path on every public
+/// Public read surface. Hot path on every public
 /// page render — kept minimal: AsNoTracking, projection straight to
 /// the contract record, single round trip even on the batch path.
 /// </summary>
@@ -57,7 +58,7 @@ internal sealed class PublicCmsService(
     public async Task<PublicBanners> GetActiveBannersAsync(
         CancellationToken cancellationToken = default)
     {
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var rows = await appDbContext.Banners
             .AsNoTracking()
             .Where(b => b.IsActive && b.Start <= now && b.End >= now)

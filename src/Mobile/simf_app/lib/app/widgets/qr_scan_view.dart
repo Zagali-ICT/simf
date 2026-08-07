@@ -131,9 +131,14 @@ class _ScannerHeader extends StatelessWidget {
                 child: IconButton(
                   key: const ValueKey<String>('scannerBack'),
                   onPressed: onBack,
+                  // Icon-only, over a live camera preview — the one control on
+                  // the scanner a user must be able to find without reading the
+                  // frame. Same defect and fix as SimfFormScaffold above and
+                  // SimfCircledBackButton (DEF-SWEEP-003).
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   icon: const Icon(
                     Icons.arrow_back_ios_new,
-                    color: Colors.white,
+                    color: SimfTokens.surface,
                     size: 20,
                     textDirection: TextDirection.ltr,
                   ),
@@ -144,7 +149,7 @@ class _ScannerHeader extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Colors.white,
+              color: SimfTokens.surface,
               fontSize: 24,
               fontWeight: FontWeight.w500,
             ),

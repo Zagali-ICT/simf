@@ -9,7 +9,7 @@ using static SIMF.Web.Content.LocalizedText;
 
 namespace SIMF.Web.Components.Pages;
 
-// Website - public programme / agenda page (D-199, Mockup page 16 "Agenda").
+// The public programme / agenda page.
 // Static-SSR public read over the anonymous backend; groups the published
 // sessions by their event-local (+03:00 Riyadh) calendar date into day sections
 // (a day strip switches between them) and renders each session as a timeline

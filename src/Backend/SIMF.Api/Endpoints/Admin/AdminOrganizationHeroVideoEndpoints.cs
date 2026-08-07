@@ -1,10 +1,10 @@
 // Tests: SIMF.Api.Tests/OrganizationHeroVideoTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Organization;
@@ -12,11 +12,11 @@ using SIMF.Infrastructure.Configuration;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>D-768 — upload (replace) the home/landing hero background video. Gated by
+/// <summary>Upload (replace) the home/landing hero background video. Gated by
 /// OrganizationProfile.Manage. The file rides the multipart form ("file"); the bytes
 /// stream straight to disk and <c>BackgroundVideoUrl</c> is pointed at the served
 /// <c>.mp4</c> route so the Flutter home hero (which cannot render a clipped YouTube
-/// WebView on Android — D-761) and the website hero play it. The body + multipart
+/// WebView on Android) and the website hero play it. The body + multipart
 /// ceilings are raised for THIS request only (before the body is read), so the DoS
 /// posture on every other endpoint is unchanged.</summary>
 public sealed class UploadOrganizationHeroVideoEndpoint(
@@ -51,11 +51,7 @@ public sealed class UploadOrganizationHeroVideoEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         // The persisted URL must be one the app/website hero can actually play: an
         // absolute https .mp4 (LiveStreamUrlPolicy). Behind the reverse proxy the
@@ -113,7 +109,7 @@ public sealed class UploadOrganizationHeroVideoEndpoint(
     }
 }
 
-/// <summary>D-768 — remove the uploaded hero background video (reverts the hero to
+/// <summary>Remove the uploaded hero background video (reverts the hero to
 /// the banner image / bundled media). Gated by OrganizationProfile.Manage. Clears
 /// <c>BackgroundVideoUrl</c> only when it still points at our served route, so a
 /// separately-pasted external / YouTube link is left intact.</summary>
@@ -134,11 +130,7 @@ public sealed class DeleteOrganizationHeroVideoEndpoint(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var servedUrl = OrganizationHeroVideoRoutes.ServedUrl(
             HttpContext.Request, options.Value.PublicApiBaseUrl);
         await heroVideo.RemoveAsync(actorId, servedUrl, ct);

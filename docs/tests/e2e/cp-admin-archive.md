@@ -6,7 +6,7 @@
 | **Route** | `/admin/archive` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-16 (D-440 — gallery/past-speaker image fields now expect a full https URL) |
 
 > **P6 (D-440):** the gallery `url` and past-speaker `photo` fields are now
@@ -81,6 +81,8 @@
 | E2E-ARC-023 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual 400, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-ARC-024 | Cover Image via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
 | E2E-ARC-025 | Excel round-trip of the dropped edition fields — summary / location / date label / cover path survive export + import (D-506) | happy | P1 | authored ✓ (`Export_includes_the_dropped_edition_columns` + `Import_round_trips_the_dropped_edition_fields`) |
+| E2E-ARC-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-ARC-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 

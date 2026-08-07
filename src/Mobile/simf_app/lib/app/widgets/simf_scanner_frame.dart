@@ -1,12 +1,32 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import '../../core/responsive/breakpoints.dart';
 import '../theme/tokens.dart';
 
 /// The gold border weight of the viewfinder's corner brackets (Figma 758:4579).
 const BorderSide _bracketSide = BorderSide(color: SimfTokens.accent, width: 2.36);
 
-/// Height of the black camera window (Figma 758:4735).
-const double _windowHeight = 300;
+/// Card widths per window-size class (BUG-019 / 19e). Figma draws the phone card
+/// at 343 (758:4735); pinning that on a tablet left the gate operator squinting
+/// at a phone-sized viewfinder on a 1600px panel, so the card steps up and
+/// clamps instead of stretching edge-to-edge.
+const double _cardWidthCompact = 343;
+const double _cardWidthMedium = 480;
+const double _cardWidthExpanded = 560;
+
+/// The camera window's height as a fraction of the card width, so the Figma
+/// 343 × 300 proportion holds at every size.
+const double _windowHeightRatio = 300 / _cardWidthCompact;
+
+/// Where the resting (not scanning) scan line sits inside the window — Figma's
+/// 93px on the 300px window, kept proportional.
+const double _scanLineRestRatio = 93 / 300;
+
+/// Bracket-clearance insets for the animated scan-line sweep.
+const double _sweepTopInset = 28;
+const double _sweepBottomInset = 30;
 
 /// The QR-scanner viewfinder card from Figma node 758:4735 — a navy card holding
 /// a black camera window (gold corner brackets, a glowing gold scan line and a
@@ -45,14 +65,19 @@ class SimfScannerFrame extends StatefulWidget {
 
 class _SimfScannerFrameState extends State<SimfScannerFrame>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2200),
-  );
+  // Built eagerly in initState, NOT as a lazy `late final` initialiser: a frame
+  // that never animates (mounted with `active: false`) would otherwise create
+  // its ticker for the first time inside dispose(), which throws "looking up a
+  // deactivated widget's ancestor is unsafe". Surfaced by the 19e width test.
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    );
     if (widget.active) {
       _controller.repeat(reverse: true);
     }
@@ -75,17 +100,35 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
     super.dispose();
   }
 
+  /// The card width for the current window-size class, never wider than the
+  /// screen itself (BUG-019 / 19e).
+  static double _cardWidth(BuildContext context) {
+    final double preferred;
+    switch (WindowSize.of(context)) {
+      case WindowSize.compact:
+        preferred = _cardWidthCompact;
+      case WindowSize.medium:
+        preferred = _cardWidthMedium;
+      case WindowSize.expanded:
+      case WindowSize.large:
+        preferred = _cardWidthExpanded;
+    }
+    return math.min(preferred, MediaQuery.sizeOf(context).width);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final width = _cardWidth(context);
+    final windowHeight = width * _windowHeightRatio;
     return Container(
-      width: 343,
+      width: width,
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         color: SimfTokens.scannerCard,
         borderRadius: BorderRadius.circular(24),
         boxShadow: const <BoxShadow>[
           BoxShadow(
-            color: Color(0x40000000),
+            color: SimfTokens.scrimBlack25,
             blurRadius: 60,
             offset: Offset(0, 24),
           ),
@@ -96,7 +139,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildWindow(),
+            child: _buildWindow(windowHeight),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
@@ -107,16 +150,16 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
     );
   }
 
-  Widget _buildWindow() {
+  Widget _buildWindow(double windowHeight) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: SizedBox(
-        height: _windowHeight,
+        height: windowHeight,
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            ColoredBox(color: Colors.black, child: widget.camera),
-            const ColoredBox(color: Color(0x59000000)), // black @ 35% overlay
+            ColoredBox(color: SimfTokens.black, child: widget.camera),
+            const ColoredBox(color: SimfTokens.scrimBlack35), // black @ 35%
             const Positioned(top: 16, left: 16, child: _Bracket(top: true, left: true)),
             const Positioned(top: 16, right: 16, child: _Bracket(top: true, left: false)),
             const Positioned(bottom: 16, left: 16, child: _Bracket(top: false, left: true)),
@@ -128,7 +171,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
                 size: 64,
               ),
             ),
-            _buildScanLine(),
+            _buildScanLine(windowHeight),
           ],
         ),
       ),
@@ -137,13 +180,18 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
 
   /// The glowing gold scan line — swept vertically across the window by the
   /// controller when [active], otherwise pinned at the design position.
-  Widget _buildScanLine() {
+  Widget _buildScanLine(double windowHeight) {
     // Sweep between a top and bottom margin, keeping the line clear of the
     // corner brackets.
-    const double topEdge = 28;
-    const double bottomEdge = _windowHeight - 30;
+    const topEdge = _sweepTopInset;
+    final bottomEdge = windowHeight - _sweepBottomInset;
     if (!widget.active) {
-      return const Positioned(top: 93, left: 16, right: 16, child: _ScanLine());
+      return Positioned(
+        top: windowHeight * _scanLineRestRatio,
+        left: 16,
+        right: 16,
+        child: const _ScanLine(),
+      );
     }
     return AnimatedBuilder(
       animation: _controller,
@@ -198,9 +246,9 @@ class _ScanLine extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: <Color>[
-            Color(0x00C9A84C),
+            SimfTokens.accentFade,
             SimfTokens.accent,
-            Color(0x00C9A84C),
+            SimfTokens.accentFade,
           ],
         ),
         boxShadow: const <BoxShadow>[

@@ -4,7 +4,7 @@ using SIMF.Domain.AccessControl;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-148 — 24-hour idempotency replay store for POST /scans.
+/// <summary>24-hour idempotency replay store for POST /scans.
 /// Composite PK on (Key, GateId) — same key can be replayed against the same
 /// gate; cross-gate reuse is a conflict at the service layer.</summary>
 internal sealed class ScanIdempotencyConfiguration

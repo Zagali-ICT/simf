@@ -127,7 +127,9 @@ locally), **DECISION** (waiting on the owner's call), or **HARDENING**
 ### 3.1 Committed secrets in `appsettings*.json` — DECISION
 
 `src/Backend/SIMF.Api/appsettings.json` carries the super-admin
-temp password (`Aa@123456789`), the TOTP seed, and the
+temp password (`[REDACTED - supply via SIMF_SuperAdmin__TempPassword]`), the TOTP seed, and the
+temp password (`SuperAdmin:TempPassword` — value redacted 2026-07-27,
+supplied via `SIMF_SuperAdmin__TempPassword`), the TOTP seed, and the
 `Jwt:SigningKey`. `src/Backend/SIMF.Api/appsettings.Development.json`
 carries `Storage:UserIdDocumentEncryptionKey`. Anyone who clones the
 repo holds the same keys. The pre-deploy choice is between (a)

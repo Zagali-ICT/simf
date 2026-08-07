@@ -3,7 +3,7 @@ using SIMF.Contracts.Exhibition;
 
 namespace SIMF.Application.Exhibition.Abstractions;
 
-/// <summary>D-199 — admin CRUD over <c>Booth</c> (Exhibition module).
+/// <summary>Admin CRUD over <c>Booth</c> (Exhibition module).
 /// Mirrors IAdminSpeakerService.</summary>
 public interface IAdminBoothService
 {

@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_visitor_avatar_sets_path,
-//        Avatar_family_guard_confines_each_route_to_its_own_family — D-357 per-family scope guard)
-using System.Security.Claims;
+//        Avatar_family_guard_confines_each_route_to_its_own_family — the per-family scope guard)
 using FastEndpoints;
 using SIMF.Api.Endpoints.Account;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -14,13 +14,13 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-427 (CS-3) — admin upload of a subject's profile photo (avatar) for the
+/// Admin upload of a subject's profile photo (avatar) for the
 /// walk-in flow. The avatar is the visitor's photo / "logo", distinct from the
-/// ID-document image, and is shown alongside the ID image in the approve modal
-/// (CS-4). Reuses <see cref="IAccountService.SetAvatarAsync"/>, which is
+/// ID-document image, and is shown alongside the ID image in the approve
+/// modal. Reuses <see cref="IAccountService.SetAvatarAsync"/>, which is
 /// id-parameterised and already enforces the 2 MB cap + MIME + magic-byte gate
-/// (no human-face requirement — it is a profile photo, optionally a logo, D-427
-/// owner decision). Permission-gated like the admin ID-document upload
+/// (no human-face requirement — it is a profile photo, optionally a
+/// logo). Permission-gated like the admin ID-document upload
 /// (Visitors.Edit / Others.Edit); the same SubjectId route shape.
 /// </summary>
 public abstract class AdminAvatarUploadEndpointBase(
@@ -40,13 +40,9 @@ public abstract class AdminAvatarUploadEndpointBase(
 
     public override async Task HandleAsync(EmptyRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out _))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        User.RequireActor();
 
-        // D-357 (review follow-up) — confine this Edit permission to its own family
+        // Confine this Edit permission to its own family
         // so it can't overwrite another family's photo across the shared id space.
         // 404 (not 403) so a wrong-family id is indistinguishable from a missing one.
         if (!await provisioning.IsSubjectInFamilyAsync(SubjectId, ExpectedType, ExpectedIsVisitor, ct))
@@ -117,7 +113,7 @@ public sealed class UploadOtherAvatarEndpoint(
 }
 
 /// <summary>
-/// CS-4 — admin stream-read of a subject's profile photo (avatar) so the CP
+/// Admin stream-read of a subject's profile photo (avatar) so the CP
 /// approve modal can render it alongside the ID image. Mirrors the self-service
 /// <c>account/avatar/{userId}</c> fetch but drops the self-only guard for an
 /// admin View permission (the avatar is the account's, on SimfUser/Identity).
@@ -140,7 +136,7 @@ public abstract class AdminAvatarFetchEndpointBase(
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        // D-357 (review follow-up) — confine this View permission to its own family
+        // Confine this View permission to its own family
         // so it can't read another family's photo across the shared SimfUser id
         // space. 404 (not 403) keeps a wrong-family id indistinguishable from a
         // missing one (also the natural response for the no-avatar case below).
@@ -150,7 +146,7 @@ public abstract class AdminAvatarFetchEndpointBase(
             return;
         }
 
-        // D-568 (S3) — resolve the subject's avatar from the StoredFile store.
+        // Resolve the subject's avatar from the StoredFile store.
         // Authorization is the route's admin View permission (Configure below);
         // this is a raw decrypt read, not IFileService.DownloadAsync (see AvatarBytes).
         var avatar = await AvatarBytes.ReadAsync(appDb, storage, SubjectId, ct);
@@ -205,7 +201,7 @@ public sealed class FetchOtherAvatarEndpoint(
     }
 }
 
-/// <summary>D-357 — <c>GET /api/v1/admin/admins/{id}/avatar</c>. Backs the
+/// <summary><c>GET /api/v1/admin/admins/{id}/avatar</c>. Backs the
 /// Admins-list thumbnail; gated by Admins.View (the Admins page permission),
 /// mirroring the visitors/others avatar reads. Reuses the same id-keyed
 /// StoredFile read (avatars live in the one central file store for every user

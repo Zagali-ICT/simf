@@ -9,9 +9,9 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Media;
 
 /// <summary>
-/// D-199 (Mockup page 30) — public (anonymous) read of the active media gallery.
+/// Public (anonymous) read of the active media gallery.
 /// Paged + optional album / kind filter. Image / thumbnail bytes now resolve from
-/// the unified <c>StoredFile</c> store (D-568 Wave C S2) via the pointer columns
+/// the unified <c>StoredFile</c> store via the pointer columns
 /// <c>MediaItem.ImageFileId</c> / <c>ThumbnailFileId</c>; the two serve routes,
 /// the presence-only <c>imageUrl</c>/<c>thumbnailUrl</c> wire keys and the
 /// content-type all stay byte-identical.
@@ -37,7 +37,7 @@ internal sealed class PublicMediaService(
             rows = rows.Where(item => item.Album == albumTerm || item.AlbumArabic == albumTerm);
         }
 
-        // A8 — optional Kind (image / video) narrow. Kind is a mapped scalar, so
+        // Optional Kind (image / video) narrow. Kind is a mapped scalar, so
         // this translates server-side; absent (null) = both kinds (unchanged).
         if (kind is not null)
         {

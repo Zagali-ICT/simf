@@ -78,4 +78,40 @@ public sealed class NotificationKindCatalogTests
     {
         Assert.Null(NotificationKindCatalog.ClickUrlFor(NotificationKind.AccountApproved, Guid.NewGuid()));
     }
+
+    // QA A27 — MeetingScheduled / MeetingCancelled / MeetingRequestConfirmed /
+    // MeetingReminder had no arm at all, so every speaker + delegation meeting
+    // notification tile was inert. They all open the bilateral-meetings page.
+    [Theory]
+    [InlineData(NotificationKind.MeetingScheduled)]
+    [InlineData(NotificationKind.MeetingCancelled)]
+    [InlineData(NotificationKind.MeetingRequestConfirmed)]
+    [InlineData(NotificationKind.MeetingReminder)]
+    public void ClickUrlFor_every_meeting_lifecycle_kind_opens_the_meetings_page(
+        NotificationKind kind)
+    {
+        Assert.Equal("/meetings", NotificationKindCatalog.ClickUrlFor(kind, Guid.NewGuid()));
+        // Not per-target — the app has no meeting-detail route, so a missing id must
+        // still yield a usable link rather than null.
+        Assert.Equal("/meetings", NotificationKindCatalog.ClickUrlFor(kind, null));
+    }
+
+    // QA A27 — the Meetings-group kinds must ALL be navigable; a new one added
+    // without an arm would silently ship another inert tile.
+    [Fact]
+    public void ClickUrlFor_covers_every_kind_in_the_Meetings_group()
+    {
+        foreach (var kind in Enum.GetValues<NotificationKind>())
+        {
+            if (NotificationKindCatalog.GroupFor(kind)
+                != NotificationKindCatalog.Groups.Meetings)
+            {
+                continue;
+            }
+            Assert.False(
+                string.IsNullOrEmpty(
+                    NotificationKindCatalog.ClickUrlFor(kind, Guid.NewGuid())),
+                $"NotificationKind.{kind} is in the Meetings group but has no clickUrl.");
+        }
+    }
 }

@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Admin;
 
-/// <summary>D-464 — the CP "Site Settings" page payload: the registration welcome
+/// <summary>The CP "Site Settings" page payload: the registration welcome
 /// message (bilingual) + the social-media links. Each field maps to a
 /// <c>SiteSettingKeys</c> key; the admin service upserts them. A blank value
 /// clears the setting (the public read treats blank as null → inert link).</summary>

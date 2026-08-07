@@ -14,11 +14,11 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب تحديث البادج") — badge job-title update
-/// request service. Submission snapshots the requester's current job title; on
+/// <summary>The badge job-title update request service
+/// (الطلبات "طلب تحديث البادج"). Submission snapshots the requester's current job title; on
 /// Accept the service applies the requested title to the requester's
 /// <c>UserProfile.JobTitle</c> (same App DB — no cross-DB write). Requester name
-/// is resolved from the profile, email on read from the Identity DB (D-157).
+/// is resolved from the profile, email on read from the Identity DB.
 /// Mirrors <c>SpeakerMeetingRequestService</c>.</summary>
 internal sealed class BadgeUpdateRequestService(
     SimfAppDbContext appDbContext,
@@ -54,7 +54,7 @@ internal sealed class BadgeUpdateRequestService(
             .Select(p => p.JobTitle)
             .SingleOrDefaultAsync(cancellationToken);
 
-        // R-4 — one open badge-update request per requester (mirrors the speaker-meeting
+        // One open badge-update request per requester (mirrors the speaker-meeting
         // dup guard): a second Pending submission just floods the review desk.
         var hasOpenRequest = await appDbContext.BadgeUpdateRequests.AsNoTracking()
             .AnyAsync(r => r.RequestedByUserId == requesterUserId
@@ -67,7 +67,7 @@ internal sealed class BadgeUpdateRequestService(
                 "لديك بالفعل طلب تحديث بادج قيد المراجعة.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var req = new BadgeUpdateRequest
         {
             Id = Guid.NewGuid(),
@@ -81,13 +81,11 @@ internal sealed class BadgeUpdateRequestService(
         appDbContext.BadgeUpdateRequests.Add(req);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BadgeUpdateRequestSubmitted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = requesterUserId,
-            Detail = JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BadgeUpdateRequestSubmitted,
+            requesterUserId,
+            JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
+            cancellationToken);
 
         logger.LogInformation(
             "Badge update request {Id} submitted by {Actor}", req.Id, requesterUserId);
@@ -133,13 +131,11 @@ internal sealed class BadgeUpdateRequestService(
         var names = await ResolveRequesterNamesAsync(
             pageRows.Select(r => r.RequestedByUserId), cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBadgeUpdateRequestsListed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { count = pageRows.Count, total, top, skip, statusFilter }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBadgeUpdateRequestsListed,
+            actorUserId,
+            JsonSerializer.Serialize(new { count = pageRows.Count, total, top, skip, statusFilter }),
+            cancellationToken);
 
         var items = pageRows.Select(r => new AdminBadgeUpdateRequestRow(
             r.Id, r.RequestedByUserId, names.GetValueOrDefault(r.RequestedByUserId),
@@ -154,13 +150,11 @@ internal sealed class BadgeUpdateRequestService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var detail = await LoadDetailAsync(id, cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBadgeUpdateRequestViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { badgeUpdateRequestId = id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBadgeUpdateRequestViewed,
+            actorUserId,
+            JsonSerializer.Serialize(new { badgeUpdateRequestId = id }),
+            cancellationToken);
         return detail;
     }
 
@@ -206,7 +200,7 @@ internal sealed class BadgeUpdateRequestService(
 
         req.Status = request.Status;
         req.ResponseNote = responseNote;
-        req.RespondedAt = timeProvider.GetUtcNow();
+        req.RespondedAt = timeProvider.SimfNow();
         req.RespondedByUserId = actorUserId;
 
         // On Accept apply the requested title to the requester's profile (same App
@@ -223,22 +217,18 @@ internal sealed class BadgeUpdateRequestService(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BadgeUpdateRequestResponded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id, status = req.Status.ToString() }),
-        }, cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminBadgeUpdateRequestViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BadgeUpdateRequestResponded,
+            actorUserId,
+            JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id, status = req.Status.ToString() }),
+            cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminBadgeUpdateRequestViewed,
+            actorUserId,
+            JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
+            cancellationToken);
 
-        // R-2 — notify the requester of the decision. On Accept the badge job title was
+        // Notify the requester of the decision. On Accept the badge job title was
         // applied above; this makes that side effect visible instead of silent.
         // Best-effort: a dispatch failure never undoes the committed response.
         var accepted = req.Status == MeetingRequestStatus.Accepted;

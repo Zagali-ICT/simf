@@ -7,7 +7,7 @@ using SIMF.Contracts.Ai;
 
 namespace SIMF.Api.Endpoints.Ai;
 
-/// <summary>D-176 (gap doc G12) — live-stream AI endpoints. Each
+/// <summary>Live-stream AI endpoints. Each
 /// chunk-translate / chunk-sign-language POST processes one segment
 /// of an in-progress transcript and returns a single translated /
 /// signed segment. The Flutter app calls these on every mic

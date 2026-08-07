@@ -6,7 +6,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin.Validators;
 
 /// <summary>
-/// D-115 — validates <see cref="AdminCreateProfileTypeRequest"/>. The
+/// Validates <see cref="AdminCreateProfileTypeRequest"/>. The
 /// UserType value is checked at the service layer (more precise error
 /// code there); this validator only enforces field-shape rules whose
 /// limits mirror the EF column maxes on <c>ProfileType</c>.
@@ -42,7 +42,7 @@ public sealed class AdminCreateProfileTypeRequestValidator
     }
 }
 
-/// <summary>D-115 — validates <see cref="AdminUpdateProfileTypeRequest"/>.
+/// <summary>Validates <see cref="AdminUpdateProfileTypeRequest"/>.
 /// Same length rules as the create validator minus UserType.</summary>
 public sealed class AdminUpdateProfileTypeRequestValidator
     : Validator<AdminUpdateProfileTypeRequest>

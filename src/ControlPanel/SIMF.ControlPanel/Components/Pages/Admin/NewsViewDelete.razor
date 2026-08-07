@@ -1,4 +1,4 @@
-@* D-353 — reusable News View/Delete form, hosted by CrudShell (as a popup or
+@* Reusable News View/Delete form, hosted by CrudShell (as a popup or
    a full page) from NewsList.razor. Inherits CrudViewDeleteFormBase so it
    exposes the standard parameter surface (IsDelete / Initial / OnDeleted /
    OnCancel). Read-only details always show (with the cover image preview when
@@ -15,7 +15,7 @@
 
 @if (Initial is not null)
 {
-    @* D-357 — image from the unified media-asset pipeline. *@
+    @* Image from the unified media-asset pipeline. *@
     <div class="simf-image-upload__preview">
         <SimfImageThumb Src="@($"/account/api/admin/assets/NewsImage/{Initial.Id}/image")"
                         Alt="@Initial.Title" Class="simf-img-thumb--lg" />
@@ -81,5 +81,6 @@
                  Danger="true"
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
-                 OnCancel="@(() => _confirming = false)" />
+                 OnCancel="@(() => _confirming = false)" 
+                 Permission="@PermissionCatalog.News.Delete"/>
 }

@@ -8,7 +8,7 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/content-blocks/export</c> — the D-356 grid export for
+/// <c>POST /api/v1/admin/content-blocks/export</c> — the grid export for
 /// dynamic CMS content blocks. All the work lives in
 /// <see cref="AdminGridExportEndpoint{TRow}"/>; this subclass only declares the
 /// route, permission, sheet/file names, the column layout (mirroring the
@@ -41,7 +41,7 @@ public sealed class ExportContentBlocksEndpoint(IAdminCmsService service, IGridE
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/content-blocks/import</c> — the D-356 grid import for
+/// <c>POST /api/v1/admin/content-blocks/import</c> — the grid import for
 /// dynamic CMS content blocks. This resource has no create; it upserts by
 /// <c>Key</c>, so a row binds to <see cref="UpsertContentBlockRequest"/> and is
 /// created when the key is new, updated in place when it already exists. The

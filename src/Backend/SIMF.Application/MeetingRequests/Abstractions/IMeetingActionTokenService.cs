@@ -2,7 +2,7 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Application.MeetingRequests.Abstractions;
 
-/// <summary>D-717 (item 7, FDS-013 §15 GAP-3) — the speaker double-opt-in
+/// <summary>The speaker double-opt-in
 /// action-link tokens. Minting is called from the accept-with-hall flow;
 /// <see cref="PreviewAsync"/> + <see cref="ApplyAsync"/> back the two public
 /// <c>AllowAnonymous</c> endpoints.</summary>
@@ -12,17 +12,24 @@ public interface IMeetingActionTokenService
     /// DbContext WITHOUT saving, and return the two ready-built landing-page URLs.
     /// The caller commits them in the SAME <c>SaveChanges</c> as the
     /// <c>AwaitingSpeaker</c> transition, so a request can never be AwaitingSpeaker
-    /// without its token pair (D-717). The raw secret lives only in the emailed URL —
+    /// without its token pair. The raw secret lives only in the emailed URL —
     /// only its hash is persisted. URLs are empty when the public base URL is
     /// unconfigured (the caller then skips the email; the tokens still commit).</summary>
     MeetingActionLinks StageTokensForRequest(Guid speakerMeetingRequestId);
+
+    /// <summary>Is <c>MeetingLinks:PublicWebBaseUrl</c> configured, i.e. can a
+    /// landing-page URL actually be built? The approve / resend paths check this BEFORE
+    /// they mint anything, so a missing setting is a clean up-front failure instead of a
+    /// request parked in <c>AwaitingSpeaker</c> whose only exit is an email that was never
+    /// sent. Keeps the option key knowledge in one place (this service builds the URLs).</summary>
+    bool LinksConfigured { get; }
 
     /// <summary>Write the "minted" OperationLog row (§15.7). Called AFTER the caller
     /// commits the staged tokens, so the audit only records a durable mint.</summary>
     Task AuditMintedAsync(
         Guid speakerMeetingRequestId, CancellationToken cancellationToken = default);
 
-    /// <summary>R4 (D-767) — stage ONE single-use delegation confirm token for a request
+    /// <summary>Stage ONE single-use delegation confirm token for a request
     /// into the shared DbContext WITHOUT saving, and return its ready-built landing-page
     /// URL (the same public <c>/meeting/confirm</c> page the speaker links use). The
     /// caller commits it in the SAME <c>SaveChanges</c> as the <c>AwaitingSpeaker</c>
@@ -47,7 +54,7 @@ public interface IMeetingActionTokenService
         string tokenSecret, CancellationToken cancellationToken = default);
 }
 
-/// <summary>D-717 — the two email-link URLs a mint produced. Empty when the public
+/// <summary>The two email-link URLs a mint produced. Empty when the public
 /// base URL is unconfigured.</summary>
 public sealed record MeetingActionLinks(string ApproveUrl, string RejectUrl)
 {

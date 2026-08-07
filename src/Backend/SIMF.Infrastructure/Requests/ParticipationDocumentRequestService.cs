@@ -14,11 +14,11 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب وثيقة المشاركة") — participation-document
-/// request service. Submission is request-only (no document is generated this
-/// wave); an admin Accepts/Rejects with an optional note. Requester name is
+/// <summary>The participation-document request service
+/// (الطلبات "طلب وثيقة المشاركة"). Submission is request-only (no document is
+/// generated yet); an admin Accepts/Rejects with an optional note. Requester name is
 /// resolved from the App-DB profile; the email is resolved on read from the
-/// Identity DB (no cross-DB JOIN, D-157). Mirrors
+/// Identity DB (no cross-DB JOIN). Mirrors
 /// <c>SpeakerMeetingRequestService</c>.</summary>
 internal sealed class ParticipationDocumentRequestService(
     SimfAppDbContext appDbContext,
@@ -49,7 +49,7 @@ internal sealed class ParticipationDocumentRequestService(
                 "يجب ألا يتجاوز طول الملاحظة 1000 حرف.");
         }
 
-        // R-4 — one open request per (requester, document type): a duplicate Pending
+        // One open request per (requester, document type): a duplicate Pending
         // submission floods the review desk (mirrors the speaker-meeting dup guard).
         var hasOpenRequest = await appDbContext.ParticipationDocumentRequests.AsNoTracking()
             .AnyAsync(r => r.RequestedByUserId == requesterUserId
@@ -63,7 +63,7 @@ internal sealed class ParticipationDocumentRequestService(
                 "لديك بالفعل طلب قيد المراجعة لهذه الوثيقة.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var req = new ParticipationDocumentRequest
         {
             Id = Guid.NewGuid(),
@@ -76,17 +76,15 @@ internal sealed class ParticipationDocumentRequestService(
         appDbContext.ParticipationDocumentRequests.Add(req);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ParticipationDocumentRequestSubmitted,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = requesterUserId,
-            Detail = JsonSerializer.Serialize(new
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ParticipationDocumentRequestSubmitted,
+            requesterUserId,
+            JsonSerializer.Serialize(new
             {
                 participationDocumentRequestId = req.Id,
                 documentType = req.DocumentType.ToString(),
             }),
-        }, cancellationToken);
+            cancellationToken);
 
         logger.LogInformation(
             "Participation document request {Id} ({Type}) submitted by {Actor}",
@@ -132,13 +130,11 @@ internal sealed class ParticipationDocumentRequestService(
         var names = await ResolveRequesterNamesAsync(
             pageRows.Select(r => r.RequestedByUserId), cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminParticipationDocumentRequestsListed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { count = pageRows.Count, total, top, skip, statusFilter }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminParticipationDocumentRequestsListed,
+            actorUserId,
+            JsonSerializer.Serialize(new { count = pageRows.Count, total, top, skip, statusFilter }),
+            cancellationToken);
 
         var items = pageRows.Select(r => new AdminParticipationDocumentRequestRow(
             r.Id, r.RequestedByUserId, names.GetValueOrDefault(r.RequestedByUserId),
@@ -152,13 +148,11 @@ internal sealed class ParticipationDocumentRequestService(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
         var detail = await LoadDetailAsync(id, cancellationToken);
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminParticipationDocumentRequestViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { participationDocumentRequestId = id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminParticipationDocumentRequestViewed,
+            actorUserId,
+            JsonSerializer.Serialize(new { participationDocumentRequestId = id }),
+            cancellationToken);
         return detail;
     }
 
@@ -203,27 +197,23 @@ internal sealed class ParticipationDocumentRequestService(
 
         req.Status = request.Status;
         req.ResponseNote = responseNote;
-        req.RespondedAt = timeProvider.GetUtcNow();
+        req.RespondedAt = timeProvider.SimfNow();
         req.RespondedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ParticipationDocumentRequestResponded,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { participationDocumentRequestId = req.Id, status = req.Status.ToString() }),
-        }, cancellationToken);
-        // One Viewed event for the email disclosure the respond detail returns (D-185).
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.AdminParticipationDocumentRequestViewed,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = JsonSerializer.Serialize(new { participationDocumentRequestId = req.Id }),
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ParticipationDocumentRequestResponded,
+            actorUserId,
+            JsonSerializer.Serialize(new { participationDocumentRequestId = req.Id, status = req.Status.ToString() }),
+            cancellationToken);
+        // One Viewed event for the email disclosure the respond detail returns.
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.AdminParticipationDocumentRequestViewed,
+            actorUserId,
+            JsonSerializer.Serialize(new { participationDocumentRequestId = req.Id }),
+            cancellationToken);
 
-        // R-2 — notify the requester of the decision (mirrors the speaker/booking flows).
+        // Notify the requester of the decision (mirrors the speaker/booking flows).
         // Best-effort: a dispatch failure never undoes the committed response.
         var accepted = req.Status == MeetingRequestStatus.Accepted;
         await notifications.TryDispatchAsync(new NotificationRequest
@@ -271,7 +261,7 @@ internal sealed class ParticipationDocumentRequestService(
     }
 
     // Batch-resolve display names for a page of requesters from the App-DB
-    // profile (no email — that stays on the detail, the D-185 bulk-PII pattern).
+    // profile (no email — that stays on the detail, the bulk-PII pattern).
     private async Task<Dictionary<Guid, string>> ResolveRequesterNamesAsync(
         IEnumerable<Guid> userIds, CancellationToken cancellationToken)
     {

@@ -26,7 +26,7 @@ public interface IAccountCodeRepository
     Task<int> CountCreatedSinceAsync(
         Guid userId,
         AccountCodePurpose purpose,
-        DateTimeOffset since,
+        DateTime since,
         CancellationToken cancellationToken = default);
 
     /// <summary>Persists changes to an existing code (consumption, attempt count).</summary>
@@ -40,7 +40,7 @@ public interface IAccountCodeRepository
     /// double-submit (no read-modify-write race).
     /// </summary>
     Task<bool> TryConsumeAsync(
-        Guid codeId, DateTimeOffset now, CancellationToken cancellationToken = default);
+        Guid codeId, DateTime now, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Atomically increments the wrong-value attempt counter in a single UPDATE

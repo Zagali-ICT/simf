@@ -41,7 +41,7 @@ class SimfTheme {
   static FilledButtonThemeData get _accentButton => FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: SimfTokens.accent,
-          foregroundColor: Colors.white,
+          foregroundColor: SimfTokens.surface,
           minimumSize: const Size.fromHeight(48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -148,7 +148,7 @@ class SimfTheme {
         ),
       ),
       chipTheme: const ChipThemeData(
-        backgroundColor: Colors.transparent,
+        backgroundColor: SimfTokens.transparent,
         // Solid-gold selected pill chips — the KSA interests design (D-359).
         selectedColor: SimfTokens.accent,
         side: BorderSide(color: SimfTokens.line),

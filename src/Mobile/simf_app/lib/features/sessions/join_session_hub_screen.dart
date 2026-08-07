@@ -9,6 +9,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/utils/refresh.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
 
@@ -22,10 +23,8 @@ class JoinSessionHubScreen extends ConsumerWidget {
 
   /// Pull-to-refresh — re-fetch the programme list (every data page supports
   /// the gesture, D-520/D-532; this screen was missing it — added D-601).
-  Future<void> _refresh(WidgetRef ref) async {
-    ref.invalidate(programmeSessionsProvider);
-    await ref.read(programmeSessionsProvider.future);
-  }
+  Future<void> _refresh(WidgetRef ref) =>
+      refreshAsync(ref, programmeSessionsProvider.future);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,14 +36,19 @@ class JoinSessionHubScreen extends ConsumerWidget {
       tab: SimfTab.sessions,
       body: sessions.when(
         loading: () => const SimfLoadingState(),
+        // NO SimfPullableHost here — SimfRefreshableMessage already wraps its
+        // child in one. Nesting two nests a SingleChildScrollView inside a
+        // SingleChildScrollView, so the inner LayoutBuilder is handed
+        // maxHeight: infinity and builds BoxConstraints(minHeight: infinity) —
+        // "BoxConstraints forces an infinite height", which took the whole
+        // screen down whenever the sessions provider errored. The empty branch
+        // below was always correct; only this one double-wrapped.
         error: (_, __) => SimfRefreshableMessage(
           onRefresh: () => _refresh(ref),
-          child: SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.sessionsError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(programmeSessionsProvider),
-            ),
+          child: SimfErrorState(
+            message: l10n.sessionsError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(programmeSessionsProvider),
           ),
         ),
         data: (items) => items.isEmpty

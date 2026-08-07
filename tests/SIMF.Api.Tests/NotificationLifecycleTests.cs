@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -55,6 +55,8 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
             IsSaudi = true,
             NationalId = "1101798278",
             OrganisationId = organisationId,
+            // DEF-PHN-004 — the mobile is required on the upsert now.
+            SaudiMobile = "0501234567",
         };
 
         var response = await PostAuthAsync(
@@ -337,16 +339,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
     private async Task<string> CreateAdministratorAndSignInAsync()
     {
         var (email, _) = await CreateAdminAsync();
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email,
-                Password = AuthFlow.Password,
-                Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email);
     }
 
     private async Task<Guid> CreateStaffSubjectAsync(string adminToken)
@@ -378,7 +371,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "اهتمام",
             DisplayOrder = 0,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
@@ -397,7 +390,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
             NameArabic = "جهة الإشعارات",
             Name = $"Notif Org {Guid.NewGuid():N}",
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(org);
         await appDb.SaveChangesAsync();

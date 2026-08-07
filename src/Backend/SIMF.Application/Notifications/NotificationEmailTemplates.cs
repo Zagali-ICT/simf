@@ -6,15 +6,15 @@ using SIMF.Common.Enums;
 namespace SIMF.Application.Notifications;
 
 /// <summary>
-/// Inline bilingual email templates for the P13 — D-054 lifecycle
+/// Inline bilingual email templates for the account lifecycle
 /// notifications. Token substitution is the dumbest possible
 /// <c>string.Replace</c>; one template per kind, EN + AR.
 ///
-/// <para>D-108: switched from string-keyed lookup to
-/// <see cref="NotificationKind"/>-keyed lookup so a typo in a template
+/// <para>The lookup is keyed by
+/// <see cref="NotificationKind"/> rather than by string so a typo in a template
 /// dispatch can't slip past the compiler.</para>
 ///
-/// <para>R4 — D-209: moved from <c>SIMF.Infrastructure.Notifications</c> to
+/// <para>Moved from <c>SIMF.Infrastructure.Notifications</c> to
 /// the Application layer alongside <see cref="NotificationDispatcher"/>, so
 /// the Application services that pre-render an email body (UserProfileService,
 /// AdminAccountService) no longer have to reach into Infrastructure.</para>
@@ -63,7 +63,7 @@ public static class NotificationEmailTemplates
             (NotificationKind.AccountTwoFactorReset, _) => TwoFactorResetEn,
             (NotificationKind.AdminPendingVisitor, "ar") => AdminPendingVisitorAr,
             (NotificationKind.AdminPendingVisitor, _) => AdminPendingVisitorEn,
-            // D-111: auth-flow closure notifications — welcome, password
+            // Auth-flow closure notifications — welcome, password
             // changed, password reset completed.
             (NotificationKind.AccountWelcome, "ar") => WelcomeAr,
             (NotificationKind.AccountWelcome, _) => WelcomeEn,
@@ -71,7 +71,7 @@ public static class NotificationEmailTemplates
             (NotificationKind.AccountPasswordChanged, _) => PasswordChangedEn,
             (NotificationKind.AccountPasswordResetCompleted, "ar") => PasswordResetCompletedAr,
             (NotificationKind.AccountPasswordResetCompleted, _) => PasswordResetCompletedEn,
-            // D-112: generic admin notification for any pending-approval
+            // Generic admin notification for any pending-approval
             // account (admin-create path; the visitor self-submit path
             // keeps its own AdminPendingVisitor template).
             (NotificationKind.AdminPendingApproval, "ar") => AdminPendingApprovalAr,
@@ -112,7 +112,7 @@ public static class NotificationEmailTemplates
         + "<p>A new visitor is awaiting approval: <strong>{SubjectEmail}</strong>. "
         + "Open the Control Panel to review their account.</p>";
 
-    // D-111: auth-flow closure templates -------------------------------------
+    // Auth-flow closure templates -------------------------------------
     private const string WelcomeEn =
         "<p>Hello {DisplayName},</p>"
         + "<p>Welcome to SIMF — your account is set up. You can now sign in "
@@ -163,7 +163,7 @@ public static class NotificationEmailTemplates
         + "<p>هناك زائر جديد بانتظار الموافقة: <strong>{SubjectEmail}</strong>. "
         + "افتح لوحة التحكم لمراجعة حسابه.</p>";
 
-    // D-111: auth-flow closure templates (Arabic) ----------------------------
+    // Auth-flow closure templates (Arabic) ----------------------------
     private const string WelcomeAr =
         "<p>مرحباً {DisplayName}،</p>"
         + "<p>أهلاً بك في SIMF — تم تجهيز حسابك. يمكنك الآن تسجيل الدخول "

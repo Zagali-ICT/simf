@@ -1,15 +1,15 @@
 // Tests: SIMF.Api.Tests/SystemSettingsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-/// <summary>P2.4 — D-229 (SIMF-FDS-012 §5.5): System Configuration settings
+/// <summary>System Configuration settings
 /// CRUD. Gated by Configuration.*. The store ships empty; the team seeds the
-/// keys (FDS-012 OI-2).</summary>
+/// keys.</summary>
 public sealed class ListSystemSettingsEndpoint(IAdminSystemSettingService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminSystemSettingSummary>>>
 {
@@ -61,11 +61,7 @@ public sealed class CreateSystemSettingEndpoint(IAdminSystemSettingService servi
     }
     public override async Task HandleAsync(AdminCreateSystemSettingRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminSystemSettingDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -84,11 +80,7 @@ public sealed class UpdateSystemSettingEndpoint(IAdminSystemSettingService servi
     }
     public override async Task HandleAsync(AdminUpdateSystemSettingRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         var id = Route<Guid>("id");
         await Send.OkAsync(ApiResult<AdminSystemSettingDetail>.Ok(
             await service.UpdateAsync(actorId, id, req, ct)), ct);
@@ -110,11 +102,7 @@ public sealed class DeleteSystemSettingEndpoint(IAdminSystemSettingService servi
     }
     public override async Task HandleAsync(DeleteSystemSettingRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

@@ -5,16 +5,16 @@ using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-269 (Mockup page 20) — SpeakerMeetingRequest EF config. Real FK
-/// to Speaker with cascade so a deleted speaker removes its pending requests;
-/// RequestedByUserId is a logical FK to SimfUser on the Identity DB (no cross-DB
-/// relation, D-157). Mirrors <see cref="MeetingRequestConfiguration"/>.</summary>
+/// <summary>SpeakerMeetingRequest EF config. Real FK
+/// to Speaker with Restrict so a hard speaker delete cannot silently drop its
+/// requests; RequestedByUserId is a logical FK to SimfUser on the Identity DB —
+/// there is no cross-DB relation.</summary>
 internal sealed class SpeakerMeetingRequestConfiguration
     : IEntityTypeConfiguration<SpeakerMeetingRequest>
 {
     public void Configure(EntityTypeBuilder<SpeakerMeetingRequest> builder)
     {
-        // D-611 (Wave B) — a set slot pair must be ordered; NULLs (topic-only
+        // A set slot pair must be ordered; NULLs (topic-only
         // request) are allowed to pass.
         builder.ToTable("SpeakerMeetingRequests", table => table.HasCheckConstraint(
             "CK_SpeakerMeetingRequests_Slot",
@@ -25,7 +25,7 @@ internal sealed class SpeakerMeetingRequestConfiguration
         builder.Property(r => r.Subject).HasMaxLength(1000).IsRequired();
         builder.Property(r => r.ResponseNote).HasMaxLength(2000);
 
-        // D-611 (Wave B) — Restrict (was Cascade): a hard speaker delete must not
+        // Restrict (was Cascade): a hard speaker delete must not
         // silently drop its requests (speakers are soft-deleted, so this never
         // fires in practice — it's a safety backstop).
         builder.HasOne(r => r.Speaker)
@@ -33,14 +33,14 @@ internal sealed class SpeakerMeetingRequestConfiguration
             .HasForeignKey(r => r.SpeakerId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // D-611 (Wave B) — the picked availability window, persisted as a real FK
+        // The picked availability window, persisted as a real FK
         // (SetNull; removing a window nulls the link rather than blocking).
         builder.HasOne<SpeakerAvailabilityWindow>()
             .WithMany()
             .HasForeignKey(r => r.AvailabilityWindowId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // D-716 (item 7, GAP-2) — the hall + optional table an accept bound the
+        // The hall + optional table an accept bound the
         // meeting to. SetNull: deleting the hall/table clears the binding rather
         // than blocking (mirrors the availability-window FK above).
         builder.HasOne<Hall>()
@@ -55,8 +55,8 @@ internal sealed class SpeakerMeetingRequestConfiguration
         builder.HasIndex(r => new { r.SpeakerId, r.Status, r.CreatedAt });
         builder.HasIndex(r => r.RequestedByUserId);
 
-        // D-611 (Wave B) — at most one LIVE request per (speaker, slot). D-716
-        // widened this from Accepted-only to the slot-holding set
+        // At most one LIVE request per (speaker, slot). This was
+        // widened from Accepted-only to the slot-holding set
         // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker + Done): a
         // hall-bound request in AwaitingSpeaker writes the hall slot into
         // SlotStart and so occupies the speaker's calendar — it must be the DB
@@ -69,7 +69,7 @@ internal sealed class SpeakerMeetingRequestConfiguration
             .IsUnique()
             .HasFilter("[SlotStart] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
-        // D-716 (item 7, GAP-2) — at most one live meeting per (hall, slot): a hall
+        // At most one live meeting per (hall, slot): a hall
         // slot cannot be double-booked across speakers. Same slot-holding live set
         // as the speaker index above (`MeetingRequestStatuses.SlotHolding`). The DB
         // backstop for the app-level free-slot re-check in

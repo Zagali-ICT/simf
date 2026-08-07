@@ -8,15 +8,16 @@ using SIMF.Common.Enums;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Organization;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Configuration;
 
-/// <summary>D-768 — stores + serves the singleton Organization Profile's hero
-/// background video through the centralized <see cref="StoredFile"/> store
+/// <summary>Stores + serves the singleton Organization Profile's hero
+/// background video through the centralized <see cref="SIMF.Domain.Files.StoredFile"/> store
 /// (<c>FileService.OrganizationHeroVideo</c>: public, plaintext, seekable). Upload
 /// streams the bytes to disk (never buffered whole), retires any prior video, and
 /// points <c>BackgroundVideoUrl</c> at the served <c>.mp4</c> route so the app +
-/// website hero accept-gate passes unchanged. Reuses the D-232 recording pipeline
+/// website hero accept-gate passes unchanged. Reuses the session-recording pipeline
 /// (streamed upload + Range serve); only the access policy differs (public here vs
 /// authenticated for a recording).</summary>
 internal sealed class OrganizationHeroVideoService(
@@ -45,7 +46,7 @@ internal sealed class OrganizationHeroVideoService(
         // NEWEST so two concurrent replaces converge on one survivor (never zero).
         await RetireActiveAsync(keepNewest: true, actorUserId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var profile = await LoadOrCreateProfileAsync(cancellationToken);
         profile.BackgroundVideoUrl = servedUrl;
         profile.UpdatedAt = now;
@@ -53,13 +54,11 @@ internal sealed class OrganizationHeroVideoService(
         await db.SaveChangesAsync(cancellationToken);
         readCache.Invalidate();
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganizationProfileUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"hero video uploaded; file={result.Id}; bytes={result.SizeBytes}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganizationProfileUpdated,
+            actorUserId,
+            $"hero video uploaded; file={result.Id}; bytes={result.SizeBytes}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} uploaded organization hero video {FileId} ({Bytes} bytes)",
@@ -71,7 +70,7 @@ internal sealed class OrganizationHeroVideoService(
     {
         await RetireActiveAsync(keepNewest: false, actorUserId, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var profile = await db.OrganizationProfile
             .SingleOrDefaultAsync(p => p.Id == OrganizationProfile.SingletonId, cancellationToken);
 
@@ -87,13 +86,11 @@ internal sealed class OrganizationHeroVideoService(
             readCache.Invalidate();
         }
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganizationProfileUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = "hero video removed",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganizationProfileUpdated,
+            actorUserId,
+            "hero video removed",
+            cancellationToken);
 
         logger.LogInformation("Admin {ActorId} removed the organization hero video", actorUserId);
     }

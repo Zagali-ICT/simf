@@ -8,8 +8,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_search_field.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../app/widgets/simf_search_field.dart';
 import 'data/notification_models.dart';
 import 'data/notifications_repository.dart';
 import 'widgets/notification_filter_chip.dart';
@@ -33,6 +33,10 @@ const Set<String> _allowedClickPaths = <String>{
   '/badge',
   // Bi-Meeting rework — the other-party confirm deep-link (?requestId=…).
   '/meeting-confirm',
+  // QA A27 — the meeting-lifecycle tiles (scheduled / cancelled / confirmed /
+  // 15-minute reminder) open the bilateral-meetings page. Without this entry
+  // the server clickUrl was rejected here and every such tile stayed inert.
+  '/meetings',
 };
 
 /// The group for [item]: the server `group`, or a client fallback derived from

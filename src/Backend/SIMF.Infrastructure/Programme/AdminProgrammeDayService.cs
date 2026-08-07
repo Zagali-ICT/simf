@@ -13,12 +13,12 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// D-452 — admin CRUD over the <see cref="ProgrammeDay"/> rows (Figma 883:2308
-/// "تفاصيل اليوم"). Built on <see cref="SimfAppDbContext"/>; mirrors
+/// Admin CRUD over the <see cref="ProgrammeDay"/> rows ("تفاصيل اليوم").
+/// Built on <see cref="SimfAppDbContext"/>; mirrors
 /// <c>AdminSessionCategoryService</c> — bilingual title, soft-delete, in-service
 /// validation, one audit row per mutation — plus a <c>Date</c>, a one-active-day
 /// -per-date uniqueness guard, and a <c>HasImage</c> flag resolved from the
-/// unified Asset table (the logo is the D-357 <c>ProgrammeDayImage</c> asset
+/// unified Asset table (the logo is the <c>ProgrammeDayImage</c> asset
 /// owned by the day's Id — no logo column).
 /// </summary>
 internal sealed class AdminProgrammeDayService(
@@ -42,7 +42,7 @@ internal sealed class AdminProgrammeDayService(
                 || EF.Functions.Like(day.TitleArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -64,7 +64,7 @@ internal sealed class AdminProgrammeDayService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: DisplayOrder, then Date.
+        // CP grid sortable columns. Default: DisplayOrder, then Date.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("title", true) => rows.OrderByDescending(day => day.Title),
@@ -129,7 +129,7 @@ internal sealed class AdminProgrammeDayService(
             ValidateAndNormalise(request.Title, request.TitleArabic);
         await EnsureUniqueDateAsync(request.Date, null, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var day = new ProgrammeDay
         {
             Id = Guid.NewGuid(),
@@ -143,13 +143,11 @@ internal sealed class AdminProgrammeDayService(
         db.ProgrammeDays.Add(day);
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProgrammeDayCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={day.Id}; date={day.Date:yyyy-MM-dd}; title={title}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProgrammeDayCreated,
+            actorUserId,
+            $"id={day.Id}; date={day.Date:yyyy-MM-dd}; title={title}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created ProgrammeDay {Title} ({Id}) on {Date}",
@@ -177,16 +175,14 @@ internal sealed class AdminProgrammeDayService(
         day.TitleArabic = titleArabic;
         day.DisplayOrder = request.DisplayOrder;
         day.IsActive = request.IsActive;
-        day.UpdatedAt = timeProvider.GetUtcNow();
+        day.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProgrammeDayUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={day.Id}; date={day.Date:yyyy-MM-dd}; active={day.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProgrammeDayUpdated,
+            actorUserId,
+            $"id={day.Id}; date={day.Date:yyyy-MM-dd}; active={day.IsActive}",
+            cancellationToken);
 
         var hasImage = await HasImageAsync(id, cancellationToken);
         return ToDetail(day, hasImage);
@@ -207,16 +203,14 @@ internal sealed class AdminProgrammeDayService(
         }
 
         day.Deactivate();
-        day.UpdatedAt = timeProvider.GetUtcNow();
+        day.UpdatedAt = timeProvider.SimfNow();
         await db.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.ProgrammeDayDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={day.Id}; date={day.Date:yyyy-MM-dd}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.ProgrammeDayDeactivated,
+            actorUserId,
+            $"id={day.Id}; date={day.Date:yyyy-MM-dd}",
+            cancellationToken);
     }
 
     /// <summary>One active programme day per date — the invariant the
@@ -254,7 +248,7 @@ internal sealed class AdminProgrammeDayService(
         {
             return new HashSet<Guid>();
         }
-        // D-568 (S1) — the day image now lives in the unified StoredFile store.
+        // The day image now lives in the unified StoredFile store.
         return (await db.StoredFiles
                 .AsNoTracking()
                 .Where(f => f.IsActive

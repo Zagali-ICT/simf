@@ -6,7 +6,7 @@ using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.Api.Endpoints.News;
 
-/// <summary>D-199 (Mockup screen 29) — public, anonymous, paged News feed.
+/// <summary>Public, anonymous, paged News feed.
 /// Active + already-published articles only, newest first. Anonymous to match
 /// the existing public reads (<c>ListPublicDelegationsEndpoint</c>).</summary>
 public sealed class ListPublicNewsQuery
@@ -23,7 +23,7 @@ public sealed class ListPublicNewsEndpoint(IPublicNewsService service)
         Get("/app/news");
         AllowAnonymous();
         Tags("Public");
-        // A6d — 45s output cache; the policy varies by all query keys so
+        // 45s output cache; the policy varies by all query keys so
         // ?page/?pageSize variants keep distinct entries (no-op under Testing).
         Options(b => b.CacheOutput("PublicRead"));
     }
@@ -35,7 +35,7 @@ public sealed class ListPublicNewsEndpoint(IPublicNewsService service)
 
 public sealed class GetPublicNewsRoute { public Guid Id { get; set; } }
 
-/// <summary>D-199 (Mockup screen 29b) — public, anonymous single article.</summary>
+/// <summary>Public, anonymous single article.</summary>
 public sealed class GetPublicNewsEndpoint(IPublicNewsService service)
     : Endpoint<GetPublicNewsRoute, ApiResult<PublicNewsArticle>>
 {

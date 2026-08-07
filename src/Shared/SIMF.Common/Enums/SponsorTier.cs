@@ -1,7 +1,7 @@
 namespace SIMF.Common.Enums;
 
 /// <summary>
-/// D-199 (Mockup page 23) — sponsorship tier a <see cref="Sponsor"/> belongs to.
+/// The sponsorship tier a <c>Sponsor</c> belongs to.
 /// The public sponsors screen groups logos under a heading per tier, highest
 /// tier first; <see cref="Platinum"/> renders before <see cref="Gold"/> before
 /// <see cref="Silver"/> before <see cref="Bronze"/>. The integer values are the

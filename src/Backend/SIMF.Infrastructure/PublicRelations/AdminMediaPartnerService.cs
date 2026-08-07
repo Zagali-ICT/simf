@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.PublicRelations;
 
-/// <summary>D-199 (Mockup page 31) — admin CRUD over
+/// <summary>Admin CRUD over
 /// <see cref="MediaPartner"/>. Id is a server-assigned Guid. Duplicate
 /// detection is on the English name (case-insensitive) since a media
 /// partner has no separate business code. Mirrors AdminCountryService /
@@ -40,7 +40,7 @@ internal sealed class AdminMediaPartnerService(
                 || EF.Functions.Like(partner.NameArabic, $"%{term}%"));
         }
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // CP grid per-column filters. Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
         {
             if (string.IsNullOrWhiteSpace(raw)) { continue; }
@@ -121,7 +121,7 @@ internal sealed class AdminMediaPartnerService(
                 $"يوجد شريك إعلامي بالاسم '{name}' بالفعل.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var partner = new MediaPartner
         {
             Name = name,
@@ -148,13 +148,11 @@ internal sealed class AdminMediaPartnerService(
         appDbContext.MediaPartners.Add(partner);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaPartnerCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={partner.Id}; name={name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaPartnerCreated,
+            actorUserId,
+            $"id={partner.Id}; name={name}",
+            cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created MediaPartner {Name} (id {Id})",
@@ -212,17 +210,15 @@ internal sealed class AdminMediaPartnerService(
         partner.Latitude = request.Latitude;
         partner.Longitude = request.Longitude;
         partner.IsActive = request.IsActive;
-        partner.UpdatedAt = timeProvider.GetUtcNow();
+        partner.UpdatedAt = timeProvider.SimfNow();
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaPartnerUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; name={name}; active={partner.IsActive}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaPartnerUpdated,
+            actorUserId,
+            $"id={id}; name={name}; active={partner.IsActive}",
+            cancellationToken);
 
         var (en, ar) = await ResolveCountryAsync(partner.CountryId, cancellationToken);
         return ToDetail(partner, en, ar);
@@ -239,16 +235,14 @@ internal sealed class AdminMediaPartnerService(
         if (!partner.IsActive) { return; }
 
         partner.IsActive = false;
-        partner.UpdatedAt = timeProvider.GetUtcNow();
+        partner.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MediaPartnerDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"id={id}; name={partner.Name}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MediaPartnerDeactivated,
+            actorUserId,
+            $"id={id}; name={partner.Name}",
+            cancellationToken);
     }
 
     private static (string name, string nameArabic, string? logoRelativePath, string? url, int displayOrder) Validate(
@@ -292,7 +286,7 @@ internal sealed class AdminMediaPartnerService(
         return (name, nameArabic, logoRelativePath, url, displayOrderRaw);
     }
 
-    // D-766 — validates the identity-card fields inlined from the removed shared
+    // Validates the identity-card fields inlined from the removed shared
     // Contact directory. Lengths mirror the EF configuration; latitude and
     // longitude are an all-or-nothing pair with real-world ranges.
     private static void ValidateContactFields(

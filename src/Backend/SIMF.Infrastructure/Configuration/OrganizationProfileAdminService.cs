@@ -13,7 +13,7 @@ using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Configuration;
 
-/// <summary>D-495 — the admin write-path for the singleton Organization Profile.
+/// <summary>The admin write-path for the singleton Organization Profile.
 /// A single full-document upsert: updates the scalar branding fields and reconciles
 /// the about-items + details lists by id. Every save touches <c>UpdatedAt</c> (so the
 /// public read's <c>Last-Modified</c> token advances), invalidates the read cache, and
@@ -67,7 +67,7 @@ internal sealed class OrganizationProfileAdminService(
             db.OrganizationProfile.Add(profile);
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         profile.Name = RequireText(request.Name, "name", 256);
         profile.NameArabic = RequireText(request.NameArabic, "Arabic name", 256);
@@ -110,19 +110,17 @@ internal sealed class OrganizationProfileAdminService(
         await db.SaveChangesAsync(cancellationToken);
         readCache.Invalidate();
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.OrganizationProfileUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"organization profile saved; about={request.AboutItems.Count}; details={request.Details.Count}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.OrganizationProfileUpdated,
+            actorUserId,
+            $"organization profile saved; about={request.AboutItems.Count}; details={request.Details.Count}",
+            cancellationToken);
 
         logger.LogInformation("Admin {ActorId} saved the organization profile", actorUserId);
     }
 
     private async Task ReconcileAboutAsync(
-        List<AdminOrganizationAboutItem> items, DateTimeOffset now, CancellationToken ct)
+        List<AdminOrganizationAboutItem> items, DateTime now, CancellationToken ct)
     {
         var existing = await db.OrganizationAboutItems
             .Where(a => a.OrganizationProfileId == OrganizationProfile.SingletonId && a.IsActive)
@@ -166,7 +164,7 @@ internal sealed class OrganizationProfileAdminService(
     }
 
     private async Task ReconcileDetailsAsync(
-        List<AdminOrganizationDetail> items, DateTimeOffset now, CancellationToken ct)
+        List<AdminOrganizationDetail> items, DateTime now, CancellationToken ct)
     {
         var existing = await db.OrganizationDetails
             .Where(d => d.OrganizationProfileId == OrganizationProfile.SingletonId && d.IsActive)

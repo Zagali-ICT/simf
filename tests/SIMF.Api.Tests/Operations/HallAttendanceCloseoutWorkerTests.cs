@@ -8,6 +8,7 @@ using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Operations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common;
 
 namespace SIMF.Api.Tests.Operations;
 
@@ -26,7 +27,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
 
         var (hall, session) = SeedSession(db, start: now.AddHours(-3), end: now.AddHours(-1));
         var row = SeedOpenAttendance(db, session, hall);
@@ -45,7 +46,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
 
         var (hall, session) = SeedSession(db, start: now.AddMinutes(-15), end: now.AddMinutes(45));
         var row = SeedOpenAttendance(db, session, hall);
@@ -63,7 +64,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = SimfClock.Now;
 
         var (hall, session) = SeedSession(db, start: now.AddHours(-3), end: now.AddHours(-1));
         var row = SeedOpenAttendance(db, session, hall);
@@ -75,14 +76,14 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
     }
 
     private static (Hall Hall, Session Session) SeedSession(
-        SimfAppDbContext db, DateTimeOffset start, DateTimeOffset end)
+        SimfAppDbContext db, DateTime start, DateTime end)
     {
         var hall = new Hall
         {
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Closeout Hall", NameArabic = "قاعة الإغلاق",
-            Capacity = 100, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = 100, IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Halls.Add(hall);
         var session = new Session
@@ -92,7 +93,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
             Title = "Closeout Session", TitleArabic = "جلسة الإغلاق",
             HallId = hall.Id,
             Start = start, End = end,
-            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
         return (hall, session);
@@ -109,7 +110,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
             UserId = Guid.NewGuid(),
             Method = AttendanceMethod.QrScan,
             Enter = session.Start,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         db.HallAttendances.Add(row);
         return row;

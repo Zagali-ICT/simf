@@ -1,14 +1,14 @@
 // Tests: SIMF.Api.Tests/ExhibitorsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Exhibitors.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Exhibitors;
 
 namespace SIMF.Api.Endpoints.Exhibitors;
 
-/// <summary>D-199 #3 — admin exhibitor list. Mirrors ListSponsorsEndpoint.</summary>
+/// <summary>Admin exhibitor list. Mirrors ListSponsorsEndpoint.</summary>
 public sealed class ListExhibitorsEndpoint(IAdminExhibitorService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminExhibitorSummary>>>
 {
@@ -63,11 +63,7 @@ public sealed class CreateExhibitorEndpoint(IAdminExhibitorService service)
 
     public override async Task HandleAsync(CreateExhibitorRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminExhibitorDetail>.Ok(
             await service.CreateAsync(actorId, req, ct)), ct);
     }
@@ -89,11 +85,7 @@ public sealed class UpdateExhibitorEndpoint(IAdminExhibitorService service)
 
     public override async Task HandleAsync(UpdateExhibitorRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminExhibitorDetail>.Ok(
             await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
@@ -115,11 +107,7 @@ public sealed class DeleteExhibitorEndpoint(IAdminExhibitorService service)
 
     public override async Task HandleAsync(DeleteExhibitorRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -164,12 +152,40 @@ public sealed class ProvisionExhibitorAccountEndpoint(IAdminExhibitorService ser
 
     public override async Task HandleAsync(ProvisionExhibitorAccountRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<ExhibitorAccountSummary>.Ok(
             await service.ProvisionAccountAsync(actorId, req.Id, req, ct)), ct);
+    }
+}
+
+public sealed class LinkExhibitorAccountRoute : LinkExhibitorAccountRequest
+{
+    public Guid Id { get; set; }
+}
+
+/// <summary><c>POST /api/v1/admin/exhibitors/{id}/accounts/link</c>.
+/// Attaches an EXISTING exhibitor-typed account to the exhibitor, which is the
+/// only way an account created through the generic Others pipeline can ever get
+/// the ExhibitorMembership the lead-capture tools require (DEF-EXH-006). Gated by
+/// its own <c>Exhibitors.LinkAccount</c> permission rather than by Create: it
+/// creates no account, it hands an existing one access to visitor contact
+/// cards.</summary>
+public sealed class LinkExhibitorAccountEndpoint(IAdminExhibitorService service)
+    : Endpoint<LinkExhibitorAccountRoute, ApiResult<ExhibitorAccountSummary>>
+{
+    public override void Configure()
+    {
+        Post("/admin/exhibitors/{id:guid}/accounts/link");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Exhibitors.LinkAccount),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(LinkExhibitorAccountRoute req, CancellationToken ct)
+    {
+        var actorId = User.ActorId();
+        await Send.OkAsync(ApiResult<ExhibitorAccountSummary>.Ok(
+            await service.LinkAccountAsync(actorId, req.Id, req, ct)), ct);
     }
 }

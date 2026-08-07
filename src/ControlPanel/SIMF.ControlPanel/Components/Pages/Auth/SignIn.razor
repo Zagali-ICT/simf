@@ -32,6 +32,8 @@
                                        Type="email" Icon="mail" InputMode="email"
                                        Autocomplete="username" Disabled="_loading" />
                         <SimfPasswordField Label="@L["Auth.SignIn.Password"]" @bind-Value="_model.Password"
+                                           ShowLabel="@L["Auth.Password.Show"]"
+                                           HideLabel="@L["Auth.Password.Hide"]"
                                            Autocomplete="current-password" Disabled="_loading" />
                     </div>
                     <SimfLink Href="/forgot-password" Block="true">@L["Auth.SignIn.ForgotLink"]</SimfLink>
@@ -47,7 +49,7 @@
     </ChildContent>
 </SimfAuthLayout>
 
-@* D-206: forced-change popup. A Control Panel sign-in whose credential is
+@* Forced-change popup. A Control Panel sign-in whose credential is
    flagged for change comes back with a single-use ticket instead of a session;
    the operator sets a new password here (current password not re-asked — the
    ticket already proves it) and then signs in normally. *@

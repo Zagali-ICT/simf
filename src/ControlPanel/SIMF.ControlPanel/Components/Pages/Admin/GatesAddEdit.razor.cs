@@ -1,17 +1,10 @@
-using System.Globalization;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -25,9 +18,18 @@ public partial class GatesAddEdit
     private bool _busy;
     private string? _error;
 
+    /// <summary>BUG-018 (18-7) — one page of candidate operators. The picker is
+    /// server-searched instead of a blind top-200.</summary>
+    private const int OperatorPageSize = 25;
+
     private IReadOnlyList<ProfileTypeOption> _profileTypes = Array.Empty<ProfileTypeOption>();
     private IReadOnlyList<OperatorOption> _operators = Array.Empty<OperatorOption>();
     private IReadOnlyList<HallOption> _halls = Array.Empty<HallOption>();
+
+    private string _operatorSearch = string.Empty;
+    private int _operatorTotal;
+    private bool _loadingOperators;
+    private string? _lookupError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -46,37 +48,64 @@ public partial class GatesAddEdit
         }
         _editContext = new EditContext(_model);
 
-        // Load active profile types + active admins as candidate operators.
-        var ptEnvelope = await JS.InvokeAsync<ApiResult<GridPage<AdminProfileTypeSummary>>>(
-            "simfAccount.postJson", "/account/api/admin/profile-types/list",
-            new GridQuery { Top = 200, Filters = new Dictionary<string, string> { ["isActive"] = "true" } });
-        if (ptEnvelope is { Success: true, Data.Items: { } items })
+        // BUG-018 (18-4) — the allowed-profile-type + hall options now come from the
+        // gate module's own Gates.Manage-gated lookup, not the ProfileTypes.View /
+        // Halls.View admin lists. A Security-team gate manager used to see two
+        // silently empty dropdowns because those lookups 403'd with no else branch.
+        var optionsEnvelope = await JS.InvokeAsync<ApiResult<AdminGateFormOptions>>(
+            "simfAccount.getJson", "/account/api/admin/gates/form-options");
+        if (optionsEnvelope is { Success: true, Data: { } options })
         {
-            _profileTypes = items.Select(i => new ProfileTypeOption(i.Id, i.Name)).ToList();
+            _profileTypes = options.ProfileTypes
+                .Select(option => new ProfileTypeOption(option.Id, option.Name)).ToList();
+            _halls = options.Halls
+                .Select(option => new HallOption(option.Id, option.Name)).ToList();
+        }
+        else
+        {
+            _lookupError = optionsEnvelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Gates.Lookup.Failed"];
         }
 
-        var opsEnvelope = await JS.InvokeAsync<ApiResult<GridPage<AdminUserSummary>>>(
-            "simfAccount.postJson", "/account/api/admin/admins/list",
-            new GridQuery { Top = 200 });
-        if (opsEnvelope is { Success: true, Data.Items: { } admins })
-        {
-            _operators = admins
-                .Select(a => new OperatorOption(a.Id, a.Email, a.DisplayName ?? string.Empty))
-                .ToList();
-        }
+        await LoadOperatorsAsync();
+    }
 
-        // X-1 — load active halls for the optional hall-door binding, same list
-        // endpoint the Booths/Sessions forms use. Empty option maps to null
-        // (perimeter gate).
-        var hallsEnvelope = await JS.InvokeAsync<ApiResult<GridPage<AdminHallSummary>>>(
-            "simfAccount.postJson", "/account/api/admin/halls/list",
-            new GridQuery { Top = 500 });
-        if (hallsEnvelope is { Success: true, Data.Items: { } halls })
+    /// <summary>BUG-018 (18-1 / 18-7) — the candidate operators are the users who
+    /// can actually work a gate (approved app accounts on an operational profile
+    /// type), NOT Control-Panel admin accounts. Searchable and paged server-side;
+    /// a failure is surfaced instead of leaving an empty list unexplained.</summary>
+    private async Task LoadOperatorsAsync()
+    {
+        if (_loadingOperators) return;
+        _loadingOperators = true;
+        try
         {
-            _halls = halls.Where(h => h.IsActive)
-                .OrderBy(h => h.Name)
-                .Select(h => new HallOption(h.Id, h.Name)).ToList();
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminGateOperatorCandidate>>>(
+                "simfAccount.postJson", "/account/api/admin/gates/operator-candidates/list",
+                new GridQuery
+                {
+                    Top = OperatorPageSize,
+                    Search = string.IsNullOrWhiteSpace(_operatorSearch)
+                        ? null : _operatorSearch.Trim(),
+                });
+            if (envelope is { Success: true, Data: { } page })
+            {
+                _operators = page.Items
+                    .Select(candidate => new OperatorOption(
+                        candidate.UserId, candidate.Email,
+                        candidate.DisplayName, candidate.ProfileTypeName))
+                    .ToList();
+                _operatorTotal = page.Total;
+            }
+            else
+            {
+                _operators = Array.Empty<OperatorOption>();
+                _operatorTotal = 0;
+                _lookupError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Gates.Lookup.Failed"];
+            }
         }
+        finally { _loadingOperators = false; }
     }
 
     private void OnHallChanged(ChangeEventArgs e)
@@ -113,55 +142,40 @@ public partial class GatesAddEdit
         _busy = true;
         try
         {
-            ApiResult<AdminGateDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminGateDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/gates",
-                    new AdminCreateGateRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
-                        DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
-                        DirectionMode = _model.DirectionMode,
-                        HallId = _model.HallId,
-                        AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
-                        AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminGateDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/gates/{Initial!.Id}",
-                    new AdminUpdateGateRequest
-                    {
-                        Code = _model.Code.Trim().ToUpperInvariant(),
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
-                        DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
-                        DirectionMode = _model.DirectionMode,
-                        IsActive = _model.IsActive,
-                        HallId = _model.HallId,
-                        AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
-                        AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
-                    });
-            }
+            var result = await SendAsync(
+                JS,
+                "/account/api/admin/gates",
+                $"/account/api/admin/gates/{Initial?.Id}",
+                new AdminCreateGateRequest
+                {
+                    Code = _model.Code.Trim().ToUpperInvariant(),
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
+                    DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
+                    DirectionMode = _model.DirectionMode,
+                    HallId = _model.HallId,
+                    AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
+                    AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
+                },
+                new AdminUpdateGateRequest
+                {
+                    Code = _model.Code.Trim().ToUpperInvariant(),
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
+                    DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
+                    DirectionMode = _model.DirectionMode,
+                    IsActive = _model.IsActive,
+                    HallId = _model.HallId,
+                    AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
+                    AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
+                });
 
-            if (envelope is { Success: true, Data: not null })
+            if (!result.Succeeded)
             {
-                await OnSuccess.InvokeAsync(envelope.Data);
+                _error = result.ServerMessage ?? L["Admin.Gates.Fallback"];
             }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Gates.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Gates.Fallback"];
         }
         finally { _busy = false; }
     }
@@ -181,6 +195,7 @@ public partial class GatesAddEdit
     }
 
     private sealed record ProfileTypeOption(Guid Id, string Name);
-    private sealed record OperatorOption(Guid Id, string Email, string DisplayName);
+    private sealed record OperatorOption(
+        Guid Id, string Email, string DisplayName, string ProfileTypeName);
     private sealed record HallOption(Guid Id, string Name);
 }

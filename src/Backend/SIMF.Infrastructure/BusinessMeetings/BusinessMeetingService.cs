@@ -9,17 +9,18 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.BusinessMeetings;
 using SIMF.Domain.BusinessMeetings;
+using SIMF.Infrastructure.MeetingRequests;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.BusinessMeetings;
 
-/// <summary>SIMF-FDS-013 — D-248: flexible hall configuration + admin-arranged
+/// <summary>Flexible hall configuration + admin-arranged
 /// B2B/B2C business meetings. Halls carry a <see cref="HallPurpose"/>; Meeting /
 /// General halls hold <see cref="MeetingTable"/>s (added one-by-one or generated
 /// random-by-count / by row-column); <see cref="HallAllocation"/> reserves hall
 /// space over a from–to slot; a <see cref="BusinessMeeting"/> schedules two or more
 /// parties (companies + visitors) at a table. Visitor names resolve via a second
-/// Identity round-trip (no cross-DB JOIN, D-157); company refs are App FKs.</summary>
+/// Identity round-trip (no cross-DB JOIN); company refs are App FKs.</summary>
 internal sealed class BusinessMeetingService(
     SimfAppDbContext appDbContext,
     SimfIdentityDbContext identityDbContext,
@@ -31,10 +32,11 @@ internal sealed class BusinessMeetingService(
 {
     private const int MaxParticipants = 50;
 
-    /// <summary>The event's local-day boundary (KSA, UTC+3) — the same convention
+    /// <summary>The event's local-day boundary (KSA, +03:00) — the same convention
     /// the programme uses to bucket a session to a Riyadh calendar day. A meeting's
-    /// start/end are converted to this zone before the forum-day bound is checked so
-    /// a late-evening UTC slot files under the correct event day.</summary>
+    /// start/end are already in this zone, so the forum-day bound is a
+    /// plain comparison and a late-evening slot files under the correct event
+    /// day without any shift.</summary>
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
     /// <summary>Hard ceiling on the number of active meeting tables a single hall
@@ -54,16 +56,14 @@ internal sealed class BusinessMeetingService(
             ?? throw NotFound(ErrorCodes.HallNotFound, "Hall not found.", "لم يتم العثور على القاعة.");
 
         hall.Purpose = request.Purpose;
-        hall.UpdatedAt = timeProvider.GetUtcNow();
+        hall.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallPurposeChanged,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"hallId={hallId}; purpose={request.Purpose}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallPurposeChanged,
+            actorUserId,
+            $"hallId={hallId}; purpose={request.Purpose}",
+            cancellationToken);
     }
 
     // ── Meeting tables ───────────────────────────────────────────────────────
@@ -102,18 +102,16 @@ internal sealed class BusinessMeetingService(
             ColumnNumber = request.ColumnNumber,
             Capacity = request.Capacity,
             IsActive = true,
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         appDbContext.MeetingTables.Add(table);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingTableCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"tableId={table.Id}; hallId={hallId}; code={code}; capacity={request.Capacity}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingTableCreated,
+            actorUserId,
+            $"tableId={table.Id}; hallId={hallId}; code={code}; capacity={request.Capacity}",
+            cancellationToken);
 
         return ToTableRow(table);
     }
@@ -138,16 +136,14 @@ internal sealed class BusinessMeetingService(
         table.RowLabel = Trim(request.RowLabel);
         table.ColumnNumber = request.ColumnNumber;
         table.Capacity = request.Capacity;
-        table.UpdatedAt = timeProvider.GetUtcNow();
+        table.UpdatedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingTableUpdated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"tableId={tableId}; code={code}; capacity={request.Capacity}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingTableUpdated,
+            actorUserId,
+            $"tableId={tableId}; code={code}; capacity={request.Capacity}",
+            cancellationToken);
 
         return ToTableRow(table);
     }
@@ -160,7 +156,7 @@ internal sealed class BusinessMeetingService(
             ?? throw NotFound(ErrorCodes.MeetingTableNotFound,
                 "Meeting table not found.", "لم يتم العثور على طاولة الاجتماع.");
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var hasScheduled = await appDbContext.BusinessMeetings.AsNoTracking()
             .AnyAsync(m => m.MeetingTableId == tableId
                 && m.Status == BusinessMeetingStatus.Confirmed
@@ -177,13 +173,11 @@ internal sealed class BusinessMeetingService(
         table.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingTableDeactivated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"tableId={tableId}; hallId={table.HallId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingTableDeactivated,
+            actorUserId,
+            $"tableId={tableId}; hallId={table.HallId}",
+            cancellationToken);
     }
 
     public async Task<MeetingTablesGenerated> GenerateTablesAsync(
@@ -192,7 +186,7 @@ internal sealed class BusinessMeetingService(
     {
         var hall = await EnsureMeetingHallAsync(hallId, cancellationToken);
         ValidateCapacity(request.Capacity);
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
 
         var existing = await appDbContext.MeetingTables
             .Where(t => t.HallId == hallId && t.IsActive)
@@ -275,14 +269,12 @@ internal sealed class BusinessMeetingService(
         appDbContext.MeetingTables.AddRange(toCreate);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.MeetingTablesGenerated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"hallId={hallId}; mode={request.Mode}; created={toCreate.Count}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.MeetingTablesGenerated,
+            actorUserId,
+            $"hallId={hallId}; mode={request.Mode}; created={toCreate.Count}; "
                 + $"removed={removed}; reset={request.Reset}",
-        }, cancellationToken);
+            cancellationToken);
 
         return new MeetingTablesGenerated(toCreate.Count, removed);
     }
@@ -355,19 +347,17 @@ internal sealed class BusinessMeetingService(
             End = request.End,
             CreatedByUserId = actorUserId,
             Notes = Trim(request.Notes),
-            CreatedAt = timeProvider.GetUtcNow(),
+            CreatedAt = timeProvider.SimfNow(),
         };
         appDbContext.HallAllocations.Add(allocation);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallAllocationCreated,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"allocationId={allocation.Id}; hallId={hallId}; purpose={request.Purpose}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallAllocationCreated,
+            actorUserId,
+            $"allocationId={allocation.Id}; hallId={hallId}; purpose={request.Purpose}; "
                 + $"mode={request.Mode}; from={request.Start:o}; to={request.End:o}",
-        }, cancellationToken);
+            cancellationToken);
 
         return new HallAllocationRow(
             allocation.Id, allocation.HallId, allocation.Purpose, allocation.Mode,
@@ -383,16 +373,14 @@ internal sealed class BusinessMeetingService(
             ?? throw NotFound(ErrorCodes.HallAllocationNotFound,
                 "Hall allocation not found.", "لم يتم العثور على تخصيص القاعة.");
 
-        allocation.ReleasedAt = timeProvider.GetUtcNow();
+        allocation.ReleasedAt = timeProvider.SimfNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.HallAllocationReleased,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"allocationId={allocationId}; hallId={allocation.HallId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.HallAllocationReleased,
+            actorUserId,
+            $"allocationId={allocationId}; hallId={allocation.HallId}",
+            cancellationToken);
     }
 
     // ── Business meetings ────────────────────────────────────────────────────
@@ -410,7 +398,7 @@ internal sealed class BusinessMeetingService(
         // manual double-Join and a post-projection sort 500'd at execution).
         var q = appDbContext.BusinessMeetings.AsNoTracking();
 
-        // CP grid per-column filters (D-255). Unknown columns are ignored. The
+        // CP grid per-column filters. Unknown columns are ignored. The
         // legacy "status" filter (the old dropdown) still parses the enum name.
         foreach (var (column, raw) in query.Filters)
         {
@@ -433,7 +421,7 @@ internal sealed class BusinessMeetingService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: most recent start first.
+        // CP grid sortable columns. Default: most recent start first.
         q = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("hall", false) => q.OrderBy(m => m.MeetingTable!.Hall!.NameArabic).ThenByDescending(m => m.Start),
@@ -522,7 +510,7 @@ internal sealed class BusinessMeetingService(
 
         var names = await ResolvePartyNamesAsync(companyIds, visitorIds, cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var meeting = new BusinessMeeting
         {
             Id = Guid.NewGuid(),
@@ -545,7 +533,7 @@ internal sealed class BusinessMeetingService(
             }).ToList(),
         };
 
-        // M-5 — close the read-then-insert double-book race. A time range cannot be a
+        // Close the read-then-insert double-book race. A time range cannot be a
         // SQL unique constraint, so the table / hall / participant overlap checks and
         // the insert must run inside ONE Serializable transaction: the range scans then
         // hold key-range locks and a concurrent overlapping insert cannot slip in
@@ -561,23 +549,23 @@ internal sealed class BusinessMeetingService(
             await using var tx = await appDbContext.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, cancellationToken);
 
-            // Table conflict — another Confirmed meeting overlaps this table/slot.
-            var tableClash = await appDbContext.BusinessMeetings.AsNoTracking()
-                .Where(m => m.MeetingTableId == table.Id
-                    && m.Status == BusinessMeetingStatus.Confirmed)
-                .AnyAsync(m => m.Start < request.End && request.Start < m.End,
-                    cancellationToken);
-            if (tableClash)
-            {
-                throw new ApiException(
-                    ErrorCodes.BusinessMeetingTableConflict, 409,
-                    "The table is already booked for an overlapping time-slot.",
-                    "الطاولة محجوزة بالفعل في فترة زمنية متداخلة.");
-            }
+            // Table conflict — the table is already held over this slot. The
+            // scan used to see this service's OWN family only, so a business meeting
+            // could be scheduled onto a table already held by a delegation or speaker
+            // meeting request. The shared guard covers all three families; running it
+            // here keeps its range scans inside this Serializable transaction, so the
+            // key-range locks that close the double-booking race still cover them.
+            await MeetingTableOverlapGuard.EnsureTableIsFreeAsync(
+                appDbContext, table.Id, request.Start, request.End,
+                ErrorCodes.BusinessMeetingTableConflict,
+                excludeDelegationRequestId: null,
+                excludeSpeakerRequestId: null,
+                excludeBusinessMeetingId: meeting.Id,
+                cancellationToken);
 
             // Hall conflict — the table's hall is wholly reserved for a non-meeting
-            // purpose (e.g. a session) for an overlapping slot (FDS-013 §5.6: a
-            // whole-hall allocation is a unit that cannot be double-reserved).
+            // purpose (e.g. a session) for an overlapping slot: a
+            // whole-hall allocation is a unit that cannot be double-reserved.
             var hallReserved = await appDbContext.HallAllocations.AsNoTracking()
                 .Where(a => a.HallId == table.HallId
                     && a.ReleasedAt == null
@@ -615,14 +603,12 @@ internal sealed class BusinessMeetingService(
             await tx.CommitAsync(cancellationToken);
         });
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BusinessMeetingScheduled,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"meetingId={meeting.Id}; tableId={table.Id}; type={request.MeetingType}; "
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BusinessMeetingScheduled,
+            actorUserId,
+            $"meetingId={meeting.Id}; tableId={table.Id}; type={request.MeetingType}; "
                 + $"participants={parties.Count}; from={request.Start:o}; to={request.End:o}",
-        }, cancellationToken);
+            cancellationToken);
 
         await NotifyParticipantsAsync(meeting, NotificationKind.MeetingScheduled,
             "A meeting was scheduled for you", "تم تحديد موعد اجتماع لك", cancellationToken);
@@ -648,7 +634,7 @@ internal sealed class BusinessMeetingService(
                 "هذا الاجتماع غير مؤكد.");
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         meeting.Status = BusinessMeetingStatus.Cancelled;
         meeting.CancelledByUserId = actorUserId;
         meeting.CancelledAt = now;
@@ -656,13 +642,11 @@ internal sealed class BusinessMeetingService(
         meeting.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await auditLog.WriteAsync(new AuditEntry
-        {
-            EventType = AuditEvents.BusinessMeetingCancelled,
-            Outcome = AuditOutcome.Success,
-            ActorUserId = actorUserId,
-            Detail = $"meetingId={id}; tableId={meeting.MeetingTableId}",
-        }, cancellationToken);
+        await auditLog.WriteSuccessAsync(
+            AuditEvents.BusinessMeetingCancelled,
+            actorUserId,
+            $"meetingId={id}; tableId={meeting.MeetingTableId}",
+            cancellationToken);
 
         await NotifyParticipantsAsync(meeting, NotificationKind.MeetingCancelled,
             "A meeting was cancelled", "تم إلغاء اجتماع", cancellationToken);
@@ -851,7 +835,7 @@ internal sealed class BusinessMeetingService(
     }
 
     private MeetingTable NewTable(
-        Guid hallId, string code, string? row, int? col, int capacity, DateTimeOffset now) =>
+        Guid hallId, string code, string? row, int? col, int capacity, DateTime now) =>
         new()
         {
             Id = Guid.NewGuid(),
@@ -871,7 +855,7 @@ internal sealed class BusinessMeetingService(
         query.ClampPage(50, 500);
 
     private async Task ValidateSlotAsync(
-        DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken)
+        DateTime start, DateTime end, CancellationToken cancellationToken)
     {
         if (end <= start)
         {
@@ -880,15 +864,15 @@ internal sealed class BusinessMeetingService(
                 "يجب أن يكون وقت النهاية بعد وقت البداية.");
         }
 
-        // M-5 — lower time bound: a meeting / allocation cannot start in the past.
-        if (start < timeProvider.GetUtcNow())
+        // Lower time bound: a meeting / allocation cannot start in the past.
+        if (start < timeProvider.SimfNow())
         {
             throw Invalid(ErrorCodes.HallAllocationInvalid,
                 "The start time cannot be in the past.",
                 "لا يمكن أن يكون وقت البداية في الماضي.");
         }
 
-        // D-753 — forum-day bound: a meeting / allocation may only be scheduled on
+        // Forum-day bound: a meeting / allocation may only be scheduled on
         // the authored event days. The window is MIN/MAX over the active
         // ProgrammeDay.Date rows (NOT the stale OrganizationProfile placeholder). The
         // slot's start and end are converted to the event-local (+03:00) calendar
@@ -899,8 +883,8 @@ internal sealed class BusinessMeetingService(
         var forum = await forumWindow.GetForumDaysAsync(cancellationToken);
         if (forum is { } window)
         {
-            var startDate = DateOnly.FromDateTime(start.ToOffset(EventOffset).DateTime);
-            var endDate = DateOnly.FromDateTime(end.ToOffset(EventOffset).DateTime);
+            var startDate = DateOnly.FromDateTime(start);
+            var endDate = DateOnly.FromDateTime(end);
             if (startDate < window.MinDate || endDate > window.MaxDate)
             {
                 throw Invalid(ErrorCodes.HallAllocationInvalid,

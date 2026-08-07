@@ -4,10 +4,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
-using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Organization;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -25,18 +22,19 @@ public partial class OrganizationProfilePage
     private string _toastVariant = "success";
     private bool _videoBusy;
 
-    // D-768 — the hidden file input the hero-video upload reads, and the served
+    // The hidden file input the hero-video upload reads, and the served
     // route the upload points BackgroundVideoUrl at. HasUploadedHeroVideo shows the
     // "Remove" affordance only when an uploaded video (not a pasted external /
     // YouTube link) is the current hero source.
     private const string HeroVideoInputId = "org-hero-video-input";
-    // Keep in sync with OrganizationHeroVideoRoutes.StreamRoute (the API assembly the
-    // CP does not reference). If the served route changes, the "Remove" affordance
-    // silently stops appearing until this matches.
-    private const string HeroVideoRouteSuffix = "/app/organization/hero-video.mp4";
+    // The SAME constant the API registers its stream route from. This used
+    // to be a hand-copied literal with a comment asking the next person to keep the
+    // two equal; nothing detected the drift, and the failure was silent — the
+    // "Remove" button simply stops being drawn, so an uploaded hero video becomes
+    // unremovable from here.
     private bool HasUploadedHeroVideo =>
         (_model.BackgroundVideoUrl ?? string.Empty)
-            .EndsWith(HeroVideoRouteSuffix, StringComparison.OrdinalIgnoreCase);
+            .EndsWith(OrganizationHeroVideoRoute.StreamRoute, StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
@@ -134,54 +132,9 @@ public partial class OrganizationProfilePage
         _toastMessage = null;
         try
         {
-            var request = new AdminUpdateOrganizationProfileRequest
-            {
-                Name = _model.Name,
-                NameArabic = _model.NameArabic,
-                Title = _model.Title,
-                TitleArabic = _model.TitleArabic,
-                Slogan = _model.Slogan,
-                SloganArabic = _model.SloganArabic,
-                Bio = _model.Bio,
-                BioArabic = _model.BioArabic,
-                CurrentYear = int.TryParse(_model.CurrentYear, NumberStyles.Integer, CultureInfo.InvariantCulture, out var y) ? y : 0,
-                Status = _model.Status,
-                EventStartDate = ParseDate(_model.EventStartDate),
-                EventEndDate = ParseDate(_model.EventEndDate),
-                Version = _model.Version,
-                SysVersion = _model.SysVersion,
-                LocationText = _model.LocationText,
-                LocationTextArabic = _model.LocationTextArabic,
-                Latitude = ParseDecimal(_model.Latitude),
-                Longitude = ParseDecimal(_model.Longitude),
-                ContactPhone = _model.ContactPhone,
-                ContactEmail = _model.ContactEmail,
-                ContactWebsite = _model.ContactWebsite,
-                LiveStreamUrl = _model.LiveStreamUrl,
-                BackgroundVideoUrl = _model.BackgroundVideoUrl,
-                Facebook = _model.Facebook,
-                X = _model.X,
-                Instagram = _model.Instagram,
-                LinkedIn = _model.LinkedIn,
-                YouTube = _model.YouTube,
-                TikTok = _model.TikTok,
-                Snapchat = _model.Snapchat,
-                AboutItems = _model.AboutItems
-                    .Select((a, i) => new AdminOrganizationAboutItem
-                    {
-                        Id = a.Id, Title = a.Title, TitleArabic = a.TitleArabic,
-                        Text = a.Text, TextArabic = a.TextArabic, DisplayOrder = i,
-                    }).ToList(),
-                Details = _model.Details
-                    .Select((x, i) => new AdminOrganizationDetail
-                    {
-                        Id = x.Id, Name = x.Name, NameArabic = x.NameArabic,
-                        Value = x.Value, ValueArabic = x.ValueArabic, DisplayOrder = i,
-                    }).ToList(),
-            };
-
             var envelope = await JS.InvokeAsync<ApiResult<OrganizationProfileResponse>>(
-                "simfAccount.putJson", "/account/api/admin/organization-profile", request);
+                "simfAccount.putJson", "/account/api/admin/organization-profile",
+                BuildUpdateRequest());
             if (envelope is { Success: true, Data: not null })
             {
                 Load(envelope.Data);
@@ -203,7 +156,56 @@ public partial class OrganizationProfilePage
         finally { _busy = false; }
     }
 
-    // D-768 — upload the picked hero video through the CP proxy (streamed to the
+    /// <summary>Maps the edited model onto the full-document upsert. About items
+    /// and details are renumbered from their list position, so drag-reordering in
+    /// the UI is what sets DisplayOrder.</summary>
+    private AdminUpdateOrganizationProfileRequest BuildUpdateRequest() => new()
+    {
+        Name = _model.Name,
+        NameArabic = _model.NameArabic,
+        Title = _model.Title,
+        TitleArabic = _model.TitleArabic,
+        Slogan = _model.Slogan,
+        SloganArabic = _model.SloganArabic,
+        Bio = _model.Bio,
+        BioArabic = _model.BioArabic,
+        CurrentYear = int.TryParse(_model.CurrentYear, NumberStyles.Integer, CultureInfo.InvariantCulture, out var year) ? year : 0,
+        Status = _model.Status,
+        EventStartDate = ParseDate(_model.EventStartDate),
+        EventEndDate = ParseDate(_model.EventEndDate),
+        Version = _model.Version,
+        SysVersion = _model.SysVersion,
+        LocationText = _model.LocationText,
+        LocationTextArabic = _model.LocationTextArabic,
+        Latitude = ParseDecimal(_model.Latitude),
+        Longitude = ParseDecimal(_model.Longitude),
+        ContactPhone = _model.ContactPhone,
+        ContactEmail = _model.ContactEmail,
+        ContactWebsite = _model.ContactWebsite,
+        LiveStreamUrl = _model.LiveStreamUrl,
+        BackgroundVideoUrl = _model.BackgroundVideoUrl,
+        Facebook = _model.Facebook,
+        X = _model.X,
+        Instagram = _model.Instagram,
+        LinkedIn = _model.LinkedIn,
+        YouTube = _model.YouTube,
+        TikTok = _model.TikTok,
+        Snapchat = _model.Snapchat,
+        AboutItems = _model.AboutItems
+            .Select((a, i) => new AdminOrganizationAboutItem
+            {
+                Id = a.Id, Title = a.Title, TitleArabic = a.TitleArabic,
+                Text = a.Text, TextArabic = a.TextArabic, DisplayOrder = i,
+            }).ToList(),
+        Details = _model.Details
+            .Select((x, i) => new AdminOrganizationDetail
+            {
+                Id = x.Id, Name = x.Name, NameArabic = x.NameArabic,
+                Value = x.Value, ValueArabic = x.ValueArabic, DisplayOrder = i,
+            }).ToList(),
+    };
+
+    // Upload the picked hero video through the CP proxy (streamed to the
     // API), then reload so the served BackgroundVideoUrl + the Remove affordance
     // reflect the new state.
     private async Task UploadHeroVideoAsync()
@@ -224,6 +226,15 @@ public partial class OrganizationProfilePage
             _toastMessage = L["Admin.OrganizationProfile.HeroVideoFailed"];
         }
         finally { _videoBusy = false; }
+    }
+
+    // The hero-video delete used to fire on the first click.
+    private bool _confirmingHeroVideoRemove;
+
+    private async Task ConfirmRemoveHeroVideoAsync()
+    {
+        _confirmingHeroVideoRemove = false;
+        await RemoveHeroVideoAsync();
     }
 
     private async Task RemoveHeroVideoAsync()
@@ -263,11 +274,11 @@ public partial class OrganizationProfilePage
         }
     }
 
-    private static string DateString(DateTimeOffset? value) =>
+    private static string DateString(DateTime? value) =>
         value?.ToString("yyyy-MM-dd") ?? string.Empty;
 
-    private static DateTimeOffset? ParseDate(string? raw) =>
-        DateTimeOffset.TryParse(raw, out var d) ? d : null;
+    private static DateTime? ParseDate(string? raw) =>
+        DateTime.TryParse(raw, out var d) ? d : null;
 
     private static decimal? ParseDecimal(string? raw) =>
         decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? v : null;

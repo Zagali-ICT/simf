@@ -86,6 +86,15 @@
 | E2E-SUM-026 | **Raw subtitle in the editor (Slice D)** — opening a summary whose session has `LiveCaptions*` shows the read-only "AI source subtitle" panels (EN + AR) above the editable fields; the detail read carries `Subtitle` / `SubtitleArabic` from the session captions; a session with no captions shows no panel; the fields are never on the public contract | happy | P1 | authored ✓ (`SessionSummaryCommitteeTests.The_editor_read_surfaces_the_raw_subtitle_source`) |
 | E2E-SUM-027 | **Pristine AI draft survives an edit (Slice D)** — Generate captures `AiDraftFullTextArabic` + `AiDraftGeneratedAt`; a Save that edits the Arabic full-text leaves the snapshot untouched (the read-only "Original AI draft" panel keeps showing the original); a re-generate refreshes the snapshot to the latest output | happy | P0 | authored ✓ (`SessionSummaryCommitteeTests.Generate_captures_the_pristine_ai_draft_snapshot` + `.Editing_the_summary_preserves_the_pristine_ai_draft` + `.Regenerating_refreshes_the_pristine_ai_draft_snapshot`) |
 | E2E-SUM-028 | **Summary video URL (Item #35)** — the editor's "Summary video URL" field saves a valid YouTube / direct HLS-MP4 link and round-trips it on re-open; an invalid link (not YouTube, not `.m3u8`/`.mp4`) is rejected 400 `SESSION_SUMMARY_INVALID`; a blank clears it to null; the field flows to the app's `PublicSessionSummary.summaryVideoUrl` as screen 34's second player | happy | P1 | authored ✓ (`SessionSummaryCommitteeTests.Save_round_trips_the_summary_video_url` + `.An_invalid_summary_video_url_is_rejected_400` + `.A_null_summary_video_url_is_allowed`) |
+| E2E-SUM-029 | **A18 — the AI draft is unmistakably a stub and cannot be shipped.** `Ai.DefaultProvider` is `Echo` (an offline stub that only echoes the prompt). Generate stores a draft that OPENS with `[AI-STUB-DO-NOT-PUBLISH]` and says, in AR + EN, that it is not real AI output (stamped by the summary desk on `AiCallResult.IsStub`, not by the provider). Approve **and** Publish refuse any summary whose text still carries that marker in ANY field (KeyPoints / Recommendations / Speakers / FullText, either language) → 400 `SESSION_SUMMARY_INVALID` (bilingual); replacing the placeholder with real minutes approves + publishes normally | error | P0 | authored ✓ (`SessionSummaryCommitteeTests.A18_the_stub_draft_is_marked_so_a_reviewer_cannot_mistake_it_for_minutes` + `.A18_ApproveAsync_WithStubDraft_ReturnsBadRequest` + `.A18_PublishAsync_WithStubTextPastedBack_ReturnsBadRequest` + `.A18_a_stub_draft_replaced_by_real_minutes_publishes_normally`) |
+| E2E-SUM-030 | **A19 — a save that changes nothing no longer unpublishes.** Re-opening the editor on a published summary and pressing Save without editing a field keeps `ApprovedAt` + `PublishedAt` and the app keeps serving it; a re-generate that produces byte-identical text likewise resets nothing. A real edit still clears approval + unpublishes (E2E-SUM-024) | error | P0 | authored ✓ (`SessionSummaryCommitteeTests.A19_saving_a_published_summary_unchanged_keeps_it_published` + `.A19_regenerating_the_same_draft_keeps_the_summary_published`) |
+| E2E-SUM-031 | **A19 — the CP names the consequence before an unpublishing save.** Editing a **published** summary and pressing Save opens a must-decide `SimfConfirm` ("This summary is published… it disappears from the app until…") and sends NO PUT until confirmed; Cancel closes it and sends nothing; an **approved / in-review** summary shows the softer "returns to draft" wording; a no-op save and a plain Draft summary are not gated | happy | P0 | authored ✓ (`SessionSummariesConfirmTests` × 4) |
+| E2E-SUM-032 | **A18 — a legacy `[echo:…]` draft cannot be approved.** A summary whose Arabic full-text still opens with the stub's pre-sentinel prefix (`[echo:echo] …` — the shape every draft generated before 2026-07-26 has on QA / production) is submitted for review, then Approve → 400 `SESSION_SUMMARY_INVALID` (bilingual "still contains placeholder text…") | error | P0 | authored ✓ (`SessionSummaryCommitteeTests.A18_ApproveAsync_WithLegacyEchoPrefixedDraft_ReturnsBadRequest`) |
+| E2E-SUM-033 | **A18 — a legacy `[echo]` draft that was already approved cannot be published.** A summary carrying the pre-sentinel prefix whose `ApprovedAt` was stamped before this guard existed (so the approve gate never saw it) → Publish returns 400 `SESSION_SUMMARY_INVALID` and the public read stays 404. Unpublish of an already-live one is still allowed, so an operator can retract | error | P0 | authored ✓ (`SessionSummaryCommitteeTests.A18_PublishAsync_WithLegacyEchoPrefixedDraftAlreadyApproved_ReturnsBadRequest`) |
+| E2E-SUM-034 | **A18 — real minutes that merely mention `[echo]` still publish.** The legacy sweep is LEADING-prefix only: minutes reading "ناقش المتحدثون تقنية [echo] للسونار…" approve and publish normally and the app serves them (no false positive) | happy | P1 | authored ✓ (`SessionSummaryCommitteeTests.A18_real_minutes_that_merely_mention_echo_still_publish`) |
+| E2E-SUM-035 | **D-837 — a denied holder gets no empty toolbar.** With `SessionSummaries.View` but not `.Export` (Export is this grid's only toolbar control) the toolbar bar is absent entirely, not rendered empty; granting `.Export` brings it back | auth | P1 | authored ✓ (`ActionPermissionRenderTests.A_denied_holder_gets_no_toolbar_bar_rather_than_an_empty_one`) |
+| E2E-SUM-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
+| E2E-SUM-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
 ## Scenarios
 
@@ -517,6 +526,36 @@ Scenario: Clearing the summary video URL removes the second player
 
 ---
 
+### E2E-SUM-035 — A denied holder gets no empty toolbar (D-837)
+
+```gherkin
+Scenario: The toolbar is absent, not empty, for an admin who cannot export
+  Given a signed-in admin whose role grants SessionSummaries.View
+        but NOT SessionSummaries.Export
+  And Export is the only control this grid puts in its toolbar
+  When they open /admin/session-summaries
+  Then the grid renders with its rows
+  And NO .simf-grid__toolbar element is present in the DOM
+  # Not "present but empty": SimfDataGrid used to decide whether to draw the bar
+  # from the callbacks the page wires, which it knows synchronously, rather than
+  # the permissions, which it did not — so a denied holder got an empty bar.
+
+Scenario: The toolbar returns as soon as one action is permitted
+  Given the same admin, now also granted SessionSummaries.Export
+  When they open /admin/session-summaries
+  Then the .simf-grid__toolbar element is present
+  And it contains the Export control
+  # The positive control — the fix must not degrade into "never draw the toolbar".
+
+Scenario: The right-click menu does not open empty on a fully denied row
+  Given a signed-in admin who holds only SessionSummaries.View
+  When they right-click a row
+  Then no context menu opens
+  And no backdrop is placed over the page
+  # Previously the menu opened with nothing in it, behind a backdrop that
+  # swallowed the next click.
+```
+
 ## Implementation notes
 
 - **API integration tests** at
@@ -556,4 +595,4 @@ Scenario: Clearing the summary video URL removes the second player
 
 ---
 
-_Last reviewed:_ 2026-07-20 by Claude (Item #35 — the editor gains a "Summary video URL" field (the app's second player on screen 34, beside the full recording); the URL is LiveStreamUrlPolicy-validated and round-trips through Save; E2E-SUM-028). Earlier: 2026-07-19 by Claude (Slice D — the raw subtitle + a pristine AI-draft snapshot are surfaced read-only in the CP editor; Generate captures the snapshot and Save never overwrites it; E2E-SUM-026/027, authored at the API layer; CP-internal, no public-contract change). Earlier the same day: owner approval hard-gate — Publish requires `ApprovedAt`, and editing a published summary clears `PublishedAt` so the app never sees unreviewed minutes; the public read + `HasPublishedSummary` also require `ApprovedAt`; E2E-SUM-023/024. Earlier: 2026-07-11 by Claude (S-6 owner — publish gated on the session having STARTED (clock: now >= Start), not the manual Held flag; E2E-SUM-025). Earlier: 2026-06-20 by SIMF Team (D-472 #9 — added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-27 by Claude (A18 follow-up — the `[AI-STUB-DO-NOT-PUBLISH]` banner is stamped by the summary desk instead of the shared `EchoAiProvider`, so the visitor chatbot / FAQ / translate never render reviewer instructions, and the approve/publish guard also refuses drafts that merely open with the legacy `[echo:…]` / `[echo]` prefix; E2E-SUM-032..034). Earlier: 2026-07-26 by Claude (A18 — the shipped Echo stub now marks its output `[AI-STUB-DO-NOT-PUBLISH]` and Approve/Publish refuse marked text, so an echo stub can no longer be approved and published verbatim; A19 — a save/regenerate that changes nothing no longer clears the review + publish stamps, and the CP warns before a save that would withdraw a live محضر; E2E-SUM-029..031). Earlier: 2026-07-20 by Claude (Item #35 — the editor gains a "Summary video URL" field (the app's second player on screen 34, beside the full recording); the URL is LiveStreamUrlPolicy-validated and round-trips through Save; E2E-SUM-028). Earlier: 2026-07-19 by Claude (Slice D — the raw subtitle + a pristine AI-draft snapshot are surfaced read-only in the CP editor; Generate captures the snapshot and Save never overwrites it; E2E-SUM-026/027, authored at the API layer; CP-internal, no public-contract change). Earlier the same day: owner approval hard-gate — Publish requires `ApprovedAt`, and editing a published summary clears `PublishedAt` so the app never sees unreviewed minutes; the public read + `HasPublishedSummary` also require `ApprovedAt`; E2E-SUM-023/024. Earlier: 2026-07-11 by Claude (S-6 owner — publish gated on the session having STARTED (clock: now >= Start), not the manual Held flag; E2E-SUM-025). Earlier: 2026-06-20 by SIMF Team (D-472 #9 — added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

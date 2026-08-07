@@ -5,7 +5,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin.Validators;
 
-/// <summary>Validates the admin-reset-2FA request (D-041).</summary>
+/// <summary>Validates the admin-reset-2FA request.</summary>
 public sealed class AdminResetTwoFactorRequestValidator
     : Validator<AdminResetTwoFactorRequest>
 {

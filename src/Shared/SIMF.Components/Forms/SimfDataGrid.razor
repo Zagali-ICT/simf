@@ -1,10 +1,10 @@
-@* SimfDataGrid v2 — the SIMF server-paged data grid (decision D-044, full
-   spec from myComment #16). One grid component used by every list page.
+@* SimfDataGrid v2 — the SIMF server-paged data grid. One grid component
+   used by every list page.
 
-   v1 (D-044 a): server-paged + sortable column headers + per-column filter
+   v1: server-paged + sortable column headers + per-column filter
    inputs + per-row actions slot + empty state.
 
-   v2 (D-044 b): adds the row right-click context menu (Copy/Delete/Edit),
+   v2: adds the row right-click context menu (Copy/Delete/Edit),
    per-row fixed action buttons at the row end (Copy/Delete/Edit), a top
    action toolbar (Select All / Add / Edit / Delete / Copy / Paste /
    Duplicate / Import / Export), per-row selection via a checkbox column,
@@ -16,7 +16,9 @@
    load — by design, since the grid never holds rows it didn't ask for).
 
    Action callbacks: each toolbar button is rendered only when its callback
-   is wired. Pages opt in to the actions they actually support.
+   is wired, AND — when the page sets the matching *Permission code —
+   only when the signed-in user holds it. Pages opt in to the actions they
+   actually support, and say who may use them.
 
    Usage:
      <SimfDataGrid TItem="UserRow"
@@ -31,6 +33,7 @@
      </SimfDataGrid>
 *@
 @namespace SIMF.Components.Forms
+@using Microsoft.AspNetCore.Authorization
 @typeparam TItem
 @inject IJSRuntime JS
 @implements IDisposable
@@ -56,49 +59,59 @@
                 }
                 @if (OnAdd.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="plus" Title="@AddLabel"
-                                       OnClick="OnAdd">
-                        @AddLabel
-                    </SimfToolbarButton>
+                    <SimfActionGate Permission="@AddPermission">
+                        <SimfToolbarButton Icon="plus" Title="@AddLabel"
+                                           OnClick="OnAdd">
+                            @AddLabel
+                        </SimfToolbarButton>
+                    </SimfActionGate>
                 }
                 @if (OnEditOne.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="edit" Title="@EditLabel"
-                                       Disabled="@(SelectedCount != 1)"
-                                       OnClick="EditSingleSelectedAsync">
-                        @EditLabel
-                    </SimfToolbarButton>
+                    <SimfActionGate Permission="@EditPermission">
+                        <SimfToolbarButton Icon="edit" Title="@EditLabel"
+                                           Disabled="@(SelectedCount != 1)"
+                                           OnClick="EditSingleSelectedAsync">
+                            @EditLabel
+                        </SimfToolbarButton>
+                    </SimfActionGate>
                 }
                 @if (OnDeleteSelected.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="trash" Title="@DeleteLabel"
-                                       Danger="true"
-                                       Disabled="@(SelectedOnPageCount == 0)"
-                                       OnClick="@(() => OnDeleteSelected.InvokeAsync(SelectedItemsOnPage()))">
-                        @DeleteLabel
-                    </SimfToolbarButton>
+                    <SimfActionGate Permission="@DeletePermission">
+                        <SimfToolbarButton Icon="trash" Title="@DeleteLabel"
+                                           Danger="true"
+                                           Disabled="@(SelectedOnPageCount == 0)"
+                                           OnClick="@(() => OnDeleteSelected.InvokeAsync(SelectedItemsOnPage()))">
+                            @DeleteLabel
+                        </SimfToolbarButton>
+                    </SimfActionGate>
                 }
-                @* D-164 (gap doc G2) — bulk approve. Label is parent-supplied
+                @* Bulk approve. Label is parent-supplied
                    (`ApproveSelectedLabel`) so the same grid can host both the
                    pending-visitor and pending-other lists with localised copy. *@
                 @if (OnApproveSelected.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="check" Title="@ApproveSelectedLabel"
-                                       Disabled="@(SelectedOnPageCount == 0)"
-                                       OnClick="@(() => OnApproveSelected.InvokeAsync(SelectedItemsOnPage()))">
-                        @ApproveSelectedLabel
-                    </SimfToolbarButton>
+                    <SimfActionGate Permission="@ApprovePermission">
+                        <SimfToolbarButton Icon="check" Title="@ApproveSelectedLabel"
+                                           Disabled="@(SelectedOnPageCount == 0)"
+                                           OnClick="@(() => OnApproveSelected.InvokeAsync(SelectedItemsOnPage()))">
+                            @ApproveSelectedLabel
+                        </SimfToolbarButton>
+                    </SimfActionGate>
                 }
-                @* D-209 — bulk reject. Mirrors bulk approve; the parent opens a
+                @* Bulk reject. Mirrors bulk approve; the parent opens a
                    shared-reason modal before calling the API. *@
                 @if (OnRejectSelected.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="close" Title="@RejectSelectedLabel"
-                                       Danger="true"
-                                       Disabled="@(SelectedOnPageCount == 0)"
-                                       OnClick="@(() => OnRejectSelected.InvokeAsync(SelectedItemsOnPage()))">
-                        @RejectSelectedLabel
-                    </SimfToolbarButton>
+                    <SimfActionGate Permission="@RejectPermission">
+                        <SimfToolbarButton Icon="close" Title="@RejectSelectedLabel"
+                                           Danger="true"
+                                           Disabled="@(SelectedOnPageCount == 0)"
+                                           OnClick="@(() => OnRejectSelected.InvokeAsync(SelectedItemsOnPage()))">
+                            @RejectSelectedLabel
+                        </SimfToolbarButton>
+                    </SimfActionGate>
                 }
                 @if (OnCopySelected.HasDelegate)
                 {
@@ -110,34 +123,42 @@
                 }
                 @if (OnPaste.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="copy" Title="@PasteLabel"
-                                       OnClick="OnPasteFromClipboardAsync">
-                        @PasteLabel
-                    </SimfToolbarButton>
+                    <SimfActionGate Permission="@AddPermission">
+                        <SimfToolbarButton Icon="copy" Title="@PasteLabel"
+                                           OnClick="OnPasteFromClipboardAsync">
+                            @PasteLabel
+                        </SimfToolbarButton>
+                    </SimfActionGate>
                 }
                 @if (OnDuplicateOne.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="copy" Title="@DuplicateLabel"
-                                       Disabled="@(SelectedCount != 1)"
-                                       OnClick="DuplicateSingleSelectedAsync">
-                        @DuplicateLabel
-                    </SimfToolbarButton>
+                    <SimfActionGate Permission="@AddPermission">
+                        <SimfToolbarButton Icon="copy" Title="@DuplicateLabel"
+                                           Disabled="@(SelectedCount != 1)"
+                                           OnClick="DuplicateSingleSelectedAsync">
+                            @DuplicateLabel
+                        </SimfToolbarButton>
+                    </SimfActionGate>
                 }
             </div>
             <div class="simf-grid__toolbar-group">
                 @if (OnImport.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="upload" Title="@ImportLabel"
-                                       OnClick="OnImport">
-                        @ImportLabel
-                    </SimfToolbarButton>
+                    <SimfActionGate Permission="@ImportPermission">
+                        <SimfToolbarButton Icon="upload" Title="@ImportLabel"
+                                           OnClick="OnImport">
+                            @ImportLabel
+                        </SimfToolbarButton>
+                    </SimfActionGate>
                 }
                 @if (OnExport.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="download" Title="@ExportLabel"
-                                       OnClick="@(() => OnExport.InvokeAsync(SelectedItemsOnPage()))">
-                        @ExportLabel
-                    </SimfToolbarButton>
+                    <SimfActionGate Permission="@ExportPermission">
+                        <SimfToolbarButton Icon="download" Title="@ExportLabel"
+                                           OnClick="@(() => OnExport.InvokeAsync(SelectedItemsOnPage()))">
+                            @ExportLabel
+                        </SimfToolbarButton>
+                    </SimfActionGate>
                 }
                 @CustomToolbar
             </div>
@@ -284,8 +305,10 @@
                                     }
                                     @if (OnEditOne.HasDelegate)
                                     {
-                                        <SimfToolbarButton Icon="edit" Title="@EditLabel"
-                                                           OnClick="@(() => OnEditOne.InvokeAsync(row))" />
+                                        <SimfActionGate Permission="@EditPermission">
+                                            <SimfToolbarButton Icon="edit" Title="@EditLabel"
+                                                               OnClick="@(() => OnEditOne.InvokeAsync(row))" />
+                                        </SimfActionGate>
                                     }
                                     @if (OnCopyOne.HasDelegate)
                                     {
@@ -294,9 +317,11 @@
                                     }
                                     @if (OnDeleteOne.HasDelegate)
                                     {
-                                        <SimfToolbarButton Icon="trash" Title="@DeleteLabel"
-                                                           Danger="true"
-                                                           OnClick="@(() => OnDeleteOne.InvokeAsync(row))" />
+                                        <SimfActionGate Permission="@DeletePermission">
+                                            <SimfToolbarButton Icon="trash" Title="@DeleteLabel"
+                                                               Danger="true"
+                                                               OnClick="@(() => OnDeleteOne.InvokeAsync(row))" />
+                                        </SimfActionGate>
                                     }
                                 </td>
                             }
@@ -324,10 +349,12 @@
                 }
                 @if (OnEditOne.HasDelegate)
                 {
-                    <SimfContextMenuItem Icon="edit"
-                                         OnClick="@(() => ContextActionAsync(OnEditOne))">
-                        @EditLabel
-                    </SimfContextMenuItem>
+                    <SimfActionGate Permission="@EditPermission">
+                        <SimfContextMenuItem Icon="edit"
+                                             OnClick="@(() => ContextActionAsync(OnEditOne))">
+                            @EditLabel
+                        </SimfContextMenuItem>
+                    </SimfActionGate>
                 }
                 @if (OnCopyOne.HasDelegate)
                 {
@@ -338,17 +365,21 @@
                 }
                 @if (OnDuplicateOne.HasDelegate)
                 {
-                    <SimfContextMenuItem Icon="copy"
-                                         OnClick="@(() => ContextActionAsync(OnDuplicateOne))">
-                        @DuplicateLabel
-                    </SimfContextMenuItem>
+                    <SimfActionGate Permission="@AddPermission">
+                        <SimfContextMenuItem Icon="copy"
+                                             OnClick="@(() => ContextActionAsync(OnDuplicateOne))">
+                            @DuplicateLabel
+                        </SimfContextMenuItem>
+                    </SimfActionGate>
                 }
                 @if (OnDeleteOne.HasDelegate)
                 {
-                    <SimfContextMenuItem Icon="trash" Danger="true"
-                                         OnClick="@(() => ContextActionAsync(OnDeleteOne))">
-                        @DeleteLabel
-                    </SimfContextMenuItem>
+                    <SimfActionGate Permission="@DeletePermission">
+                        <SimfContextMenuItem Icon="trash" Danger="true"
+                                             OnClick="@(() => ContextActionAsync(OnDeleteOne))">
+                            @DeleteLabel
+                        </SimfContextMenuItem>
+                    </SimfActionGate>
                 }
             </SimfContextMenu>
         }
@@ -363,7 +394,7 @@
              @oncontextmenu:preventDefault></div>
     }
 
-    @* D-117 — full pager: First / Prev / numbered pages / Next / Last + page-size selector + "Page X of Y" summary. *@
+    @* Full pager: First / Prev / numbered pages / Next / Last + page-size selector + "Page X of Y" summary. *@
     <div class="simf-grid__pager">
         <span class="simf-grid__pager-summary">@RenderSummary()</span>
         <div class="simf-grid__pager-page">@RenderPageLabel()</div>
@@ -453,17 +484,17 @@
     [Parameter] public Func<TItem, string>? RowKey { get; set; }
 
     /// <summary>Produces a per-row label used for the selection checkbox's
-    /// <c>aria-label</c> (D-045 H2). Defaults to the row key, so a screen
+    /// <c>aria-label</c>. Defaults to the row key, so a screen
     /// reader gets a useful per-row name instead of "Select row" repeated.</summary>
     [Parameter] public Func<TItem, string>? RowLabel { get; set; }
 
     /// <summary>Optional visually-hidden caption announced by screen readers
-    /// when the table receives focus (D-045 H2).</summary>
+    /// when the table receives focus.</summary>
     [Parameter] public string? Caption { get; set; }
 
     /// <summary>The string prefix used to label per-column filter inputs
     /// (e.g. "Filter") — combined with the column header for the
-    /// <c>aria-label</c> on each input (D-045 H2).</summary>
+    /// <c>aria-label</c> on each input.</summary>
     [Parameter] public string FilterColumnLabel { get; set; } = "Filter";
 
     /// <summary>Raised when the selection changes — receives every key currently selected.</summary>
@@ -480,14 +511,14 @@
     /// <summary>Delete the selected rows in bulk.</summary>
     [Parameter] public EventCallback<IReadOnlyList<TItem>> OnDeleteSelected { get; set; }
 
-    /// <summary>D-164 (gap doc G2) — approve the selected rows in bulk
+    /// <summary>Approve the selected rows in bulk
     /// ("Select All" affordance for the security team's pending-visitor
     /// list). When the parent supplies this handler, an "Approve selected"
     /// toolbar button appears alongside Delete, enabled only when ≥ 1
     /// row on the current page is selected.</summary>
     [Parameter] public EventCallback<IReadOnlyList<TItem>> OnApproveSelected { get; set; }
 
-    /// <summary>D-209 — bulk reject the selected rows. When set, a "Reject
+    /// <summary>Bulk reject the selected rows. When set, a "Reject
     /// selected" toolbar button appears alongside Approve, enabled only when
     /// ≥ 1 row on the current page is selected. The parent collects the
     /// shared reason before calling the API.</summary>
@@ -496,7 +527,7 @@
     /// <summary>Delete one row (per-row button + context menu).</summary>
     [Parameter] public EventCallback<TItem> OnDeleteOne { get; set; }
 
-    /// <summary>Show read-only details for one row (per-row button + context menu). D-117.</summary>
+    /// <summary>Show read-only details for one row (per-row button + context menu).</summary>
     [Parameter] public EventCallback<TItem> OnDetailsOne { get; set; }
 
     /// <summary>Copy the selected rows (writes to the system clipboard as JSON).</summary>
@@ -517,6 +548,58 @@
     /// <summary>Export the selected rows (or, if none selected, the whole result set).</summary>
     [Parameter] public EventCallback<IReadOnlyList<TItem>> OnExport { get; set; }
 
+    // -- Parameters: action permissions ----------------------------------------
+    //
+    // The grid renders its own toolbar, row-end and context-menu buttons from the
+    // callbacks above, so a page cannot wrap them in a permission gate from the
+    // outside — which is how 45 Control Panel pages ended up offering Add / Edit /
+    // Delete / Import / Export to admins the API would refuse with a 403.
+    //
+    // NULL IS THE DEFAULT AND MEANS UNGATED, so a caller that has not opted in
+    // renders exactly as before. Set the code that gates the API ENDPOINT the
+    // button calls — never the page's own gate, which everyone reaching the page
+    // already holds and which therefore gates nothing.
+    //
+    // Not gated, and each for a stated reason: Select all and Copy act on rows the
+    // page's own permission already let the holder read; Details opens the same
+    // read-only record. Export IS gated — every one of the 44 pages that offers it
+    // has its own X.Export code on the endpoint behind it.
+
+    /// <summary>Permission gating every create-intent control: the toolbar Add
+    /// (<see cref="OnAdd"/>), Duplicate (<see cref="OnDuplicateOne"/>, toolbar and
+    /// context menu) and Paste (<see cref="OnPaste"/>).
+    ///
+    /// <para>One code, because creating from scratch and creating from a copy are
+    /// the same verb on the same resource: the catalogue has no Duplicate or Paste
+    /// code anywhere, and the API agrees — <c>POST /admin/admins/duplicate</c> is
+    /// gated on <c>Admins.Create</c>, the same code as <c>POST /admin/admins</c>.
+    /// Split this parameter if a resource ever gains a distinct code.</para></summary>
+    [Parameter] public string? AddPermission { get; set; }
+
+    /// <summary>Permission gating every Edit affordance — the toolbar button, the
+    /// row-end button and the context-menu entry, all of which raise <see cref="OnEditOne"/>.</summary>
+    [Parameter] public string? EditPermission { get; set; }
+
+    /// <summary>Permission gating every Delete affordance — the bulk toolbar button
+    /// (<see cref="OnDeleteSelected"/>) and the row-end button and context-menu entry
+    /// (<see cref="OnDeleteOne"/>). One code: deleting one row and deleting several
+    /// is the same verb on the same resource, and no page gates them differently.</summary>
+    [Parameter] public string? DeletePermission { get; set; }
+
+    /// <summary>Permission gating the toolbar Import button (<see cref="OnImport"/>).</summary>
+    [Parameter] public string? ImportPermission { get; set; }
+
+    /// <summary>Permission gating the toolbar Export button (<see cref="OnExport"/>).
+    /// Export leaves the building with a spreadsheet of the whole result set, and the
+    /// API gates it on its own <c>X.Export</c> code rather than on View.</summary>
+    [Parameter] public string? ExportPermission { get; set; }
+
+    /// <summary>Permission gating the bulk-approve toolbar button (<see cref="OnApproveSelected"/>).</summary>
+    [Parameter] public string? ApprovePermission { get; set; }
+
+    /// <summary>Permission gating the bulk-reject toolbar button (<see cref="OnRejectSelected"/>).</summary>
+    [Parameter] public string? RejectPermission { get; set; }
+
     // -- Parameters: labels ---------------------------------------------------
 
     [Parameter] public string ActionsHeader { get; set; } = "Actions";
@@ -534,9 +617,9 @@
     [Parameter] public string EditLabel { get; set; } = "Edit";
     [Parameter] public string DetailsLabel { get; set; } = "Details";
     [Parameter] public string DeleteLabel { get; set; } = "Delete";
-    /// <summary>D-164 — label for the bulk-approve toolbar button.</summary>
+    /// <summary>Label for the bulk-approve toolbar button.</summary>
     [Parameter] public string ApproveSelectedLabel { get; set; } = "Approve selected";
-    /// <summary>D-209 — label for the bulk-reject toolbar button.</summary>
+    /// <summary>Label for the bulk-reject toolbar button.</summary>
     [Parameter] public string RejectSelectedLabel { get; set; } = "Reject selected";
     [Parameter] public string CopyLabel { get; set; } = "Copy";
     [Parameter] public string PasteLabel { get; set; } = "Paste";
@@ -544,7 +627,7 @@
     [Parameter] public string ImportLabel { get; set; } = "Import";
     [Parameter] public string ExportLabel { get; set; } = "Export";
 
-    /// <summary>The page-size options shown in the pager. D-117.</summary>
+    /// <summary>The page-size options shown in the pager.</summary>
     [Parameter] public IReadOnlyList<int> PageSizeOptions { get; set; } = new[] { 10, 20, 50, 100 };
 
     /// <summary>The pager summary template — receives (skip, taken, total); the
@@ -553,7 +636,7 @@
     [Parameter] public Func<int, int, int, string> SummaryFormatter { get; set; } =
         (skip, taken, total) => $"{skip + 1}-{skip + taken} of {total}";
 
-    /// <summary>The pager "Page X of Y" formatter — receives (current, total). D-117.</summary>
+    /// <summary>The pager "Page X of Y" formatter — receives (current, total).</summary>
     [Parameter] public Func<int, int, string> PageFormatter { get; set; } =
         (current, total) => $"Page {current} of {total}";
 
@@ -576,24 +659,95 @@
 
     // -- Derived flags ---------------------------------------------------------
 
+    // Whether the holder may use each gated action, resolved ONCE per
+    // parameter set instead of once per rendered button.
+    //
+    // Two things depend on it. The containers below decided from the CALLBACKS a
+    // page wires, which the grid knows synchronously, and not from the
+    // PERMISSIONS, which it did not - so a fully denied holder got an empty
+    // toolbar bar, an empty actions column and a right-click menu that opened
+    // with nothing in it but a backdrop that swallowed a click - six such empty
+    // containers were measured, five of them held open only by the then-ungated
+    // Details button. And the per-row Edit/Delete gates re-evaluated their policy
+    // once per row per render, so a 100-row page ran ~200 authorization checks on
+    // every sort, filter, page change and checkbox tick - the part policy
+    // memoisation could not reach, because building the policy was never the
+    // cost; evaluating it was.
+    //
+    // Defaults are true so the un-opted caller is unchanged: a null permission
+    // means ungated, and a host with no authorization cascade (the Website never
+    // renders this grid, and a bUnit test may not register one) keeps the
+    // ungated behaviour rather than silently hiding every action.
+    private bool _mayAdd = true;
+    private bool _mayEdit = true;
+    private bool _mayDelete = true;
+    private bool _mayImport = true;
+    private bool _mayExport = true;
+    private bool _mayApprove = true;
+    private bool _mayReject = true;
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    [Inject] private IServiceProvider Services { get; set; } = default!;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _mayAdd = await MayUseAsync(AddPermission);
+        _mayEdit = await MayUseAsync(EditPermission);
+        _mayDelete = await MayUseAsync(DeletePermission);
+        _mayImport = await MayUseAsync(ImportPermission);
+        _mayExport = await MayUseAsync(ExportPermission);
+        _mayApprove = await MayUseAsync(ApprovePermission);
+        _mayReject = await MayUseAsync(RejectPermission);
+    }
+
+    /// <summary>Resolves one permission for the current holder. Mirrors
+    /// <see cref="SimfActionGate"/> exactly: null is ungated, anything else is
+    /// checked against its permission policy.</summary>
+    private async Task<bool> MayUseAsync(string? permission)
+    {
+        if (permission is null) { return true; }
+        if (AuthenticationStateTask is null) { return true; }
+
+        var authorization = Services.GetService(typeof(IAuthorizationService)) as IAuthorizationService;
+        if (authorization is null) { return true; }
+
+        var user = (await AuthenticationStateTask).User;
+        var result = await authorization.AuthorizeAsync(
+            user, PermissionCatalog.PolicyFor(permission));
+        return result.Succeeded;
+    }
+
     private bool HasToolbar =>
         Multiselect
-        || OnAdd.HasDelegate || OnEditOne.HasDelegate || OnDeleteSelected.HasDelegate
-        || OnCopySelected.HasDelegate || OnPaste.HasDelegate || OnDuplicateOne.HasDelegate
-        || OnImport.HasDelegate || OnExport.HasDelegate || CustomToolbar is not null;
+        || (OnAdd.HasDelegate && _mayAdd)
+        || (OnEditOne.HasDelegate && _mayEdit)
+        || (OnDeleteSelected.HasDelegate && _mayDelete)
+        || OnCopySelected.HasDelegate
+        || (OnPaste.HasDelegate && _mayAdd)
+        || (OnDuplicateOne.HasDelegate && _mayAdd)
+        || (OnImport.HasDelegate && _mayImport)
+        || (OnExport.HasDelegate && _mayExport)
+        || (OnApproveSelected.HasDelegate && _mayApprove)
+        || (OnRejectSelected.HasDelegate && _mayReject)
+        || CustomToolbar is not null;
 
     private bool HasRowEndCell =>
         RowActions is not null
         || OnDetailsOne.HasDelegate
-        || OnEditOne.HasDelegate || OnCopyOne.HasDelegate || OnDeleteOne.HasDelegate;
+        || (OnEditOne.HasDelegate && _mayEdit)
+        || OnCopyOne.HasDelegate
+        || (OnDeleteOne.HasDelegate && _mayDelete);
 
     private bool AnyContextHandlerWired =>
         OnDetailsOne.HasDelegate
-        || OnEditOne.HasDelegate || OnCopyOne.HasDelegate
-        || OnDeleteOne.HasDelegate || OnDuplicateOne.HasDelegate;
+        || (OnEditOne.HasDelegate && _mayEdit)
+        || OnCopyOne.HasDelegate
+        || (OnDeleteOne.HasDelegate && _mayDelete)
+        || (OnDuplicateOne.HasDelegate && _mayAdd);
 
     /// <summary>Back-compat alias retained because the Razor markup binds to
-    /// this name on conditional <c>@oncontextmenu</c> attributes (D-045 H1).</summary>
+    /// this name on conditional <c>@oncontextmenu</c> attributes.</summary>
     private bool _anyContextHandlerWired => AnyContextHandlerWired;
 
     private bool HasAnyFilterableColumn => _columns.Any(c => c.Filterable);
@@ -610,8 +764,8 @@
     /// <summary>Total selected keys across every page.</summary>
     private int SelectedCount => _selectedKeys.Count;
 
-    /// <summary>Selected rows on the current page only — D-045 H1: every
-    /// toolbar Disabled state now reads this rather than <see cref="SelectedCount"/>
+    /// <summary>Selected rows on the current page only. Every
+    /// toolbar Disabled state reads this rather than <see cref="SelectedCount"/>
     /// so the act-on-selection buttons disable correctly when the user has
     /// paged away from their selection.</summary>
     private int SelectedOnPageCount
@@ -674,7 +828,7 @@
 
     private string RowSelectionLabel(TItem row)
     {
-        // D-045 H2: every row checkbox gets a distinct accessible name —
+        // Every row checkbox gets a distinct accessible name —
         // by default the row key, but the caller can supply a richer label
         // (e.g. the user's email for the admin grid).
         if (RowLabel is not null) return $"{SelectRowLabel} {RowLabel(row)}";
@@ -708,7 +862,7 @@
     {
         if (Query is null || Page is null) return string.Empty;
         if (Page.Total == 0) return SummaryFormatter(0, 0, 0);
-        // D-255: pass (skip, taken, total) — the page formatters compute the
+        // Pass (skip, taken, total) — the page formatters compute the
         // 1-based range themselves (skip+1 .. skip+taken). Passing a
         // pre-incremented `from` here double-counted ("Showing 2–8 of 7").
         return SummaryFormatter(Query.Skip, Page.Items.Count, Page.Total);
@@ -717,7 +871,7 @@
     private async Task ToggleSortAsync(string key)
     {
         if (Query is null) return;
-        // D-045 H1: a sort/filter/page change drops the selection. The grid
+        // A sort/filter/page change drops the selection. The grid
         // never holds rows it didn't ask for; carrying stale keys across a
         // query change leads to silent partial deletes when the user clicks
         // a toolbar action with a now-invisible selection.
@@ -778,7 +932,7 @@
         await OnQueryChanged.InvokeAsync(next);
     }
 
-    // -- Full pager (D-117) ----------------------------------------------------
+    // -- Full pager ------------------------------------------------------------
 
     private int CurrentPage
     {
@@ -883,7 +1037,7 @@
     {
         if (!_anyContextHandlerWired) return;
         _contextRow = row;
-        // D-045 H2 — RTL fix: SimfContextMenu uses `inset-inline-start`,
+        // RTL fix: SimfContextMenu uses `inset-inline-start`,
         // which resolves to the RIGHT edge in RTL. The mouse client X is
         // measured from the viewport's LEFT edge regardless of direction,
         // so in RTL we must mirror the value before passing it in.
@@ -972,7 +1126,7 @@
     }
 
     // -- Disposal --------------------------------------------------------------
-    // D-045 H1: dispose the filter-debounce CTS so its OS handle is reclaimed
+    // Dispose the filter-debounce CTS so its OS handle is reclaimed
     // when the grid leaves the page. Without this, sustained typing in the
     // filter input leaks a CTS per keystroke until GC notices.
 

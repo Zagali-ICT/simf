@@ -1,6 +1,6 @@
-@* Control Panel — pending visitor approval queue (P4b). Any CP role:
-   Administrator / Staff / Scientific / Security. Approve mints the QR
-   id so the visitor's QR badge becomes available. Reject opens a
+﻿@* Control Panel — pending visitor approval queue. Reaching the page needs
+   Visitors.View; Approve and Reject each need their own permission. Approve
+   mints the QR id so the visitor's QR badge becomes available. Reject opens a
    reason modal (10–500 chars). *@
 @page "/admin/visitors/pending"
 @using SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes
@@ -10,7 +10,7 @@
 
 <PageTitle>@L["Admin.Pending.Visitors.Title"] · SIMF</PageTitle>
 
-@* D-353 parity — hide the grid while the review "View" takes over the full page. *@
+@* Hide the grid while the review "View" takes over the full page. *@
 @if (!ViewFullPage)
 {
 <SimfBanner Title="@L["Admin.Pending.Visitors.Title"]" />
@@ -44,7 +44,9 @@
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       ActionsHeader="@L["Grid.Actions"]"
-                      SummaryFormatter="@FormatSummary">
+                      SummaryFormatter="@FormatSummary"
+                      ApprovePermission="@PermissionCatalog.Visitors.Approve"
+                      RejectPermission="@PermissionCatalog.Visitors.Reject">
             <CustomToolbar>
                 <CrudPresentationToggle PageKey="@(PresentationPageKey!)" @bind-Value="_presentation" />
             </CustomToolbar>
@@ -68,7 +70,7 @@
                 </SimfDataGridColumn>
             </Columns>
             <RowActions Context="user">
-                @* D-128 — Approve now opens a review modal that loads the
+                @* Approve opens a review modal that loads the
                    full profile first. The admin must click "Confirm
                    and Approve" inside the modal to actually approve;
                    that removes the "approved without looking" hazard.
@@ -78,16 +80,22 @@
                             OnClick="@(() => OpenViewAsync(user, approveMode: false))">
                     @L["Admin.Pending.Action.View"]
                 </SimfButton>
-                <SimfButton Type="button" Variant="primary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenViewAsync(user, approveMode: true))">
-                    @L["Admin.Pending.Action.Approve"]
-                </SimfButton>
-                <SimfButton Type="button" Variant="secondary"
-                            Disabled="_busy"
-                            OnClick="@(() => OpenReject(user))">
-                    @L["Admin.Pending.Action.Reject"]
-                </SimfButton>
+                @* The row pair matches the bulk pair above it. The
+                   read-only View above stays ungated: Visitors.View bought it. *@
+                <AuthorizedAction Permission="@PermissionCatalog.Visitors.Approve">
+                    <SimfButton Type="button" Variant="primary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenViewAsync(user, approveMode: true))">
+                        @L["Admin.Pending.Action.Approve"]
+                    </SimfButton>
+                </AuthorizedAction>
+                <AuthorizedAction Permission="@PermissionCatalog.Visitors.Reject">
+                    <SimfButton Type="button" Variant="secondary"
+                                Disabled="_busy"
+                                OnClick="@(() => OpenReject(user))">
+                        @L["Admin.Pending.Action.Reject"]
+                    </SimfButton>
+                </AuthorizedAction>
             </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.Pending.None"]" />
@@ -111,7 +119,8 @@
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@L["Admin.Pending.Reject.Title"]"
-               OnClose="@(() => _rejectTarget = null)">
+               OnClose="@(() => _rejectTarget = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Pending.Reject.Confirm"], _rejectTarget.Email)</p>
             <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
@@ -125,23 +134,40 @@
                         OnClick="@(() => _rejectTarget = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Visitors.Reject">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_rejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmRejectAsync">
-                @L["Admin.Pending.Reject.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_rejectReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmRejectAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Pending.Reject.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
 
-@* D-209 — bulk reject: shared-reason modal for the selected pending rows. *@
+@* Bulk approve commits many accounts at once; confirm the count first. *@
+<SimfConfirm Open="@(_bulkApproveSelected is not null)"
+             Title="@L["Admin.Pending.BulkApprove.Confirm.Title"]"
+             Message="@(_bulkApproveSelected is null ? string.Empty
+                        : string.Format(L["Admin.Pending.BulkApprove.Confirm.Message"],
+                                        _bulkApproveSelected.Count))"
+             ConfirmLabel="@L["Admin.Pending.ApproveReview.Confirm"]"
+             CancelLabel="@L["Common.Cancel"]"
+             OnConfirm="ConfirmBulkApproveAsync"
+             OnCancel="CancelBulkApprove" 
+             Permission="@PermissionCatalog.Visitors.Approve"/>
+
+@* Bulk reject: shared-reason modal for the selected pending rows. *@
 @if (_bulkRejectSelected is not null)
 {
     <SimfModal Open="true"
                RequireExplicitClose="true"
                Title="@L["Admin.Pending.BulkReject.Title"]"
-               OnClose="@(() => _bulkRejectSelected = null)">
+               OnClose="@(() => _bulkRejectSelected = null)"
+               CloseLabel="@L["Grid.Close"]">
         <ChildContent>
             <p>@string.Format(L["Admin.Pending.BulkReject.Confirm"], _bulkRejectSelected.Count)</p>
             <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
@@ -155,12 +181,16 @@
                         OnClick="@(() => _bulkRejectSelected = null)">
                 @L["Admin.Pending.Reject.Cancel"]
             </SimfButton>
+            @* The commit button of the modal this action opened. *@
+            <AuthorizedAction Permission="@PermissionCatalog.Visitors.Reject">
             <SimfButton Type="button" Variant="primary"
-                        Loading="_busy"
-                        Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
-                        OnClick="ConfirmBulkRejectAsync">
-                @L["Admin.Pending.BulkReject.Submit"]
-            </SimfButton>
+                            Loading="_busy"
+                            Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
+                            OnClick="ConfirmBulkRejectAsync"
+                            LoadingLabel="@L["Grid.Working"]">
+                    @L["Admin.Pending.BulkReject.Submit"]
+                </SimfButton>
+            </AuthorizedAction>
         </Footer>
     </SimfModal>
 }
@@ -237,7 +267,7 @@
                     </dl>
                     @if (_viewProfile.HasIdImage)
                     {
-                        @* CS-E (D-387) — thumbnail is a button that opens a
+                        @* The thumbnail is a button that opens a
                            full-size lightbox; a download link sits beneath it.
                            _imageUrl is captured once in OpenViewAsync so the
                            cache-buster doesn't re-fetch on every render. *@
@@ -257,7 +287,7 @@
                             </div>
                         </div>
                     }
-                    @* CS-4 — profile photo (avatar), shown alongside the ID image;
+                    @* Profile photo (avatar), shown alongside the ID image;
                        clickable to a full-size lightbox + downloadable. *@
                     @if (_viewProfile.HasAvatar)
                     {
@@ -283,7 +313,7 @@
                     <SimfAlert Variant="info">@L["Admin.Pending.View.Empty"]</SimfAlert>
                 }
 
-                @* CS-D (D-386) — optional tier picker, approve mode only.
+                @* Optional tier picker, approve mode only.
                    Lists the active audience-side (IsVisitor=true) profile
                    types; the blank first option keeps the current tier. *@
                 @if (_approveMode)
@@ -312,12 +342,16 @@
                 <SimfButton Type="button" Variant="secondary" OnClick="CloseView">
                     @L["Admin.Pending.ApproveReview.Cancel"]
                 </SimfButton>
+                @* The commit button of the modal this action opened. *@
+                <AuthorizedAction Permission="@PermissionCatalog.Visitors.Approve">
                 <SimfButton Type="button" Variant="primary"
-                            Loading="_busy"
-                            Disabled="@(_viewLoading || _viewProfile is null)"
-                            OnClick="ConfirmApproveFromReviewAsync">
-                    @L["Admin.Pending.ApproveReview.Confirm"]
-                </SimfButton>
+                                Loading="_busy"
+                                Disabled="@(_viewLoading || _viewProfile is null)"
+                                OnClick="ConfirmApproveFromReviewAsync"
+                                LoadingLabel="@L["Grid.Working"]">
+                        @L["Admin.Pending.ApproveReview.Confirm"]
+                    </SimfButton>
+                </AuthorizedAction>
             }
             else
             {
@@ -329,7 +363,7 @@
     </CrudShell>
 }
 
-@* CS-E (D-387) — full-size lightbox for the captured face photo. Renders the
+@* Full-size lightbox for the captured face photo. Renders the
    same image at natural size; download link repeated in the footer. *@
 @if (_imageZoomOpen && _viewProfile is not null)
 {
@@ -356,7 +390,7 @@
     </SimfModal>
 }
 
-@* CS-4 — full-size lightbox for the profile photo (avatar). *@
+@* Full-size lightbox for the profile photo (avatar). *@
 @if (_avatarZoomOpen && _viewProfile is not null)
 {
     <SimfModal Open="true"

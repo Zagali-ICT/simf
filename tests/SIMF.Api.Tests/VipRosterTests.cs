@@ -140,7 +140,7 @@ public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
             Name = "Test Organisation",
             CommercialRegistration = $"CR{Guid.NewGuid():N}"[..12],
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.Organisations.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -163,7 +163,7 @@ public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
             PageColor = "#3B82F6",
             IsForVisitor = true,
             IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SimfClock.Now,
         };
         appDb.ProfileTypes.Add(fresh);
         await appDb.SaveChangesAsync();
@@ -191,14 +191,7 @@ public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var sign = await _client.PostAsJsonAsync(
-            "/api/v1/app/auth/sign-in",
-            new SignInRequest
-            {
-                Email = email, Password = Password, Audience = SignInAudience.Cp,
-            });
-        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        return await AuthFlow.SignInControlPanelAsync(_client, _factory, email, Password);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

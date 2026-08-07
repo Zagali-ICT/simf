@@ -151,11 +151,10 @@ them through `CrudGridExcel Resource="halls"`.)
 | 400 | `HALL_GEOFENCE_INVALID` | partial geofence (not all three) ; lat ∉ [−90,90] / lon ∉ [−180,180]; radius ≤ 0 or > 100000 m |
 | 404 | `HALL_NOT_FOUND` | get / update / delete on a missing id |
 | 409 | `HALL_CODE_DUPLICATE` | create / update to a `Code` already used (case-insensitive) |
+| 409 | `HALL_IN_USE` | delete — or an update clearing `IsActive` — on a hall that active sessions still use; the message names the count (A37) |
 
 Every server message is **bilingual** (`ApiException(code, status, en, ar)`);
-the CP surfaces `MessageForCurrentCulture()`. `HALL_IN_USE` exists in
-`ErrorCodes.cs` but is **reserved** — the Deactivate flow does not yet guard a
-hall referenced by an active session (see [Logic](admin-halls_Logic.md) L-7).
+the CP surfaces `MessageForCurrentCulture()`.
 
 ## How the same `Hall` reaches the app
 The app never calls these admin endpoints. The hall surfaces on the **public**

@@ -1,8 +1,8 @@
-@* P2.4 (D-229) — System Configuration page (SIMF-FDS-012 §5.5). Admin CRUD
+@* System Configuration page. Admin CRUD
    over the platform system-settings store (the settings that are not content
    and not categories). Ships empty; the team seeds the keys once the client
-   confirms the list (FDS-012 OI-2). Registration open/close lives on its own
-   Operations page. Centralized dialog/full-page framing D-353: Add / Edit /
+   confirms the list. Registration open/close lives on its own
+   Operations page. Centralized dialog/full-page framing: Add / Edit /
    View / Delete are hosted by CrudShell, which frames the reusable
    ConfigurationAddEdit and ConfigurationViewDelete forms as a popup or a full
    page per the admin's toolbar choice (persisted in localStorage via
@@ -24,7 +24,9 @@
         <div class="simf-surface">
             @if (_toast is not null)
             {
-                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                <div class="simf-toast">
+                    <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+                </div>
             }
 
             <SimfDataGrid TItem="AdminSystemSettingSummary"
@@ -60,7 +62,12 @@
                           DeleteLabel="@L["Grid.Delete"]"
                           ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Grid.Import"]"
-                          SummaryFormatter="@FormatSummary">
+                          SummaryFormatter="@FormatSummary"
+                          AddPermission="@PermissionCatalog.Configuration.Create"
+                          EditPermission="@PermissionCatalog.Configuration.Edit"
+                          DeletePermission="@PermissionCatalog.Configuration.Delete"
+                          ImportPermission="@PermissionCatalog.Configuration.Import"
+                          ExportPermission="@PermissionCatalog.Configuration.Export">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>

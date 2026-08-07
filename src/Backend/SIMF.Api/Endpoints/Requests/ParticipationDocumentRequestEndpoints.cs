@@ -1,15 +1,15 @@
 // Tests: SIMF.Api.Tests/ParticipationDocumentRequestsTests.cs
-using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Requests.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Requests;
 
 namespace SIMF.Api.Endpoints.Requests;
 
-/// <summary>D-500 (Wave 5, الطلبات "طلب وثيقة المشاركة") — an approved attendee
-/// submits a participation-document request. Login-required.</summary>
+/// <summary>The الطلبات hub's "طلب وثيقة المشاركة" flow: an approved
+/// attendee submits a participation-document request. Login-required.</summary>
 public sealed class SubmitParticipationDocumentRequestEndpoint(IParticipationDocumentRequestService service)
     : Endpoint<SubmitParticipationDocumentRequestBody, ApiResult<ParticipationDocumentRequestSubmitted>>
 {
@@ -23,11 +23,7 @@ public sealed class SubmitParticipationDocumentRequestEndpoint(IParticipationDoc
 
     public override async Task HandleAsync(SubmitParticipationDocumentRequestBody req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<ParticipationDocumentRequestSubmitted>.Ok(
             await service.SubmitAsync(actorId, req, ct)), ct);
     }
@@ -48,11 +44,7 @@ public sealed class ListAdminParticipationDocumentRequestsEndpoint(IParticipatio
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<GridPage<AdminParticipationDocumentRequestRow>>.Ok(
             await service.ListAllAsync(actorId, req, ct)), ct);
     }
@@ -77,11 +69,7 @@ public sealed class GetAdminParticipationDocumentRequestEndpoint(IParticipationD
 
     public override async Task HandleAsync(GetAdminParticipationDocumentRequestRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminParticipationDocumentRequestDetail>.Ok(
             await service.GetAsync(actorId, req.Id, ct)), ct);
     }
@@ -106,11 +94,7 @@ public sealed class RespondToParticipationDocumentRequestEndpoint(IParticipation
 
     public override async Task HandleAsync(RespondToParticipationDocumentRequestRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await Send.OkAsync(ApiResult<AdminParticipationDocumentRequestDetail>.Ok(
             await service.RespondAsync(actorId, req.Id, req, ct)), ct);
     }

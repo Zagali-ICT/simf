@@ -7,17 +7,18 @@ using SIMF.Application.Notifications;
 using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
-/// Bi-Meeting rework — background worker that fires the "meeting starting soon"
+/// Background worker that fires the "meeting starting soon"
 /// reminder 15 minutes before a CONFIRMED (<see cref="MeetingRequestStatus.Accepted"/>)
 /// bilateral meeting (speaker or delegation) with a bound slot. Mirrors
 /// <see cref="SessionReminderWorker"/>: once per minute it finds confirmed meetings whose
 /// <c>SlotStart</c> falls inside the lead window and that have not yet been reminded,
 /// stamps <c>ReminderSent</c> and commits it BEFORE dispatching (at-most-once dedup,
-/// per D-157 the notification rows land on SIMF_Identity and cannot share a transaction
+/// the notification rows land on SIMF_Identity and cannot share a transaction
 /// with this SIMF_App stamp), then dispatches an in-app + email
 /// <see cref="NotificationKind.MeetingReminder"/> to the parties.
 /// </summary>
@@ -88,7 +89,7 @@ internal sealed class MeetingReminderWorker(
         var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
 
         var reminded = await RunReminderScanAsync(
-            db, notifications, timeProvider.GetUtcNow(), ReminderLeadTime, logger,
+            db, notifications, timeProvider.SimfNow(), ReminderLeadTime, logger,
             cancellationToken);
         if (reminded > 0)
         {
@@ -101,7 +102,7 @@ internal sealed class MeetingReminderWorker(
     /// the number of meetings reminded.</summary>
     internal static async Task<int> RunReminderScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
-        DateTimeOffset now, TimeSpan leadTime, ILogger logger,
+        DateTime now, TimeSpan leadTime, ILogger logger,
         CancellationToken cancellationToken)
     {
         var windowEnd = now + leadTime;

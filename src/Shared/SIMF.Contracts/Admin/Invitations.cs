@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Admin;
 
-/// <summary>D-168 (gap doc G5, PDF §2.7.3) — one row in the admin
+/// <summary>One row in the admin
 /// Invitations grid. The recipient's display name + profile type are
 /// projected so the grid does not need a second fetch.</summary>
 public sealed record AdminInvitationSummary(
@@ -16,11 +16,11 @@ public sealed record AdminInvitationSummary(
     string? RecipientEmail,
     InvitationState State,
     string? Notes,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt,
+    DateTime CreatedAt,
+    DateTime? RespondedAt,
     bool IsActive);
 
-/// <summary>D-168 — full invitation detail. Same projection plus the
+/// <summary>Full invitation detail. Same projection plus the
 /// recipient's job title + nationality so the Details / Edit modal can
 /// render the recipient card without a second fetch.</summary>
 public sealed record AdminInvitationDetail(
@@ -35,12 +35,12 @@ public sealed record AdminInvitationDetail(
     string? RecipientJobTitle,
     InvitationState State,
     string? Notes,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt,
-    DateTimeOffset? UpdatedAt,
+    DateTime CreatedAt,
+    DateTime? RespondedAt,
+    DateTime? UpdatedAt,
     bool IsActive);
 
-/// <summary>D-168 — create-invitation request. State defaults to
+/// <summary>Create-invitation request. State defaults to
 /// <see cref="InvitationState.Pending"/> on the server; the PR rep
 /// only specifies who + an optional note.</summary>
 public sealed class AdminCreateInvitationRequest
@@ -49,7 +49,7 @@ public sealed class AdminCreateInvitationRequest
     public string? Notes { get; set; }
 }
 
-/// <summary>D-168 — update-invitation request. The PR rep may move the
+/// <summary>Update-invitation request. The PR rep may move the
 /// state forward (Pending → Confirmed / Declined) and edit the notes.
 /// Going back to <see cref="InvitationState.Pending"/> from a settled
 /// state is rejected by the service (the recipient already responded).
@@ -61,7 +61,7 @@ public class AdminUpdateInvitationRequest
     public string? Notes { get; set; }
 }
 
-/// <summary>D-168 — one row in the admin VIP list. ProfileType.Name is
+/// <summary>One row in the admin VIP list. ProfileType.Name is
 /// the discriminator (VVIP / VIP / Gold).</summary>
 public sealed record AdminVipSummary(
     Guid UserProfileId,
@@ -74,7 +74,7 @@ public sealed record AdminVipSummary(
     string ProfileTypeNameArabic,
     string? Email);
 
-/// <summary>D-168 — bulk-notify-VIPs request. Body is the free-text
+/// <summary>Bulk-notify-VIPs request. Body is the free-text
 /// message; the dispatcher fans out one in-app row + one queued email
 /// per recipient. <see cref="UserProfileIds"/> is the explicit selection
 /// from the VIP grid — the server validates each id is on the VIP list
@@ -88,7 +88,7 @@ public sealed class AdminNotifyVipsRequest
     public string BodyArabic { get; set; } = string.Empty;
 }
 
-/// <summary>D-168 — result of an
+/// <summary>Result of an
 /// <see cref="AdminNotifyVipsRequest"/> dispatch. Per-recipient list of
 /// the ids that successfully landed an in-app row + an enqueued email
 /// (no-email entries indicate the recipient had no email on file).</summary>

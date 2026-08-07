@@ -1,7 +1,15 @@
-@* SimfModal — the SIMF overlay dialog (decision D-044, hardened D-045 H2).
+﻿@* SimfModal — the SIMF overlay dialog.
    Focus trap, return-focus-on-close and ref-counted body lock now live in
    simfModal (window.simfModal) so the component code stays tiny and the
-   keydown handler fires regardless of where focus is. *@
+   keydown handler fires regardless of where focus is.
+
+   NOT STACKABLE. simfModal.bind installs ONE focus trap per panel with
+   no depth or stack notion, and every .simf-modal shares z-index 100 — so a
+   second modal opened over an open one has undefined focus and Escape
+   behaviour. If you need a confirmation over an open dialog, close the first
+   and stage the second (see MediaLibraryList.AskDeactivate) rather than
+   nesting them. Making these genuinely stackable means a depth stack in
+   simfModal.bind plus Escape routing and z-index layering. *@
 @namespace SIMF.Components.Forms
 @inject IJSRuntime JS
 @implements IAsyncDisposable
@@ -15,10 +23,17 @@
              tabindex="-1" @ref="_panelRef">
             <header class="simf-modal__head">
                 <h2 class="simf-modal__title">@Title</h2>
-                <button type="button" class="simf-modal__close"
-                        aria-label="@CloseLabel" @onclick="CloseAsync">
-                    <SimfIcon Name="close" Size="18" />
-                </button>
+                @* §6.16 — a modal with no OnClose delegate would render a close
+                   button that does nothing. HideClose is for the blocking
+                   progress overlays that genuinely cannot be dismissed; every
+                   other dialog keeps the button (the default). *@
+                @if (!HideClose)
+                {
+                    <button type="button" class="simf-modal__close"
+                            aria-label="@CloseLabel" @onclick="CloseAsync">
+                        <SimfIcon Name="close" Size="18" />
+                    </button>
+                }
             </header>
             <div class="simf-modal__body">
                 @ChildContent
@@ -48,6 +63,11 @@
     /// <summary>When true, the backdrop click and Esc do nothing — only an
     /// explicit footer button closes the modal. Use for must-decide flows.</summary>
     [Parameter] public bool RequireExplicitClose { get; set; }
+
+    /// <summary>When true, the header close button is not rendered. For
+    /// blocking progress overlays that have no OnClose to raise — a close
+    /// button there would be a dead control.</summary>
+    [Parameter] public bool HideClose { get; set; }
 
     /// <summary>The dialog body content.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }

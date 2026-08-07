@@ -6,14 +6,15 @@ using SIMF.Contracts.Programme;
 
 namespace SIMF.Api.Endpoints.Public;
 
-/// <summary>Wave 2 (Figma 1388:7621 "عروض الجلسات") —
+/// <summary>The "عروض الجلسات" list —
 /// <c>GET /api/v1/app/presentations</c>: every active session-presentation file,
 /// time-ordered by session start so the app groups by day. Each item carries the
 /// session (title + start) + the presenting speaker + the file metadata; the
-/// bytes come from the download route. ANONYMOUS (owner 2026-07-22 — the "الجلسات"
-/// Sessions list is public, opened from the home "Sessions" tile by a guest); the
-/// data is active-forum content (session titles/speakers/decks), consistent with
-/// the already-public agenda (D-750) and the public website download route below.</summary>
+/// bytes come from the download route. ANONYMOUS by owner decision (the
+/// "الجلسات" Sessions list is public, opened from the home "Sessions" tile by a
+/// guest); the data is active-forum content (session titles/speakers/decks),
+/// consistent with the already-public agenda and the public website download
+/// route below.</summary>
 public sealed class ListPublicPresentationsEndpoint(IPublicSpeakerPresentationService service)
     : EndpointWithoutRequest<ApiResult<PublicPresentations>>
 {
@@ -30,12 +31,12 @@ public sealed class ListPublicPresentationsEndpoint(IPublicSpeakerPresentationSe
         await Send.OkAsync(ApiResult<PublicPresentations>.Ok(await service.ListAsync(ct)), ct);
 }
 
-/// <summary>Wave 2 — <c>GET /api/v1/app/presentations/{id}/file</c>: streams one
-/// presentation's stored bytes as an attachment (the تحميل button on
-/// Figma 1388:7621). A 404 when the presentation / session is missing or
-/// soft-deleted. ANONYMOUS (owner 2026-07-22 — the Sessions list is public, and
-/// the same file bytes are already served anonymously by the website download
-/// route below, so this exposes nothing new).</summary>
+/// <summary><c>GET /api/v1/app/presentations/{id}/file</c>: streams one
+/// presentation's stored bytes as an attachment (the تحميل button). A 404 when
+/// the presentation / session is missing or soft-deleted. ANONYMOUS by owner
+/// decision (the Sessions list is public, and the same file bytes are already
+/// served anonymously by the website download route below, so this exposes
+/// nothing new).</summary>
 public sealed class DownloadPublicPresentationRoute
 {
     public Guid Id { get; set; }
@@ -68,10 +69,10 @@ public sealed class DownloadPublicPresentationEndpoint(IPublicSpeakerPresentatio
     }
 }
 
-/// <summary>Website Session-detail "روابط التحميل" (Figma 5991-85840) —
+/// <summary>Website Session-detail "روابط التحميل" —
 /// <c>GET /api/v1/app/sessions/{sessionId}/downloads/{presentationId}</c>: streams
-/// one of the session's presentation files as an attachment. ANONYMOUS (owner
-/// decision 2026-07-15 — these files are public on the marketing website); the
+/// one of the session's presentation files as an attachment. ANONYMOUS by owner
+/// decision (these files are public on the marketing website); the
 /// session scope is the authorisation, so the presentation must belong to that
 /// session (both active) or the route 404s. Distinct from the signed-in
 /// <c>/app/presentations/{id}/file</c> attendee route above.</summary>

@@ -10,8 +10,15 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class InterestViewDeleteTests : CpComponentTestBase
 {
+    public InterestViewDeleteTests()
+    {
+        // D-833 — the confirm button is gated on the code the endpoint behind
+        // it needs; this test drives that button, so the identity holds it.
+        Grant(PermissionCatalog.Interests.Delete);
+    }
+
     private static AdminInterestSummary Row() => new(
-        Guid.NewGuid(), "Naval Engineering", "الهندسة البحرية", 10, IsActive: true, DateTimeOffset.UnixEpoch);
+        Guid.NewGuid(), "Naval Engineering", "الهندسة البحرية", 10, IsActive: true, DateTime.UnixEpoch);
 
     [Fact]
     public void View_mode_shows_details_and_no_delete_button()

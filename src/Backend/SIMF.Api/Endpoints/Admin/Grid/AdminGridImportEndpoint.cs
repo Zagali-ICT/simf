@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
@@ -16,11 +16,11 @@ public enum GridRowApplyKind
 }
 
 /// <summary>
-/// Generic base for a resource's <c>POST /admin/{resource}/import</c> endpoint
-/// (D-356). A concrete subclass supplies the route, the <c>{Resource}.Import</c>
+/// Generic base for a resource's <c>POST /admin/{resource}/import</c> endpoint.
+/// A concrete subclass supplies the route, the <c>{Resource}.Import</c>
 /// permission, the sheet name + required headers, a per-row key (for the error
 /// list) and how to apply one parsed row to its create/upsert service; this
-/// base owns the auth gate, the 5 MB + ZIP-magic upload defence (D-045 H1), the
+/// base owns the auth gate, the 5 MB + ZIP-magic upload defence, the
 /// parse, the per-row try/catch (one bad row never aborts the batch) and the
 /// aggregated <see cref="AdminGridImportResult"/>. Mirrors the proven
 /// <c>ImportUsersEndpoint</c>.
@@ -75,11 +75,7 @@ public abstract class AdminGridImportEndpoint(IGridExcelImporter importer)
 
     public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = Files.GetFile("file");
         if (file is null || file.Length == 0)

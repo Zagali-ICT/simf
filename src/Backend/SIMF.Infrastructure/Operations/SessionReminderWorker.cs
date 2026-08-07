@@ -7,22 +7,23 @@ using SIMF.Application.Notifications;
 using SIMF.Application.Operations;
 using SIMF.Common.Enums;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Operations;
 
 /// <summary>
-/// P1.7 (D-217) — background worker that fires the "session starting soon"
+/// Background worker that fires the "session starting soon"
 /// reminder. Once per minute it finds active sessions whose
 /// <c>Start</c> falls inside the lead window and that have not yet been
 /// reminded, then dispatches an in-app <see cref="NotificationKind.SessionReminder"/>
 /// to every attendee with an active seat in that session.
 ///
-/// <para>Dedup: <c>Session.ReminderSent</c> is the once-only guard
-/// (D-217 freeze-lift). A session is stamped and committed BEFORE its batch
+/// <para>Dedup: <c>Session.ReminderSent</c> is the once-only guard.
+/// A session is stamped and committed BEFORE its batch
 /// is dispatched, so a restart mid-tick cannot resend (unlike an in-memory
 /// set, or a stamp saved only after the whole loop). The notification rows
 /// land on SIMF_Identity and cannot share a transaction with this SIMF_App
-/// stamp (D-157), so claiming first makes a reminder at-most-once (a crash
+/// stamp, so claiming first makes a reminder at-most-once (a crash
 /// may drop the rest of one session's batch) rather than re-sending it on
 /// the next tick. Granularity is per-session: a visitor who books AFTER the
 /// reminder fired does not get a late reminder — acceptable for a "starts in
@@ -98,7 +99,7 @@ internal sealed class SessionReminderWorker(
         var notifications = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
 
         var reminded = await RunReminderScanAsync(
-            db, notifications, timeProvider.GetUtcNow(), ReminderLeadTime, logger,
+            db, notifications, timeProvider.SimfNow(), ReminderLeadTime, logger,
             cancellationToken);
         if (reminded > 0)
         {
@@ -117,7 +118,7 @@ internal sealed class SessionReminderWorker(
     /// </summary>
     internal static async Task<int> RunReminderScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
-        DateTimeOffset now, TimeSpan leadTime, ILogger logger,
+        DateTime now, TimeSpan leadTime, ILogger logger,
         CancellationToken cancellationToken)
     {
         var windowEnd = now + leadTime;
@@ -146,7 +147,7 @@ internal sealed class SessionReminderWorker(
             // commit it so a restart mid-batch (or a second worker instance)
             // cannot re-send this session's reminder. The notification writes
             // land on SIMF_Identity and cannot share a transaction with this
-            // SIMF_App stamp (D-157). A zero-attendee session is still claimed
+            // SIMF_App stamp. A zero-attendee session is still claimed
             // so the worker stops re-scanning it every minute until it starts.
             session.ReminderSent = now;
             await db.SaveChangesAsync(cancellationToken);

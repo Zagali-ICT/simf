@@ -4,7 +4,7 @@ using SIMF.Contracts.Email;
 
 namespace SIMF.Application.Email;
 
-/// <summary>D-735 — the CP admin surface over the transactional email templates:
+/// <summary>The CP admin surface over the transactional email templates:
 /// list the fixed set, read one for editing, save an override (validating tokens,
 /// bumping the version), reset to the code default, and render a live preview.
 /// The catalogue owns the defaults; the DB owns only overrides.</summary>

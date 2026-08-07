@@ -38,6 +38,9 @@ class AccountRememberForgot extends StatelessWidget {
                 height: 19,
                 child: Checkbox(
                   value: rememberMe,
+                  // The caption is a sibling Text, so the box itself announced
+                  // as an unnamed checkbox (BUG-012).
+                  semanticLabel: rememberLabel,
                   onChanged: enabled
                       ? (v) => onRememberChanged(v ?? true)
                       : null,
@@ -56,10 +59,7 @@ class AccountRememberForgot extends StatelessWidget {
               Flexible(
                 child: Text(
                   rememberLabel,
-                  style: const TextStyle(
-                    fontSize: SimfTokens.textSm,
-                    color: SimfTokens.greyText,
-                  ),
+                  style: SimfTokens.bodyGreySm,
                 ),
               ),
             ],

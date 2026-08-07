@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Api.RequestContext;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -15,7 +16,7 @@ using SIMF.Contracts.Files;
 
 namespace SIMF.Api.Endpoints.Files;
 
-/// <summary>D-568 — shared helpers for the centralized file endpoints.</summary>
+/// <summary>Shared helpers for the centralized file endpoints.</summary>
 internal static class FileEndpointSupport
 {
     /// <summary>Builds the caller identity from the request principal so the
@@ -23,7 +24,7 @@ internal static class FileEndpointSupport
     public static FileAccessContext ContextFrom(ClaimsPrincipal user)
     {
         var isAuthenticated = user.Identity?.IsAuthenticated ?? false;
-        Guid? userId = Guid.TryParse(user.FindFirstValue("sub"), out var id) ? id : null;
+        Guid? userId = user.ActorIdOrNull();
         var permissions = user.FindAll(PermissionCatalog.ClaimType)
             .Select(c => c.Value)
             .ToHashSet(StringComparer.Ordinal);
@@ -35,7 +36,7 @@ internal static class FileEndpointSupport
     public static string SanitizeForHeader(string name) =>
         new(name.Where(c => c is not ('"' or '\r' or '\n') && !char.IsControl(c)).ToArray());
 
-    /// <summary>P1 (D-568 hardening) — an RFC 6266 / RFC 5987 attachment
+    /// <summary>An RFC 6266 / RFC 5987 attachment
     /// Content-Disposition that carries a non-ASCII (e.g. Arabic) file name
     /// safely: an ASCII-only <c>filename="…"</c> fallback for legacy clients plus
     /// <c>filename*=UTF-8''&lt;pct-encoded&gt;</c> for modern ones (browsers prefer
@@ -50,14 +51,14 @@ internal static class FileEndpointSupport
     }
 }
 
-/// <summary>D-568 — the single upload endpoint. Multipart; the service category +
+/// <summary>The single upload endpoint. Multipart; the service category +
 /// owner ride the form; the file is validated, scanned (fail-closed in
 /// Production), encrypted-per-policy and stored. Gated by <c>Files.Upload</c>.</summary>
 public sealed class FileUploadRequest
 {
     public FileService Service { get; set; }
 
-    /// <summary>P2 (D-568 hardening) — the owning entity's id (e.g. the speaker /
+    /// <summary>The owning entity's id (e.g. the speaker /
     /// booth an admin is uploading a photo for). The owner *family*
     /// (<c>OwnerEntityType</c>) is NOT accepted from the client: it is forced from
     /// the service's policy in <c>StoredFileService</c>, so a caller cannot
@@ -86,11 +87,7 @@ public sealed class FileUploadEndpoint(
 
     public override async Task HandleAsync(FileUploadRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var file = req.File;
         if (file is null || file.Length == 0)
@@ -117,7 +114,7 @@ public sealed class FileUploadEndpoint(
     }
 }
 
-/// <summary>D-568 (P6) — record an external image link (a logo / cover hosted
+/// <summary>Record an external image link (a logo / cover hosted
 /// elsewhere). Owner-upsert; the download endpoint 302-redirects to it. Gated by
 /// <c>Files.Upload</c>, same as the byte upload.</summary>
 public sealed class FileLinkRequest
@@ -141,11 +138,7 @@ public sealed class FileLinkEndpoint(IFileService service)
 
     public override async Task HandleAsync(FileLinkRequest req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
 
         var result = await service.CreateExternalLinkAsync(
             new CreateExternalLinkCommand(req.Service, req.OwnerEntityId, req.Url, actorId), ct);
@@ -155,7 +148,7 @@ public sealed class FileLinkEndpoint(IFileService service)
     }
 }
 
-/// <summary>D-568 — the single download-by-GUID endpoint. Anonymous at the route
+/// <summary>The single download-by-GUID endpoint. Anonymous at the route
 /// (public files must serve without a token); authorization is resolved IN CODE
 /// from the file's own <see cref="FileService"/> policy, so a guessed GUID for a
 /// private file is rejected with a uniform 404.</summary>
@@ -217,7 +210,7 @@ public sealed class FileDownloadEndpoint(IFileService service)
     }
 }
 
-/// <summary>D-568 — soft-delete a file. Gated by <c>Files.Delete</c>; 409 when the
+/// <summary>Soft-delete a file. Gated by <c>Files.Delete</c>; 409 when the
 /// file is under a retention hold.</summary>
 public sealed class FileDeleteRoute
 {
@@ -238,17 +231,13 @@ public sealed class FileDeleteEndpoint(IFileService service)
 
     public override async Task HandleAsync(FileDeleteRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.DeleteAsync(req.Id, actorId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }
 
-/// <summary>D-568 — PDPL right-to-erasure (P7): securely destroy a file's bytes
+/// <summary>PDPL right-to-erasure: securely destroy a file's bytes
 /// even under a retention hold. Gated by the privileged <c>Files.ForceDelete</c>,
 /// held separately from ordinary delete so the elevated action is independently
 /// grantable and audited.</summary>
@@ -266,11 +255,7 @@ public sealed class FileForceDeleteEndpoint(IFileService service)
 
     public override async Task HandleAsync(FileDeleteRoute req, CancellationToken ct)
     {
-        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
-        {
-            await Send.UnauthorizedAsync(ct);
-            return;
-        }
+        var actorId = User.ActorId();
         await service.ForceDeleteAsync(req.Id, actorId, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

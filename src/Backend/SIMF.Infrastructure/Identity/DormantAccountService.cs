@@ -6,23 +6,23 @@ using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Common;
 
 namespace SIMF.Infrastructure.Identity;
 
-/// <summary>A1-19 (NCA) — disables Approved accounts inactive beyond the configured
+/// <summary>NCA dormancy rule — disables Approved accounts inactive beyond the configured
 /// threshold. Inactivity = time since the last successful sign-in, or the account's
 /// creation time if it never signed in.</summary>
 /// <remarks>
-/// PRE-ENABLE GATE (D-494): the <c>LastSuccessfulSignInAtUtc ?? CreatedAt</c>
+/// PRE-ENABLE GATE: the <c>LastSuccessfulSignInAt ?? CreatedAt</c>
 /// fallback below is intentional and unit-tested, but it means the FIRST sweep
-/// after the Wave-6d column shipped — when that column is still NULL for every
+/// after that column shipped — when it is still NULL for every
 /// existing user — would fall back to <c>CreatedAt</c> and disable every
 /// long-standing Approved non-admin at once. The sweep is therefore default-OFF
 /// (<c>DormantAccountDisableDays &lt;= 0</c> returns early) and never touches
 /// administrators. Do NOT set a positive <c>DormantAccountDisableDays</c> in
-/// production until <c>LastSuccessfulSignInAtUtc</c> has been backfilled (e.g.
-/// stamped to deploy-time for existing approved users). See the merge-readiness
-/// doc §5.1 and DECISIONS_LOG D-494.
+/// production until <c>LastSuccessfulSignInAt</c> has been backfilled (e.g.
+/// stamped to deploy-time for existing approved users).
 /// </remarks>
 internal sealed class DormantAccountService(
     SimfIdentityDbContext dbContext,
@@ -40,7 +40,7 @@ internal sealed class DormantAccountService(
             return 0;
         }
 
-        var now = timeProvider.GetUtcNow();
+        var now = timeProvider.SimfNow();
         var cutoff = now.AddDays(-days);
 
         var dormant = await dbContext.Users
@@ -49,7 +49,7 @@ internal sealed class DormantAccountService(
                 // lock out the (only) admin and brick the Control Panel, including
                 // the seeded super-admin (Approved + UserType.Admin).
                 && user.UserType != UserType.Admin
-                && (user.LastSuccessfulSignInAtUtc ?? user.CreatedAt) < cutoff)
+                && (user.LastSuccessfulSignInAt ?? user.CreatedAt) < cutoff)
             .ToListAsync(cancellationToken);
         if (dormant.Count == 0)
         {

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    D-823 — the offline badge desk's test project.
+
+    Windows-only, like the tool it tests (WinForms + DPAPI + native printing),
+    and DELIBERATELY OUTSIDE SIMF.slnx for the same reason SIMF.BadgeDesk is:
+    the solution has to keep building on any host. The BadgeDesk stage in
+    azure-pipelines.yml builds and runs it, so a change to SIMF.Common or
+    SIMF.Contracts that breaks the only tool that mints badges now turns the
+    pipeline red instead of being discovered at a venue.
+
+    Run it explicitly:
+      dotnet test tests/SIMF.BadgeDesk.Tests
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <IsPackable>false</IsPackable>
+    <!-- The tool it tests is Windows-only by construction; the analyser has
+         nothing to add and TreatWarningsAsErrors would fail on every call. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="6.12.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Tools\SIMF.BadgeDesk\SIMF.BadgeDesk.csproj" />
+  </ItemGroup>
+
+</Project>

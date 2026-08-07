@@ -86,7 +86,7 @@ class _SizeChip extends StatelessWidget {
           height: 36,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? SimfTokens.accent : Colors.transparent,
+            color: selected ? SimfTokens.accent : SimfTokens.transparent,
             border: selected
                 ? null
                 : Border.all(
@@ -99,11 +99,12 @@ class _SizeChip extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: selected ? Colors.white : SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            ),
+            // #16 — the two states are named tokens, not an inline style built
+            // from tokens. Same values: selected = white/12/w600, unselected =
+            // beige/12 at the theme's regular weight.
+            style: selected
+                ? SimfTokens.labelWhiteSemiboldSm
+                : SimfTokens.labelBeigeSm,
           ),
         ),
       ),

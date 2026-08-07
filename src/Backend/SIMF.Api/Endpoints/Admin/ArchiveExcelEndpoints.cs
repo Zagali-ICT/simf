@@ -8,7 +8,7 @@ using SIMF.Contracts.Archive;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/archive/export</c> — the D-356 grid export for archive
+/// <c>POST /api/v1/admin/archive/export</c> — the generic grid export for archive
 /// editions. All the work lives in <see cref="AdminGridExportEndpoint{TRow}"/>;
 /// this subclass only declares the route, permission, sheet/file names, the
 /// column layout (mirroring the Archive grid), and how to list + identify an
@@ -33,7 +33,7 @@ public sealed class ExportArchiveEndpoint(IAdminArchiveService service, IGridExc
         new("Sessions", row => row.Sessions),
         new("Speakers", row => row.Speakers),
         new("IsActive", row => row.IsActive),
-        // D-506 — round-trip the dropped edition fields (summary, location, date
+        // Round-trip the dropped edition fields (summary, location, date
         // label, cover path; appended so the existing column order is unchanged;
         // import binds by header name).
         new("SummaryEn", row => row.SummaryEn),
@@ -53,7 +53,7 @@ public sealed class ExportArchiveEndpoint(IAdminArchiveService service, IGridExc
 }
 
 /// <summary>
-/// <c>POST /api/v1/admin/archive/import</c> — the D-356 grid import (insert-only)
+/// <c>POST /api/v1/admin/archive/import</c> — the generic grid import (insert-only)
 /// for archive editions. The base does the upload defence, parse and per-row
 /// error aggregation; this subclass binds one row to
 /// <see cref="CreateArchiveEditionRequest"/> and creates it (the service rejects
@@ -111,7 +111,7 @@ public sealed class ImportArchiveEndpoint(IAdminArchiveService service, IGridExc
                 row.Cells.GetValueOrDefault("Sessions", string.Empty), out var sessions) ? sessions : 0,
             Speakers = int.TryParse(
                 row.Cells.GetValueOrDefault("Speakers", string.Empty), out var speakers) ? speakers : 0,
-            // D-506 — round-trip the remaining dropped edition fields (location,
+            // Round-trip the remaining dropped edition fields (location,
             // date label, cover path; CreateAsync trims + length-guards them,
             // absent columns simply stay null).
             LocationEn = NullIfBlank(row.Cells.GetValueOrDefault("LocationEn", string.Empty)),
