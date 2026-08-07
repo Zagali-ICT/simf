@@ -138,8 +138,18 @@ public sealed class IdentitySeeder(
         // (the gate triad, the PR/VIP triad) keep their exact strings and grants.
         await SeedPermissionCatalogAsync(cancellationToken);
 
-        var admin = await accounts.FindByEmailAsync(settings.Email, cancellationToken)
-            ?? await CreateSuperAdminAsync(settings, cancellationToken);
+        // The super-admin is found BY E-MAIL, so changing SuperAdmin:Email against
+        // an existing database does not move the account — it seeds a second one
+        // and leaves the first in place, holding the Administrator wildcard. That
+        // is a silent duplicate of the highest-privilege account in the system, so
+        // it is reported loudly and to the audit trail before the row is created.
+        var admin = await accounts.FindByEmailAsync(settings.Email, cancellationToken);
+        if (admin is null)
+        {
+            await ReportSupersededSuperAdminsAsync(settings.Email, cancellationToken);
+            admin = await CreateSuperAdminAsync(settings, cancellationToken);
+        }
+
         if (admin is null)
         {
             return;
@@ -571,6 +581,63 @@ public sealed class IdentitySeeder(
         });
         // ProfileType lives on App DB.
         await appDbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Reports the Administrator accounts that already exist when the configured
+    /// super-admin e-mail matches none of them.
+    ///
+    /// <para>Seeding resolves the super-admin by e-mail, so pointing
+    /// <c>SuperAdmin:Email</c> at a new address does not rename the account — it
+    /// creates a second one and leaves the first signing in with its old
+    /// credentials. Both carry the Administrator wildcard, which is the highest
+    /// privilege in the system, and nothing else in the boot path mentions it. The
+    /// duplicate is therefore written to the audit trail as well as the log:
+    /// a second unattended super-admin is exactly the kind of thing a security
+    /// review must be able to find after the fact, and a startup line scrolls away.</para>
+    ///
+    /// <para>This reports; it does not refuse to boot. An Administrator can also be
+    /// created legitimately in the Control Panel, so their presence is not proof of
+    /// a mistake, and failing startup on a guess would take the API down for a
+    /// condition that may be intentional. Resolving it needs an operator decision
+    /// either way — see <c>docs/migrations/2026/DEPLOY.md</c>.</para>
+    /// </summary>
+    private async Task ReportSupersededSuperAdminsAsync(
+        string configuredEmail,
+        CancellationToken cancellationToken)
+    {
+        var existing = await (
+            from user in dbContext.Users
+            join userRole in dbContext.UserRoles on user.Id equals userRole.UserId
+            join role in dbContext.Roles on userRole.RoleId equals role.Id
+            where role.Name == AdministratorRole
+            select user.Email)
+            .ToListAsync(cancellationToken);
+
+        if (existing.Count == 0)
+        {
+            return;
+        }
+
+        var others = string.Join(", ", existing);
+        logger.LogWarning(
+            "SuperAdmin:Email is {Configured}, which matches no account, but {Count} "
+            + "Administrator account(s) already exist ({Others}). A SECOND super-admin "
+            + "is about to be created — the existing one keeps the Administrator "
+            + "wildcard and its old credentials. If SuperAdmin:Email was changed "
+            + "deliberately, migrate the existing row instead; see "
+            + "docs/migrations/2026/DEPLOY.md.",
+            configuredEmail, existing.Count, others);
+
+        await auditLog.WriteAsync(
+            new AuditEntry
+            {
+                EventType = AuditEvents.SuperAdminDuplicateSeeded,
+                Outcome = AuditOutcome.Failure,
+                SubjectEmail = configuredEmail,
+                Detail = $"Existing Administrator account(s): {others}",
+            },
+            cancellationToken);
     }
 
     private async Task<SimfUser?> CreateSuperAdminAsync(
