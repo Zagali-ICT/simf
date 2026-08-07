@@ -43,10 +43,11 @@ builder.Services.AddLocalization(options => options.ResourcesPath = "Resources")
 // PublicEditions).
 builder.Services.AddMemoryCache();
 
-// SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
-// certificate on the server-to-server API calls (the API uses a self-signed
-// cert whose name does not match the host). Default false → normal TLS
-// validation, so dev and any other environment are unaffected.
+// SIMF_Api__AllowSelfSignedCertificate=true installs
+// DangerousAcceptAnyServerCertificateValidator, which accepts ANY certificate
+// from ANY host - not just a self-signed one. It is only safe against a loopback
+// BaseUrl, and SimfApiBaseAddress.Resolve refuses to boot on any other pairing
+// outside Development. Default false => ordinary TLS validation.
 var allowSelfSignedApiCert =
     builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
 Func<HttpMessageHandler> apiPrimaryHandler = () =>
@@ -61,11 +62,12 @@ Func<HttpMessageHandler> apiPrimaryHandler = () =>
 };
 
 // The typed client shares one validated API base address (SimfApiBaseAddress) —
-// server-to-server. The self-signed cert handler (above) is applied so
-// production over a self-signed API cert works when
-// SIMF_Api__AllowSelfSignedCertificate=true.
+// server-to-server. The self-signed cert handler (above) is applied, and
+// Resolve validates the flag against the address before the client is built.
 var apiBaseUri = SimfApiBaseAddress.Resolve(
-    builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
+    builder.Configuration["Api:BaseUrl"],
+    builder.Environment.IsDevelopment(),
+    allowSelfSignedApiCert);
 
 // The typed client for the SIMF anonymous public-read endpoints.
 // Anonymous, so no bearer token; BaseAddress only — the public endpoints do

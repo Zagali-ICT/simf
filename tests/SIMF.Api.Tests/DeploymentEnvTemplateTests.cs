@@ -183,6 +183,84 @@ public sealed class DeploymentEnvTemplateTests
         }
     }
 
+    private static string SingleValue(MatchCollection entries, string name)
+    {
+        var values = entries
+            .Where(m => m.Groups["name"].Value == name)
+            .Select(m => m.Groups["value"].Value)
+            .ToList();
+
+        Assert.True(
+            values.Count == 1,
+            $"{TemplateName} should declare {name} exactly once; found {values.Count}.");
+        return values[0];
+    }
+
+    /// <summary>The template's VALUES, not just its key names. Api:BaseUrl and
+    /// Api:AllowSelfSignedCertificate have to move together: the flag installs
+    /// DangerousAcceptAnyServerCertificateValidator on the typed clients that
+    /// forward the admin password, the TOTP code and the perm:* bearer token, so
+    /// pairing it with a public origin hands those to whoever answers for that
+    /// name. SimfApiBaseAddress.Resolve refuses the pairing at boot on the
+    /// EFFECTIVE config; this stops the repo recommending it in the first place.
+    /// A server provisioned from an older copy of the overlay is unaffected by a
+    /// template correction, which is why both layers exist. The key-presence
+    /// test above passed throughout the window where the values were wrong.</summary>
+    [Fact]
+    public void The_env_template_never_pairs_the_trust_all_with_a_public_origin()
+    {
+        var template = ReadRepoFile("deploy", TemplateName);
+        var entries = EntryPattern.Matches(template);
+
+        var baseUrl = SingleValue(entries, "SIMF_Api__BaseUrl");
+        var allowSelfSigned = SingleValue(entries, "SIMF_Api__AllowSelfSignedCertificate");
+
+        // bool.TryParse, not a compare against "true", because that is what
+        // GetValue<bool> does at runtime: it trims, so " true " binds to true and
+        // installs the bypass while a string compare would call it disabled.
+        var trustAll = bool.TryParse(allowSelfSigned, out var parsed) && parsed;
+        var loopback = Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) && uri.IsLoopback;
+
+        Assert.True(
+            !trustAll || loopback,
+            $"{TemplateName} pairs SIMF_Api__AllowSelfSignedCertificate=true with "
+            + $"SIMF_Api__BaseUrl='{baseUrl}', which is not a loopback address. That "
+            + "disables certificate validation on a public origin and exposes the "
+            + "forwarded bearer token to an on-path attacker. Set the flag to false, "
+            + "or point BaseUrl back at loopback.");
+    }
+
+    /// <summary>Windows PowerShell 5.1 decodes a BOM-less file as the ANSI
+    /// codepage, so one em dash in a comment becomes three characters - and one
+    /// of them is a quote, which terminates the string and stops the script
+    /// parsing. The template carried six em dashes and one ellipsis, and failed
+    /// with 8 parse errors under powershell.exe until 2026-08-07, while the same
+    /// file was fine under pwsh 7 (UTF-8 by default). An operator on Windows
+    /// Server therefore ran it and set NOTHING. Pure ASCII is the fix that does
+    /// not depend on a BOM surviving an editor round-trip.</summary>
+    [Theory]
+    [InlineData(TemplateName)]
+    [InlineData(RunbookName)]
+    public void The_operator_run_scripts_are_pure_ascii_so_windows_powershell_can_parse_them(
+        string scriptName)
+    {
+        var script = ReadRepoFile("deploy", scriptName);
+
+        var offenders = script
+            .Select((character, index) => (Character: character, Index: index))
+            .Where(x => x.Character > '\x007F')
+            .Take(10)
+            .Select(x => $"U+{(int)x.Character:X4} at offset {x.Index}")
+            .ToList();
+
+        Assert.True(
+            offenders.Count == 0,
+            $"{scriptName} contains non-ASCII characters: {string.Join(", ", offenders)}. "
+            + "Windows PowerShell 5.1 reads this BOM-less file as ANSI, corrupting them and "
+            + "breaking the parse. Use '-' instead of an em dash and '...' instead of an "
+            + "ellipsis.");
+    }
+
     [Fact]
     public void The_template_documents_what_breaks_when_a_boot_gate_is_missing()
     {

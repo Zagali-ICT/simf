@@ -118,11 +118,22 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_SessionRecordingStorage__MaxUploadBytes"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 1073741824 (1 GiB)" }
 
     # --- How CP and Web reach the API -----------------------------------------
-    # Loopback on purpose: it avoids a NAT hairpin through the public name. The
-    # self-signed allowance exists because the loopback certificate cannot match
-    # "localhost"; it applies to that hop only, never to a public origin.
+    # AllowSelfSignedCertificate is NOT a "self-signed only" allowance: it installs
+    # DangerousAcceptAnyServerCertificateValidator, which accepts ANY certificate
+    # from ANY host. It is therefore only ever safe on a loopback hop, where there
+    # is no name resolution and nothing to get between the two processes.
+    #
+    # It stayed on while BaseUrl was https://localhost:12340/, because a loopback
+    # certificate cannot match "localhost". D-868 moved the estate to simrsnf.com
+    # and a real certificate is installed, so the pairing below is now
+    # public origin + ordinary TLS validation, and the trust-all is off.
+    #
+    # These two settings MUST move together. A public BaseUrl with the flag on
+    # means the CP's admin password, TOTP code and perm:* bearer token are handed
+    # to whoever answers for that name. SimfApiBaseAddress.Resolve refuses to boot
+    # on that combination outside Development, and a test asserts the pairing here.
     [pscustomobject]@{ Name = "SIMF_Api__BaseUrl"; Value = "https://api.simrsnf.com/"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "must be HTTPS outside Development" }
-    [pscustomobject]@{ Name = "SIMF_Api__AllowSelfSignedCertificate"; Value = "true"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "accepts the API loopback cert only" }
+    [pscustomobject]@{ Name = "SIMF_Api__AllowSelfSignedCertificate"; Value = "false"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "loopback BaseUrl ONLY; false for any public origin" }
 
     # --- Meeting confirmation links -------------------------------------------
     # Empty => the speaker double-opt-in email cannot be built, and the Approve /
@@ -153,16 +164,16 @@ $vars = @(
     # mail is delivered, which blocks visitor sign-up and the whole speaker flow.
     [pscustomobject]@{ Name = "SIMF_Email__Host"; Value = "smtp.zoho.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "SMTP host" }
     [pscustomobject]@{ Name = "SIMF_Email__Port"; Value = "587"; Secret = $false; Gate = $false; Apps = "API"; Note = "STARTTLS submission port" }
-    [pscustomobject]@{ Name = "SIMF_Email__User"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP user — set on the server, never here" }
-    [pscustomobject]@{ Name = "SIMF_Email__Password"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP app password — set on the server, never here" }
+    [pscustomobject]@{ Name = "SIMF_Email__User"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP user - set on the server, never here" }
+    [pscustomobject]@{ Name = "SIMF_Email__Password"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP app password - set on the server, never here" }
     # The From domain must be a VERIFIED sender on the Zoho account. Tested
     # 2026-08-07 against the live relay: no-reply@apexium.com.sa was refused with
     # "Sender is not allowed to relay emails", while no-reply@ammn.com.sa sent
-    # fine on the same credentials. The send FAILS — it does not fall back — and
+    # fine on the same credentials. The send FAILS - it does not fall back - and
     # on this system that stops sign-up codes, password resets and 2FA. So do not
     # change this until apexium.com.sa is a verified domain in Zoho with its
     # SPF/DKIM records published, then re-run the same test before committing.
-    [pscustomobject]@{ Name = "SIMF_Email__FromAddress"; Value = "no-reply@ammn.com.sa"; Secret = $false; Gate = $false; Apps = "API"; Note = "sending address — must be a verified Zoho sender (D-873)" }
+    [pscustomobject]@{ Name = "SIMF_Email__FromAddress"; Value = "no-reply@ammn.com.sa"; Secret = $false; Gate = $false; Apps = "API"; Note = "sending address - must be a verified Zoho sender (D-873)" }
     [pscustomobject]@{ Name = "SIMF_Email__FromName"; Value = "SIMF"; Secret = $false; Gate = $false; Apps = "API"; Note = "display name on outbound mail" }
 
     # --- AI providers ---------------------------------------------------------
@@ -177,8 +188,8 @@ $vars = @(
     # KnownProxies missing => the API sees the reverse proxy's IP as the client
     # IP, so rate limiting and every audit row record the wrong address.
     [pscustomobject]@{ Name = "SIMF_ReverseProxy__KnownProxies__0"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC: reverse-proxy IP (repeat __1, __2, ...)" }
-    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__0"; Value = "https://web.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "browser origin allowed to call the API — Website + the Flutter web build (D-868)" }
-    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__1"; Value = "https://cp.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "Control Panel origin. Add __2, __3, … for further origins" }
+    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__0"; Value = "https://web.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "browser origin allowed to call the API - Website + the Flutter web build (D-868)" }
+    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__1"; Value = "https://cp.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "Control Panel origin. Add __2, __3, ... for further origins" }
     [pscustomobject]@{ Name = "SIMF_RateLimit__PermitLimit"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 20" }
     [pscustomobject]@{ Name = "SIMF_RateLimit__WindowSeconds"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 60" }
 
