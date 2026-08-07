@@ -6,7 +6,7 @@
 | **Route** | `/account/totp-pairing` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-02 |
 
 > **Page shape (read from `TotpPairing.razor`, not the older reference doc).**
@@ -58,7 +58,7 @@ Feature: TOTP re-pairing golden path
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And the Administrator superadmin@zagali-ict.com has signed in via /login + /login/totp
+  And the Administrator superadmin@simrsnf.com has signed in via /login + /login/totp
   And that account already has an active authenticator secret (it is enrolled)
   And the Administrator has navigated to /account/totp-pairing
 

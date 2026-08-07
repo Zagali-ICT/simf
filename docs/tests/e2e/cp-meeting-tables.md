@@ -17,7 +17,7 @@
 | **Route** | `/admin/meeting-tables` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell driver |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via `Get-Totp` helper |
 | **Permissions** | `MeetingTables.View` (page), `MeetingTables.Edit`, `HallAllocations.View/Edit`, `Halls.Edit` (set purpose) |
 | **API** | `PUT /api/v1/admin/halls/{id}/purpose`, `POST /api/v1/admin/halls/{hallId}/meeting-tables[/list|/generate]`, `PUT|DELETE /api/v1/admin/meeting-tables/{id}`, `POST /api/v1/admin/halls/{hallId}/hall-allocations[/list]`, `DELETE /api/v1/admin/hall-allocations/{id}` |
 | **Backed by tests** | `tests/SIMF.Api.Tests/BusinessMeetingsTests.cs` |

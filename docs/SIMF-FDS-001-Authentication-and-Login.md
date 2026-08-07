@@ -396,7 +396,7 @@ single-use, stored hashed, invalidated after the per-code attempt cap, and
 bound to the originating sign-in.
 
 ### A.4 The superadmin TOTP bootstrap
-The seeded administrator `superadmin@zagali-ict.com` is created **with its TOTP
+The seeded administrator `superadmin@simrsnf.com` is created **with its TOTP
 secret already provisioned**; the secret / QR is delivered to the operator
 out-of-band through the `set-env-*` script. This removes the bootstrap deadlock
 — the system is administrable from first run. First-sign-in TOTP enrolment for

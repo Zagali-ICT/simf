@@ -4,7 +4,7 @@
 |--|--|
 | **Route** | `/admin/delegation-meetings` |
 | **Surface** | Control Panel |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-20 (D-478 #11, Group G phase 2) |
 
 > **What this page does (grounded in `DelegationMeetingsList.razor`, D-478).**

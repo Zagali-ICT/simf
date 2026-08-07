@@ -150,7 +150,7 @@ environment with the Machine-scope variable:
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `SIMF_MeetingLinks__PublicWebBaseUrl` | the public Website origin, e.g. `https://simf.zagali-ict.com` | no trailing slash needed; trimmed when the link is built |
+| `SIMF_MeetingLinks__PublicWebBaseUrl` | the public Website origin, e.g. `https://web.simrsnf.com` | no trailing slash needed; trimmed when the link is built |
 | `SIMF_MeetingLinks__TokenTtlHours` | `72` (default) | link lifetime, §15.7 |
 
 `appsettings.json` ships the key **empty**; `appsettings.Development.json` defaults it

@@ -6,7 +6,7 @@
 | **Route** | `/admin/reset-2fa` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-02 |
 
 > **Page shape.** This is **not** a grid page. `ResetTwoFactor.razor` is a single
@@ -50,7 +50,7 @@ Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
   And an Administrator with the "Admins.ResetTwoFactor" permission has signed in
-    via /login + /login/totp (superadmin@zagali-ict.com + Get-Totp helper)
+    via /login + /login/totp (superadmin@simrsnf.com + Get-Totp helper)
   And they have landed on /admin/reset-2fa
 
 Scenario: Reset a normal user's 2FA from email + reason
@@ -177,8 +177,8 @@ Scenario: An email with no matching account returns 404 and a red alert
 
 ```gherkin
 Scenario: Resetting your own account is rejected with AdminCannotResetSelf
-  Given the signed-in administrator's own email is "superadmin@zagali-ict.com"
-  When they fill "User email" = "superadmin@zagali-ict.com"
+  Given the signed-in administrator's own email is "superadmin@simrsnf.com"
+  When they fill "User email" = "superadmin@simrsnf.com"
   And fill "Reason (audited)" = "Trying to reset my own account from this page."
   And click "Reset 2FA"
   And accept the confirm() dialog

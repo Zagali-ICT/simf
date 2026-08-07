@@ -6,7 +6,7 @@
 | **Route** | `/admin/delegation-availability` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-07-22 (bi-meeting rework — new page) |
 
 > **What this page does (grounded in `DelegationAvailabilityPage.razor(.cs)`, bi-meeting rework).**

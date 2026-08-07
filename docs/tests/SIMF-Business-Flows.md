@@ -572,7 +572,7 @@ This cross-page flow proves the full "partner-account → gate → scan" chain a
 Feature: Staff account → profile-scoped gate → app scan
   Background:
     Given the API is reachable and the Control Panel is signed in as
-      "superadmin@zagali-ict.com" (password entered at run time; TOTP via the Get-Totp helper)
+      "superadmin@simrsnf.com" (password entered at run time; TOTP via the Get-Totp helper)
 
   Scenario: A walk-in Staff operator is created, approved, assigned, and records a live scan
     # --- CP: partner ProfileType carrying the Staff app-role ---
@@ -809,7 +809,7 @@ Feature: Model the venue as purpose-specialised halls with a seat grid
     Given the API is reachable on http://localhost:5175
     And the Control Panel is reachable on http://localhost:5158
     And an Administrator is signed in
-      # superadmin@zagali-ict.com + TOTP via the Get-Totp helper
+      # superadmin@simrsnf.com + TOTP via the Get-Totp helper
 
   Scenario: Create four halls, dedicate their purpose, and lay out the session hall
     Given the administrator opens /admin/halls
@@ -2089,7 +2089,7 @@ Feature: BF-09 Golden journey — snapshot the current event into a past edition
   So that visitors see "SIMF 2026" as a completed past edition
 
 Background:
-  Given an Administrator "superadmin@zagali-ict.com" is signed in
+  Given an Administrator "superadmin@simrsnf.com" is signed in
   And their TOTP is generated via the Get-Totp helper (never a literal secret)
   And the admin role carries the "Archive.Snapshot" permission
   And the live App database currently holds 14 active sessions and 9 active speakers
@@ -2907,9 +2907,9 @@ Scenario: A 2FA visitor signs in with password + emailed OTP and lands on the pr
 
 ```gherkin
 Scenario: An Administrator account is rejected on the visitor surface
-  Given the Administrator account superadmin@zagali-ict.com exists (UserType = Admin)
+  Given the Administrator account superadmin@simrsnf.com exists (UserType = Admin)
   And the browser is on /login
-  When the operator fills "Email address" = "superadmin@zagali-ict.com"
+  When the operator fills "Email address" = "superadmin@simrsnf.com"
   And fills "Password" = the admin's test password (a dev fixture — not stored here)
   And clicks "Sign in"
   Then POST /api/v1/app/auth/sign-in fires with audience: "Web"
@@ -3419,7 +3419,7 @@ Feature: BF-14 Arabic toggle on a representative Control Panel list
   Background:
     Given the API is reachable on http://localhost:5175
     And the Control Panel is reachable on http://localhost:5158
-    And an Administrator is signed in (superadmin@zagali-ict.com + TOTP via Get-Totp)
+    And an Administrator is signed in (superadmin@simrsnf.com + TOTP via Get-Totp)
 
   Scenario: Switching to Arabic re-renders the whole speakers page RTL
     Given the administrator is on /admin/speakers in English

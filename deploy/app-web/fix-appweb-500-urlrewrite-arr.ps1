@@ -30,7 +30,7 @@
     Idempotent: anything already in place is skipped, so it is safe to re-run.
 
 .PARAMETER SiteUrl
-    Public URL verified at the end. Default: https://simf_app.zagali-ict.com/
+    Public URL verified at the end. Default: https://web.simrsnf.com/
 
 .PARAMETER Force
     Skip the interactive confirmation prompt (for unattended runs).
@@ -46,7 +46,7 @@
         ARR         : https://www.iis.net/downloads/microsoft/application-request-routing
 #>
 param(
-    [string] $SiteUrl = 'https://simf_app.zagali-ict.com/',
+    [string] $SiteUrl = 'https://web.simrsnf.com/',
     [switch] $Force,
     [switch] $DryRun
 )

@@ -6,7 +6,7 @@
 | **Route** | `/admin/attendance` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-07-28 |
 
 > **Scenario ids were renamespaced `ATT` → `ATND` on 2026-07-28.** This page and
@@ -101,7 +101,7 @@ Feature: Session-attendance dashboard
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And the account superadmin@zagali-ict.com is Approved with a paired TOTP authenticator
+  And the account superadmin@simrsnf.com is Approved with a paired TOTP authenticator
   And an Administrator has signed in via /login + /login/totp using the Get-Totp helper
   And they have landed on /admin/attendance
 

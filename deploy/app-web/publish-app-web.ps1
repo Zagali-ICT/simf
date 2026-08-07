@@ -6,7 +6,7 @@
 #
 # Usage (PowerShell, any directory):
 #   .\publish-app-web.ps1 `
-#       -ApiBase  "https://simf_api.zagali-ict.com/api/v1" `
+#       -ApiBase  "https://api.simrsnf.com/api/v1" `
 #       -OutDir   "D:\SIMF\Publish\simf-app-web" `
 #       [-AppKey  "<prod app key>"] `
 #       [-SupportPhone "+9665XXXXXXXX"] [-SupportEmail "support@..."] `

@@ -32,7 +32,7 @@ same `PasswordHash`, `SecurityStamp` and 2FA columns, so it signs in identically
 
 | Identity | Role | Used for |
 |---|---|---|
-| `superadmin@zagali-ict.com` + TOTP via `Get-Totp` | Administrator (`*`) | `/not-found`, `/Error` |
+| `superadmin@simrsnf.com` + TOTP via `Get-Totp` | Administrator (`*`) | `/not-found`, `/Error` |
 | restricted fixture (e.g. `qa-gate@…`) + same TOTP | GateOperator | every `/not-permitted` scenario |
 
 ## Coverage matrix

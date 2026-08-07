@@ -23,7 +23,7 @@ force on the approved baseline documents.
 | D1 | Use **Microsoft ASP.NET Core Identity** — `PasswordHasher` for hashing, Identity's TOTP provider for admin 2FA, and **Identity's lockout** (see §5.4). Follow Microsoft's published guidance (§4). |
 | D2 | Development database server: **MSSQLSERVER / SQLEXPRESS**; connection configuration follows the IBS pattern (open point O-1). |
 | D3 | The email-code sending and configuration are **copied from IBS v10**, and reviewed against the SIMF security baseline before they are trusted (open point O-1). |
-| D4 | Bootstrap administrator **`superadmin@zagali-ict.com`**; every seeded user gets a temporary password and is forced to change it on first sign-in; an admin-added user is auto-approved, a self-registered user needs admin approval. |
+| D4 | Bootstrap administrator **`superadmin@simrsnf.com`**; every seeded user gets a temporary password and is forced to change it on first sign-in; an admin-added user is auto-approved, a self-registered user needs admin approval. |
 | D6 | Build the whole authentication feature, including forgot-password and change-password. **Admin / Control Panel users sign in with TOTP; visitors sign in with an email OTP.** |
 | **C-1** | **One physical database, two `DbContext`s** (`SimfIdentityDbContext`, `SimfAppDbContext`) with **separate migration histories** — the migration isolation that was wanted, without losing atomic transactions or cross-table foreign keys. (Supersedes the v1 "two physical databases" idea.) |
 
@@ -220,7 +220,7 @@ class" is intended, or scope the manuals per feature.)
 2. The IdentityAccess domain + the two `DbContext`s (one database) + the first
    migration of each + repositories + connection pooling.
 3. Sign-up + verify-email + resend-code + async email + the approval rule + the
-   seeded `superadmin@zagali-ict.com` (with its TOTP secret) + the
+   seeded `superadmin@simrsnf.com` (with its TOTP secret) + the
    registration-surge load test.
 4. Sign-in (both paths) + the second factors (TOTP / email OTP) + lockout +
    refresh rotation + JWT auth + the security-stamp revocation check + sessions.

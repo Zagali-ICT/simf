@@ -5,13 +5,13 @@ Last updated: 2026-07-25
 The Flutter app's **web build** is published as a static IIS site (proof-of-
 concept distribution of the mobile app's UI in a browser; the shipped product
 targets remain Android + iOS per SIMF-MAA-001 §2). The published build calls
-the production API at **`https://simf_api.zagali-ict.com/api/v1`**.
+the production API at **`https://api.simrsnf.com/api/v1`**.
 
 ## 1. Produce the deploy folder
 
 ```powershell
 D:\SIMF\System\V1.0.0\deploy\app-web\publish-app-web.ps1 `
-    -ApiBase "https://simf_api.zagali-ict.com/api/v1" `
+    -ApiBase "https://api.simrsnf.com/api/v1" `
     -OutDir  "D:\SIMF\Publish\simf-app-web"
 ```
 
@@ -74,7 +74,7 @@ is no runtime config file. Optional parameters: `-AppKey`, `-SupportPhone`,
 - **Hostname `simf_api` contains an underscore.** Public CAs do not issue
   TLS certificates for hostnames with `_` (RFC 952/1123 hostnames allow
   letters/digits/hyphens only). If certificate issuance fails, the host
-  should be renamed (e.g. `simf-api.zagali-ict.com`) and the web app
+  should be renamed (e.g. `api.simrsnf.com`) and the web app
   rebuilt with the corrected `-ApiBase`.
 - **Web storage is not a secure enclave.** On web, tokens live in browser
   storage (`flutter_secure_storage` has no Keychain/Keystore there) — this
@@ -88,7 +88,7 @@ is no runtime config file. Optional parameters: `-AppKey`, `-SupportPhone`,
 
 1. Open the site root — the splash must route to onboarding/sign-in.
 2. Register / sign in end-to-end (watch the browser network tab: all calls
-   go to `https://simf_api.zagali-ict.com/api/v1/...`, no CORS errors).
+   go to `https://api.simrsnf.com/api/v1/...`, no CORS errors).
 3. `docs/tests/e2e/mobile-sign-in.md` scenarios are the full catalogue.
 
 ## 6. Troubleshooting

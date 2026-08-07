@@ -6,7 +6,7 @@
 | **Route** | `/admin/hall-arrivals` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-07-26 (DEF-CHK-003 picker + FR-CHK-003/004) |
 
 > **What this page does.** The hall-door arrival console (P5.1d — D-244,

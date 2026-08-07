@@ -4,10 +4,10 @@
 |-------|-------|
 | Title | Manual (human) production-rehearsal test plan |
 | Status | Living plan — subordinate to `SIMF-TST-001-Test-Plan.md` |
-| Surfaces | Control Panel (`https://simf.zagali-ict.com` admin) + Mobile App (Flutter, prod API) |
+| Surfaces | Control Panel (`https://web.simrsnf.com` admin) + Mobile App (Flutter, prod API) |
 | Team | 3–4 testers + 1 QA Lead (the Lead may also be one of the 4) |
 | Window | 7 working days |
-| Environment | **LIVE production** (`simf_api` / `simf_app` / `simf.zagali-ict.com`, self-signed TLS) |
+| Environment | **LIVE production** (`simf_api` / `simf_app` / `web.simrsnf.com`, self-signed TLS) |
 | Gate simulation | **Both** in-app scanner **and** a physical-device dry-run |
 | Devices | Android phone · Huawei / no-GMS Android · Android tablet · iOS |
 | Companion cases | [`SIMF-Manual-Test-Cases.md`](SIMF-Manual-Test-Cases.md) |
@@ -65,7 +65,7 @@ are mandatory; a breach is a stop-the-line event.
    time via the `Get-Totp` helper; OTPs are read from the system, never written
    into a log, screenshot, or chat (`SIMF-TST-001` §7; E2E plan §3.5). Redact
    tokens/Q*R* payloads in screenshots.
-6. **Self-signed TLS is expected** on `simf.zagali-ict.com`. Browsers/devices will
+6. **Self-signed TLS is expected** on `web.simrsnf.com`. Browsers/devices will
    warn; that is the current production posture, not a test defect — but **record
    it** (it ties to the open security finding on TLS trust).
 7. **Two known OPEN security findings touch this run** (treat as context, verify,
@@ -224,7 +224,7 @@ cases are `TC-J-03 … TC-J-05` in doc 2; this is the operating context.
 ## 6. Stage 0 — setup (Day 1 AM)
 
 ### 6.1 Confirm the target
-- QA Lead confirms **which build is live** on `simf.zagali-ict.com` (see §2.8) and
+- QA Lead confirms **which build is live** on `web.simrsnf.com` (see §2.8) and
   notes the deployed commit in the Day-1 run-log.
 - Confirm both DBs reachable and `/health` green (the DevOps owner runs the remote
   health/curl recipe; testers do not need DB access except the OTP read, which the

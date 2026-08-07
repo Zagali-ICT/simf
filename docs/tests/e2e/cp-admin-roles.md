@@ -6,7 +6,7 @@
 | **Route** | `/admin/roles` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper. The page is gated by `PermissionCatalog.Roles.View`; the per-row "Permissions" link is gated by `PermissionCatalog.Roles.AssignPermissions`. |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper. The page is gated by `PermissionCatalog.Roles.View`; the per-row "Permissions" link is gated by `PermissionCatalog.Roles.AssignPermissions`. |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page gate (verified in source).** `RolesList.razor` carries
@@ -537,7 +537,7 @@ Scenario: The Scientific team role ships as a built-in role with the programme g
 
 - **Manual smoke is the canonical run today.** Until Playwright is adopted, the
   canonical execution of these scenarios is a Chrome DevTools MCP session: sign
-  in per the Auth setup (`superadmin@zagali-ict.com` + `Get-Totp`), walk each
+  in per the Auth setup (`superadmin@simrsnf.com` + `Get-Totp`), walk each
   scenario, and capture screenshots into `docs/screenshots/cp-admin-roles-*.png`.
 - **Convert to Playwright** when the runner is adopted: copy each Gherkin block
   into a `.feature` file under `tests/SIMF.E2E.Tests/` (project to be created)

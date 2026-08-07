@@ -11,17 +11,22 @@ disabled**, so verify locally before merging.
 
 | Surface | URL |
 |---|---|
-| API | `https://simf_api.zagali-ict.com` (health: `/health`) |
-| Control Panel | `https://simf_cp.zagali-ict.com` |
-| Website | `https://simf.zagali-ict.com` |
-| App (web build) | `https://simf_app.zagali-ict.com` |
+| API | `https://api.simrsnf.com` (health: `/health`) |
+| Control Panel | `https://cp.simrsnf.com` |
+| Website | `https://web.simrsnf.com` |
+| App (web build) | `https://web.simrsnf.com` |
 
 The deployed `appsettings.json` is **overwritten by every deploy** — all real
 configuration comes from Machine-scope `SIMF_*` environment variables.
 
-> The certificate is self-signed on an underscore hostname (no public CA is
-> possible). Each browser must visit the API `/health` once and accept it, or
-> XHR fails with `ERR_CERT_AUTHORITY_INVALID` before CORS is even evaluated.
+> **TLS action owed.** The hosts moved to `simrsnf.com` (D-868), which — unlike
+> the old underscore hostnames — are valid public-CA subjects, so a real
+> certificate is now obtainable (win-acme / Let's Encrypt). Until one is
+> installed the certificate is still self-signed, and each browser must visit the
+> API `/health` once and accept it or XHR fails with
+> `ERR_CERT_AUTHORITY_INVALID` before CORS is even evaluated. Installing a real
+> cert also clears the app's blanket TLS trust-all, which is an NCA handover
+> blocker — see `SIMF-Security-Assessment-2026-06-20.md` H2/C2.
 
 ## 2. Migrate — automatic
 
@@ -67,14 +72,14 @@ never in a tracked file.
 
 | Account | Surface | Password comes from |
 |---|---|---|
-| `superadmin@zagali-ict.com` | Control Panel only | `SIMF_SuperAdmin__TempPassword` |
+| `superadmin@simrsnf.com` | Control Panel only | `SIMF_SuperAdmin__TempPassword` |
 | Demo/visitor accounts | App + Website | `SIMF_Seed__DemoPassword` |
 | Everyone else | — | created in the CP, or self sign-up |
 
 Setting or rotating the super-admin:
 
 ```powershell
-[Environment]::SetEnvironmentVariable('SIMF_SuperAdmin__Email',        'superadmin@zagali-ict.com','Machine')
+[Environment]::SetEnvironmentVariable('SIMF_SuperAdmin__Email',        'superadmin@simrsnf.com','Machine')
 [Environment]::SetEnvironmentVariable('SIMF_SuperAdmin__TempPassword', '<new-strong-password>',    'Machine')
 [Environment]::SetEnvironmentVariable('SIMF_SuperAdmin__PasswordChangeRequired','false',            'Machine')
 # then restart the API app pool
@@ -92,7 +97,7 @@ The API **refuses to start** in Production unless these are set:
 
 ## 5. First sign-in to the Control Panel
 
-`https://simf_cp.zagali-ict.com/login` — email + password, then **one** of:
+`https://cp.simrsnf.com/login` — email + password, then **one** of:
 
 - **The account already has an authenticator** → enter the 6-digit code.
 - **It does not** → the CP withholds the session and forces enrolment: it shows a

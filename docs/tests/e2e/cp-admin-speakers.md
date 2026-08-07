@@ -6,7 +6,7 @@
 | **Route** | `/admin/speakers` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-07-11 (redesign — identity cell, country flag, Sessions link, sectioned form) |
 
 > **Page surface (read from `SpeakersList.razor` + `SpeakersAddEdit.razor` +
@@ -95,7 +95,7 @@ Feature: Speakers CRUD round-trip
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And an Administrator has signed in as superadmin@zagali-ict.com via /login + /login/totp
+  And an Administrator has signed in as superadmin@simrsnf.com via /login + /login/totp
     using a fresh code from the PowerShell Get-Totp helper
   And they have landed on /admin/speakers
   And the grid has finished loading (no "Loading speakers…" indicator)
@@ -589,7 +589,7 @@ Scenario: The Add form is grouped into four titled steps and still saves
 
 - **Manual smoke as canonical-source-of-truth today.** Until Playwright is
   adopted, the canonical "run" of these scenarios is a Chrome DevTools MCP
-  session — sign in as `superadmin@zagali-ict.com` with a fresh `Get-Totp`
+  session — sign in as `superadmin@simrsnf.com` with a fresh `Get-Totp`
   code, walk each scenario, and capture screenshots into
   `docs/screenshots/cp-admin-speakers-{scenario}.png`.
 - **Convert to Playwright** when the runner is adopted: copy each Gherkin

@@ -357,7 +357,7 @@ Closing these is as valuable as fixing the real ones: each is a row that would o
 
 - **Severity** critical · **Surface** security · **Effort** S (<1h)
 - **Reported in** `SIMF-QA-Report-2026-07-24.md` (as: open)
-- **Where it still lives** D:/swt-fix/tools/smoke/smoke.sh is still tracked and unchanged. Line 8 sets SUPER_TOTP_SECRET to a literal base32 TOTP seed; line 22 posts {"email":"superadmin@zagali-ict.com","password":"<SIMF_SuperAdmin__TempPassword>","audience":1}. That is a complete second factor plus first factor for a super-admin identity, committed. (The script targets http://localhost:5175, not a public host, but the credential triple is real and the email matches the production super-admin.)
+- **Where it still lives** D:/swt-fix/tools/smoke/smoke.sh is still tracked and unchanged. Line 8 sets SUPER_TOTP_SECRET to a literal base32 TOTP seed; line 22 posts {"email":"superadmin@simrsnf.com","password":"<SIMF_SuperAdmin__TempPassword>","audience":1}. That is a complete second factor plus first factor for a super-admin identity, committed. (The script targets http://localhost:5175, not a public host, but the credential triple is real and the email matches the production super-admin.)
 - **Fix** Delete the three literals and read them from environment variables (SIMF_SMOKE_EMAIL / _PASSWORD / _TOTP_SECRET), or delete the script. Then the owner must rotate the super-admin password AND re-seed the TOTP secret, and purge both from git history — a code-side deletion alone leaves the working credential in every clone.
 
 ### `#2` — Control-Panel sign-in mints a full token on the password alone when 2FA is not enrolled

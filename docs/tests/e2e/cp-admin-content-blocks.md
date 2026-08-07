@@ -6,7 +6,7 @@
 | **Route** | `/admin/content-blocks` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-07-31 (`FR-1203-markdown-render` — content is plain text) |
 
 > **Page summary.** The Content blocks page (D-173, gap doc G8, PDF §1, §2.1)
@@ -89,7 +89,7 @@ Feature: Content blocks CRUD round-trip
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And an Administrator (superadmin@zagali-ict.com) has signed in via /login + /login/totp
+  And an Administrator (superadmin@simrsnf.com) has signed in via /login + /login/totp
     using a fresh code from the Get-Totp helper
   And they have landed on /admin/content-blocks
   And the grid has finished loading (no "Loading content blocks…" text)

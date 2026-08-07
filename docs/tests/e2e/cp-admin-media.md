@@ -6,7 +6,7 @@
 | **Route** | `/admin/media` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page permission:** `PermissionCatalog.Media.View` gates the page
@@ -61,7 +61,7 @@ Feature: Media Center CRUD round-trip for an Image item
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And an Administrator (superadmin@zagali-ict.com) has signed in via /login + /login/totp
+  And an Administrator (superadmin@simrsnf.com) has signed in via /login + /login/totp
   And they have landed on /admin/media
 
 Scenario: Create an Image item, attach its bitmap, edit it, then delete it

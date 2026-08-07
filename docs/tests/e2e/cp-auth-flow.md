@@ -46,7 +46,7 @@ Feature: Administrator sign-in
 
   Scenario: Super-admin signs in (password + TOTP)
     Given an administrator opens /login
-    When they fill Email="superadmin@zagali-ict.com"
+    When they fill Email="superadmin@simrsnf.com"
     And they fill Password="[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"
     And they click "Sign in"
     Then they land on /login/totp

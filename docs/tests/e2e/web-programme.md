@@ -6,7 +6,7 @@
 | **Route** | `/programme` |
 | **Surface** | Website (public marketing site - `ln-` Bootstrap SSR) |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later - keep steps tool-agnostic) |
-| **Auth setup** | **None - anonymous.** `Programme.razor` calls `SimfPublicClient` (no bearer token); `GET /api/v1/app/programme/sessions` + `GET /api/v1/app/speakers` are `AllowAnonymous()`. (Seed the agenda for the golden path via the Control Panel admin - `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper - creating halls / categories / speakers / typed sessions over the admin API, then drive the public page anonymously.) |
+| **Auth setup** | **None - anonymous.** `Programme.razor` calls `SimfPublicClient` (no bearer token); `GET /api/v1/app/programme/sessions` + `GET /api/v1/app/speakers` are `AllowAnonymous()`. (Seed the agenda for the golden path via the Control Panel admin - `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper - creating halls / categories / speakers / typed sessions over the admin API, then drive the public page anonymously.) |
 | **Design** | Adapted from the app "Programme schedule" (Figma `883-2308`); **no dedicated website frame** (`web/programme.md` §7). |
 | **Last reviewed** | 2026-07-20 |
 

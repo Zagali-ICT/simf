@@ -6,7 +6,7 @@
 | **Route** | `/sessions/{id:guid}` |
 | **Surface** | Website (public marketing site — `ln-` Bootstrap SSR) |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | **None — the page is anonymous.** `SessionDetail.razor` calls `SimfPublicClient` (no bearer); `GET /api/v1/app/programme/sessions/{id}` + the agenda list are `AllowAnonymous()`. Seeding a session (with themes / speakers / language / outcomes / presentation files) uses the Control Panel admin — `superadmin@zagali-ict.com` + TOTP via `Get-Totp` — over the admin API, then the page is driven anonymously. |
+| **Auth setup** | **None — the page is anonymous.** `SessionDetail.razor` calls `SimfPublicClient` (no bearer); `GET /api/v1/app/programme/sessions/{id}` + the agenda list are `AllowAnonymous()`. Seeding a session (with themes / speakers / language / outcomes / presentation files) uses the Control Panel admin — `superadmin@simrsnf.com` + TOTP via `Get-Totp` — over the admin API, then the page is driven anonymously. |
 | **Figma** | KSA Maritime Forum — Session Detail (Desktop AR), node `5991-85840` |
 | **Last reviewed** | 2026-07-31 (FR-702 live notice on the at-a-glance card — informational, gates nothing; D-815) |
 
@@ -91,7 +91,7 @@ Feature: Website session detail renders one published session in full
 Background:
   Given the API is reachable on http://localhost:5175
   And the Website is reachable on http://localhost:5115
-  And — to seed — an Administrator has signed into the Control Panel (superadmin@zagali-ict.com + TOTP via Get-Totp)
+  And — to seed — an Administrator has signed into the Control Panel (superadmin@simrsnf.com + TOTP via Get-Totp)
   And via the admin API a Hall "Main Hall" / "القاعة الرئيسية" (capacity 400) exists
   And a Theme "Maritime Security" / "الأمن البحري" with a description exists and is tagged on the session
   And a Speaker "Dr. Sarah Al-Otaibi" / "د. سارة العتيبي" (rank "Chief Scientist", country Saudi Arabia, a photo) is on the session

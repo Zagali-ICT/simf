@@ -8,7 +8,7 @@
 | **Route** | `/admin/visitors/vip/export` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell driver _(or: Playwright when adopted)_ |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via `Get-Totp` helper |
 | **Last reviewed** | 2026-06-15 |
 
 ## Coverage matrix

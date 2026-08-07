@@ -6,7 +6,7 @@
 | **Route** | `/admin/invitations` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page facts (grounded in `InvitationsList.razor`, post D-256 SimfDataGrid migration; D-353 CrudShell framing + D-356 Excel export):**
@@ -103,7 +103,7 @@ Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
   And an administrator holding the Invitations.View + Invitations.Manage permissions has signed in
-    via /login + /login/totp (superadmin@zagali-ict.com + Get-Totp helper)
+    via /login + /login/totp (superadmin@simrsnf.com + Get-Totp helper)
   And they have landed on /admin/invitations
   And a UserProfile exists with id "11111111-1111-1111-1111-111111111111"
     (English name "Capt. Faisal Al-Harbi", Arabic name "النقيب فيصل الحربي", ProfileType "VIP")

@@ -6,7 +6,7 @@
 | **Route** | `/admin/speaker-presentations` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page shape (read from `SpeakerPresentationsList.razor`, D-228 / FR-407, SIMF-FDS-004 §5.3;
@@ -112,7 +112,7 @@ Feature: Speaker presentation file management round-trip
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And an Administrator (superadmin@zagali-ict.com) has signed in via /login + /login/totp using the Get-Totp helper
+  And an Administrator (superadmin@simrsnf.com) has signed in via /login + /login/totp using the Get-Totp helper
   And at least one active Speaker ("Dr. Speaker") and one active Session ("Keynote") exist
   And the Administrator has landed on /admin/speaker-presentations
   And the page title reads "Speaker presentations"

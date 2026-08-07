@@ -6,7 +6,7 @@
 | **Route** | `/admin/faq` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-07 (D-338 — converted to SimfDataGrid) |
 
 > **Page shape (D-338).** Two-level master-detail using **two `SimfDataGrid`s**: a

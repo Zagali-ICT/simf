@@ -6,7 +6,7 @@
 | **Route** | `/admin/halls/seat-layouts` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-07-27 (B15 remove-layout + A40 Halls-grid row action and client-side validation; Save is now BLOCKED while a client rule fails) |
 
 > **Page shape (read from `HallSeatLayoutEditor.razor`, D-182).** This is a

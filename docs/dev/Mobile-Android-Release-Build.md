@@ -100,5 +100,5 @@ Build command used for the prod-pointed APK:
 ```bash
 flutter build apk --release \
   --dart-define=SIMF_BUILD=prod \
-  --dart-define=SIMF_API_BASE=https://simf_api.zagali-ict.com/api/v1
+  --dart-define=SIMF_API_BASE=https://api.simrsnf.com/api/v1
 ```

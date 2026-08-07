@@ -10,7 +10,7 @@
 | **Route** | `/admin/business-meetings` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell driver |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via `Get-Totp` helper |
 | **Permissions** | `BusinessMeetings.View` (page), `BusinessMeetings.Schedule`, `BusinessMeetings.Cancel` |
 | **API** | `POST /api/v1/admin/business-meetings/list`, `GET /api/v1/admin/business-meetings/{id}`, `POST /api/v1/admin/business-meetings`, `POST /api/v1/admin/business-meetings/{id}/cancel`, `POST /api/v1/admin/business-meetings/export` |
 | **Backed by tests** | `tests/SIMF.Api.Tests/BusinessMeetingsTests.cs`, `tests/SIMF.Api.Tests/BusinessMeetingsExcelTests.cs` |

@@ -6,7 +6,7 @@
 | **Route** | `/admin/session-summaries` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-07-20 (Item #35 — Summary video URL field; E2E-SUM-028) |
 
 > **What this page does (grounded in `SessionSummariesList.razor`).** This is the
@@ -109,7 +109,7 @@ Feature: Session-summary committee desk round-trip
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And an Administrator (superadmin@zagali-ict.com) has signed in via /login + /login/totp
+  And an Administrator (superadmin@simrsnf.com) has signed in via /login + /login/totp
   And the administrator holds SessionSummaries.View, .Edit and .Publish (Administrator = "*")
   And at least one active session exists (e.g. "Naval Propulsion Futures", code "S-101")
   And they have landed on /admin/session-summaries

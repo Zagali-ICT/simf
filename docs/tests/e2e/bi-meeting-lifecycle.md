@@ -12,7 +12,7 @@
 | **Flows** | Speaker meeting (`SpeakerMeetingRequest`) · Delegation meeting (`DelegationMeetingRequest`) |
 | **Surfaces** | Mobile app (requester + receiver) · Control Panel (admin desks) · Website (`/meeting/confirm`) |
 | **Test runner** | xUnit + `WebApplicationFactory` (backend lifecycle) · Flutter widget (app) · Chrome DevTools MCP + PowerShell (CP/Web live) |
-| **Auth setup** | Admin: `superadmin@zagali-ict.com` + TOTP via `Get-Totp`. App: an approved visitor holding `AllowsSpeakerMeeting` / `AllowsDelegationMeeting`. |
+| **Auth setup** | Admin: `superadmin@simrsnf.com` + TOTP via `Get-Totp`. App: an approved visitor holding `AllowsSpeakerMeeting` / `AllowsDelegationMeeting`. |
 | **Statuses** | `Pending=0` · `Accepted=1` · `Rejected=2` · `Cancelled=3` · `AwaitingSpeaker=4` · `Done=5` |
 | **Last reviewed** | 2026-07-25 |
 

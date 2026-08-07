@@ -11,7 +11,7 @@
 | **Route(s)** | representative: `/admin/sessions`, `/account/notifications`, `/admin/sessions` add/edit; app session detail + notifications |
 | **Surface** | Control Panel + Mobile |
 | **Test runner** | Chrome DevTools MCP + PowerShell driver (CP); device/emulator (app) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via `Get-Totp` helper |
 | **Helper under test** | [`SaudiTime.cs`](../../../src/Shared/SIMF.Common/SaudiTime.cs) · unit tests [`SaudiTimeTests.cs`](../../../tests/SIMF.Application.Tests/SaudiTimeTests.cs) |
 | **Last reviewed** | 2026-07-21 (residue sweep: ops/services, sessions/live-hall, session-summaries AI-draft label) |
 

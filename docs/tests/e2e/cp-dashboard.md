@@ -6,7 +6,7 @@
 | **Route** | `/` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later - keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-07-29 |
 
 > **What this page is.** The Dashboard is the **post-sign-in landing page**
@@ -121,13 +121,13 @@ Feature: Dashboard landing
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And the account superadmin@zagali-ict.com is Approved with a paired TOTP authenticator
+  And the account superadmin@simrsnf.com is Approved with a paired TOTP authenticator
 
 Scenario: Approved admin lands on the Dashboard after login + TOTP
   Given the administrator opens http://localhost:5158/
   And they are not yet signed in
   Then they are redirected to /login
-  When they enter email "superadmin@zagali-ict.com" and the account password
+  When they enter email "superadmin@simrsnf.com" and the account password
   And they submit the sign-in form
   Then they are taken to /login/totp
   When they enter the current 6-digit TOTP code from the Get-Totp helper
@@ -313,7 +313,7 @@ Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
   And the three active ProgrammeDay rows of the fixture table above are seeded
-  And superadmin@zagali-ict.com is Approved and passes PermissionCatalog.Statistics.View
+  And superadmin@simrsnf.com is Approved and passes PermissionCatalog.Statistics.View
 
 Scenario: The full programme dashboard renders under the welcome panel
   Given the administrator is signed in with login + TOTP
