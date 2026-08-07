@@ -6,12 +6,12 @@
 | **Date** | 2026-06-20 |
 | **Assessor** | Internal automated white-box + non-destructive recon (Claude Code) |
 | **Authorisation** | Owner-authorised assessment of the owner's own systems |
-| **Targets (live)** | `https://simf.zagali-ict.com` (Website) · `https://simf_api.zagali-ict.com` (API) · `https://simf_app.zagali-ict.com` (App/static) — all → `173.201.37.122` |
+| **Targets (live)** | `https://web.simrsnf.com` (Website, and the Flutter web build served under it) · `https://api.simrsnf.com` (API) · `https://cp.simrsnf.com` (Control Panel) — all resolving to a single IP behind a Host-header reverse proxy |
 | **Codebase** | `D:\SIMF\System\V1.0.0` (.NET 10 API + Blazor CP/Website + Flutter app) |
 | **Posture** | **Non-destructive.** White-box source review + read-only live recon only. No active exploitation, no payloads that mutate data, no brute-force, no DoS against production. |
 | **Standards** | OWASP Top 10 2021 · OWASP API Security Top 10 2023 · OWASP Mobile Top 10 2024 · NCA Essential Cybersecurity Controls (ECC-1:2018) |
 
-> **Note on the third URL.** `simf_web.zagali-ict.com` (as written in the request) **does not resolve** in DNS. The three hosts that resolve are `simf`, `simf_api`, and `simf_app` — all to the same IP behind a Host-header reverse proxy (IIS 10). This report covers those three.
+> **Note on the third URL.** One of the three URLs in the audit request **did not resolve** in DNS at the time of the review. The three hosts that did resolve all pointed at the same IP behind a Host-header reverse proxy (IIS 10), and this report covers those three. Hostnames throughout this report were rewritten to the current `simrsnf.com` estate under D-868; at the time of the review they were the older underscore hosts, which is itself finding **H2** below.
 
 > **🔒 Redaction note (2026-07-27, owner decision).** This report originally quoted three credential values verbatim in findings **C1** and **H1**: the SMTP relay host, the SMTP user / sending address, and the super-admin bootstrap password (twice). Those values were **redacted on 2026-07-27** and replaced in place with the configuration **key path** each one belongs to (`Email:Host`, `Email:User` / `Email:FromAddress`, `SuperAdmin:TempPassword`) plus the `SIMF_`-prefixed environment variable that now supplies it. Every finding keeps its evidence — the file, the line, the key and the impact are unchanged; only the recoverable value is gone.
 >
@@ -136,16 +136,16 @@ Production does **not** load `appsettings.Development.json` (ASPNETCORE_ENVIRONM
 
 ### 🟠 H1 — Super-admin temp password + working TOTP seed committed
 
-**Evidence:** `src/Backend/SIMF.Api/appsettings.json:34-38` — `SuperAdmin.Email = superadmin@zagali-ict.com`, `TempPassword = "[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"`, `TotpSecret = "dbji csx7 …"` (a valid base32 authenticator seed). Seeded by `IdentitySeeder.cs` (`CreateSuperAdminAsync` sets `PasswordChangeRequired=true` at first creation; the TOTP secret is re-asserted on deploy while 2FA is enabled). Override path exists: `Program.cs:36` `AddEnvironmentVariables("SIMF_")` lets `SIMF_SuperAdmin__TempPassword`/`__TotpSecret` win, and `deploy/set-env-api.ps1` lists them as required-but-skips-empty.
+**Evidence:** `src/Backend/SIMF.Api/appsettings.json:34-38` — `SuperAdmin.Email = superadmin@simrsnf.com`, `TempPassword = "[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"`, `TotpSecret = "dbji csx7 …"` (a valid base32 authenticator seed). Seeded by `IdentitySeeder.cs` (`CreateSuperAdminAsync` sets `PasswordChangeRequired=true` at first creation; the TOTP secret is re-asserted on deploy while 2FA is enabled). Override path exists: `Program.cs:36` `AddEnvironmentVariables("SIMF_")` lets `SIMF_SuperAdmin__TempPassword`/`__TotpSecret` win, and `deploy/set-env-api.ps1` lists them as required-but-skips-empty.
 
 **Impact — conditional:**
 - If prod **did** set the `SIMF_SuperAdmin__*` env vars before first boot → the committed values are inert defaults (residual: git exposure of an example). 
-- If prod **did not** (the template skips empty values, so appsettings wins) → the **live super-admin is `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` with a known TOTP seed**. The committed seed yields valid 6-digit codes, so MFA gives zero protection against a repo-access adversary → full `Administrator` (`perm:*`) compromise. `PasswordChangeRequired=true` only forces a reset *after* a successful first login; it doesn't stop the attacker logging in first.
-**Evidence:** `src/Backend/SIMF.Api/appsettings.json:34-38` — `SuperAdmin.Email = superadmin@zagali-ict.com`, `TempPassword = ` **[value redacted 2026-07-27 — `SuperAdmin:TempPassword`, now supplied via `SIMF_SuperAdmin__TempPassword`]** (a short, guessable-class password), `TotpSecret = "dbji csx7 …"` (a valid base32 authenticator seed). Seeded by `IdentitySeeder.cs` (`CreateSuperAdminAsync` sets `PasswordChangeRequired=true` at first creation; the TOTP secret is re-asserted on deploy while 2FA is enabled). Override path exists: `Program.cs:36` `AddEnvironmentVariables("SIMF_")` lets `SIMF_SuperAdmin__TempPassword`/`__TotpSecret` win, and `deploy/set-env-api.ps1` lists them as required-but-skips-empty.
+- If prod **did not** (the template skips empty values, so appsettings wins) → the **live super-admin is `superadmin@simrsnf.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` with a known TOTP seed**. The committed seed yields valid 6-digit codes, so MFA gives zero protection against a repo-access adversary → full `Administrator` (`perm:*`) compromise. `PasswordChangeRequired=true` only forces a reset *after* a successful first login; it doesn't stop the attacker logging in first.
+**Evidence:** `src/Backend/SIMF.Api/appsettings.json:34-38` — `SuperAdmin.Email = superadmin@simrsnf.com`, `TempPassword = ` **[value redacted 2026-07-27 — `SuperAdmin:TempPassword`, now supplied via `SIMF_SuperAdmin__TempPassword`]** (a short, guessable-class password), `TotpSecret = "dbji csx7 …"` (a valid base32 authenticator seed). Seeded by `IdentitySeeder.cs` (`CreateSuperAdminAsync` sets `PasswordChangeRequired=true` at first creation; the TOTP secret is re-asserted on deploy while 2FA is enabled). Override path exists: `Program.cs:36` `AddEnvironmentVariables("SIMF_")` lets `SIMF_SuperAdmin__TempPassword`/`__TotpSecret` win, and `deploy/set-env-api.ps1` lists them as required-but-skips-empty.
 
 **Impact — conditional:**
 - If prod **did** set the `SIMF_SuperAdmin__*` env vars before first boot → the committed values are inert defaults (residual: git exposure of an example). 
-- If prod **did not** (the template skips empty values, so appsettings wins) → the **live super-admin is `superadmin@zagali-ict.com` with the committed `SuperAdmin:TempPassword` [value redacted 2026-07-27] and a known TOTP seed**. The committed seed yields valid 6-digit codes, so MFA gives zero protection against a repo-access adversary → full `Administrator` (`perm:*`) compromise. `PasswordChangeRequired=true` only forces a reset *after* a successful first login; it doesn't stop the attacker logging in first.
+- If prod **did not** (the template skips empty values, so appsettings wins) → the **live super-admin is `superadmin@simrsnf.com` with the committed `SuperAdmin:TempPassword` [value redacted 2026-07-27] and a known TOTP seed**. The committed seed yields valid 6-digit codes, so MFA gives zero protection against a repo-access adversary → full `Administrator` (`perm:*`) compromise. `PasswordChangeRequired=true` only forces a reset *after* a successful first login; it doesn't stop the attacker logging in first.
 
 **This is the single most important thing to verify on the server.** It is rated High but is **Critical** in the un-overridden case.
 
@@ -163,7 +163,7 @@ Production does **not** load `appsettings.Development.json` (ASPNETCORE_ENVIRONM
 
 **OWASP** A02 · **NCA ECC** 2-8 Cryptography, 2-5 Network Security. NCA requires valid, trusted TLS for internet-facing services.
 
-**Remediation.** Obtain a publicly-trusted CA certificate (e.g. Let's Encrypt/commercial) for **DNS-valid hostnames without underscores** (e.g. `api.zagali-ict.com`, `app.zagali-ict.com`). Migrate the hosts/proxy bindings, update the app/CP/Web base URLs, then remove the C2 bypass. Set HSTS to ≥1 year with `includeSubDomains` once all subdomains are HTTPS.
+**Remediation.** Obtain a publicly-trusted CA certificate (e.g. Let's Encrypt/commercial) for **DNS-valid hostnames without underscores** (e.g. `api.simrsnf.com`, `web.simrsnf.com`). Migrate the hosts/proxy bindings, update the app/CP/Web base URLs, then remove the C2 bypass. Set HSTS to ≥1 year with `includeSubDomains` once all subdomains are HTTPS.
 
 ---
 

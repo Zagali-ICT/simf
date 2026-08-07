@@ -6,7 +6,7 @@
 | **Route** | `/admin/others` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `PermissionCatalog.Others.View` (`Others.View`) on the page; row/action endpoints additionally gated by `Others.Create` / `Others.Edit` / `Others.Delete` / `Others.Export` / `Others.Import` / `Others.RegisterOnsite` |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
@@ -66,7 +66,7 @@ Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
   And an Administrator has signed in via /login + /login/totp using
-      "superadmin@zagali-ict.com" and a fresh code from the Get-Totp helper
+      "superadmin@simrsnf.com" and a fresh code from the Get-Totp helper
   And at least one Other profile-type is seeded (via /admin/profile-types/other)
   And they have landed on /admin/others
   And the grid title reads "Others" and a POST /account/api/admin/others/list returned 200

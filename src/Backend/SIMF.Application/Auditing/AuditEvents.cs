@@ -79,6 +79,12 @@ public static class AuditEvents
     public const string PasswordChanged = "PasswordChange.Succeeded";
     public const string PasswordChangeFailed = "PasswordChange.Failed";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
+
+    // The configured SuperAdmin:Email did not match any account while OTHER
+    // Administrator accounts already existed, so seeding created a second
+    // wildcard-privilege account beside them instead of moving the first. Almost
+    // always a changed SuperAdmin:Email against an existing database.
+    public const string SuperAdminDuplicateSeeded = "Admin.SuperAdminDuplicateSeeded";
     // NCA — the daily sweep disabled an account for inactivity beyond the
     // configured threshold. A system action (no actor).
     public const string AccountDormantDisabled = "Account.DormantDisabled";

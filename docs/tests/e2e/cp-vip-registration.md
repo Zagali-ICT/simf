@@ -8,7 +8,7 @@
 | **Route** | `/admin/visitors/vip` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell driver _(or: Playwright when adopted)_ |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via `Get-Totp` helper |
 | **Last reviewed** | 2026-07-21 (VIP edit — page is now the VIP/VVIP list) |
 
 > **What this page is (2026-07-21).** `/admin/visitors/vip` is now a **VIP/VVIP

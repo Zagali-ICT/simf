@@ -895,7 +895,7 @@ connection string grows an inline password.
 | Website | http://localhost:5115 |
 | API health | http://localhost:5175/health |
 | CP sign-in | http://localhost:5158/login |
-| Default super-admin | `superadmin@zagali-ict.com` (`SuperAdmin:Email`) |
+| Default super-admin | `superadmin@simrsnf.com` (`SuperAdmin:Email`) |
 | Super-admin password | not committed, set `SIMF_SuperAdmin__TempPassword` (section 20.3) |
 | TOTP secret (dev) | not committed, set `SIMF_SuperAdmin__TotpSecret` (section 20.3) |
 

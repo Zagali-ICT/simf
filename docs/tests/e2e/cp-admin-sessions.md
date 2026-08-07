@@ -6,7 +6,7 @@
 | **Route** | `/admin/sessions` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-08-04 (arrival-grace override: added D-839 SES-057..059, its PUT round-trip fixed D-842 SES-060) |
 
 > **Permissions.** The page is gated `@attribute [RequirePermission(PermissionCatalog.Sessions.View)]`

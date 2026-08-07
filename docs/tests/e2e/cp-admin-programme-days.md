@@ -6,7 +6,7 @@
 | **Route** | `/admin/programme-days` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-19 (D-452 — programme days + logo) |
 
 > **Page background.** D-452 (Figma 883:2308 "تفاصيل اليوم") — CP management for the

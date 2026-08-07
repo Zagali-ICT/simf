@@ -6,7 +6,7 @@
 | **Route** | `/admin/admins/pending` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-03 |
 
 > **Page-required permission:** `PermissionCatalog.Admins.View`
@@ -52,10 +52,10 @@ Feature: Pending-admin approval golden path
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And an Administrator has signed in as superadmin@zagali-ict.com via /login + /login/totp
+  And an Administrator has signed in as superadmin@simrsnf.com via /login + /login/totp
     using the TOTP value produced by the PowerShell Get-Totp helper
   And at least one admin account exists in AccountState=PendingApproval
-    (e.g. seed candidate "pending.admin@zagali-ict.com" / "Pending Admin")
+    (e.g. seed candidate "pending.admin@simrsnf.com" / "Pending Admin")
   And they have landed on /admin/admins/pending
 
 Scenario: Approve a pending admin
@@ -63,13 +63,13 @@ Scenario: Approve a pending admin
   And the SimfBanner title reads "Pending staff approvals"
   And the supporting line reads "Approval mints the QR badge and unlocks sign-in (CP for staff, event entry for visitors). Rejection records a reason for audit."
   And the grid columns are Email, Display name, Created
-  When the administrator clicks "Approve" on the row for "pending.admin@zagali-ict.com"
+  When the administrator clicks "Approve" on the row for "pending.admin@simrsnf.com"
   Then a SimfConfirm dialog opens titled "Approve administrator account"
-  And its message names the candidate: "You are about to approve Pending Admin (pending.admin@zagali-ict.com). Approving grants Control Panel access and mints the QR badge."
+  And its message names the candidate: "You are about to approve Pending Admin (pending.admin@simrsnf.com). Approving grants Control Panel access and mints the QR badge."
   And no request has been sent yet
   When they click "Confirm approval"
   Then a POST /account/api/admin/admins/{id}/approve fires and returns 200 with ApiResult.Success=true
-  And a green toast (SimfAlert variant="success") reads "Approved pending.admin@zagali-ict.com."
+  And a green toast (SimfAlert variant="success") reads "Approved pending.admin@simrsnf.com."
   And the list reloads (POST /account/api/admin/admins/pending/list returns 200)
   And the grid shows {N - 1} rows
   And the approved row no longer appears in the pending queue
@@ -91,10 +91,10 @@ Scenario: Approve a pending admin
 ```gherkin
 Scenario: Reject a pending admin via the reason modal
   Given the administrator is on /admin/admins/pending
-  And a pending row exists for "reject.me@zagali-ict.com"
+  And a pending row exists for "reject.me@simrsnf.com"
   When the administrator clicks "Reject" on that row
   Then the reject modal opens titled "Reject account"
-  And the body reads "Reject reject.me@zagali-ict.com? This sets the account to Rejected and writes an audit row."
+  And the body reads "Reject reject.me@simrsnf.com? This sets the account to Rejected and writes an audit row."
   And a "Reason" textarea is shown with the helper "Between 10 and 500 characters. Shown to operators in the audit log."
   And the modal "Reject" submit button is disabled (reason is empty)
   When the administrator types Reason="Duplicate of an existing staff account; please use the original."
@@ -102,7 +102,7 @@ Scenario: Reject a pending admin via the reason modal
   When they click "Reject"
   Then a POST /account/api/admin/admins/{id}/reject fires with body { Reason: "Duplicate of an existing staff account; please use the original." } and returns 200
   And the modal closes
-  And a green toast reads "Rejected reject.me@zagali-ict.com."
+  And a green toast reads "Rejected reject.me@simrsnf.com."
   And the list reloads and the row no longer appears
 ```
 
@@ -384,7 +384,7 @@ _Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid 
 ```gherkin
 Scenario: The administrator changes their mind at the confirmation
   Given the administrator is on /admin/admins/pending
-  And the grid shows a row for "pending.admin@zagali-ict.com"
+  And the grid shows a row for "pending.admin@simrsnf.com"
   When they click "Approve" on that row
   Then a SimfConfirm dialog opens titled "Approve administrator account"
   When they click "Cancel"

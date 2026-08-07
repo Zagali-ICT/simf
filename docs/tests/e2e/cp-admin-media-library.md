@@ -11,7 +11,7 @@
 | **Route** | `/admin/media-library` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell driver _(or: Playwright when adopted)_ |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via `Get-Totp` helper |
 | **Permissions** | page: `MediaLibrary.View`; deactivate/restore actions: `MediaLibrary.Manage` |
 | **Key API** | `POST /account/api/admin/assets/list`, `GET /account/api/admin/assets/item/{id}`, `DELETE …/item/{id}`, `POST …/item/{id}/restore` |
 | **Last reviewed** | `2026-06-10` |

@@ -6,7 +6,7 @@
 | **Route** | `/admin/others/pending` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-03 |
 
 > **Page permission:** `@attribute [RequirePermission(PermissionCatalog.Others.View)]`.
@@ -404,7 +404,7 @@ confirmed in the manual Chrome DevTools MCP smoke.
 - **Manual smoke is the canonical run today.** Until Playwright is adopted, walk each
   scenario in a Chrome DevTools MCP session per the
   [SIMF table/smoke pattern](../../dev/SIMF_TABLE_PATTERN.md), signing in with
-  `superadmin@zagali-ict.com` + the `Get-Totp` helper, and capture screenshots into
+  `superadmin@simrsnf.com` + the `Get-Totp` helper, and capture screenshots into
   `docs/screenshots/cp-admin-others-pending-*.png`.
 - **Convert to Playwright** when the runner lands: copy each Gherkin block into a
   `.feature` file under `tests/SIMF.E2E.Tests/` (project to be created) plus a

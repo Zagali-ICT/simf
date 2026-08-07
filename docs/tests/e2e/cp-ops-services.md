@@ -8,7 +8,7 @@
 | **Permission** | `ServicesMonitor.View` |
 | **Backend** | `GET /account/api/admin/ops/workers` (BFF) which proxies `GET /api/v1/admin/ops/workers` |
 | **Test runner** | Chrome DevTools MCP + PowerShell driver |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via `Get-Totp` helper |
 | **Last reviewed** | 2026-07-18 |
 
 ## Coverage matrix

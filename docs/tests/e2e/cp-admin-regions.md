@@ -6,7 +6,7 @@
 | **Route** | `/admin/regions` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-30 (D-547 — Region lookup shipped) |
 
 > **Page permission:** the page is gated by `@attribute [RequirePermission(PermissionCatalog.Regions.View)]`.

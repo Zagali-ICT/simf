@@ -23,7 +23,7 @@ the fetch can work, for the owner/infra team to approve or decline.
 ## Request
 
 Allow **outbound HTTPS (TCP 443)** from the **SIMF API host** (the backend
-serving `simf_cp.zagali-ict.com` / `simf_api.zagali-ict.com`) to:
+serving `cp.simrsnf.com` / `api.simrsnf.com`) to:
 
 | Host | Role | Necessity |
 |------|------|-----------|

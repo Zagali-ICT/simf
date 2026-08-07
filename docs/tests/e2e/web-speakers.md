@@ -6,7 +6,7 @@
 | **Route** | `/speakers` |
 | **Surface** | Website (public marketing site — `ln-` Bootstrap SSR) |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | **None — the page is anonymous.** `Speakers.razor` calls `SimfPublicClient`, which carries **no bearer token**; `GET /api/v1/speakers` is `AllowAnonymous()`. A signed-in session is neither required nor read. (Seeding speakers for the golden path uses the Control Panel admin — `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper — to create active speakers over the admin API, then the public page is driven anonymously.) |
+| **Auth setup** | **None — the page is anonymous.** `Speakers.razor` calls `SimfPublicClient`, which carries **no bearer token**; `GET /api/v1/speakers` is `AllowAnonymous()`. A signed-in session is neither required nor read. (Seeding speakers for the golden path uses the Control Panel admin — `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper — to create active speakers over the admin API, then the public page is driven anonymously.) |
 | **Figma** | KSA Maritime Forum — Speakers (Desktop AR), node `5840-26779` (card `5840:26994` + content `5840:26996`; event band `5840:26981`) |
 | **Last reviewed** | 2026-07-15 |
 
@@ -83,7 +83,7 @@ Background:
   Given the API is reachable on http://localhost:5175
   And the Website is reachable on http://localhost:5115
   And — to seed speakers — an Administrator has signed into the Control Panel
-      (superadmin@zagali-ict.com + TOTP via the Get-Totp helper)
+      (superadmin@simrsnf.com + TOTP via the Get-Totp helper)
   And via the admin API an active Speaker "Dr. Sarah Al-Otaibi" / "د. سارة العتيبي"
       exists with rank "Chief Scientist" / "كبيرة العلماء", country "Saudi Arabia" /
       "المملكة العربية السعودية", display order 0, and an uploaded SpeakerPhoto asset

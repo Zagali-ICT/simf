@@ -6,7 +6,7 @@
 | **Route** | `/admin/attendees` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-02 |
 
 > **Page nature.** This is a **read-only** roster grid (D-134 Sprint A): a
@@ -328,7 +328,7 @@ Scenario: API 500 on /list surfaces the bilingual fallback toast
 
 ```gherkin
 Scenario: Admin accounts never appear in the attendee roster
-  Given at least one Administrator account exists (e.g. superadmin@zagali-ict.com)
+  Given at least one Administrator account exists (e.g. superadmin@simrsnf.com)
   When the administrator opens /admin/attendees with no filters
   Then no row for an Administrator account appears in the grid
   And the total count excludes admins

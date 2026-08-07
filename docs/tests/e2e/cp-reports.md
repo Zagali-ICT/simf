@@ -6,7 +6,7 @@
 | **Routes** | `/admin/reports`, `/admin/reports/attendance`, `/admin/reports/registrations`, `/admin/reports/gates` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell driver |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via `Get-Totp` helper |
 | **Last reviewed** | 2026-07-30 |
 
 ## Coverage matrix
@@ -45,7 +45,7 @@ Feature: Reports hub
   So that I do not have to remember each route
 
 Scenario: The hub shows a card per permitted report
-  Given I am signed in as "superadmin@zagali-ict.com"
+  Given I am signed in as "superadmin@simrsnf.com"
   When I open "/admin/reports"
   Then the page title is "Reports"
   And I see a card linking to "/admin/reports/attendance"
@@ -58,7 +58,7 @@ Scenario: The hub shows a card per permitted report
 
 ```gherkin
 Scenario: The attendance report loads
-  Given I am signed in as "superadmin@zagali-ict.com"
+  Given I am signed in as "superadmin@simrsnf.com"
   When I open "/admin/reports/attendance"
   Then the grid shows columns "Code", "Session", "Hall", "Start", "Attendees", "Inside now"
   And the totals row shows "Sessions", "Distinct attendees" and "Inside now"
@@ -74,7 +74,7 @@ Feature: Inclusive Saudi date range
 
 Scenario: A session on the To day appears
   Given a session exists starting at 12:00 Riyadh on "23-11-2026"
-  And I am signed in as "superadmin@zagali-ict.com"
+  And I am signed in as "superadmin@simrsnf.com"
   When I open "/admin/reports/attendance"
   And I set From to "23-11-2026" and To to "23-11-2026"
   And I press "Apply"

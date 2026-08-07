@@ -6,7 +6,7 @@
 | **Route** | `/admin/profile-types/visitor` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `ProfileTypes.View` (page) · `ProfileTypes.Create` / `.Edit` / `.Delete` (actions) |
 | **Last reviewed** | 2026-06-02 |
 
@@ -80,7 +80,7 @@ Feature: Visitor profile types CRUD round-trip
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And an Administrator (superadmin@zagali-ict.com) holding ProfileTypes.* has signed in
+  And an Administrator (superadmin@simrsnf.com) holding ProfileTypes.* has signed in
     via /login + /login/totp using the Get-Totp helper
   And they have landed on /admin/profile-types/visitor
 

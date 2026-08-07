@@ -6,7 +6,7 @@
 | **Route** | `/admin/booths` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Surface map (verified against source).** Page:
@@ -124,7 +124,7 @@ Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
   And the Website is reachable on http://localhost:5115
-  And an Administrator signs in as superadmin@zagali-ict.com using a TOTP from the Get-Totp helper
+  And an Administrator signs in as superadmin@simrsnf.com using a TOTP from the Get-Totp helper
   And they have landed on /admin/booths
   And the page issued POST /account/api/admin/booths/list and rendered the grid (or the SimfEmptyState)
 

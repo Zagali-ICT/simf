@@ -6,7 +6,7 @@
 | **Route** | `/admin/exhibitors` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5) |
 
 > **Page permission:** the page is gated by `@attribute [RequirePermission(PermissionCatalog.Exhibitors.View)]`.
@@ -130,7 +130,7 @@ Scenario: Create, edit, then deactivate one exhibitor
 - Network: every `/account/api/admin/exhibitors/*` call returns 200
 - Audit rows: `OperationLog` rows with `Event = 'Exhibitor.Created'`, `'Exhibitor.Updated'`,
   and `'Exhibitor.Deactivated'`, each carrying the actor's id (the
-  `superadmin@zagali-ict.com` user id)
+  `superadmin@simrsnf.com` user id)
 
 ### E2E-EXH-002 — Add an exhibitor (create-only, all fields)
 

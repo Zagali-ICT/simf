@@ -6,7 +6,7 @@
 | **Route** | `/admin/venue-map` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page background.** P2.5 (D-230) — CP editor for the 2D venue map
@@ -66,7 +66,7 @@ Feature: Venue-map node CRUD round-trip
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And an Administrator has signed in as superadmin@zagali-ict.com via /login + /login/totp (Get-Totp helper)
+  And an Administrator has signed in as superadmin@simrsnf.com via /login + /login/totp (Get-Totp helper)
   And they have landed on /admin/venue-map
   And the page issued POST /account/api/admin/venue-map/list (200)
   And the picker loads POST /account/api/admin/halls/list and POST /account/api/admin/booths/list both returned 200
@@ -480,7 +480,7 @@ Scenario: A bad upload is rejected without creating anything
 
 - **Manual smoke as canonical-source-of-truth today.** Until Playwright is
   adopted, the canonical "run" of these scenarios is a Chrome DevTools MCP
-  session: sign in as `superadmin@zagali-ict.com` via `/login` + `/login/totp`
+  session: sign in as `superadmin@simrsnf.com` via `/login` + `/login/totp`
   (TOTP from the `Get-Totp` helper), walk each scenario, and capture screenshots
   into `docs/screenshots/cp-admin-venue-map-{scenario}.png`.
 - **Page reference doc.** The page reference doc lives at

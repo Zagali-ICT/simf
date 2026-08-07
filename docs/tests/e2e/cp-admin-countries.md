@@ -6,7 +6,7 @@
 | **Route** | `/admin/countries` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `Countries.View` (page gate). Create/Edit/Deactivate actions hit endpoints gated by `Countries.Create` / `Countries.Edit` / `Countries.Delete`. |
 | **Last reviewed** | 2026-07-28 |
 

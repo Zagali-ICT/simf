@@ -6,7 +6,7 @@
 | **Route** | `/admin/print-bag` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-02 |
 
 > **Page permission:** `[RequirePermission(PermissionCatalog.Attendees.PrintBag)]`
@@ -50,7 +50,7 @@ Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
   And an Administrator has signed in via /login + /login/totp using
-      superadmin@zagali-ict.com and a fresh Get-Totp code
+      superadmin@simrsnf.com and a fresh Get-Totp code
   And they have landed on /admin/print-bag
 
 Scenario: Look up a known QR id, render the badge, and print

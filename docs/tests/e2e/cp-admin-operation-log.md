@@ -6,7 +6,7 @@
 | **Route** | `/admin/operation-log` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-03 |
 
 > **Page contract (grounded in source).** Read-only viewer over the durable
@@ -85,7 +85,7 @@ Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
   And an Administrator has signed in via /login + /login/totp using
-      superadmin@zagali-ict.com and a TOTP from the Get-Totp helper
+      superadmin@simrsnf.com and a TOTP from the Get-Totp helper
   And they have landed on /admin/operation-log
 
 Scenario: Default render, filter, open one entry, then clear
@@ -170,9 +170,9 @@ Scenario: From / To date range filters by TimestampUtc, To-day inclusive
 ```gherkin
 Scenario: Subject email contains filter narrows by subject
   Given entries exist for several subject emails
-  When the administrator types "superadmin@zagali-ict.com" into "Subject email contains"
+  When the administrator types "superadmin@simrsnf.com" into "Subject email contains"
   And clicks "Apply filters"
-  Then a POST .../operation-log/list fires with Filters.subjectEmail="superadmin@zagali-ict.com"
+  Then a POST .../operation-log/list fires with Filters.subjectEmail="superadmin@simrsnf.com"
   And only rows whose Subject email contains that string render
   And rows with a null Subject email (shown as "—") are excluded
 ```

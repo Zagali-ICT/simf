@@ -7,8 +7,8 @@
 
 - **Figma side:** each frame pulled via the Figma MCP (`get_screenshot` / `get_metadata`)
   at its native resolution. Frames are **375-wide phone screens**.
-- **App side:** the **deployed Flutter web app** (`https://simf_app.zagali-ict.com`,
-  pointed at the **prod API** `https://simf_api.zagali-ict.com/api/v1`) rendered in Chrome
+- **App side:** the **deployed Flutter web app** (`https://web.simrsnf.com`,
+  pointed at the **prod API** `https://api.simrsnf.com/api/v1`) rendered in Chrome
   at a **375 CSS-px viewport** — matched to the Figma frame width so the two are
   apples-to-apples. Navigated by go_router hash deep-links (`/#/<route>`); guest session.
 - **Comparison:** element-by-element (layout, order, RTL inline direction, spacing,

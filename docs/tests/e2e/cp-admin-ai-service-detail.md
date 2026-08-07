@@ -6,7 +6,7 @@
 | **Route** | `/admin/ai/services/{feature}` (e.g. `/admin/ai/services/SessionSummary`) |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-22 (CP Phase-2 — new page) |
 
 > **Page permission:** `@attribute [RequirePermission(PermissionCatalog.AiPrompts.View)]`.

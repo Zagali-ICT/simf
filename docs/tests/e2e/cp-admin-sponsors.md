@@ -6,7 +6,7 @@
 | **Route** | `/admin/sponsors` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-07-11 (D-740 — logo thumbnail identity cell + URL link) |
 
 > **Page permission:** the page is gated by `@attribute [RequirePermission(PermissionCatalog.Sponsors.View)]`.
@@ -147,7 +147,7 @@ Scenario: Create, edit, then delete one sponsor
 - Network: every `/account/api/admin/sponsors/*` call returns 200
 - Audit rows: `OperationLog` rows with `Event = 'Sponsor.Created'`, `'Sponsor.Updated'`,
   and `'Sponsor.Deactivated'`, each carrying the actor's id (the
-  `superadmin@zagali-ict.com` user id)
+  `superadmin@simrsnf.com` user id)
 
 ### E2E-SPN-002 — Add a sponsor (create-only)
 

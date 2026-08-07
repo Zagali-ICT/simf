@@ -6,7 +6,7 @@
 | **Route** | `/admin/admins` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
-| **Auth setup** | `superadmin@zagali-ict.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` / `[REDACTED - supply via SIMF_SuperAdmin__TempPassword]` + TOTP via the `Get-Totp` helper |
 | **Page permission** | `PermissionCatalog.Admins.View` (`@attribute [RequirePermission(PermissionCatalog.Admins.View)]`) |
 | **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
@@ -205,7 +205,7 @@ Scenario: Select three rows and bulk-delete with one reason
 
 ```gherkin
 Scenario: The actor's own row is silently skipped
-  Given the signed-in administrator's own row (superadmin@zagali-ict.com) is in the grid
+  Given the signed-in administrator's own row (superadmin@simrsnf.com) is in the grid
   When they tick only their own row
   And click the toolbar "Delete" button, type a valid reason, and submit
   Then the API returns HTTP 200 with ApiResult.Data { Deleted:0, Skipped:1 }

@@ -4,7 +4,7 @@
 |--|--|
 | **Route** | `/admin/hall-availability` |
 | **Surface** | Control Panel |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-07-09 (D-715 — item 7, FDS-013 §15 GAP-1) |
 
 > **What this page does (grounded in `HallAvailabilityPage.razor`, D-715).**

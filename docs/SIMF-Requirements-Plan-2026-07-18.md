@@ -351,9 +351,10 @@ the release worker (W2-5) keys off it.**
    متوقع / An unexpected error occurred." **(#2)** another create-path 500 (Identity
    transaction, or the PII blind-index if the encryption key is missing on prod). **(#3)**
    real transport failure — surfaces as "تعذر الاتصال بالخادم / check your internet"; prod
-   base URL uses an **underscore hostname** `simf_api.zagali-ict.com` (spec-invalid, some
+   base URL at the time used an **underscore hostname** (spec-invalid, some
    Android stacks reject) on a **self-signed cert** (app trusts all, so TLS isn't the app
-   blocker; a real CA cert on a valid host is still owed).
+   blocker; a real CA cert on a valid host is still owed). The hosts have since moved to
+   `api.simrsnf.com` / `cp.simrsnf.com` / `web.simrsnf.com`, which are valid CA subjects.
    **OWNER CONFIRMED the on-device text = "could not reach the server, please try again."**
    That is the app's `errorServerUnavailable`/`networkErrorBody` path (non-JSON response or
    transport failure) — **NOT** the "unexpected error occurred" a caught backend 500
@@ -364,7 +365,7 @@ the release worker (W2-5) keys off it.**
    **reverse-proxy + API logs** for `POST /api/v1/app/account/user-profile` at a failed
    attempt — 502 (backend crash/restart), 504 (create path hangs — cross-DB
    transaction/sequence/deadlock), or a non-JSON error page? Verify the create path isn't
-   timing out and the underscore host `simf_api.zagali-ict.com` + self-signed cert aren't
+   timing out and that the host + self-signed cert aren't
    mishandled by the proxy/DNS. Cheap parallel rule-out: `SELECT 1 FROM sys.sequences WHERE
    name='RegistrationReferenceSequence'` on prod `Simf_Data`. Code hardening (either way):
    surface the real backend status/code instead of masking every failure as "couldn't reach

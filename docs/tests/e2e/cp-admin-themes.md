@@ -6,7 +6,7 @@
 | **Route** | `/admin/themes` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
-| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Auth setup** | `superadmin@simrsnf.com` + TOTP via the `Get-Totp` helper |
 | **Last reviewed** | 2026-06-26 (D-506 — Excel description field-drop fix) |
 
 > **Permission gate:** the page carries `@attribute [RequirePermission(PermissionCatalog.Themes.View)]`
@@ -62,7 +62,7 @@ Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
   And the Website is reachable on http://localhost:5115
-  And an Administrator signs in at /login with superadmin@zagali-ict.com
+  And an Administrator signs in at /login with superadmin@simrsnf.com
   And they complete TOTP at /login/totp using the Get-Totp helper
   And they navigate to /admin/themes
   And the page title reads "Themes & pillars · SIMF"
