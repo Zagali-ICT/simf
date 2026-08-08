@@ -171,8 +171,8 @@ stages:
     #     unreachable, so a provisioning problem can never masquerade as a passing
     #     test gate. `sqllocaldb` is the standard Chocolatey package; the
     #     bootstrap URL is Chocolatey's official installer.
-    #     DISABLED 2026-07-01 (enabled:false) together with the test gate below —
-    #     it exists only to support the integration tests. Re-enable both together. ---
+    #     RE-ENABLED 2026-08-08 together with the test gate below. It exists only
+    #     to support SIMF.Api.Tests, which hosts the API against LocalDB. ---
     - powershell: |
         $ErrorActionPreference = 'Stop'
 
@@ -219,20 +219,30 @@ stages:
           throw 'MSSQLLocalDB is not Running - the integration tests cannot reach SQL Server.'
         }
       displayName: 'Provision SQL Server LocalDB (integration tests)'
-      enabled: false
 
-    # --- Test gate (NCA Secure App-Dev Standard §3-20; SIMF-OPS-001 §5) — a
-    #     failing test stops the pipeline. RE-ENABLED 2026-06-21 (had been
-    #     temporarily disabled 2026-06-05 for speed). SIMF.Api.Tests runs ~13 min.
-    #     TEMPORARILY DISABLED 2026-07-01 (enabled:false) by owner request. Flip
-    #     `enabled` back to true to restore the gate.
+    # --- Test gate, part 1: the FAST suites (NCA Secure App-Dev Standard §3-20;
+    #     SIMF-OPS-001 §5). A failing test stops the pipeline.
     #
-    #     WHILE THIS IS OFF, NO TEST GATES ANYTHING IN CI. That now includes the
-    #     QA programme's guards — the E2E-catalogue integrity ratchet, the CP
-    #     permission/nav gates, and the WS4 browser element sweep pass or fail
-    #     only on a developer's machine. It is also how /admin/companies stayed
-    #     marked "Real" in PAGE-INDEX for eight weeks after its page was deleted:
-    #     the check that catches it exists, but nothing runs it.
+    #     RE-ENABLED 2026-08-08 after measuring what was actually slow. The gate
+    #     was disabled 2026-07-01 for speed, and because it was ONE all-or-nothing
+    #     step, 922 tests that finish in under a minute went off with the one
+    #     suite that does not:
+    #
+    #       SIMF.Domain.Tests            17 tests
+    #       SIMF.Application.Tests      119 tests
+    #       SIMF.ApiClient.Tests         50 tests
+    #       SIMF.ControlPanel.Tests     588 tests   <- the CP permission + nav gates
+    #       SIMF.Web.Tests              140 tests
+    #       SIMF.E2E.Tests                8 tests   (227 skipped with no QA stack)
+    #
+    #     That is what left the CP permission/nav gates, the E2E-catalogue
+    #     integrity ratchet and the WS4 element sweep passing or failing only on
+    #     a developer's machine. It is also how /admin/companies stayed marked
+    #     "Real" in PAGE-INDEX for eight weeks after its page was deleted: the
+    #     check that catches it exists, but nothing ran it.
+    #
+    #     All six suites were verified green on this tree before this step was
+    #     re-enabled. SIMF.Api.Tests is excluded here and gated separately below.
     #
     #     `tests/**/*.csproj` already picks up tests/SIMF.E2E.Tests (WS4,
     #     Playwright), and that project needs no extra setup here: with no QA
@@ -243,11 +253,51 @@ stages:
     #       pwsh tests/SIMF.E2E.Tests/bin/$(buildConfiguration)/net10.0/playwright.ps1 install chromium
     #     ---
     - task: DotNetCoreCLI@2
-      displayName: 'Run all tests'
-      enabled: false
+      displayName: 'Run tests (fast suites)'
       inputs:
         command: 'test'
-        projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'
+        # Listed explicitly rather than as `tests/**/*.csproj` minus an
+        # exclusion. The task's `projects` input is documented as a wildcard
+        # string; the semicolon-separated `!negation` form is documented for
+        # `packagesToPack`/`packagesToPush`, NOT for this input, so relying on it
+        # here would be guessing at the parser. An explicit list also fails
+        # loudly when a project is renamed, where a silent glob would just run
+        # one suite fewer. A NEW test project must be added to this list.
+        projects: |
+          $(Build.SourcesDirectory)/tests/SIMF.Domain.Tests/SIMF.Domain.Tests.csproj
+          $(Build.SourcesDirectory)/tests/SIMF.Application.Tests/SIMF.Application.Tests.csproj
+          $(Build.SourcesDirectory)/tests/SIMF.ApiClient.Tests/SIMF.ApiClient.Tests.csproj
+          $(Build.SourcesDirectory)/tests/SIMF.ControlPanel.Tests/SIMF.ControlPanel.Tests.csproj
+          $(Build.SourcesDirectory)/tests/SIMF.Web.Tests/SIMF.Web.Tests.csproj
+          $(Build.SourcesDirectory)/tests/SIMF.E2E.Tests/SIMF.E2E.Tests.csproj
+        arguments: '--configuration $(buildConfiguration)'
+
+    # --- Test gate, part 2: SIMF.Api.Tests (2272 integration tests).
+    #
+    #     SEPARATE FROM THE STEP ABOVE FOR TWO MEASURED REASONS:
+    #
+    #     1. It is LOAD-SENSITIVE. On the same tree and the same DLLs it reports
+    #        6 failures in 1h22m when anything else builds or tests on the agent,
+    #        and 0 failures in 38m20s when it runs alone. The spurious failures
+    #        land in classes that share the database through SimfApiFactory
+    #        (RolesExcelTests, OrganizationHeroVideoTests); the tell is the status
+    #        code, because interference gives 401 while a real permission
+    #        regression gives 403. A gate that fails at random gets ignored and
+    #        then switched off, which is how this one ended up disabled.
+    #     2. It needs LocalDB, provisioned by the step above.
+    #
+    #     `condition` keeps it off pull-request validation, so nobody waits ~38
+    #     minutes on every push, and ON for the branch builds that gate a merge.
+    #     Change the condition rather than adding `enabled: false`: a disabled
+    #     step is invisible, a condition states its own rule.
+    - task: DotNetCoreCLI@2
+      displayName: 'Run tests (SIMF.Api.Tests, integration)'
+      condition: >-
+        and(succeeded(),
+            ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        command: 'test'
+        projects: '$(Build.SourcesDirectory)/tests/SIMF.Api.Tests/SIMF.Api.Tests.csproj'
         arguments: '--configuration $(buildConfiguration)'
 
     # --- Publish (zips by default; one folder per app under the staging dir).
