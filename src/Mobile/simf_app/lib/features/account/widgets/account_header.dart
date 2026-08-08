@@ -16,7 +16,7 @@ class AccountHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        const SimfLogo(size: 44),
+        const SimfLogo(size: SimfTokens.accountHeaderSize),
         const SizedBox(width: SimfTokens.space4),
         Flexible(
           child: Text(

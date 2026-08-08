@@ -34,19 +34,14 @@ void main() {
       expect(found.single.remedy, Remedy.fieldLimit);
     });
 
-    test('routes maxLines to a layout constant', () {
+    // Deliberately silent: `maxLines: 2` already says "at most two lines", and
+    // crossAxisCount is a responsive DESIGN change raised separately rather
+    // than smuggled into a cleanup wave.
+    test('does NOT fire on maxLines or crossAxisCount', () {
+      expect(ofRule(run('Widget b() => T(maxLines: 2);'), 'SIMF-C1'), isEmpty);
       expect(
-        ofRule(run('Widget b() => T(maxLines: 2);'), 'SIMF-C1').single.remedy,
-        Remedy.layoutIntent,
-      );
-    });
-
-    test('routes crossAxisCount to the responsive layer', () {
-      expect(
-        ofRule(run('Widget b() => G(crossAxisCount: 3);'), 'SIMF-C1')
-            .single
-            .remedy,
-        Remedy.responsive,
+        ofRule(run('Widget b() => G(crossAxisCount: 3);'), 'SIMF-C1'),
+        isEmpty,
       );
     });
 
@@ -54,8 +49,8 @@ void main() {
     // so a checker that only visits InstanceCreationExpression misses it.
     test('routes Duration to the timeout policy in BOTH call forms', () {
       for (final String form in <String>[
-        'var d = Duration(seconds: 30);',
-        'var d = const Duration(seconds: 30);',
+        'Widget b() => A(duration: Duration(seconds: 30));',
+        'Widget b() => A(duration: const Duration(seconds: 30));',
       ]) {
         final List<Violation> found = ofRule(run(form), 'SIMF-C1');
         expect(found, hasLength(1), reason: form);
@@ -65,10 +60,25 @@ void main() {
 
     test('fires on positional EdgeInsets values in both call forms', () {
       for (final String form in <String>[
-        'var p = EdgeInsets.all(16);',
-        'var p = const EdgeInsets.all(16);',
+        'Widget b() => A(padding: EdgeInsets.all(16));',
+        'Widget b() => A(padding: const EdgeInsets.all(16));',
       ]) {
         expect(ofRule(run(form), 'SIMF-C1'), hasLength(1), reason: form);
+      }
+    });
+
+    // A value that ALREADY has a name is not a magic number - it is the fix.
+    // Flagging `const Duration saudiOffset = Duration(hours: 3);` would make the
+    // rule unsatisfiable, because that declaration is what resolving one looks
+    // like.
+    test('is silent when the literal already has a name', () {
+      for (final String form in <String>[
+        'const Duration saudiOffset = Duration(hours: 3);',
+        'class A { static const double tileSize = 48; }',
+        'class A { const A({this.tick = const Duration(seconds: 15)}); '
+            'final Duration tick; }',
+      ]) {
+        expect(ofRule(run(form), 'SIMF-C1'), isEmpty, reason: form);
       }
     });
 
@@ -139,11 +149,15 @@ void main() {
       );
     });
 
-    test('fires on a widget-building method', () {
-      expect(
-        ofRule(run('class A { Widget _buildContent() => X(); }'), 'SIMF-C3'),
-        hasLength(1),
-      );
+    // A _build* method is composition in a small file and a symptom in a huge
+    // one. All 78 in this repo read instance state, so none is a mechanical
+    // extraction; the defect the rule should catch is the oversized file.
+    test('fires on a widget-building method only in an oversized file', () {
+      const String decl = 'class A { Widget _buildContent() => X(); }';
+      expect(ofRule(run(decl), 'SIMF-C3'), isEmpty);
+      final String padded =
+          '${List<String>.filled(420, '// pad').join('\n')}\n$decl';
+      expect(ofRule(run(padded), 'SIMF-C3'), hasLength(1));
     });
   });
 
@@ -218,7 +232,31 @@ class LiveRepository {}
         'Widget b() => TextFormField(controller: c);',
         'Widget b() => new TextFormField(controller: c);',
       ]) {
-        expect(ofRule(run(form), 'SIMF-C7'), hasLength(1), reason: form);
+        expect(
+          ofRule(
+            run(form,
+                path: 'src/Mobile/simf_app/lib/features/demo/demo_screen.dart'),
+            'SIMF-C7',
+          ),
+          hasLength(1),
+          reason: form,
+        );
+      }
+    });
+
+    // A field component wrapping TextFormField IS the shared component. Firing
+    // here would make the rule unsatisfiable: something has to wrap it.
+    test('C7 does NOT fire inside a field component', () {
+      for (final String path in <String>[
+        'src/Mobile/simf_app/lib/features/account/widgets/mobile_field.dart',
+        'src/Mobile/simf_app/lib/core/widgets/simf_field_style.dart',
+      ]) {
+        expect(
+          ofRule(run('Widget b() => TextFormField(controller: c);', path: path),
+              'SIMF-C7'),
+          isEmpty,
+          reason: path,
+        );
       }
     });
   });
@@ -230,6 +268,24 @@ class LiveRepository {}
         content: '<div style="color:red">hi</div>',
       );
       expect(found, hasLength(1));
+    });
+
+    // A runtime value has nowhere else to live: the stylesheet consumes the
+    // custom property. Flagging it would force a class per pixel value.
+    test('N1 does NOT fire on a style carrying a Razor expression', () {
+      for (final String markup in <String>[
+        '<div style="--simf-gauge-fill:@Percent"></div>',
+        '<div style="background-image:url(\'@s.Image\')"></div>',
+      ]) {
+        expect(
+          analyseRazorFile(
+            posixPath: 'src/Website/SIMF.Web/X.razor',
+            content: markup,
+          ),
+          isEmpty,
+          reason: markup,
+        );
+      }
     });
 
     test('N1 ignores a Razor comment', () {
@@ -247,6 +303,26 @@ class LiveRepository {}
         analyseCssFile(
           posixPath: 'src/Website/SIMF.Web/wwwroot/css/landing.css',
           content: '.a { color: #ff0000; }',
+        ),
+        hasLength(1),
+      );
+    });
+
+    // A stylesheet must write the hex SOMEWHERE, and that somewhere is its
+    // token block. Same principle as C1 skipping a named Dart constant.
+    test('N2 fires on a USE site but not on a token definition', () {
+      const String path = 'src/Website/SIMF.Web/wwwroot/css/landing.css';
+      expect(
+        analyseCssFile(
+          posixPath: path,
+          content: ':root { --gold: #e8c060; }',
+        ),
+        isEmpty,
+      );
+      expect(
+        analyseCssFile(
+          posixPath: path,
+          content: '.ln-chip { background: #e8c060; }',
         ),
         hasLength(1),
       );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import 'day_banner_fallback.dart';
 
 /// The day banner (frame node 1064:13240): the selected day's logo image under a
 /// navy bottom-gradient with the gold anchor badge at the inline-end. A navy
@@ -30,10 +31,10 @@ class ProgrammeDayBanner extends StatelessWidget {
                     ? child
                     : const ColoredBox(color: SimfTokens.navy),
                 errorBuilder: (context, error, stackTrace) =>
-                    const _DayBannerFallback(),
+                    const DayBannerFallback(),
               )
             else
-              const _DayBannerFallback(),
+              const DayBannerFallback(),
             // The frame's bottom gradient (transparent → navy #001030 @ 80%).
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -62,7 +63,7 @@ class ProgrammeDayBanner extends StatelessWidget {
                 ),
                 child: const Icon(
                   Icons.anchor,
-                  size: 16,
+                  size: SimfTokens.programmeDayBannerSize,
                   color: SimfTokens.navy,
                 ),
               ),
@@ -74,20 +75,3 @@ class ProgrammeDayBanner extends StatelessWidget {
   }
 }
 
-/// The no-logo / failed-fetch day-banner fall-back: a navy box with the anchor
-/// glyph (the designed empty state until a day logo is uploaded).
-class _DayBannerFallback extends StatelessWidget {
-  const _DayBannerFallback();
-
-  @override
-  Widget build(BuildContext context) => const ColoredBox(
-        color: SimfTokens.navy,
-        child: Center(
-          child: Icon(
-            Icons.image_outlined,
-            size: 28,
-            color: SimfTokens.beigeBorder,
-          ),
-        ),
-      );
-}

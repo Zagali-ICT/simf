@@ -36,7 +36,11 @@ class SimfApp extends ConsumerWidget {
     });
 
     return MaterialApp.router(
-      title: 'SIMF',
+      // onGenerateTitle, not `title`: the OS task-switcher label is user-facing
+      // copy and the app has an Arabic name. `title` is evaluated outside any
+      // Localizations scope, so it cannot read AppL10n; this callback receives a
+      // context that can.
+      onGenerateTitle: (context) => AppL10n.of(context).appName,
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       // The app is navy-always (the Mockup.html brand surface): every screen is

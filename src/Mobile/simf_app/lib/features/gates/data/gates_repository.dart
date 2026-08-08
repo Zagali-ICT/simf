@@ -5,6 +5,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'gate_models.dart';
 import 'gate_offline_config.dart';
 import 'gate_scan_queue.dart';
+import 'gates_endpoints.dart';
 import 'offline_badge.dart';
 
 /// Data layer for the staff gate operator console (Figma 758:4380/4651/4735/
@@ -25,7 +26,7 @@ class GatesRepository {
   /// `GET /app/gates/my-assignments` → the gates this operator may work.
   Future<List<OperatorGate>> myAssignments() {
     return _client.get<List<OperatorGate>>(
-      '/app/gates/my-assignments',
+      GatesEndpoints.myAssignments,
       decodeData: OperatorGate.listFromData,
     );
   }
@@ -37,7 +38,7 @@ class GatesRepository {
   Future<GateOfflineConfig?> refreshOfflineConfig() async {
     try {
       final config = await _client.get<GateOfflineConfig>(
-        '/app/gates/offline-config',
+        GatesEndpoints.offlineConfig,
         decodeData: (data) => GateOfflineConfig.fromJson(
           (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
         ),
@@ -65,7 +66,7 @@ class GatesRepository {
     ScanDirection? direction,
   }) {
     return _client.post<GateScanResult>(
-      '/app/gates/$gateId/scans',
+      GatesEndpoints.scans(gateId),
       body: <String, dynamic>{
         'qr': qr,
         'idempotencyKey': idempotencyKey,

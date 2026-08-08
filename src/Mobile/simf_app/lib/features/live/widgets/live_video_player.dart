@@ -7,9 +7,12 @@ import 'package:video_player/video_player.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
 import '../../../core/session/session_activity.dart';
 import '../youtube_url.dart';
+import 'player.dart';
+import 'player_error.dart';
+import 'player_loading.dart';
+import 'youtube_view.dart';
 
 /// The device orientations to lock while the live player is (not) fullscreen
 /// (D-721): landscape in fullscreen, back to the app-wide portrait lock out of
@@ -150,7 +153,7 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
     if (controller == null) {
       return;
     }
-    // The glyph is driven by the controller's ValueListenable in [_Player], so
+    // The glyph is driven by the controller's ValueListenable in [Player], so
     // no setState is needed here — just fire the toggle.
     unawaited(
       controller.value.isPlaying ? controller.pause() : controller.play(),
@@ -182,7 +185,7 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
   Widget build(BuildContext context) {
     if (_error) {
       final l10n = AppL10n.of(context);
-      return _PlayerError(
+      return PlayerError(
         message: l10n.liveFeedError,
         retryLabel: l10n.retryLabel,
         onRetry: _retry,
@@ -190,163 +193,13 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
     }
     final youtube = _youtube;
     if (youtube != null) {
-      return _YoutubeView(controller: youtube);
+      return YoutubeView(controller: youtube);
     }
     final video = _video;
     if (video != null && _videoReady) {
-      return _Player(controller: video, onToggle: _toggleVideoPlay);
+      return Player(controller: video, onToggle: _toggleVideoPlay);
     }
-    return const _PlayerLoading();
+    return const PlayerLoading();
   }
 }
 
-/// The YouTube IFrame player surface (D-349) with a LIVE badge overlay. YouTube
-/// supplies its own play/pause + CC controls (the latter covers الترجمة الفورية
-/// for YouTube feeds), so no extra play FAB is added here.
-class _YoutubeView extends StatelessWidget {
-  const _YoutubeView({required this.controller});
-
-  final YoutubePlayerController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    // The LIVE badge + language chip live in the surface's top row (934:3612),
-    // not overlaid on the video, so the player is just the rounded feed.
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(SimfTokens.radius),
-      child: YoutubePlayer(
-        controller: controller,
-        aspectRatio: SimfTokens.videoAspectRatio,
-      ),
-    );
-  }
-}
-
-/// The `video_player` surface: a 16:9-aware [VideoPlayer] with a play/pause FAB
-/// (the HLS/MP4 fallback path).
-class _Player extends StatelessWidget {
-  const _Player({required this.controller, required this.onToggle});
-
-  final VideoPlayerController controller;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    final ratio = controller.value.aspectRatio == 0
-        ? SimfTokens.videoAspectRatio
-        : controller.value.aspectRatio;
-    // The LIVE badge + language chip live in the surface's top row (934:3612).
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(SimfTokens.radius),
-      child: Stack(
-        alignment: AlignmentDirectional.bottomEnd,
-        children: <Widget>[
-          AspectRatio(
-            aspectRatio: ratio,
-            child: VideoPlayer(controller),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(SimfTokens.space3),
-            child: FloatingActionButton.small(
-              heroTag: 'live-play',
-              onPressed: onToggle,
-              child: ValueListenableBuilder<VideoPlayerValue>(
-                valueListenable: controller,
-                builder: (_, value, __) => Icon(
-                  value.isPlaying ? Icons.pause : Icons.play_arrow,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlayerLoading extends StatelessWidget {
-  const _PlayerLoading();
-
-  @override
-  Widget build(BuildContext context) {
-    // Frame 934:3595 — the resting/poster affordance: a 52px translucent-white
-    // circle holding a 22px white play triangle (shown until the feed renders).
-    return AspectRatio(
-      aspectRatio: SimfTokens.videoAspectRatio,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: SimfTokens.black,
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-        ),
-        child: Center(
-          child: Container(
-            width: 52,
-            height: 52,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: SimfTokens.playScrim,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.play_arrow,
-              size: 22,
-              color: SimfTokens.surface,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Shown when a live feed fails to load — a terminal error surface with a Retry
-/// that re-binds the player (Page_025 L-7), instead of an endless spinner.
-class _PlayerError extends StatelessWidget {
-  const _PlayerError({
-    required this.message,
-    required this.retryLabel,
-    required this.onRetry,
-  });
-
-  final String message;
-  final String retryLabel;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: SimfTokens.videoAspectRatio,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: SimfTokens.black,
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-        ),
-        // Centred + scrollable so the icon + message + button never overflow
-        // the fixed 16:9 box on a short / landscape viewport (RenderFlex).
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(SimfTokens.space3),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const Icon(
-                  Icons.error_outline,
-                  size: 36,
-                  color: SimfTokens.beigeBorder,
-                ),
-                const SizedBox(height: SimfTokens.space2),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: SimfTokens.hintBeige,
-                ),
-                const SizedBox(height: SimfTokens.space3),
-                FilledButton(onPressed: onRetry, child: Text(retryLabel)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/validation/field_limits.dart';
 import '../../../core/widgets/simf_field_label.dart';
 import '../../../core/widgets/simf_field_style.dart';
 import '../../../core/widgets/simf_picker_field.dart';
@@ -58,7 +59,7 @@ class PlaceOfBirthField extends StatelessWidget {
         else
           TextFormField(
             controller: controller,
-            maxLength: 128,
+            maxLength: FieldLimits.placeOfBirth,
             style: simfInputStyle,
             autovalidateMode: AutovalidateMode.onUserInteraction,
             validator: (String? v) => (v == null || v.trim().isEmpty)

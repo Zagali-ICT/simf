@@ -5,6 +5,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/utils/refresh.dart';
+import 'data/archive_endpoints.dart';
 import 'data/archive_models.dart';
 import 'widgets/archive_body.dart';
 
@@ -13,7 +14,7 @@ final archiveEditionsProvider =
     FutureProvider.autoDispose<List<ArchiveEdition>>((ref) async {
   final client = ref.watch(simfApiClientProvider);
   return client.get<List<ArchiveEdition>>(
-    '/app/archive',
+    ArchiveEndpoints.list,
     decodeData: ArchiveEdition.listFromData,
   );
 });
@@ -25,7 +26,7 @@ final archiveEditionDetailProvider = FutureProvider.autoDispose
   final client = ref.watch(simfApiClientProvider);
   try {
     return await client.get<ArchiveEditionDetail>(
-      '/app/archive/$id',
+      ArchiveEndpoints.byId(id),
       decodeData: (data) => ArchiveEditionDetail.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       ),

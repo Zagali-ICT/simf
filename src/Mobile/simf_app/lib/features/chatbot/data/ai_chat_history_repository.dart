@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'chat_message.dart';
+import 'chatbot_endpoints.dart';
 
 /// Loads the signed-in visitor's persisted AI-assistant transcript
 /// (`GET /app/ai/assistance/history`) so the conversation survives navigation
@@ -15,7 +16,7 @@ class AiChatHistoryRepository {
 
   Future<List<ChatMessage>> getHistory() {
     return _client.get<List<ChatMessage>>(
-      '/app/ai/assistance/history',
+      ChatbotEndpoints.history,
       decodeData: (data) => ((data as List?) ?? const <dynamic>[])
           .map((e) => (e as Map).cast<String, dynamic>())
           .map(

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 import '../../contacts/data/contact_models.dart';
-import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// D-426 — one captured visitor in an exhibitor's "My Visitors" list. Mirrors
 /// `SIMF.Contracts.Exhibitors.ExhibitorVisitorRow`: scan metadata plus the

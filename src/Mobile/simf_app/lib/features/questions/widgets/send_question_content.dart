@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../core/validation/field_limits.dart';
 import '../../../core/widgets/simf_radio_pill.dart';
+import 'numbered_line.dart';
 
 /// The frame 943:3750 footnote — a single centred gold bullet, the bold gold
 /// "ملاحظة" word, then the muted-beige "reviewed before air" body.
@@ -142,7 +144,7 @@ class SendQuestionComposer extends StatelessWidget {
           ),
           child: TextField(
             controller: controller,
-            maxLength: 500,
+            maxLength: FieldLimits.sessionQuestion,
             maxLines: null,
             expands: true,
             textAlign: TextAlign.start,
@@ -229,36 +231,10 @@ class SessionDataBlock extends StatelessWidget {
         const SizedBox(height: SimfTokens.space2),
         for (var i = 0; i < lines.length; i++) ...<Widget>[
           if (i != 0) const SizedBox(height: SimfTokens.space4),
-          _NumberedLine(index: i + 1, text: lines[i]),
+          NumberedLine(index: i + 1, text: lines[i]),
         ],
       ],
     );
   }
 }
 
-/// One numbered session-data line — the index sits at the inline start (right
-/// in RTL) before the right-aligned beige body, matching the frame's
-/// `list-decimal` marker.
-class _NumberedLine extends StatelessWidget {
-  const _NumberedLine({required this.index, required this.text});
-
-  final int index;
-  final String text;
-
-  // Frame 1049:12591 — leading 1.3, tighter than the 1.5 body.
-  static const TextStyle _style = SimfTokens.bodyBeigeMedium13;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text('$index.', textDirection: TextDirection.ltr, style: _style),
-        const SizedBox(width: SimfTokens.space2),
-        Expanded(
-          child: Text(text, textAlign: TextAlign.start, style: _style),
-        ),
-      ],
-    );
-  }
-}

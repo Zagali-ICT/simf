@@ -59,10 +59,10 @@ class TermsAndNextButtons extends StatelessWidget {
             onPressed: busy ? null : onNext,
             child: busy
                 ? const SizedBox(
-                    height: 20,
-                    width: 20,
+                    height: SimfTokens.space5,
+                    width: SimfTokens.space5,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
+                      strokeWidth: SimfTokens.termsAndNextButtonsStrokeWidth,
                       color: SimfTokens.surface,
                     ),
                   )

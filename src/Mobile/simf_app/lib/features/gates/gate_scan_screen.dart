@@ -320,7 +320,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
                       child: Icon(
                         Icons.chevron_left,
                         color: SimfTokens.surface,
-                        size: 26,
+                        size: SimfTokens.gateScanScreenSizeMd,
                       ),
                     ),
                   ),
@@ -448,7 +448,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
           ),
           child: Row(
             children: <Widget>[
-              const Icon(Icons.sync, color: SimfTokens.accent, size: 18),
+              const Icon(Icons.sync, color: SimfTokens.accent, size: SimfTokens.gateScanScreenSizeSm),
               const SizedBox(width: SimfTokens.space2),
               Expanded(
                 child: Text(

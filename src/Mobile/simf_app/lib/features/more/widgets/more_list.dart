@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_forward_chevron.dart';
 
@@ -55,7 +56,7 @@ class MoreRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: SizedBox(
-          height: 48,
+          height: SimfTokens.moreListHeight,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
             child: Row(
@@ -80,9 +81,9 @@ class MoreRow extends StatelessWidget {
                 // White caret per the More-menu frame 1129:17224 (owner
                 // 2026-07-07: nav arrows are white, not gold).
                 const SimfForwardChevron(
-                  'assets/icons/ic_caret_left.svg',
+                  AppAssets.icCaretLeft,
                   color: SimfTokens.surface,
-                  size: 22,
+                  size: SimfTokens.moreListSize,
                 ),
               ],
             ),

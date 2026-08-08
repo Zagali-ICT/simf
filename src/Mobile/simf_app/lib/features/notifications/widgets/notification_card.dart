@@ -6,6 +6,7 @@ import '../../../app/widgets/simf_page_shell.dart';
 import '../../../core/utils/saudi_time.dart';
 import '../data/notification_models.dart';
 import 'notification_category_icon.dart';
+import 'unread_dot.dart';
 
 /// One 12-hour formatter for the card timestamps (hoisted off the build path).
 final DateFormat _timeFormat = DateFormat('hh:mm a');
@@ -93,7 +94,7 @@ class NotificationCard extends StatelessWidget {
               const PositionedDirectional(
                 top: SimfTokens.space2,
                 end: SimfTokens.space2,
-                child: _UnreadDot(),
+                child: UnreadDot(),
               ),
           ],
         ),
@@ -102,20 +103,3 @@ class NotificationCard extends StatelessWidget {
   }
 }
 
-/// The unread marker (frame 758:2491) — a 14-px red dot at the card's top
-/// inline-end corner.
-class _UnreadDot extends StatelessWidget {
-  const _UnreadDot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 14,
-      height: 14,
-      decoration: const BoxDecoration(
-        color: SimfTokens.danger,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-}

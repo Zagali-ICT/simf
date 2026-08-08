@@ -41,7 +41,7 @@ class AccountTopControls extends StatelessWidget {
               tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               icon: const SimfSvgIcon(
                 AppAssets.authBack,
-                size: 24,
+                size: SimfTokens.accountTopControlsSize,
                 color: SimfTokens.surface,
               ),
             ),

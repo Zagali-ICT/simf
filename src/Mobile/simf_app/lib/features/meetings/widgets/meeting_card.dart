@@ -12,6 +12,7 @@ import '../../../core/utils/saudi_time.dart';
 import '../../requests/data/request_models.dart';
 import '../../requests/widgets/request_status_style.dart';
 import '../../speakers/widgets/speaker_photo_tile.dart';
+import 'flag_badge.dart';
 
 /// One bilateral-meeting card on the اللقاءات الثنائية page (Figma 1408:9726): a
 /// navy card with a green (accepted) hairline, carrying —
@@ -128,7 +129,7 @@ class MeetingCard extends StatelessWidget {
           _statusPill(),
           if (flag != null) ...<Widget>[
             const SizedBox(width: SimfTokens.space3),
-            _FlagBadge(flag: flag),
+            FlagBadge(flag: flag),
           ],
         ],
       ),
@@ -152,7 +153,7 @@ class MeetingCard extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          SpeakerPhotoTile(imageUrl: photoUrl, size: 38),
+          SpeakerPhotoTile(imageUrl: photoUrl, size: SimfTokens.meetingCardSizeLg),
           const SizedBox(width: SimfTokens.space2),
           Flexible(
             child: Text(
@@ -169,7 +170,7 @@ class MeetingCard extends StatelessWidget {
               angle: -math.pi / 2,
               child: const SimfSvgIcon(
                 AppAssets.chevronLeft,
-                size: 20,
+                size: SimfTokens.meetingCardSizeMd,
                 color: SimfTokens.accent,
               ),
             ),
@@ -194,7 +195,7 @@ class MeetingCard extends StatelessWidget {
           const SizedBox(width: SimfTokens.space1),
           const Icon(
             Icons.schedule,
-            size: 12,
+            size: SimfTokens.meetingCardSizeSm,
             color: SimfTokens.beigeBorder,
           ),
         ],
@@ -244,30 +245,3 @@ class MeetingCard extends StatelessWidget {
   }
 }
 
-/// The 48×48 nationality flag badge (Figma 1408:9726): the flag emoji on a soft
-/// green well.
-class _FlagBadge extends StatelessWidget {
-  const _FlagBadge({required this.flag});
-
-  final String flag;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.flagBadgeBg,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
-        border: Border.all(color: SimfTokens.flagBadgeBorder),
-      ),
-      child: Text(
-        flag,
-        textDirection: TextDirection.ltr,
-        // The frame's 28px flag glyph (textHero token == 28).
-        style: const TextStyle(fontSize: SimfTokens.textHero, height: 1),
-      ),
-    );
-  }
-}

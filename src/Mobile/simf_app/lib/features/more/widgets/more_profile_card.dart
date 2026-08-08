@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
@@ -57,12 +58,12 @@ class MoreProfileCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space3),
-              SimfAvatar(name: name, currentUser: true, size: 42),
+              SimfAvatar(name: name, currentUser: true, size: SimfTokens.moreProfileCardSizeMd),
               const SizedBox(width: SimfTokens.space2),
               const SimfSvgIcon(
-                'assets/icons/ic_caret_left.svg',
+                AppAssets.icCaretLeft,
                 color: SimfTokens.accent,
-                size: 24,
+                size: SimfTokens.moreProfileCardSizeSm,
               ),
             ],
           ),

@@ -135,14 +135,36 @@ The following taxonomy governs this programme.
 | Literal | Correct location | Review prescribed |
 |---------|------------------|-------------------|
 | Spacing, radius, icon size, opacity, colour, typography | `SimfTokens`, under a semantic name | `simfTokens`, agreed |
-| `maxLength` | `features/<f>/data/*_field_limits.dart`, mirroring backend `MaximumLength(N)` and `HasMaxLength(N)` | `simfTokens`, not accepted |
-| `Duration` for timeout, cooldown, debounce | `core/net/timeouts.dart` or a feature policy constant | `simfTokens`, not accepted |
-| `maxLines`, `minLines` | A named layout constant | `simfTokens`, not accepted |
-| `crossAxisCount` | Derived from `core/responsive/breakpoints.dart` | `simfTokens`, not accepted |
+| `maxLength` | `core/validation/field_limits.dart`, mirroring backend `MaximumLength(N)` and `HasMaxLength(N)` | `simfTokens`, not accepted |
+| `Duration` for animation | `core/motion/motion_durations.dart` (`MotionDurations`) | `simfTokens`, not accepted |
+| `Duration` for a deadline | the same file (`TimeoutPolicy`); exceeding one is a failure path, not an effect | `simfTokens`, not accepted |
+| `maxLines`, `minLines` | left as written, see 5.1 | `simfTokens`, not accepted |
+| `crossAxisCount` | a separate responsive proposal, see 5.2 | `simfTokens`, not accepted |
 | API endpoint path | `features/<f>/data/*_endpoints.dart` | Single central file, not accepted, see section 8 |
 | Bundled asset path | `AppAssets` | `app_assets.dart`, agreed |
 | User facing string | `AppL10n` | Localization, agreed |
 | External host such as `youtube.com` | A URL policy constant in `core/` | `simfTokens`, not accepted |
+
+A literal that is ALREADY the value of a named declaration or a parameter
+default is not a finding. `const Duration saudiOffset = Duration(hours: 3);`
+and `this.tickInterval = const Duration(seconds: 15)` are the named constant
+and the named default the rule asks for; flagging them would make the rule
+unsatisfiable, because writing exactly that is what resolving a magic number
+looks like. 87 of the original 599 were this.
+
+### 5.1 Why `maxLines` is left alone
+
+`maxLines: 2` already states its own meaning: at most two lines. Replacing it
+with `TextClamp.cardTitle` adds a hop and no information. A rule earns its
+place where the number is opaque, as in `height: 37`, not where the parameter
+name already carries the meaning.
+
+### 5.2 Why `crossAxisCount` is a separate proposal
+
+Deriving the column count from `core/responsive/breakpoints.dart` is the right
+answer and is worth doing. It also CHANGES the layout on a tablet, which is a
+design decision, not a cleanup. Making it inside a refactor wave would be a
+visual change disguised as tidying, so it is raised on its own.
 
 Tokens created during this programme are named semantically from the outset.
 Renaming the existing value named tokens, for example `gap5`, `radius10` and
@@ -251,6 +273,67 @@ unstated.
 
 The gate progresses in three stages: no new violations, then zero violations in
 each feature as its wave lands, then zero across the repository at Wave 6.
+
+## 10.1 The remaining 14 findings, and why they are not being forced to zero
+
+Eight of the nine rules report zero. SIMF-C3 reports 14, all of them `_build*`
+methods in three screens:
+
+| Screen | Lines | Findings |
+|--------|-------|----------|
+| `sign_up_visitor_screen.dart` | 1304 | 10 |
+| `staff/register_visitor_screen.dart` | 1262 | 3 |
+| `session_detail_screen.dart` | 467 | 1 |
+
+Three of the six screens originally on this list were split and are now under
+the limit: `sign_in_screen` (418 to 331), `live_broadcast_screen` (507 to 332)
+and `sign_up_interests_screen` (469 to 320).
+
+The rule applied in each case, stated so it can be applied again:
+
+> Extract when the extracted thing is large relative to what it needs. Leave it
+> when the parameter list would be longer than the body it justifies.
+
+`live_broadcast_screen`'s `_content` was 165 lines against four dependencies,
+so it became a widget. `session_detail_screen`'s `_detailBody` is 33 lines
+against thirteen, so it did not. The remaining side-actions on that screen are
+three-to-eleven-line wrappers around a dialog and two snackbars: moving them
+would add a file and remove nothing.
+
+The two 1300-line registration screens are the real remainder, and the ratio is
+against extraction there too. The state each field builder needs was measured:
+
+| Method | Distinct pieces of state |
+|--------|--------------------------|
+| `_buildOrganisationField` | 9 |
+| `_buildProfileTypeField` | 8 |
+| `_buildPlateField` | 8 |
+| `_buildIdImageField` | 6 |
+
+As widgets these take eight or nine constructor parameters each, several of them
+callbacks: the same coupling, expressed with more ceremony, and harder to read.
+That is a change made for the metric rather than for the reader.
+
+Everything in those screens that genuinely did not belong in a widget has been
+taken out, and each move is covered by tests that could not exist before it:
+
+* the 8 visitor-profile validators, now pure functions with 16 tests;
+* the sign-in validators, including the rule that sign-in does NOT apply the
+  sign-up password policy, pinned by a test;
+* the 100-line device-key sign-in flow;
+* the session-detail eligibility rules, with 7 tests covering their defect ids;
+* the live-broadcast presentation helpers.
+
+What remains is the screens themselves. `sign_up_visitor_screen` collects around
+twenty fields spanning identity, documents, contact, vehicle and photographs in
+one form. The honest fix is to split it into form sections that own their own
+state, which is a redesign of the highest-traffic registration flow in the
+product, not a refactor. It needs its own decision, its own plan and its own
+verification.
+
+These 14 are therefore recorded as a **known, argued exception** rather than
+churned to zero. The gate holds them at exactly this count, so the number cannot
+grow quietly while the redesign is decided.
 
 ## 11. Out of scope
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'account_endpoints.dart';
 import 'profile_models.dart';
 
 /// App-local data layer for the visitor profile (Page_007): the upsert + the
@@ -17,7 +18,7 @@ class ProfileRepository {
   /// E1 — pre-fill (empty on a first-time profile).
   Future<UserProfileResponse> getMyProfile() {
     return _client.get<UserProfileResponse>(
-      '/app/account/user-profile',
+      AccountEndpoints.userProfile,
       decodeData: (data) =>
           UserProfileResponse.fromJson(_asMap(data)),
     );
@@ -28,7 +29,7 @@ class ProfileRepository {
     UpsertUserProfileRequest request,
   ) {
     return _client.post<UserProfileResponse>(
-      '/app/account/user-profile',
+      AccountEndpoints.userProfile,
       body: request.toJson(),
       decodeData: (data) =>
           UserProfileResponse.fromJson(_asMap(data)),
@@ -38,7 +39,7 @@ class ProfileRepository {
   /// E3 — nationality lookup.
   Future<List<CountryItem>> getCountries() {
     return _client.get<List<CountryItem>>(
-      '/app/account/user-profile/countries',
+      AccountEndpoints.countries,
       decodeData: (data) => _keyed(data, 'countries', CountryItem.fromJson),
     );
   }
@@ -47,7 +48,7 @@ class ProfileRepository {
   /// نوع التسجيل chip: true → audience rows, false → partner/Other rows, null → all.
   Future<List<ProfileTypeItem>> getProfileTypes({bool? isVisitor}) {
     return _client.get<List<ProfileTypeItem>>(
-      '/app/account/profile-types',
+      AccountEndpoints.profileTypes,
       queryParameters: isVisitor == null
           ? null
           : <String, dynamic>{'isVisitor': isVisitor},
@@ -58,7 +59,7 @@ class ProfileRepository {
   /// E5 — interests lookup (active rows, ordered).
   Future<List<InterestItem>> getInterests() {
     return _client.get<List<InterestItem>>(
-      '/app/account/interests',
+      AccountEndpoints.interests,
       decodeData: (data) => _keyed(data, 'interests', InterestItem.fromJson),
     );
   }
@@ -73,7 +74,7 @@ class ProfileRepository {
       query['search'] = search.trim();
     }
     return _client.get<List<OrganisationItem>>(
-      '/app/organisations',
+      AccountEndpoints.organisations,
       queryParameters: query,
       // E6 returns a bare JSON array (ApiResult<IReadOnlyList<...>>).
       decodeData: (data) => (data as List<dynamic>? ?? const <dynamic>[])
@@ -91,7 +92,7 @@ class ProfileRepository {
     required String filename,
   }) {
     return _client.upload<bool>(
-      '/app/account/user-profile/id-image',
+      AccountEndpoints.idImage,
       bytes: bytes,
       filename: filename,
       contentType: mimeForFilename(filename),
@@ -109,7 +110,7 @@ class ProfileRepository {
     required String filename,
   }) {
     return _client.upload<bool>(
-      '/app/account/avatar',
+      AccountEndpoints.avatar,
       bytes: bytes,
       filename: filename,
       contentType: mimeForFilename(filename),
@@ -266,7 +267,7 @@ final myAvatarBytesProvider =
   try {
     return await ref
         .watch(simfApiClientProvider)
-        .getBytes('/app/account/avatar/${user.id}');
+        .getBytes(AccountEndpoints.avatarOf(user.id));
   } on ApiFailure {
     return null;
   }

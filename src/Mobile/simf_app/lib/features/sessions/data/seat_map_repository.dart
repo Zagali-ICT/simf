@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'seat_map_models.dart';
+import 'sessions_endpoints.dart';
 
 /// Data layer for the My-Seat map (Page_018). One read reuses the shipped
 /// seat endpoint (no new API — D-267); `RequireApprovedAccount` (the route is
@@ -16,7 +17,7 @@ class SeatMapRepository {
   /// `GET /app/sessions/{id}/seats` → the whole grid + `myCell` (E1).
   Future<SessionSeatMap> getSeatMap(String sessionId) {
     return _client.get<SessionSeatMap>(
-      '/app/sessions/$sessionId/seats',
+      SessionsEndpoints.seats(sessionId),
       decodeData: (data) => SessionSeatMap.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       ),
@@ -34,7 +35,7 @@ class SeatMapRepository {
     required int seatNumber,
   }) {
     return _client.post<MyReservation>(
-      '/app/sessions/$sessionId/seats/reserve',
+      SessionsEndpoints.reserveSeat(sessionId),
       body: <String, dynamic>{'rowLabel': rowLabel, 'seatNumber': seatNumber},
       decodeData: _decodeReservation,
     );
@@ -44,7 +45,7 @@ class SeatMapRepository {
   /// the first free seat (assigned-seat session), created Pending.
   Future<MyReservation> reserveRandom(String sessionId) {
     return _client.post<MyReservation>(
-      '/app/sessions/$sessionId/seats/reserve-random',
+      SessionsEndpoints.reserveRandomSeat(sessionId),
       // Send an empty JSON object, not a null body: the endpoint rejects a
       // bodyless POST with 400 VALIDATION_FAILED ("input does not contain any
       // JSON tokens") before it ever reaches the handler.
@@ -58,7 +59,7 @@ class SeatMapRepository {
   /// `SEAT_SELECTION_REQUIRED` means the session actually needs a seat pick.
   Future<MyReservation> joinOpenSeating(String sessionId) {
     return _client.post<MyReservation>(
-      '/app/sessions/$sessionId/seats/join',
+      SessionsEndpoints.joinSeat(sessionId),
       // Empty JSON object, not a null body — a bodyless POST is rejected with
       // 400 VALIDATION_FAILED before the handler runs (see reserveRandom).
       body: const <String, dynamic>{},
@@ -79,7 +80,7 @@ class SeatMapRepository {
     required int seatNumber,
   }) {
     return _client.post<MyReservation>(
-      '/app/sessions/$sessionId/seats/move',
+      SessionsEndpoints.moveSeat(sessionId),
       body: <String, dynamic>{'rowLabel': rowLabel, 'seatNumber': seatNumber},
       decodeData: _decodeReservation,
     );
@@ -89,7 +90,7 @@ class SeatMapRepository {
   /// held reservation (before the session starts). A 404 means there was none.
   Future<void> releaseMine(String sessionId) {
     return _client.delete<bool>(
-      '/app/sessions/$sessionId/seats/mine',
+      SessionsEndpoints.mySeat(sessionId),
       decodeData: (_) => true,
     );
   }

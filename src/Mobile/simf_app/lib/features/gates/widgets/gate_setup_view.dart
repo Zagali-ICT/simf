@@ -57,7 +57,7 @@ class GateSetupView extends StatelessWidget {
               ),
               child: const Icon(
                 Icons.qr_code_2,
-                size: 60,
+                size: SimfTokens.gateSetupViewSizeLg,
                 color: SimfTokens.accent,
               ),
             ),
@@ -81,7 +81,7 @@ class GateSetupView extends StatelessWidget {
                 const Icon(
                   Icons.warning_amber_outlined,
                   color: SimfTokens.danger,
-                  size: 18,
+                  size: SimfTokens.gateSetupViewSizeSm,
                 ),
                 const SizedBox(width: SimfTokens.space2),
                 Expanded(
@@ -146,7 +146,7 @@ class GateSetupView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                 ),
               ),
-              icon: const Icon(Icons.photo_camera_outlined, size: 22),
+              icon: const Icon(Icons.photo_camera_outlined, size: SimfTokens.gateSetupViewSizeMd),
               label: Text(
                 l10n.gateScanCode,
                 style: SimfTokens.titleBold,

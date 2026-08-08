@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import 'channel_row.dart';
 
 /// Shared read-only contact card (SIMF-FDS-014 §5.5). Renders a resolved
 /// visitor card — initials avatar, name, job title, then the available channels
@@ -48,7 +49,7 @@ class ContactCard extends StatelessWidget {
             Row(
               children: <Widget>[
                 CircleAvatar(
-                  radius: 26,
+                  radius: SimfTokens.contactCardRadius,
                   backgroundColor: SimfTokens.accent,
                   child: Text(
                     _initials(name),
@@ -77,11 +78,11 @@ class ContactCard extends StatelessWidget {
               ],
             ),
             if (available) ...<Widget>[
-              _ChannelRow(icon: Icons.business_outlined, value: organisation),
-              _ChannelRow(icon: Icons.public, value: country),
-              _ChannelRow(icon: Icons.email_outlined, value: email),
-              _ChannelRow(icon: Icons.phone_outlined, value: saudiMobile),
-              _ChannelRow(
+              ChannelRow(icon: Icons.business_outlined, value: organisation),
+              ChannelRow(icon: Icons.public, value: country),
+              ChannelRow(icon: Icons.email_outlined, value: email),
+              ChannelRow(icon: Icons.phone_outlined, value: saudiMobile),
+              ChannelRow(
                 icon: Icons.phone_iphone_outlined,
                 value: internationalMobile,
               ),
@@ -117,29 +118,3 @@ class ContactCard extends StatelessWidget {
   }
 }
 
-/// One labelled channel line (icon + value). Renders nothing when the value is
-/// blank, so the card only shows the channels the subject actually exposes.
-class _ChannelRow extends StatelessWidget {
-  const _ChannelRow({required this.icon, required this.value});
-
-  final IconData icon;
-  final String? value;
-
-  @override
-  Widget build(BuildContext context) {
-    if (value == null || value!.trim().isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: SimfTokens.space3),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Icon(icon, size: 18, color: SimfTokens.accent),
-          const SizedBox(width: SimfTokens.space2),
-          Expanded(child: Text(value!)),
-        ],
-      ),
-    );
-  }
-}

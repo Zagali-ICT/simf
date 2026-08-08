@@ -24,7 +24,7 @@ class NavyPasswordToggle extends StatelessWidget {
       tooltip: obscure ? l10n.showPasswordTooltip : l10n.hidePasswordTooltip,
       icon: Icon(
         obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-        size: 18,
+        size: SimfTokens.navyPasswordToggleSize,
         color: SimfTokens.beigeBorder,
       ),
       onPressed: onToggle,

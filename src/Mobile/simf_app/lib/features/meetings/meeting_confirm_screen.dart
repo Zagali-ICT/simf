@@ -8,6 +8,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/utils/saudi_time.dart';
+import '../delegations/data/delegation_models.dart';
 import '../delegations/data/delegations_repository.dart';
 
 /// Confirm meeting — تأكيد الاجتماع · route: [RouteNames.meetingConfirm]
@@ -122,7 +123,7 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
         const SizedBox(height: SimfTokens.space6),
         const Icon(
           Icons.handshake_outlined,
-          size: 64,
+          size: SimfTokens.meetingConfirmScreenSize,
           color: SimfTokens.accent,
         ),
         const SizedBox(height: SimfTokens.space4),
@@ -159,7 +160,7 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
         const SizedBox(height: SimfTokens.space6),
         Icon(
           _declined ? Icons.cancel_outlined : Icons.check_circle_outline,
-          size: 64,
+          size: SimfTokens.meetingConfirmScreenSize,
           color: SimfTokens.accent,
         ),
         const SizedBox(height: SimfTokens.space4),

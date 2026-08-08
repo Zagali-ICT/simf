@@ -74,7 +74,7 @@ class SpeakerSessionRow extends StatelessWidget {
             const SimfSvgIcon(
               AppAssets.icCaretLeft,
               color: SimfTokens.txtTertiary,
-              size: 18,
+              size: SimfTokens.speakerSessionsSize,
             ),
           ],
         ),

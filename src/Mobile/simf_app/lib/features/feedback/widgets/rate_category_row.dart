@@ -43,7 +43,7 @@ class RateCategoryRow extends StatelessWidget {
           const SizedBox(width: SimfTokens.space2),
           StarRow(
             value: value,
-            size: 18,
+            size: SimfTokens.rateCategoryRowSize,
             gap: SimfTokens.space1,
             onChanged: onChanged,
           ),

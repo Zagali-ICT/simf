@@ -4,6 +4,7 @@ import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../venuemap/data/venue_map_models.dart';
 import 'booth_hall_box.dart';
+import 'code_pill.dart';
 
 /// The hall row (frame node 922:2795): the gold-bordered **code pill** (A-12)
 /// beside the deep-navy **hall box**. The frame's hall box reads
@@ -46,39 +47,10 @@ class BoothHallRow extends StatelessWidget {
         ),
         if (code.isNotEmpty) ...<Widget>[
           const SizedBox(width: SimfTokens.space4),
-          _CodePill(code: code),
+          CodePill(code: code),
         ],
       ],
     );
   }
 }
 
-/// The accent booth-number pill (frame node 922:2796): a 109-wide navy box with
-/// a gold hairline, the code in gold, always LTR.
-class _CodePill extends StatelessWidget {
-  const _CodePill({required this.code});
-
-  final String code;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: SimfTokens.codePillWidth,
-      height: SimfTokens.controlHeight,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        border: Border.all(
-          color: SimfTokens.accent,
-          width: SimfTokens.hairline,
-        ),
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(
-        code,
-        textDirection: TextDirection.ltr,
-        style: SimfTokens.labelGoldSemibold,
-      ),
-    );
-  }
-}

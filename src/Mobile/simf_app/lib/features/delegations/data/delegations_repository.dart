@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'delegation_models.dart';
-import 'package:simf_app/core/utils/saudi_time.dart';
+import 'delegations_endpoints.dart';
 
 /// Data layer for the Delegations screen — App "الوفود" (Figma 1426:10771). One
 /// read of the public invited-country delegations (`GET /app/delegations`,
@@ -15,7 +16,7 @@ class DelegationsRepository {
 
   Future<Delegations> getDelegations() {
     return _client.get<Delegations>(
-      '/app/delegations',
+      DelegationsEndpoints.list,
       decodeData: Delegations.fromData,
     );
   }
@@ -26,7 +27,7 @@ class DelegationsRepository {
   /// (the request can still be sent subject-only).
   Future<List<DelegationSlot>> getAvailableSlots(int countryId) {
     return _client.get<List<DelegationSlot>>(
-      '/app/countries/$countryId/available-slots',
+      DelegationsEndpoints.availableSlots(countryId),
       decodeData: (data) => (data as List? ?? const <dynamic>[])
           .whereType<Map<dynamic, dynamic>>()
           .map((e) => DelegationSlot.fromJson(e.cast<String, dynamic>()))
@@ -46,7 +47,7 @@ class DelegationsRepository {
     DateTime? slotEnd,
   }) {
     return _client.post<bool>(
-      '/app/delegation-meeting-requests',
+      DelegationsEndpoints.meetingRequests,
       body: <String, dynamic>{
         'targetCountryCode': targetCountryCode,
         'attendeeCount': attendeeCount,
@@ -67,7 +68,7 @@ class DelegationsRepository {
   /// Maps 403 (not the other party) / 409 (not awaiting confirmation).
   Future<DelegationMeetingSummary> confirmMeeting(String requestId) {
     return _client.post<DelegationMeetingSummary>(
-      '/app/delegation-meeting-requests/$requestId/confirm',
+      DelegationsEndpoints.confirmMeeting(requestId),
       body: const <String, dynamic>{},
       decodeData: (data) => DelegationMeetingSummary.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
@@ -82,53 +83,13 @@ class DelegationsRepository {
   /// Maps 403 (not the other party) / 409 (not awaiting confirmation).
   Future<DelegationMeetingSummary> declineMeeting(String requestId) {
     return _client.post<DelegationMeetingSummary>(
-      '/app/delegation-meeting-requests/$requestId/decline',
+      DelegationsEndpoints.declineMeeting(requestId),
       body: const <String, dynamic>{},
       decodeData: (data) => DelegationMeetingSummary.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       ),
     );
   }
-}
-
-/// Bi-Meeting rework — one bookable meeting slot offered by a delegation
-/// (parity with `SpeakerSlot`).
-class DelegationSlot {
-  const DelegationSlot({required this.start, required this.end});
-
-  factory DelegationSlot.fromJson(Map<String, dynamic> json) => DelegationSlot(
-        start: DateTime.parse(json['start'] as String),
-        end: DateTime.parse(json['end'] as String),
-      );
-
-  final DateTime start;
-  final DateTime end;
-}
-
-/// Bi-Meeting rework — the delegation-meeting summary returned by the confirm
-/// endpoint, shown on the confirm screen. Carries no requester PII.
-class DelegationMeetingSummary {
-  const DelegationMeetingSummary({
-    required this.requestingCountry,
-    required this.targetCountry,
-    required this.subject,
-    this.slotStart,
-  });
-
-  factory DelegationMeetingSummary.fromJson(Map<String, dynamic> json) =>
-      DelegationMeetingSummary(
-        requestingCountry: (json['requestingCountry'] as String?) ?? '',
-        targetCountry: (json['targetCountry'] as String?) ?? '',
-        subject: (json['subject'] as String?) ?? '',
-        slotStart: json['slotStart'] == null
-            ? null
-            : parseWireOrNull(json['slotStart'] as String),
-      );
-
-  final String requestingCountry;
-  final String targetCountry;
-  final String subject;
-  final DateTime? slotStart;
 }
 
 final delegationsRepositoryProvider = Provider<DelegationsRepository>((ref) {

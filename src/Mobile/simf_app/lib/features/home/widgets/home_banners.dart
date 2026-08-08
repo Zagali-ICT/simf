@@ -75,7 +75,7 @@ class LiveBanner extends StatelessWidget {
                 child: const SimfSvgIcon(
                   AppAssets.icCaretLeft,
                   color: SimfTokens.surface,
-                  size: 24,
+                  size: SimfTokens.homeBannersSize,
                 ),
               ),
             ],

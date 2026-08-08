@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../localization/app_l10n.dart';
+import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
 import 'simf_svg_icon.dart';
 
@@ -119,7 +120,7 @@ class SimfPageNote extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         // Sized like the shell's other inline glyphs (cf. SimfEmptyState).
-        const Icon(Icons.info_outline, size: 16, color: SimfTokens.beigeBorder),
+        const Icon(Icons.info_outline, size: SimfTokens.simfCardsSizeSm, color: SimfTokens.beigeBorder),
         const SizedBox(width: SimfTokens.space2),
         Expanded(child: Text(text, style: SimfTokens.bodyBeigeSm)),
       ],
@@ -148,7 +149,7 @@ class SimfLinkRow extends StatelessWidget {
       borderColor: SimfTokens.beigeBorder,
       borderWidth: SimfTokens.hairline,
       child: SizedBox(
-        height: 48,
+        height: SimfTokens.simfCardsHeightSm,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
           child: Row(
@@ -172,9 +173,9 @@ class SimfLinkRow extends StatelessWidget {
               Transform.flip(
                 flipX: flip,
                 child: const SimfSvgIcon(
-                  'assets/icons/ic_caret_left.svg',
+                  AppAssets.icCaretLeft,
                   color: SimfTokens.surface,
-                  size: 24,
+                  size: SimfTokens.simfCardsSizeMd,
                 ),
               ),
             ],
@@ -224,8 +225,8 @@ class SimfListRow extends StatelessWidget {
           children: <Widget>[
             if (badge != null) ...<Widget>[
               Container(
-                width: 72,
-                height: 64,
+                width: SimfTokens.simfCardsWidth,
+                height: SimfTokens.simfCardsHeightMd,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: badgeOutlined ? null : SimfTokens.accent,
@@ -267,9 +268,9 @@ class SimfListRow extends StatelessWidget {
             Transform.flip(
               flipX: flip,
               child: const SimfSvgIcon(
-                'assets/icons/ic_caret_left.svg',
+                AppAssets.icCaretLeft,
                 color: SimfTokens.accent,
-                size: 24,
+                size: SimfTokens.simfCardsSizeMd,
               ),
             ),
           ],

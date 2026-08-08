@@ -10,13 +10,13 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/validation/field_limits.dart';
 import '../../core/validation/required_validation.dart';
-import '../../core/widgets/simf_field_label.dart';
-import '../../core/widgets/simf_field_style.dart';
 import 'biometric_auth.dart';
 import 'post_auth_route.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
+import 'widgets/navi_form_field.dart';
 import 'widgets/navy_password_toggle.dart';
 
 /// Badge password — إكمال تسجيل الدخول · route: [RouteNames.badgePassword]
@@ -151,13 +151,13 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.badgePasswordScreenMaxWidth,
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const SizedBox(height: 48),
+              const SizedBox(height: SimfTokens.badgePasswordScreenHeight),
               if (name != null && name.isNotEmpty) ...<Widget>[
                 Text(
                   l10n.badgeWelcomeName(name),
@@ -176,26 +176,22 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
                 const SizedBox(height: SimfTokens.space2),
               ],
               const SizedBox(height: SimfTokens.space6),
-              SimfFieldLabel(l10n.passwordLabel, color: SimfTokens.surface),
-              const SizedBox(height: SimfTokens.space2),
-              TextFormField(
+              NaviFormField(
+                label: l10n.passwordLabel,
                 controller: _password,
                 obscureText: _obscure,
-                maxLength: 128,
+                maxLength: FieldLimits.password,
                 enabled: !_busy,
+                autovalidateMode: AutovalidateMode.disabled,
                 onChanged: (_) => setState(() {}),
                 onFieldSubmitted: (_) {
                   if (_canSubmit) {
                     unawaited(_submit());
                   }
                 },
-                style: simfInputStyleOnNavy,
-                decoration: simfFieldDecoration(
-                  counterText: '',
-                  suffixIcon: NavyPasswordToggle(
-                    obscure: _obscure,
-                    onToggle: () => setState(() => _obscure = !_obscure),
-                  ),
+                suffixIcon: NavyPasswordToggle(
+                  obscure: _obscure,
+                  onToggle: () => setState(() => _obscure = !_obscure),
                 ),
                 validator: (value) => isBlank(value) ? l10n.requiredField : null,
               ),
@@ -228,7 +224,7 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.badgePasswordScreenMaxWidth,
         child: AuthSubmitButton(
           label: l10n.signInButton,
           busy: _busy,

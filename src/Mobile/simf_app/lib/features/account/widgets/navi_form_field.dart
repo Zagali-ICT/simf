@@ -31,6 +31,7 @@ class NaviFormField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.onFieldSubmitted,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
     super.key,
   });
 
@@ -53,6 +54,14 @@ class NaviFormField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onFieldSubmitted;
 
+  /// When validation errors appear. Defaults to [AutovalidateMode.onUserInteraction],
+  /// the behaviour the forgot/reset screens were built against.
+  ///
+  /// The badge screens pass [AutovalidateMode.disabled] because they validate on
+  /// submit only: adopting this field there must not start surfacing errors mid-
+  /// typing, which would be a UX change dressed up as a refactor.
+  final AutovalidateMode autovalidateMode;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -68,7 +77,7 @@ class NaviFormField extends StatelessWidget {
           maxLength: maxLength,
           textDirection: textDirection,
           inputFormatters: inputFormatters,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
+          autovalidateMode: autovalidateMode,
           validator: validator,
           onChanged: onChanged,
           onFieldSubmitted: onFieldSubmitted,

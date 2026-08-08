@@ -3,6 +3,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'notification_models.dart';
+import 'notifications_endpoints.dart';
 
 /// App-local data layer for the notifications feature — the bell's unread count
 /// (`GET /app/account/notifications/unread-count`, signed-in only — Page_013 E1)
@@ -22,7 +23,7 @@ class NotificationsRepository {
   /// `{ unreadCount }` (`SIMF.Contracts.Notifications.UnreadCountResponse`).
   Future<int> getUnreadCount() {
     return _client.get<int>(
-      '/app/account/notifications/unread-count',
+      NotificationsEndpoints.unreadCount,
       decodeData: (data) =>
           (data is Map ? data['unreadCount'] as int? : null) ?? 0,
     );
@@ -35,7 +36,7 @@ class NotificationsRepository {
     int top = 50,
   }) {
     return _client.post<List<NotificationItem>>(
-      '/app/account/notifications/list',
+      NotificationsEndpoints.list,
       body: <String, dynamic>{'skip': skip, 'top': top},
       decodeData: NotificationItem.listFromData,
     );
@@ -44,7 +45,7 @@ class NotificationsRepository {
   /// `POST /app/account/notifications/{id}/read` → `true` (Page_033 E2).
   Future<bool> markRead(String id) {
     return _client.post<bool>(
-      '/app/account/notifications/$id/read',
+      NotificationsEndpoints.markRead(id),
       decodeData: (_) => true,
     );
   }
@@ -52,7 +53,7 @@ class NotificationsRepository {
   /// `POST /app/account/notifications/read-all` → `true` (Page_033 E3).
   Future<bool> markAllRead() {
     return _client.post<bool>(
-      '/app/account/notifications/read-all',
+      NotificationsEndpoints.markAllRead,
       decodeData: (_) => true,
     );
   }

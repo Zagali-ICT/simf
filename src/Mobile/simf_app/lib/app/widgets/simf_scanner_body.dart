@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
 
+import '../../core/motion/motion_durations.dart';
 import '../../core/utils/scan_gate.dart';
 import '../../core/widgets/simf_field_style.dart';
 import '../localization/app_l10n.dart';
 import '../theme/tokens.dart';
+import 'camera_error_card.dart';
+import 'or_divider.dart';
 import 'simf_scanner_frame.dart';
 
 /// The single QR-scanning experience shared by every scanner in the app
@@ -128,7 +131,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
   void _armWatchdog() {
     _awaitingController = true;
     _watchdog?.cancel();
-    _watchdog = Timer(const Duration(seconds: 8), () {
+    _watchdog = Timer(TimeoutPolicy.qrScan, () {
       if (mounted && _awaitingController) {
         setState(() {
           _cameraError = true;
@@ -205,7 +208,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
         if (widget.enableCamera) ...<Widget>[
           _buildCameraSection(l10n),
           const SizedBox(height: SimfTokens.space4),
-          _OrDivider(label: l10n.orDividerLabel),
+          OrDivider(label: l10n.orDividerLabel),
           const SizedBox(height: SimfTokens.space4),
         ],
         _buildManual(l10n),
@@ -215,7 +218,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
 
   Widget _buildCameraSection(AppL10n l10n) {
     if (_cameraError) {
-      return _CameraErrorCard(
+      return CameraErrorCard(
         message: l10n.scannerCameraError,
         retryLabel: l10n.scannerCameraRetry,
         onRetry: _retryCamera,
@@ -229,7 +232,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
         style: OutlinedButton.styleFrom(
           foregroundColor: SimfTokens.accent,
           side: const BorderSide(color: SimfTokens.accent),
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
         ),
       );
     }
@@ -322,7 +325,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
           // Disabled (not a spinner) while busy: an onCode that opens a modal
           // stays pending, and an infinite spinner would hang pumpAndSettle.
           onPressed: _processing ? null : _submitManual,
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(SimfTokens.buttonHeight)),
           child: Text(widget.continueLabel),
         ),
       ],
@@ -330,77 +333,3 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
   }
 }
 
-/// The gold "or" divider between the camera and manual paths.
-class _OrDivider extends StatelessWidget {
-  const _OrDivider({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        const Expanded(child: Divider(color: SimfTokens.accent)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
-          child: Text(
-            label,
-            style: SimfTokens.labelBeigeSm,
-          ),
-        ),
-        const Expanded(child: Divider(color: SimfTokens.accent)),
-      ],
-    );
-  }
-}
-
-/// Shown when the camera cannot start (permission denied / no camera / init
-/// failure). Points at system settings and keeps the manual path below usable,
-/// so the scanner is never a silent black dead-end.
-class _CameraErrorCard extends StatelessWidget {
-  const _CameraErrorCard({
-    required this.message,
-    required this.retryLabel,
-    required this.onRetry,
-  });
-
-  final String message;
-  final String retryLabel;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: SimfTokens.scannerCard,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(color: SimfTokens.accent),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space5),
-        child: Column(
-          children: <Widget>[
-            const Icon(
-              Icons.no_photography_outlined,
-              color: SimfTokens.accent,
-              size: 40,
-            ),
-            const SizedBox(height: SimfTokens.space3),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: SimfTokens.hintBeige,
-            ),
-            const SizedBox(height: SimfTokens.space3),
-            TextButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: Text(retryLabel),
-              style: TextButton.styleFrom(foregroundColor: SimfTokens.accent),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

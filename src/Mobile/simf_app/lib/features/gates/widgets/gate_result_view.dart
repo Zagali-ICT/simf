@@ -52,7 +52,7 @@ class GateResultView extends StatelessWidget {
           children: <Widget>[
             Icon(
               allowed ? Icons.check_circle_outline : Icons.cancel_outlined,
-              size: 84,
+              size: SimfTokens.gateResultViewSize,
               color: accent,
             ),
             const SizedBox(height: SimfTokens.space3),

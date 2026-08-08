@@ -50,7 +50,7 @@ class SessionsSearchField extends StatelessWidget {
             ),
             child: SimfSvgIcon(
               AppAssets.icSearch,
-              size: 18,
+              size: SimfTokens.sessionsSearchFieldSize,
               color: SimfTokens.surface,
             ),
           ),

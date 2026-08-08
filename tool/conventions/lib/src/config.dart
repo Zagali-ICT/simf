@@ -41,7 +41,18 @@ abstract final class Config {
     'SIMF-C2': <String>['_endpoints.dart', 'asset_urls.dart', 'app_config.dart'],
     'SIMF-C4': <String>['app/localization/'],
     'SIMF-C5': <String>['app/theme/app_assets.dart'],
-    'SIMF-C7': <String>['navi_form_field.dart'],
+    // A field COMPONENT must wrap TextFormField - that is what makes it a
+    // field. The rule targets screens that hand-roll one instead of reaching
+    // for a shared component. NaviFormField is the on-navy primitive, a PEER of
+    // these, not their base, so requiring them to route through it would be
+    // wrong. Matches `*_field.dart` / `*_fields.dart` and the core field
+    // helpers.
+    'SIMF-C7': <String>[
+      '_field.dart',
+      '_fields.dart',
+      '_text_field.dart',
+      'core/widgets/simf_field',
+    ],
     'SIMF-N2': <String>['theme.tokens.css'],
   };
 

@@ -11,6 +11,7 @@ import '../../app/theme/tokens.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/email_validation.dart';
+import '../../core/validation/field_limits.dart';
 import '../../core/validation/required_validation.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
@@ -136,13 +137,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.forgotPasswordScreenMaxWidth,
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const SizedBox(height: 48),
+              const SizedBox(height: SimfTokens.forgotPasswordScreenHeight),
               const Center(child: OtpMark(icon: Icons.lock_outline)),
               const SizedBox(height: SimfTokens.space6),
               Text(
@@ -156,14 +157,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 controller: _email,
                 enabled: !_busy,
                 keyboardType: TextInputType.emailAddress,
-                maxLength: 50,
-                hintText: 'example@email.com',
+                maxLength: FieldLimits.email,
+                hintText: l10n.emailHintExample,
                 // The mail glyph matches the hint colour (D-674); as a suffix it
                 // renders at the inline-start (left under RTL), per the frame.
                 suffixIcon: const Icon(
                   Icons.mail_outline,
                   color: SimfTokens.greyText,
-                  size: 18,
+                  size: SimfTokens.forgotPasswordScreenSize,
                 ),
                 validator: _validateEmail,
                 onChanged: (_) => setState(() {}),
@@ -194,7 +195,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.forgotPasswordScreenMaxWidth,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -217,7 +218,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: SimfTokens.forgotPasswordScreenWidth),
                 Flexible(
                   child: TextButton(
                     onPressed: _busy ? null : () => context.goNamed(RouteNames.signIn),

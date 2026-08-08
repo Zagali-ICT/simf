@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 import '../data/chat_message.dart';
+import 'ai_badge.dart';
 
 /// One chat bubble — pinned to match the Figma regardless of locale: assistant
 /// bubbles to the left (navy-deep fill + a top-end gold "AI" badge, frame
@@ -53,7 +54,7 @@ class ChatBubble extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const _AiBadge(),
+                  const AiBadge(),
                   const SizedBox(width: SimfTokens.space2),
                   Flexible(child: text),
                 ],
@@ -63,26 +64,3 @@ class ChatBubble extends StatelessWidget {
   }
 }
 
-/// The gold "AI" tag prefixing every assistant bubble (frame `1064:13276`):
-/// a gold pill, white bold "AI" at 12px.
-class _AiBadge extends StatelessWidget {
-  const _AiBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
-        vertical: SimfTokens.gap2,
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: const Text(
-        'AI',
-        style: SimfTokens.labelWhiteBold12Tall,
-      ),
-    );
-  }
-}

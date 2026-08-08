@@ -10,6 +10,7 @@ import '../../../core/errors/api_error_l10n.dart';
 import '../../../core/utils/gregorian_month_names.dart';
 import '../../../core/utils/saudi_time.dart';
 import '../../../core/utils/weekday_names.dart';
+import '../../../core/validation/field_limits.dart';
 import '../data/speaker_models.dart';
 import '../data/speakers_repository.dart';
 import 'meeting_slot_pickers.dart';
@@ -299,8 +300,8 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         children: <Widget>[
           Center(
             child: Container(
-              width: 80,
-              height: 5,
+              width: SimfTokens.meetingRequestSheetWidthMd,
+              height: SimfTokens.meetingRequestSheetHeightSm,
               decoration: BoxDecoration(
                 color: SimfTokens.accent,
                 borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
@@ -356,10 +357,10 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: SimfTokens.space2),
             child: SizedBox(
-              width: 20,
-              height: 20,
+              width: SimfTokens.space5,
+              height: SimfTokens.space5,
               child: CircularProgressIndicator(
-                strokeWidth: 2,
+                strokeWidth: SimfTokens.meetingRequestSheetStrokeWidth,
                 color: SimfTokens.accent,
               ),
             ),
@@ -440,7 +441,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         key: const ValueKey<String>('meeting-subject'),
         controller: _subject,
         textAlign: TextAlign.start,
-        maxLength: 1000,
+        maxLength: FieldLimits.meetingRequestMessage,
         maxLines: 1,
         style: SimfTokens.bodyInputMd,
         decoration: InputDecoration(
@@ -480,10 +481,10 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: SimfTokens.space2),
           child: SizedBox(
-            width: 20,
-            height: 20,
+            width: SimfTokens.space5,
+            height: SimfTokens.space5,
             child: CircularProgressIndicator(
-              strokeWidth: 2,
+              strokeWidth: SimfTokens.meetingRequestSheetStrokeWidth,
               color: SimfTokens.accent,
             ),
           ),
@@ -503,7 +504,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           _hint(l10n.speakersNoMatches) // لا نتائج مطابقة
         else
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 264),
+            constraints: const BoxConstraints(maxHeight: SimfTokens.meetingRequestSheetMaxHeight),
             child: ListView.separated(
               shrinkWrap: true,
               padding: EdgeInsets.zero,
@@ -562,7 +563,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           prefixIcon: const Icon(
             Icons.search,
             color: SimfTokens.greyText,
-            size: 18,
+            size: SimfTokens.meetingRequestSheetSize,
           ),
           filled: true,
           fillColor: SimfTokens.surface,

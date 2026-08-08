@@ -28,7 +28,7 @@ class AuthAltButton extends StatelessWidget {
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         side: const BorderSide(color: SimfTokens.beigeBorder),
-        minimumSize: const Size.fromHeight(48),
+        minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
         shape: const RoundedRectangleBorder(
           borderRadius: SimfTokens.borderRadiusSmall,
         ),
@@ -46,7 +46,7 @@ class AuthAltButton extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: SimfTokens.authChromeWidthSm),
           icon,
         ],
       ),
@@ -57,7 +57,7 @@ class AuthAltButton extends StatelessWidget {
 final ButtonStyle authSubmitButtonStyle = FilledButton.styleFrom(
   backgroundColor: SimfTokens.accent,
   disabledBackgroundColor: SimfTokens.accent.withValues(alpha: 0.5),
-  minimumSize: const Size.fromHeight(48),
+  minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
   shape: const RoundedRectangleBorder(
     borderRadius: SimfTokens.borderRadiusSmall,
   ),
@@ -96,10 +96,10 @@ class AuthSubmitButton extends StatelessWidget {
       style: authSubmitButtonStyle,
       child: busy
           ? const SizedBox(
-              width: 20,
-              height: 20,
+              width: SimfTokens.space5,
+              height: SimfTokens.space5,
               child: CircularProgressIndicator(
-                strokeWidth: 2,
+                strokeWidth: SimfTokens.authChromeStrokeWidth,
                 color: SimfTokens.surface,
               ),
             )

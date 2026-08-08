@@ -36,7 +36,7 @@ class BadgeActions extends StatelessWidget {
       return _actionButton(
         icon: const SimfSvgIcon(
           AppAssets.badgeScan,
-          size: 24,
+          size: SimfTokens.badgeActionsSize,
           color: SimfTokens.surface,
         ),
         label: l10n.badgeScanVisitor,
@@ -52,7 +52,7 @@ class BadgeActions extends StatelessWidget {
             filled: true,
             icon: const SimfSvgIcon(
               AppAssets.badgeScan,
-              size: 24,
+              size: SimfTokens.badgeActionsSize,
               color: SimfTokens.surface,
             ),
             label: l10n.badgeAddPerson,
@@ -70,7 +70,7 @@ class BadgeActions extends StatelessWidget {
           _actionButton(
             icon: const Icon(
               Icons.qr_code_2,
-              size: 24,
+              size: SimfTokens.badgeActionsSize,
               color: SimfTokens.surface,
             ),
             label: l10n.shareMyContactTitle,

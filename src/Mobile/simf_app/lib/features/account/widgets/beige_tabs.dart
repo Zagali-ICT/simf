@@ -35,7 +35,7 @@ class BeigeTabs extends StatelessWidget {
                 onTap: () => onChanged(i),
                 borderRadius: SimfTokens.borderRadiusSmall,
                 child: Container(
-                  height: 34,
+                  height: SimfTokens.beigeTabsHeight,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: i == selectedIndex

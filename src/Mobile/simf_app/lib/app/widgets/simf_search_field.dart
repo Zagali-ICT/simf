@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
 import 'simf_svg_icon.dart';
 
@@ -47,22 +48,22 @@ class SimfSearchField extends StatelessWidget {
           // Muted beige placeholder (matches the Figma search frames 908/922/758).
           hintStyle: SimfTokens.labelBeigeSm,
           prefixIcon: const SimfSvgIcon(
-            'assets/icons/ic_search.svg',
+            AppAssets.icSearch,
             // Figma search frames (1341:3565 etc.) — 14px magnifier.
-            size: 14,
+            size: SimfTokens.simfSearchFieldSizeSm,
             color: SimfTokens.beigeBorder,
           ),
           prefixIconConstraints:
-              const BoxConstraints(minWidth: 44, minHeight: 44),
+              const BoxConstraints(minWidth: SimfTokens.simfSearchFieldMinWidth, minHeight: SimfTokens.simfSearchFieldMinHeight),
           suffixIcon: showTuningIcon
               ? const SimfSvgIcon(
-                  'assets/icons/ic_tuning.svg',
-                  size: 18,
+                  AppAssets.icTuning,
+                  size: SimfTokens.simfSearchFieldSizeMd,
                   color: SimfTokens.beigeBorder,
                 )
               : null,
           suffixIconConstraints:
-              const BoxConstraints(minWidth: 44, minHeight: 44),
+              const BoxConstraints(minWidth: SimfTokens.simfSearchFieldMinWidth, minHeight: SimfTokens.simfSearchFieldMinHeight),
           // Figma search frames (908/922/758) — an unfilled box with a 0.2px
           // beige hairline; the navy page shows through (no card-like fill).
           filled: false,

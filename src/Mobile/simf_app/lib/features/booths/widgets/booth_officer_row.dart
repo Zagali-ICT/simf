@@ -33,8 +33,8 @@ class BoothOfficerRow extends StatelessWidget {
         ),
         const SizedBox(width: SimfTokens.space2),
         Container(
-          width: 40,
-          height: 40,
+          width: SimfTokens.space10,
+          height: SimfTokens.space10,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: SimfTokens.accent,

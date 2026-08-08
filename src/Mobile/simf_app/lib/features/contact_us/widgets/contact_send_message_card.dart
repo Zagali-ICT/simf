@@ -79,9 +79,9 @@ class ContactSendMessageCard extends StatelessWidget {
                 onPressed: sending ? null : onSend,
                 child: sending
                     ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        height: SimfTokens.space5,
+                        width: SimfTokens.space5,
+                        child: CircularProgressIndicator(strokeWidth: SimfTokens.contactSendMessageCardStrokeWidth),
                       )
                     : Text(l10n.contactSendButton),
               ),

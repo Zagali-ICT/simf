@@ -14,6 +14,7 @@ import '../localization/app_l10n.dart';
 import '../route_names.dart';
 import '../router.dart';
 import '../theme/tokens.dart';
+import 'drawer_tile.dart';
 import 'simf_confirm_dialog.dart';
 
 /// The shell's side drawer — the المزيد menu as a slide-in panel, opened by the
@@ -71,7 +72,7 @@ class MoreDrawer extends ConsumerWidget {
                     if (routeAllowsRole(entry.routeName, role) &&
                         (!entry.approvedOnly || approved) &&
                         (!entry.signedInOnly || signedIn))
-                      _DrawerTile(
+                      DrawerTile(
                         icon: entry.icon,
                         title: entry.title,
                         onTap: () {
@@ -82,7 +83,7 @@ class MoreDrawer extends ConsumerWidget {
                   // The one action a signed-in-but-unapproved account gets that a
                   // true guest does not: check its registration status (D-666).
                   if (pending)
-                    _DrawerTile(
+                    DrawerTile(
                       icon: Icons.hourglass_top_outlined,
                       title: l10n.registrationStatusButton,
                       onTap: () {
@@ -92,7 +93,7 @@ class MoreDrawer extends ConsumerWidget {
                     ),
                   // Staff gate operations (D-406 / D-509) — Staff role only.
                   if (routeAllowsRole(RouteNames.gateScanner, role))
-                    _DrawerTile(
+                    DrawerTile(
                       icon: Icons.qr_code_scanner,
                       title: l10n.gateScannerEntry,
                       onTap: () {
@@ -101,7 +102,7 @@ class MoreDrawer extends ConsumerWidget {
                       },
                     ),
                   if (routeAllowsRole(RouteNames.staffRegisterVisitor, role))
-                    _DrawerTile(
+                    DrawerTile(
                       icon: Icons.person_add_alt_1_outlined,
                       title: l10n.staffRegisterVisitorEntry,
                       onTap: () {
@@ -112,7 +113,7 @@ class MoreDrawer extends ConsumerWidget {
                   // Exhibitor lead capture (D-426 / D-519) — Exhibitor role only
                   // (the JWT role drives it now, replacing the dashboard probe).
                   if (routeAllowsRole(RouteNames.scanVisitor, role))
-                    _DrawerTile(
+                    DrawerTile(
                       icon: Icons.qr_code_scanner,
                       title: l10n.scanVisitorTitle,
                       onTap: () {
@@ -121,7 +122,7 @@ class MoreDrawer extends ConsumerWidget {
                       },
                     ),
                   if (routeAllowsRole(RouteNames.myVisitors, role))
-                    _DrawerTile(
+                    DrawerTile(
                       icon: Icons.groups_outlined,
                       title: l10n.myVisitorsTitle,
                       onTap: () {
@@ -143,7 +144,7 @@ class MoreDrawer extends ConsumerWidget {
                   // Calendar export needs an approved account's schedule — hide
                   // it for a guest / not-yet-approved account (D-666).
                   if (approved)
-                    _DrawerTile(
+                    DrawerTile(
                       icon: Icons.calendar_today_outlined,
                       title: l10n.shareCalendar,
                       onTap: () => unawaited(_shareCalendar(context, ref, l10n)),
@@ -154,7 +155,7 @@ class MoreDrawer extends ConsumerWidget {
                   // us and About are public — every account, incl. a guest — and
                   // About now carries the version (the old footer line is gone);
                   // logout is signed-in only.
-                  _DrawerTile(
+                  DrawerTile(
                     icon: Icons.mail_outline,
                     title: l10n.contactUsTitle,
                     onTap: () {
@@ -162,7 +163,7 @@ class MoreDrawer extends ConsumerWidget {
                       context.pushNamed(RouteNames.contactUs);
                     },
                   ),
-                  _DrawerTile(
+                  DrawerTile(
                     icon: Icons.info_outline,
                     title: l10n.aboutAppTitle,
                     onTap: () {
@@ -171,7 +172,7 @@ class MoreDrawer extends ConsumerWidget {
                     },
                   ),
                   if (signedIn)
-                    _DrawerTile(
+                    DrawerTile(
                       icon: Icons.logout,
                       title: l10n.signOutLink,
                       onTap: () =>
@@ -234,32 +235,6 @@ class MoreDrawer extends ConsumerWidget {
     }
     await auth.signOut();
     router.goNamed(RouteNames.signIn);
-  }
-}
-
-/// One drawer row in the navy KSA styling: a white leading icon over a white
-/// title (owner 2026-07-07: main-menu nav icons are white, not gold).
-class _DrawerTile extends StatelessWidget {
-  const _DrawerTile({
-    required this.icon,
-    required this.title,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    // No inline style on the title (#16): the app theme's `listTileTheme`
-    // already sets `textColor: SimfTokens.surface`, so the colour-only override
-    // that used to sit here was a duplicate of the token it re-stated.
-    return ListTile(
-      leading: Icon(icon, color: SimfTokens.surface),
-      title: Text(title),
-      onTap: onTap,
-    );
   }
 }
 

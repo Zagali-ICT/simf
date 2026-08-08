@@ -129,8 +129,8 @@ class ModeratorQuestionCard extends StatelessWidget {
               ),
               const SizedBox(width: SimfTokens.space5),
               Container(
-                width: 80,
-                height: 80,
+                width: SimfTokens.moderatorQuestionCardWidth,
+                height: SimfTokens.moderatorQuestionCardHeight,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: SimfTokens.accent,

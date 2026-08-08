@@ -10,9 +10,11 @@ import '../../../app/theme/tokens.dart';
 import '../../../core/utils/gregorian_month_names.dart';
 import '../../../core/utils/saudi_time.dart';
 import '../../../core/utils/weekday_names.dart';
+import '../../../core/validation/field_limits.dart';
 import '../../speakers/widgets/meeting_slot_pickers.dart';
 import '../data/delegation_models.dart';
 import '../data/delegations_repository.dart';
+import 'delegation_option_tile.dart';
 
 /// Bi-Meeting rework — the delegation-meeting request sheet (طلب اجتماع وفد),
 /// mirroring the speaker [MeetingRequestSheet]. A delegate of one invited country
@@ -283,8 +285,8 @@ class _DelegationMeetingRequestSheetState
         children: <Widget>[
           Center(
             child: Container(
-              width: 80,
-              height: 5,
+              width: SimfTokens.delegationMeetingRequestSheetWidthMd,
+              height: SimfTokens.delegationMeetingRequestSheetHeightSm,
               decoration: BoxDecoration(
                 color: SimfTokens.accent,
                 borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
@@ -337,10 +339,10 @@ class _DelegationMeetingRequestSheetState
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: SimfTokens.space2),
             child: SizedBox(
-              width: 20,
-              height: 20,
+              width: SimfTokens.space5,
+              height: SimfTokens.space5,
               child: CircularProgressIndicator(
-                strokeWidth: 2,
+                strokeWidth: SimfTokens.delegationMeetingRequestSheetStrokeWidth,
                 color: SimfTokens.accent,
               ),
             ),
@@ -445,7 +447,7 @@ class _DelegationMeetingRequestSheetState
         key: const ValueKey<String>('delegation-subject'),
         controller: _subject,
         textAlign: TextAlign.start,
-        maxLength: 1000,
+        maxLength: FieldLimits.meetingRequestMessage,
         maxLines: 1,
         style: SimfTokens.bodyInputMd,
         decoration: InputDecoration(
@@ -481,10 +483,10 @@ class _DelegationMeetingRequestSheetState
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: SimfTokens.space2),
           child: SizedBox(
-            width: 20,
-            height: 20,
+            width: SimfTokens.space5,
+            height: SimfTokens.space5,
             child: CircularProgressIndicator(
-              strokeWidth: 2,
+              strokeWidth: SimfTokens.delegationMeetingRequestSheetStrokeWidth,
               color: SimfTokens.accent,
             ),
           ),
@@ -505,7 +507,7 @@ class _DelegationMeetingRequestSheetState
           _hint(l10n.speakersNoMatches)
         else
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 264),
+            constraints: const BoxConstraints(maxHeight: SimfTokens.delegationMeetingRequestSheetMaxHeight),
             child: ListView.separated(
               shrinkWrap: true,
               padding: EdgeInsets.zero,
@@ -514,7 +516,7 @@ class _DelegationMeetingRequestSheetState
                   const SizedBox(height: SimfTokens.space2),
               itemBuilder: (context, i) {
                 final d = matches[i];
-                return _DelegationOptionTile(
+                return DelegationOptionTile(
                   delegation: d,
                   isArabic: isArabic,
                   selected: _selected?.countryId == d.countryId,
@@ -538,7 +540,7 @@ class _DelegationMeetingRequestSheetState
           prefixIcon: const Icon(
             Icons.search,
             color: SimfTokens.greyText,
-            size: 18,
+            size: SimfTokens.delegationMeetingRequestSheetSize,
           ),
           filled: true,
           fillColor: SimfTokens.surface,
@@ -632,65 +634,3 @@ class _DelegationMeetingRequestSheetState
   }
 }
 
-/// One selectable delegation row in the picker — flag + localized country name +
-/// member count, with a selected (gold) outline. Mirrors [SpeakerOptionTile]'s
-/// role for the speaker picker.
-class _DelegationOptionTile extends StatelessWidget {
-  const _DelegationOptionTile({
-    required this.delegation,
-    required this.isArabic,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final DelegationItem delegation;
-  final bool isArabic;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: SimfTokens.surface,
-      borderRadius: SimfTokens.borderRadiusSmall,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: SimfTokens.borderRadiusSmall,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SimfTokens.space3,
-            vertical: SimfTokens.space3,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: SimfTokens.borderRadiusSmall,
-            border: Border.all(
-              color: selected ? SimfTokens.accent : SimfTokens.beigeBorder,
-              width: selected ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            children: <Widget>[
-              Text(
-                delegation.flagEmoji,
-                style: const TextStyle(fontSize: 22),
-              ),
-              const SizedBox(width: SimfTokens.space3),
-              Expanded(
-                child: Text(
-                  delegation.localizedCountry(isArabic),
-                  style: SimfTokens.labelNavyMediumSm,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              Text(
-                '${delegation.memberCount}',
-                style: SimfTokens.bodyGreySm,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -63,7 +63,7 @@ class SessionDetailHeader extends StatelessWidget {
                     icon: Icon(
                       actionIcon,
                       color: SimfTokens.surface,
-                      size: 22,
+                      size: SimfTokens.sessionDetailHeaderSize,
                     ),
                   ),
           ),

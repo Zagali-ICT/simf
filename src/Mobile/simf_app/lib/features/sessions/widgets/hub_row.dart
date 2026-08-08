@@ -1,0 +1,60 @@
+import 'package:flutter/material.dart';
+import '../../../app/theme/app_assets.dart';
+import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_page_shell.dart';
+import '../../../app/widgets/simf_svg_icon.dart';
+
+/// One tappable session row — a navy card with the title over the time · hall
+/// line and a direction-aware forward chevron.
+class HubRow extends StatelessWidget {
+  const HubRow({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SimfCard(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space3),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    title,
+                    style: SimfTokens.labelWhiteSemiboldLg,
+                  ),
+                  const SizedBox(height: SimfTokens.space1),
+                  Text(
+                    subtitle,
+                    style: SimfTokens.labelBeigeSm,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: SimfTokens.space2),
+            // The thin stroked forward chevron the sibling cards use
+            // (session-detail seat card / speakers rows). The old
+            // direction-aware Icons.chevron_left DOUBLE-mirrored under RTL
+            // (chevron_left carries matchTextDirection, so Flutter flipped it
+            // back to pointing right) — SimfSvgIcon never mirrors (D-601).
+            const SimfSvgIcon(
+              AppAssets.icBack,
+              size: SimfTokens.hubRowSize,
+              color: SimfTokens.beigeBorder,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

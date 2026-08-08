@@ -9,6 +9,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/utils/refresh.dart';
 import 'data/sponsor_models.dart';
+import 'data/sponsors_endpoints.dart';
 import 'widgets/sponsor_card.dart';
 import 'widgets/sponsor_grid.dart';
 import 'widgets/sponsor_logo.dart';
@@ -18,7 +19,7 @@ final sponsorGroupsProvider =
     FutureProvider.autoDispose<List<SponsorTierGroup>>((ref) async {
   final client = ref.watch(simfApiClientProvider);
   return client.get<List<SponsorTierGroup>>(
-    '/app/sponsors',
+    SponsorsEndpoints.list,
     decodeData: SponsorTierGroup.listFromData,
   );
 });

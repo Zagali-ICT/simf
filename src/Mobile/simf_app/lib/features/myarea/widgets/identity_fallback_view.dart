@@ -27,7 +27,7 @@ class IdentityFallbackView extends StatelessWidget {
           children: <Widget>[
             const Icon(
               Icons.photo_camera_front_outlined,
-              size: 56,
+              size: SimfTokens.identityFallbackViewSize,
               color: SimfTokens.beigeBorder,
             ),
             const SizedBox(height: SimfTokens.space4),
@@ -42,7 +42,7 @@ class IdentityFallbackView extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: SimfTokens.accent,
                 foregroundColor: SimfTokens.navy,
-                minimumSize: const Size.fromHeight(48),
+                minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
               ),
               icon: const Icon(Icons.refresh),
               label: Text(l10n.identityRetry),

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../net/core_endpoints.dart';
+
 /// D-461 — the public site/app branding settings (`GET /app/site-settings`): the
 /// registration welcome message (bilingual) + the social links. Editable in the
 /// Control Panel; social fields are null when not configured. Consumers fall back
@@ -89,7 +91,7 @@ class SiteSettingsRepository {
 
   Future<SiteSettings> get() {
     return _client.get<SiteSettings>(
-      '/app/site-settings',
+      CoreEndpoints.siteSettings,
       decodeData: (data) => SiteSettings.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       ),

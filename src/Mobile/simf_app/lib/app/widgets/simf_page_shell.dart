@@ -1,11 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/accessibility/data/accessibility_controller.dart';
 import '../../features/account/data/profile_repository.dart'
     show myAvatarBytesProvider;
 import '../../features/notifications/data/notifications_repository.dart'
@@ -13,13 +11,15 @@ import '../../features/notifications/data/notifications_repository.dart'
 import '../localization/app_l10n.dart';
 import '../localization/locale_controller.dart';
 import '../route_names.dart';
+import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
+import 'avatar_fallback.dart';
 import 'more_drawer.dart';
+import 'screen_announcer.dart';
 import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
 import 'simf_bottom_nav.dart';
 import 'simf_image_viewer.dart';
 import 'simf_language_toggle.dart';
-import 'simf_logo.dart';
 import 'simf_svg_icon.dart';
 
 // One widget group per file (CLAUDE.md §1). Re-exported here so the ~489
@@ -158,7 +158,7 @@ class SimfPageShell extends StatelessWidget {
           if (showSweep) const SimfSweepBackground(),
           // Page-038 screen-reader assist: announces this page's title once on
           // mount when the user has enabled it (invisible; self-guards).
-          _ScreenAnnouncer(title: title),
+          ScreenAnnouncer(title: title),
           SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -201,8 +201,8 @@ class SimfPageShell extends StatelessWidget {
           // Leading: the 42×42 navy back box (Figma 758:1473) on the LEFT; the
           // chevron is not mirrored (the frame's chevron points left).
           SizedBox(
-            width: 42,
-            height: 42,
+            width: SimfTokens.simfPageShellWidthSm,
+            height: SimfTokens.simfPageShellHeightSm,
             child: onBack == null
                 ? null
                 : SimfCircledBackButton(onBack: onBack!, mirrorInRtl: false),
@@ -236,61 +236,11 @@ class SimfPageShell extends StatelessWidget {
           else
             // المزيد (1129:17224) drops the header pill; the spacer balances the
             // 42-wide back box so the title stays centred.
-            const SizedBox(width: 42, height: 42),
+            const SizedBox(width: SimfTokens.simfPageShellWidthSm, height: SimfTokens.simfPageShellHeightSm),
         ],
       ),
     );
   }
-}
-
-/// Announces the page [title] once on mount through the platform accessibility
-/// channel, but only when the Page-038 screen-reader assist is enabled. Renders
-/// nothing; lives invisibly in the [SimfPageShell] stack so every shell page that
-/// carries a title participates without per-screen wiring.
-class _ScreenAnnouncer extends ConsumerStatefulWidget {
-  const _ScreenAnnouncer({required this.title});
-
-  final String? title;
-
-  @override
-  ConsumerState<_ScreenAnnouncer> createState() => _ScreenAnnouncerState();
-}
-
-class _ScreenAnnouncerState extends ConsumerState<_ScreenAnnouncer> {
-  @override
-  void initState() {
-    super.initState();
-    final title = widget.title?.trim();
-    if (title == null || title.isEmpty) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      bool assist;
-      try {
-        assist = ref.read(accessibilityControllerProvider).screenReaderAssist;
-      } catch (_) {
-        // Accessibility DI not wired (e.g. a widget test that builds a SimfPageShell
-        // without overriding the controller). The announcer is best-effort and
-        // must never break a page, so skip silently.
-        return;
-      }
-      if (!assist) {
-        return;
-      }
-      final l10n = AppL10n.of(context);
-      SemanticsService.sendAnnouncement(
-        View.of(context),
-        l10n.accessibilityScreenAnnouncement(title),
-        Directionality.of(context),
-      );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 /// The circled back chevron (dark circle, white chevron). By default the glyph
@@ -330,8 +280,8 @@ class SimfCircledBackButton extends StatelessWidget {
       icon: Transform.flip(
         flipX: flip,
         child: const SimfSvgIcon(
-          'assets/icons/ic_back.svg',
-          size: 24,
+          AppAssets.icBack,
+          size: SimfTokens.simfPageShellSizeMd,
           color: SimfTokens.surface,
         ),
       ),
@@ -355,7 +305,7 @@ class SimfMenuButton extends StatelessWidget {
         backgroundColor: SimfTokens.navyDeep,
         shape: const CircleBorder(),
       ),
-      icon: const Icon(Icons.menu, color: SimfTokens.surface, size: 20),
+      icon: const Icon(Icons.menu, color: SimfTokens.surface, size: SimfTokens.simfPageShellSizeSm),
     );
   }
 }
@@ -497,11 +447,11 @@ class SimfSweepBackground extends StatelessWidget {
       child: Transform.rotate(
         angle: 0.4936,
         child: Container(
-          width: 313,
-          height: 323,
+          width: SimfTokens.simfPageShellWidthMd,
+          height: SimfTokens.simfPageShellHeightMd,
           decoration: const BoxDecoration(
             color: SimfTokens.surfaceTint,
-            borderRadius: BorderRadius.all(Radius.circular(40)),
+            borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radiusSheet)),
           ),
         ),
       ),
@@ -545,7 +495,7 @@ class SimfAvatar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final fallback = _AvatarFallback(size: size);
+    final fallback = AvatarFallback(size: size);
     Widget child = fallback;
     MemoryImage? photo;
     if (currentUser) {
@@ -572,28 +522,6 @@ class SimfAvatar extends ConsumerWidget {
       image: photo,
       label: label ?? '',
       child: box,
-    );
-  }
-}
-
-/// The default avatar when a user has no photo (or the photo fails to load):
-/// the SIMF brand mark on a navy box. The owner chose the logo over a cultural
-/// figure (D-402); the logo art is white, so the box stays dark (navyDeep) for
-/// contrast on every surface — the navy scaffold, the my-area card, and the
-/// gold badge strip alike.
-class _AvatarFallback extends StatelessWidget {
-  const _AvatarFallback({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: SimfTokens.navyDeep,
-      child: Padding(
-        padding: EdgeInsets.all(size * 0.18),
-        child: SimfLogo(size: size * 0.64),
-      ),
     );
   }
 }

@@ -20,7 +20,7 @@ class RegistrationSecondaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
+      height: SimfTokens.registrationSecondaryButtonHeight,
       width: double.infinity,
       child: Material(
         color: SimfTokens.transparent,

@@ -32,6 +32,17 @@ class AppL10n {
   String _t(String ar, String en) => isArabic ? ar : en;
 
   String get appName => _t('الملتقى البحري', 'SIMF');
+
+  /// The current UI language's own name, for the language-toggle chip.
+  ///
+  /// A language switcher shows the AUTONYM: Arabic is labelled "العربية" and
+  /// English "English" whatever the active locale, which is why both sides are
+  /// spelled out here rather than translated.
+  String get currentLanguageAutonym => _t('العربية', 'English');
+
+  /// The gold "AI" badge on an assistant chat bubble. Kept as the Latin
+  /// initialism in both languages, as the design frame renders it.
+  String get aiBadgeLabel => _t('AI', 'AI');
   String get comingSoonTitle => _t('قريباً', 'Coming soon');
   String get comingSoonBody => _t(
         'هذه الشاشة قيد التطوير. سيتم استبدالها بنسخة UI/UX النهائية لاحقاً.',
@@ -536,6 +547,10 @@ class AppL10n {
   // Sign in (Page 003).
   String get signInTitle => _t('تسجيل الدخول', 'Sign in');
   String get emailLabel => _t('البريد الإلكتروني', 'Email');
+
+  /// Placeholder shown inside an empty email field. The example address stays
+  /// Latin in both languages, as an address itself would be.
+  String get emailHintExample => _t('example@email.com', 'example@email.com');
   String get passwordLabel => _t('كلمة المرور', 'Password');
   String get signInButton => _t('دخول', 'Sign in');
   String get forgotPasswordLink => _t('نسيت كلمة المرور؟', 'Forgot password?');
@@ -832,6 +847,11 @@ class AppL10n {
   // The signed-in home's filled gold discover badge (frame 758:1280); the guest
   // home keeps the outlined "KSA" badge (frame 758:2910).
   String get discoverSaudiBadge => _t('السعودية', 'Saudi');
+
+  /// The GUEST variant of the badge above (Figma 758:2910), which the frame
+  /// renders as the Latin abbreviation in both languages. Deliberately not
+  /// translated: the signed-in variant [discoverSaudiBadge] is the localised one.
+  String get discoverSaudiBadgeShort => _t('KSA', 'KSA');
   String get greetingMorning => _t('صباح الخير', 'Good morning');
   String get greetingEvening => _t('مساء الخير', 'Good evening');
 

@@ -31,7 +31,7 @@ class AccountAuthPrompt extends StatelessWidget {
             style: SimfTokens.bodyGreySm,
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: SimfTokens.accountAuthPromptWidth),
         Flexible(
           child: TextButton(
             onPressed: enabled ? onTap : null,

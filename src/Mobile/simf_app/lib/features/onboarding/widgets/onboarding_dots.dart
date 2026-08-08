@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../core/motion/motion_durations.dart';
 
 /// The design's pill page dots — active 32×8 beige, inactive 16×8 soft gold.
 /// Forced LTR so the active dot travels left → right exactly as in the
@@ -23,15 +24,15 @@ class OnboardingDots extends StatelessWidget {
       children: <Widget>[
         for (int i = 0; i < count; i++)
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: MotionDurations.onboardingDotFade,
             margin: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
             width: i == activeIndex ? 32 : 16,
-            height: 8,
+            height: SimfTokens.space2,
             decoration: BoxDecoration(
               color: i == activeIndex
                   ? SimfTokens.beigeBorder
                   : SimfTokens.goldSoftFill50,
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(SimfTokens.radiusPill),
             ),
           ),
       ],

@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:pointycastle/api.dart';
 import 'package:pointycastle/block/aes.dart';
 import 'package:pointycastle/block/modes/gcm.dart';
-import 'package:pointycastle/api.dart';
 
 /// D-820 — decodes the encrypted badge a desk printed with no network.
 ///

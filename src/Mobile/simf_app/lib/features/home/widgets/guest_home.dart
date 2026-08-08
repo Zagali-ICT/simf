@@ -7,6 +7,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_bottom_nav.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import 'discover_saudi_row.dart';
+import 'guest_banner.dart';
 import 'home_icons.dart';
 import 'pending_approval_card.dart';
 
@@ -44,7 +45,7 @@ class GuestHome extends StatelessWidget {
           // (D-666) — it gets the under-review card at the bottom instead, never
           // a "please sign in" prompt.
           if (!pendingApproval) ...<Widget>[
-            _GuestBanner(l10n: l10n),
+            GuestBanner(l10n: l10n),
             const SizedBox(height: SimfTokens.space4),
           ],
           SimfTileRow(
@@ -101,7 +102,7 @@ class GuestHome extends StatelessWidget {
             badgeOutlined: true,
             badge: const Icon(
               Icons.help_outline,
-              size: 32,
+              size: SimfTokens.guestHomeSize,
               color: SimfTokens.accent,
             ),
             // Wave 1 added the public FAQ screen (GET /app/faq); the row opens
@@ -128,44 +129,3 @@ class GuestHome extends StatelessWidget {
   }
 }
 
-/// The "you are browsing as a guest" banner: a navy card with the gold
-/// highlighted phrase inside the beige copy (frame node 512:1499).
-class _GuestBanner extends StatelessWidget {
-  const _GuestBanner({required this.l10n});
-
-  final AppL10n l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
-        vertical: SimfTokens.space3,
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.navy,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(
-          color: SimfTokens.accent,
-          width: SimfTokens.hairline,
-        ),
-      ),
-      child: Text.rich(
-        TextSpan(
-          style: SimfTokens.bodyBeige,
-          children: <InlineSpan>[
-            TextSpan(text: l10n.guestBannerPrefix),
-            TextSpan(
-              text: l10n.guestBannerHighlight,
-              style: const TextStyle(
-                color: SimfTokens.accent,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            TextSpan(text: l10n.guestBannerSuffix),
-          ],
-        ),
-      ),
-    );
-  }
-}

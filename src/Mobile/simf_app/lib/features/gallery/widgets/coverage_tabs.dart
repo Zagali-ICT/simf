@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/route_names.dart';
 import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
+import 'coverage_tab.dart';
 
 /// The three media-coverage tabs (frame node 947:3869): the active tab is solid
 /// gold, the others bordered navy cards. The gallery tab is active here; the
@@ -24,7 +24,7 @@ class CoverageTabs extends StatelessWidget {
     return Row(
       children: <Widget>[
         Expanded(
-          child: _CoverageTab(
+          child: CoverageTab(
             label: l10n.galleryTitle,
             active: true,
             onTap: null,
@@ -32,7 +32,7 @@ class CoverageTabs extends StatelessWidget {
         ),
         const SizedBox(width: SimfTokens.space4),
         Expanded(
-          child: _CoverageTab(
+          child: CoverageTab(
             label: l10n.mediaPartnersTitle,
             active: false,
             onTap: () => context.goNamed(RouteNames.mediaPartners),
@@ -40,7 +40,7 @@ class CoverageTabs extends StatelessWidget {
         ),
         const SizedBox(width: SimfTokens.space4),
         Expanded(
-          child: _CoverageTab(
+          child: CoverageTab(
             label: l10n.newsTitle,
             active: false,
             onTap: () => context.goNamed(RouteNames.news),
@@ -51,44 +51,3 @@ class CoverageTabs extends StatelessWidget {
   }
 }
 
-/// One tab pill (frame node 947:3872): a 48-high card, solid gold when active
-/// else a bordered navy card. Two-word labels wrap to two centred lines.
-class _CoverageTab extends StatelessWidget {
-  const _CoverageTab({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SimfCard(
-      onTap: onTap,
-      color: active ? SimfTokens.accent : SimfTokens.navyDeep,
-      borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
-      child: SizedBox(
-        height: SimfTokens.controlHeight,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              // Figma 947:3764 — the active gold pill carries dark navy text;
-              // inactive pills carry beige text on navy.
-              style: active
-                  ? SimfTokens.labelNavySemiboldSm
-                  : SimfTokens.labelBeigeSemiboldSm,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

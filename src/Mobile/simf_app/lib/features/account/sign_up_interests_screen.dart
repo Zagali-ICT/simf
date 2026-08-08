@@ -8,15 +8,14 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 import 'widgets/account_sub_header.dart';
-import 'widgets/auth_chrome.dart';
 import 'widgets/interest_chip.dart';
+import 'widgets/sign_up_interests_body.dart';
 
 /// Page 007‑01 — اهتماماتي · Sign up — interests. The KSA-Project Figma design
 /// (node 505:1083 — D-365): navy surface + sweep, custom header, the
@@ -177,6 +176,22 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     });
   }
 
+  Widget _buildBody(AppL10n l10n) => SignUpInterestsBody(
+        l10n: l10n,
+        interests: _interests,
+        selected: _selected,
+        loading: _loading,
+        loadError: _loadError,
+        submitting: _submitting,
+        submitError: _submitError,
+        editMode: widget.editMode,
+        draft: widget.draft,
+        onToggleInterest: _toggleInterest,
+        onSave: _save,
+        onRetry: _load,
+        onRetryEdit: _loadForEdit,
+      );
+
   Future<void> _save() async {
     if (widget.editMode) {
       await _saveEdit();
@@ -300,170 +315,4 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     );
   }
 
-  Widget _buildBody(AppL10n l10n) {
-    if (!widget.editMode && widget.draft == null) {
-      // Create mode, direct open with no preceding data screen — recover by
-      // sending the user to the profile-data step. (Edit mode self-loads.)
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                l10n.profileLoadError,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: SimfTokens.txtSecondary),
-              ),
-              const SizedBox(height: SimfTokens.space4),
-              FilledButton(
-                onPressed: () => context.goNamed(RouteNames.signUpVisitor),
-                child: Text(l10n.signUpVisitorTitle),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: SimfTokens.accent),
-      );
-    }
-    if (_loadError != null) {
-      return _buildLoadError(l10n);
-    }
-    return Column(
-      children: <Widget>[
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-            child: MaxWidthBody(
-              maxWidth: 560,
-              child: Column(
-                children: <Widget>[
-                  const SizedBox(height: SimfTokens.space6),
-                  Text(
-                    l10n.interestsChooseTitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: SimfTokens.surface,
-                      fontSize: SimfTokens.text24,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: SimfTokens.space4),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space6),
-                    child: Text(
-                      l10n.interestsHelper,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: SimfTokens.beigeBorder,
-                        fontSize: SimfTokens.textLg,
-                        fontWeight: FontWeight.w500,
-                        height: 21 / 16,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: SimfTokens.space8),
-                  _buildChips(l10n),
-                  const SizedBox(height: SimfTokens.space6),
-                  Text(
-                    l10n.interestsCounter(_selected.length),
-                    textAlign: TextAlign.center,
-                    style: SimfTokens.labelBeigeMedium,
-                  ),
-                  if (_submitError != null) ...<Widget>[
-                    const SizedBox(height: SimfTokens.space3),
-                    Text(
-                      _submitError!,
-                      textAlign: TextAlign.center,
-                      style: SimfTokens.labelDangerSm,
-                    ),
-                  ],
-                  const SizedBox(height: SimfTokens.space6),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(SimfTokens.space4, 0, SimfTokens.space4, SimfTokens.space6),
-          child: MaxWidthBody(
-            maxWidth: 560,
-            child: SizedBox(
-              width: double.infinity,
-              child: AuthSubmitButton(
-                label: widget.editMode ? l10n.saveLabel : l10n.continueLabel,
-                busy: _submitting,
-                onPressed: (_submitting || _selected.isEmpty)
-                    ? null
-                    : () => unawaited(_save()),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Only this branch is pull-to-refreshable — re-running the load on the
-  /// populated grid would discard the chips the user has already picked.
-  Widget _buildLoadError(AppL10n l10n) {
-    return SimfRefreshableMessage(
-      onRefresh: () => widget.editMode ? _loadForEdit() : _load(),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                _loadError!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: SimfTokens.txtSecondary),
-              ),
-              const SizedBox(height: SimfTokens.space4),
-              FilledButton(
-                onPressed: () =>
-                    unawaited(widget.editMode ? _loadForEdit() : _load()),
-                child: Text(l10n.retryLabel),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// The design's two-column pill grid (Figma 505:1222): gold when selected,
-  /// `navyDeep` with a muted border otherwise.
-  Widget _buildChips(AppL10n l10n) {
-    if (_interests.isEmpty) {
-      return Text(
-        l10n.interestsEmpty,
-        style: const TextStyle(color: SimfTokens.txtSecondary),
-      );
-    }
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 12,
-        mainAxisExtent: 43,
-      ),
-      itemCount: _interests.length,
-      itemBuilder: (context, index) {
-        final interest = _interests[index];
-        return InterestChip(
-          label: l10n.isArabic ? interest.nameArabic : interest.name,
-          selected: _selected.contains(interest.id),
-          onTap: _submitting ? null : () => _toggleInterest(interest.id, l10n),
-        );
-      },
-    );
-  }
 }

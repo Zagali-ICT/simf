@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
@@ -12,7 +13,6 @@ import 'session_header_card.dart';
 import 'session_reservation_card.dart';
 import 'session_speaker_card.dart';
 import 'session_text_sections.dart';
-import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// The scrolling body: the header card, description, speakers, my-seat card and
 /// the CTA row — all RTL-primary on the navy shell (frame 889:2450).

@@ -278,11 +278,11 @@ class _IdentityVerificationScreenState
   Widget _stepLeading() {
     switch (livenessPromptDirection(_step)) {
       case LivenessPromptDirection.none:
-        return const Text('😊', style: TextStyle(fontSize: 30));
+        return const Text('😊', style: TextStyle(fontSize: SimfTokens.identityVerificationScreenFontSize));
       case LivenessPromptDirection.right:
-        return const Icon(Icons.east, color: SimfTokens.accent, size: 32);
+        return const Icon(Icons.east, color: SimfTokens.accent, size: SimfTokens.identityVerificationScreenSize);
       case LivenessPromptDirection.left:
-        return const Icon(Icons.west, color: SimfTokens.accent, size: 32);
+        return const Icon(Icons.west, color: SimfTokens.accent, size: SimfTokens.identityVerificationScreenSize);
     }
   }
 

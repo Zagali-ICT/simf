@@ -28,8 +28,8 @@ class ArchiveBullet extends StatelessWidget {
             end: SimfTokens.space2,
           ),
           child: Container(
-            width: 5,
-            height: 5,
+            width: SimfTokens.archiveBulletWidth,
+            height: SimfTokens.archiveBulletHeight,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
         ),

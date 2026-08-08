@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/motion/motion_durations.dart';
 import '../../../core/net/asset_urls.dart';
 import '../../news/data/news_models.dart';
 import 'carousel_dots.dart';
+import 'highlight_slide.dart';
 
 /// ابرز الاحداث — the highlights carousel (frame node 758:1239): an
 /// auto-advancing, swipeable PageView of image+title slides drawn from the most
@@ -60,7 +62,7 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
       final next = (_index + 1) % widget.items.length;
       _controller.animateToPage(
         next,
-        duration: const Duration(milliseconds: 450),
+        duration: MotionDurations.carouselSlide,
         curve: Curves.easeInOut,
       );
     });
@@ -85,7 +87,7 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
             itemCount: widget.items.length,
             itemBuilder: (context, i) {
               final post = widget.items[i];
-              return _HighlightSlide(
+              return HighlightSlide(
                 title: post.localizedTitle(widget.l10n.isArabic),
                 imageUrl: AssetUrls.image(
                   widget.baseUrl,
@@ -102,89 +104,6 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
           CarouselDots(count: widget.items.length, index: _index),
         ],
       ],
-    );
-  }
-}
-
-/// One carousel slide (758:1239): the news image filling a rounded card with a
-/// bottom scrim and the title overlaid — image + text only. Tapping opens the
-/// article. The image rides the D-357 anonymous `NewsImage` route; a spinner
-/// shows while it loads and a navy image-glyph box is the no-image fall-back.
-class _HighlightSlide extends StatelessWidget {
-  const _HighlightSlide({
-    required this.title,
-    required this.imageUrl,
-    required this.onTap,
-  });
-
-  final String title;
-  final String imageUrl;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      // A small inset so the neighbouring slides peek at the edges.
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              ColoredBox(
-                color: SimfTokens.navy,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  gaplessPlayback: true,
-                  loadingBuilder: (context, child, progress) =>
-                      progress == null
-                          ? child
-                          : const Center(
-                              child: SizedBox(
-                                width: 18,
-                                height: 18,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            ),
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                    child: Icon(
-                      Icons.image_outlined,
-                      size: 28,
-                      color: SimfTokens.beigeBorder,
-                    ),
-                  ),
-                ),
-              ),
-              // Bottom scrim so the white title reads over any image.
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.center,
-                    end: Alignment.bottomCenter,
-                    colors: <Color>[SimfTokens.transparent, SimfTokens.navyFill80],
-                  ),
-                ),
-              ),
-              Positioned(
-                left: SimfTokens.space4,
-                right: SimfTokens.space4,
-                bottom: SimfTokens.space3,
-                child: Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: SimfTokens.labelWhiteBoldLgTall,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

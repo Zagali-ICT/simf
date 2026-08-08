@@ -45,9 +45,9 @@ class SpeakerAvatar extends StatelessWidget {
     // (never painted under the gold stroke).
     return Center(
       child: Container(
-        width: 125,
-        height: 125,
-        padding: const EdgeInsets.all(2.77),
+        width: SimfTokens.speakerAvatarWidth,
+        height: SimfTokens.speakerAvatarHeight,
+        padding: const EdgeInsets.all(SimfTokens.avatarRingInset),
         decoration: const BoxDecoration(
           color: SimfTokens.accent,
           shape: BoxShape.circle,

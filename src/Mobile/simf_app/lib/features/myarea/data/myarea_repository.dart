@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'myarea_endpoints.dart';
 import 'myarea_models.dart';
 
 /// App-local data layer for the My-Area dashboard (Page_014). The dashboard read
@@ -15,18 +16,18 @@ class MyAreaRepository {
 
   Future<MyAreaDashboard> getDashboard() {
     return _client.get<MyAreaDashboard>(
-      '/app/account/dashboard',
+      MyAreaEndpoints.dashboard,
       decodeData: (data) => MyAreaDashboard.fromJson(_asMap(data)),
     );
   }
 
   /// `GET /app/account/contact-card.vcf` → raw vCard 3.0 text (Page_014 E3).
   Future<String> getContactCardVcf() =>
-      _client.getText('/app/account/contact-card.vcf');
+      _client.getText(MyAreaEndpoints.contactCard);
 
   /// `GET /app/account/calendar.ics` → raw RFC 5545 calendar text (Page_014 E2).
   Future<String> getCalendarIcs() =>
-      _client.getText('/app/account/calendar.ics');
+      _client.getText(MyAreaEndpoints.calendar);
 
   /// `POST /app/account/avatar` (multipart) — uploads a new avatar image for the
   /// signed-in user (jpeg/png/webp, server-gated to ≤ 2 MB). Returns true on
@@ -36,7 +37,7 @@ class MyAreaRepository {
     required String filename,
   }) {
     return _client.upload<bool>(
-      '/app/account/avatar',
+      MyAreaEndpoints.avatar,
       bytes: bytes,
       filename: filename,
       contentType: _avatarMime(filename),

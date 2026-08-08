@@ -5,6 +5,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/route_names.dart';
+import '../../core/motion/motion_durations.dart';
 import '../../core/organization_profile/organization_profile.dart';
 import '../../core/startup/app_update_checker.dart';
 
@@ -12,7 +13,7 @@ import '../../core/startup/app_update_checker.dart';
 /// L-1). Boot work that finishes sooner waits for this. Exposed as a provider
 /// so widget/unit tests can collapse it to [Duration.zero].
 final minSplashDurationProvider = Provider<Duration>((ref) {
-  return const Duration(milliseconds: 1200);
+  return MotionDurations.splashHold;
 });
 
 /// What the splash should do once boot work resolves.
@@ -109,7 +110,7 @@ class SplashController extends Notifier<SplashState> {
     try {
       // Hard cap (Logic L-6): never wait forever on the cold-start restore; on
       // timeout, fall through and route out on whatever state is current.
-      await completer.future.timeout(const Duration(seconds: 8));
+      await completer.future.timeout(TimeoutPolicy.splashStartup);
     } on TimeoutException {
       // Intentionally swallowed — the splash advances rather than hanging.
     } finally {

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
 import '../data/session_models.dart';
+import 'type_tab.dart';
 
 /// The three type tabs (frame node 883:2320): الكل (all) / جلسات (sessions) /
 /// ورش العمل (workshops). The active tab is solid gold; the rest are bordered
@@ -47,7 +47,7 @@ class SessionTypeTabs extends StatelessWidget {
           for (final (i, (label, type)) in tabs.indexed) ...<Widget>[
             if (i > 0) const SizedBox(width: SimfTokens.space2),
             Expanded(
-              child: _TypeTab(
+              child: TypeTab(
                 label: label,
                 active: type == active,
                 onTap: () => onChanged(type),
@@ -60,39 +60,3 @@ class SessionTypeTabs extends StatelessWidget {
   }
 }
 
-class _TypeTab extends StatelessWidget {
-  const _TypeTab({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SimfCard(
-      onTap: active ? null : onTap,
-      color: active ? SimfTokens.accent : SimfTokens.navyDeep,
-      borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
-      child: SizedBox(
-        // Figma tab cell 883:2321 — 41px tall.
-        height: SimfTokens.typeTabHeight,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: SimfTokens.labelWhiteSemiboldSm,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

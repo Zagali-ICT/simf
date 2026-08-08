@@ -35,8 +35,8 @@ class ComingSoonScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Container(
-                width: 80,
-                height: 80,
+                width: SimfTokens.comingSoonScreenWidth,
+                height: SimfTokens.comingSoonScreenHeight,
                 decoration: const BoxDecoration(
                   color: SimfTokens.accent,
                   shape: BoxShape.circle,

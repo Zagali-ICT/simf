@@ -33,9 +33,9 @@ class RegistrationStatusHeader extends StatelessWidget {
               icon: const Icon(
                 Icons.arrow_back_ios_new,
                 color: SimfTokens.surface,
-                size: 20,
+                size: SimfTokens.registrationStatusHeaderSize,
               ),
-              splashRadius: 22,
+              splashRadius: SimfTokens.registrationStatusHeaderSplashRadius,
             ),
             Expanded(
               child: Text(
@@ -46,7 +46,7 @@ class RegistrationStatusHeader extends StatelessWidget {
                 style: SimfTokens.labelWhiteSemiboldTitle,
               ),
             ),
-            const SizedBox(width: 48), // balances the back button; keeps title centred
+            const SizedBox(width: SimfTokens.registrationStatusHeaderWidth), // balances the back button; keeps title centred
           ],
         ),
       ),

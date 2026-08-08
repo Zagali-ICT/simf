@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../core/validation/field_limits.dart';
 
 /// The KSA OTP-frame box border (Figma 505:987 — D-364, promoted to a shared
 /// widget when the 2FA screen became the second consumer, D-369).
@@ -37,7 +38,7 @@ class OtpCodeBoxes extends StatelessWidget {
     final digits = controller.text;
     final activeIndex = digits.length.clamp(0, 5);
     return SizedBox(
-      height: 52,
+      height: SimfTokens.otpCodeBoxesHeightSm,
       child: Stack(
         children: <Widget>[
           Positioned.fill(
@@ -45,7 +46,7 @@ class OtpCodeBoxes extends StatelessWidget {
               controller: controller,
               focusNode: focusNode,
               keyboardType: TextInputType.number,
-              maxLength: 6,
+              maxLength: FieldLimits.otpCode,
               enabled: enabled,
               autocorrect: false,
               showCursor: false,
@@ -78,12 +79,12 @@ class OtpCodeBoxes extends StatelessWidget {
                   if (i > 0) const SizedBox(width: SimfTokens.space4),
                   Expanded(
                     child: Container(
-                      height: 52,
+                      height: SimfTokens.otpCodeBoxesHeightSm,
                       decoration: BoxDecoration(
                         color: SimfTokens.navy,
                         borderRadius: BorderRadius.circular(SimfTokens.radius14),
                         border: Border.all(
-                          width: 1.5,
+                          width: SimfTokens.otpCodeBoxesWidthMd,
                           color: focusNode.hasFocus && i == activeIndex
                               ? SimfTokens.accent
                               : otpCodeBoxBorder,
@@ -116,15 +117,15 @@ class OtpMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 96,
-      height: 96,
+      width: SimfTokens.otpCodeBoxesWidthLg,
+      height: SimfTokens.otpCodeBoxesHeightMd,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: SimfTokens.navyDeep,
-        border: Border.all(color: SimfTokens.accent, width: 1.2),
+        border: Border.all(color: SimfTokens.accent, width: SimfTokens.otpCodeBoxesWidthSm),
       ),
       alignment: Alignment.center,
-      child: Icon(icon, color: SimfTokens.accent, size: 34),
+      child: Icon(icon, color: SimfTokens.accent, size: SimfTokens.otpCodeBoxesSize),
     );
   }
 }

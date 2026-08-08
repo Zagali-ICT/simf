@@ -42,15 +42,15 @@ class AccountTermsCheckbox extends StatelessWidget {
         Row(
           children: <Widget>[
             SizedBox(
-              width: 19,
-              height: 19,
+              width: SimfTokens.accountTermsCheckboxWidthMd,
+              height: SimfTokens.accountTermsCheckboxHeightMd,
               child: Checkbox(
                 value: accepted,
                 onChanged: enabled ? (v) => onChanged(v ?? false) : null,
                 activeColor: SimfTokens.accent,
                 side: BorderSide(
                   color: showError ? SimfTokens.danger : SimfTokens.greyText,
-                  width: 1.5,
+                  width: SimfTokens.accountTermsCheckboxWidthSm,
                 ),
                 shape: const RoundedRectangleBorder(
                   borderRadius: SimfTokens.borderRadiusSmall,
@@ -68,7 +68,7 @@ class AccountTermsCheckbox extends StatelessWidget {
                 child: Text.rich(
                   TextSpan(
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: SimfTokens.accountTermsCheckboxFontSize,
                       color: SimfTokens.headlineInk,
                     ),
                     children: <InlineSpan>[
@@ -80,7 +80,7 @@ class AccountTermsCheckbox extends StatelessWidget {
                           child: Text(
                             l10n.termsTitle,
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: SimfTokens.accountTermsCheckboxFontSize,
                               fontWeight: FontWeight.w600,
                               color: SimfTokens.navy,
                               decoration: TextDecoration.underline,
@@ -97,7 +97,7 @@ class AccountTermsCheckbox extends StatelessWidget {
           ],
         ),
         if (showError) ...<Widget>[
-          const SizedBox(height: 6),
+          const SizedBox(height: SimfTokens.accountTermsCheckboxHeightSm),
           Padding(
             padding: const EdgeInsetsDirectional.only(start: 27),
             child: Text(

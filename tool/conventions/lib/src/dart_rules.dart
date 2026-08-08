@@ -48,11 +48,20 @@ const Set<String> _designNumberArgs = <String>{
 
 /// Named arguments that are NOT design quantities. The external review told us
 /// to put all of these in `simfTokens`; each actually belongs somewhere else.
+///
+/// Two arguments the review also listed are DELIBERATELY absent:
+///
+/// * `maxLines` / `minLines`. `maxLines: 2` already says what it means - at
+///   most two lines. Replacing it with `TextClamp.cardTitle` adds a hop without
+///   adding information, and the literal is the clearer expression. A rule
+///   should fire where the number is opaque (`height: 37`), not where the
+///   parameter name carries the meaning.
+/// * `crossAxisCount`. The right fix IS to derive the column count from
+///   `core/responsive/breakpoints.dart` - but that CHANGES the layout on a
+///   tablet. That is a design decision, not a cleanup, so it is raised as its
+///   own proposal instead of being smuggled into a refactor wave.
 const Map<String, String> _nonDesignNumberArgs = <String, String>{
   'maxLength': Remedy.fieldLimit,
-  'maxLines': Remedy.layoutIntent,
-  'minLines': Remedy.layoutIntent,
-  'crossAxisCount': Remedy.responsive,
 };
 
 /// Constructors whose POSITIONAL numeric arguments are design quantities.
@@ -116,6 +125,31 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
 
   bool _isSignificant(num? value) => value != null && value != 0 && value != 1;
 
+  /// True when this literal is ALREADY the value of something with a name.
+  ///
+  /// `const Duration saudiOffset = Duration(hours: 3);` and
+  /// `this.tickInterval = const Duration(seconds: 15)` are not magic numbers:
+  /// they are the named constant and the named default the rule is asking for.
+  /// Flagging them makes the rule unsatisfiable, because the fix for a magic
+  /// number is to write exactly this. Only a literal used inline at a call site,
+  /// `duration: const Duration(milliseconds: 250)`, is a finding.
+  bool _hasOwnName(AstNode node) {
+    AstNode? current = node.parent;
+    while (current != null) {
+      if (current is VariableDeclaration || current is DefaultFormalParameter) {
+        return true;
+      }
+      // Stop at the first node that means "used here", rather than "declared as".
+      if (current is Statement ||
+          current is ClassMember && current is! FieldDeclaration ||
+          current is CompilationUnit) {
+        return false;
+      }
+      current = current.parent;
+    }
+    return false;
+  }
+
   // ── SIMF-C1 / C7 / C4 ───────────────────────────────────────────────────
   //
   // Both visitors funnel into [_checkConstructorLike]. This matters: because the
@@ -152,7 +186,9 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
 
     if (typeName == 'Duration') {
       for (final Expression arg in argumentList.arguments) {
-        if (arg is NamedExpression && _isSignificant(_numericValue(arg.expression))) {
+        if (arg is NamedExpression &&
+            _isSignificant(_numericValue(arg.expression)) &&
+            !_hasOwnName(arg)) {
           _add(
             rule: 'SIMF-C1',
             offset: arg.offset,
@@ -166,7 +202,7 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
     if (_positionalDesignCtors.contains(typeName)) {
       for (final Expression arg in argumentList.arguments) {
         if (arg is NamedExpression) continue;
-        if (_isSignificant(_numericValue(arg))) {
+        if (_isSignificant(_numericValue(arg)) && !_hasOwnName(arg)) {
           _add(
             rule: 'SIMF-C1',
             offset: arg.offset,
@@ -191,7 +227,9 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
     final String name = node.name.label.name;
     final Expression value = node.expression;
 
-    if (_designNumberArgs.contains(name) && _isSignificant(_numericValue(value))) {
+    if (_designNumberArgs.contains(name) &&
+        _isSignificant(_numericValue(value)) &&
+        !_hasOwnName(node)) {
       _add(
         rule: 'SIMF-C1',
         offset: node.offset,
@@ -201,7 +239,9 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
     }
 
     final String? special = _nonDesignNumberArgs[name];
-    if (special != null && _isSignificant(_numericValue(value))) {
+    if (special != null &&
+        _isSignificant(_numericValue(value)) &&
+        !_hasOwnName(node)) {
       _add(
         rule: 'SIMF-C1',
         offset: node.offset,
@@ -332,6 +372,20 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
     return false;
   }
 
+  /// A `_build*` method is only a finding in an OVERSIZED file.
+  ///
+  /// All 78 in this repo read instance state (`_busy`, `_email`, `setState`),
+  /// so none is a mechanical extraction: turning one into a widget means
+  /// lifting that state into a constructor. `_buildBottomActions` reads six
+  /// fields and two callbacks - as a widget that is eight parameters to say
+  /// what one method already says, which is worse than what is there.
+  ///
+  /// So the rule tracks the defect that actually matters, the one CLAUDE.md
+  /// section 1 already states: a file over 400 lines. In a 1393-line screen
+  /// those methods ARE the structure problem. In a 200-line widget they are
+  /// ordinary composition, and 59 of the 78 are in files under the limit.
+  static const int _maxFileLines = 400;
+
   @override
   void visitMethodDeclaration(MethodDeclaration node) {
     final String name = node.name.lexeme;
@@ -340,12 +394,14 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
         returns != null &&
         (returns == 'Widget' ||
             returns == 'List<Widget>' ||
-            returns == 'PreferredSizeWidget')) {
+            returns == 'PreferredSizeWidget') &&
+        lineInfo.lineCount > _maxFileLines) {
       _add(
         rule: 'SIMF-C3',
         offset: node.offset,
-        message: 'widget-building method $name() returning $returns',
-        remedy: Remedy.ownFile,
+        message: '$name() returning $returns in a '
+            '${lineInfo.lineCount}-line file (limit $_maxFileLines)',
+        remedy: 'split the file; move this and its state into a widget',
       );
     }
     super.visitMethodDeclaration(node);

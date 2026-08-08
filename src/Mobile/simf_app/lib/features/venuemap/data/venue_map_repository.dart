@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'venue_map_models.dart';
+import 'venuemap_endpoints.dart';
 
 /// App-local data layer for the 2D venue map (Page_015). All three reads are
 /// **public** (`AllowAnonymous`) — a Guest sees the full map. Throws [ApiFailure]
@@ -15,7 +16,7 @@ class VenueMapRepository {
   /// `GET /app/venue-map` → the full active node list (E1).
   Future<List<VenueMapNode>> getNodes() {
     return _client.get<List<VenueMapNode>>(
-      '/app/venue-map',
+      VenueMapEndpoints.venueMap,
       decodeData: (data) =>
           _list(data).map(VenueMapNode.fromJson).toList(growable: false),
     );
@@ -24,7 +25,7 @@ class VenueMapRepository {
   /// `GET /app/booths` → the booth summaries that fill the popups (E2).
   Future<List<BoothSummary>> getBooths() {
     return _client.get<List<BoothSummary>>(
-      '/app/booths',
+      VenueMapEndpoints.booths,
       decodeData: (data) =>
           _list(data).map(BoothSummary.fromJson).toList(growable: false),
     );
@@ -33,7 +34,7 @@ class VenueMapRepository {
   /// `GET /app/booths/{id}` → the booth detail (description paragraph, E3).
   Future<BoothDetail> getBoothDetail(String id) {
     return _client.get<BoothDetail>(
-      '/app/booths/$id',
+      VenueMapEndpoints.boothById(id),
       decodeData: (data) => BoothDetail.fromJson(_asMap(data)),
     );
   }

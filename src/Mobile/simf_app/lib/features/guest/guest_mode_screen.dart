@@ -40,17 +40,17 @@ class GuestModeScreen extends StatelessWidget {
             children: <Widget>[
               Center(
                 child: Container(
-                  width: 64,
-                  height: 64,
+                  width: SimfTokens.guestModeScreenWidthMd,
+                  height: SimfTokens.guestModeScreenHeightMd,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: SimfTokens.accent.withValues(alpha: 0.08),
-                    border: Border.all(color: SimfTokens.accent, width: 1.5),
+                    border: Border.all(color: SimfTokens.accent, width: SimfTokens.guestModeScreenWidthSm),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.explore_outlined,
-                    size: 30,
+                    size: SimfTokens.guestModeScreenSize,
                     color: SimfTokens.accent,
                   ),
                 ),
@@ -80,7 +80,7 @@ class GuestModeScreen extends StatelessWidget {
                       style: const TextStyle(
                         color: SimfTokens.txtSecondary,
                         fontSize: SimfTokens.textSm,
-                        height: 1.7,
+                        height: SimfTokens.guestModeScreenHeightSm,
                       ),
                     ),
                     const SizedBox(height: SimfTokens.space3),
@@ -89,7 +89,7 @@ class GuestModeScreen extends StatelessWidget {
                       style: const TextStyle(
                         color: SimfTokens.txtSecondary,
                         fontSize: SimfTokens.textSm,
-                        height: 1.7,
+                        height: SimfTokens.guestModeScreenHeightSm,
                       ),
                     ),
                   ],

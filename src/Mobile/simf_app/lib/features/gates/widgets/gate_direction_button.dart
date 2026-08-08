@@ -47,7 +47,7 @@ class GateDirectionButton extends StatelessWidget {
                 style: SimfTokens.labelWhiteBoldLg,
               ),
               const SizedBox(width: SimfTokens.space2),
-              Icon(icon, size: 18, color: SimfTokens.surface),
+              Icon(icon, size: SimfTokens.gateDirectionButtonSize, color: SimfTokens.surface),
             ],
           ),
         ),

@@ -12,6 +12,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/app_assets.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../../core/motion/motion_durations.dart';
 import 'widgets/onboarding_background.dart';
 import 'widgets/onboarding_dots.dart';
 import 'widgets/onboarding_top_bar.dart';
@@ -119,7 +120,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
     unawaited(
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 250),
+        duration: MotionDurations.dotFade,
         curve: Curves.easeOut,
       ),
     );
@@ -131,7 +132,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
     unawaited(
       _pageController.previousPage(
-        duration: const Duration(milliseconds: 250),
+        duration: MotionDurations.dotFade,
         curve: Curves.easeOut,
       ),
     );
@@ -177,7 +178,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   onToggleLanguage: _toggleLanguage,
                 ),
                 const SizedBox(height: SimfTokens.space2),
-                const SimfLogo(size: 136),
+                const SimfLogo(size: SimfTokens.onboardingScreenSize),
                 const SizedBox(height: SimfTokens.space10),
                 SizedBox(
                   height: SimfTokens.onboardCarouselHeight,

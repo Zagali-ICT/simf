@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'accessibility_controller.dart';
+import 'accessibility_endpoints.dart';
 
 /// `accessibility-server-sync` — the server half of the accessibility choices.
 ///
@@ -20,7 +21,7 @@ import 'accessibility_controller.dart';
 class AccessibilityPreferencesRepository {
   AccessibilityPreferencesRepository(this._client);
 
-  static const String _path = '/app/account/preferences';
+  static const String _path = AccessibilityEndpoints.preferences;
 
   final SimfApiClient _client;
 

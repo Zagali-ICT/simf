@@ -8,7 +8,6 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
-import '../../app/router.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_info_dialog.dart';
@@ -18,6 +17,7 @@ import '../moderation/data/moderation_repository.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'data/session_calendar.dart';
+import 'data/session_detail_eligibility.dart';
 import 'data/session_detail_repository.dart';
 import 'data/session_lifecycle.dart';
 import 'data/session_models.dart';
@@ -117,7 +117,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       // is fetched: a guest / pending account has no join section (L-3), and a
       // Staff / Moderator is not offered one either — the router would bounce
       // them Home the moment they tapped it.
-      final canJoin = _canJoin;
+      final canJoin = canJoinSession(_role);
       final seatMap = canJoin ? await _safeSeatMap() : null;
       if (!mounted) {
         return;
@@ -147,49 +147,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   /// disagree for a signed-in but not-yet-approved account (D-666 presents it as
   /// a guest), and the router reads the effective one — so a screen that reads
   /// the raw role offers affordances the router then bounces.
-  static AppRole _roleOf(AuthState auth) => auth is AuthStateSignedIn
-      ? auth.session.user.effectiveAppRole
-      : AppRole.guest;
-
-  AppRole get _role => _roleOf(ref.read(authControllerProvider));
-
-  /// DEF-MOD-004 — join / my-seat are attendee-only routes (#18 and #109 share
-  /// the same allowed set), so the UI offers them only to a role that can
-  /// actually open them. [routeAllowsRole] is the router's own table (D-519), so
-  /// the two can never drift apart.
-  bool get _canJoin => routeAllowsRole(RouteNames.mySeat, _role);
-
-  /// DEF-MOD-003 — the اسأل المحاور card opens the attendee-only send-question
-  /// route (#26). A GUEST (and a pending account, which presents as one) still
-  /// sees the card DISABLED — that is the existing sign-in nudge — but an
-  /// operational role the router would bounce is not offered it at all.
-  bool get _canAsk {
-    final role = _role;
-    return role == AppRole.guest ||
-        routeAllowsRole(RouteNames.sendQuestion, role);
-  }
-
-  /// Whether the hall check-in strip is offered. Three gates, each for its own
-  /// reason:
-  ///
-  /// * It reads the CALLER's own attendance from a bearer-gated endpoint, so it
-  ///   follows the same attendee gate as the seat map (D-576/D-577; D-666
-  ///   presents a not-yet-approved account as a guest): a guest has no
-  ///   attendance to report and would only ever see the failed-read state.
-  /// * A session too far in the future has nothing to report yet. But the cut-off
-  ///   is NOT "has it started": `HallAttendanceService.RecordGateDoorScanAsync`
-  ///   binds a door scan with `s.Start - ArrivalGrace <= now`, where ArrivalGrace
-  ///   is 15 minutes, so an attendee scanned in during the queue BEFORE the doors
-  ///   nominally open already has a real attendance row. Gating on
-  ///   `phase != upcoming` hid the strip for exactly that window — the one where
-  ///   people are most likely to have just been scanned. The client mirrors the
-  ///   server's grace so the two agree.
-  /// * #29 — a workshop's detail is the title + time block only, so it carries
-  ///   no attendance section either.
-  bool _showArrivalStatus(SessionDetail detail) =>
-      _canJoin &&
-      detail.type != SessionType.workshop &&
-      !saudiNow().isBefore(detail.start.subtract(detail.arrivalGrace));
+  AppRole get _role => roleOf(ref.read(authControllerProvider));
 
   Future<SessionSeatMap?> _safeSeatMap() async {
     try {
@@ -363,7 +321,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     // DEF-MOD-008 — the ROUTER gates on effectiveAppRole (D-666: an unapproved
     // account presents as guest). Reading the raw `appRole` here showed the
     // moderate action to an unapproved moderator, who was then bounced Home.
-    final role = _roleOf(ref.watch(authControllerProvider));
+    final role = roleOf(ref.watch(authControllerProvider));
     // Moderator (محاور) entry to the Q&A desk (D-405). Moderator-EXCLUSIVE
     // (D-519): Staff no longer inherits it (the focused role model dropped the
     // isAtLeast ladder). The server still enforces the per-session
@@ -475,7 +433,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   Widget _detailBody(AppL10n l10n, String baseUrl) {
     return SessionDetailBody(
       detail: _detail!,
-      header: _showArrivalStatus(_detail!)
+      header: showArrivalStatus(_detail!, _role)
           ? SessionArrivalAction(
               sessionId: widget.sessionId,
               hasEnded: _detail!.phase(saudiNow()) == SessionPhase.ended,
@@ -486,7 +444,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       busy: _busy,
       l10n: l10n,
       baseUrl: baseUrl,
-      canAsk: _canAsk,
+      canAsk: canAskQuestion(_role),
       onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
       onRemind: () => _remind(l10n),
       onSessionLink: _openLive,

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'meet_endpoints.dart';
 import 'partner_directory_models.dart';
 
 /// Build #13 — `GET /app/networking/partner-directory` → the "Meet People Like
@@ -11,7 +12,7 @@ final partnerDirectoryProvider =
     FutureProvider.autoDispose<List<PartnerDirectoryEntry>>((ref) async {
   final client = ref.watch(simfApiClientProvider);
   return client.get<List<PartnerDirectoryEntry>>(
-    '/app/networking/partner-directory',
+    MeetEndpoints.partnerDirectory,
     decodeData: PartnerDirectoryEntry.listFromData,
   );
 });

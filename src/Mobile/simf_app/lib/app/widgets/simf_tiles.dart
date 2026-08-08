@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 import 'simf_cards.dart';
 import 'simf_svg_icon.dart';
+import 'tile_body.dart';
 
 /// The home/section tile family: the equal-width row and the nav / stat
 /// tiles that fill it. Split out of `simf_page_shell.dart`, which re-exports
@@ -86,7 +87,7 @@ class SimfNavTile extends StatelessWidget {
           ? SimfTokens.beigeBorder
           : SimfTokens.navyDisabledBorder,
       borderWidth: enabled ? SimfTokens.hairline : 1,
-      child: _TileBody(
+      child: TileBody(
         top: top,
         label: label,
         labelColor: labelColor,
@@ -124,7 +125,7 @@ class SimfStatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return SimfCard(
       onTap: onTap,
-      child: _TileBody(
+      child: TileBody(
         top: Text(
           '$value',
           style: SimfTokens.labelGoldBoldXl,
@@ -136,45 +137,3 @@ class SimfStatTile extends StatelessWidget {
   }
 }
 
-/// The shared tile interior: a centred top element over the small bold label.
-class _TileBody extends StatelessWidget {
-  const _TileBody({
-    required this.top,
-    required this.label,
-    required this.labelColor,
-    this.minHeight = 72,
-  });
-
-  final Widget top;
-  final String label;
-  final Color labelColor;
-  final double minHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: minHeight),
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space2),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            top,
-            const SizedBox(height: SimfTokens.space2),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-                color: labelColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

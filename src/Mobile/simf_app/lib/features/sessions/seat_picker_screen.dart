@@ -15,6 +15,7 @@ import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'widgets/hall_seat_map.dart';
 import 'widgets/seat_map_async_view.dart';
+import 'widgets/selected_seat_chip.dart';
 
 /// D-485 — **Seat picker** (`/sessions/:sessionId/pick-seat`, approved Visitor).
 /// An assigned-seat session's selectable hall grid: tap an **available** seat to
@@ -274,7 +275,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
           ),
           const SizedBox(height: SimfTokens.space5),
           if (_selectedRow != null && _selectedSeat != null) ...<Widget>[
-            _SelectedSeatChip(
+            SelectedSeatChip(
               label:
                   l10n.seatPickerSelectedChip(_selectedRow!, _selectedSeat!),
             ),
@@ -296,7 +297,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
                 borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               ),
             ),
-            icon: const Icon(Icons.event_seat, size: 20),
+            icon: const Icon(Icons.event_seat, size: SimfTokens.seatPickerScreenSize),
             label: Text(
               held == null
                   ? l10n.seatPickerConfirmCta
@@ -318,7 +319,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                 ),
               ),
-              icon: const Icon(Icons.shuffle, size: 20),
+              icon: const Icon(Icons.shuffle, size: SimfTokens.seatPickerScreenSize),
               label: Text(
                 l10n.seatPickerRandomCta,
                 style: SimfTokens.titleBold,
@@ -331,33 +332,3 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
   }
 }
 
-/// The confirmation chip above the CTAs: shows the seat the visitor has tapped
-/// so they can verify it before committing. A bordered navy pill (frame parity
-/// with the my-seat chips) — kept forced-LTR-agnostic (it reads inside the RTL
-/// picker body).
-class _SelectedSeatChip extends StatelessWidget {
-  const _SelectedSeatChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space3,
-        vertical: SimfTokens.space2,
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        border: Border.all(color: SimfTokens.accent),
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: SimfTokens.labelWhiteSemibold,
-      ),
-    );
-  }
-}

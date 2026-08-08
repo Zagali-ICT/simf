@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../data/delegation_models.dart';
+import 'flag_box.dart';
 
 /// One delegation card (Figma 1426:10838): the country identity row (flag +
 /// bilingual name). The head-of-delegation box and the member-count / date-range
@@ -52,7 +53,7 @@ class DelegationCard extends StatelessWidget {
     final showSubtitle = subtitle.isNotEmpty && subtitle != title;
     return Row(
       children: <Widget>[
-        _FlagBox(emoji: item.flagEmoji),
+        FlagBox(emoji: item.flagEmoji),
         const SizedBox(width: SimfTokens.space3),
         Expanded(
           child: Column(
@@ -82,23 +83,3 @@ class DelegationCard extends StatelessWidget {
   }
 }
 
-class _FlagBox extends StatelessWidget {
-  const _FlagBox({required this.emoji});
-
-  final String emoji;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.surfaceTint,
-        border: Border.all(color: SimfTokens.line),
-        borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
-      ),
-      child: Text(emoji, style: const TextStyle(fontSize: 28)),
-    );
-  }
-}

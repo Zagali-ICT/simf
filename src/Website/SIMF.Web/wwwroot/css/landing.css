@@ -6,7 +6,7 @@
    Bootstrap 5 provides the reset, grid and utilities; these tokens and
    component classes carry the Saudi-DGA brand so the page never relies on
    default Bootstrap colours or type. Token VALUES mirror the Figma variable
-   collection (verified: Yellow/Normal #e8c060, Primary #244a77, …).
+   collection (verified: Yellow/Normal var(--gold), Primary var(--primary), …).
 
    Everything is scoped under .landing (and this file only loads on the
    landing page via <HeadContent>), so it cannot affect the app's other
@@ -39,32 +39,53 @@
 /* --------------------------- design tokens --------------------------- */
 .landing {
   /* brand */
-  --navy: #001640;
-  --primary: #244a77;
-  --primary-light: #e9edf1;
-  --secondary: #498fbd;
-  --secondary-dark: #376b8e;
-  --secondary-light: #edf4f8;
+  --navy: var(--navy);
+  --primary: var(--primary);
+  --primary-light: var(--primary-light);
+  --secondary: var(--secondary);
+  --secondary-dark: var(--secondary-dark);
+  --secondary-light: var(--secondary-light);
   /* interior page-hero gradient (Figma colors/blue: dark → bright) */
-  --blue-dark: #005da2;
-  --blue-bright: #007cd8;
+  --blue-dark: var(--blue-dark);
+  --blue-bright: var(--blue-bright);
   /* deep-navy hairline for translucent "glass" cards on navy (matches ln-tstat) */
-  --navy-line: #1b3859;
-  --gold: #e8c060;
-  --gold-active: #ba9a4d;
-  --gold-dark: #ae9048;
-  --gold-light: #fdf9ef;
-  --gold-darker: #514322;
+  --navy-line: var(--navy-line);
+  --gold: var(--gold);
+  --gold-active: var(--gold-active);
+  --gold-dark: var(--gold-dark);
+  --gold-light: var(--gold-light);
+  --gold-darker: var(--gold-darker);
   /* neutrals */
-  --ink: #161616;
-  --ink-display: #1f2a37;
-  --border-neutral: #d2d6db;
-  --bg-gray: #f5f8fa;
-  --white: #ffffff;
-  --gray-darker: #545555;
+  --ink: var(--ink);
+  --ink-display: var(--ink-display);
+  --border-neutral: var(--border-neutral);
+  --bg-gray: var(--bg-gray);
+  --white: var(--white);
+  --gray-darker: var(--gray-darker);
   /* speaker-card photo gradient (blue → gold) */
-  --secondary-tint: #c7dceb;
-  --gold-tint: #f8ebce;
+
+  /* Neutral ramp and one-off surfaces (SIMF-CQP-001 N2). These were written as
+     raw hex at their use sites; the values are unchanged, the names say what
+     each one is for. */
+  --black: var(--black);
+  --ink-strong: var(--ink-strong);
+  --ink-muted: var(--ink-muted);
+  --ink-subtle: var(--ink-subtle);
+  --icon-neutral: var(--icon-neutral);
+  --border-subtle: var(--border-subtle);
+  --border-input: var(--border-input);
+  --surface-muted: var(--surface-muted);
+  --surface-chip: var(--surface-chip);
+  --surface-chip-hover: var(--surface-chip-hover);
+  --surface-panel: var(--surface-panel);
+  --surface-panel-alt: var(--surface-panel-alt);
+  --text-on-navy-muted: var(--text-on-navy-muted);
+  --primary-hover: var(--primary-hover);
+  --navy-scrim: var(--navy-scrim);
+  --flag-green: var(--flag-green);
+
+  --secondary-tint: var(--secondary-tint);
+  --gold-tint: var(--gold-tint);
   /* radius / effect */
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -80,7 +101,7 @@
   --landing-font: 'Almarai', system-ui, 'Segoe UI', Tahoma, sans-serif;
 
   /* Bootstrap theme overrides (so .btn/.text-primary/etc. inherit the brand) */
-  --bs-primary: #244a77;
+  --bs-primary: var(--primary);
   --bs-primary-rgb: 36, 74, 119;
   --bs-body-font-family: var(--landing-font);
   --bs-body-color: var(--ink);
@@ -156,7 +177,7 @@
 .ln-stamp { background: var(--gold); height: 32px; display: flex; align-items: center;
   padding-inline: 32px; overflow: hidden; }
 .ln-stamp__content { display: flex; align-items: center; gap: 10px; }
-.ln-stamp__flag { width: 20px; height: 14px; background: #006923; display: inline-grid;
+.ln-stamp__flag { width: 20px; height: 14px; background: var(--flag-green); display: inline-grid;
   place-items: center; overflow: hidden; flex: 0 0 auto; }
 .ln-stamp__flag img { width: 14px; height: auto; }
 .ln-stamp__label { font-size: 14px; line-height: 20px; color: var(--ink); white-space: nowrap; }
@@ -170,6 +191,9 @@
 .ln-nav__inner { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 16px; }
 .ln-nav__brandmenu { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .ln-nav__logo { height: 64px; width: auto; }
+/* The off-canvas header is shorter than the desktop bar, so the mark sits at
+   40px there. Was an inline style on the element (SIMF-CQP-001 N1). */
+.ln-nav__logo--compact { height: 40px; }
 .ln-nav__menu { display: flex; align-items: center; }
 .ln-nav__item { display: inline-flex; align-items: center; gap: 4px; height: 72px; padding-inline: 16px;
   color: var(--white); font-size: 16px; line-height: 24px; background: none; border: 0; border-radius: var(--radius-sm);
@@ -228,23 +252,23 @@
 .ln-search__close svg { width: 20px; height: 20px; }
 .ln-search__bar { display: flex; align-items: center; gap: 16px; width: 100%; }
 .ln-search__field { flex: 1 1 0; min-width: 0; height: 40px; display: flex; align-items: center; gap: 8px;
-  background: var(--white); border: 1px solid #9da4ae; border-radius: 4px; padding-inline: 16px 8px; }
+  background: var(--white); border: 1px solid var(--border-input); border-radius: 4px; padding-inline: 16px 8px; }
 .ln-search__field input { flex: 1 1 0; min-width: 0; border: 0; outline: 0; background: none; font-family: inherit;
   font-size: 16px; line-height: 24px; color: var(--ink-display); text-align: start; }
-.ln-search__field input::placeholder { color: #6c737f; }
-.ln-search__field > svg { width: 20px; height: 20px; color: #384250; flex: 0 0 20px; }
-.ln-search__mic { background: none; border: 0; padding: 0; cursor: pointer; color: #384250; }
+.ln-search__field input::placeholder { color: var(--ink-subtle); }
+.ln-search__field > svg { width: 20px; height: 20px; color: var(--icon-neutral); flex: 0 0 20px; }
+.ln-search__mic { background: none; border: 0; padding: 0; cursor: pointer; color: var(--icon-neutral); }
 .ln-search__mic svg { width: 20px; height: 20px; }
 .ln-search__submit { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding-inline: 16px;
   background: var(--primary); color: var(--white); border: 0; border-radius: 4px; font-family: inherit; font-size: 16px;
   line-height: 24px; cursor: pointer; white-space: nowrap; }
-.ln-search__submit:hover { background: #1d3c60; }
+.ln-search__submit:hover { background: var(--primary-hover); }
 .ln-search__sugg { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; width: 100%; }
 .ln-search__suggtitle { font-size: 18px; font-weight: 700; line-height: 28px; color: var(--gold-dark); }
 .ln-search__chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.ln-chip { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding-inline: 12px; background: #f3f4f6;
+.ln-chip { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding-inline: 12px; background: var(--surface-chip);
   border: 0; border-radius: 4px; font-family: inherit; font-size: 16px; line-height: 24px; color: var(--ink); cursor: pointer; white-space: nowrap; }
-.ln-chip:hover { background: #e5e7eb; }
+.ln-chip:hover { background: var(--surface-chip-hover); }
 .ln-chip svg { width: 18px; height: 18px; }
 
 /* mobile off-canvas nav (Bootstrap offcanvas, brand-styled) */
@@ -318,14 +342,14 @@
   align-items: flex-start; gap: 32px; }
 .ln-intro__text { display: flex; flex-direction: column; align-items: flex-start; text-align: start; gap: 24px; width: 100%; }
 .ln-intro__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--white); }
-.ln-intro__sub { font-size: 16px; line-height: 24px; color: #bbc7d5; max-width: 720px; }
+.ln-intro__sub { font-size: 16px; line-height: 24px; color: var(--text-on-navy-muted); max-width: 720px; }
 .ln-intro__lead { font-size: 16px; line-height: 24px; color: var(--white); max-width: 720px; }
 /* Continuous marquee: two copies of the threat stats scroll -50% forever. Forced
    LTR so the over-wide track anchors at its left edge; both edges masked; pauses
    on hover. (Was a static manual-scroll row — the design wants it moving.) */
 .ln-intro__strip { width: 100%; overflow: hidden; direction: ltr;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
-          mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%); }
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, var(--black) 5%, var(--black) 95%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, var(--black) 5%, var(--black) 95%, transparent 100%); }
 .ln-marquee__track { display: flex; width: max-content;
   animation: ln-marquee 60s linear infinite; }
 .ln-intro__strip:hover .ln-marquee__track { animation-play-state: paused; }
@@ -352,8 +376,8 @@
 .ln-stats__header { background: var(--bg-gray); padding: 40px clamp(16px, 5.5vw, 80px); display: flex;
   flex-direction: column; text-align: start; gap: 24px; }
 .ln-stats__eyebrow { font-size: 16px; line-height: 24px; color: var(--secondary-dark); }
-.ln-stats__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: #000; }
-.ln-stats__lead { font-size: 16px; line-height: 24px; color: #000; max-width: 900px; }
+.ln-stats__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--black); }
+.ln-stats__lead { font-size: 16px; line-height: 24px; color: var(--black); max-width: 900px; }
 .ln-stats__band { position: relative; background: var(--navy); overflow: hidden; padding: 64px 24px;
   display: flex; flex-direction: column; align-items: center; gap: 64px; }
 .ln-stats__band::before { content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -378,7 +402,7 @@
 .ln-about__text { display: flex; flex-direction: column; align-items: flex-start; gap: 32px; }
 .ln-about__eyebrow { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--gold-dark); }
 .ln-about__title { font-size: 32px; font-weight: 800; line-height: 1.25; color: var(--navy); text-align: start; }
-.ln-about__lead { font-size: 18px; line-height: 32px; color: #000; text-align: start; }
+.ln-about__lead { font-size: 18px; line-height: 32px; color: var(--black); text-align: start; }
 .ln-about__media { flex: 0 0 608px; width: 608px; height: 433px; border-radius: 8px; overflow: hidden; }
 .ln-about__media img { width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 980px) {
@@ -400,22 +424,22 @@
    page. flex:1 fills the viewport edge-to-edge and adapts to the card count. */
 .ln-miles__row { display: flex; width: 100%; }
 .ln-mcard { flex: 1 1 0; min-width: 0; height: 369px; display: flex; flex-direction: column;
-  border: 1px solid #e0e0e0; background: #fafafa; overflow: hidden; }
+  border: 1px solid var(--border-subtle); background: var(--surface-muted); overflow: hidden; }
 .ln-mcard__img { flex: 0 0 259px; position: relative; background-size: cover; background-position: center;
   transition: flex-basis .45s ease; }
-.ln-mcard__img::after { content: ""; position: absolute; inset: 0; background: #001c71; opacity: 0; transition: opacity .45s ease; }
-.ln-mcard__img--future { background-color: #bbc7d5; background-size: contain; background-repeat: no-repeat; background-position: center; }
+.ln-mcard__img::after { content: ""; position: absolute; inset: 0; background: var(--navy-scrim); opacity: 0; transition: opacity .45s ease; }
+.ln-mcard__img--future { background-color: var(--text-on-navy-muted); background-size: contain; background-repeat: no-repeat; background-position: center; }
 .ln-mcard__body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: flex-start;
-  gap: 12px; padding: 16px; text-align: start; background: #fafafa; overflow: hidden; transition: background-color .45s ease; }
+  gap: 12px; padding: 16px; text-align: start; background: var(--surface-muted); overflow: hidden; transition: background-color .45s ease; }
 .ln-mcard__top { display: flex; align-items: flex-start; justify-content: space-between; width: 100%; gap: 12px; }
 .ln-mcard__arrow { flex: 0 0 auto; width: 40px; height: 40px; display: grid; place-items: center; color: var(--primary);
   transition: color .45s ease; }
 .ln-mcard__arrow svg { width: 22px; height: 22px; }
 [dir="ltr"] .ln-mcard__arrow svg { transform: scaleX(-1); }
 .ln-mcard__headcol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
-.ln-mcard__date { font-size: 18px; line-height: 32px; color: #757575; transition: color .45s ease; }
+.ln-mcard__date { font-size: 18px; line-height: 32px; color: var(--ink-muted); transition: color .45s ease; }
 .ln-mcard__name { font-size: 24px; font-weight: 700; line-height: 32px; color: var(--ink-display); text-align: start; transition: color .45s ease; }
-.ln-mcard__text { font-size: 16px; line-height: 24px; color: #757575; width: 100%; opacity: 0;
+.ln-mcard__text { font-size: 16px; line-height: 24px; color: var(--ink-muted); width: 100%; opacity: 0;
   transition: opacity .4s ease .05s, color .45s ease; }
 .ln-mcard:hover .ln-mcard__img { flex-basis: 152px; }
 .ln-mcard:hover .ln-mcard__img::after { opacity: .34; }
@@ -434,7 +458,7 @@
 .ln-hero2__bg img { position: absolute; inset-inline-end: 0; top: 0; width: 51.16%; height: 100%; object-fit: cover; }
 .ln-hero2__bg::after { content: ""; position: absolute; inset: 0; background-image:
   linear-gradient(90deg, rgba(0, 0, 0, .24) 0%, rgba(0, 0, 0, .24) 100%),
-  linear-gradient(269.98deg, #244a77 0%, #498fbd 49.16%, rgba(73, 143, 189, .98) 51.69%, rgba(73, 143, 189, 0) 99.94%); }
+  linear-gradient(269.98deg, var(--primary) 0%, var(--secondary) 49.16%, rgba(73, 143, 189, .98) 51.69%, rgba(73, 143, 189, 0) 99.94%); }
 /* the gradient is genuinely mirrored art, so it keeps an explicit LTR flip */
 [dir="ltr"] .ln-hero2__bg::after { transform: scaleX(-1); }
 .ln-hero2__block { position: relative; z-index: 1; width: 457px; max-width: 100%; display: flex; flex-direction: column;
@@ -627,13 +651,13 @@
   .ln-pband__strip { overflow-x: auto; scrollbar-width: none; }
   .ln-pband__strip::-webkit-scrollbar { display: none; }
 }
-.ln-pcard { flex: 0 0 360px; width: 360px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-direction: column;
+.ln-pcard { flex: 0 0 360px; width: 360px; background: var(--white); border: 1px solid var(--border-subtle); display: flex; flex-direction: column;
   transition: background-color .3s ease, border-color .3s ease; }
 .ln-pcard:hover { border-color: var(--primary-light); }
-.ln-pcard:hover .ln-pcard__logo, .ln-pcard:hover .ln-pcard__label { background: #e7e9f1; }
-.ln-pcard__logo { height: 238px; display: grid; place-items: center; padding: 32px; background: #fff; transition: background-color .3s ease; }
+.ln-pcard:hover .ln-pcard__logo, .ln-pcard:hover .ln-pcard__label { background: var(--surface-panel-alt); }
+.ln-pcard__logo { height: 238px; display: grid; place-items: center; padding: 32px; background: var(--white); transition: background-color .3s ease; }
 .ln-pcard__logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.ln-pcard__label { min-height: 88px; background: #fafafa; border-top: 1px solid #e0e0e0; display: grid; place-items: center; padding: 13px; font-size: 22px; font-weight: 600; color: #212121; text-align: center; transition: background-color .3s ease; }
+.ln-pcard__label { min-height: 88px; background: var(--surface-muted); border-top: 1px solid var(--border-subtle); display: grid; place-items: center; padding: 13px; font-size: 22px; font-weight: 600; color: var(--ink-strong); text-align: center; transition: background-color .3s ease; }
 .ln-pband__bar { max-width: calc(var(--content-w) + 2 * var(--section-gutter)); margin-inline: auto; width: 100%; padding: 16px clamp(16px, 5.5vw, var(--section-gutter)); }
 .ln-pband__rail { height: 6px; background: rgba(0, 0, 0, .1); border-radius: 10px; position: relative; }
 .ln-pband__thumb { position: absolute; inset-inline-start: 0; top: 0; height: 6px; width: 200px; background: var(--gold); border-radius: 10px; }
@@ -650,16 +674,16 @@
    viewport is forced LTR so the over-wide track anchors at its left edge (an
    RTL block would right-anchor it and translate-X would push it off-screen). */
 .ln-spon__marquee { overflow: hidden; direction: ltr;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
-          mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%); }
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, var(--black) 5%, var(--black) 95%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, var(--black) 5%, var(--black) 95%, transparent 100%); }
 .ln-spon__track { display: flex; width: max-content;
   animation: ln-marquee 40s linear infinite; }
 .ln-spon__marquee:hover .ln-spon__track { animation-play-state: paused; }
 .ln-scard2 { flex: 0 0 auto; width: 243px; height: 122px; padding: 16px; margin-inline-end: 16px;
-  background: #fff; border: 1px solid var(--border-neutral); border-radius: 16px;
+  background: var(--white); border: 1px solid var(--border-neutral); border-radius: 16px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
 .ln-scard2__name { font-size: 18px; font-weight: 800; line-height: 1.3; color: var(--ink-display); }
-.ln-scard2__tag { background: var(--gold-light); border: 1px solid #f8ebce; border-radius: var(--radius-sm);
+.ln-scard2__tag { background: var(--gold-light); border: 1px solid var(--gold-tint); border-radius: var(--radius-sm);
   padding: 2px 8px; font-size: 12px; line-height: 18px; color: var(--ink-display); }
 /* Two roster copies scroll -50% for the seamless loop (shared by the partners band). */
 @keyframes ln-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -704,7 +728,7 @@
 .ln-dcard__panel { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px 16px 16px; background: linear-gradient(180deg, rgba(0, 22, 64, 0) 0%, rgba(0, 22, 64, .64) 100%); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
 .ln-dcard__title { font-size: 18px; font-weight: 800; line-height: 28px; color: var(--gold-light); text-align: start; text-shadow: 0 2px 10px rgba(76, 78, 100, .2); transition: color .3s ease; }
 .ln-dcard:hover .ln-dcard__title { color: var(--gold); }
-.ln-dcard__meta { display: flex; align-items: center; gap: 4px; color: #fff; font-size: 18px; font-weight: 700; line-height: 24px; white-space: nowrap; }
+.ln-dcard__meta { display: flex; align-items: center; gap: 4px; color: var(--white); font-size: 18px; font-weight: 700; line-height: 24px; white-space: nowrap; }
 .ln-dcard__meta svg { width: 24px; height: 24px; flex: 0 0 24px; }
 @media (max-width: 1000px) { .ln-discover__grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .ln-discover__grid { grid-template-columns: 1fr; } }
@@ -761,14 +785,14 @@
 .ln-ft__brand img { height: 64px; width: auto; display: block; }
 .ln-ft__groups { display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
 .ln-ft__group { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; width: 256px; }
-.ln-ft__label { font-size: 16px; line-height: 24px; color: var(--gold); text-align: start; width: 100%; padding-bottom: 8px; border-bottom: 1px solid #f8ebce; }
+.ln-ft__label { font-size: 16px; line-height: 24px; color: var(--gold); text-align: start; width: 100%; padding-bottom: 8px; border-bottom: 1px solid var(--gold-tint); }
 .ln-ft__list { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; width: 100%; }
 .ln-ft__link { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; color: var(--gold-light); text-align: start; }
 .ln-ft__link--ul { text-decoration: underline; }
 .ln-ft__link img { width: 16px; height: 16px; flex: 0 0 16px; }
 .ln-ft__col { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; width: 256px; }
 .ln-ft__icons { display: flex; flex-wrap: wrap; gap: 8px; }
-.ln-ft__iconbtn { width: 32px; height: 32px; border: 1px solid #f8ebce; border-radius: var(--radius-sm); display: inline-grid; place-items: center; background: transparent; cursor: pointer; }
+.ln-ft__iconbtn { width: 32px; height: 32px; border: 1px solid var(--gold-tint); border-radius: var(--radius-sm); display: inline-grid; place-items: center; background: transparent; cursor: pointer; }
 .ln-ft__iconbtn img { width: 20px; height: 20px; }
 .ln-footer__legal { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-block: 16px; flex-wrap: wrap; border-top: 1px solid rgba(248, 235, 206, .2); }
 .ln-ft__copywrap { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: start; }
@@ -792,7 +816,7 @@
   opacity: 0; animation: ln-fade .9s cubic-bezier(.22, .61, .36, 1) .15s forwards; }
 .ln-loader__bar { width: 160px; height: 1px; background: rgba(255, 255, 255, .12);
   overflow: hidden; position: relative; }
-.ln-loader__bar span { display: block; height: 100%; width: 40%; background: #fff;
+.ln-loader__bar span { display: block; height: 100%; width: 40%; background: var(--white);
   animation: ln-slide 1.4s cubic-bezier(.65, 0, .35, 1) infinite; }
 @keyframes ln-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes ln-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
@@ -881,7 +905,7 @@
 .landing .ln-spkcard__photo {
   width: 100%;
   height: 296px;
-  border: 0.5px solid #f1f2f2;
+  border: 0.5px solid var(--surface-panel);
   border-radius: var(--radius-sm);
   box-shadow: 0 0 0 5px var(--white);
   overflow: hidden;
@@ -1047,7 +1071,7 @@
    from the landing themes card (which also uses `.ln-tcard`). Left unscoped, the
    `.landing .ln-tcard`/`__desc` rules out-specified the landing card and forced
    its desc to 14px/near-white — scoping them here lets the landing card keep its
-   own Figma-correct 16px/#e9edf1 desc. */
+   own Figma-correct 16px/var(--primary-light) desc. */
 .landing .ln-sessthemes__grid .ln-tcard {
   display: flex; flex-direction: column; gap: 16px; align-items: flex-start;
   background: color-mix(in srgb, var(--primary) 50%, transparent);
@@ -1343,7 +1367,7 @@
   display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
 
 .ln-chat__launcher { position: relative; width: 88px; height: 88px; padding: 0; border: 0;
-  border-radius: 50%; background: #e9edf1; color: var(--navy); cursor: pointer;
+  border-radius: 50%; background: var(--primary-light); color: var(--navy); cursor: pointer;
   display: grid; place-items: center; box-shadow: 0 10px 30px rgba(0, 22, 64, .22);
   transition: transform .2s ease, box-shadow .2s ease;
   animation: ln-chat-bob 3.2s ease-in-out infinite; }

@@ -2,11 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/motion/motion_durations.dart';
 import '../../core/responsive/breakpoints.dart';
 import '../theme/tokens.dart';
-
-/// The gold border weight of the viewfinder's corner brackets (Figma 758:4579).
-const BorderSide _bracketSide = BorderSide(color: SimfTokens.accent, width: 2.36);
+import 'scan_line.dart';
+import 'scanner_bracket.dart';
 
 /// Card widths per window-size class (BUG-019 / 19e). Figma draws the phone card
 /// at 343 (758:4735); pinning that on a tablet left the gate operator squinting
@@ -76,7 +76,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: MotionDurations.scannerSweep,
     );
     if (widget.active) {
       _controller.repeat(reverse: true);
@@ -125,12 +125,12 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         color: SimfTokens.scannerCard,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusScanner),
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: SimfTokens.scrimBlack25,
-            blurRadius: 60,
-            offset: Offset(0, 24),
+            blurRadius: SimfTokens.simfScannerFrameBlurRadius,
+            offset: Offset(0, SimfTokens.scannerGlowOffset),
           ),
         ],
       ),
@@ -142,7 +142,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
             child: _buildWindow(windowHeight),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+            padding: const EdgeInsets.fromLTRB(SimfTokens.space4, SimfTokens.space5, SimfTokens.space4, SimfTokens.space1),
             child: _buildStatusRow(),
           ),
         ],
@@ -152,7 +152,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
 
   Widget _buildWindow(double windowHeight) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
       child: SizedBox(
         height: windowHeight,
         child: Stack(
@@ -160,15 +160,15 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
           children: <Widget>[
             ColoredBox(color: SimfTokens.black, child: widget.camera),
             const ColoredBox(color: SimfTokens.scrimBlack35), // black @ 35%
-            const Positioned(top: 16, left: 16, child: _Bracket(top: true, left: true)),
-            const Positioned(top: 16, right: 16, child: _Bracket(top: true, left: false)),
-            const Positioned(bottom: 16, left: 16, child: _Bracket(top: false, left: true)),
-            const Positioned(bottom: 16, right: 16, child: _Bracket(top: false, left: false)),
+            const Positioned(top: 16, left: 16, child: ScannerBracket(top: true, left: true)),
+            const Positioned(top: 16, right: 16, child: ScannerBracket(top: true, left: false)),
+            const Positioned(bottom: 16, left: 16, child: ScannerBracket(top: false, left: true)),
+            const Positioned(bottom: 16, right: 16, child: ScannerBracket(top: false, left: false)),
             const Center(
               child: Icon(
                 Icons.qr_code_scanner,
                 color: SimfTokens.accent,
-                size: 64,
+                size: SimfTokens.simfScannerFrameSize,
               ),
             ),
             _buildScanLine(windowHeight),
@@ -190,12 +190,12 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
         top: windowHeight * _scanLineRestRatio,
         left: 16,
         right: 16,
-        child: const _ScanLine(),
+        child: const ScanLine(),
       );
     }
     return AnimatedBuilder(
       animation: _controller,
-      child: const _ScanLine(),
+      child: const ScanLine(),
       builder: (context, child) => Positioned(
         top: topEdge + (bottomEdge - topEdge) * _controller.value,
         left: 16,
@@ -218,14 +218,14 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
             child: Text(
               widget.statusLabel,
               textDirection: TextDirection.rtl,
-              style: const TextStyle(color: SimfTokens.mutedBlue, fontSize: 12),
+              style: const TextStyle(color: SimfTokens.mutedBlue, fontSize: SimfTokens.simfScannerFrameFontSize),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: SimfTokens.space2),
           ClipRRect(
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusPillSm),
             child: const SizedBox(
-              height: 6,
+              height: SimfTokens.simfScannerFrameHeightSm,
               child: ColoredBox(color: SimfTokens.scannerTrack),
             ),
           ),
@@ -235,51 +235,5 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
   }
 }
 
-/// The horizontal glowing gold scan line (Figma 758:4735).
-class _ScanLine extends StatelessWidget {
-  const _ScanLine();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 2,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: <Color>[
-            SimfTokens.accentFade,
-            SimfTokens.accent,
-            SimfTokens.accentFade,
-          ],
-        ),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(color: SimfTokens.accent, blurRadius: 8),
-        ],
-      ),
-    );
-  }
-}
-
 /// One gold L-shaped corner bracket of the viewfinder (Figma 758:4579-4582):
 /// a 28px square drawing the [top]-or-bottom and [left]-or-right edges in gold.
-class _Bracket extends StatelessWidget {
-  const _Bracket({required this.top, required this.left});
-
-  final bool top;
-  final bool left;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 28,
-      height: 28,
-      decoration: BoxDecoration(
-        border: Border(
-          top: top ? _bracketSide : BorderSide.none,
-          bottom: top ? BorderSide.none : _bracketSide,
-          left: left ? _bracketSide : BorderSide.none,
-          right: left ? BorderSide.none : _bracketSide,
-        ),
-      ),
-    );
-  }
-}

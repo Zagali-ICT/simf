@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 import '../data/media_models.dart';
-import 'gallery_placeholder_box.dart';
+import 'play_glyph.dart';
+import 'thumbnail.dart';
 
 /// One media tile (frame node 949:4043): a rounded bitmap with a navy
 /// bottom-gradient; video tiles overlay a centred play glyph. The localised
@@ -36,7 +37,7 @@ class GalleryMediaTile extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: <Widget>[
-          _Thumbnail(imageUrl: tileUrl, isVideo: isVideo),
+          Thumbnail(imageUrl: tileUrl, isVideo: isVideo),
           // The navy bottom-gradient (frame: transparent → navy-80% at the
           // bottom) so any overlaid label reads on a bright photo.
           const DecoratedBox(
@@ -48,7 +49,7 @@ class GalleryMediaTile extends StatelessWidget {
               ),
             ),
           ),
-          if (isVideo) const _PlayGlyph(),
+          if (isVideo) const PlayGlyph(),
           if (title != null)
             Positioned(
               left: SimfTokens.space2,
@@ -70,69 +71,3 @@ class GalleryMediaTile extends StatelessWidget {
   }
 }
 
-/// The video play glyph (frame node 949:4059): a navy-70% circle with a centred
-/// play triangle.
-class _PlayGlyph extends StatelessWidget {
-  const _PlayGlyph();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: const BoxDecoration(
-          color: SimfTokens.navyFill70,
-          shape: BoxShape.circle,
-        ),
-        alignment: Alignment.center,
-        child: const Icon(
-          Icons.play_arrow_rounded,
-          size: 30,
-          color: SimfTokens.surface,
-        ),
-      ),
-    );
-  }
-}
-
-/// The tile bitmap: a network image (thumbnail/image) with a spinner while it
-/// loads and a fall-back to the kind icon when [imageUrl] is null or the fetch
-/// fails.
-class _Thumbnail extends StatelessWidget {
-  const _Thumbnail({required this.imageUrl, required this.isVideo});
-
-  final String? imageUrl;
-  final bool isVideo;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = imageUrl;
-    if (url == null) {
-      return GalleryPlaceholderBox(isVideo: isVideo);
-    }
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
-      gaplessPlayback: true,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) {
-          return child;
-        }
-        return Container(
-          color: SimfTokens.navyDeep,
-          alignment: Alignment.center,
-          child: const SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) =>
-          GalleryPlaceholderBox(isVideo: isVideo),
-    );
-  }
-}

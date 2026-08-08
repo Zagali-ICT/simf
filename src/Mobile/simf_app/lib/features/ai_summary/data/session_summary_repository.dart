@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'ai_summary_endpoints.dart';
 import 'session_summary_models.dart';
 
 /// Data layer for the AI session summary (Page_034). One read, reusing the
@@ -17,7 +18,7 @@ class SessionSummaryRepository {
   /// when the session has no published summary (or is missing / soft-deleted).
   Future<SessionSummary> getSummary(String sessionId) {
     return _client.get<SessionSummary>(
-      '/app/programme/sessions/$sessionId/summary',
+      AiSummaryEndpoints.sessionSummary(sessionId),
       decodeData: SessionSummary.fromData,
     );
   }

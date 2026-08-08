@@ -8,6 +8,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../../../core/utils/saudi_time.dart';
 import '../data/request_models.dart';
+import 'icon_box.dart';
 import 'request_status_style.dart';
 
 /// One expandable request card: the type icon, headline + context line + date,
@@ -57,7 +58,7 @@ class _RequestCardState extends State<RequestCard> {
               padding: const EdgeInsets.all(SimfTokens.space2),
               child: Row(
                 children: <Widget>[
-                  _IconBox(icon: _kindIcon(item.kind)),
+                  IconBox(icon: _kindIcon(item.kind)),
                   const SizedBox(width: SimfTokens.space2),
                   Expanded(
                     child: Column(
@@ -100,7 +101,7 @@ class _RequestCardState extends State<RequestCard> {
                     angle: _expanded ? math.pi / 2 : -math.pi / 2,
                     child: const SimfSvgIcon(
                       AppAssets.chevronLeft,
-                      size: 20,
+                      size: SimfTokens.requestCardSizeMd,
                       color: SimfTokens.accent,
                     ),
                   ),
@@ -139,8 +140,8 @@ class _RequestCardState extends State<RequestCard> {
           Row(
             children: <Widget>[
               Container(
-                width: 8,
-                height: 8,
+                width: SimfTokens.space2,
+                height: SimfTokens.space2,
                 decoration:
                     BoxDecoration(color: statusColor, shape: BoxShape.circle),
               ),
@@ -173,7 +174,7 @@ class _RequestCardState extends State<RequestCard> {
               alignment: AlignmentDirectional.centerEnd,
               child: OutlinedButton.icon(
                 onPressed: widget.onCancel,
-                icon: const Icon(Icons.close, size: 16, color: SimfTokens.danger),
+                icon: const Icon(Icons.close, size: SimfTokens.requestCardSizeSm, color: SimfTokens.danger),
                 label: Text(
                   l10n.requestCancel,
                   style: SimfTokens.bodyDanger,
@@ -223,24 +224,3 @@ IconData _kindIcon(AppRequestKind kind) {
   }
 }
 
-/// The gold rounded type-icon box at the inline start of a card (Figma
-/// 1408:9783 — 32px, radius-4, a 16px navy glyph).
-class _IconBox extends StatelessWidget {
-  const _IconBox({required this.icon});
-
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: SimfTokens.requestIconBox,
-      height: SimfTokens.requestIconBox,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Icon(icon, size: 16, color: SimfTokens.navy),
-    );
-  }
-}

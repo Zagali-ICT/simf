@@ -17,7 +17,11 @@ import '../sessions/data/seat_map_models.dart';
 import '../sessions/data/seat_map_repository.dart';
 import '../sessions/widgets/hall_seat_map.dart';
 import '../sessions/widgets/seat_map_async_view.dart';
+import 'data/staff_seating_models.dart';
 import 'data/staff_seating_repository.dart';
+import 'widgets/desk_card.dart';
+import 'widgets/desk_row.dart';
+import 'widgets/occupant_header.dart';
 
 /// D-771 (owner 2026-07-26) — the **staff seating desk**
 /// (`/staff/seating/:sessionId`, approved Staff). Derived from the visitor seat
@@ -201,7 +205,7 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
   /// (a) the shared scanner body — the same viewfinder + manual-entry field every
   /// other SIMF scanner uses (D-737), so the desk needs no bespoke reader.
   Widget _scannerCard(AppL10n l10n) {
-    return _DeskCard(
+    return DeskCard(
       child: SimfScannerBody(
         fieldLabel: l10n.staffSeatingScanLabel,
         continueLabel: l10n.staffSeatingScanCta,
@@ -215,21 +219,21 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
   /// error, or the occupant (reference id, name, photo, VVIP guest note).
   Widget _resultCard(AppL10n l10n) {
     if (_error != null) {
-      return _DeskCard(
+      return DeskCard(
         child: Text(_error!, style: SimfTokens.labelWhiteSemibold),
       );
     }
     final result = _result;
     if (result == null) {
-      return _DeskCard(
+      return DeskCard(
         child: Text(l10n.staffSeatingIntro, style: SimfTokens.labelBeigeSm),
       );
     }
-    return _DeskCard(
+    return DeskCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _OccupantHeader(result: result, photo: _photo, l10n: l10n),
+          OccupantHeader(result: result, photo: _photo, l10n: l10n),
           const SizedBox(height: SimfTokens.space3),
           if (!result.found)
             Text(
@@ -240,7 +244,7 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
             )
           else ...<Widget>[
             if (result.rowLabel != null && result.seatNumber != null)
-              _DeskRow(
+              DeskRow(
                 label: l10n.staffSeatingSeat,
                 value: l10n.staffSeatingSeatValue(
                   result.rowLabel!,
@@ -248,18 +252,18 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
                 ),
               ),
             if (result.reservationId != null)
-              _DeskRow(
+              DeskRow(
                 label: l10n.staffSeatingReference,
                 value: result.reservationId!,
               ),
-            _DeskRow(
+            DeskRow(
               label: l10n.staffSeatingGuest,
               // A VVIP protocol seat has no registration: the administrator's
               // manual note IS the occupant record.
               value: result.localizedGuestHint(l10n.isArabic) ??
                   result.localizedName(l10n.isArabic),
             ),
-            _DeskRow(
+            DeskRow(
               label: _tierLabel(l10n, result.tier),
               value: result.checkedIn
                   ? l10n.staffSeatingCheckedIn
@@ -303,98 +307,3 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
       };
 }
 
-/// The desk's navy surface — one shared card so the scanner, the result and the
-/// error state never drift apart.
-class _DeskCard extends StatelessWidget {
-  const _DeskCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// One label / value line in the result card.
-class _DeskRow extends StatelessWidget {
-  const _DeskRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: SimfTokens.space2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text('$label: ', style: SimfTokens.labelBeigeSm),
-          Expanded(
-            child: Text(value, style: SimfTokens.labelWhiteSemibold),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The guest's photo + name. The bytes arrive from the authenticated Dio path
-/// (D-422); until they do (or when there is no photo) a labelled placeholder
-/// keeps the row's height stable and the a11y tree named.
-class _OccupantHeader extends StatelessWidget {
-  const _OccupantHeader({
-    required this.result,
-    required this.photo,
-    required this.l10n,
-  });
-
-  final StaffSeatOccupant result;
-  final Uint8List? photo;
-  final AppL10n l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final bytes = photo;
-    return Row(
-      children: <Widget>[
-        Semantics(
-          image: true,
-          label: l10n.staffSeatingGuestPhoto,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-            child: SizedBox(
-              width: SimfTokens.staffSeatingPhotoSize,
-              height: SimfTokens.staffSeatingPhotoSize,
-              child: bytes == null
-                  ? const ColoredBox(
-                      color: SimfTokens.navy,
-                      child: Icon(
-                        Icons.person_outline,
-                        color: SimfTokens.beigeBorder,
-                      ),
-                    )
-                  : Image.memory(bytes, fit: BoxFit.cover),
-            ),
-          ),
-        ),
-        const SizedBox(width: SimfTokens.space3),
-        Expanded(
-          child: Text(
-            result.localizedGuestHint(l10n.isArabic) ??
-                result.localizedName(l10n.isArabic),
-            style: SimfTokens.labelWhiteBoldTitle,
-          ),
-        ),
-      ],
-    );
-  }
-}

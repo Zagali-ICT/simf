@@ -284,7 +284,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
             transformationController: _transform,
             minScale: 0.3,
             maxScale: 4,
-            boundaryMargin: const EdgeInsets.all(200),
+            boundaryMargin: const EdgeInsets.all(SimfTokens.venueMapPanMargin),
             child: SizedBox(
               width: _canvas,
               height: _canvas,
@@ -294,7 +294,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
                     Positioned(
                       left: (_positions[node.id] ?? Offset.zero).dx - 40,
                       top: (_positions[node.id] ?? Offset.zero).dy - 40,
-                      width: 80,
+                      width: SimfTokens.venueMapScreenWidth,
                       child: VenueMapMarker(
                         node: node,
                         isArabic: isArabic,

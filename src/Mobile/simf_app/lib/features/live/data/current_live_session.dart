@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 import '../../sessions/data/session_lifecycle.dart';
 import '../../sessions/data/sessions_repository.dart';
-import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// The id of the session that is in its live time-window right now (the first,
 /// in programme order), or null when nothing is live. Backs the Home LIVE

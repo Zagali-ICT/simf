@@ -61,7 +61,7 @@ class SignInAltActions extends StatelessWidget {
             label: l10n.faceIdSignInButton,
             icon: const SimfSvgIcon(
               AppAssets.authFaceId,
-              size: 20,
+              size: SimfTokens.signInAltActionsSize,
               color: SimfTokens.goldSoft,
             ),
             onPressed: busy ? null : onBiometric,
@@ -72,7 +72,7 @@ class SignInAltActions extends StatelessWidget {
           label: l10n.badgeSignInButton,
           icon: const Icon(
             Icons.qr_code_scanner,
-            size: 20,
+            size: SimfTokens.signInAltActionsSize,
             color: SimfTokens.goldSoft,
           ),
           onPressed: busy ? null : onBadge,
@@ -80,7 +80,7 @@ class SignInAltActions extends StatelessWidget {
         // Guest entry (Figma 627:2390, D-363) — the underlined design-native
         // link; the app's only path into guest mode (Page_012).
         SizedBox(
-          height: 48,
+          height: SimfTokens.signInAltActionsHeight,
           child: Center(
             child: TextButton(
               onPressed: busy ? null : onGuest,

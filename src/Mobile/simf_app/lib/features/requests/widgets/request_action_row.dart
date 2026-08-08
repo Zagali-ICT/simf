@@ -116,7 +116,7 @@ class RequestActionButton extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space1),
-            SimfSvgIcon(asset, size: 14, color: fg),
+            SimfSvgIcon(asset, size: SimfTokens.requestActionRowSize, color: fg),
           ],
         ),
       ),

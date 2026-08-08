@@ -19,8 +19,8 @@ class SignUpVisitorHeaderAvatar extends StatelessWidget {
       // The frame (168:2972) shows a navy-deep rounded box with a gold person
       // glyph, not a bare dark icon on the beige card (D-674).
       return Container(
-        width: 40,
-        height: 40,
+        width: SimfTokens.space10,
+        height: SimfTokens.space10,
         alignment: Alignment.center,
         decoration: const BoxDecoration(
           color: SimfTokens.navyDeep,
@@ -28,13 +28,13 @@ class SignUpVisitorHeaderAvatar extends StatelessWidget {
         ),
         child: const Icon(
           Icons.account_circle_outlined,
-          size: 24,
+          size: SimfTokens.signUpVisitorHeaderAvatarSize,
           color: SimfTokens.accent,
         ),
       );
     }
     return ClipOval(
-      child: Image.memory(data, width: 40, height: 40, fit: BoxFit.cover),
+      child: Image.memory(data, width: SimfTokens.space10, height: SimfTokens.space10, fit: BoxFit.cover),
     );
   }
 }

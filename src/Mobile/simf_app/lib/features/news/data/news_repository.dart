@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'news_endpoints.dart';
 import 'news_models.dart';
 
 /// `GET /app/news` → the latest news list (public, D-199). Consumed by the News
@@ -10,7 +11,7 @@ final newsListProvider =
     FutureProvider.autoDispose<List<NewsListItem>>((ref) async {
   final client = ref.watch(simfApiClientProvider);
   return client.get<List<NewsListItem>>(
-    '/app/news',
+    NewsEndpoints.list,
     decodeData: NewsListItem.listFromData,
   );
 });
@@ -26,7 +27,7 @@ class NewsRepository {
   /// `GET /app/news/{id}` → the full article. 404 when missing / unpublished.
   Future<NewsArticle> getArticle(String id) {
     return _client.get<NewsArticle>(
-      '/app/news/$id',
+      NewsEndpoints.article(id),
       decodeData: (data) => NewsArticle.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       ),

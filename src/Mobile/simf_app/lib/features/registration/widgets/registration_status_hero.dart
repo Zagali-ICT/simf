@@ -25,15 +25,15 @@ class RegistrationStatusHero extends StatelessWidget {
     return Column(
       children: <Widget>[
         Container(
-          width: 104,
-          height: 104,
+          width: SimfTokens.registrationStatusHeroWidthMd,
+          height: SimfTokens.registrationStatusHeroHeightMd,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: SimfTokens.navyDeep,
             shape: BoxShape.circle,
-            border: Border.all(color: color, width: 2.36),
+            border: Border.all(color: color, width: SimfTokens.registrationStatusHeroWidthSm),
           ),
-          child: Icon(icon, size: 40, color: color),
+          child: Icon(icon, size: SimfTokens.registrationStatusHeroSize, color: color),
         ),
         const SizedBox(height: SimfTokens.space4),
         Text(
@@ -52,7 +52,7 @@ class RegistrationStatusHero extends StatelessWidget {
           style: const TextStyle(
             color: SimfTokens.beigeBorder,
             fontSize: SimfTokens.textMd, // 14
-            height: 1.5,
+            height: SimfTokens.registrationStatusHeroHeightSm,
           ),
         ),
       ],

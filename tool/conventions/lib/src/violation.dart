@@ -67,20 +67,11 @@ abstract final class Remedy {
   /// `maxLength` — must mirror the backend FluentValidation `.MaximumLength(N)`
   /// and EF `.HasMaxLength(N)`. A design-token file cannot carry that contract.
   static const String fieldLimit =
-      'features/<f>/data/*_field_limits.dart (mirror backend MaxLength)';
+      'core/validation/field_limits.dart (mirror the backend MaximumLength)';
 
-  /// Timeouts, cooldowns, debounces — network/behaviour policy, not design.
+  /// Timeouts, cooldowns, debounces — behaviour policy, not design.
   static const String duration =
-      'core/net/timeouts.dart or a feature policy const';
-
-  /// `maxLines`/`minLines` — layout intent. A token named `maxLines2` is just a
-  /// renamed 2.
-  static const String layoutIntent =
-      'a named layout const (never a value-named token)';
-
-  /// `crossAxisCount` — should be derived from the breakpoint, not frozen.
-  static const String responsive =
-      'computed from core/responsive/breakpoints.dart';
+      'core/motion/motion_durations.dart (MotionDurations / TimeoutPolicy)';
 
   static const String endpoints =
       'features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)';

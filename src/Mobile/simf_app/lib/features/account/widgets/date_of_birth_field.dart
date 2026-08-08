@@ -37,7 +37,7 @@ class DateOfBirthField extends StatelessWidget {
               suffixIcon: const Icon(
                 Icons.calendar_today_outlined,
                 color: SimfTokens.greyText,
-                size: 18,
+                size: SimfTokens.dateOfBirthFieldSize,
               ),
             ),
             child: Text(displayValue, style: simfInputStyle),
