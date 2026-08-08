@@ -14,8 +14,7 @@ import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/email_validation.dart';
 import '../../core/validation/password_validation.dart';
 import '../../core/validation/required_validation.dart';
-import '../../core/widgets/simf_field_label.dart';
-import '../../core/widgets/simf_field_style.dart';
+import 'widgets/navi_form_field.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/navy_password_toggle.dart';
@@ -278,17 +277,15 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
   }
 
   List<Widget> _emailStepFields(AppL10n l10n) => <Widget>[
-        SimfFieldLabel(l10n.emailLabelGeneric, color: SimfTokens.surface),
-        const SizedBox(height: SimfTokens.space2),
-        TextFormField(
+        NaviFormField(
+          label: l10n.emailLabelGeneric,
           controller: _email,
           keyboardType: TextInputType.emailAddress,
           textDirection: TextDirection.ltr,
           maxLength: 50,
           enabled: !_busy,
+          autovalidateMode: AutovalidateMode.disabled,
           onChanged: (_) => setState(() {}),
-          style: simfInputStyleOnNavy,
-          decoration: simfFieldDecoration(counterText: ''),
           validator: (value) {
             if (isBlank(value)) {
               return l10n.requiredField;
@@ -302,59 +299,50 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
       ];
 
   List<Widget> _codeStepFields(AppL10n l10n) => <Widget>[
-        SimfFieldLabel(l10n.otpLabel, color: SimfTokens.surface),
-        const SizedBox(height: SimfTokens.space2),
-        TextFormField(
+        NaviFormField(
+          label: l10n.otpLabel,
           controller: _code,
           keyboardType: TextInputType.number,
           textDirection: TextDirection.ltr,
           maxLength: 6,
           enabled: !_busy,
+          autovalidateMode: AutovalidateMode.disabled,
           inputFormatters: <TextInputFormatter>[
             FilteringTextInputFormatter.digitsOnly,
           ],
           onChanged: (_) => setState(() {}),
-          style: simfInputStyleOnNavy,
-          decoration: simfFieldDecoration(counterText: ''),
           validator: (value) => isBlank(value) ? l10n.requiredField : null,
         ),
         const SizedBox(height: SimfTokens.space4),
-        SimfFieldLabel(l10n.newPasswordLabel, color: SimfTokens.surface),
-        const SizedBox(height: SimfTokens.space2),
-        TextFormField(
+        NaviFormField(
+          label: l10n.newPasswordLabel,
           controller: _password,
           obscureText: _obscure,
           maxLength: 128,
           enabled: !_busy,
+          autovalidateMode: AutovalidateMode.disabled,
           onChanged: _onPasswordChanged,
-          style: simfInputStyleOnNavy,
-          decoration: simfFieldDecoration(
-            counterText: '',
-            suffixIcon: NavyPasswordToggle(
-              obscure: _obscure,
-              onToggle: () => setState(() => _obscure = !_obscure),
-            ),
+          suffixIcon: NavyPasswordToggle(
+            obscure: _obscure,
+            onToggle: () => setState(() => _obscure = !_obscure),
           ),
-          validator: (value) =>
-              isBlank(value) ? l10n.requiredField : null,
+          validator: (value) => isBlank(value) ? l10n.requiredField : null,
         ),
         _buildPasswordErrors(l10n),
         const SizedBox(height: SimfTokens.space4),
-        SimfFieldLabel(l10n.confirmPasswordLabel, color: SimfTokens.surface),
-        const SizedBox(height: SimfTokens.space2),
-        TextFormField(
+        NaviFormField(
+          label: l10n.confirmPasswordLabel,
           controller: _confirm,
           obscureText: _obscure,
           maxLength: 128,
           enabled: !_busy,
+          autovalidateMode: AutovalidateMode.disabled,
           onChanged: (_) => setState(() {}),
           onFieldSubmitted: (_) {
             if (_canComplete) {
               unawaited(_complete());
             }
           },
-          style: simfInputStyleOnNavy,
-          decoration: simfFieldDecoration(counterText: ''),
           validator: (value) =>
               value == _password.text ? null : l10n.passwordsDoNotMatch,
         ),

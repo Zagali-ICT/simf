@@ -218,7 +218,31 @@ class LiveRepository {}
         'Widget b() => TextFormField(controller: c);',
         'Widget b() => new TextFormField(controller: c);',
       ]) {
-        expect(ofRule(run(form), 'SIMF-C7'), hasLength(1), reason: form);
+        expect(
+          ofRule(
+            run(form,
+                path: 'src/Mobile/simf_app/lib/features/demo/demo_screen.dart'),
+            'SIMF-C7',
+          ),
+          hasLength(1),
+          reason: form,
+        );
+      }
+    });
+
+    // A field component wrapping TextFormField IS the shared component. Firing
+    // here would make the rule unsatisfiable: something has to wrap it.
+    test('C7 does NOT fire inside a field component', () {
+      for (final String path in <String>[
+        'src/Mobile/simf_app/lib/features/account/widgets/mobile_field.dart',
+        'src/Mobile/simf_app/lib/core/widgets/simf_field_style.dart',
+      ]) {
+        expect(
+          ofRule(run('Widget b() => TextFormField(controller: c);', path: path),
+              'SIMF-C7'),
+          isEmpty,
+          reason: path,
+        );
       }
     });
   });

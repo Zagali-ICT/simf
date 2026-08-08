@@ -40,6 +40,7 @@ import 'widgets/plate_number_field.dart';
 import 'widgets/profile_type_field.dart';
 import 'widgets/sign_up_visitor_header_avatar.dart';
 import 'widgets/terms_and_next_buttons.dart';
+import 'data/region_models.dart';
 
 /// Page 007 — إنشاء ملف شخصى · Sign up — profile **data**. The KSA-Project
 /// Figma design (node 168:2972 — D-368): the login-style navy header (logo +

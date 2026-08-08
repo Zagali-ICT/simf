@@ -92,46 +92,6 @@ class DelegationsRepository {
   }
 }
 
-/// Bi-Meeting rework — one bookable meeting slot offered by a delegation
-/// (parity with `SpeakerSlot`).
-class DelegationSlot {
-  const DelegationSlot({required this.start, required this.end});
-
-  factory DelegationSlot.fromJson(Map<String, dynamic> json) => DelegationSlot(
-        start: DateTime.parse(json['start'] as String),
-        end: DateTime.parse(json['end'] as String),
-      );
-
-  final DateTime start;
-  final DateTime end;
-}
-
-/// Bi-Meeting rework — the delegation-meeting summary returned by the confirm
-/// endpoint, shown on the confirm screen. Carries no requester PII.
-class DelegationMeetingSummary {
-  const DelegationMeetingSummary({
-    required this.requestingCountry,
-    required this.targetCountry,
-    required this.subject,
-    this.slotStart,
-  });
-
-  factory DelegationMeetingSummary.fromJson(Map<String, dynamic> json) =>
-      DelegationMeetingSummary(
-        requestingCountry: (json['requestingCountry'] as String?) ?? '',
-        targetCountry: (json['targetCountry'] as String?) ?? '',
-        subject: (json['subject'] as String?) ?? '',
-        slotStart: json['slotStart'] == null
-            ? null
-            : parseWireOrNull(json['slotStart'] as String),
-      );
-
-  final String requestingCountry;
-  final String targetCountry;
-  final String subject;
-  final DateTime? slotStart;
-}
-
 final delegationsRepositoryProvider = Provider<DelegationsRepository>((ref) {
   return DelegationsRepository(ref.watch(simfApiClientProvider));
 });

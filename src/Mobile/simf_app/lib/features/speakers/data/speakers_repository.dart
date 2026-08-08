@@ -74,19 +74,6 @@ class SpeakersRepository {
   }
 }
 
-/// D-474 (#11) — one bookable meeting slot offered by a speaker.
-class SpeakerSlot {
-  const SpeakerSlot({required this.start, required this.end});
-
-  factory SpeakerSlot.fromJson(Map<String, dynamic> json) => SpeakerSlot(
-        start: DateTime.parse(json['start'] as String),
-        end: DateTime.parse(json['end'] as String),
-      );
-
-  final DateTime start;
-  final DateTime end;
-}
-
 final speakersRepositoryProvider = Provider<SpeakersRepository>((ref) {
   return SpeakersRepository(ref.watch(simfApiClientProvider));
 });

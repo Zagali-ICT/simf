@@ -15,6 +15,7 @@ import 'package:simf_app/features/account/data/region_repository.dart';
 import 'package:simf_app/features/account/sign_up_visitor_screen.dart';
 
 import 'golden_fonts.dart';
+import 'package:simf_app/features/account/data/region_models.dart';
 
 /// Golden render of the sign-up profile-data form against Figma frame
 /// **168:2972** (إنشاء ملف شخصي · Page 007). Regenerate:

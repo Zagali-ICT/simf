@@ -13,6 +13,7 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/staff/data/staff_seating_repository.dart';
 import 'package:simf_app/features/staff/staff_seating_screen.dart';
+import 'package:simf_app/features/staff/data/staff_seating_models.dart';
 
 // Row A = VVIP (protocol), row B = Normal.
 SessionSeatMap _map() => const SessionSeatMap(

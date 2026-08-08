@@ -14,6 +14,7 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../../core/organization_profile/organization_profile.dart';
 import '../../core/site_settings/site_settings.dart';
 import '../sessions/data/rate_prompt_tracker.dart';
+import 'data/live_models.dart';
 import 'data/live_repository.dart';
 import 'widgets/live_content.dart';
 import 'widgets/live_message_surfaces.dart';

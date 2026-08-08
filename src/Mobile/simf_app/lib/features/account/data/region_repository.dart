@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'account_endpoints.dart';
+import 'region_models.dart';
 
 /// App-local data layer for the region lookup (D-547): the single public read of
 /// the official Saudi administrative regions, over the authenticated
@@ -32,27 +33,6 @@ class RegionRepository {
 
   static Map<String, dynamic> _asMap(Object? data) =>
       (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
-}
-
-/// Region picker row — `GET /app/regions` (D-547). [name] (English) is nullable;
-/// [nameArabic] is always present. Wire keys: `code`, `name`, `nameArabic`.
-@immutable
-class RegionItem {
-  const RegionItem({
-    required this.code,
-    required this.name,
-    required this.nameArabic,
-  });
-
-  final String code;
-  final String? name;
-  final String nameArabic;
-
-  static RegionItem fromJson(Map<String, dynamic> json) => RegionItem(
-        code: json['code'] as String? ?? '',
-        name: json['name'] as String?,
-        nameArabic: json['nameArabic'] as String? ?? '',
-      );
 }
 
 final regionRepositoryProvider = Provider<RegionRepository>((ref) {

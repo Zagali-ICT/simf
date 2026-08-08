@@ -18,6 +18,7 @@ import '../sessions/data/seat_map_repository.dart';
 import '../sessions/widgets/hall_seat_map.dart';
 import '../sessions/widgets/seat_map_async_view.dart';
 import 'data/staff_seating_repository.dart';
+import 'data/staff_seating_models.dart';
 
 /// D-771 (owner 2026-07-26) — the **staff seating desk**
 /// (`/staff/seating/:sessionId`, approved Staff). Derived from the visitor seat

@@ -10,6 +10,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/meetings/meeting_confirm_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+import 'package:simf_app/features/delegations/data/delegation_models.dart';
 
 /// Records which endpoint the screen called and returns a canned summary, or
 /// throws the configured [ApiFailure]. Extends the concrete repository (its
