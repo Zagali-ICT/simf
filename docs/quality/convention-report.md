@@ -6,8 +6,8 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 
 | Rule | Findings |
 |------|----------|
-| SIMF-C3 | 31 |
-| **Total** | **31** |
+| SIMF-C3 | 25 |
+| **Total** | **25** |
 
 ## account feature
 
@@ -46,15 +46,6 @@ Fix : split the file; move this and its state into a widget
 Issue : _buildOrganisationField() returning Widget in a 1393-line file (limit 400)  (line 1331, SIMF-C3)
 Fix : split the file; move this and its state into a widget
 
-## app (shared shell) feature
-
-
-Issue file : src/Mobile/simf_app/lib/app/widgets/simf_identity_cell.dart
-Issue : private widget _LogoOrInitials extends StatelessWidget  (line 137, SIMF-C3)
-Fix : its own file under widgets/
-Issue : private widget _InitialsAvatar extends StatelessWidget  (line 171, SIMF-C3)
-Fix : its own file under widgets/
-
 ## contacts feature
 
 
@@ -67,13 +58,6 @@ Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/delegations/widgets/delegations_stats_strip.dart
 Issue : private widget _FlagSpot extends StatelessWidget  (line 105, SIMF-C3)
-Fix : its own file under widgets/
-
-## home feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/home/widgets/home_hero_banner.dart
-Issue : private widget _HeroImage extends StatelessWidget  (line 165, SIMF-C3)
 Fix : its own file under widgets/
 
 ## live feature
@@ -95,10 +79,6 @@ Fix : its own file under widgets/
 ## sessions feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/sessions/join_session_hub_screen.dart
-Issue : private widget _HubList extends StatelessWidget  (line 70, SIMF-C3)
-Fix : its own file under widgets/
-
 Issue file : src/Mobile/simf_app/lib/features/sessions/session_detail_screen.dart
 Issue : _buildBody() returning Widget in a 510-line file (limit 400)  (line 424, SIMF-C3)
 Fix : split the file; move this and its state into a widget
@@ -107,12 +87,6 @@ Issue file : src/Mobile/simf_app/lib/features/sessions/session_presentations_scr
 Issue : private widget _Body extends StatelessWidget  (line 103, SIMF-C3)
 Fix : its own file under widgets/
 Issue : private widget _PresentationCard extends StatelessWidget  (line 198, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/hall_seat_map.dart
-Issue : private widget _SeatGridRow extends StatelessWidget  (line 227, SIMF-C3)
-Fix : its own file under widgets/
-Issue : private widget _SeatBox extends StatelessWidget  (line 380, SIMF-C3)
 Fix : its own file under widgets/
 
 ## staff feature

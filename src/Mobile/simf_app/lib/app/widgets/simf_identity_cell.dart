@@ -5,6 +5,7 @@ import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
 import 'simf_page_shell.dart';
 import 'simf_svg_icon.dart';
+import 'identity_logo_or_initials.dart';
 
 /// A shared identity row (Build #13): the navy [SimfCard] chrome carrying — in
 /// RTL — a 44x44 logo/photo tile (or a gold initials avatar) at the inline start,
@@ -57,7 +58,7 @@ class SimfIdentityCell extends StatelessWidget {
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Row(
           children: <Widget>[
-            _LogoOrInitials(imageUrl: imageUrl, initials: _initialsFrom(title)),
+            IdentityLogoOrInitials(imageUrl: imageUrl, initials: _initialsFrom(title)),
             const SizedBox(width: SimfTokens.space4),
             Expanded(
               child: Column(
@@ -132,63 +133,4 @@ String _initialsFrom(String name) {
     return parts.first.substring(0, 1);
   }
   return '${parts.first.substring(0, 1)}.${parts[1].substring(0, 1)}';
-}
-
-/// The leading tile: the entity logo/photo on a navy rounded-square when
-/// [imageUrl] is set (falling back to the gold initials on load error / 404),
-/// otherwise the gold initials avatar directly.
-class _LogoOrInitials extends StatelessWidget {
-  const _LogoOrInitials({required this.imageUrl, required this.initials});
-
-  final String? imageUrl;
-  final String initials;
-
-  static const double _size = 44;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = imageUrl;
-    final avatar = _InitialsAvatar(initials: initials);
-    if (url == null || url.isEmpty) {
-      return avatar;
-    }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      child: Image.network(
-        url,
-        width: _size,
-        height: _size,
-        fit: BoxFit.cover,
-        gaplessPlayback: true,
-        loadingBuilder: (context, child, progress) =>
-            progress == null ? child : avatar,
-        errorBuilder: (context, error, stackTrace) => avatar,
-      ),
-    );
-  }
-}
-
-/// The gold rounded-square initials avatar (matches the meet card's avatar).
-class _InitialsAvatar extends StatelessWidget {
-  const _InitialsAvatar({required this.initials});
-
-  final String initials;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: _LogoOrInitials._size,
-      height: _LogoOrInitials._size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(
-        initials,
-        textDirection: TextDirection.ltr,
-        style: SimfTokens.labelWhiteBoldMd,
-      ),
-    );
-  }
 }

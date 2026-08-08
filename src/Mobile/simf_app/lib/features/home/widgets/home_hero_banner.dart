@@ -11,6 +11,7 @@ import '../../banners/data/banner_models.dart';
 import 'carousel_dots.dart';
 import 'hero_background_video.dart';
 import 'hero_overlay.dart';
+import 'hero_image.dart';
 
 /// The home hero (replaces the static discover banner, #43): the forum edition —
 /// name (gold), theme, date range and location — overlaid on a rotating strip of
@@ -129,7 +130,7 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
                 controller: _controller,
                 onPageChanged: (i) => setState(() => _index = i),
                 itemCount: banners.length,
-                itemBuilder: (context, i) => _HeroImage(
+                itemBuilder: (context, i) => HeroImage(
                   url: banners[i].assetImageUrl(widget.baseUrl),
                   fallbackUrl: banners[i].imageUrl,
                 ),
@@ -161,40 +162,3 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
     );
   }
 }
-
-/// One hero background image: the uploaded banner asset, falling back to the
-/// banner's pasted [fallbackUrl], then the bundled discover photo — so the hero
-/// always shows something even before an image is uploaded.
-class _HeroImage extends StatelessWidget {
-  const _HeroImage({required this.url, this.fallbackUrl});
-
-  final String url;
-  final String? fallbackUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: SimfTokens.navy,
-      child: Image.network(
-        url,
-        fit: BoxFit.fill,
-        gaplessPlayback: true,
-        errorBuilder: (context, error, stackTrace) {
-          final fallback = fallbackUrl;
-          if (fallback != null && fallback.isNotEmpty) {
-            return Image.network(
-              fallback,
-              fit: BoxFit.fill,
-              errorBuilder: (_, __, ___) => _placeholder,
-            );
-          }
-          return _placeholder;
-        },
-      ),
-    );
-  }
-
-  Widget get _placeholder =>
-      Image.asset(AppAssets.discoverHero, fit: BoxFit.fill);
-}
-

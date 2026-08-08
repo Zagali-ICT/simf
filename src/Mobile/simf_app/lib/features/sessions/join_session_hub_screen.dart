@@ -11,6 +11,7 @@ import '../../core/utils/refresh.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
 import 'widgets/hub_row.dart';
+import 'widgets/hub_list.dart';
 
 /// D-485 — **Join a session** hub (`/sessions/join`, approved Visitor). The
 /// standalone entry into the join flow (the other entry is the Join CTA on the
@@ -60,60 +61,9 @@ class JoinSessionHubScreen extends ConsumerWidget {
               )
             : SimfPullToRefresh(
                 onRefresh: () => _refresh(ref),
-                child: _HubList(items: items, l10n: l10n),
+                child: HubList(items: items, l10n: l10n),
               ),
       ),
     );
   }
 }
-
-class _HubList extends StatelessWidget {
-  const _HubList({required this.items, required this.l10n});
-
-  final List<SessionListItem> items;
-  final AppL10n l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final isArabic = l10n.isArabic;
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space3,
-        SimfTokens.space4,
-        SimfTokens.space5,
-      ),
-      itemCount: items.length + 1,
-      separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space3),
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: SimfTokens.space2),
-            child: Text(
-              l10n.joinHubHint,
-              textAlign: TextAlign.center,
-              style: SimfTokens.labelBeigeSm,
-            ),
-          );
-        }
-        final item = items[index - 1];
-        return HubRow(
-          title: item.localizedTitle(isArabic),
-          subtitle: _subtitle(context, item, isArabic),
-          onTap: () => context.pushNamed(
-            RouteNames.sessionDetail,
-            pathParameters: <String, String>{RouteParams.sessionId: item.id},
-          ),
-        );
-      },
-    );
-  }
-
-  String _subtitle(BuildContext context, SessionListItem item, bool isArabic) {
-    final time = TimeOfDay.fromDateTime(item.startLocal).format(context);
-    final hall = item.localizedHall(isArabic);
-    return hall == null || hall.isEmpty ? time : '$time · $hall';
-  }
-}
-
