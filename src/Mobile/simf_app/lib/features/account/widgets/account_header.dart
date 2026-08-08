@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_logo.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo.dart';
 
 /// The auth screens' brand header: the [SimfLogo] beside the forum name,
 /// centred (the logo at the inline start — the right under RTL), matching the

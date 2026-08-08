@@ -1,6 +1,6 @@
-import '../../../app/localization/app_l10n.dart';
-import '../../../core/validation/email_validation.dart';
-import '../../../core/validation/required_validation.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/core/validation/email_validation.dart';
+import 'package:simf_app/core/validation/required_validation.dart';
 
 /// Field validators for the sign-in form.
 ///

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The "تسجيل الخروج" link beneath the primary button (Figma 1701:3827) —
 /// centred, muted, 12px.

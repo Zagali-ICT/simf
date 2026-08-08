@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A selectable radio pill (Figma 522:2151): a white pill with an 18px
 /// gold-ringed radio that fills when [selected], then the [label]. Shared form

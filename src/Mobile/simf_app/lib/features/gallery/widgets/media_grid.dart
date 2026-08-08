@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../data/media_models.dart';
-import 'gallery_media_tile.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/gallery/data/media_models.dart';
+import 'package:simf_app/features/gallery/widgets/gallery_media_tile.dart';
 
 /// A two-up grid of media tiles (frame: 104-high, 8-radius tiles with a 12-gap).
 class MediaGrid extends StatelessWidget {

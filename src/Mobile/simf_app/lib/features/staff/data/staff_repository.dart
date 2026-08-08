@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/staff/data/staff_endpoints.dart';
+import 'package:simf_app/features/staff/data/staff_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'staff_endpoints.dart';
-import 'staff_models.dart';
 
 /// Maps an image filename to the MIME the upload gate accepts (jpeg/png/webp).
 /// The picker only yields these three, so a null is a programming error.

@@ -1,9 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'seat_map_models.dart';
-import 'sessions_endpoints.dart';
 
 /// Data layer for the My-Seat map (Page_018). One read reuses the shipped
 /// seat endpoint (no new API — D-267); `RequireApprovedAccount` (the route is

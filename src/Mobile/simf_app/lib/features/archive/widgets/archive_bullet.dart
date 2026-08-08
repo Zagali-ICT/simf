@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A bulleted list item (the frame's disc bullets, node 925:3258 / 925:3264):
 /// a leading inline-start disc and the value text. The disc colour matches the

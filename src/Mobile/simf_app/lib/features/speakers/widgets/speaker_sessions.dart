@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/route_names.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import '../data/speaker_models.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/speakers/data/speaker_models.dart';
 
 /// A small caps section heading (beige, 10px Bold, tracked) — used for the
 /// speaker's "sessions" list header.

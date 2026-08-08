@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The "we sent a code to <address>" block above the OTP boxes: the muted
 /// sentence over the recipient on a gold line, always LTR so an email or phone

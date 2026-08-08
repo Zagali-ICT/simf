@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/core/site_settings/site_settings.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/banners/data/banner_models.dart';
+import 'package:simf_app/features/banners/data/banners_repository.dart';
+import 'package:simf_app/features/home/widgets/guest_home.dart';
+import 'package:simf_app/features/home/widgets/operational_homes.dart';
+import 'package:simf_app/features/home/widgets/visitor_home.dart';
+import 'package:simf_app/features/myarea/data/myarea_models.dart';
+import 'package:simf_app/features/myarea/data/myarea_repository.dart';
+import 'package:simf_app/features/news/data/news_models.dart';
+import 'package:simf_app/features/news/news_screen.dart' show newsListProvider;
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../core/organization_profile/organization_profile.dart';
-import '../../core/site_settings/site_settings.dart';
-import '../account/data/profile_repository.dart';
-import '../banners/data/banner_models.dart';
-import '../banners/data/banners_repository.dart';
-import '../myarea/data/myarea_models.dart';
-import '../myarea/data/myarea_repository.dart';
-import '../news/data/news_models.dart';
-import '../news/news_screen.dart' show newsListProvider;
-import 'widgets/guest_home.dart';
-import 'widgets/operational_homes.dart';
-import 'widgets/visitor_home.dart';
 
 // Re-export the greeting helpers so `homeGreeting` / `homePostTime` stay
 // importable from this file (the home widget tests reference them here).

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The header name line. Figma 1327:3461 — when the speaker has a nationality
 /// the flag sits at the inline-start of the name (physical left in this

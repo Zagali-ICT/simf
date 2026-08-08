@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_forward_chevron.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import '../../../core/utils/saudi_time.dart';
-import '../data/myarea_models.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_forward_chevron.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/myarea/data/myarea_models.dart';
 
 /// One 12-hour formatter for the schedule rows (hoisted off the build path).
 final DateFormat _timeFormat = DateFormat('hh:mm a');

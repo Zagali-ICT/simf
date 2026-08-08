@@ -3,24 +3,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../features/account/data/profile_repository.dart'
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/avatar_fallback.dart';
+import 'package:simf_app/app/widgets/more_drawer.dart';
+import 'package:simf_app/app/widgets/screen_announcer.dart';
+import 'package:simf_app/app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_image_viewer.dart';
+import 'package:simf_app/app/widgets/simf_language_toggle.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart'
     show myAvatarBytesProvider;
-import '../../features/notifications/data/notifications_repository.dart'
+import 'package:simf_app/features/notifications/data/notifications_repository.dart'
     show unreadNotificationCountProvider;
-import '../localization/app_l10n.dart';
-import '../localization/locale_controller.dart';
-import '../route_names.dart';
-import '../theme/app_assets.dart';
-import '../theme/tokens.dart';
-import 'avatar_fallback.dart';
-import 'more_drawer.dart';
-import 'screen_announcer.dart';
-import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
-import 'simf_bottom_nav.dart';
-import 'simf_image_viewer.dart';
-import 'simf_language_toggle.dart';
-import 'simf_svg_icon.dart';
 
 // One widget group per file (CLAUDE.md §1). Re-exported here so the ~489
 // existing `simf_page_shell.dart` imports across the app keep resolving.

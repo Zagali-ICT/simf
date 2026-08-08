@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A short 3-letter English weekday for the day strip (LTR, as in the frame).
 String _weekdayEn(DateTime day) {

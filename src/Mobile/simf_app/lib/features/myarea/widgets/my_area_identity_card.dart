@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'tappable_avatar.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/myarea/widgets/tappable_avatar.dart';
 
 /// The My-Area identity card (frame node 512:2047): avatar 64, name +
 /// tier·enrolled line + gold reference, and the bordered gold مشاركة button.

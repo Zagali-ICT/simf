@@ -2,15 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
+import 'package:simf_app/core/sharing/content_sharer.dart';
+import 'package:simf_app/features/contacts/widgets/contact_card.dart';
+import 'package:simf_app/features/exhibitor/data/exhibitor_models.dart';
+import 'package:simf_app/features/exhibitor/data/exhibitor_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_confirm_dialog.dart';
-import '../../../core/sharing/content_sharer.dart';
-import '../../contacts/widgets/contact_card.dart';
-import '../data/exhibitor_models.dart';
-import '../data/exhibitor_repository.dart';
 
 /// FR-EXH-002 — the captured-lead detail sheet: the full card plus **Export
 /// vCard** and **Remove**.

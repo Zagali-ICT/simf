@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The "you are browsing as a guest" banner: a navy card with the gold
 /// highlighted phrase inside the beige copy (frame node 512:1499).

@@ -1,9 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/contacts/data/contact_models.dart';
+import 'package:simf_app/features/exhibitor/data/exhibitor_endpoints.dart';
+import 'package:simf_app/features/exhibitor/data/exhibitor_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../contacts/data/contact_models.dart';
-import 'exhibitor_endpoints.dart';
-import 'exhibitor_models.dart';
 
 /// D-426 — exhibitor ("Other" profile type) lead capture. Scans a visitor's
 /// entry-badge QR (`POST /app/exhibitor/visitors/scan`) → captures them to the

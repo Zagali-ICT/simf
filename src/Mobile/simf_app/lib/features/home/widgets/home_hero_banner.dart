@@ -2,16 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../core/motion/motion_durations.dart';
-import '../../../core/organization_profile/organization_profile.dart';
-import '../../banners/data/banner_models.dart';
-import 'carousel_dots.dart';
-import 'hero_background_video.dart';
-import 'hero_image.dart';
-import 'hero_overlay.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/features/banners/data/banner_models.dart';
+import 'package:simf_app/features/home/widgets/carousel_dots.dart';
+import 'package:simf_app/features/home/widgets/hero_background_video.dart';
+import 'package:simf_app/features/home/widgets/hero_image.dart';
+import 'package:simf_app/features/home/widgets/hero_overlay.dart';
 
 /// The home hero (replaces the static discover banner, #43): the forum edition —
 /// name (gold), theme, date range and location — overlaid on a rotating strip of

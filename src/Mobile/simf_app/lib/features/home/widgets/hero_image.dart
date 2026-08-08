@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One hero background image: the uploaded banner asset, falling back to the
 /// banner's pasted [fallbackUrl], then the bundled discover photo — so the hero

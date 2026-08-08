@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_cards.dart';
-import '../../../app/widgets/simf_refresh.dart';
-import '../../../app/widgets/simf_states.dart';
-import '../../../core/utils/saudi_time.dart';
-import '../data/presentation_models.dart';
-import '../data/presentation_summary_gate.dart';
-import '../data/session_models.dart';
-import 'file_icon.dart';
-import 'session_filter_tabs.dart';
-import 'session_summry_button.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_cards.dart';
+import 'package:simf_app/app/widgets/simf_refresh.dart';
+import 'package:simf_app/app/widgets/simf_states.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/sessions/data/presentation_models.dart';
+import 'package:simf_app/features/sessions/data/presentation_summary_gate.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/widgets/file_icon.dart';
+import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
+import 'package:simf_app/features/sessions/widgets/session_summry_button.dart';
 
 class PresentationsBody extends StatelessWidget {
   const PresentationsBody({

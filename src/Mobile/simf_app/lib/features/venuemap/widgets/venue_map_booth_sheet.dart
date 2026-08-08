@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/venue_map_models.dart';
-import 'sub_line.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
+import 'package:simf_app/features/venuemap/widgets/sub_line.dart';
 
 /// The booth detail sheet (the عرض التفاصيل action). Shows the cached summary
 /// immediately; the description streams in from the lazy detail call — a null

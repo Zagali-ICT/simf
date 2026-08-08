@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/app_assets.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../app/widgets/simf_svg_icon.dart';
-import 'widgets/icon_box.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/exhibition/widgets/icon_box.dart';
 
 /// A label/value row with a beige-fill icon box on one end and a chevron on the
 /// other — the shared shape of the stand-code→map row (Figma 1439:11904) and the

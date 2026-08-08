@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import 'auth_chrome.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/account/widgets/auth_chrome.dart';
 
 /// The sign-in card's alternative entry methods below the "or" divider:
 /// Face-ID sign-in (shown only when a biometric is usable), the printed-badge

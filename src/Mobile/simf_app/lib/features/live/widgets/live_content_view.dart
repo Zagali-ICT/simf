@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/live_models.dart';
-import '../data/live_presentation.dart';
-import 'live_content.dart';
-import 'live_message_surfaces.dart';
-import 'live_player_surface.dart';
+import 'package:simf_app/features/live/data/live_models.dart';
+import 'package:simf_app/features/live/data/live_presentation.dart';
+import 'package:simf_app/features/live/widgets/live_content.dart';
+import 'package:simf_app/features/live/widgets/live_message_surfaces.dart';
+import 'package:simf_app/features/live/widgets/live_player_surface.dart';
 
 /// The live screen's body once a session is resolved: the player band, the
 /// broadcast header, the Q&A entry and the upcoming-sessions list.

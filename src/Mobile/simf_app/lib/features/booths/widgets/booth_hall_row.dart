@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../venuemap/data/venue_map_models.dart';
-import 'booth_hall_box.dart';
-import 'code_pill.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/booths/widgets/booth_hall_box.dart';
+import 'package:simf_app/features/booths/widgets/code_pill.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 
 /// The hall row (frame node 922:2795): the gold-bordered **code pill** (A-12)
 /// beside the deep-navy **hall box**. The frame's hall box reads

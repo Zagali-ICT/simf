@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/ai_summary/data/ai_summary_endpoints.dart';
+import 'package:simf_app/features/ai_summary/data/session_summary_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'ai_summary_endpoints.dart';
-import 'session_summary_models.dart';
 
 /// Data layer for the AI session summary (Page_034). One read, reusing the
 /// shipped **anonymous** endpoint (no new API): the published summary for a

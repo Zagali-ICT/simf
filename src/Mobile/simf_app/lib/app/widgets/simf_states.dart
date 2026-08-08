@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../route_names.dart';
-import '../theme/tokens.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The shared loading / error / empty triad every data screen composes.
 /// Split out of `simf_page_shell.dart` (one widget group per file); that file

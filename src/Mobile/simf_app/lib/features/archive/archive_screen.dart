@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/archive/data/archive_endpoints.dart';
+import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/widgets/archive_body.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import 'data/archive_endpoints.dart';
-import 'data/archive_models.dart';
-import 'widgets/archive_body.dart';
 
 /// `GET /app/archive` → the past editions (public, D-273).
 final archiveEditionsProvider =

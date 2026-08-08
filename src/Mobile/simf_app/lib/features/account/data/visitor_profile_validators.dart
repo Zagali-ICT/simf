@@ -1,8 +1,8 @@
-import '../../../app/localization/app_l10n.dart';
-import '../../../core/validation/name_validation.dart';
-import '../../../core/validation/phone_validation.dart';
-import '../../../core/validation/plate_validation.dart';
-import '../../../core/validation/saudi_id_validation.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/core/validation/name_validation.dart';
+import 'package:simf_app/core/validation/phone_validation.dart';
+import 'package:simf_app/core/validation/plate_validation.dart';
+import 'package:simf_app/core/validation/saudi_id_validation.dart';
 
 /// Which identity document a non-Saudi visitor is registering with.
 ///

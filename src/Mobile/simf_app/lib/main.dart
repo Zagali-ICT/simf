@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:simf_app/app/app.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
+import 'package:simf_app/core/env/build_config.dart';
+import 'package:simf_app/core/startup/app_version_policy.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'app/app.dart';
-import 'app/localization/locale_controller.dart';
-import 'core/env/build_config.dart';
-import 'core/startup/app_version_policy.dart';
-import 'features/accessibility/data/accessibility_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

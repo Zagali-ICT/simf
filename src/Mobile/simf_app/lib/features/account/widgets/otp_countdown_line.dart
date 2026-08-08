@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The resend countdown under the OTP boxes (frame 758:2616): the muted prefix
 /// followed by the remaining time in gold bold, as one rich line so the two

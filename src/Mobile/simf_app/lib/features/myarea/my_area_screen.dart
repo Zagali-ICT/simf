@@ -3,22 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart'
+    show avatarBustProvider, referenceNumberProvider;
+import 'package:simf_app/features/myarea/data/myarea_models.dart';
+import 'package:simf_app/features/myarea/data/myarea_repository.dart';
+import 'package:simf_app/features/myarea/identity_verification_screen.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_dashboard_body.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_identity_card.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_rows.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_bottom_nav.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../account/data/profile_repository.dart'
-    show avatarBustProvider, referenceNumberProvider;
-import 'data/myarea_models.dart';
-import 'data/myarea_repository.dart';
-import 'identity_verification_screen.dart';
-import 'widgets/my_area_dashboard_body.dart';
-import 'widgets/my_area_identity_card.dart';
-import 'widgets/my_area_rows.dart';
 
 /// Page 014 — منطقتي · My Area (#14, `/my-area`), rebuilt to the KSA Wave-2
 /// frame **213:963** (owner re-pick, D-396; the earlier build used 512:1780)

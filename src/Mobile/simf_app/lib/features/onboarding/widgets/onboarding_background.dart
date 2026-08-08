@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 import 'package:video_player/video_player.dart';
-
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
 
 const String _worldMapAsset = AppAssets.onboardingWorldMap;
 

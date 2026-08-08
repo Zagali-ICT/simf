@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The gold-bordered "المسرح · STAGE" band at the top of the hall card
 /// (frame 905:1584): a full-width navyDeep pill, gold hairline, gold label.

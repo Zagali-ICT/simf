@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../data/notification_models.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/notifications/data/notification_models.dart';
 
 /// The solid colour-coded circular category mark. Per Figma 758:2491 the icon is
 /// styled **per notification kind** (a decorative colour + glyph), not per

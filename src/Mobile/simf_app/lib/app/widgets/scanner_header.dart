@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The scanner's navy header band (56-high): a circular navy-deep back button at
 /// the inline start over a centred white title — mirrors `AccountSubHeader` with

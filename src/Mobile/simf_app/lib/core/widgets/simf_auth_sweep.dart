@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The decorative diagonal sweep behind the auth screens' header (Figma node
 /// 168:2850, rotated 28.28°) — approximated as a tinted rounded rectangle.

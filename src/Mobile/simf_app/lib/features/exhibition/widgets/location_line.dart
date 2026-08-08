@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../core/country_flag.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/country_flag.dart';
 
 /// The gold "City، Country" line with the country flag (Figma 1439:11895):
 /// SemiBold-14 gold city, 20px flag, 8px gap, flag on the left (RTL).

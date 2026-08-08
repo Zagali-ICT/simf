@@ -2,15 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/questions/data/questions_repository.dart';
+import 'package:simf_app/features/questions/widgets/send_question_content.dart';
+import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../sessions/data/session_detail_repository.dart';
-import '../sessions/data/session_models.dart';
-import 'data/questions_repository.dart';
-import 'widgets/send_question_content.dart';
 
 /// The question recipient — maps to the wire int the API decodes
 /// (`SessionQuestionRecipient`: Speaker=0, Host=1).

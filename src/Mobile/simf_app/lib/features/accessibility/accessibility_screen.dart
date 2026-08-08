@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import 'data/accessibility_controller.dart';
-import 'widgets/accessibility_font_size_card.dart';
-import 'widgets/accessibility_section_heading.dart';
-import 'widgets/accessibility_toggle_row.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
+import 'package:simf_app/features/accessibility/widgets/accessibility_font_size_card.dart';
+import 'package:simf_app/features/accessibility/widgets/accessibility_section_heading.dart';
+import 'package:simf_app/features/accessibility/widgets/accessibility_toggle_row.dart';
 
 /// Page 038 — إمكانية الوصول · Accessibility (#38, `/settings/accessibility`).
 ///

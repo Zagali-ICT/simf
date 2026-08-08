@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The clock·time·meta line under a session-card title — a 12px beige-hairline
 /// glyph + an ellipsized beige label filling the row. Shared by the summaries

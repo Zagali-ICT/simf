@@ -1,4 +1,4 @@
-import '../../app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
 
 /// The greeting word by local time of day (the frame's "صباح الخير" row).
 String homeGreeting(AppL10n l10n, DateTime now) =>

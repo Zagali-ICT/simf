@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
-import 'gallery_placeholder_box.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/gallery/widgets/gallery_placeholder_box.dart';
 
 /// The tile bitmap: a network image (thumbnail/image) with a spinner while it
 /// loads and a fall-back to the kind icon when [imageUrl] is null or the fetch

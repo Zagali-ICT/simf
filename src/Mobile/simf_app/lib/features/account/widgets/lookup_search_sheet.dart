@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One option for the shared [LookupSearchSheet]: a stable [value], a display
 /// [label], and the [search] text matched against the query (defaults to the

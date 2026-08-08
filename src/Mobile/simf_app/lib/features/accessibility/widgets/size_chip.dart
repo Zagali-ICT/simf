@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One font-size pill: gold fill when [selected], else a beige-hairline outline.
 class SizeChip extends StatelessWidget {

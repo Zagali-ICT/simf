@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/feedback/data/feedback_endpoints.dart';
+import 'package:simf_app/features/feedback/data/rating_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'feedback_endpoints.dart';
-import 'rating_models.dart';
 
 /// Data layer for the dynamic rating form (Page_040).
 ///

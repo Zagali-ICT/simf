@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The full-width gold primary button (Figma 1701:3826): h48, radius-4, white
 /// bold label.

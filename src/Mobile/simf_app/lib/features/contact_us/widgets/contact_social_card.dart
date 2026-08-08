@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/confirm_external_link.dart';
-import '../../../core/organization_profile/organization_profile.dart';
-import 'contact_card_chrome.dart';
-import 'social_button.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/confirm_external_link.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/features/contact_us/widgets/contact_card_chrome.dart';
+import 'package:simf_app/features/contact_us/widgets/social_button.dart';
 
 /// The "وسائل التواصل الاجتماعي" row (frame node 1388:7711): one bordered tap
 /// box per set social link. Brand-accurate glyphs are pending a Figma asset

@@ -3,21 +3,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_repository.dart';
+import 'package:simf_app/features/sessions/widgets/programme_day_banner.dart';
+import 'package:simf_app/features/sessions/widgets/programme_day_strip.dart';
+import 'package:simf_app/features/sessions/widgets/session_timeline_row.dart';
+import 'package:simf_app/features/sessions/widgets/session_type_tabs.dart';
+import 'package:simf_app/features/sessions/widgets/sessions_search_field.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_bottom_nav.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/net/asset_urls.dart';
-import 'data/session_models.dart';
-import 'data/sessions_repository.dart';
-import 'widgets/programme_day_banner.dart';
-import 'widgets/programme_day_strip.dart';
-import 'widgets/session_timeline_row.dart';
-import 'widgets/session_type_tabs.dart';
-import 'widgets/sessions_search_field.dart';
 
 /// Page 016 — برنامج الملتقى · Sessions (#16, `/sessions`), rebuilt to the LIVE
 /// KSA frame **883:2308** (D-452).

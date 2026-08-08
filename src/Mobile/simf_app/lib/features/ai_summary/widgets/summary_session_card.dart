@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/utils/weekday_names.dart';
-import '../../sessions/data/session_models.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/utils/weekday_names.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
 
 /// 12h "hh:mm a" for the session sub-line + agenda rows (locale-data-free,
 /// pinned 'en' for Western digits as the frame shows).

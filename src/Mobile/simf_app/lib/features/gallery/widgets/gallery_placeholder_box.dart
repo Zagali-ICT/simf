@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The no-bitmap / failed-fetch fall-back for a media tile: a navy box with the
 /// media kind icon.

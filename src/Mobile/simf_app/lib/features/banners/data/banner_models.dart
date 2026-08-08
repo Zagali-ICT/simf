@@ -1,4 +1,4 @@
-import '../../../core/net/asset_urls.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
 
 /// One public home banner (`GET /app/banners`, D-173) — the rotating home-hero
 /// image source (#43). The image is an uploaded asset served by the row id

@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/account/data/account_endpoints.dart';
+import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'account_endpoints.dart';
-import 'profile_models.dart';
 
 /// App-local data layer for the visitor profile (Page_007): the upsert + the
 /// four lookups, over the authenticated `/app/account/*` + `/app/organisations`

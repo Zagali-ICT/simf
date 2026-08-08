@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_logo_image.dart';
-import 'initials_tile.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo_image.dart';
+import 'package:simf_app/features/media_partners/widgets/initials_tile.dart';
 
 class PartnerLogo extends StatelessWidget {
   const PartnerLogo({required this.url, required this.name});

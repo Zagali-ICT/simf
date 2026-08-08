@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../localization/app_l10n.dart';
-import '../theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// App-wide single-action info dialog — the one-button sibling of
 /// `SimfConfirmDialog` (which is deliberately hard-wired to two 50/50 actions,

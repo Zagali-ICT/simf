@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_logo_image.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo_image.dart';
 
 /// The square logo on an exhibitor / sponsor detail card (Figma 1439:11881 /
 /// 11826): the real ExhibitorLogo / SponsorLogo asset (served anonymously per

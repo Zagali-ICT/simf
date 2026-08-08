@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../core/validation/field_limits.dart';
-import '../../../core/widgets/simf_field_label.dart';
-import '../../../core/widgets/simf_field_style.dart';
-import '../../../core/widgets/simf_picker_field.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/validation/field_limits.dart';
+import 'package:simf_app/core/widgets/simf_field_label.dart';
+import 'package:simf_app/core/widgets/simf_field_style.dart';
+import 'package:simf_app/core/widgets/simf_picker_field.dart';
 
 /// مكان الميلاد on the sign-up profile step — required for everyone (D-723).
 ///

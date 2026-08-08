@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'auth_chrome.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/account/widgets/auth_chrome.dart';
 
 /// A centred "question + action link" row shared by the auth cards — sign-in's
 /// «no account? create account» and sign-up's «have an account? sign in». The

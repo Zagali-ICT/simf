@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../core/country_flag.dart';
-import '../../../core/net/asset_urls.dart';
-import '../data/session_models.dart';
-import 'speaker_avatar.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/country_flag.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/widgets/speaker_avatar.dart';
 
 /// One speaker card (frame 889:2722/889:2737/889:2747): a navy box with a beige
 /// hairline; a 40×40 rounded photo on the inline-start (physical right), with

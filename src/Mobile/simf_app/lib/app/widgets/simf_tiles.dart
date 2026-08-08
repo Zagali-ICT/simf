@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../theme/tokens.dart';
-import 'simf_cards.dart';
-import 'simf_svg_icon.dart';
-import 'tile_body.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_cards.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/widgets/tile_body.dart';
 
 /// The home/section tile family: the equal-width row and the nav / stat
 /// tiles that fill it. Split out of `simf_page_shell.dart`, which re-exports

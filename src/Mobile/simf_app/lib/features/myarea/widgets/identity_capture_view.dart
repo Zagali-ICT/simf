@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The guided liveness camera (Figma 758:4180 / 758:4248 / 758:4316): the live
 /// front-camera preview fills the area above (a spinner until it is ready), and

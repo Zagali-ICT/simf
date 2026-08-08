@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'simf_image_viewer.dart';
+import 'package:simf_app/app/widgets/simf_image_viewer.dart';
 
 /// The one widget every logo / photo box in the app renders through (owner
 /// 2026-07-26 — "make the logo fit its box in all logo views, and on-press show

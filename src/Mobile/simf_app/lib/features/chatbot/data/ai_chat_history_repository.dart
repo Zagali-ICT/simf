@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/chatbot/data/chat_message.dart';
+import 'package:simf_app/features/chatbot/data/chatbot_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'chat_message.dart';
-import 'chatbot_endpoints.dart';
 
 /// Loads the signed-in visitor's persisted AI-assistant transcript
 /// (`GET /app/ai/assistance/history`) so the conversation survives navigation

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../core/validation/digit_normalization.dart';
-import '../../../core/validation/field_limits.dart';
-import '../../../core/validation/phone_validation.dart';
-import '../../../core/widgets/simf_field_label.dart';
-import '../../../core/widgets/simf_field_style.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/validation/digit_normalization.dart';
+import 'package:simf_app/core/validation/field_limits.dart';
+import 'package:simf_app/core/validation/phone_validation.dart';
+import 'package:simf_app/core/widgets/simf_field_label.dart';
+import 'package:simf_app/core/widgets/simf_field_style.dart';
 
 /// The one mobile-number form rule, in the field's own file so no screen writes
 /// a second copy: required (D-723), then the C4 (D-371) standard shape — Saudi

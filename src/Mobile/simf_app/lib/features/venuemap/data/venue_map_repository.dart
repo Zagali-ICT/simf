@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
+import 'package:simf_app/features/venuemap/data/venuemap_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'venue_map_models.dart';
-import 'venuemap_endpoints.dart';
 
 /// App-local data layer for the 2D venue map (Page_015). All three reads are
 /// **public** (`AllowAnonymous`) — a Guest sees the full map. Throws [ApiFailure]

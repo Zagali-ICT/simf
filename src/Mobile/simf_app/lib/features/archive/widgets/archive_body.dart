@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../archive_screen.dart';
-import '../data/archive_models.dart';
-import 'archive_bullet.dart';
-import 'archive_edition_pills.dart';
-import 'archive_gallery_row.dart';
-import 'archive_notice_banner.dart';
-import 'archive_past_speakers_row.dart';
-import 'archive_place_time_row.dart';
-import 'archive_session_title_card.dart';
-import 'archive_stat_row.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/archive/archive_screen.dart';
+import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/widgets/archive_bullet.dart';
+import 'package:simf_app/features/archive/widgets/archive_edition_pills.dart';
+import 'package:simf_app/features/archive/widgets/archive_gallery_row.dart';
+import 'package:simf_app/features/archive/widgets/archive_notice_banner.dart';
+import 'package:simf_app/features/archive/widgets/archive_past_speakers_row.dart';
+import 'package:simf_app/features/archive/widgets/archive_place_time_row.dart';
+import 'package:simf_app/features/archive/widgets/archive_session_title_card.dart';
+import 'package:simf_app/features/archive/widgets/archive_stat_row.dart';
 
 /// The scrolling content: notice banner → edition selector → selected-edition
 /// detail (title / summary / place·time / stats).

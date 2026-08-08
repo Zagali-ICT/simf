@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The desk's navy surface — one shared card so the scanner, the result and the
 /// error state never drift apart.

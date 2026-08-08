@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/news/data/news_endpoints.dart';
+import 'package:simf_app/features/news/data/news_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'news_endpoints.dart';
-import 'news_models.dart';
 
 /// `GET /app/news` → the latest news list (public, D-199). Consumed by the News
 /// screen + the Home highlights carousel (both via the `news_screen.dart`

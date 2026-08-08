@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 class SocialButton extends StatelessWidget {
   const SocialButton({

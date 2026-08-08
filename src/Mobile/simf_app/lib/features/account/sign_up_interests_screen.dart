@@ -3,19 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/errors/api_error_l10n.dart';
+import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
+import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/account/widgets/account_sub_header.dart';
+import 'package:simf_app/features/account/widgets/interest_chip.dart';
+import 'package:simf_app/features/account/widgets/sign_up_interests_body.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../core/errors/api_error_l10n.dart';
-import '../../core/responsive/max_width_body.dart';
-import '../../core/widgets/simf_auth_sweep.dart';
-import 'data/profile_models.dart';
-import 'data/profile_repository.dart';
-import 'widgets/account_sub_header.dart';
-import 'widgets/interest_chip.dart';
-import 'widgets/sign_up_interests_body.dart';
 
 /// Page 007‑01 — اهتماماتي · Sign up — interests. The KSA-Project Figma design
 /// (node 505:1083 — D-365): navy surface + sweep, custom header, the

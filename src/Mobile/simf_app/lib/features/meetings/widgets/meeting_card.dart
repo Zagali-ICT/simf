@@ -1,18 +1,17 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import '../../../core/country_flag.dart';
-import '../../../core/net/asset_urls.dart';
-import '../../../core/utils/saudi_time.dart';
-import '../../requests/data/request_models.dart';
-import '../../requests/widgets/request_status_style.dart';
-import '../../speakers/widgets/speaker_photo_tile.dart';
-import 'flag_badge.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/core/country_flag.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/meetings/widgets/flag_badge.dart';
+import 'package:simf_app/features/requests/data/request_models.dart';
+import 'package:simf_app/features/requests/widgets/request_status_style.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_photo_tile.dart';
 
 /// One bilateral-meeting card on the اللقاءات الثنائية page (Figma 1408:9726): a
 /// navy card with a green (accepted) hairline, carrying —

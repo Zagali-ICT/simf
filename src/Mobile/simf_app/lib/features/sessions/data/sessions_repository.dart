@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'session_models.dart';
-import 'sessions_endpoints.dart';
 
 /// App-local data layer for the sessions list (Page_016). The read is **public**
 /// (`AllowAnonymous`) — a Guest sees the full programme. The app fetches the

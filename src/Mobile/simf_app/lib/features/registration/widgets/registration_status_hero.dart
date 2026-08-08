@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The status hero (Figma 1701:3799–3804): a 104px ring (navyDeep fill, a
 /// state-coloured 2.36px border) around the state icon, a white headline, and a

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import '../../../core/widgets/simf_field_label.dart';
-import '../../../core/widgets/simf_field_style.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/core/widgets/simf_field_label.dart';
+import 'package:simf_app/core/widgets/simf_field_style.dart';
 
 /// The auth forms' email field: a [SimfFieldLabel] over a [TextFormField] on
 /// the shared input style. Shared by sign-in / sign-up so the label, direction

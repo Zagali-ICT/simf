@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/venue_map_models.dart';
-import 'venue_map_logo_badge.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
+import 'package:simf_app/features/venuemap/widgets/venue_map_logo_badge.dart';
 
 /// The bottom white info card for the selected node (frame node 215:562's
 /// SAMI card): the exhibitor **logo badge** · gold code box · name +

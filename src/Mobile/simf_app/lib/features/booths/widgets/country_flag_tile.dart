@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The booth country flag tile (frame node 1062:12911): a 40×40 rounded tile at
 /// the inline-end (left) of the header. Figma renders a full flag image; the app

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../data/session_models.dart';
-import 'day_cell.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/widgets/day_cell.dart';
 
 /// The agenda day strip (frame node 883:2327, restyled #4): a **white**
 /// calendar band that shows the programme days **plus muted neighbour days

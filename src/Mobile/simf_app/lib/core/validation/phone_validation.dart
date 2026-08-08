@@ -8,7 +8,7 @@
 /// `+`-prefixed form the server's shapes require.
 library;
 
-import 'digit_normalization.dart';
+import 'package:simf_app/core/validation/digit_normalization.dart';
 
 final RegExp _saudiMobileShape = RegExp(r'^(05\d{8}|\+9665\d{8})$');
 final RegExp _internationalShape = RegExp(r'^\+[1-9]\d{7,14}$');

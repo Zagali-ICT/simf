@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The reference-number card (Figma 505:1525, D-366/D-373): the beige label over
 /// the gold `SIMF-YYYY-NNNNNNNN` reference (forced LTR), on an 80%-navy fill.

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../core/net/asset_urls.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
 
 /// One media partner — mirrors `PublicMediaPartnerItem` (`name`/`nameArabic`).
 @immutable

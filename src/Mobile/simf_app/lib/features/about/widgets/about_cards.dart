@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'about_card.dart';
-import 'card_heading.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/about/widgets/about_card.dart';
+import 'package:simf_app/features/about/widgets/card_heading.dart';
 
 /// A detail value's internal reading direction, from its script: an Arabic
 /// value reads RTL; a language-neutral value (a year, a "01-2026 — 04-2026"

@@ -3,17 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_search_field.dart';
+import 'package:simf_app/features/speakers/data/speaker_models.dart';
+import 'package:simf_app/features/speakers/data/speakers_repository.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_list_card.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_sort_control.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../app/widgets/simf_search_field.dart';
-import 'data/speaker_models.dart';
-import 'data/speakers_repository.dart';
-import 'widgets/speaker_list_card.dart';
-import 'widgets/speaker_sort_control.dart';
 
 /// Page 019 — المتحدثون · Speakers list (#19, `/speakers`, Guest+), rebuilt to
 /// the KSA-Project Figma frame **908:1744 "Speakers"** on the shared navy shell.

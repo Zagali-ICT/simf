@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import 'channel_row.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/contacts/widgets/channel_row.dart';
 
 /// Shared read-only contact card (SIMF-FDS-014 §5.5). Renders a resolved
 /// visitor card — initials avatar, name, job title, then the available channels

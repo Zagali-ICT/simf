@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The no-logo / failed-fetch day-banner fall-back: a navy box with the anchor
 /// glyph (the designed empty state until a day logo is uploaded).

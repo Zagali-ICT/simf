@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../venuemap/data/venue_map_models.dart';
-import 'booth_company_header.dart';
-import 'booth_contact_boxes.dart';
-import 'booth_guide_button.dart';
-import 'booth_hall_row.dart';
-import 'booth_officer_row.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/booths/widgets/booth_company_header.dart';
+import 'package:simf_app/features/booths/widgets/booth_contact_boxes.dart';
+import 'package:simf_app/features/booths/widgets/booth_guide_button.dart';
+import 'package:simf_app/features/booths/widgets/booth_hall_row.dart';
+import 'package:simf_app/features/booths/widgets/booth_officer_row.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 
 /// One exhibitor card (frame node 922:2554): a navy box with the beige
 /// hairline carrying — top to bottom — the company header (short name + full

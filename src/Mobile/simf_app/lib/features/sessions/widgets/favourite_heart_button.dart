@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import '../data/session_favourites.dart';
 
 /// The المفضلة heart toggle shown on a session card (Figma 1388:8392 / 1388:9067)
 /// — a 32px gold square: solid gold + a filled white heart when favourited, a

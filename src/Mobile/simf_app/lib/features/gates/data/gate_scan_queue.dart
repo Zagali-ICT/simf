@@ -2,9 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/gates/data/gate_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'gate_models.dart';
 
 /// One gate scan that could not reach the server (network down / timeout / a
 /// 5xx) and is held on-device for automatic retry. It carries its own

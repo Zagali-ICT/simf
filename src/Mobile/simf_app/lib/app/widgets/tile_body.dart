@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The shared tile interior: a centred top element over the small bold label.
 class TileBody extends StatelessWidget {

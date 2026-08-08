@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The invisible padding that grows each flag's tap target to a
 /// comfortable size without moving the painted dot.

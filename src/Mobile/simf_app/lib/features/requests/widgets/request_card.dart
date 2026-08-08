@@ -2,14 +2,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import '../../../core/utils/saudi_time.dart';
-import '../data/request_models.dart';
-import 'icon_box.dart';
-import 'request_status_style.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/requests/data/request_models.dart';
+import 'package:simf_app/features/requests/widgets/icon_box.dart';
+import 'package:simf_app/features/requests/widgets/request_status_style.dart';
 
 /// One expandable request card: the type icon, headline + context line + date,
 /// a status-coloured leading strip, and (when expanded) the status detail and a

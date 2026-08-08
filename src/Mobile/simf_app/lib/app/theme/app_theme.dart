@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// Builds the app's [ThemeData] from [SimfTokens] + the **IBM Plex Sans Arabic**
 /// type family (the `Mockup.html` app font, D-329). Widgets read colour and type

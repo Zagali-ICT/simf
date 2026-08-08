@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The past-speakers overflow tile (frame node 927:3343): a 72×72 beige-bordered
 /// rounded-rect (r8) with a big gold "+N" over the white "آخرون" label.

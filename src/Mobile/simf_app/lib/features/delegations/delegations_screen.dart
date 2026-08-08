@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import '../account/data/profile_repository.dart';
-import 'data/delegation_models.dart';
-import 'data/delegations_repository.dart';
-import 'widgets/delegation_meeting_request_sheet.dart';
-import 'widgets/delegations_body.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/delegations/data/delegation_models.dart';
+import 'package:simf_app/features/delegations/data/delegations_repository.dart';
+import 'package:simf_app/features/delegations/widgets/delegation_meeting_request_sheet.dart';
+import 'package:simf_app/features/delegations/widgets/delegations_body.dart';
 
 /// The Delegations screen — App "الوفود" (Figma 1426:10771): the invited
 /// countries' delegations, each card showing the flag, country name, head of

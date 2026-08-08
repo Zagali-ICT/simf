@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One numbered session-data line on the send-question sheet.
 /// One numbered session-data line — the index sits at the inline start (right

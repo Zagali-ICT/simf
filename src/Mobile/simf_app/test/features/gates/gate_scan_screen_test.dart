@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/gates/data/gate_models.dart';
 import 'package:simf_app/features/gates/data/gate_offline_config.dart';
-import 'package:simf_app/features/gates/data/offline_badge.dart';
 import 'package:simf_app/features/gates/data/gates_repository.dart';
+import 'package:simf_app/features/gates/data/offline_badge.dart';
 import 'package:simf_app/features/gates/gate_scan_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

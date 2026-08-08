@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/seat_map_models.dart';
-import 'seat_chip.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/widgets/seat_chip.dart';
 
 /// The "الجلسة" card (frame 905:1556): the session label, its title, then the
 /// seat (مقعد) + row (الصف) chips — right-aligned on the navy `navyDeep` fill.

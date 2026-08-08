@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The About anchor-mark header (frame 1116:16448): the gold anchor + forum name,
 /// the optional forum title beneath it, and the optional gold status badge

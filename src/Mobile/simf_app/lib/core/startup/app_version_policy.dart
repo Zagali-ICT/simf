@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:simf_app/core/net/core_endpoints.dart';
+import 'package:simf_app/core/startup/app_update_checker.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../net/core_endpoints.dart';
-import 'app_update_checker.dart';
 
 /// D-736 — the server app-update policy (`GET /app/version-policy`): the
 /// per-platform minimum supported version (older installs are hard-blocked),

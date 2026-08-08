@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// Shown when the camera cannot start (permission denied / no camera / init
 /// failure). Points at system settings and keeps the manual path below usable,

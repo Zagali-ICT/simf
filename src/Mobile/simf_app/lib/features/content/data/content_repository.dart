@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/content/data/content_endpoints.dart';
+import 'package:simf_app/features/content/data/content_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'content_endpoints.dart';
-import 'content_models.dart';
 
 /// App-local data layer for the public CMS read (`GET /app/content/{key}`,
 /// anonymous — Page_009). Throws [ApiFailure] on a wire error; a 404 means the

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The design's beige segmented tabs (Figma 505:1075 / 505:1030) — D-373
 /// owner fix: the **selected** segment is a **white pill** with navy text

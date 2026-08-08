@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_assets.dart';
-import '../theme/tokens.dart';
-import 'simf_svg_icon.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// Shared navy rounded search field used across the Figma sub-page frames — a
 /// magnifier at the inline start and (optionally) a tuning/filter glyph at the

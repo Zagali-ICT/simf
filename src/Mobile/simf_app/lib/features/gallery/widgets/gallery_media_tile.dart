@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../data/media_models.dart';
-import 'play_glyph.dart';
-import 'thumbnail.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/gallery/data/media_models.dart';
+import 'package:simf_app/features/gallery/widgets/play_glyph.dart';
+import 'package:simf_app/features/gallery/widgets/thumbnail.dart';
 
 /// One media tile (frame node 949:4043): a rounded bitmap with a navy
 /// bottom-gradient; video tiles overlay a centred play glyph. The localised

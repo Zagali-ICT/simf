@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/localization/locale_controller.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
-import '../../../app/widgets/simf_bottom_nav.dart' show SimfTab;
-import '../../../app/widgets/simf_language_toggle.dart';
-import '../../../app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart' show SimfTab;
+import 'package:simf_app/app/widgets/simf_language_toggle.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
 
 /// The greeting header (frame node 203:1238): avatar + greeting + name at the
 /// inline start; the bell (with the unread badge) and the menu at the end.

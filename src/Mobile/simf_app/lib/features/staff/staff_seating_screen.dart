@@ -3,25 +3,24 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_scanner_body.dart';
+import 'package:simf_app/core/responsive/breakpoints.dart';
+import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
+import 'package:simf_app/features/sessions/widgets/hall_seat_map.dart';
+import 'package:simf_app/features/sessions/widgets/seat_map_async_view.dart';
+import 'package:simf_app/features/staff/data/staff_seating_models.dart';
+import 'package:simf_app/features/staff/data/staff_seating_repository.dart';
+import 'package:simf_app/features/staff/widgets/desk_card.dart';
+import 'package:simf_app/features/staff/widgets/desk_row.dart';
+import 'package:simf_app/features/staff/widgets/occupant_header.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_bottom_nav.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../app/widgets/simf_scanner_body.dart';
-import '../../core/responsive/breakpoints.dart';
-import '../../core/responsive/max_width_body.dart';
-import '../../core/utils/refresh.dart';
-import '../sessions/data/seat_map_models.dart';
-import '../sessions/data/seat_map_repository.dart';
-import '../sessions/widgets/hall_seat_map.dart';
-import '../sessions/widgets/seat_map_async_view.dart';
-import 'data/staff_seating_models.dart';
-import 'data/staff_seating_repository.dart';
-import 'widgets/desk_card.dart';
-import 'widgets/desk_row.dart';
-import 'widgets/occupant_header.dart';
 
 /// D-771 (owner 2026-07-26) — the **staff seating desk**
 /// (`/staff/seating/:sessionId`, approved Staff). Derived from the visitor seat

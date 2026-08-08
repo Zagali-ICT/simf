@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../core/organization_profile/organization_profile.dart';
-import 'meta_line.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/features/home/widgets/meta_line.dart';
 
 /// The hero text overlay: the forum edition (name + theme + date range +
 /// location) when the profile is loaded, otherwise the original discover copy.

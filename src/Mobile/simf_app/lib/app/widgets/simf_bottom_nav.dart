@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../localization/app_l10n.dart';
-import '../route_names.dart';
-import '../theme/app_assets.dart';
-import '../theme/tokens.dart';
-import 'centre_action.dart';
-import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
-import 'simf_bottom_nav_item.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/centre_action.dart';
+import 'package:simf_app/app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
+import 'package:simf_app/app/widgets/simf_bottom_nav_item.dart';
 
 /// When inside [SimfAppShell] (i.e., when [SimfShellScope] is the nearest
 /// inherited ancestor), switch tabs via the shell. Outside the shell, navigate

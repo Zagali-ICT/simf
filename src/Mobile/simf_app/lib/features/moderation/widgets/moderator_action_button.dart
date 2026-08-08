@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One large moderator action button (Figma 1462:12236): reject / answered /
 /// on-stage. Outline until its state is active; the on-stage CTA is drawn solid

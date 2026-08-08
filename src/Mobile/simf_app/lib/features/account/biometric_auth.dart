@@ -6,13 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:local_auth/local_auth.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_confirm_dialog.dart';
-import '../../core/motion/motion_durations.dart';
 
 /// Maps a non-success [LocalAuthOutcome] to a localized message, so the sign-in
 /// prompt and the enrol step-up share one mapping (D-738). Returns null for

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One media-center tab pill (frame node 1049:12640 / 1049:12642): a 48-high,
 /// 8px-radius pill — active is solid gold with **white** text; inactive is a

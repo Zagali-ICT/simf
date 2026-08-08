@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The gold border weight of the viewfinder's corner brackets (Figma 758:4579).
 const BorderSide _bracketSide =

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A section heading (frame 889:2717/889:2720/889:2770): white, 16px Medium,
 /// right-aligned for RTL.

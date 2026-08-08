@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import 'legend_item.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/widgets/legend_item.dart';
 
 /// D-771 — the seat-TIER legend, shown only for a hall that has tiered rows:
 /// شخصيات بالغة الأهمية (deep red) · كبار الشخصيات (deep teal) · عادي (bordered).

@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/media_partners/data/media_partner_models.dart';
+import 'package:simf_app/features/media_partners/data/media_partners_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'media_partner_models.dart';
-import 'media_partners_endpoints.dart';
 
 /// `GET /app/media-partners` → the flat partner list (public, D-199).
 final mediaPartnersProvider =

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../account/biometric_auth.dart';
-import '../../sessions/data/session_favourites.dart';
-import '../data/myarea_models.dart';
-import 'my_area_identity_card.dart';
-import 'my_area_rows.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/account/biometric_auth.dart';
+import 'package:simf_app/features/myarea/data/myarea_models.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_identity_card.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_rows.dart';
+import 'package:simf_app/features/sessions/data/session_favourites.dart';
 
 /// The Approved-user My-Area dashboard body (frame 213:963 / 758:1283): the
 /// identity card, the share pill, the الإحصائيات stat tiles, the جدولي

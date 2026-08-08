@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/session_models.dart';
-import 'category_pill.dart';
-import 'header_action_button.dart';
-import 'index_badge.dart';
-import 'session_meta_row.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/widgets/category_pill.dart';
+import 'package:simf_app/features/sessions/widgets/header_action_button.dart';
+import 'package:simf_app/features/sessions/widgets/index_badge.dart';
+import 'package:simf_app/features/sessions/widgets/session_meta_row.dart';
 
 /// The session header card (frame 889:2716): a navy box holding the title +
 /// gold index badge, the category tag pill (PAR-D3, when the session carries a

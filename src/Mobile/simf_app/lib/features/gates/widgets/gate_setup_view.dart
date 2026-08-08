@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/gate_models.dart';
-import 'gate_direction_button.dart';
-import 'gate_picker.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/gates/data/gate_models.dart';
+import 'package:simf_app/features/gates/widgets/gate_direction_button.dart';
+import 'package:simf_app/features/gates/widgets/gate_picker.dart';
 
 /// Figma 758:4651 — the setup card: a QR glyph, the gate picker, the دخول/خروج
 /// movement toggle, and the big "سكان الرمز" button (enabled once a movement

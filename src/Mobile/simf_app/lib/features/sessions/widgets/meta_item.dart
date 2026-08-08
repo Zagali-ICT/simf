@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One icon + label pair in the meta line (frame 889:2687/889:2686).
 class MetaItem extends StatelessWidget {

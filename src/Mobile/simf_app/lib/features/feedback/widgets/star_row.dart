@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A tappable 1–5 star bar. Renders in the ambient direction so the fill grows
 /// from the inline start (right under RTL — matching the Figma — left under

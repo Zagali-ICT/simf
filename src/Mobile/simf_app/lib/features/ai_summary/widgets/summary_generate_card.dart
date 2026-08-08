@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The generate-summary card (frame 1433:11389): the gold "توليد ملخص للجلسة"
 /// button (sparkle + label on the right, the collapse chevron on the left) over

@@ -1,7 +1,7 @@
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'session_models.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
 
 /// The device "add to calendar" action (Page_017 E4) — a **client-local OS
 /// action** built entirely from the cached session (no API, works offline).

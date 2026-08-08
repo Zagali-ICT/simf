@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One bordered seat/row chip (frame 905:1577 / 905:1579): a gold label word
 /// next to its value, centred on a navyDeep fill with a thin gold/beige border.

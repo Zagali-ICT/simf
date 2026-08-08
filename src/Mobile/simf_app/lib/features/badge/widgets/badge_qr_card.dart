@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../core/utils/hex_color.dart';
-import '../../myarea/data/myarea_models.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/hex_color.dart';
+import 'package:simf_app/features/myarea/data/myarea_models.dart';
 
 /// The issued badge card (frame node tree under 758:1469): the gold-bordered
 /// white card holding the QR, the "امسح للدخول" hint and the identity strip

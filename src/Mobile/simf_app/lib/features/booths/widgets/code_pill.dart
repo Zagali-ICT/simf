@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The accent booth-number pill (frame node 922:2796): a 109-wide navy box with
 /// a gold hairline, the code in gold, always LTR.

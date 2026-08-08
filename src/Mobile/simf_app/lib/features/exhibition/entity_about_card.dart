@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
 
 /// The "نبذة عن…" about card (Figma 1439:11931): borderless navyDeep, radius-8;
 /// white Medium-16 right-aligned header, a beige hairline divider, then the

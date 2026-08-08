@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/validation/field_limits.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/validation/field_limits.dart';
 
 /// The KSA OTP-frame box border (Figma 505:987 — D-364, promoted to a shared
 /// widget when the 2FA screen became the second consumer, D-369).

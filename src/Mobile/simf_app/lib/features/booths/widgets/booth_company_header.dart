@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-
-import '../../../app/theme/tokens.dart';
-import '../../../core/country_flag.dart';
-import '../../venuemap/data/venue_map_models.dart';
-import 'booth_logo_tile.dart';
-import 'country_flag_tile.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/country_flag.dart';
+import 'package:simf_app/features/booths/widgets/booth_logo_tile.dart';
+import 'package:simf_app/features/booths/widgets/country_flag_tile.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 
 /// The card header (frame node 922:2556): the company **logo tile** on the
 /// inline start (physical right) — the real CompanyLogo, short-name fallback —

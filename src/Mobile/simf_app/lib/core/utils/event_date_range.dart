@@ -1,4 +1,4 @@
-import 'gregorian_month_names.dart';
+import 'package:simf_app/core/utils/gregorian_month_names.dart';
 
 /// Formats the forum's event date range (the CP-editable
 /// `OrganizationProfile.EventStartDate` / `EventEndDate`) as one bilingual

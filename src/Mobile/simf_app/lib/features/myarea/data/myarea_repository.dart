@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/myarea/data/myarea_endpoints.dart';
+import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'myarea_endpoints.dart';
-import 'myarea_models.dart';
 
 /// App-local data layer for the My-Area dashboard (Page_014). The dashboard read
 /// is the `ApiResult` envelope; the calendar/contact exports are **raw** text

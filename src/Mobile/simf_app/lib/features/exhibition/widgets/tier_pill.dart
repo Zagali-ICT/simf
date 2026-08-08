@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The full-width tier pill (Figma 1439:11898): beige-10% fill, beige hairline,
 /// radius-8, px-20/py-8, gap-8; the 16px medal glyph at the inline start (right

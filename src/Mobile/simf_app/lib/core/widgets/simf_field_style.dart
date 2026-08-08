@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The one shared form-field styling for every bordered SIMF input — login,
 /// sign-up, profile and any other form. The value text style + the standard

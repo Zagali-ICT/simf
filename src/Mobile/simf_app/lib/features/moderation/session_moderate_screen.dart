@@ -2,16 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/moderation/data/moderation_models.dart';
+import 'package:simf_app/features/moderation/data/moderation_repository.dart';
+import 'package:simf_app/features/moderation/widgets/moderator_filter_bar.dart';
+import 'package:simf_app/features/moderation/widgets/moderator_header.dart';
+import 'package:simf_app/features/moderation/widgets/moderator_question_card.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import 'data/moderation_models.dart';
-import 'data/moderation_repository.dart';
-import 'widgets/moderator_filter_bar.dart';
-import 'widgets/moderator_header.dart';
-import 'widgets/moderator_question_card.dart';
 
 /// Moderator (محاور) per-session Q&A desk — Figma 1461:12227 (D-405 / D-509).
 ///

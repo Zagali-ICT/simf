@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The two success-frame actions: the gold حالة التسجيل primary (→ status) and
 /// the outlined الانتقال للرئيسية secondary (→ home). Figma 505:1525+.

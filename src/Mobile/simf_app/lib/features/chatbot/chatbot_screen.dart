@@ -3,16 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import 'data/ai_chat_history_repository.dart';
-import 'data/chat_message.dart';
-import 'data/chatbot_responder.dart';
-import 'widgets/chat_bubble.dart';
-import 'widgets/chat_composer.dart';
-import 'widgets/quick_replies.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/chatbot/data/ai_chat_history_repository.dart';
+import 'package:simf_app/features/chatbot/data/chat_message.dart';
+import 'package:simf_app/features/chatbot/data/chatbot_responder.dart';
+import 'package:simf_app/features/chatbot/widgets/chat_bubble.dart';
+import 'package:simf_app/features/chatbot/widgets/chat_composer.dart';
+import 'package:simf_app/features/chatbot/widgets/quick_replies.dart';
 
 // The responder seam lives in `data/`; re-exported so the existing
 // `ChatbotResponder` / `chatbotResponderProvider` imports (the chatbot test

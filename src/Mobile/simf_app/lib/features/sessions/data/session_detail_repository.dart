@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'session_models.dart';
-import 'sessions_endpoints.dart';
 
 /// Data layer for the session detail (Page_017). Two reads, both reusing the
 /// shipped endpoints (no new API — D-265): the **anonymous** detail and the

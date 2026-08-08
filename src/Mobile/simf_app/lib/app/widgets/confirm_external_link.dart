@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
+import 'package:simf_app/core/external_link.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../../core/external_link.dart';
-import '../localization/app_l10n.dart';
-import 'simf_confirm_dialog.dart';
 
 /// Confirms with the user before leaving the app for an external website, then
 /// launches it in the external browser (owner 2026-06-27 — every external link

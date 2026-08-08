@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// B1 — the "change seat" action: a full-width gold-outlined button under the
 /// frame's action row. Its visible label IS its accessible name, and the leading

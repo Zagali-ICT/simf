@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// PAR-D3 — the session's category tag pill, sitting under the title inside the
 /// header card: a small gold-hairline pill on the 4px radius carrying the

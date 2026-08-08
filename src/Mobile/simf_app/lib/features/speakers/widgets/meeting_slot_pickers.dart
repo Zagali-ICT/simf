@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One white day card in the meeting-request date picker (Figma 1776:4975):
 /// weekday over the bold day number over the month; gold-filled when selected.

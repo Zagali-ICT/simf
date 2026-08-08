@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
-import '../../../app/theme/tokens.dart';
-import 'contact_us_section.dart';
-import 'reference_number_card.dart';
-import 'registration_success_actions.dart';
-import 'registration_success_mark.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/registration/widgets/contact_us_section.dart';
+import 'package:simf_app/features/registration/widgets/reference_number_card.dart';
+import 'package:simf_app/features/registration/widgets/registration_success_actions.dart';
+import 'package:simf_app/features/registration/widgets/registration_success_mark.dart';
 
 /// The fallback mask when no real reference is available (offline arrival or a
 /// pre-D-373 save). D-373 superseded the D-366 always-masked rule: the save

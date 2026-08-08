@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'quick_reply_chip.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/chatbot/widgets/quick_reply_chip.dart';
 
 /// The horizontal quick-reply chip strip (frame `1070:13389`): beige-hairline
 /// pills, beige 12px SemiBold text, scrolls past the screen edge. Tapping one

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 class ErrorState extends StatelessWidget {
   const ErrorState({required this.message, required this.onRetry});

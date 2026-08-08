@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One booth-officer contact box (frame 922:2810): a bordered navy box carrying
 /// the contact text (email / phone) with a trailing glyph.

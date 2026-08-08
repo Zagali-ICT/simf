@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../app/theme/tokens.dart';
-import 'simf_field_style.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/widgets/simf_field_style.dart';
 
 /// One source row. Named for a screen reader so the sheet has no unlabelled
 /// tappable (BUG-019 / 19h).

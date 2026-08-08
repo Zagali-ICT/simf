@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/delegation_models.dart';
-import 'delegations_stat.dart';
-import 'flag_spot.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/delegations/data/delegation_models.dart';
+import 'package:simf_app/features/delegations/widgets/delegations_stat.dart';
+import 'package:simf_app/features/delegations/widgets/flag_spot.dart';
 
 /// The header stats strip (Figma 1426:10781): a navy card with a faint gold
 /// grid, the invited countries' flags scattered across it, and the two big-gold

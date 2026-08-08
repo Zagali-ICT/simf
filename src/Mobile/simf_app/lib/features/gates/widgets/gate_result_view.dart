@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/gate_models.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/gates/data/gate_models.dart';
 
 /// The green مسموح / red ممنوع verdict card (Figma 758:4886 / 758:4819): the
 /// outcome icon + label + subtitle, the holder/reference/type/gate/direction

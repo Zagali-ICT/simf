@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The speaker's photo on a speaker card (frame 1060:12892): a 40×40 rounded
 /// square with a beige hairline. Renders the uploaded SpeakerPhoto asset

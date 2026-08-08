@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import 'legend_item.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/widgets/legend_item.dart';
 
 /// The legend row (frame 907:1591): محجوز (deep-navy fill) · متاح (bordered) ·
 /// مقعدك (gold fill) — each a label next to its colour swatch. The reserved and

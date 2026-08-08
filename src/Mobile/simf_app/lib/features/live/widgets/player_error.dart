@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// Shown when a live feed fails to load — a terminal error surface with a Retry
 /// that re-binds the player (Page_025 L-7), instead of an endless spinner.

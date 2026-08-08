@@ -3,10 +3,9 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../../app/route_names.dart';
-import '../accessibility/data/accessibility_controller.dart';
 
 /// D-374 — the single post-auth routing rule (owner: "if user not add their
 /// profile, must show them add profile as first stage"). The completeness

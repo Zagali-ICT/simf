@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import '../../../core/country_flag.dart';
-import '../../../core/net/asset_urls.dart';
-import '../data/speaker_models.dart';
-import 'speaker_photo_tile.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/core/country_flag.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/features/speakers/data/speaker_models.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_photo_tile.dart';
 
 /// One speaker card on the المتحدثون list (frame 908:1999): the navy [SimfCard]
 /// chrome carrying — in RTL — a 44×44 photo tile at the inline start (right),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// Mandatory "I accept the terms and conditions" checkbox on sign-up step 1
 /// (D-719, owner batch 2026-07-09). Registration must be gated on an explicit

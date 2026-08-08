@@ -11,7 +11,6 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/registration/registration_status_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'golden_fonts.dart';
 

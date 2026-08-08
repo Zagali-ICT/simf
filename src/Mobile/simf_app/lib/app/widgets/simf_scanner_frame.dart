@@ -1,12 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-
-import '../../core/motion/motion_durations.dart';
-import '../../core/responsive/breakpoints.dart';
-import '../theme/tokens.dart';
-import 'scan_line.dart';
-import 'scanner_bracket.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/scan_line.dart';
+import 'package:simf_app/app/widgets/scanner_bracket.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/core/responsive/breakpoints.dart';
 
 /// Card widths per window-size class (BUG-019 / 19e). Figma draws the phone card
 /// at 343 (758:4735); pinning that on a tablet left the gate operator squinting

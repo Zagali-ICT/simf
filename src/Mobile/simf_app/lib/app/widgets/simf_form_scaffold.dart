@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../localization/app_l10n.dart';
-import '../localization/locale_controller.dart';
-import '../theme/tokens.dart';
-import 'simf_language_toggle.dart';
-import 'simf_logo.dart';
-import 'simf_page_shell.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_language_toggle.dart';
+import 'package:simf_app/app/widgets/simf_logo.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
 
 /// The shared navy-sweep scaffold for every account/entry form (login, sign-up,
 /// profile, forgot/reset/badge): the decorative sweep, the forced-LTR

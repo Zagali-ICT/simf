@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'cv_tab.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/speakers/widgets/cv_tab.dart';
 
 /// One CV section (bio / qualifications / training / awards) — a title and the
 /// optional localized body (null when the speaker has no content for it).

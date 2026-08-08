@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/content/data/content_models.dart';
+import 'package:simf_app/features/content/data/content_repository.dart';
+import 'package:simf_app/features/content/widgets/terms_bullet_card.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import 'data/content_models.dart';
-import 'data/content_repository.dart';
-import 'widgets/terms_bullet_card.dart';
 
 /// Page 009 — الشروط والأحكام · Terms & conditions. The KSA-Project Figma
 /// design (node 505:1553 — D-367, fidelity pass D-375): navy surface + sweep,

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/seat_picker_screen.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B'],

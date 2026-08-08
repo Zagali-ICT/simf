@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_filter_search_field.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import '../myarea/data/my_sessions_repository.dart';
-import '../sessions/data/session_favourites.dart';
-import '../sessions/data/session_models.dart';
-import '../sessions/data/sessions_repository.dart' show programmeSessionsProvider;
-import '../sessions/widgets/session_filter_tabs.dart';
-import 'widgets/session_summary_list_card.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_filter_search_field.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/ai_summary/widgets/session_summary_list_card.dart';
+import 'package:simf_app/features/myarea/data/my_sessions_repository.dart';
+import 'package:simf_app/features/sessions/data/session_favourites.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_repository.dart' show programmeSessionsProvider;
+import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 
 /// **Session summaries** — App "ملخص الجلسات" (Figma 1388:8392, Guest+). Every
 /// programme session in a searchable, day-grouped list with three tabs —

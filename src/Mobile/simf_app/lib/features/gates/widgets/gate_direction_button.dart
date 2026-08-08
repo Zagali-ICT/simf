@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One دخول/خروج movement toggle pill (setup stage).
 class GateDirectionButton extends StatelessWidget {

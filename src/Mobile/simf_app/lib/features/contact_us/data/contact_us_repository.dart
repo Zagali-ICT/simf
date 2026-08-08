@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/contact_us/data/contact_us_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'contact_us_endpoints.dart';
 
 /// Data layer for the contact form (`POST /app/contact-inquiry`, anonymous —
 /// Figma 1388:7567). One write; throws [ApiFailure] on a wire error (the screen

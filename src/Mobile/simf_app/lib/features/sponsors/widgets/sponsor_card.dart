@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import 'badge_box.dart';
-import 'sponsor_logo.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/sponsors/widgets/badge_box.dart';
+import 'package:simf_app/features/sponsors/widgets/sponsor_logo.dart';
 
 /// One sponsor card — frame 922:2824's 72-high row. RTL puts the square logo
 /// badge on the inline-start (physical right), the name + secondary line next

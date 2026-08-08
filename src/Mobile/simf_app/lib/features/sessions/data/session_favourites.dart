@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'sessions_endpoints.dart';
 
 /// Session favourites (المفضلة) — the per-user heart shown on the
 /// session-summaries (Figma 1388:8392) and my-sessions (1388:9067) screens.

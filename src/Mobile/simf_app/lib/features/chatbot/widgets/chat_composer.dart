@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The bottom input bar (frame `1070:13398`): a navy-deep bar with the beige
 /// hairline, the placeholder at the inline end and the gold send square at the

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
-import 'sponsor_logo.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sponsors/widgets/sponsor_logo.dart';
 
 /// The square logo chip on a sponsor card — frame's 53×53 box. On the gold hero
 /// card it is gold-filled with a navy edge; on a navy premium card it is

@@ -2,10 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/session/session_activity.dart';
+import 'package:simf_app/core/session/session_timeout_overlay.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import 'session_activity.dart';
-import 'session_timeout_overlay.dart';
 
 /// D-726 / D-737 (owner item 11) — the app-side inactivity session guard.
 /// It is an idle timer: while the signed-in user keeps interacting, the guard

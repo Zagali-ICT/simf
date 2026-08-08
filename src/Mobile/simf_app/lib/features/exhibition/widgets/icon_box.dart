@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The 44×44 beige-fill icon box (Figma 1439:11913 / 11926): beige-10% fill,
 /// beige hairline, radius-4, with a 20px gold glyph centred. A bundled Figma

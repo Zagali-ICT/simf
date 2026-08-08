@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-
-import '../../../app/theme/tokens.dart';
-import '../../live/widgets/live_video_player.dart';
-import 'summary_content_card.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/ai_summary/widgets/summary_content_card.dart';
+import 'package:simf_app/features/live/widgets/live_video_player.dart';
 
 /// Item #35 (2026-07-20) — one labeled video on the session-summary surface
 /// (screen 34): the gold-bar section heading over the shared [LiveVideoPlayer].

@@ -2,15 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../../app/localization/app_l10n.dart';
-import '../../../../app/theme/tokens.dart';
-import '../../../../app/widgets/simf_page_shell.dart';
-import '../../../../core/responsive/max_width_body.dart';
-import '../../../app/route_names.dart';
-import '../data/profile_models.dart';
-import '../widgets/auth_chrome.dart';
-import '../widgets/interest_chip.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/widgets/auth_chrome.dart';
+import 'package:simf_app/features/account/widgets/interest_chip.dart';
 
 /// The interests step's body: the chip grid, the load-error retry and the
 /// submit control.

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The auth screens' content card: the beige rounded panel holding the sign-in
 /// / sign-up form. Shared so the padding / colour / radius live in one place

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/core/errors/api_error_l10n.dart';
+import 'package:simf_app/features/account/biometric_auth.dart';
+import 'package:simf_app/features/account/post_auth_route.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../core/errors/api_error_l10n.dart';
-import 'biometric_auth.dart';
-import 'post_auth_route.dart';
 
 /// Runs the device-key ("Face ID") sign-in: availability, enrolment, the OS
 /// prompt, then the credential exchange and the post-auth routing.

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The identity cell's leading square: the entity logo, falling back to
 /// its initials. The two widgets share one size and are used only by each

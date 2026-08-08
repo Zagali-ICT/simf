@@ -3,19 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/features/onboarding/widgets/onboarding_background.dart';
+import 'package:simf_app/features/onboarding/widgets/onboarding_dots.dart';
+import 'package:simf_app/features/onboarding/widgets/onboarding_top_bar.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:video_player/video_player.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/localization/locale_controller.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/app_assets.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_logo.dart';
-import '../../core/motion/motion_durations.dart';
-import 'widgets/onboarding_background.dart';
-import 'widgets/onboarding_dots.dart';
-import 'widgets/onboarding_top_bar.dart';
 
 /// Page 002 — التهيئة · Onboarding (first-run only). The KSA-Project Figma
 /// design (frames 148:22 / 159:942 / 159:1052 — D-362): a three-step carousel

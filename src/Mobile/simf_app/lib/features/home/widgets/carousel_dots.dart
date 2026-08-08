@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/motion/motion_durations.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
 
 /// The carousel position dots — the active one is a wider gold pill, the rest
 /// are faint beige. Shared by the home highlights carousel and the home hero

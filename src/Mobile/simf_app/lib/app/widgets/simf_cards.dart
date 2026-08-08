@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../localization/app_l10n.dart';
-import '../theme/app_assets.dart';
-import '../theme/tokens.dart';
-import 'simf_svg_icon.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The card / section-header / link-row / list-row surfaces every page
 /// composes. Split out of `simf_page_shell.dart`, which re-exports them so

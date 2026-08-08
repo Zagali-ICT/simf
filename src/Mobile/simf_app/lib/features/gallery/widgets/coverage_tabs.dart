@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
-import '../../../app/theme/tokens.dart';
-import 'coverage_tab.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/gallery/widgets/coverage_tab.dart';
 
 /// The three media-coverage tabs (frame node 947:3869): the active tab is solid
 /// gold, the others bordered navy cards. The gallery tab is active here; the

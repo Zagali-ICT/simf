@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/features/live/data/live_models.dart';
-import 'package:simf_app/features/live/data/live_repository.dart';
 
 void main() {
   group('LiveSession.fromJson end (S-3)', () {

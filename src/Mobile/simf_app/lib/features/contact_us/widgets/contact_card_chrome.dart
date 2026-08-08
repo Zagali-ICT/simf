@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// Shared navy-deep card chrome for the contact sections (Figma card 1388:7774):
 /// full-width, px-16 / py-8, 8-radius navy-deep fill.

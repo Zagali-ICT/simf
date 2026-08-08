@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/utils/gregorian_month_names.dart';
-import '../../../core/utils/weekday_names.dart';
-import '../data/session_models.dart';
-import 'meta_item.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/weekday_names.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/widgets/meta_item.dart';
 
 /// The icon + label meta row on the session header, with its time formatter.
 /// Interim local time format: `HH:MM` (device-local). Final locale-aware

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import '../sessions/widgets/session_filter_tabs.dart';
-import 'data/my_sessions_models.dart';
-import 'data/my_sessions_repository.dart';
-import 'widgets/my_sessions_tabbed_list.dart';
+import 'package:simf_app/features/myarea/data/my_sessions_models.dart';
+import 'package:simf_app/features/myarea/data/my_sessions_repository.dart';
+import 'package:simf_app/features/myarea/widgets/my_sessions_tabbed_list.dart';
+import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 
 /// **My sessions** — App "تفاصيل الجلسات" (Figma 1388:9067, Approved account),
 /// reached from the My-Area "my sessions" counter. The caller's booked / joined

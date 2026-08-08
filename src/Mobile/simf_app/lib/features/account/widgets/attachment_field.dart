@@ -2,9 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/widgets/simf_field_label.dart';
-import 'attach_box.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/widgets/simf_field_label.dart';
+import 'package:simf_app/features/account/widgets/attach_box.dart';
 
 /// A file/photo attachment field (Figma 168:2977): a label, an optional hint,
 /// then either the empty 56px attach box or — once [bytes] is set — a preview

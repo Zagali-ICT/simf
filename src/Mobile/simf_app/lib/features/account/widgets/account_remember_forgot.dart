@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'auth_chrome.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/account/widgets/auth_chrome.dart';
 
 /// The sign-in card's "remember me" checkbox at the inline start and the
 /// "forgot password?" link at the end (Figma 168:2800). Extracted so the row's

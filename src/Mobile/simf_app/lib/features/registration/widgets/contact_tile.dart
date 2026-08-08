@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One bordered contact tile (Figma 522:2223). Inert (null [onTap]) until its
 /// BuildConfig contact value is supplied (D-369).

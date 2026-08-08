@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../localization/app_l10n.dart';
-import '../theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The shared full-size image viewer (owner 2026-07-26 — "on-press on a logo
 /// must show it in full size").

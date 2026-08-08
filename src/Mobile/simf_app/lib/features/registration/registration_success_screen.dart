@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../core/site_settings/site_settings.dart';
-import 'widgets/registration_success_body.dart';
-import 'widgets/registration_success_header.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/site_settings/site_settings.dart';
+import 'package:simf_app/features/registration/widgets/registration_success_body.dart';
+import 'package:simf_app/features/registration/widgets/registration_success_header.dart';
 
 /// Page 010 — تم التسجيل · Registration success. The KSA-Project Figma design
 /// (node 505:1451 — D-366): green-ringed check, the success headline + the

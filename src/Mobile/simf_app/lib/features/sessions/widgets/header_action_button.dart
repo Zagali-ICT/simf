@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One header-card action button (frame 889:2708/889:2709): a 34-high navy chip
 /// on the 4px radius with a centred 12px SemiBold label. The accented variant

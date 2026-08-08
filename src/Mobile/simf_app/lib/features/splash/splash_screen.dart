@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_logo.dart';
-import '../../core/organization_profile/organization_profile.dart';
-import '../../core/startup/app_update_checker.dart';
-import 'splash_controller.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/core/startup/app_update_checker.dart';
+import 'package:simf_app/features/splash/splash_controller.dart';
 
 /// Page 001 — البداية · Splash / bootstrap. The KSA-Project Figma design
 /// (node 159:573, D-361): the brand mark over "SAUDI · MOD · RSNF", the forum

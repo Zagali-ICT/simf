@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The 32px navy file-icon box (Figma 1388:7643 — no border, a 20px beige glyph).
 class FileIcon extends StatelessWidget {

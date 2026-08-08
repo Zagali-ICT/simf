@@ -1,8 +1,7 @@
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/features/live/data/live_models.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../core/organization_profile/organization_profile.dart';
-import 'live_models.dart';
 
 /// Presentation rules for the live-broadcast screen, as pure functions.
 ///

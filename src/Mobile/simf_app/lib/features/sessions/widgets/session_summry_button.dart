@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The gold ملخص الجلسة button (Figma 1388:7621) — opens the session summary
 /// (34). When [enabled] is false (no published summary yet) it greys out with

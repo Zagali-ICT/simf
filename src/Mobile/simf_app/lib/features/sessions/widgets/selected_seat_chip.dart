@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The confirmation chip above the CTAs: shows the seat the visitor has tapped
 /// so they can verify it before committing. A bordered navy pill (frame parity

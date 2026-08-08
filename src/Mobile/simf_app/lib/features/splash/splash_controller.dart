@@ -1,13 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/core/startup/app_update_checker.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/route_names.dart';
-import '../../core/motion/motion_durations.dart';
-import '../../core/organization_profile/organization_profile.dart';
-import '../../core/startup/app_update_checker.dart';
 
 /// Minimum time the logo is shown so the splash never flickers (Page_001 Logic
 /// L-1). Boot work that finishes sooner waits for this. Exposed as a provider

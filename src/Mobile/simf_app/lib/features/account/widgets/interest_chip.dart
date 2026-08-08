@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One pill in the sign-up interests grid (Figma 505:1222): gold when
 /// [selected], `navyDeep` with a muted border otherwise. Tapping toggles it via

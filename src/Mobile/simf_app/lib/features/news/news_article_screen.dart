@@ -2,13 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/news/data/news_models.dart';
+import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import 'data/news_models.dart';
-import 'data/news_repository.dart';
 
 /// The full news article (Page_029 detail, `GET /app/news/{id}`). Pushed from the
 /// news list via an imperative route (the screen has no go_router entry).

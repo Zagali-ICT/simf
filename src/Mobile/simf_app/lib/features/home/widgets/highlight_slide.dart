@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One carousel slide (758:1239): the news image filling a rounded card with a
 /// bottom scrim and the title overlaid — image + text only. Tapping opens the

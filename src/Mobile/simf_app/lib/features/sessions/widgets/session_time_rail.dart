@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The left time column of a timeline row, with its HH:mm formatter.
 /// The trailing vertical time rail (frame 1310:3241): the start time at the top

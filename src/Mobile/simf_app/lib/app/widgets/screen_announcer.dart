@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/accessibility/data/accessibility_controller.dart';
-import '../localization/app_l10n.dart';
-import 'simf_page_shell.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 
 /// Announces the page [title] once on mount through the platform accessibility
 /// channel, but only when the Page-038 screen-reader assist is enabled. Renders

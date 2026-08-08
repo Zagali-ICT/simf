@@ -1,10 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/live/youtube_url.dart';
 import 'package:video_player/video_player.dart';
-
-import '../../../app/theme/tokens.dart';
-import '../../live/youtube_url.dart';
 
 /// The hero-section background video (D-756 / D-761): plays the CP-configured
 /// `OrganizationProfile.backgroundVideoUrl` behind the home hero — muted,

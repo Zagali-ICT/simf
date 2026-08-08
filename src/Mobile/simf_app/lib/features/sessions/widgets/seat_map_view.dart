@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/seat_map_models.dart';
-import 'change_seat_button.dart';
-import 'hall_seat_map.dart';
-import 'session_card.dart';
-import 'sessions_actions.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/widgets/change_seat_button.dart';
+import 'package:simf_app/features/sessions/widgets/hall_seat_map.dart';
+import 'package:simf_app/features/sessions/widgets/session_card.dart';
+import 'package:simf_app/features/sessions/widgets/sessions_actions.dart';
 
 class SeatMapView extends StatelessWidget {
   const SeatMapView({

@@ -1,10 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/sessions/data/presentation_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'presentation_models.dart';
-import 'sessions_endpoints.dart';
 
 /// Data layer for the session-presentations screen — App "الجلسات"
 /// (Figma 1388:7621). Lists every active session (`GET /app/presentations`;

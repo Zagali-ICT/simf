@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../app/theme/tokens.dart';
-import '../../accessibility/data/accessibility_controller.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 
 /// The gold-bordered organiser caption strip under the player (frame 934:3613).
 /// P5 — D-439: when the session carries admin-typed [caption] text it is shown

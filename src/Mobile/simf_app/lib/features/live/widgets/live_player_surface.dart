@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'caption_strip.dart';
-import 'live_badges.dart';
-import 'live_video_player.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/live/widgets/caption_strip.dart';
+import 'package:simf_app/features/live/widgets/live_badges.dart';
+import 'package:simf_app/features/live/widgets/live_video_player.dart';
 
 /// The black live player surface (frame 934:3614): the player fills a 16:9 box
 /// over a black backdrop, with the LIVE badge + language chip in the top row and

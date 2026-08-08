@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/widgets/simf_field_label.dart';
-import '../../../core/widgets/simf_field_style.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/widgets/simf_field_label.dart';
+import 'package:simf_app/core/widgets/simf_field_style.dart';
 
 /// An on-navy labeled form field — a white [SimfFieldLabel] over a
 /// [TextFormField] on [simfInputStyleOnNavy] + [simfFieldDecoration]. The navy

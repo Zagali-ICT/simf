@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The beige-bordered notice banner (node 925:3222): centred beige text in a
 /// navy-deep box with the 0.5px beige hairline.

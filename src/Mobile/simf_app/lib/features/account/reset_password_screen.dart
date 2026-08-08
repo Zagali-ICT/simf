@@ -5,22 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/errors/api_error_l10n.dart';
+import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/validation/field_limits.dart';
+import 'package:simf_app/core/validation/password_validation.dart';
+import 'package:simf_app/core/validation/required_validation.dart';
+import 'package:simf_app/features/account/widgets/account_sub_header.dart';
+import 'package:simf_app/features/account/widgets/auth_chrome.dart';
+import 'package:simf_app/features/account/widgets/navi_form_field.dart';
+import 'package:simf_app/features/account/widgets/navy_password_toggle.dart';
+import 'package:simf_app/features/account/widgets/otp_code_boxes.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../core/errors/api_error_l10n.dart';
-import '../../core/responsive/max_width_body.dart';
-import '../../core/validation/field_limits.dart';
-import '../../core/validation/password_validation.dart';
-import '../../core/validation/required_validation.dart';
-import 'widgets/account_sub_header.dart';
-import 'widgets/auth_chrome.dart';
-import 'widgets/navi_form_field.dart';
-import 'widgets/navy_password_toggle.dart';
-import 'widgets/otp_code_boxes.dart';
 
 /// Page 003 — Reset password (Logic L-6). No dedicated Figma frame exists for
 /// this step, so it is built to match its navy sibling — the forgot-password

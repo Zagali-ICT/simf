@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
-import 'simf_logo.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo.dart';
 
 /// The default avatar when a user has no photo (or the photo fails to load):
 /// the SIMF brand mark on a navy box. The owner chose the logo over a cultural

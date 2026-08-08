@@ -94,6 +94,33 @@ void main() {
     });
   });
 
+  group('baseline fingerprints', () {
+    // A finding must keep its identity across edits that move it. The C3
+    // message carries the file's LINE COUNT, so deleting unused imports
+    // renamed every fingerprint in a file at once and the gate reported 14
+    // "new" violations in code nobody had touched.
+    test('survive a change in the line count the message reports', () {
+      const String decl = 'class A { Widget _buildContent() => X(); }';
+      String fingerprintAt(int padding) {
+        final String src =
+            '${List<String>.filled(padding, '// pad').join('\n')}\n$decl';
+        return ofRule(run(src), 'SIMF-C3').single.fingerprint;
+      }
+
+      expect(fingerprintAt(420), fingerprintAt(500));
+    });
+
+    test('still separate two different findings in one file', () {
+      final List<Violation> found = ofRule(
+        run('${List<String>.filled(420, '// pad').join('\n')}\n'
+            'class A { Widget _buildOne() => X(); Widget _buildTwo() => Y(); }'),
+        'SIMF-C3',
+      );
+      expect(found, hasLength(2));
+      expect(found[0].fingerprint, isNot(found[1].fingerprint));
+    });
+  });
+
   group('SIMF-C2 endpoint and asset URLs', () {
     test('fires on an endpoint path literal', () {
       final List<Violation> found =

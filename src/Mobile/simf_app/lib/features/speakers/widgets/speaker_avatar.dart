@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_logo_image.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo_image.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The speaker profile identity avatar (908:2110 `912:2270`): a 125px white
 /// circle ringed gold (2.77px). Renders the speaker's uploaded photo (the D-357

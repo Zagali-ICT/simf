@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../requests/data/request_models.dart';
-import '../../requests/data/requests_repository.dart';
+import 'package:simf_app/features/requests/data/request_models.dart';
+import 'package:simf_app/features/requests/data/requests_repository.dart';
 
 /// D-745 / R9 (D-767) — the اللقاءات الثنائية (bilateral meetings) feed: **ALL** of
 /// the signed-in user's bilateral meeting requests (speaker + delegation kinds),

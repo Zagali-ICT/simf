@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/country_flag.dart';
-import '../../../core/net/asset_urls.dart';
-import '../data/speaker_models.dart';
-import 'speaker_photo_tile.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/country_flag.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/features/speakers/data/speaker_models.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_photo_tile.dart';
 
 /// One selectable speaker row in the bilateral picker (owner 2026-07-11): the
 /// shared [SpeakerPhotoTile] photo + the speaker's name (with the country flag

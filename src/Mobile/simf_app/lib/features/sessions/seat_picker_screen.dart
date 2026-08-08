@@ -2,20 +2,19 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
+import 'package:simf_app/app/widgets/simf_info_dialog.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
+import 'package:simf_app/features/sessions/widgets/hall_seat_map.dart';
+import 'package:simf_app/features/sessions/widgets/seat_map_async_view.dart';
+import 'package:simf_app/features/sessions/widgets/selected_seat_chip.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_bottom_nav.dart';
-import '../../app/widgets/simf_confirm_dialog.dart';
-import '../../app/widgets/simf_info_dialog.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import 'data/seat_map_models.dart';
-import 'data/seat_map_repository.dart';
-import 'widgets/hall_seat_map.dart';
-import 'widgets/seat_map_async_view.dart';
-import 'widgets/selected_seat_chip.dart';
 
 /// D-485 — **Seat picker** (`/sessions/:sessionId/pick-seat`, approved Visitor).
 /// An assigned-seat session's selectable hall grid: tap an **available** seat to

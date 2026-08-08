@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The booth-officer row (frame 922:2800): the officer's gold name over the
 /// fixed beige role label, beside a gold initials tile (e.g. "RS"). D-432 — the
