@@ -28,6 +28,7 @@ import '../../core/widgets/simf_picker_field.dart';
 import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
+import 'data/visitor_profile_validators.dart';
 import 'data/region_models.dart';
 import 'data/region_repository.dart';
 import 'saudi_regions.dart';
@@ -75,8 +76,6 @@ class SignUpVisitorScreen extends ConsumerStatefulWidget {
 
 /// Which identity document a non-Saudi registrant supplies (the validator
 /// accepts an Iqama **or** a passport — Page_007 L-4).
-enum _DocType { iqama, passport }
-
 class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -113,7 +112,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   // D-373 — Saudi-ness derives from the nationality pick (the explicit
   // switch was removed): SA → national-ID field, else Iqama/Passport.
   bool get _isSaudi => _nationalityCode == 'SA';
-  _DocType _docType = _DocType.iqama;
+  VisitorDocType _docType = VisitorDocType.iqama;
   DateTime? _dateOfBirth;
   AppGender _gender = AppGender.unspecified;
   String? _nationalityCode;
@@ -241,10 +240,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _birthRegionCode = regionByName(profile.placeOfBirth)?.code;
     _nationalId.text = profile.nationalId ?? '';
     if ((profile.iqamaNumber ?? '').isNotEmpty) {
-      _docType = _DocType.iqama;
+      _docType = VisitorDocType.iqama;
       _documentNumber.text = profile.iqamaNumber!;
     } else if ((profile.passportNumber ?? '').isNotEmpty) {
-      _docType = _DocType.passport;
+      _docType = VisitorDocType.passport;
       _documentNumber.text = profile.passportNumber!;
     }
     _saudiMobile.text = profile.saudiMobile ?? '';
@@ -601,10 +600,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       placeOfBirth: _placeOfBirth.text.trim(),
       isSaudi: isSaudi,
       nationalId: isSaudi ? _emptyToNull(_nationalId.text) : null,
-      iqamaNumber: !isSaudi && _docType == _DocType.iqama
+      iqamaNumber: !isSaudi && _docType == VisitorDocType.iqama
           ? _emptyToNull(_documentNumber.text)
           : null,
-      passportNumber: !isSaudi && _docType == _DocType.passport
+      passportNumber: !isSaudi && _docType == VisitorDocType.passport
           ? _emptyToNull(_documentNumber.text)
           : null,
       // Submit the canonical phone — Arabic digits folded, a leading `00`
@@ -622,92 +621,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   // ---- Validators (client mirror of UpsertUserProfileRequestValidator) -----
-
-  /// Shared name rule for both scripts (mirror UpsertUserProfileRequestValidator):
-  /// required, [lettersOnly] only, and 2–4 whitespace-separated parts. The pure
-  /// shape rules live in `core/validation/name_validation.dart`; this keeps the
-  /// per-script l10n message ([lettersOnlyMsg]) and the order of checks.
-  String? _validateName(String? value, RegExp lettersOnly, String lettersOnlyMsg) {
-    final l10n = AppL10n.of(context);
-    final name = value?.trim() ?? '';
-    if (name.isEmpty) {
-      return l10n.requiredField;
-    }
-    if (!isNameLettersOnly(name, lettersOnly)) {
-      return lettersOnlyMsg;
-    }
-    if (!hasFullNameParts(name)) {
-      return l10n.fullNameParts;
-    }
-    return null;
-  }
-
-  String? _validateArabicName(String? value) => _validateName(
-        value,
-        arabicNameLettersOnly,
-        AppL10n.of(context).arabicNameLettersOnly,
-      );
-
-  String? _validateEnglishName(String? value) => _validateName(
-        value,
-        englishNameLettersOnly,
-        AppL10n.of(context).englishNameLettersOnly,
-      );
-
-  String? _validateNationalId(String? value) {
-    final id = value?.trim() ?? '';
-    return isValidNationalId(id)
-        ? null
-        : AppL10n.of(context).nationalIdInvalid;
-  }
-
-  String? _validateDocumentNumber(String? value) {
-    final l10n = AppL10n.of(context);
-    final number = value?.trim() ?? '';
-    if (number.isEmpty) {
-      return l10n.documentRequired;
-    }
-    if (_docType == _DocType.iqama) {
-      return isValidIqama(number) ? null : l10n.iqamaInvalid;
-    }
-    return isValidPassport(number) ? null : l10n.passportInvalid;
-  }
-
-  /// C4 (D-371) — the standard shapes live in `phone_validation.dart`,
-  /// mirroring `UpsertUserProfileRequestValidator` exactly.
-  String? _validateSaudiMobile(String? value) {
-    final phone = value?.trim() ?? '';
-    // D-723 — mobile is required (only the plate number stays optional).
-    if (phone.isEmpty) {
-      return AppL10n.of(context).mobileRequired;
-    }
-    return isStandardSaudiMobile(phone)
-        ? null
-        : AppL10n.of(context).saudiMobileInvalid;
-  }
-
-  String? _validateInternationalMobile(String? value) {
-    final phone = value?.trim() ?? '';
-    // D-723 — mobile is required (only the plate number stays optional).
-    if (phone.isEmpty) {
-      return AppL10n.of(context).mobileRequired;
-    }
-    return isStandardInternationalMobile(phone)
-        ? null
-        : AppL10n.of(context).internationalMobileInvalid;
-  }
-
-  /// C6 (D-371) — optional plate; Saudi standard when filled (the shape
-  /// lives in `plate_validation.dart`, mirroring the server).
-  String? _validatePlate(String? value) {
-    final plate = value?.trim() ?? '';
-    if (plate.isEmpty) {
-      return null;
-    }
-    return isStandardPlateNumber(plate)
-        ? null
-        : AppL10n.of(context).plateNumberInvalid;
-  }
 
   void _back() {
     if (context.canPop()) {
@@ -809,7 +722,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     inputFormatters: <TextInputFormatter>[
                       FilteringTextInputFormatter.allow(arabicNameCharacters),
                     ],
-                    validator: _validateArabicName,
+                    validator: (v) => validateArabicName(v, l10n),
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   SimfLabeledTextField(
@@ -821,7 +734,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     inputFormatters: <TextInputFormatter>[
                       FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
                     ],
-                    validator: _validateEnglishName,
+                    validator: (v) => validateEnglishName(v, l10n),
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   SimfFieldLabel(l10n.genderLabel),
@@ -876,8 +789,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     controller:
                         _isSaudi ? _saudiMobile : _internationalMobile,
                     validator: _isSaudi
-                        ? _validateSaudiMobile
-                        : _validateInternationalMobile,
+                        ? (v) => validateSaudiMobile(v, l10n)
+                        : (v) => validateInternationalMobile(v, l10n),
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   DateOfBirthField(
@@ -1140,7 +1053,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             const WesternDigitsFormatter(),
             FilteringTextInputFormatter.digitsOnly,
           ],
-          validator: _validateNationalId,
+          validator: (v) => validateNationalId(v, l10n),
         ),
       ];
     }
@@ -1149,9 +1062,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       const SizedBox(height: SimfTokens.space2),
       BeigeTabs(
         options: <String>[l10n.iqamaSegment, l10n.passportSegment],
-        selectedIndex: _docType == _DocType.iqama ? 0 : 1,
+        selectedIndex: _docType == VisitorDocType.iqama ? 0 : 1,
         onChanged: (index) => setState(() {
-          _docType = index == 0 ? _DocType.iqama : _DocType.passport;
+          _docType = index == 0 ? VisitorDocType.iqama : VisitorDocType.passport;
           _documentNumber.clear();
         }),
       ),
@@ -1159,10 +1072,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       SimfLabeledTextField(
         label: l10n.documentNumberLabel,
         controller: _documentNumber,
-        maxLength: _docType == _DocType.iqama ? 10 : 9,
+        maxLength: _docType == VisitorDocType.iqama ? 10 : 9,
         // Fold Arabic-Indic digits to Western (letters pass for passports).
         inputFormatters: const <TextInputFormatter>[WesternDigitsFormatter()],
-        validator: _validateDocumentNumber,
+        validator: (v) => validateDocumentNumber(v, l10n, _docType),
       ),
     ];
   }
@@ -1199,7 +1112,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _pickPlateLetter(l10n, position, _plateLetterSetter(position)),
       ),
       onDigitsChanged: () => setState(_syncPlate),
-      validateDigits: (_) => _validatePlate(_plate.text),
+      validateDigits: (_) => validatePlate(_plate.text, l10n),
     );
   }
 
