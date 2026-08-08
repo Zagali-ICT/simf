@@ -6,9 +6,19 @@ SIMF web apps and deploy them to IIS, mirroring the V10 ERP pipeline.
 
 | App | Project | Artifact zip | IIS (placeholder) |
 |-----|---------|--------------|-------------------|
-| SimfAPI | `src/Backend/SIMF.Api/SIMF.Api.csproj` | `api/SIMF.Api.zip` | site `SIMF.API`, path `D:\SIMF\API` |
-| SimfCP | `src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj` | `cp/SIMF.ControlPanel.zip` | site `SIMF.CP`, path `D:\SIMF\CP` |
-| SimfWeb | `src/Website/SIMF.Web/SIMF.Web.csproj` | `web/SIMF.Web.zip` | site `SIMF.WEB`, path `D:\SIMF\WEB` |
+| SimfAPI | `src/Backend/SIMF.Api/SIMF.Api.csproj` | `api/SIMF.Api.zip` | site `SIMF.API`, path `D:\System\v1.0.1\api` |
+| SimfCP | `src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj` | `cp/SIMF.ControlPanel.zip` | site `SIMF.CP`, path `D:\System\v1.0.1\cp` |
+| SimfWeb | `src/Website/SIMF.Web/SIMF.Web.csproj` | `web/SIMF.Web.zip` | site `SIMF.WEB`, path `D:\System\v1.0.1\web` |
+
+All three sites and the SQL Server are addressed by hostname, not by IP: every
+certificate bypass was removed on 2026-08-08, so the API certificate has to
+validate and no public CA issues one for a private address. Point DNS (or the
+hosts file on the web server) at the estate's addresses instead.
+
+The deploy root is VERSIONED (`v1.0.1`). Two consequences: the IIS sites' physical
+paths must be repointed when the version changes, and nothing that must survive a
+release may live under it - uploads and logs are configured outside this tree for
+exactly that reason (`SIMF_FileStorage__RootPath`, `SIMF_Storage__LogDirectory`).
 
 The **Flutter app's web build** (a static IIS site, proof of concept — D-376) is
 published separately by [`app-web/publish-app-web.ps1`](app-web/publish-app-web.ps1)
@@ -47,9 +57,9 @@ deploys with no repackaging step:
 # -> publish\api  publish\cp  publish\web
 
 .\deploy\iis-deploy.ps1 -ArtifactRoot .\publish `
-    -ApiSiteName "SIMF.API" -ApiPath "D:\SIMF\API" `
-    -CpSiteName  "SIMF.CP"  -CpPath  "D:\SIMF\CP"  `
-    -WebSiteName "SIMF.WEB" -WebPath "D:\SIMF\WEB"
+    -ApiSiteName "SIMF.API" -ApiPath "D:\System\v1.0.1\api" `
+    -CpSiteName  "SIMF.CP"  -CpPath  "D:\System\v1.0.1\cp"  `
+    -WebSiteName "SIMF.WEB" -WebPath "D:\System\v1.0.1\web"
 ```
 
 `publish/` is git-ignored. There is no separate Worker output because the

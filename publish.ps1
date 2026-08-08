@@ -8,9 +8,9 @@
 #
 #   .\publish.ps1
 #   .\deploy\iis-deploy.ps1 -ArtifactRoot .\publish `
-#       -ApiSiteName "SIMF.API" -ApiPath "D:\SIMF\API" `
-#       -CpSiteName  "SIMF.CP"  -CpPath  "D:\SIMF\CP"  `
-#       -WebSiteName "SIMF.WEB" -WebPath "D:\SIMF\WEB"
+#       -ApiSiteName "SIMF.API" -ApiPath "D:\System\v1.0.1\api" `
+#       -CpSiteName  "SIMF.CP"  -CpPath  "D:\System\v1.0.1\cp"  `
+#       -WebSiteName "SIMF.WEB" -WebPath "D:\System\v1.0.1\web"
 #
 # Notes:
 # - There is no separate Worker project: the 10 background workers run
