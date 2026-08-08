@@ -7,20 +7,31 @@
 #   # remove flutter_lints from dev_dependencies — it conflicts/duplicates very_good
 #
 # ───────────────────────────────────────────────────────────────────────────
-# ADOPTION — DO NOT drop the `errors:` promotions below in on day one.
-# This is a mature 46.9k-line codebase: ~445 relative imports (0 package: imports)
-# + 526 inline TextStyle + thousands of missing-const sites mean a global
-# error-flip throws thousands of analyzer errors immediately, and the program's
-# own "analyze clean before a module is done" gate becomes unsatisfiable while
-# "never a repo-wide diff" forbids the only fix.
+# ADOPTION - the ratchet, and where it currently stands (2026-08-09).
 #
-# Instead RATCHET:
-#   1. Adopt this file with the `errors:` block COMMENTED OUT (very_good defaults
-#      = info/warning). Record the baseline: `flutter analyze > .refactor/analyze_before.txt`.
-#   2. The per-module gate is "ZERO NEW issues + ZERO issues in the touched
-#      module's files" — never repo-wide zero, until the very end.
-#   3. Un-comment each `errors:` line only once that rule reaches zero repo-wide
-#      (usually after the relevant module sweep). By Phase 6 the whole block is on.
+# The original note said an error-flip was impossible because the repo carried
+# ~445 relative imports and 526 inline TextStyle. Both are now ZERO, so the
+# rules below moved from "someday" to enforced. The reasoning behind the ratchet
+# stands and is why the rest are still off:
+#
+#   Turn a rule to `error` ONLY when it already reports zero repo-wide. A gate
+#   that fails every build gets switched off, and a switched-off gate protects
+#   nothing - which is exactly what happened to the .NET test stage, disabled
+#   for five weeks with 922 passing tests behind it.
+#
+# ENFORCED as errors below: 8 rules, each verified at zero before promotion.
+# CI additionally treats WARNINGS as fatal (azure-pipelines.yml drops
+# --no-fatal-warnings); `--no-fatal-infos` stays until the infos below clear.
+#
+# STILL OPEN, ~2100 infos, largest first:
+#   avoid_positional_boolean_parameters       135
+#   use_key_in_widget_constructors            113
+#   avoid_redundant_argument_values           109
+#   prefer_constructors_over_static_methods    75
+#   comment_references                         55
+#   lines_longer_than_80_chars               ~1580
+# Each closes on its own, then gets promoted here. Do NOT promote one that is
+# not already at zero.
 # ───────────────────────────────────────────────────────────────────────────
 
 include: package:very_good_analysis/analysis_options.yaml
@@ -31,23 +42,19 @@ analyzer:
     strict-inference: true
     strict-raw-types: true
 
-  # errors: — END-STATE promotions. Keep COMMENTED until each rule is repo-wide
-  # clean (see ADOPTION above), then enable one line at a time.
-  # errors:
-  #   avoid_print: error
-  #   avoid_dynamic_calls: error
-  #   unawaited_futures: error
-  #   always_use_package_imports: error      # ~445 relative imports today — enable LAST
-  #   prefer_const_constructors: error
-  #   prefer_const_literals_to_create_immutables: error
-  #   use_build_context_synchronously: error # async-gap BuildContext misuse
-  #   dead_code: error
-  #   unused_import: error
-  #   unused_local_variable: error
-  #   unused_element: error
-  #   unused_field: error
+  # ENFORCED. Each of these reported ZERO repo-wide before being promoted
+  # (2026-08-09); see the ADOPTION note above for the rule about that.
   errors:
-    todo: warning                          # TODOs are visible, not silent — safe to keep on from day one
+    todo: warning                          # TODOs are visible, not silent - safe to keep on from day one
+    always_use_package_imports: error      # was ~445, then 2032 after the extractions; now 0
+    unused_import: error
+    unused_local_variable: error
+    unused_element: error
+    unused_field: error
+    dead_code: error
+    avoid_print: error
+    use_build_context_synchronously: error # async-gap BuildContext misuse - a real defect, not style
+    avoid_dynamic_calls: error
 
   exclude:
     - "**/*.g.dart"
