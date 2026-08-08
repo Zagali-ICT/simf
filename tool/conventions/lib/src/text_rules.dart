@@ -5,7 +5,16 @@ import 'violation.dart';
 /// textually — which is adequate because both rules are about literal syntax
 /// (`style="…"`, `#rrggbb`) rather than structure.
 
-final RegExp _inlineStyle = RegExp(r'style\s*=\s*"[^"]+"');
+/// A STATIC inline style: `style="..."` whose value carries no Razor
+/// expression.
+///
+/// The rule targets styling that belongs in a stylesheet. It deliberately does
+/// NOT match a value containing `@`, because a runtime value has nowhere else
+/// to go: `style="--simf-gauge-fill:@Percent"` feeds a CSS custom property that
+/// the stylesheet then consumes, which is the sanctioned way to pass data into
+/// CSS. Banning it would force a class per pixel value, or an inline `<style>`
+/// block, both worse. 16 of the 17 initial matches were this shape.
+final RegExp _inlineStyle = RegExp(r'style\s*=\s*"([^"@]+)"');
 final RegExp _hexColour = RegExp(r'#[0-9a-fA-F]{3,8}\b');
 
 /// A `@* … *@` Razor comment or an HTML comment. Not code.

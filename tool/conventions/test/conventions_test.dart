@@ -256,6 +256,24 @@ class LiveRepository {}
       expect(found, hasLength(1));
     });
 
+    // A runtime value has nowhere else to live: the stylesheet consumes the
+    // custom property. Flagging it would force a class per pixel value.
+    test('N1 does NOT fire on a style carrying a Razor expression', () {
+      for (final String markup in <String>[
+        '<div style="--simf-gauge-fill:@Percent"></div>',
+        '<div style="background-image:url(\'@s.Image\')"></div>',
+      ]) {
+        expect(
+          analyseRazorFile(
+            posixPath: 'src/Website/SIMF.Web/X.razor',
+            content: markup,
+          ),
+          isEmpty,
+          reason: markup,
+        );
+      }
+    });
+
     test('N1 ignores a Razor comment', () {
       expect(
         analyseRazorFile(

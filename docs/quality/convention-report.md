@@ -8,80 +8,11 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 |------|----------|
 | SIMF-C1 | 599 |
 | SIMF-C3 | 192 |
-| SIMF-N1 | 17 |
 | SIMF-N2 | 67 |
-| **Total** | **875** |
-
-## ControlPanel feature
-
-
-Issue file : src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BulkBadgeGenerator.razor
-Issue : style="@(row.Color is null ? null : $"  (line 57, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/PrintBag.razor
-Issue : style="@($"  (line 39, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ThemesList.razor
-Issue : style="@($"  (line 87, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/WalkInRegistrationForm.razor
-Issue : style="@($"  (line 35, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/WalkInSuccessModal.razor
-Issue : style="@($"  (line 11, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-## Shared components feature
-
-
-Issue file : src/Shared/SIMF.Components/Charts/SimfBarGauge.razor
-Issue : style="--simf-gauge-fill:@Percent"  (line 17, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/Shared/SIMF.Components/Charts/SimfGroupedBarChart.razor
-Issue : style="--simf-bar-x:@Percent(bar.X + (bar.Width / 2), PlotWidth);--simf-bar-y:@Percent(bar.Height, PlotHeight)"  (line 84, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/Shared/SIMF.Components/Forms/SimfContextMenu.razor
-Issue : style="@($"  (line 9, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/Shared/SIMF.Components/Forms/SimfDataGrid.razor
-Issue : style="@(column.Width is null ? null : $"  (line 144, SIMF-N1)
-Fix : a BEM class in the stylesheet
+| **Total** | **858** |
 
 ## Website feature
 
-
-Issue file : src/Website/SIMF.Web/Components/Layout/LandingHeader.razor
-Issue : style="height:40px"  (line 116, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/Website/SIMF.Web/Components/Pages/Archive.razor
-Issue : style="background-image:url('@s.Image')"  (line 55, SIMF-N1)
-Fix : a BEM class in the stylesheet
-Issue : style="background-image:url('@m.Image')"  (line 97, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/Website/SIMF.Web/Components/Pages/Landing.razor
-Issue : style="background-image:url('@m.Image')"  (line 150, SIMF-N1)
-Fix : a BEM class in the stylesheet
-Issue : style="background-image:url('@s.Image')"  (line 217, SIMF-N1)
-Fix : a BEM class in the stylesheet
-Issue : style="background-image:url('@n.Image')"  (line 291, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/Website/SIMF.Web/Components/Pages/Organizer.razor
-Issue : style="--logo:url('/@o.Logo')"  (line 34, SIMF-N1)
-Fix : a BEM class in the stylesheet
-
-Issue file : src/Website/SIMF.Web/Components/Pages/Plenary.razor
-Issue : style="background-image:url('@s.Image')"  (line 28, SIMF-N1)
-Fix : a BEM class in the stylesheet
 
 Issue file : src/Website/SIMF.Web/wwwroot/css/landing.css
 Issue : raw hex #001640  (line 27, SIMF-N2)
@@ -132,91 +63,91 @@ Issue : raw hex #244a77  (line 65, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #006923  (line 128, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #9da4ae  (line 198, SIMF-N2)
+Issue : raw hex #9da4ae  (line 200, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #6c737f  (line 201, SIMF-N2)
+Issue : raw hex #6c737f  (line 203, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #384250  (line 202, SIMF-N2)
+Issue : raw hex #384250  (line 204, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #384250  (line 203, SIMF-N2)
+Issue : raw hex #384250  (line 205, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #1d3c60  (line 208, SIMF-N2)
+Issue : raw hex #1d3c60  (line 210, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #f3f4f6  (line 212, SIMF-N2)
+Issue : raw hex #f3f4f6  (line 214, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #e5e7eb  (line 214, SIMF-N2)
+Issue : raw hex #e5e7eb  (line 216, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #bbc7d5  (line 282, SIMF-N2)
+Issue : raw hex #bbc7d5  (line 284, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 286, SIMF-N2)
+Issue : raw hex #000  (line 288, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 286, SIMF-N2)
+Issue : raw hex #000  (line 288, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 287, SIMF-N2)
+Issue : raw hex #000  (line 289, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 287, SIMF-N2)
+Issue : raw hex #000  (line 289, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 314, SIMF-N2)
+Issue : raw hex #000  (line 316, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 315, SIMF-N2)
+Issue : raw hex #000  (line 317, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 340, SIMF-N2)
+Issue : raw hex #000  (line 342, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fafafa  (line 360, SIMF-N2)
+Issue : raw hex #e0e0e0  (line 362, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #e0e0e0  (line 360, SIMF-N2)
+Issue : raw hex #fafafa  (line 362, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #001c71  (line 363, SIMF-N2)
+Issue : raw hex #001c71  (line 365, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #bbc7d5  (line 364, SIMF-N2)
+Issue : raw hex #bbc7d5  (line 366, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fafafa  (line 366, SIMF-N2)
-Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #757575  (line 373, SIMF-N2)
+Issue : raw hex #fafafa  (line 368, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #757575  (line 375, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #244a77  (line 394, SIMF-N2)
+Issue : raw hex #757575  (line 377, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #498fbd  (line 394, SIMF-N2)
+Issue : raw hex #244a77  (line 396, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fff  (line 572, SIMF-N2)
+Issue : raw hex #498fbd  (line 396, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #e0e0e0  (line 572, SIMF-N2)
+Issue : raw hex #fff  (line 574, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #e7e9f1  (line 575, SIMF-N2)
+Issue : raw hex #e0e0e0  (line 574, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fff  (line 576, SIMF-N2)
+Issue : raw hex #e7e9f1  (line 577, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fafafa  (line 578, SIMF-N2)
+Issue : raw hex #fff  (line 578, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #e0e0e0  (line 578, SIMF-N2)
+Issue : raw hex #fafafa  (line 580, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #212121  (line 578, SIMF-N2)
+Issue : raw hex #e0e0e0  (line 580, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 592, SIMF-N2)
+Issue : raw hex #212121  (line 580, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 592, SIMF-N2)
+Issue : raw hex #000  (line 594, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 593, SIMF-N2)
+Issue : raw hex #000  (line 594, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #000  (line 593, SIMF-N2)
+Issue : raw hex #000  (line 595, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fff  (line 598, SIMF-N2)
+Issue : raw hex #000  (line 595, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #f8ebce  (line 601, SIMF-N2)
+Issue : raw hex #fff  (line 600, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fff  (line 646, SIMF-N2)
+Issue : raw hex #f8ebce  (line 603, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #f8ebce  (line 695, SIMF-N2)
+Issue : raw hex #fff  (line 648, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #f8ebce  (line 702, SIMF-N2)
+Issue : raw hex #f8ebce  (line 697, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fff  (line 725, SIMF-N2)
+Issue : raw hex #f8ebce  (line 704, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #f1f2f2  (line 803, SIMF-N2)
+Issue : raw hex #fff  (line 727, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #e9edf1  (line 1235, SIMF-N2)
+Issue : raw hex #f1f2f2  (line 805, SIMF-N2)
+Fix : theme.tokens.css (the CSS token SSOT)
+Issue : raw hex #e9edf1  (line 1237, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 
 ## about feature
@@ -1282,21 +1213,21 @@ Issue : Offset(0.42)  (line 49, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.10)  (line 49, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.46)  (line 50, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.16)  (line 50, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.09)  (line 51, SIMF-C1)
+Issue : Offset(0.46)  (line 50, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.48)  (line 51, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.22)  (line 52, SIMF-C1)
+Issue : Offset(0.09)  (line 51, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.76)  (line 52, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.30)  (line 53, SIMF-C1)
+Issue : Offset(0.22)  (line 52, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.63)  (line 53, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : Offset(0.30)  (line 53, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.54)  (line 54, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
@@ -1313,9 +1244,9 @@ Fix : its own file under widgets/
 
 
 Issue file : src/Mobile/simf_app/lib/features/exhibition/entity_identity_card.dart
-Issue : width: 108  (line 43, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : height: 108  (line 43, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : width: 108  (line 43, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : private widget _LocationLine extends StatelessWidget  (line 85, SIMF-C3)
 Fix : its own file under widgets/

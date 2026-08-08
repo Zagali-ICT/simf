@@ -170,6 +170,9 @@
 .ln-nav__inner { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 16px; }
 .ln-nav__brandmenu { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .ln-nav__logo { height: 64px; width: auto; }
+/* The off-canvas header is shorter than the desktop bar, so the mark sits at
+   40px there. Was an inline style on the element (SIMF-CQP-001 N1). */
+.ln-nav__logo--compact { height: 40px; }
 .ln-nav__menu { display: flex; align-items: center; }
 .ln-nav__item { display: inline-flex; align-items: center; gap: 4px; height: 72px; padding-inline: 16px;
   color: var(--white); font-size: 16px; line-height: 24px; background: none; border: 0; border-radius: var(--radius-sm);
