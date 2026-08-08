@@ -5,6 +5,10 @@ import '../../../app/theme/tokens.dart';
 import '../../../core/utils/gregorian_month_names.dart';
 import '../../../core/utils/weekday_names.dart';
 import '../data/session_models.dart';
+import 'category_pill.dart';
+import 'header_action_button.dart';
+import 'index_badge.dart';
+import 'meta_item.dart';
 
 /// The session header card (frame 889:2716): a navy box holding the title +
 /// gold index badge, the category tag pill (PAR-D3, when the session carries a
@@ -75,7 +79,7 @@ class SessionHeaderCard extends StatelessWidget {
           Row(
             children: <Widget>[
               if (badgeText.isNotEmpty) ...<Widget>[
-                _IndexBadge(text: badgeText),
+                IndexBadge(text: badgeText),
                 const SizedBox(width: SimfTokens.space2),
               ],
               Expanded(
@@ -93,7 +97,7 @@ class SessionHeaderCard extends StatelessWidget {
             const SizedBox(height: SimfTokens.space2),
             Align(
               alignment: AlignmentDirectional.centerStart,
-              child: _CategoryPill(label: category),
+              child: CategoryPill(label: category),
             ),
           ],
 
@@ -112,7 +116,7 @@ class SessionHeaderCard extends StatelessWidget {
             Row(
               children: <Widget>[
                 Expanded(
-                  child: _HeaderActionButton(
+                  child: HeaderActionButton(
                     label: l10n.sessionSummary,
                     accented: true,
                     enabled: summaryEnabled,
@@ -121,7 +125,7 @@ class SessionHeaderCard extends StatelessWidget {
                 ),
                 const SizedBox(width: SimfTokens.space2),
                 Expanded(
-                  child: _HeaderActionButton(
+                  child: HeaderActionButton(
                     label: l10n.sessionLink,
                     accented: false,
                     enabled: liveEnabled,
@@ -132,142 +136,6 @@ class SessionHeaderCard extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// PAR-D3 — the session's category tag pill, sitting under the title inside the
-/// header card: a small gold-hairline pill on the 4px radius carrying the
-/// localized category name in gold 12px SemiBold. Rendered only when the session
-/// carries a category, so an uncategorised session keeps the pre-PAR-D3 layout.
-class _CategoryPill extends StatelessWidget {
-  const _CategoryPill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
-        vertical: SimfTokens.space1,
-      ),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(
-          // The gold hairline is the BOLD one, as on the accented ملخص الجلسة
-          // chip below it (the 0.2 hairline is the beige variant).
-          color: SimfTokens.accent,
-          width: SimfTokens.hairlineBold,
-        ),
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: SimfTokens.labelGoldSemiboldSm,
-      ),
-    );
-  }
-}
-
-/// One header-card action button (frame 889:2708/889:2709): a 34-high navy chip
-/// on the 4px radius with a centred 12px SemiBold label. The accented variant
-/// (ملخص الجلسة) carries the 0.5px gold hairline + gold text; the plain variant
-/// (رابط الجلسة) the 0.2px beige hairline + white text.
-class _HeaderActionButton extends StatelessWidget {
-  const _HeaderActionButton({
-    required this.label,
-    required this.accented,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool accented;
-
-  /// False greys the chip and drops the tap (owner 2026-07-14): an inactive
-  /// action whose state does not apply yet (a summary on a future session).
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    // Disabled overrides the accent/plain palette with the shell's disabled
-    // tokens (same greying the locked اسأل المحاور / بطاقتي cards use).
-    final fg = !enabled
-        ? SimfTokens.navyDisabledText
-        : (accented ? SimfTokens.accent : SimfTokens.surface);
-    final borderColor = !enabled
-        ? SimfTokens.navyDisabledBorder
-        : (accented ? SimfTokens.accent : SimfTokens.beigeBorder);
-    return Material(
-      color: SimfTokens.navyDeep,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        child: Container(
-          height: SimfTokens.actionChipHeight,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.all(SimfTokens.space2),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-            border: Border.all(
-              color: borderColor,
-              width: accented ? SimfTokens.hairlineBold : SimfTokens.hairline,
-            ),
-          ),
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: fg,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The gold index badge (frame 889:2604): a 40×40 gold rounded square with the
-/// day-ordinal in white extrabold, always LTR (e.g. "02"); a longer fallback
-/// code scales down to fit rather than overflowing the badge.
-class _IndexBadge extends StatelessWidget {
-  const _IndexBadge({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: SimfTokens.mapControlSize,
-      height: SimfTokens.mapControlSize,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radius14),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
-        // A two-digit ordinal ("02") shows at full size; a longer fallback code
-        // ("S-001" / "S-TODAY") scales down to fit the 40×40 badge instead of
-        // overflowing or wrapping.
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            text,
-            textDirection: TextDirection.ltr,
-            maxLines: 1,
-            softWrap: false,
-            style: SimfTokens.labelWhiteExtraboldLg,
-          ),
-        ),
       ),
     );
   }
@@ -296,7 +164,7 @@ class _MetaRow extends StatelessWidget {
         spacing: SimfTokens.space3,
         runSpacing: SimfTokens.space1,
         children: <Widget>[
-          _MetaItem(
+          MetaItem(
             icon: Icons.schedule_outlined,
             label: '${_time(start)} — ${_time(end)}',
           ),
@@ -306,7 +174,7 @@ class _MetaRow extends StatelessWidget {
             // the beige time/date items beside it.
             style: SimfTokens.labelWhiteBlackLg,
           ),
-          _MetaItem(
+          MetaItem(
             icon: Icons.calendar_today_outlined,
             label: '${gregorianWeekdayName(start, isArabic)} · '
                 '${start.day.toString().padLeft(2, '0')} '
@@ -314,32 +182,6 @@ class _MetaRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// One icon + label pair in the meta line (frame 889:2687/889:2686).
-class _MetaItem extends StatelessWidget {
-  const _MetaItem({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Icon(icon, size: 14, color: SimfTokens.beigeBorder),
-        const SizedBox(width: SimfTokens.space2),
-        Text(
-          label,
-          // SemiBold (owner 2026-06-30): the time/date numbers read bolder than
-          // the frame's Regular. The ambient Directionality is LTR so the time
-          // digits read start→end and the icon leads on the left.
-          style: SimfTokens.labelBeigeSemiboldSm,
-        ),
-      ],
     );
   }
 }

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/seat_map_models.dart';
+import 'stage_bar.dart';
+import 'legend.dart';
+import 'tier_legend.dart';
 
 /// The hall seat-map card shared by **My-Seat** (Figma 898:2873 — read-only)
 /// and the **Seat-Picker** (D-485 — selectable): the gold-bordered stage band,
@@ -117,7 +120,7 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
       ),
       child: Column(
         children: <Widget>[
-          _StageBar(label: l10n.stageLabelBilingual),
+          StageBar(label: l10n.stageLabelBilingual),
           const SizedBox(height: SimfTokens.space6),
           // The hall plan keeps the stage at the top and seat columns in venue
           // order — do not mirror the grid geometry in RTL (L-7), so it is
@@ -200,7 +203,7 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
             ),
           ),
           const SizedBox(height: SimfTokens.space6),
-          _Legend(
+          Legend(
             l10n: l10n,
             availableBorderColor: widget.availableBorderColor,
             swatchSize: widget.swatchSize,
@@ -213,39 +216,9 @@ class _HallSeatMapCardState extends State<HallSeatMapCard> {
           // tiered rows, so a plain hall keeps the shipped three-item legend.
           if (map.hasTiers) ...<Widget>[
             const SizedBox(height: SimfTokens.space3),
-            _TierLegend(l10n: l10n, swatchSize: widget.swatchSize),
+            TierLegend(l10n: l10n, swatchSize: widget.swatchSize),
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// The gold-bordered "المسرح · STAGE" band at the top of the hall card
-/// (frame 905:1584): a full-width navyDeep pill, gold hairline, gold label.
-class _StageBar extends StatelessWidget {
-  const _StageBar({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: SimfTokens.controlHeight,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        border: Border.all(
-          color: SimfTokens.accent,
-          width: SimfTokens.hairlineBold,
-        ),
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: SimfTokens.bodyGold,
       ),
     );
   }
@@ -516,155 +489,3 @@ class _SeatBox extends StatelessWidget {
   }
 }
 
-/// The legend row (frame 907:1591): محجوز (deep-navy fill) · متاح (bordered) ·
-/// مقعدك (gold fill) — each a label next to its colour swatch. The reserved and
-/// mine swatches mirror the in-grid state icons. Reads left-to-right like the
-/// frame (forced LTR so it never mirrors with the RTL page).
-/// A12 — a fourth entry, "confirmed" (green fill), joins them only when
-/// the hall holds a confirmed seat, so the shipped three-item frame is
-/// unchanged for a hall nobody has entered yet.
-class _Legend extends StatelessWidget {
-  const _Legend({
-    required this.l10n,
-    required this.availableBorderColor,
-    required this.swatchSize,
-    required this.showConfirmed,
-  });
-
-  final AppL10n l10n;
-  final Color availableBorderColor;
-  final double swatchSize;
-  final bool showConfirmed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: SimfTokens.space2,
-        runSpacing: SimfTokens.space2,
-        children: <Widget>[
-          _LegendItem(
-            label: l10n.legendReserved,
-            color: SimfTokens.navy,
-            size: swatchSize,
-            icon: Icons.close,
-            iconColor: SimfTokens.beigeBorder,
-          ),
-          if (showConfirmed)
-            _LegendItem(
-              label: l10n.legendConfirmed,
-              color: SimfTokens.seatConfirmed,
-              size: swatchSize,
-              icon: Icons.how_to_reg,
-              iconColor: SimfTokens.surface,
-            ),
-          _LegendItem(
-            label: l10n.legendAvailable,
-            color: SimfTokens.transparent,
-            borderColor: availableBorderColor,
-            size: SimfTokens.seatSwatchLg,
-          ),
-          _LegendItem(
-            label: l10n.legendMine,
-            color: SimfTokens.accent,
-            size: swatchSize,
-            icon: Icons.check,
-            iconColor: SimfTokens.navy,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// D-771 — the seat-TIER legend, shown only for a hall that has tiered rows:
-/// شخصيات بالغة الأهمية (deep red) · كبار الشخصيات (deep teal) · عادي (bordered).
-/// Reuses [_LegendItem] so both legends stay one component, and is forced LTR
-/// like the state legend so it never mirrors with the RTL page.
-class _TierLegend extends StatelessWidget {
-  const _TierLegend({required this.l10n, required this.swatchSize});
-
-  final AppL10n l10n;
-  final double swatchSize;
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: SimfTokens.space2,
-        runSpacing: SimfTokens.space2,
-        children: <Widget>[
-          _LegendItem(
-            label: l10n.seatTierVvip,
-            color: SimfTokens.seatTierVvip,
-            size: swatchSize,
-          ),
-          _LegendItem(
-            label: l10n.seatTierVip,
-            color: SimfTokens.seatTierVip,
-            size: swatchSize,
-          ),
-          _LegendItem(
-            label: l10n.seatTierNormal,
-            color: SimfTokens.transparent,
-            borderColor: SimfTokens.beigeBorder,
-            size: SimfTokens.seatSwatchLg,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LegendItem extends StatelessWidget {
-  const _LegendItem({
-    required this.color,
-    required this.label,
-    required this.size,
-    this.borderColor,
-    this.icon,
-    this.iconColor,
-  });
-
-  final Color color;
-  final String label;
-  final double size;
-  final Color? borderColor;
-  final IconData? icon;
-  final Color? iconColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Text(
-          label,
-          style: SimfTokens.labelBeigeSm,
-        ),
-        const SizedBox(width: SimfTokens.space2),
-        Container(
-          width: size,
-          height: size,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: color,
-            border: borderColor != null ? Border.all(color: borderColor!) : null,
-            borderRadius: BorderRadius.circular(SimfTokens.radiusSeat),
-          ),
-          child: icon != null
-              ? Icon(
-                  icon,
-                  size: SimfTokens.seatStateIconSize,
-                  color: iconColor,
-                )
-              : null,
-        ),
-      ],
-    );
-  }
-}

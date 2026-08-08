@@ -12,6 +12,7 @@ import '../../sessions/widgets/favourite_heart_button.dart';
 import '../../sessions/widgets/session_card_meta.dart';
 import '../../sessions/widgets/session_state_chip.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
+import 'category_pill.dart';
 
 /// One rich session-summary card (Figma 1388:8392): heart on the trailing edge,
 /// the title over the clock·time·duration line, the primary speaker + hall, and
@@ -119,7 +120,7 @@ class SessionSummaryCard extends StatelessWidget {
               Row(
                 children: <Widget>[
                   if (category != null && category.isNotEmpty) ...<Widget>[
-                    Expanded(child: _CategoryPill(label: category)),
+                    Expanded(child: CategoryPill(label: category)),
                     if (hasChips) const SizedBox(width: SimfTokens.space4),
                   ],
                   if (hasChips) SessionStateChipRow(kinds: stateChips, l10n: l10n),
@@ -143,34 +144,3 @@ class SessionSummaryCard extends StatelessWidget {
   }
 }
 
-/// The bordered category pill on the card's bottom row.
-class _CategoryPill extends StatelessWidget {
-  const _CategoryPill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space4, // 16
-        vertical: SimfTokens.space2, // 8
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius), // 8
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: SimfTokens.labelWhiteMediumSm,
-      ),
-    );
-  }
-}

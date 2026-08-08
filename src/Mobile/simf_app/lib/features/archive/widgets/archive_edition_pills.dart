@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/archive_models.dart';
+import 'edition_pill.dart';
 
 /// The edition-selector pills (frame node 925:3248): one pill per edition,
 /// **equal-width** and filling the row (frame `flex-1`, 16px gap). The selected
@@ -29,7 +30,7 @@ class ArchiveEditionPills extends StatelessWidget {
         for (var i = 0; i < editions.length; i++) ...<Widget>[
           if (i > 0) const SizedBox(width: SimfTokens.space4),
           Expanded(
-            child: _EditionPill(
+            child: EditionPill(
               label: l10n.archiveEditionPill(editions[i].year),
               active: editions[i].id == selectedId,
               onTap: () => onSelect(editions[i].id),
@@ -41,47 +42,3 @@ class ArchiveEditionPills extends StatelessWidget {
   }
 }
 
-class _EditionPill extends StatelessWidget {
-  const _EditionPill({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: active ? SimfTokens.accent : SimfTokens.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        side: active
-            ? BorderSide.none
-            : const BorderSide(
-                color: SimfTokens.beigeBorder,
-                width: SimfTokens.hairline,
-              ),
-      ),
-      child: InkWell(
-        onTap: active ? null : onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        child: Container(
-          height: SimfTokens.controlHeight,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: active
-                ? SimfTokens.labelWhiteSemiboldSm
-                : SimfTokens.labelBeigeSemiboldSm,
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
-import '../../speakers/data/speaker_models.dart';
 
 /// One delegation card — an invited country with its head of delegation, date
 /// range and member count (Figma 1426:10771 الوفود), mirroring

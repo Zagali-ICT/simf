@@ -6,6 +6,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../data/seat_map_models.dart';
+import 'seat_marker.dart';
 
 /// D-485 — the reservation card: the held seat (الصف · مقعد) or "general
 /// admission" for an open-seating join, plus the pending-approval hint. A
@@ -46,7 +47,7 @@ class SessionReservationCard extends StatelessWidget {
             Semantics(
               button: onView != null,
               label: l10n.seatViewLink,
-              child: const _SeatMarker(),
+              child: const SeatMarker(),
             ),
             const SizedBox(width: SimfTokens.space4),
             Expanded(
@@ -84,30 +85,3 @@ class SessionReservationCard extends StatelessWidget {
   }
 }
 
-/// The gold filled marker box on the my-seat card (frame 894:2779): a 44×44
-/// gold-bordered tile wrapping a small gold filled square.
-class _SeatMarker extends StatelessWidget {
-  const _SeatMarker();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: SimfTokens.tapTarget,
-      height: SimfTokens.tapTarget,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.accent.withValues(alpha: SimfTokens.seatFillOpacity),
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(color: SimfTokens.accent),
-      ),
-      child: Container(
-        width: SimfTokens.seatMarkerInner,
-        height: SimfTokens.seatMarkerInner,
-        decoration: BoxDecoration(
-          color: SimfTokens.accent,
-          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        ),
-      ),
-    );
-  }
-}

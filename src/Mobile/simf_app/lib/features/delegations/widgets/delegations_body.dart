@@ -7,6 +7,7 @@ import '../../../app/widgets/simf_page_shell.dart';
 import '../data/delegation_models.dart';
 import 'delegation_card.dart';
 import 'delegations_stats_strip.dart';
+import 'active_filter_chip.dart';
 
 /// The loaded Delegations list — the stats strip, the search box, then the
 /// filtered per-country cards (or the empty / no-results state). Tapping a flag
@@ -85,7 +86,7 @@ class DelegationsBody extends StatelessWidget {
         // way out.
         if (selectedCountryCode != null) ...<Widget>[
           const SizedBox(height: SimfTokens.space3),
-          _ActiveFilterChip(
+          ActiveFilterChip(
             country: selectedName ?? l10n.delegationsClearFilter,
             clearLabel: l10n.delegationsClearFilter,
             onClear: onClearFilter,
@@ -132,65 +133,3 @@ class DelegationsBody extends StatelessWidget {
   }
 }
 
-/// The removable filter pill shown when a stats-strip flag is selected: the
-/// country name with a close glyph; the whole pill clears the filter.
-class _ActiveFilterChip extends StatelessWidget {
-  const _ActiveFilterChip({
-    required this.country,
-    required this.clearLabel,
-    required this.onClear,
-  });
-
-  final String country;
-  final String clearLabel;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onClear,
-        child: Container(
-          decoration: BoxDecoration(
-            color: SimfTokens.goldFill6,
-            border: Border.all(color: SimfTokens.goldBorder15),
-            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-          ),
-          padding: const EdgeInsetsDirectional.only(
-            start: SimfTokens.space3,
-            end: SimfTokens.space2,
-            top: SimfTokens.space2,
-            bottom: SimfTokens.space2,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Flexible(
-                child: Text(
-                  country,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: SimfTokens.labelGoldSemiboldSm,
-                ),
-              ),
-              const SizedBox(width: SimfTokens.space1),
-              // Semantics label so the tap target reads as "clear filter" to
-              // assistive tech, not just a bare glyph.
-              Semantics(
-                button: true,
-                label: clearLabel,
-                child: const Icon(
-                  Icons.close,
-                  size: 14,
-                  color: SimfTokens.accent,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

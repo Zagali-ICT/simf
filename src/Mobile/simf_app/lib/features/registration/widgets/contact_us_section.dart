@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/env/build_config.dart';
 import '../../../core/external_link.dart';
+import 'contact_tile.dart';
 
 /// The success-frame "تواصل معنا" block (Figma 522:2223): the section title, the
 /// call + mail tiles, and the social footer. Each tile opens the OS dialer /
@@ -40,7 +41,7 @@ class ContactUsSection extends StatelessWidget {
             // Frame 522:2223 (RTL): the mail tile leads (right edge), the call
             // tile trails (left) — so the mail tile is the first child.
             Expanded(
-              child: _ContactTile(
+              child: ContactTile(
                 icon: Icons.mail_outline,
                 onTap: BuildConfig.supportEmail.isEmpty
                     ? null
@@ -56,7 +57,7 @@ class ContactUsSection extends StatelessWidget {
             ),
             const SizedBox(width: SimfTokens.space4),
             Expanded(
-              child: _ContactTile(
+              child: ContactTile(
                 icon: Icons.call_outlined,
                 onTap: BuildConfig.supportPhone.isEmpty
                     ? null
@@ -83,28 +84,3 @@ class ContactUsSection extends StatelessWidget {
   }
 }
 
-/// One bordered contact tile (Figma 522:2223). Inert (null [onTap]) until its
-/// BuildConfig contact value is supplied (D-369).
-class _ContactTile extends StatelessWidget {
-  const _ContactTile({required this.icon, this.onTap});
-
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radius10),
-      child: Container(
-        height: 52,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          border: Border.all(color: SimfTokens.tileBorderNavy, width: 0.8),
-          borderRadius: BorderRadius.circular(SimfTokens.radius10),
-        ),
-        child: Icon(icon, color: SimfTokens.surface, size: 24),
-      ),
-    );
-  }
-}

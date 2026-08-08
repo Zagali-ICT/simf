@@ -4,6 +4,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_image_viewer.dart';
 import '../../../app/widgets/simf_logo_image.dart';
 import '../../../app/widgets/simf_page_shell.dart';
+import 'initials_tile.dart';
 
 /// One partner — frame node 958:2263: the navy KSA card with a centred gold
 /// rounded-square logo holder over the partner name (white 12px SemiBold).
@@ -110,7 +111,7 @@ class _PartnerLogo extends StatelessWidget {
           ),
           // Initials are computed only when the fetch fails — the common
           // success path skips the split.
-          onError: () => _InitialsTile(initials: _initials),
+          onError: () => InitialsTile(initials: _initials),
           enableFullScreen: false,
         ),
       ),
@@ -118,23 +119,3 @@ class _PartnerLogo extends StatelessWidget {
   }
 }
 
-/// The no-logo / failed-fetch fall-back: the partner's initials on the frame's
-/// gold tile (navy text for contrast on gold).
-class _InitialsTile extends StatelessWidget {
-  const _InitialsTile({required this.initials});
-
-  final String initials;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: SimfTokens.accent,
-      child: Center(
-        child: Text(
-          initials,
-          style: SimfTokens.labelNavyBoldTracked,
-        ),
-      ),
-    );
-  }
-}

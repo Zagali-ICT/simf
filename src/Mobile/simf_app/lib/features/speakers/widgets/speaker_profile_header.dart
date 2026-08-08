@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
+import 'name_line.dart';
 
 /// The speaker-profile header (frame 908:2110): the two-line title (white name
 /// over the beige rank, with the nationality flag leading the name) flanked by
@@ -39,7 +40,7 @@ class SpeakerProfileHeader extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                _NameLine(title: title, flag: flag),
+                NameLine(title: title, flag: flag),
                 if (rank != null) ...<Widget>[
                   const SizedBox(height: SimfTokens.space1),
                   Text(
@@ -61,35 +62,3 @@ class SpeakerProfileHeader extends StatelessWidget {
   }
 }
 
-/// The header name line. Figma 1327:3461 — when the speaker has a nationality
-/// the flag sits at the inline-start of the name (physical left in this
-/// LTR-forced header), 8px before it; the name ellipsises if it is too long.
-class _NameLine extends StatelessWidget {
-  const _NameLine({required this.title, required this.flag});
-
-  final String title;
-  final String flag;
-
-  @override
-  Widget build(BuildContext context) {
-    final nameText = Text(
-      title,
-      textAlign: TextAlign.center,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: SimfTokens.labelWhiteSemiboldTitle,
-    );
-    if (flag.isEmpty) {
-      return nameText;
-    }
-    return Row(
-      textDirection: TextDirection.ltr,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Text(flag, style: const TextStyle(fontSize: SimfTokens.textTitle)),
-        const SizedBox(width: SimfTokens.space2),
-        Flexible(child: nameText),
-      ],
-    );
-  }
-}

@@ -9,6 +9,7 @@ import '../../../core/organization_profile/organization_profile.dart';
 import '../../banners/data/banner_models.dart';
 import 'carousel_dots.dart';
 import 'hero_background_video.dart';
+import 'hero_overlay.dart';
 
 /// The home hero (replaces the static discover banner, #43): the forum edition —
 /// name (gold), theme, date range and location — overlaid on a rotating strip of
@@ -139,7 +140,7 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
                 onTap: widget.onTap,
                 child: Padding(
                   padding: const EdgeInsets.all(SimfTokens.space2),
-                  child: _HeroOverlay(
+                  child: HeroOverlay(
                     l10n: widget.l10n,
                     profile: widget.profile,
                   ),
@@ -196,97 +197,3 @@ class _HeroImage extends StatelessWidget {
       Image.asset(AppAssets.discoverHero, fit: BoxFit.fill);
 }
 
-/// The hero text overlay: the forum edition (name + theme + date range +
-/// location) when the profile is loaded, otherwise the original discover copy.
-class _HeroOverlay extends StatelessWidget {
-  const _HeroOverlay({required this.l10n, required this.profile});
-
-  final AppL10n l10n;
-  final OrgProfile? profile;
-
-  @override
-  Widget build(BuildContext context) {
-    final isArabic = l10n.isArabic;
-    final p = profile;
-    final name = p?.nameFor(isArabic) ?? '';
-
-    // No edition config yet → the original discover copy (zero regression).
-    if (p == null || name.isEmpty) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            l10n.discoverSection,
-            style: SimfTokens.labelGoldBoldLg,
-          ),
-          const SizedBox(height: SimfTokens.space2),
-          Text(
-            l10n.discoverBannerSubtitle,
-            style: SimfTokens.labelWhiteMediumSm,
-          ),
-        ],
-      );
-    }
-
-    final theme = p.titleFor(isArabic);
-    final dates = p.eventDateRange(isArabic);
-    final location = p.locationFor(isArabic);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          name,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: SimfTokens.labelGoldBold,
-        ),
-        if (theme.isNotEmpty) ...<Widget>[
-          const SizedBox(height: SimfTokens.space1),
-          Text(
-            theme,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: SimfTokens.labelWhiteMediumSm,
-          ),
-        ],
-        if (dates != null) ...<Widget>[
-          const SizedBox(height: SimfTokens.space1),
-          _MetaLine(icon: Icons.event_outlined, text: dates),
-        ],
-        if (location != null && location.isNotEmpty) ...<Widget>[
-          const SizedBox(height: SimfTokens.space1),
-          _MetaLine(icon: Icons.place_outlined, text: location),
-        ],
-      ],
-    );
-  }
-}
-
-/// A small icon + text meta row (date / location) under the hero title.
-class _MetaLine extends StatelessWidget {
-  const _MetaLine({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Icon(icon, size: 14, color: SimfTokens.surface),
-        const SizedBox(width: SimfTokens.space1),
-        Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: SimfTokens.bodyWhiteSm,
-          ),
-        ),
-      ],
-    );
-  }
-}

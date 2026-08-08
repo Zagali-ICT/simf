@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/responsive/breakpoints.dart';
 import '../theme/tokens.dart';
+import 'scan_line.dart';
 
 /// The gold border weight of the viewfinder's corner brackets (Figma 758:4579).
 const BorderSide _bracketSide = BorderSide(color: SimfTokens.accent, width: 2.36);
@@ -190,12 +191,12 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
         top: windowHeight * _scanLineRestRatio,
         left: 16,
         right: 16,
-        child: const _ScanLine(),
+        child: const ScanLine(),
       );
     }
     return AnimatedBuilder(
       animation: _controller,
-      child: const _ScanLine(),
+      child: const ScanLine(),
       builder: (context, child) => Positioned(
         top: topEdge + (bottomEdge - topEdge) * _controller.value,
         left: 16,
@@ -229,30 +230,6 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
               child: ColoredBox(color: SimfTokens.scannerTrack),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The horizontal glowing gold scan line (Figma 758:4735).
-class _ScanLine extends StatelessWidget {
-  const _ScanLine();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 2,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: <Color>[
-            SimfTokens.accentFade,
-            SimfTokens.accent,
-            SimfTokens.accentFade,
-          ],
-        ),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(color: SimfTokens.accent, blurRadius: 8),
         ],
       ),
     );

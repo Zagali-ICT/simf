@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
+import 'tappable_avatar.dart';
 
 /// The My-Area identity card (frame node 512:2047): avatar 64, name +
 /// tier·enrolled line + gold reference, and the bordered gold مشاركة button.
@@ -36,7 +36,7 @@ class MyAreaIdentityCard extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          _TappableAvatar(
+          TappableAvatar(
             name: name,
             onTap: onAvatarTap,
             tooltip: avatarTooltip,
@@ -115,57 +115,3 @@ class MyAreaIdentityCard extends StatelessWidget {
   }
 }
 
-/// The profile avatar with a tap-to-change affordance (frame 213:963): the gold
-/// rounded avatar plus a small camera badge at the corner. A null [onTap] (the
-/// limited/pending view) renders a plain avatar with no camera badge.
-class _TappableAvatar extends StatelessWidget {
-  const _TappableAvatar({
-    required this.name,
-    this.onTap,
-    this.tooltip,
-  });
-
-  final String name;
-  final VoidCallback? onTap;
-  final String? tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final avatar = SimfAvatar(name: name, currentUser: true, size: 64);
-    if (onTap == null) {
-      return avatar;
-    }
-    return Semantics(
-      button: true,
-      label: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: <Widget>[
-            avatar,
-            Positioned.directional(
-              textDirection: Directionality.of(context),
-              end: -2,
-              bottom: -2,
-              child: Container(
-                padding: const EdgeInsets.all(SimfTokens.space1),
-                decoration: BoxDecoration(
-                  color: SimfTokens.accent,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: SimfTokens.navyDeep, width: 1.5),
-                ),
-                child: const Icon(
-                  Icons.photo_camera_outlined,
-                  size: 12,
-                  color: SimfTokens.navy,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

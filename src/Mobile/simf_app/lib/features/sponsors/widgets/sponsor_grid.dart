@@ -5,6 +5,7 @@ import '../../../app/route_names.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/sponsor_models.dart';
 import 'sponsor_logo.dart';
+import 'sponsor_grid_tile.dart';
 
 /// The lowest-tier band rendered as the frame's compact 3-column logo grid
 /// (frame 922:2824 "رعاة ذهبيون"): each tile is the sponsor's logo over its
@@ -36,7 +37,7 @@ class SponsorGrid extends StatelessWidget {
         mainAxisExtent: SimfTokens.sponsorRowHeight,
       ),
       itemCount: sponsors.length,
-      itemBuilder: (context, i) => _SponsorGridTile(
+      itemBuilder: (context, i) => SponsorGridTile(
         id: sponsors[i].id,
         baseUrl: baseUrl,
         name: sponsors[i].localizedName(isArabic),
@@ -51,64 +52,3 @@ class SponsorGrid extends StatelessWidget {
   }
 }
 
-/// One gold-tier grid tile (frame 925:3031): a single 72-high navy card on the
-/// beige hairline holding the sponsor logo above its name (12px SemiBold white,
-/// centred). The logo fills the area above the name; initials are the fallback.
-class _SponsorGridTile extends StatelessWidget {
-  const _SponsorGridTile({
-    required this.id,
-    required this.baseUrl,
-    required this.name,
-    required this.initials,
-    required this.onTap,
-  });
-
-  final String id;
-  final String baseUrl;
-  final String name;
-  final String initials;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: SimfTokens.navyDeep,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        side: const BorderSide(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space2),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                child: SponsorLogo(
-                  id: id,
-                  baseUrl: baseUrl,
-                  fallbackInitials: initials,
-                  hero: false,
-                  name: name,
-                ),
-              ),
-              const SizedBox(height: SimfTokens.space2),
-              Text(
-                name,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: SimfTokens.labelWhiteSemiboldSm,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

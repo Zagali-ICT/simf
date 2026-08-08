@@ -4,6 +4,7 @@ import '../../app/theme/app_assets.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import 'widgets/icon_box.dart';
 
 /// A label/value row with a beige-fill icon box on one end and a chevron on the
 /// other — the shared shape of the stand-code→map row (Figma 1439:11904) and the
@@ -91,7 +92,7 @@ class EntityLinkRow extends StatelessWidget {
         padding: const EdgeInsets.all(SimfTokens.space4), // 16
         child: Row(
           children: <Widget>[
-            _IconBox(icon: icon, iconAsset: iconAsset),
+            IconBox(icon: icon, iconAsset: iconAsset),
             const SizedBox(width: SimfTokens.space3), // 12
             Expanded(
               child: Column(
@@ -121,32 +122,3 @@ class EntityLinkRow extends StatelessWidget {
   }
 }
 
-/// The 44×44 beige-fill icon box (Figma 1439:11913 / 11926): beige-10% fill,
-/// beige hairline, radius-4, with a 20px gold glyph centred. A bundled Figma
-/// SVG ([iconAsset]) takes precedence over the Material [icon] when supplied.
-class _IconBox extends StatelessWidget {
-  const _IconBox({required this.icon, this.iconAsset});
-
-  final IconData icon;
-  final String? iconAsset;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.beigeFill10,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall), // 4
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
-      ),
-      child: iconAsset == null
-          ? Icon(icon, size: 20, color: SimfTokens.accent)
-          : SimfSvgIcon(iconAsset!, size: 20, color: SimfTokens.accent),
-    );
-  }
-}

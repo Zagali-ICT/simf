@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/venue_map_models.dart';
+import 'sub_line.dart';
 
 /// The booth detail sheet (the عرض التفاصيل action). Shows the cached summary
 /// immediately; the description streams in from the lazy detail call — a null
@@ -63,7 +64,7 @@ class VenueMapBoothSheet extends StatelessWidget {
           ),
           if (booth != null) ...<Widget>[
             const SizedBox(height: SimfTokens.space2),
-            _SubLine(
+            SubLine(
               booth.localizedExhibitor(isArabic),
               booth.localizedSector(isArabic),
             ),
@@ -92,25 +93,3 @@ class VenueMapBoothSheet extends StatelessWidget {
   }
 }
 
-/// The "Exhibitor · Sector" sub-line; renders only the parts that are present.
-class _SubLine extends StatelessWidget {
-  const _SubLine(this.exhibitor, this.sector);
-
-  final String? exhibitor;
-  final String? sector;
-
-  @override
-  Widget build(BuildContext context) {
-    final parts = <String>[
-      if (exhibitor != null) exhibitor!,
-      if (sector != null) sector!,
-    ];
-    if (parts.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Text(
-      parts.join(' · '),
-      style: SimfTokens.bodyInkMuted,
-    );
-  }
-}

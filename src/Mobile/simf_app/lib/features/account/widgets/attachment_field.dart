@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 import '../../../core/widgets/simf_field_label.dart';
+import 'attach_box.dart';
 
 /// A file/photo attachment field (Figma 168:2977): a label, an optional hint,
 /// then either the empty 56px attach box or — once [bytes] is set — a preview
@@ -57,7 +58,7 @@ class AttachmentField extends StatelessWidget {
           const SizedBox(height: SimfTokens.space2),
         ],
         if (data == null)
-          _AttachBox(label: attachLabel, icon: attachIcon, onTap: onAttach)
+          AttachBox(label: attachLabel, icon: attachIcon, onTap: onAttach)
         else
           Container(
             padding: const EdgeInsets.all(SimfTokens.space2),
@@ -109,57 +110,3 @@ class AttachmentField extends StatelessWidget {
   }
 }
 
-/// The empty 56px bordered attach box: a centred label + trailing icon.
-class _AttachBox extends StatelessWidget {
-  const _AttachBox({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: SimfTokens.borderRadiusSmall,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          border: Border.all(color: SimfTokens.beigeBorder),
-          borderRadius: SimfTokens.borderRadiusSmall,
-        ),
-        // The frame (168:2972) shows the gold attach glyph first, then the
-        // label — forced LTR so the icon-then-text order holds under Arabic too
-        // and the icon is gold, not grey (D-674).
-        child: Directionality(
-          textDirection: TextDirection.ltr,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(icon, size: 24, color: SimfTokens.accent),
-              const SizedBox(width: SimfTokens.space2),
-              // BUG-019 — the box has a fixed height and sits in a half-width
-              // tablet column, so a longer attach label must ellipsize instead
-              // of overflowing. Loose fit: an already-fitting label is unmoved.
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: SimfTokens.inputInk,
-                    fontSize: SimfTokens.textMd,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

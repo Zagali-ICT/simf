@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/net/asset_urls.dart';
 import '../data/news_models.dart';
+import 'news_thumbnail.dart';
 
 /// One news row — frame node 957:2197: a borderless navy (radius-8) card laid
 /// out horizontally. In RTL the text block sits at the inline-start (right) —
@@ -77,7 +78,7 @@ class NewsCard extends StatelessWidget {
               ),
             ),
             // Inline-end (left in RTL): the thumbnail + overlaid category chip.
-            _NewsThumbnail(
+            NewsThumbnail(
               imageUrl: AssetUrls.image(baseUrl, AssetKind.newsImage, item.id),
               category: category,
             ),
@@ -98,120 +99,3 @@ class NewsCard extends StatelessWidget {
   }
 }
 
-/// The news thumbnail (frame node 958:2202): the article's `NewsImage` asset
-/// (fetched from the public anonymous D-357 route) under a navy
-/// bottom-gradient,
-/// with the gold category chip overlaid at the inline-start top corner. A
-/// spinner shows while it loads; a navy article-icon box is the no-image /
-/// fetch
-/// -failure fall-back. 155 wide, stretched to the card height.
-class _NewsThumbnail extends StatelessWidget {
-  const _NewsThumbnail({required this.imageUrl, required this.category});
-
-  final String imageUrl;
-  final String category;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: SimfTokens.newsThumbWidth,
-      height: SimfTokens.newsThumbHeight,
-      child: ClipRRect(
-        borderRadius:
-            const BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              gaplessPlayback: true,
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) {
-                  return child;
-                }
-                return const ColoredBox(
-                  color: SimfTokens.navy,
-                  child: Center(
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) =>
-                  const _NewsImageFallback(),
-            ),
-            // The frame's bottom gradient (transparent → navy `#001030` @ 80%).
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.center,
-                  end: Alignment.bottomCenter,
-                  colors: <Color>[
-                    SimfTokens.transparent,
-                    SimfTokens.bannerScrim,
-                  ],
-                ),
-              ),
-            ),
-            if (category.isNotEmpty)
-              PositionedDirectional(
-                top: SimfTokens.space2,
-                start: SimfTokens.space2,
-                child: _CategoryChip(label: category),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The no-image / failed-fetch fall-back: a navy box with the article glyph.
-class _NewsImageFallback extends StatelessWidget {
-  const _NewsImageFallback();
-
-  @override
-  Widget build(BuildContext context) => const ColoredBox(
-        color: SimfTokens.navy,
-        child: Center(
-          child: Icon(
-            Icons.article_outlined,
-            size: 28,
-            color: SimfTokens.accent,
-          ),
-        ),
-      );
-}
-
-/// The gold category chip overlaid on the thumbnail (frame node 958:2203): a
-/// solid-gold rounded pill with white bold text.
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      // Frame 958:2203 — 10px horizontal padding (no matching spacing token).
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: SimfTokens.space1,
-      ),
-      decoration: const BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: SimfTokens.labelWhiteBoldXs,
-      ),
-    );
-  }
-}

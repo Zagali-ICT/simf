@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../data/live_models.dart';
-import '../data/live_repository.dart';
+import 'toggle_pill.dart';
+import 'time_chip.dart';
 
 /// Login-gate state (owner, D-577): the live stream is login-only, so a
 /// signed-out guest sees this prompt — an icon, a message, and a gold Sign-in
@@ -82,7 +83,7 @@ class FeedToggle extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(
-            child: _TogglePill(
+            child: TogglePill(
               label: mainLabel,
               active: !showSignLanguage,
               onTap: () => onChanged(false),
@@ -90,7 +91,7 @@ class FeedToggle extends StatelessWidget {
           ),
           const SizedBox(width: SimfTokens.space2),
           Expanded(
-            child: _TogglePill(
+            child: TogglePill(
               label: signLabel,
               active: showSignLanguage,
               icon: Icons.sign_language_outlined,
@@ -98,51 +99,6 @@ class FeedToggle extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// One feed-toggle pill — the gold/navy view-pill language shared with the
-/// sessions screen: active = solid gold, inactive = bordered navy card.
-class _TogglePill extends StatelessWidget {
-  const _TogglePill({
-    required this.label,
-    required this.active,
-    required this.onTap,
-    this.icon,
-  });
-
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return SimfCard(
-      onTap: active ? null : onTap,
-      color: active ? SimfTokens.accent : SimfTokens.navyDeep,
-      borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
-      child: SizedBox(
-        height: SimfTokens.tapTarget,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            if (icon != null) ...<Widget>[
-              Icon(icon, size: 16, color: SimfTokens.surface),
-              const SizedBox(width: SimfTokens.space1),
-            ],
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: SimfTokens.labelWhiteSemiboldSm,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -328,7 +284,7 @@ class UpcomingCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space3),
-            _TimeChip(time: session.start),
+            TimeChip(time: session.start),
           ],
         ),
       ),
@@ -336,34 +292,3 @@ class UpcomingCard extends StatelessWidget {
   }
 }
 
-/// A gold time chip showing the local HH:mm (frame 934:3628).
-class _TimeChip extends StatelessWidget {
-  const _TimeChip({required this.time});
-
-  final DateTime? time;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = time;
-    final label = t == null
-        ? '—'
-        : '${t.hour.toString().padLeft(2, '0')}:'
-            '${t.minute.toString().padLeft(2, '0')}';
-    return Container(
-      // Frame 934:3628 — a fixed 53-wide gold chip, p-4, radius-4.
-      width: SimfTokens.timeChipWidth,
-      padding: const EdgeInsets.all(SimfTokens.space1),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(
-        label,
-        textDirection: TextDirection.ltr,
-        textAlign: TextAlign.center,
-        style: SimfTokens.labelWhiteSemibold,
-      ),
-    );
-  }
-}

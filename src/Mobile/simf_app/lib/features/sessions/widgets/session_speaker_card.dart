@@ -5,6 +5,7 @@ import '../../../app/widgets/simf_page_shell.dart';
 import '../../../core/country_flag.dart';
 import '../../../core/net/asset_urls.dart';
 import '../data/session_models.dart';
+import 'speaker_avatar.dart';
 
 /// One speaker card (frame 889:2722/889:2737/889:2747): a navy box with a beige
 /// hairline; a 40×40 rounded photo on the inline-start (physical right), with
@@ -44,7 +45,7 @@ class SessionSpeakerCard extends StatelessWidget {
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Row(
           children: <Widget>[
-            _SpeakerAvatar(
+            SpeakerAvatar(
               imageUrl:
                   AssetUrls.image(baseUrl, AssetKind.speakerPhoto, speaker.id),
             ),
@@ -125,43 +126,3 @@ class SessionSpeakerCard extends StatelessWidget {
   }
 }
 
-/// The speaker's photo on a speaker card (frame 1060:12892): a 40×40 rounded
-/// square with a beige hairline. Renders the uploaded SpeakerPhoto asset
-/// (D-357), falling back to a navy person glyph while it loads or when the
-/// speaker has no photo (the asset route 404s).
-class _SpeakerAvatar extends StatelessWidget {
-  const _SpeakerAvatar({required this.imageUrl});
-
-  final String imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    const placeholder = ColoredBox(
-      color: SimfTokens.navy,
-      child: Center(
-        child: Icon(Icons.person, size: 20, color: SimfTokens.beigeBorder),
-      ),
-    );
-    return Container(
-      width: 40,
-      height: 40,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: SimfTokens.navy,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
-      ),
-      child: Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        gaplessPlayback: true,
-        loadingBuilder: (context, child, progress) =>
-            progress == null ? child : placeholder,
-        errorBuilder: (context, error, stackTrace) => placeholder,
-      ),
-    );
-  }
-}

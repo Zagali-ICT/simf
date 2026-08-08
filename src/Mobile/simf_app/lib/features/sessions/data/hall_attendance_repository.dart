@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-import '../../../core/utils/saudi_time.dart';
 import 'session_models.dart';
 import 'sessions_endpoints.dart';
 

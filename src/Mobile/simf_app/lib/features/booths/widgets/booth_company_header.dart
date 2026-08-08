@@ -5,6 +5,7 @@ import '../../../app/widgets/simf_logo_image.dart';
 import '../../../core/country_flag.dart';
 import '../../../core/net/asset_urls.dart';
 import '../../venuemap/data/venue_map_models.dart';
+import 'country_flag_tile.dart';
 
 /// The card header (frame node 922:2556): the company **logo tile** on the
 /// inline start (physical right) — the real CompanyLogo, short-name fallback —
@@ -76,37 +77,9 @@ class BoothCompanyHeader extends StatelessWidget {
           // shown only when the booth carries a resolved country.
           if (flag != null) ...<Widget>[
             const SizedBox(width: SimfTokens.space2),
-            _CountryFlagTile(flag: flag),
+            CountryFlagTile(flag: flag),
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// The booth country flag tile (frame node 1062:12911): a 40×40 rounded tile at
-/// the inline-end (left) of the header. Figma renders a full flag image; the app
-/// renders the country **emoji** (its only flag form), centred on the navy tile.
-class _CountryFlagTile extends StatelessWidget {
-  const _CountryFlagTile({required this.flag});
-
-  final String flag;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      alignment: Alignment.center,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(
-        flag,
-        textDirection: TextDirection.ltr,
-        style: const TextStyle(fontSize: 28, height: 1),
       ),
     );
   }

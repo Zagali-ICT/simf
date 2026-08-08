@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-import '../../sessions/data/seat_map_models.dart';
 import 'staff_endpoints.dart';
 import 'staff_seating_models.dart';
 

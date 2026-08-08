@@ -14,6 +14,7 @@ import 'data/contacts_repository.dart';
 import 'widgets/contacts_empty_state.dart';
 import 'widgets/saved_contact_sheet.dart';
 import 'widgets/saved_contact_tile.dart';
+import 'widgets/error_state.dart';
 
 /// My Contacts (SIMF-FDS-014 §5.6, D-286). **Auth-gated** (Approved only). Lists
 /// the cards the visitor saved (`GET /app/contacts`, resolved on read — no PII
@@ -112,7 +113,7 @@ class _MyContactsScreenState extends ConsumerState<MyContactsScreen> {
     if (_error) {
       return SimfRefreshableMessage(
         onRefresh: _load,
-        child: _ErrorState(
+        child: ErrorState(
           message: l10n.myContactsError,
           onRetry: () => unawaited(_load()),
         ),
@@ -148,27 +149,3 @@ class _MyContactsScreenState extends ConsumerState<MyContactsScreen> {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
-          ],
-        ),
-      ),
-    );
-  }
-}

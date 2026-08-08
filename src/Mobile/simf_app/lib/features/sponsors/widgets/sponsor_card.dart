@@ -6,6 +6,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import 'sponsor_logo.dart';
+import 'badge_box.dart';
 
 /// One sponsor card — frame 922:2824's 72-high row. RTL puts the square logo
 /// badge on the inline-start (physical right), the name + secondary line next
@@ -59,7 +60,7 @@ class SponsorCard extends StatelessWidget {
               // it, and the forward chevron on the far inline-end (physical
               // left). The bundled caret does not auto-mirror, so it keeps
               // pointing left as the design shows.
-              _BadgeBox(
+              BadgeBox(
                 hero: hero,
                 child: SponsorLogo(
                   id: id,
@@ -129,32 +130,3 @@ class SponsorCard extends StatelessWidget {
   }
 }
 
-/// The square logo chip on a sponsor card — frame's 53×53 box. On the gold hero
-/// card it is gold-filled with a navy edge; on a navy premium card it is
-/// navy-filled with a gold edge. Hosts the real [SponsorLogo] (clipped to fill),
-/// falling back to the acronym initials.
-class _BadgeBox extends StatelessWidget {
-  const _BadgeBox({required this.child, required this.hero});
-
-  final Widget child;
-  final bool hero;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 53,
-      height: 53,
-      clipBehavior: Clip.antiAlias,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: hero ? SimfTokens.accent : SimfTokens.navy,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(
-          color: hero ? SimfTokens.navy : SimfTokens.accent,
-          width: SimfTokens.hairline,
-        ),
-      ),
-      child: child,
-    );
-  }
-}

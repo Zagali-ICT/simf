@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import 'role_pill.dart';
 
 /// The moderator desk navy header (Figma 1461:12565): back button (left),
 /// centred RTL title, and the gold role pill (right). Forced LTR so the back
@@ -58,31 +59,10 @@ class ModeratorDeskHeader extends StatelessWidget {
               style: SimfTokens.labelWhiteBoldHero,
             ),
           ),
-          _RolePill(label: badgeLabel),
+          RolePill(label: badgeLabel),
         ],
       ),
     );
   }
 }
 
-class _RolePill extends StatelessWidget {
-  const _RolePill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.center,
-      padding: const EdgeInsets.all(SimfTokens.space2),
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(
-        label,
-        style: SimfTokens.labelWhiteBoldTitle,
-      ),
-    );
-  }
-}

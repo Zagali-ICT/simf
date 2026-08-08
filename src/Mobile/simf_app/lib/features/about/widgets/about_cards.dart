@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import 'about_card.dart';
+import 'card_heading.dart';
 
 /// A detail value's internal reading direction, from its script: an Arabic
 /// value reads RTL; a language-neutral value (a year, a "01-2026 — 04-2026"
@@ -21,11 +23,11 @@ class AboutTextCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Card(
+    return AboutCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _CardHeading(title),
+          CardHeading(title),
           const SizedBox(height: SimfTokens.space2),
           Text(
             body,
@@ -46,11 +48,11 @@ class AboutDetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Card(
+    return AboutCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _CardHeading(title),
+          CardHeading(title),
           const SizedBox(height: SimfTokens.space3),
           for (final (index, (label, value)) in rows.indexed) ...<Widget>[
             if (index > 0) const SizedBox(height: SimfTokens.space2),
@@ -92,11 +94,11 @@ class AboutThemesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Card(
+    return AboutCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _CardHeading(title),
+          CardHeading(title),
           const SizedBox(height: SimfTokens.space3),
           for (final (index, (number, themeTitle, body)) in themes.indexed)
             ...<Widget>[
@@ -134,37 +136,3 @@ class AboutThemesCard extends StatelessWidget {
   }
 }
 
-/// The shared navy-deep card chrome for the About sections.
-class _Card extends StatelessWidget {
-  const _Card({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _CardHeading extends StatelessWidget {
-  const _CardHeading(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      textAlign: TextAlign.start,
-      style: SimfTokens.labelWhiteBoldMd,
-    );
-  }
-}

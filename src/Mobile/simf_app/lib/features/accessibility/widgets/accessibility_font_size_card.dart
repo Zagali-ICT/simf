@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/accessibility_controller.dart';
+import 'size_chip.dart';
 
 /// The "حجم الخط" card (frame 1116:16630): the label over a row of four pill
 /// chips, the selected one filled gold.
@@ -46,7 +47,7 @@ class AccessibilityFontSizeCard extends StatelessWidget {
               for (final (index, (size, label)) in options.indexed) ...<Widget>[
                 if (index > 0) const SizedBox(width: SimfTokens.space2),
                 Expanded(
-                  child: _SizeChip(
+                  child: SizeChip(
                     label: label,
                     selected: size == value,
                     onTap: () => onChanged(size),
@@ -61,53 +62,3 @@ class AccessibilityFontSizeCard extends StatelessWidget {
   }
 }
 
-/// One font-size pill: gold fill when [selected], else a beige-hairline outline.
-class _SizeChip extends StatelessWidget {
-  const _SizeChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        child: Container(
-          height: 36,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? SimfTokens.accent : SimfTokens.transparent,
-            border: selected
-                ? null
-                : Border.all(
-                    color: SimfTokens.beigeBorder,
-                    width: SimfTokens.hairline,
-                  ),
-            borderRadius: BorderRadius.circular(SimfTokens.radius),
-          ),
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            // #16 — the two states are named tokens, not an inline style built
-            // from tokens. Same values: selected = white/12/w600, unselected =
-            // beige/12 at the theme's regular weight.
-            style: selected
-                ? SimfTokens.labelWhiteSemiboldSm
-                : SimfTokens.labelBeigeSm,
-          ),
-        ),
-      ),
-    );
-  }
-}

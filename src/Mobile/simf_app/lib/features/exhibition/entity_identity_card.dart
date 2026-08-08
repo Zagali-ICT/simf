@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
-import '../../core/country_flag.dart';
 import 'entity_link_row.dart';
+import 'widgets/location_line.dart';
+import 'widgets/tier_pill.dart';
 
 /// The borderless navyDeep identity card (Figma 1439:11891): the square logo,
 /// the entity name, the gold "City، Country" line, the centred tier pill and the
@@ -49,7 +50,7 @@ class EntityIdentityCard extends StatelessWidget {
             ),
             if ((locationLine ?? '').trim().isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
-              _LocationLine(text: locationLine!.trim(), countryId: countryId),
+              LocationLine(text: locationLine!.trim(), countryId: countryId),
             ],
             if ((tierPill ?? '').trim().isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
@@ -57,7 +58,7 @@ class EntityIdentityCard extends StatelessWidget {
               // and centre (Figma 1439:11898 — a ~151px content-width pill
               // centred in the card, not a full-width bar). Center escapes the
               // stretch; the Row below sizes to content (MainAxisSize.min).
-              Center(child: _TierPill(label: tierPill!.trim())),
+              Center(child: TierPill(label: tierPill!.trim())),
             ],
             if ((standCode ?? '').trim().isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
@@ -82,84 +83,3 @@ class EntityIdentityCard extends StatelessWidget {
   }
 }
 
-/// The gold "City، Country" line with the country flag (Figma 1439:11895):
-/// SemiBold-14 gold city, 20px flag, 8px gap, flag on the left (RTL).
-class _LocationLine extends StatelessWidget {
-  const _LocationLine({required this.text, required this.countryId});
-
-  final String text;
-  final int? countryId;
-
-  @override
-  Widget build(BuildContext context) {
-    final flag = countryFlagEmoji(countryId);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Flexible(
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: SimfTokens.labelGoldSemibold, // 14
-          ),
-        ),
-        if (flag != null) ...<Widget>[
-          const SizedBox(width: SimfTokens.space2),
-          Text(
-            flag,
-            textDirection: TextDirection.ltr,
-            style: const TextStyle(fontSize: SimfTokens.textXl, height: 1), // 20
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// The full-width tier pill (Figma 1439:11898): beige-10% fill, beige hairline,
-/// radius-8, px-20/py-8, gap-8; the 16px medal glyph at the inline start (right
-/// in RTL, node 1439:11899) then the gold Bold-14 label (node 1439:11903).
-class _TierPill extends StatelessWidget {
-  const _TierPill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space5, // 20
-        vertical: SimfTokens.space2, // 8
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.beigeFill10,
-        borderRadius: BorderRadius.circular(SimfTokens.radius), // 8
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          const Icon(
-            Icons.workspace_premium_outlined,
-            size: 16,
-            color: SimfTokens.accent,
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          Flexible(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: SimfTokens.labelGoldBold, // 14
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

@@ -13,6 +13,8 @@ import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
 import 'widgets/session_filter_tabs.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
+import 'widgets/file_icon.dart';
+import 'widgets/session_summry_button.dart';
 
 /// **Sessions** — App "الجلسات" (Figma 1388:7621, Approved account), reached
 /// from the Home "الجلسات" tile. Sessions grouped by event day, each card a file
@@ -263,7 +265,7 @@ class _PresentationCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: SimfTokens.space3),
-                const _FileIcon(),
+                const FileIcon(),
               ],
             ),
             const SizedBox(height: SimfTokens.space6), // gap-24
@@ -282,7 +284,7 @@ class _PresentationCard extends StatelessWidget {
                   )
                 else
                   const SizedBox.shrink(),
-                _SessionSummryButton(
+                SessionSummryButton(
                   label: l10n.sessionSummary,
                   enabled: summaryEnabled,
                   onTap: () => _openSummary(context),
@@ -296,75 +298,3 @@ class _PresentationCard extends StatelessWidget {
   }
 }
 
-/// The 32px navy file-icon box (Figma 1388:7643 — no border, a 20px beige glyph).
-class _FileIcon extends StatelessWidget {
-  const _FileIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: SimfTokens.requestIconBox,
-      height: SimfTokens.requestIconBox,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.navy,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: const Icon(
-        Icons.description_outlined,
-        size: 20,
-        color: SimfTokens.beigeBorder,
-      ),
-    );
-  }
-}
-
-/// The gold ملخص الجلسة button (Figma 1388:7621) — opens the session summary
-/// (34). When [enabled] is false (no published summary yet) it greys out with
-/// the shell's disabled tokens and stops tapping — inactive, not hidden (owner
-/// 2026-07-14, same treatment as the detail header's ملخص الجلسة button).
-class _SessionSummryButton extends StatelessWidget {
-  const _SessionSummryButton({
-    required this.label,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = enabled ? SimfTokens.surface : SimfTokens.navyDisabledText;
-    final button = Material(
-      color: enabled ? SimfTokens.accent : SimfTokens.navyDisabled,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        onTap: enabled ? onTap : null,
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space2), // p-8
-          child: Text(
-            label,
-            style: TextStyle(
-              color: fg,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-    );
-    // Disabled: a deeper no-op tap recogniser wins the gesture arena over the
-    // card's open-detail InkWell, so tapping an inactive button does nothing
-    // (owner 2026-07-14) rather than falling through to the card.
-    return enabled
-        ? button
-        : GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {},
-            child: button,
-          );
-  }
-}

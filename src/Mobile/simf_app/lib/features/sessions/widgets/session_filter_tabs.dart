@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import 'sessions_pill.dart';
 
 /// The pill-tab bar shared by the session-summaries (Figma 1388:8392),
 /// my-sessions (1388:9067) and presentations (1388:7621) screens: pills with the
@@ -47,7 +48,7 @@ class SessionFilterTabs extends StatelessWidget {
             for (var i = 0; i < labels.length; i++) ...<Widget>[
               if (i > 0) SizedBox(width: gap),
               Expanded(
-                child: _Pill(
+                child: SessionsPill(
                   label: labels[i],
                   selected: i == selectedIndex,
                   icon: icons != null && i < icons!.length ? icons![i] : null,
@@ -69,7 +70,7 @@ class SessionFilterTabs extends StatelessWidget {
           // (no space after الكل). A SizedBox is even and direction-agnostic.
           for (var i = 0; i < labels.length; i++) ...<Widget>[
             if (i > 0) const SizedBox(width: SimfTokens.space2),
-            _Pill(
+            SessionsPill(
               label: labels[i],
               selected: i == selectedIndex,
               onTap: () => onSelected(i),
@@ -81,61 +82,3 @@ class SessionFilterTabs extends StatelessWidget {
   }
 }
 
-class _Pill extends StatelessWidget {
-  const _Pill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.icon,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color fg = selected ? SimfTokens.surface : SimfTokens.beigeBorder;
-    final Widget text = Text(
-      label,
-      textAlign: TextAlign.center,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        color: fg,
-        fontSize: SimfTokens.textSm, // 12
-        fontWeight: FontWeight.w600,
-      ),
-    );
-    return Material(
-      color: selected ? SimfTokens.accent : SimfTokens.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        side: selected
-            ? BorderSide.none
-            : const BorderSide(
-                color: SimfTokens.beigeBorder,
-                width: SimfTokens.hairline,
-              ),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space2), // p-8
-          child: icon == null
-              ? text
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Flexible(child: text),
-                    const SizedBox(width: SimfTokens.space1), // gap-4
-                    Icon(icon, size: 14, color: fg),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-}

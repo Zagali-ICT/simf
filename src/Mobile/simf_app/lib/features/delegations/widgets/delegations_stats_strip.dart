@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/delegation_models.dart';
+import 'delegations_stat.dart';
 
 /// The header stats strip (Figma 1426:10781): a navy card with a faint gold
 /// grid, the invited countries' flags scattered across it, and the two big-gold
@@ -87,7 +88,7 @@ class DelegationsStatsStrip extends StatelessWidget {
               Positioned(
                 left: SimfTokens.space4,
                 bottom: SimfTokens.space3,
-                child: _Stat(
+                child: DelegationsStat(
                   value: countryCount,
                   label: l10n.delegationsCountriesStat,
                   alignEnd: false,
@@ -158,27 +159,3 @@ class _GridPainter extends CustomPainter {
   bool shouldRepaint(_GridPainter oldDelegate) => false;
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({
-    required this.value,
-    required this.label,
-    required this.alignEnd,
-  });
-
-  final int value;
-  final String label;
-  final bool alignEnd;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: <Widget>[
-        Text('$value', style: SimfTokens.labelGoldBoldXl),
-        Text(label, style: SimfTokens.labelBeigeSm),
-      ],
-    );
-  }
-}

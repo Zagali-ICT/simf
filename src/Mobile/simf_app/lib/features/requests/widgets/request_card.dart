@@ -9,6 +9,7 @@ import '../../../app/widgets/simf_svg_icon.dart';
 import '../../../core/utils/saudi_time.dart';
 import '../data/request_models.dart';
 import 'request_status_style.dart';
+import 'icon_box.dart';
 
 /// One expandable request card: the type icon, headline + context line + date,
 /// a status-coloured leading strip, and (when expanded) the status detail and a
@@ -57,7 +58,7 @@ class _RequestCardState extends State<RequestCard> {
               padding: const EdgeInsets.all(SimfTokens.space2),
               child: Row(
                 children: <Widget>[
-                  _IconBox(icon: _kindIcon(item.kind)),
+                  IconBox(icon: _kindIcon(item.kind)),
                   const SizedBox(width: SimfTokens.space2),
                   Expanded(
                     child: Column(
@@ -223,24 +224,3 @@ IconData _kindIcon(AppRequestKind kind) {
   }
 }
 
-/// The gold rounded type-icon box at the inline start of a card (Figma
-/// 1408:9783 — 32px, radius-4, a 16px navy glyph).
-class _IconBox extends StatelessWidget {
-  const _IconBox({required this.icon});
-
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: SimfTokens.requestIconBox,
-      height: SimfTokens.requestIconBox,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Icon(icon, size: 16, color: SimfTokens.navy),
-    );
-  }
-}

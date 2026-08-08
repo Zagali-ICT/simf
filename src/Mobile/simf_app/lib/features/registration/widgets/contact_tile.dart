@@ -1,0 +1,28 @@
+import 'package:flutter/material.dart';
+import '../../../app/theme/tokens.dart';
+
+/// One bordered contact tile (Figma 522:2223). Inert (null [onTap]) until its
+/// BuildConfig contact value is supplied (D-369).
+class ContactTile extends StatelessWidget {
+  const ContactTile({required this.icon, this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(SimfTokens.radius10),
+      child: Container(
+        height: 52,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          border: Border.all(color: SimfTokens.tileBorderNavy, width: 0.8),
+          borderRadius: BorderRadius.circular(SimfTokens.radius10),
+        ),
+        child: Icon(icon, color: SimfTokens.surface, size: 24),
+      ),
+    );
+  }
+}
