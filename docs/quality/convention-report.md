@@ -6,19 +6,11 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 
 | Rule | Findings |
 |------|----------|
-| SIMF-C3 | 17 |
-| **Total** | **17** |
+| SIMF-C3 | 14 |
+| **Total** | **14** |
 
 ## account feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/account/sign_up_interests_screen.dart
-Issue : _buildBody() returning Widget in a 470-line file (limit 400)  (line 303, SIMF-C3)
-Fix : split the file; move this and its state into a widget
-Issue : _buildLoadError() returning Widget in a 470-line file (limit 400)  (line 411, SIMF-C3)
-Fix : split the file; move this and its state into a widget
-Issue : _buildChips() returning Widget in a 470-line file (limit 400)  (line 440, SIMF-C3)
-Fix : split the file; move this and its state into a widget
 
 Issue file : src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart
 Issue : _buildBody() returning Widget in a 1305-line file (limit 400)  (line 650, SIMF-C3)

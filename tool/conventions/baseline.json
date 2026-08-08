@@ -2,9 +2,6 @@
   "version": 1,
   "note": "Fingerprints tolerated at the time of recording. The gate fails on anything NOT in this list. Entries are removed as waves land; none are ever added by hand.",
   "fingerprints": [
-    "SIMF-C3|src/Mobile/simf_app/lib/features/account/sign_up_interests_screen.dart|_buildBody() returning Widget in a 470-line file (limit 400)",
-    "SIMF-C3|src/Mobile/simf_app/lib/features/account/sign_up_interests_screen.dart|_buildChips() returning Widget in a 470-line file (limit 400)",
-    "SIMF-C3|src/Mobile/simf_app/lib/features/account/sign_up_interests_screen.dart|_buildLoadError() returning Widget in a 470-line file (limit 400)",
     "SIMF-C3|src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart|_buildBody() returning Widget in a 1305-line file (limit 400)",
     "SIMF-C3|src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart|_buildDocumentFields() returning List<Widget> in a 1305-line file (limit 400)",
     "SIMF-C3|src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart|_buildFacePhotoField() returning Widget in a 1305-line file (limit 400)",
