@@ -173,7 +173,6 @@ public sealed class DeploymentEnvTemplateTests
                      "SIMF_Ai__OpenAi__ApiKey",
                      "SIMF_Storage__LogDirectory",
                      "SIMF_Api__BaseUrl",
-                     "SIMF_Api__AllowSelfSignedCertificate",
                      "SIMF_Session__LifetimeHours",
                  })
         {
@@ -196,38 +195,27 @@ public sealed class DeploymentEnvTemplateTests
         return values[0];
     }
 
-    /// <summary>The template's VALUES, not just its key names. Api:BaseUrl and
-    /// Api:AllowSelfSignedCertificate have to move together: the flag installs
-    /// DangerousAcceptAnyServerCertificateValidator on the typed clients that
-    /// forward the admin password, the TOTP code and the perm:* bearer token, so
-    /// pairing it with a public origin hands those to whoever answers for that
-    /// name. SimfApiBaseAddress.Resolve refuses the pairing at boot on the
-    /// EFFECTIVE config; this stops the repo recommending it in the first place.
-    /// A server provisioned from an older copy of the overlay is unaffected by a
-    /// template correction, which is why both layers exist. The key-presence
-    /// test above passed throughout the window where the values were wrong.</summary>
+    /// <summary>The trust-all setting is GONE, not merely defaulted to false.
+    /// While it existed, the template shipped it paired with a public BaseUrl and
+    /// the key-presence test above stayed green throughout - a default is a value
+    /// someone can change on a server, and this one disabled certificate
+    /// validation on the clients carrying the admin password, the TOTP code and
+    /// the perm:* bearer token. Deleting the key is what makes that
+    /// unreachable; this stops it being reintroduced as "just a toggle".</summary>
     [Fact]
-    public void The_env_template_never_pairs_the_trust_all_with_a_public_origin()
+    public void The_env_template_does_not_declare_the_retired_trust_all_setting()
     {
         var template = ReadRepoFile("deploy", TemplateName);
-        var entries = EntryPattern.Matches(template);
+        var declared = EntryPattern.Matches(template)
+            .Select(match => match.Groups["name"].Value)
+            .ToList();
 
-        var baseUrl = SingleValue(entries, "SIMF_Api__BaseUrl");
-        var allowSelfSigned = SingleValue(entries, "SIMF_Api__AllowSelfSignedCertificate");
+        Assert.DoesNotContain("SIMF_Api__AllowSelfSignedCertificate", declared);
 
-        // bool.TryParse, not a compare against "true", because that is what
-        // GetValue<bool> does at runtime: it trims, so " true " binds to true and
-        // installs the bypass while a string compare would call it disabled.
-        var trustAll = bool.TryParse(allowSelfSigned, out var parsed) && parsed;
-        var loopback = Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) && uri.IsLoopback;
-
-        Assert.True(
-            !trustAll || loopback,
-            $"{TemplateName} pairs SIMF_Api__AllowSelfSignedCertificate=true with "
-            + $"SIMF_Api__BaseUrl='{baseUrl}', which is not a loopback address. That "
-            + "disables certificate validation on a public origin and exposes the "
-            + "forwarded bearer token to an on-path attacker. Set the flag to false, "
-            + "or point BaseUrl back at loopback.");
+        // BaseUrl stays required, and stays HTTPS: it is the address whose
+        // certificate now has to validate for the CP and Website to start.
+        var baseUrl = SingleValue(EntryPattern.Matches(template), "SIMF_Api__BaseUrl");
+        Assert.StartsWith("https://", baseUrl, StringComparison.Ordinal);
     }
 
     /// <summary>Windows PowerShell 5.1 decodes a BOM-less file as the ANSI
@@ -238,34 +226,28 @@ public sealed class DeploymentEnvTemplateTests
     /// file was fine under pwsh 7 (UTF-8 by default). An operator on Windows
     /// Server therefore ran it and set NOTHING. Pure ASCII is the fix that does
     /// not depend on a BOM surviving an editor round-trip.</summary>
-    /// <summary>The runbook's health probe disables certificate validation so it
-    /// can accept the deployment's own certificate, which cannot match
-    /// "localhost". -HealthUrl is a PARAMETER though, so that allowance has to be
-    /// gated on the address: against a public origin an unvalidated probe lets
-    /// whoever answers for the name return the 200 the script treats as proof the
-    /// deploy is healthy, defeating the verification instead of performing it.
-    /// Same rule the API clients enforce in SimfApiBaseAddress.Resolve.</summary>
+    /// <summary>The runbook's health probe validates the certificate like any
+    /// other client. It used to trust any certificate so it could probe loopback,
+    /// whose certificate cannot match "localhost" - but the probe is the only
+    /// verification the script performs, and an unvalidated one reports a
+    /// deployment healthy on an answer from anything at all. It now probes the
+    /// public origin, where the real certificate applies.
+    /// (CertificateValidationBypassTests enforces the absence repo-wide; this
+    /// pins the probe's own shape.)</summary>
     [Fact]
-    public void The_runbook_only_trusts_any_certificate_on_a_loopback_health_probe()
+    public void The_runbook_health_probe_validates_the_certificate()
     {
         var runbook = ReadRepoFile("deploy", RunbookName);
 
-        // The bypass exists...
-        Assert.Contains(
-            "ServerCertificateValidationCallback = { $true }", runbook, StringComparison.Ordinal);
+        Assert.DoesNotContain("ServerCertificateValidationCallback", runbook, StringComparison.Ordinal);
 
-        // ...and is reached only behind the loopback test.
-        Assert.Contains("([Uri]$HealthUrl).IsLoopback", runbook, StringComparison.Ordinal);
-
-        var guardIndex = runbook.IndexOf("IsLoopback", StringComparison.Ordinal);
-        var bypassIndex = runbook.IndexOf(
-            "ServerCertificateValidationCallback = { $true }", StringComparison.Ordinal);
-
-        Assert.True(
-            guardIndex < bypassIndex,
-            $"{RunbookName} sets the accept-any-certificate callback before testing whether "
-            + "HealthUrl is loopback. The allowance must be gated on the address, not applied "
-            + "unconditionally.");
+        var healthUrl = Regex.Match(runbook, @"\$HealthUrl\s*=\s*""(?<url>[^""]+)""");
+        Assert.True(healthUrl.Success, $"{RunbookName} no longer declares a $HealthUrl default.");
+        Assert.False(
+            new Uri(healthUrl.Groups["url"].Value).IsLoopback,
+            $"{RunbookName} probes {healthUrl.Groups["url"].Value}. A loopback probe cannot "
+            + "validate a certificate issued for the public host, and there is no longer an "
+            + "allowance to skip validation - so the default must be the public origin.");
     }
 
     // The filled overlays are gitignored: they exist only on a provisioned

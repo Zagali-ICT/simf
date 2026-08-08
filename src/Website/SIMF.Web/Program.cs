@@ -43,27 +43,18 @@ builder.Services.AddLocalization(options => options.ResourcesPath = "Resources")
 // PublicEditions).
 builder.Services.AddMemoryCache();
 
-// SIMF_Api__AllowSelfSignedCertificate=true installs
-// DangerousAcceptAnyServerCertificateValidator, which accepts ANY certificate
-// from ANY host - not just a self-signed one. It is only safe against a loopback
-// BaseUrl, and SimfApiTransport.Resolve refuses to boot on any other pairing
-// outside Development. Default false => ordinary TLS validation.
+// The typed client shares one validated API base address - server-to-server.
 //
-// The setting is read ONCE, here, and both the validation and the handler come
-// out of the resulting transport - so this host cannot install a bypass that
-// the validation did not see.
-
-// The typed client shares one validated API transport - server-to-server.
-var apiTransport = SimfApiTransport.Resolve(
-    builder.Configuration["Api:BaseUrl"],
-    builder.Environment.IsDevelopment(),
-    builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate"));
+// No primary handler is configured, which is the point: the client gets the
+// platform's default, with ordinary certificate-chain validation, and there is
+// no setting that can turn that off. See SimfApiBaseAddress.
+var apiBaseUri = SimfApiBaseAddress.Resolve(
+    builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
 
 // The typed client for the SIMF anonymous public-read endpoints.
 // Anonymous, so no bearer token; BaseAddress only — the public endpoints do
 // not require an X-App-Key header in this build.
-builder.Services.AddHttpClient<SimfPublicClient>(client => client.BaseAddress = apiTransport.BaseAddress)
-    .ConfigurePrimaryHttpMessageHandler(apiTransport.CreatePrimaryHandler);
+builder.Services.AddHttpClient<SimfPublicClient>(client => client.BaseAddress = apiBaseUri);
 
 // Resolves the forum event dates from the public OrganizationProfile (cached) and
 // formats the shared bilingual range for the marketing pages, so the date is

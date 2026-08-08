@@ -144,7 +144,7 @@ Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
 
 Until 2026-08-06 there were three scripts, one per service. They wrote to the
 same Machine-scope namespace and overlapped on `ASPNETCORE_ENVIRONMENT`,
-`SIMF_Api__BaseUrl`, `SIMF_Api__AllowSelfSignedCertificate` and
+`SIMF_Api__BaseUrl`, `SIMF_Api__AllowSelfSignedCertificate` (since retired) and
 `SIMF_Storage__LogDirectory`, each noting that "running both is fine, the last
 writer wins". That holds only while the copies agree; edit one and the box
 silently takes whichever ran last. They are now a single file, so a deployment

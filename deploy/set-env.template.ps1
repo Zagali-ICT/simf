@@ -118,22 +118,20 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_SessionRecordingStorage__MaxUploadBytes"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 1073741824 (1 GiB)" }
 
     # --- How CP and Web reach the API -----------------------------------------
-    # AllowSelfSignedCertificate is NOT a "self-signed only" allowance: it installs
-    # DangerousAcceptAnyServerCertificateValidator, which accepts ANY certificate
-    # from ANY host. It is therefore only ever safe on a loopback hop, where there
-    # is no name resolution and nothing to get between the two processes.
+    # SIMF_Api__AllowSelfSignedCertificate is GONE (2026-08-08). It installed
+    # DangerousAcceptAnyServerCertificateValidator on the clients that carry the
+    # admin password, the TOTP code and the perm:* bearer token, so anything that
+    # answered for the configured host received them. It existed because the old
+    # underscore hostnames could not get a public CA certificate; D-868 moved the
+    # estate to simrsnf.com and D-872 installed a real one, which removed the
+    # reason. Setting it now does nothing - the hosts no longer read it, and a
+    # test fails the build if the key comes back.
     #
-    # It stayed on while BaseUrl was https://localhost:12340/, because a loopback
-    # certificate cannot match "localhost". D-868 moved the estate to simrsnf.com
-    # and a real certificate is installed, so the pairing below is now
-    # public origin + ordinary TLS validation, and the trust-all is off.
-    #
-    # These two settings MUST move together. A public BaseUrl with the flag on
-    # means the CP's admin password, TOTP code and perm:* bearer token are handed
-    # to whoever answers for that name. SimfApiBaseAddress.Resolve refuses to boot
-    # on that combination outside Development, and a test asserts the pairing here.
-    [pscustomobject]@{ Name = "SIMF_Api__BaseUrl"; Value = "https://api.simrsnf.com/"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "must be HTTPS outside Development" }
-    [pscustomobject]@{ Name = "SIMF_Api__AllowSelfSignedCertificate"; Value = "false"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "loopback BaseUrl ONLY; false for any public origin" }
+    # The consequence, stated plainly: if the API certificate is expired, missing
+    # or does not match this address, the Control Panel and Website CANNOT reach
+    # the API and there is no switch to make them. That is an outage to fix on
+    # the server. Certificate renewal is now a commitment this deployment has.
+    [pscustomobject]@{ Name = "SIMF_Api__BaseUrl"; Value = "https://api.simrsnf.com/"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "must be HTTPS outside Development; its certificate must validate" }
 
     # --- Meeting confirmation links -------------------------------------------
     # Empty => the speaker double-opt-in email cannot be built, and the Approve /
