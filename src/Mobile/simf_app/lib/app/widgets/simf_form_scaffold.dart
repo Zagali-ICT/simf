@@ -142,7 +142,7 @@ class SimfFormScaffold extends ConsumerWidget {
                     // (profile) places [child] raw so it can use a Material
                     // card for its interactive-tile ink.
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(SimfTokens.space6),
                       decoration: const BoxDecoration(
                         color: SimfTokens.cardBeige,
                         borderRadius: SimfTokens.borderRadiusSmall,

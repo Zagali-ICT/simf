@@ -36,7 +36,7 @@ class SimfAuthSweep extends StatelessWidget {
           height: SimfTokens.simfAuthSweepHeight,
           decoration: BoxDecoration(
             color: SimfTokens.surfaceTint,
-            borderRadius: BorderRadius.circular(40),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSheet),
           ),
         ),
       ),

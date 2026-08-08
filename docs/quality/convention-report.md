@@ -6,10 +6,9 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 
 | Rule | Findings |
 |------|----------|
-| SIMF-C1 | 33 |
 | SIMF-C3 | 98 |
 | SIMF-N2 | 67 |
-| **Total** | **198** |
+| **Total** | **165** |
 
 ## Website feature
 
@@ -111,9 +110,9 @@ Issue : raw hex #244a77  (line 396, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #498fbd  (line 396, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fff  (line 574, SIMF-N2)
-Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #e0e0e0  (line 574, SIMF-N2)
+Fix : theme.tokens.css (the CSS token SSOT)
+Issue : raw hex #fff  (line 574, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #e7e9f1  (line 577, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
@@ -230,8 +229,6 @@ Issue : widget-building method _buildLoadError() returning Widget  (line 921, SI
 Fix : its own file under widgets/
 Issue : widget-building method _buildProfileTypeField() returning Widget  (line 955, SIMF-C3)
 Fix : its own file under widgets/
-Issue : Radius.circular(12)  (line 984, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : widget-building method _buildNationalityField() returning Widget  (line 994, SIMF-C3)
 Fix : its own file under widgets/
 Issue : widget-building method _buildDocumentFields() returning List<Widget>  (line 1129, SIMF-C3)
@@ -247,16 +244,6 @@ Fix : its own file under widgets/
 Issue : widget-building method _buildOrganisationField() returning Widget  (line 1331, SIMF-C3)
 Fix : its own file under widgets/
 
-Issue file : src/Mobile/simf_app/lib/features/account/widgets/auth_chrome.dart
-Issue : Size.fromHeight(48)  (line 31, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
-Issue file : src/Mobile/simf_app/lib/features/account/widgets/interest_chip.dart
-Issue : BorderRadius.circular(999)  (line 26, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-Issue : BorderRadius.circular(999)  (line 32, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
 ## ai_summary feature
 
 
@@ -267,65 +254,25 @@ Fix : its own file under widgets/
 ## app (shared shell) feature
 
 
-Issue file : src/Mobile/simf_app/lib/app/theme/app_theme.dart
-Issue : Size.fromHeight(48)  (line 45, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
-Issue file : src/Mobile/simf_app/lib/app/widgets/simf_form_scaffold.dart
-Issue : EdgeInsets.all(24)  (line 145, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_identity_cell.dart
 Issue : private widget _LogoOrInitials extends StatelessWidget  (line 137, SIMF-C3)
 Fix : its own file under widgets/
 Issue : private widget _InitialsAvatar extends StatelessWidget  (line 171, SIMF-C3)
 Fix : its own file under widgets/
 
-Issue file : src/Mobile/simf_app/lib/app/widgets/simf_language_toggle.dart
-Issue : BorderRadius.circular(12)  (line 59, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-Issue : EdgeInsets.all(4)  (line 63, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-Issue : BorderRadius.circular(12)  (line 66, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
-Issue file : src/Mobile/simf_app/lib/app/widgets/simf_page_shell.dart
-Issue : Radius.circular(40)  (line 454, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_scanner_body.dart
 Issue : widget-building method _buildCameraSection() returning Widget  (line 219, SIMF-C3)
 Fix : its own file under widgets/
-Issue : Size.fromHeight(48)  (line 235, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : widget-building method _buildManual() returning Widget  (line 306, SIMF-C3)
 Fix : its own file under widgets/
-Issue : Size.fromHeight(48)  (line 328, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_scanner_frame.dart
-Issue : BorderRadius.circular(24)  (line 130, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(24)  (line 135, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-Issue : EdgeInsets.fromLTRB(16)  (line 147, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-Issue : EdgeInsets.fromLTRB(16)  (line 147, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-Issue : EdgeInsets.fromLTRB(20)  (line 147, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-Issue : EdgeInsets.fromLTRB(4)  (line 147, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : widget-building method _buildWindow() returning Widget  (line 155, SIMF-C3)
 Fix : its own file under widgets/
-Issue : BorderRadius.circular(16)  (line 157, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : widget-building method _buildScanLine() returning Widget  (line 183, SIMF-C3)
 Fix : its own file under widgets/
 Issue : widget-building method _buildStatusRow() returning Widget  (line 210, SIMF-C3)
 Fix : its own file under widgets/
-Issue : BorderRadius.circular(100)  (line 228, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : private widget _Bracket extends StatelessWidget  (line 240, SIMF-C3)
 Fix : its own file under widgets/
 
@@ -370,25 +317,10 @@ Fix : its own file under widgets/
 
 
 Issue file : src/Mobile/simf_app/lib/features/content/terms_screen.dart
-Issue : BorderRadius.circular(40)  (line 120, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : widget-building method _buildBody() returning Widget  (line 176, SIMF-C3)
 Fix : its own file under widgets/
 Issue : widget-building method _buildContent() returning Widget  (line 206, SIMF-C3)
 Fix : its own file under widgets/
-
-## core feature
-
-
-Issue file : src/Mobile/simf_app/lib/core/session/session_timeout_overlay.dart
-Issue : Size.fromHeight(48)  (line 75, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-Issue : Size.fromHeight(48)  (line 85, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
-Issue file : src/Mobile/simf_app/lib/core/widgets/simf_auth_sweep.dart
-Issue : BorderRadius.circular(40)  (line 39, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 
 ## delegations feature
 
@@ -413,10 +345,6 @@ Fix : its own file under widgets/
 
 ## home feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/home/widgets/carousel_dots.dart
-Issue : BorderRadius.circular(3)  (line 30, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/home/widgets/home_hero_banner.dart
 Issue : private widget _HeroImage extends StatelessWidget  (line 165, SIMF-C3)
@@ -468,14 +396,6 @@ Fix : its own file under widgets/
 Issue : private widget _MySessionCard extends StatelessWidget  (line 178, SIMF-C3)
 Fix : its own file under widgets/
 
-Issue file : src/Mobile/simf_app/lib/features/myarea/widgets/identity_capture_view.dart
-Issue : BorderRadius.circular(3)  (line 115, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
-Issue file : src/Mobile/simf_app/lib/features/myarea/widgets/identity_fallback_view.dart
-Issue : Size.fromHeight(48)  (line 45, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
 ## news feature
 
 
@@ -489,13 +409,6 @@ Fix : its own file under widgets/
 Issue file : src/Mobile/simf_app/lib/features/notifications/notifications_screen.dart
 Issue : widget-building method _buildBody() returning Widget  (line 278, SIMF-C3)
 Fix : its own file under widgets/
-
-## onboarding feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/onboarding/widgets/onboarding_dots.dart
-Issue : BorderRadius.circular(999)  (line 35, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 
 ## questions feature
 
@@ -514,18 +427,6 @@ Issue : widget-building method _buildStatusView() returning Widget  (line 129, S
 Fix : its own file under widgets/
 Issue : widget-building method _buildError() returning Widget  (line 216, SIMF-C3)
 Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/registration/registration_success_screen.dart
-Issue : BorderRadius.circular(40)  (line 66, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
-Issue file : src/Mobile/simf_app/lib/features/registration/widgets/registration_sign_out_link.dart
-Issue : Size.fromHeight(36)  (line 22, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
-Issue file : src/Mobile/simf_app/lib/features/registration/widgets/registration_success_actions.dart
-Issue : Size.fromHeight(48)  (line 39, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 
 ## requests feature
 
@@ -590,10 +491,6 @@ Issue file : src/Mobile/simf_app/lib/features/speakers/speakers_screen.dart
 Issue : widget-building method _buildBody() returning Widget  (line 93, SIMF-C3)
 Fix : its own file under widgets/
 
-Issue file : src/Mobile/simf_app/lib/features/speakers/widgets/speaker_avatar.dart
-Issue : EdgeInsets.all(2.77)  (line 50, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-
 ## sponsors feature
 
 
@@ -624,8 +521,6 @@ Issue : widget-building method _buildEmpty() returning Widget  (line 261, SIMF-C
 Fix : its own file under widgets/
 Issue : widget-building method _buildMap() returning Widget  (line 271, SIMF-C3)
 Fix : its own file under widgets/
-Issue : EdgeInsets.all(200)  (line 287, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/venuemap/widgets/venue_map_info_card.dart
 Issue : private widget _LogoBadge extends StatelessWidget  (line 171, SIMF-C3)

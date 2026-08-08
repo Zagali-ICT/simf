@@ -117,7 +117,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                 height: SimfTokens.termsScreenHeightMd,
                 decoration: BoxDecoration(
                   color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(40),
+                  borderRadius: BorderRadius.circular(SimfTokens.radiusSheet),
                 ),
               ),
             ),

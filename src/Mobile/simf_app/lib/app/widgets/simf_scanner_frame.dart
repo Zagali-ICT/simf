@@ -127,12 +127,12 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         color: SimfTokens.scannerCard,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusScanner),
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: SimfTokens.scrimBlack25,
             blurRadius: SimfTokens.simfScannerFrameBlurRadius,
-            offset: Offset(0, 24),
+            offset: Offset(0, SimfTokens.scannerGlowOffset),
           ),
         ],
       ),
@@ -144,7 +144,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
             child: _buildWindow(windowHeight),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+            padding: const EdgeInsets.fromLTRB(SimfTokens.space4, SimfTokens.space5, SimfTokens.space4, SimfTokens.space1),
             child: _buildStatusRow(),
           ),
         ],
@@ -154,7 +154,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
 
   Widget _buildWindow(double windowHeight) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
       child: SizedBox(
         height: windowHeight,
         child: Stack(
@@ -225,7 +225,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
           ),
           const SizedBox(height: SimfTokens.space2),
           ClipRRect(
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusPillSm),
             child: const SizedBox(
               height: SimfTokens.simfScannerFrameHeightSm,
               child: ColoredBox(color: SimfTokens.scannerTrack),

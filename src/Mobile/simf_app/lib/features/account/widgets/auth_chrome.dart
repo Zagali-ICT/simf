@@ -28,7 +28,7 @@ class AuthAltButton extends StatelessWidget {
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         side: const BorderSide(color: SimfTokens.beigeBorder),
-        minimumSize: const Size.fromHeight(48),
+        minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
         shape: const RoundedRectangleBorder(
           borderRadius: SimfTokens.borderRadiusSmall,
         ),
@@ -57,7 +57,7 @@ class AuthAltButton extends StatelessWidget {
 final ButtonStyle authSubmitButtonStyle = FilledButton.styleFrom(
   backgroundColor: SimfTokens.accent,
   disabledBackgroundColor: SimfTokens.accent.withValues(alpha: 0.5),
-  minimumSize: const Size.fromHeight(48),
+  minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
   shape: const RoundedRectangleBorder(
     borderRadius: SimfTokens.borderRadiusSmall,
   ),

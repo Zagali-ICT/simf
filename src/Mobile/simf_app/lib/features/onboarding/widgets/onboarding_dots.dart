@@ -32,7 +32,7 @@ class OnboardingDots extends StatelessWidget {
               color: i == activeIndex
                   ? SimfTokens.beigeBorder
                   : SimfTokens.goldSoftFill50,
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(SimfTokens.radiusPill),
             ),
           ),
       ],

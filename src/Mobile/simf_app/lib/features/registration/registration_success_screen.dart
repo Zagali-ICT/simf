@@ -63,7 +63,7 @@ class RegistrationSuccessScreen extends ConsumerWidget {
                 height: SimfTokens.registrationSuccessScreenHeight,
                 decoration: BoxDecoration(
                   color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(40),
+                  borderRadius: BorderRadius.circular(SimfTokens.radiusSheet),
                 ),
               ),
             ),

@@ -112,7 +112,7 @@ class LiveCaptureView extends StatelessWidget {
         height: SimfTokens.identityCaptureViewHeightSm,
         decoration: BoxDecoration(
           color: done ? SimfTokens.accent : SimfTokens.beigeFill50,
-          borderRadius: BorderRadius.circular(3),
+          borderRadius: BorderRadius.circular(SimfTokens.radiusDot),
         ),
       );
 

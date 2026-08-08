@@ -56,14 +56,14 @@ class SimfLanguageToggle extends StatelessWidget {
         child: InkWell(
           key: const ValueKey<String>('languageToggle'),
           onTap: busy ? null : onPressed,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
           child: Container(
             width: SimfTokens.simfLanguageToggleWidth,
             height: SimfTokens.space6,
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(SimfTokens.space1),
             decoration: BoxDecoration(
               color: SimfTokens.navyDeep,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
             ),
             // Figma 1967:3661 also has a 10% inset top shadow; it is
             // imperceptible on the navy fill and, as the pill is shared

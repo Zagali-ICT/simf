@@ -19,7 +19,7 @@ class RegistrationSignOutLink extends StatelessWidget {
     return TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(
-        minimumSize: const Size.fromHeight(36),
+        minimumSize: const Size.fromHeight(SimfTokens.buttonHeightCompact),
         foregroundColor: SimfTokens.beigeBorder,
       ),
       child: Text(

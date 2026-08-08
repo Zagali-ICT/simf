@@ -1299,4 +1299,40 @@ class SimfTokens {
   static const double venueMapInfoCardSizeSm = 18;
   static const double venueMapScreenWidth = 80;
   static const double websiteLinkSize = 16;
+
+  // ── Shared shape + control metrics (SIMF-CQP-001 W4d) ──────────────────
+  /// Standard full-width button height (the auth CTA, the scanner actions, the
+  /// session-timeout dialog): 7 sites shared this number.
+  static const double buttonHeight = 48;
+
+  /// The shorter secondary/text-button height (registration sign-out link).
+  static const double buttonHeightCompact = 36;
+
+  /// A fully-rounded pill. The value only has to exceed half the box height;
+  /// the NAME is what says "pill", which `999` never did.
+  static const double radiusPill = 999;
+
+  /// The same intent at a smaller magnitude, where the box is short enough that
+  /// 100 already rounds it fully (scanner status chip).
+  static const double radiusPillSm = 100;
+
+  /// The large sheet/overlay corner (auth sweep, terms sheet, page-shell body,
+  /// registration success).
+  static const double radiusSheet = 40;
+
+  /// The scanner viewfinder card corner.
+  static const double radiusScanner = 24;
+
+  /// A page-dot corner: small enough to read as a rounded bar, not a circle.
+  static const double radiusDot = 3;
+
+  /// Decorative-blur offset behind the scanner frame.
+  static const double scannerGlowOffset = 24;
+
+  /// The venue map's pan margin around the plan, so the edges stay reachable.
+  static const double venueMapPanMargin = 200;
+
+  /// The speaker avatar's ring inset (off-scale, from the Figma frame).
+  static const double avatarRingInset = 2.77;
+
 }

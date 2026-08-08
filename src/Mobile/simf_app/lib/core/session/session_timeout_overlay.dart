@@ -72,7 +72,7 @@ class SessionTimeoutOverlay extends StatelessWidget {
                                   onPressed: onSignOut,
                                   style: TextButton.styleFrom(
                                     foregroundColor: SimfTokens.beigeBorder,
-                                    minimumSize: const Size.fromHeight(48),
+                                    minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
                                   ),
                                   child: Text(l10n.signOutLink),
                                 ),
@@ -82,7 +82,7 @@ class SessionTimeoutOverlay extends StatelessWidget {
                                 child: FilledButton(
                                   onPressed: onStaySignedIn,
                                   style: FilledButton.styleFrom(
-                                    minimumSize: const Size.fromHeight(48),
+                                    minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
                                   ),
                                   child: Text(l10n.sessionStaySignedIn),
                                 ),

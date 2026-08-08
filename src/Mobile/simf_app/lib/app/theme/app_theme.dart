@@ -42,7 +42,7 @@ class SimfTheme {
         style: FilledButton.styleFrom(
           backgroundColor: SimfTokens.accent,
           foregroundColor: SimfTokens.surface,
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           ),
@@ -121,7 +121,7 @@ class SimfTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: SimfTokens.surface,
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
           side: const BorderSide(color: SimfTokens.beigeBorder),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -229,7 +229,7 @@ class SimfTheme {
         style: FilledButton.styleFrom(
           backgroundColor: SimfTokens.hcLightInk,
           foregroundColor: SimfTokens.hcLightSurface,
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radius),
           ),
@@ -275,7 +275,7 @@ class SimfTheme {
         style: FilledButton.styleFrom(
           backgroundColor: SimfTokens.hcDarkInk,
           foregroundColor: SimfTokens.hcDarkSurface,
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radius),
           ),

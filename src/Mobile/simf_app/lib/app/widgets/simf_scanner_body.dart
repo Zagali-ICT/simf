@@ -232,7 +232,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
         style: OutlinedButton.styleFrom(
           foregroundColor: SimfTokens.accent,
           side: const BorderSide(color: SimfTokens.accent),
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
         ),
       );
     }
@@ -325,7 +325,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
           // Disabled (not a spinner) while busy: an onCode that opens a modal
           // stays pending, and an infinite spinner would hang pumpAndSettle.
           onPressed: _processing ? null : _submitManual,
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(SimfTokens.buttonHeight)),
           child: Text(widget.continueLabel),
         ),
       ],

@@ -981,7 +981,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       isScrollControlled: true,
       backgroundColor: SimfTokens.cardBeige,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(SimfTokens.radiusLarge)),
       ),
       builder: (_) => LookupSearchSheet(
         options: options,

@@ -36,7 +36,7 @@ class RegistrationSuccessActions extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             side: const BorderSide(color: SimfTokens.accent),
             foregroundColor: SimfTokens.surface,
-            minimumSize: const Size.fromHeight(48),
+            minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
             ),

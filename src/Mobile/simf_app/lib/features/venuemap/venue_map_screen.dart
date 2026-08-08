@@ -284,7 +284,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
             transformationController: _transform,
             minScale: 0.3,
             maxScale: 4,
-            boundaryMargin: const EdgeInsets.all(200),
+            boundaryMargin: const EdgeInsets.all(SimfTokens.venueMapPanMargin),
             child: SizedBox(
               width: _canvas,
               height: _canvas,

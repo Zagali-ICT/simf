@@ -23,13 +23,13 @@ class InterestChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
+      borderRadius: BorderRadius.circular(SimfTokens.radiusPill),
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4, vertical: SimfTokens.space2),
         decoration: BoxDecoration(
           color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(SimfTokens.radiusPill),
           border: Border.all(
             width: SimfTokens.interestChipWidth,
             color: selected ? SimfTokens.accent : SimfTokens.chipBorderNavy,

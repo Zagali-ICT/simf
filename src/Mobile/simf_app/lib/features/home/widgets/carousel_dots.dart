@@ -27,7 +27,7 @@ class CarouselDots extends StatelessWidget {
             color: active
                 ? SimfTokens.accent
                 : SimfTokens.beigeBorder.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusDot),
           ),
         );
       }),
