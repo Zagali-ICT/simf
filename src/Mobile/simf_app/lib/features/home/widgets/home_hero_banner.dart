@@ -10,8 +10,8 @@ import '../../../core/organization_profile/organization_profile.dart';
 import '../../banners/data/banner_models.dart';
 import 'carousel_dots.dart';
 import 'hero_background_video.dart';
-import 'hero_overlay.dart';
 import 'hero_image.dart';
+import 'hero_overlay.dart';
 
 /// The home hero (replaces the static discover banner, #43): the forum edition —
 /// name (gold), theme, date range and location — overlaid on a rotating strip of

@@ -4,6 +4,7 @@ import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/delegation_models.dart';
 import 'delegations_stat.dart';
+import 'flag_spot.dart';
 
 /// The header stats strip (Figma 1426:10781): a navy card with a faint gold
 /// grid, the invited countries' flags scattered across it, and the two big-gold
@@ -40,7 +41,6 @@ class DelegationsStatsStrip extends StatelessWidget {
   /// The transparent padding around each flag glyph that widens the tap target
   /// without moving the glyph — the [Positioned] offset is pulled back by the
   /// same amount, so an unselected flag renders at the exact original pixel.
-  static const double _hitPad = 9;
 
   /// The Figma's decorative scatter positions (relative to the strip), filled
   /// with the real invited-country flags so the map reflects the data.
@@ -77,9 +77,9 @@ class DelegationsStatsStrip extends StatelessWidget {
               ),
               for (var i = 0; i < count; i++)
                 Positioned(
-                  left: _spots[i].dx * width - _hitPad,
-                  top: _spots[i].dy * height - _hitPad,
-                  child: _FlagSpot(
+                  left: _spots[i].dx * width - flagSpotHitPad,
+                  top: _spots[i].dy * height - flagSpotHitPad,
+                  child: FlagSpot(
                     flag: flagItems[i].flagEmoji,
                     selected: flagItems[i].countryCode == selectedCountryCode,
                     onTap: () => onFlagTap(flagItems[i].countryCode),
@@ -97,41 +97,6 @@ class DelegationsStatsStrip extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-/// One scattered flag glyph as a tap target. The glyph sits inside
-/// [DelegationsStatsStrip._hitPad] of transparent padding (widening the touch
-/// area); when [selected] the padding box is ringed in gold to mark the active
-/// filter.
-class _FlagSpot extends StatelessWidget {
-  const _FlagSpot({
-    required this.flag,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String flag;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(DelegationsStatsStrip._hitPad),
-        decoration: selected
-            ? BoxDecoration(
-                color: SimfTokens.goldFill6,
-                border: Border.all(color: SimfTokens.accent),
-                borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-              )
-            : null,
-        child: Text(flag, style: const TextStyle(fontSize: SimfTokens.delegationsStatsStripFontSize)),
       ),
     );
   }
@@ -158,4 +123,3 @@ class _GridPainter extends CustomPainter {
   @override
   bool shouldRepaint(_GridPainter oldDelegate) => false;
 }
-

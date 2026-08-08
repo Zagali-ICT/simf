@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
-import '../../../core/utils/gregorian_month_names.dart';
-import '../../../core/utils/weekday_names.dart';
 import '../data/session_models.dart';
 import 'category_pill.dart';
 import 'header_action_button.dart';
 import 'index_badge.dart';
-import 'meta_item.dart';
 import 'session_meta_row.dart';
 
 /// The session header card (frame 889:2716): a navy box holding the title +

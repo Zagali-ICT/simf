@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/utils/refresh.dart';
-import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
-import 'widgets/hub_row.dart';
 import 'widgets/hub_list.dart';
 
 /// D-485 — **Join a session** hub (`/sessions/join`, approved Visitor). The

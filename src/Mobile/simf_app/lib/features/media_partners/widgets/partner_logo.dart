@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_logo_image.dart';
-import '../data/media_partner_models.dart';
 import 'initials_tile.dart';
 
 class PartnerLogo extends StatelessWidget {

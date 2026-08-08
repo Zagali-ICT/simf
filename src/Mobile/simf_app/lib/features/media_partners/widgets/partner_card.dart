@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_image_viewer.dart';
-import '../../../app/widgets/simf_logo_image.dart';
 import '../../../app/widgets/simf_page_shell.dart';
-import 'initials_tile.dart';
 import 'partner_logo.dart';
 
 /// One partner — frame node 958:2263: the navy KSA card with a centred gold

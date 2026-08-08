@@ -6,8 +6,8 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 
 | Rule | Findings |
 |------|----------|
-| SIMF-C3 | 25 |
-| **Total** | **25** |
+| SIMF-C3 | 19 |
+| **Total** | **19** |
 
 ## account feature
 
@@ -46,20 +46,6 @@ Fix : split the file; move this and its state into a widget
 Issue : _buildOrganisationField() returning Widget in a 1393-line file (limit 400)  (line 1331, SIMF-C3)
 Fix : split the file; move this and its state into a widget
 
-## contacts feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/contacts/scan_contact_screen.dart
-Issue : private widget _ContactPreviewSheet extends ConsumerStatefulWidget  (line 147, SIMF-C3)
-Fix : its own file under widgets/
-
-## delegations feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/delegations/widgets/delegations_stats_strip.dart
-Issue : private widget _FlagSpot extends StatelessWidget  (line 105, SIMF-C3)
-Fix : its own file under widgets/
-
 ## live feature
 
 
@@ -67,27 +53,12 @@ Issue file : src/Mobile/simf_app/lib/features/live/live_broadcast_screen.dart
 Issue : _buildBody() returning Widget in a 508-line file (limit 400)  (line 275, SIMF-C3)
 Fix : split the file; move this and its state into a widget
 
-## myarea feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/myarea/my_sessions_screen.dart
-Issue : private widget _TabbedList extends StatelessWidget  (line 123, SIMF-C3)
-Fix : its own file under widgets/
-Issue : private widget _MySessionCard extends StatelessWidget  (line 178, SIMF-C3)
-Fix : its own file under widgets/
-
 ## sessions feature
 
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/session_detail_screen.dart
 Issue : _buildBody() returning Widget in a 510-line file (limit 400)  (line 424, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/session_presentations_screen.dart
-Issue : private widget _Body extends StatelessWidget  (line 103, SIMF-C3)
-Fix : its own file under widgets/
-Issue : private widget _PresentationCard extends StatelessWidget  (line 198, SIMF-C3)
-Fix : its own file under widgets/
 
 ## staff feature
 

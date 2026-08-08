@@ -11,6 +11,7 @@ import 'package:simf_app/features/sessions/data/presentation_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/session_presentations_screen.dart';
+import 'package:simf_app/features/sessions/data/presentation_summary_gate.dart';
 
 PresentationItem _item(String id, String title) => PresentationItem(
       id: id,

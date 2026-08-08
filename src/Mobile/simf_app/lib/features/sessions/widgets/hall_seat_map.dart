@@ -4,9 +4,9 @@ import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/seat_map_models.dart';
 import 'legend.dart';
+import 'seat_grid_row.dart';
 import 'stage_bar.dart';
 import 'tier_legend.dart';
-import 'seat_grid_row.dart';
 
 /// The hall seat-map card shared by **My-Seat** (Figma 898:2873 — read-only)
 /// and the **Seat-Picker** (D-485 — selectable): the gold-bordered stage band,

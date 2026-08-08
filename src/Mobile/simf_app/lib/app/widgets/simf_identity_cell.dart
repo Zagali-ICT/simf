@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/country_flag.dart';
 import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
+import 'identity_logo_or_initials.dart';
 import 'simf_page_shell.dart';
 import 'simf_svg_icon.dart';
-import 'identity_logo_or_initials.dart';
 
 /// A shared identity row (Build #13): the navy [SimfCard] chrome carrying — in
 /// RTL — a 44x44 logo/photo tile (or a gold initials avatar) at the inline start,

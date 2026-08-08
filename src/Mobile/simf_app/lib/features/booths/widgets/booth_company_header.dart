@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_logo_image.dart';
 import '../../../core/country_flag.dart';
-import '../../../core/net/asset_urls.dart';
 import '../../venuemap/data/venue_map_models.dart';
 import 'booth_logo_tile.dart';
 import 'country_flag_tile.dart';

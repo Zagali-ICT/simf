@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_logo_image.dart';
-import '../../../core/net/asset_urls.dart';
 import '../data/venue_map_models.dart';
 import 'venue_map_logo_badge.dart';
 
