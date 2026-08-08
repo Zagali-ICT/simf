@@ -48,6 +48,14 @@ List<Violation> analyseRazorFile({
   return found;
 }
 
+/// A custom-property DEFINITION: `--name: #rrggbb`.
+///
+/// A stylesheet has to write the hex somewhere, and that somewhere is the token
+/// block. Flagging the definition would make the rule unsatisfiable, exactly as
+/// flagging a named Dart constant did for C1. The finding is a hex at a USE
+/// site, which bypasses the token.
+final RegExp _tokenDefinition = RegExp(r'--[\w-]+\s*:\s*#[0-9a-fA-F]{3,8}');
+
 List<Violation> analyseCssFile({
   required String posixPath,
   required String content,
@@ -56,7 +64,10 @@ List<Violation> analyseCssFile({
 
   final List<Violation> found = <Violation>[];
   final String stripped = content.replaceAll(_cssComment, '');
-  final List<String> lines = stripped.split('\n');
+  final List<String> lines = stripped
+      .split('\n')
+      .map((String line) => line.replaceAll(_tokenDefinition, ''))
+      .toList();
 
   for (int i = 0; i < lines.length; i++) {
     for (final RegExpMatch match in _hexColour.allMatches(lines[i])) {

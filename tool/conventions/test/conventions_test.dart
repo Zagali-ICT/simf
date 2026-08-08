@@ -304,6 +304,26 @@ class LiveRepository {}
       );
     });
 
+    // A stylesheet must write the hex SOMEWHERE, and that somewhere is its
+    // token block. Same principle as C1 skipping a named Dart constant.
+    test('N2 fires on a USE site but not on a token definition', () {
+      const String path = 'src/Website/SIMF.Web/wwwroot/css/landing.css';
+      expect(
+        analyseCssFile(
+          posixPath: path,
+          content: ':root { --gold: #e8c060; }',
+        ),
+        isEmpty,
+      );
+      expect(
+        analyseCssFile(
+          posixPath: path,
+          content: '.ln-chip { background: #e8c060; }',
+        ),
+        hasLength(1),
+      );
+    });
+
     test('N2 is silent inside theme.tokens.css, the token SSOT', () {
       expect(
         analyseCssFile(
