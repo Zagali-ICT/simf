@@ -356,6 +356,34 @@ stages:
         if ($LASTEXITCODE -ne 0) { throw "flutter analyze found errors in SIMF Dart sources (exit $LASTEXITCODE)." }
       displayName: 'flutter analyze (lib + test + integration_test + packages)'
 
+    # --- Convention gate (SIMF-CQP-001). Detects the code-quality classes that
+    #     NO Dart lint can see - magic numbers, hardcoded endpoint paths,
+    #     private-widget placement, un-localized strings, bundled-asset paths,
+    #     models declared inside repository files, and raw form controls where a
+    #     shared component exists. Those seven classes are exactly what the
+    #     August 2026 external review reported by hand; this step is how that
+    #     review stops arriving as a document.
+    #
+    #     Deliberately SEPARATE from `flutter analyze` above, which stays
+    #     advisory (see the ADOPTION note in analysis_options.yaml). This step is
+    #     FATAL from day one because it gates against a recorded baseline, so
+    #     "no NEW violations" is satisfiable immediately while the remediation
+    #     waves land. It tightens to --strict (zero violations) at Wave 6.
+    #
+    #     The checker's own test suite runs first: a broken checker would
+    #     otherwise pass everything silently, which is the failure mode this
+    #     whole gate exists to prevent.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        Set-Location '$(Build.SourcesDirectory)/tool/conventions'
+        dart pub get
+        if ($LASTEXITCODE -ne 0) { throw "dart pub get failed for the convention checker (exit $LASTEXITCODE)." }
+        dart test
+        if ($LASTEXITCODE -ne 0) { throw "The convention checker's own tests failed (exit $LASTEXITCODE) - fix the checker before trusting its verdict." }
+        dart run bin/simf_conventions.dart --check
+        if ($LASTEXITCODE -ne 0) { throw "NEW convention violations introduced. See the list above and docs/SIMF-CQP-001-Code-Quality-Programme.md section 5 for where each literal belongs." }
+      displayName: 'Convention gate (SIMF-CQP-001)'
+
     # Test gate. The two local packages are green (15 + 46 tests as of
     # 2026-07-26). The app suite runs 1096 tests, of which 2 in
     # test/features/sessions/my_seat_screen_test.dart are RED on main

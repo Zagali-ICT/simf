@@ -1,0 +1,23 @@
+name: simf_conventions
+description: >-
+  SIMF convention checker. Detects the code-quality violation classes that no
+  Dart lint can see (magic numbers, hardcoded endpoints, private-widget
+  placement, un-localized strings, asset-path literals) and reports them in the
+  same shape as an external code review, so the gate runs in CI instead of
+  arriving as a PDF.
+publish_to: none
+version: 1.0.0
+
+# Deliberately a SEPARATE package with its own lockfile. The checker pins
+# `analyzer` directly; the Flutter app pins it transitively through
+# very_good_analysis. Keeping them in one pubspec would make every analyzer
+# bump a negotiation between the linter and the app it lints.
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+
+dependencies:
+  analyzer: ^9.0.0
+  path: ^1.9.0
+
+dev_dependencies:
+  test: ^1.25.0
