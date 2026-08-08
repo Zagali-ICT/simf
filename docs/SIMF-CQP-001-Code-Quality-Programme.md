@@ -274,21 +274,34 @@ unstated.
 The gate progresses in three stages: no new violations, then zero violations in
 each feature as its wave lands, then zero across the repository at Wave 6.
 
-## 10.1 The remaining 18 findings, and why they are not being forced to zero
+## 10.1 The remaining 14 findings, and why they are not being forced to zero
 
-Eight of the nine rules report zero. SIMF-C3 reports 18, all of them `_build*`
-methods in five screens:
+Eight of the nine rules report zero. SIMF-C3 reports 14, all of them `_build*`
+methods in three screens:
 
 | Screen | Lines | Findings |
 |--------|-------|----------|
-| `sign_up_visitor_screen.dart` | 1305 | 10 |
+| `sign_up_visitor_screen.dart` | 1304 | 10 |
 | `staff/register_visitor_screen.dart` | 1262 | 3 |
-| `sign_up_interests_screen.dart` | 469 | 3 |
-| `live_broadcast_screen.dart` | 507 | 1 |
-| `session_detail_screen.dart` | 468 | 1 |
+| `session_detail_screen.dart` | 467 | 1 |
 
-Every one of these methods reads instance state. The state each would need as a
-widget was measured rather than estimated:
+Three of the six screens originally on this list were split and are now under
+the limit: `sign_in_screen` (418 to 331), `live_broadcast_screen` (507 to 332)
+and `sign_up_interests_screen` (469 to 320).
+
+The rule applied in each case, stated so it can be applied again:
+
+> Extract when the extracted thing is large relative to what it needs. Leave it
+> when the parameter list would be longer than the body it justifies.
+
+`live_broadcast_screen`'s `_content` was 165 lines against four dependencies,
+so it became a widget. `session_detail_screen`'s `_detailBody` is 33 lines
+against thirteen, so it did not. The remaining side-actions on that screen are
+three-to-eleven-line wrappers around a dialog and two snackbars: moving them
+would add a file and remove nothing.
+
+The two 1300-line registration screens are the real remainder, and the ratio is
+against extraction there too. The state each field builder needs was measured:
 
 | Method | Distinct pieces of state |
 |--------|--------------------------|
@@ -297,21 +310,19 @@ widget was measured rather than estimated:
 | `_buildPlateField` | 8 |
 | `_buildIdImageField` | 6 |
 
-Converting these to widgets means eight or nine constructor parameters each,
-several of them callbacks. That satisfies the rule and makes the code harder to
-read: the same coupling, expressed with more ceremony. It would be a change made
-for the metric rather than for the reader.
+As widgets these take eight or nine constructor parameters each, several of them
+callbacks: the same coupling, expressed with more ceremony, and harder to read.
+That is a change made for the metric rather than for the reader.
 
-What has been taken out of these screens is everything that genuinely did not
-belong in a widget, and each move was verified by tests that could not exist
-before it:
+Everything in those screens that genuinely did not belong in a widget has been
+taken out, and each move is covered by tests that could not exist before it:
 
 * the 8 visitor-profile validators, now pure functions with 16 tests;
-* the sign-in validators, with the load-bearing rule that sign-in does NOT
-  apply the sign-up password policy, pinned by a test;
+* the sign-in validators, including the rule that sign-in does NOT apply the
+  sign-up password policy, pinned by a test;
 * the 100-line device-key sign-in flow;
-* the session-detail eligibility rules, with 7 tests covering the defect ids
-  they were filed under.
+* the session-detail eligibility rules, with 7 tests covering their defect ids;
+* the live-broadcast presentation helpers.
 
 What remains is the screens themselves. `sign_up_visitor_screen` collects around
 twenty fields spanning identity, documents, contact, vehicle and photographs in
@@ -320,7 +331,7 @@ state, which is a redesign of the highest-traffic registration flow in the
 product, not a refactor. It needs its own decision, its own plan and its own
 verification.
 
-These 18 are therefore recorded as a **known, argued exception** rather than
+These 14 are therefore recorded as a **known, argued exception** rather than
 churned to zero. The gate holds them at exactly this count, so the number cannot
 grow quietly while the redesign is decided.
 

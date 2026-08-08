@@ -59,7 +59,7 @@ mechanically and is run before every delivery. Its current output is in
 |----------|------|-------|-----|----------|
 | Raw numeric literals | SIMF-C1 | 599 | **0** | Fixed, partly differently, see 5.1 |
 | Hardcoded endpoint and asset URLs | SIMF-C2 | 123 | **0** | Fixed differently, see 5.2 |
-| Private widgets and build methods | SIMF-C3 | 192 | 18 | Fixed as proposed, see 5.3 and 5.6 |
+| Private widgets and build methods | SIMF-C3 | 192 | 14 | Fixed as proposed, see 5.3 and 5.6 |
 | Hardcoded user facing strings | SIMF-C4 | 6 | **0** | Fixed as proposed |
 | Hardcoded bundled asset paths | SIMF-C5 | 31 | **0** | Fixed as proposed |
 | Models inside repository files | SIMF-C6 | 9 | **0** | Fixed as proposed |
@@ -70,8 +70,8 @@ covers the Control Panel and Website, which were not in the review: 17 inline
 style attributes (SIMF-N1, now 0) and 67 raw hex colours outside the token
 stylesheet (SIMF-N2, now 0).
 
-**1056 findings at the start, 18 now.** Every private widget class named in the
-review has its own file. The 18 remaining are `_build*` methods in five large
+**1056 findings at the start, 14 now.** Every private widget class named in the
+review has its own file. The 14 remaining are `_build*` methods in three large
 screens, held as an argued exception rather than forced to zero; section 5.6
 explains why, and SIMF-CQP-001 section 10.1 records it in full.
 
@@ -152,9 +152,10 @@ and contains no numeric literal. Its only valid finding is the private widget
 one, which is accepted. Items in this class are listed per wave in section 6
 with the position "Already correct".
 
-### 5.6 The 18 findings not forced to zero
+### 5.6 The 14 findings not forced to zero
 
-All 18 are `_build*` methods in five screens. Every one reads instance state,
+All 14 are `_build*` methods in three screens. Three of the six screens
+originally on this list were split and are now under the limit. Every one reads instance state,
 so converting it to a widget means passing that state through a constructor.
 The cost was measured, not estimated: `_buildOrganisationField` reads 9
 distinct pieces of state, `_buildProfileTypeField` and `_buildPlateField` 8
@@ -175,7 +176,7 @@ It is worth doing and it needs its own decision and its own verification; doing
 it inside a cleanup pass would be the wrong way to change a flow that matters
 this much.
 
-The gate holds these 18 at exactly this count, so the number cannot grow while
+The gate holds these 14 at exactly this count, so the number cannot grow while
 that decision is taken.
 
 ### 5.7 Where our rules were wrong, not the code
