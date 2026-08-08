@@ -6,7 +6,7 @@ import 'package:simf_app/core/validation/required_validation.dart';
 ///
 /// Pure functions of their input, so they read without the screen around them
 /// and are testable without pumping the form. Separate from
-/// `visitor_profile_validators.dart` on purpose: signing IN and registering a
+/// the visitor-profile validators on purpose: signing IN and registering a
 /// profile answer different questions about the same field.
 String? validateSignInEmail(String? value, AppL10n l10n) {
   final email = value?.trim() ?? '';

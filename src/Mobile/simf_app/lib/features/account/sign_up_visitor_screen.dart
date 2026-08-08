@@ -26,7 +26,6 @@ import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/account/data/region_models.dart';
 import 'package:simf_app/features/account/data/region_repository.dart';
-import 'package:simf_app/features/account/data/visitor_profile_validators.dart';
 import 'package:simf_app/features/account/saudi_regions.dart';
 import 'package:simf_app/features/account/widgets/attachment_field.dart';
 import 'package:simf_app/features/account/widgets/beige_tabs.dart';
@@ -41,6 +40,7 @@ import 'package:simf_app/features/account/widgets/profile_type_field.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_header_avatar.dart';
 import 'package:simf_app/features/account/widgets/terms_and_next_buttons.dart';
 import 'package:simf_app/features/myarea/identity_verification_screen.dart' show CapturedSelfie;
+import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Page 007 — إنشاء ملف شخصى · Sign up — profile **data**. The KSA-Project

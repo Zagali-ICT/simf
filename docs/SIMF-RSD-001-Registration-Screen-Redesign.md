@@ -4,8 +4,8 @@
 |-------|-------|
 | Document ID | SIMF-RSD-001 |
 | Title | Registration Screens: Structural Redesign Scope |
-| Version | 1.0 |
-| Status | Proposal, pending owner approval. NOT started. |
+| Version | 1.1 |
+| Status | In progress. Step 1 done; steps 2 to 6 pending owner approval. |
 | Classification | Confidential, to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team |
 | Owner | Solution Architect |
@@ -28,7 +28,8 @@ The remaining 14 are `_build*` methods in two screens:
 They were not forced to zero, and this document explains what closing them
 properly would involve so the owner can decide whether it is worth doing.
 
-**This is a scope, not a plan of record. No work has started.**
+**Step 1 (the no-behaviour-change move) is DONE.** Steps 2 to 6 change how
+state is owned and are not started; each needs its own go-ahead.
 
 ## 2. Why the mechanical fix was refused
 
@@ -97,16 +98,26 @@ Extract the shared form into section widgets, each owning its own state, and
 let both screens compose them.
 
 ```
-features/registration/            (new, shared)
+features/visitor_profile/         (new, shared)
   data/
+    visitor_profile_validators.dart   the shared rules + VisitorDocType (moved
+                                      in step 1)
     visitor_profile_form_state.dart   ChangeNotifier or Riverpod notifier:
-                                      the 17 shared fields + their validators
+                                      the 17 shared fields
   widgets/
     identity_section.dart             Arabic/English name, gender, job title
     nationality_section.dart          nationality, profile type, organisation
     document_section.dart             national id / Iqama / passport, doc type
     contact_section.dart              mobile (Saudi vs international)
 ```
+
+**Not `features/registration/`,** which this document originally proposed. That
+directory already exists and holds the post-signup APPROVAL flow (#11):
+`registration_status_screen`, `registration_success_screen` and their widgets,
+both routed. Putting the shared form there would file two unrelated concerns
+under one name. `visitor_profile` is the domain's own term for this data: it is
+what the l10n strings, the router comments and the API
+(`/app/account/user-profile`, `UpsertUserProfileRequest`) already call it.
 
 Each screen then keeps only what is genuinely its own:
 
@@ -163,7 +174,7 @@ Ordered so the risky step is last and every step is independently revertible.
 
 | Step | Work | Ends when |
 |------|------|-----------|
-| 1 | Create `features/registration/`, move `VisitorDocType` and the shared validators into it. No behaviour change. | Suites green, both screens unchanged in behaviour |
+| 1 | **DONE.** Create `features/visitor_profile/`, move `VisitorDocType` and the shared validators into it. No behaviour change. | Suites green, both screens unchanged in behaviour |
 | 2 | `visitor_profile_form_state` holding the 17 shared fields, used by sign_up ONLY. | sign_up suite + golden green |
 | 3 | Extract `identity_section` and `contact_section`, sign_up only. | sign_up under 900 lines |
 | 4 | Extract `nationality_section` and `document_section`, sign_up only. | sign_up under 400 lines, its 10 findings close |

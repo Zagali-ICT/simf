@@ -25,7 +25,6 @@ import 'package:simf_app/core/widgets/simf_labeled_text_field.dart';
 import 'package:simf_app/core/widgets/simf_picker_field.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
-import 'package:simf_app/features/account/data/visitor_profile_validators.dart';
 import 'package:simf_app/features/account/widgets/attachment_field.dart';
 import 'package:simf_app/features/account/widgets/beige_tabs.dart';
 import 'package:simf_app/features/account/widgets/gender_pills_field.dart';
@@ -34,6 +33,7 @@ import 'package:simf_app/features/account/widgets/mobile_field.dart';
 import 'package:simf_app/features/account/widgets/terms_and_next_buttons.dart';
 import 'package:simf_app/features/staff/data/staff_models.dart';
 import 'package:simf_app/features/staff/data/staff_repository.dart';
+import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// D-509 — "إنشاء ملف زائر" / add a visitor at the exhibition (staff). Staff

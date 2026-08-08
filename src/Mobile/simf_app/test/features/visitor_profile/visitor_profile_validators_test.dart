@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
-import 'package:simf_app/features/account/data/visitor_profile_validators.dart';
+import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 
 /// These validators were members of a 1393-line screen's State, so exercising
 /// them meant pumping the whole sign-up form. As pure functions they are
