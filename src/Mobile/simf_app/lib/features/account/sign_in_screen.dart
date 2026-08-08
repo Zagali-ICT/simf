@@ -14,10 +14,9 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
-import '../../core/validation/email_validation.dart';
-import '../../core/validation/required_validation.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
 import 'biometric_auth.dart';
+import 'data/sign_in_validators.dart';
 import 'post_auth_route.dart';
 import 'widgets/account_auth_prompt.dart';
 import 'widgets/account_card.dart';
@@ -27,6 +26,7 @@ import 'widgets/account_remember_forgot.dart';
 import 'widgets/account_top_controls.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/sign_in_alt_actions.dart';
+import 'biometric_sign_in.dart';
 
 /// Page 003 — تسجيل الدخول · Sign in. The KSA-Project Figma design (node
 /// 168:2800), promoted from the D-358 preview to the official sign-in
@@ -88,22 +88,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   /// #7 — empty → required; otherwise the malformed-email shape is rejected
   /// before the network round-trip, with an inline bilingual error.
-  String? _validateEmail(String? value) {
-    final email = value?.trim() ?? '';
-    final l10n = AppL10n.of(context);
-    if (isBlank(email)) {
-      return l10n.requiredField;
-    }
-    return isValidEmail(email) ? null : l10n.invalidEmail;
-  }
-
-  /// Sign-in only requires a non-empty password — it does NOT enforce the
-  /// sign-up password policy (any existing password must be allowed to sign in;
-  /// the server authenticates it).
-  String? _validatePassword(String? value) {
-    return isBlank(value) ? AppL10n.of(context).requiredField : null;
-  }
-
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
@@ -177,87 +161,17 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   /// then the device-key sign-in. Prompt outcomes are surfaced explicitly: a
   /// user cancel is silent (their own choice), a lockout / unavailable shows a
   /// message instead of the old silent password-path fallback.
-  Future<void> _biometricSignIn() async {
-    final l10n = AppL10n.of(context);
-    final biometric = ref.read(biometricAuthProvider);
-    final notifier = ref.read(authControllerProvider.notifier);
-    // (1) The device must have a usable biometric / secured lock.
-    if (!await biometric.isAvailable()) {
-      if (mounted) {
-        setState(() => _error = l10n.biometricUnavailable);
-      }
-      return;
-    }
-    if (!mounted) {
-      return;
-    }
-    // (2) Face login needs a device key, enrolled on a prior sign-in.
-    bool enrolled;
-    try {
-      enrolled = await notifier.hasEnrolledDeviceKey();
-    } catch (_) {
-      enrolled = false;
-    }
-    if (!enrolled) {
-      if (mounted) {
-        setState(() => _error = l10n.biometricNotEnrolled);
-      }
-      return;
-    }
-    // (3) OS prompt — biometric-first, device-PIN fallback (D-738).
-    final outcome =
-        await biometric.confirmDeviceIdentity(l10n.biometricSignInTooltip);
-    if (!mounted) {
-      return;
-    }
-    if (outcome != LocalAuthOutcome.success) {
-      // A cancel is the user's own choice → silent (null); other outcomes get
-      // feedback, via the shared BiometricAuth mapping.
-      final message = localizedBiometricError(l10n, outcome);
-      if (message != null) {
-        setState(() => _error = message);
-      }
-      return;
-    }
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    Object? unexpectedError;
-    try {
-      await notifier.signInWithDeviceKey();
-    } on AuthFailure catch (failure) {
-      if (mounted) {
-        setState(() {
-          _error = failure.source.localizedMessage(l10n);
-        });
-      }
-    } catch (e) {
-      // Non-AuthFailure (e.g. FormatException from reloadCurrentUser before
-      // the defence in signInWithDeviceKey was added): capture so the session
-      // routing still happens below. Shown in a SnackBar after routing so
-      // the user sees the error but is not stranded on the sign-in screen.
-      unexpectedError = e;
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
-    // Route on the resulting auth state, OUTSIDE the try: signInWithDeviceKey
-    // establishes the session before its trailing profile reload, so a
-    // non-AuthFailure thrown there must not skip the navigation home — the
-    // biometric path mirrors the password path (D-441).
-    if (mounted && ref.read(authControllerProvider) is AuthStateSignedIn) {
-      if (unexpectedError != null) {
-        // The localized generic message, not '$unexpectedError' — a raw Dart
-        // toString is untranslated and leaks internal type detail to the user.
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.errorGenericBody)),
-        );
-      }
-      routeAfterAuth(context, ref);
-    }
-  }
+  Future<void> _biometricSignIn() => runBiometricSignIn(
+        context: context,
+        ref: ref,
+        l10n: AppL10n.of(context),
+        onError: (message) {
+          if (mounted) setState(() => _error = message);
+        },
+        onBusy: ({required busy}) {
+          if (mounted) setState(() => _busy = busy);
+        },
+      );
 
   /// The globe button toggles AR ↔ EN and persists the choice (D-363).
   void _toggleLanguage() {
@@ -348,7 +262,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 controller: _email,
                 label: l10n.emailLabel,
                 enabled: !_busy,
-                validator: _validateEmail,
+                validator: (v) => validateSignInEmail(v, l10n),
                 onChanged: (_) => setState(() {}),
                 autofillHints: const <String>[
                   AutofillHints.username,
@@ -362,7 +276,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 obscure: _obscure,
                 onToggleObscure: () => setState(() => _obscure = !_obscure),
                 enabled: !_busy,
-                validator: _validatePassword,
+                validator: (v) => validateSignInPassword(v, l10n),
                 onChanged: (_) => setState(() {}),
                 onSubmitted: (_) {
                   if (_canSubmit) {

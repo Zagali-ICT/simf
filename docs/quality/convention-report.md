@@ -6,15 +6,11 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 
 | Rule | Findings |
 |------|----------|
-| SIMF-C3 | 19 |
-| **Total** | **19** |
+| SIMF-C3 | 18 |
+| **Total** | **18** |
 
 ## account feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/account/sign_in_screen.dart
-Issue : _buildCard() returning Widget in a 418-line file (limit 400)  (line 319, SIMF-C3)
-Fix : split the file; move this and its state into a widget
 
 Issue file : src/Mobile/simf_app/lib/features/account/sign_up_interests_screen.dart
 Issue : _buildBody() returning Widget in a 470-line file (limit 400)  (line 303, SIMF-C3)
@@ -25,25 +21,25 @@ Issue : _buildChips() returning Widget in a 470-line file (limit 400)  (line 440
 Fix : split the file; move this and its state into a widget
 
 Issue file : src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart
-Issue : _buildBody() returning Widget in a 1393-line file (limit 400)  (line 738, SIMF-C3)
+Issue : _buildBody() returning Widget in a 1306-line file (limit 400)  (line 651, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildLoadError() returning Widget in a 1393-line file (limit 400)  (line 921, SIMF-C3)
+Issue : _buildLoadError() returning Widget in a 1306-line file (limit 400)  (line 834, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildProfileTypeField() returning Widget in a 1393-line file (limit 400)  (line 955, SIMF-C3)
+Issue : _buildProfileTypeField() returning Widget in a 1306-line file (limit 400)  (line 868, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildNationalityField() returning Widget in a 1393-line file (limit 400)  (line 994, SIMF-C3)
+Issue : _buildNationalityField() returning Widget in a 1306-line file (limit 400)  (line 907, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildDocumentFields() returning List<Widget> in a 1393-line file (limit 400)  (line 1129, SIMF-C3)
+Issue : _buildDocumentFields() returning List<Widget> in a 1306-line file (limit 400)  (line 1042, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildPlaceOfBirthField() returning Widget in a 1393-line file (limit 400)  (line 1170, SIMF-C3)
+Issue : _buildPlaceOfBirthField() returning Widget in a 1306-line file (limit 400)  (line 1083, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildPlateField() returning Widget in a 1393-line file (limit 400)  (line 1191, SIMF-C3)
+Issue : _buildPlateField() returning Widget in a 1306-line file (limit 400)  (line 1104, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildIdImageField() returning Widget in a 1393-line file (limit 400)  (line 1282, SIMF-C3)
+Issue : _buildIdImageField() returning Widget in a 1306-line file (limit 400)  (line 1195, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildFacePhotoField() returning Widget in a 1393-line file (limit 400)  (line 1302, SIMF-C3)
+Issue : _buildFacePhotoField() returning Widget in a 1306-line file (limit 400)  (line 1215, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildOrganisationField() returning Widget in a 1393-line file (limit 400)  (line 1331, SIMF-C3)
+Issue : _buildOrganisationField() returning Widget in a 1306-line file (limit 400)  (line 1244, SIMF-C3)
 Fix : split the file; move this and its state into a widget
 
 ## live feature
@@ -64,10 +60,10 @@ Fix : split the file; move this and its state into a widget
 
 
 Issue file : src/Mobile/simf_app/lib/features/staff/register_visitor_screen.dart
-Issue : _buildBody() returning Widget in a 1264-line file (limit 400)  (line 644, SIMF-C3)
+Issue : _buildBody() returning Widget in a 1263-line file (limit 400)  (line 643, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildLoadError() returning Widget in a 1264-line file (limit 400)  (line 679, SIMF-C3)
+Issue : _buildLoadError() returning Widget in a 1263-line file (limit 400)  (line 678, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildForm() returning Widget in a 1264-line file (limit 400)  (line 709, SIMF-C3)
+Issue : _buildForm() returning Widget in a 1263-line file (limit 400)  (line 708, SIMF-C3)
 Fix : split the file; move this and its state into a widget
 
