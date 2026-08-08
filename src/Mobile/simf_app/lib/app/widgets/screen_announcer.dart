@@ -10,7 +10,7 @@ import 'package:simf_app/features/accessibility/data/accessibility_controller.da
 /// nothing; lives invisibly in the [SimfPageShell] stack so every shell page that
 /// carries a title participates without per-screen wiring.
 class ScreenAnnouncer extends ConsumerStatefulWidget {
-  const ScreenAnnouncer({required this.title});
+  const ScreenAnnouncer({required this.title, super.key});
 
   final String? title;
 

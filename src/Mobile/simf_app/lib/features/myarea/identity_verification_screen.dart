@@ -102,7 +102,6 @@ class _IdentityVerificationScreenState
       _detector = FaceDetector(
         options: FaceDetectorOptions(
           enableClassification: true,
-          performanceMode: FaceDetectorMode.fast,
         ),
       );
       if (!mounted) {

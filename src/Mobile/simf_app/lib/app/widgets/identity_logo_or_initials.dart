@@ -12,7 +12,7 @@ const double _size = 44;
 /// [imageUrl] is set (falling back to the gold initials on load error / 404),
 /// otherwise the gold initials avatar directly.
 class IdentityLogoOrInitials extends StatelessWidget {
-  const IdentityLogoOrInitials({required this.imageUrl, required this.initials});
+  const IdentityLogoOrInitials({required this.imageUrl, required this.initials, super.key});
 
   final String? imageUrl;
   final String initials;
@@ -42,7 +42,7 @@ class IdentityLogoOrInitials extends StatelessWidget {
 
 /// The gold rounded-square initials avatar (matches the meet card's avatar).
 class IdentityInitialsAvatar extends StatelessWidget {
-  const IdentityInitialsAvatar({required this.initials});
+  const IdentityInitialsAvatar({required this.initials, super.key});
 
   final String initials;
 

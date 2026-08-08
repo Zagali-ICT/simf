@@ -5,7 +5,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// The gold "AI" tag prefixing every assistant bubble (frame `1064:13276`):
 /// a gold pill, white bold "AI" at 12px.
 class AiBadge extends StatelessWidget {
-  const AiBadge();
+  const AiBadge({super.key});
 
   @override
   Widget build(BuildContext context) {

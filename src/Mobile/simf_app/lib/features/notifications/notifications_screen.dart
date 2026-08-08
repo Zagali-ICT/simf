@@ -317,7 +317,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           child: SimfSearchField(
             hint: l10n.notificationsSearchHint,
             onChanged: (v) => setState(() => _query = v),
-            showTuningIcon: false,
           ),
         ),
         Padding(

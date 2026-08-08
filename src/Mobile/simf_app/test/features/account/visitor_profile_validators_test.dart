@@ -8,8 +8,8 @@ import 'package:simf_app/features/account/data/visitor_profile_validators.dart';
 /// testable directly, which is the point of the move: the rules that decide
 /// whether a visitor can register are now checkable in milliseconds.
 void main() {
-  const AppL10n ar = AppL10n(Locale('ar'));
-  const AppL10n en = AppL10n(Locale('en'));
+  const ar = AppL10n(Locale('ar'));
+  const en = AppL10n(Locale('en'));
 
   group('name', () {
     test('rejects empty', () {
@@ -59,9 +59,9 @@ void main() {
     // The same input is valid or invalid depending on the document, which is
     // why docType is a parameter rather than screen state.
     test('is required whichever document it is', () {
-      for (final VisitorDocType kind in VisitorDocType.values) {
+      for (final kind in VisitorDocType.values) {
         expect(validateDocumentNumber('', en, kind), en.documentRequired,
-            reason: kind.name);
+            reason: kind.name,);
       }
     });
 

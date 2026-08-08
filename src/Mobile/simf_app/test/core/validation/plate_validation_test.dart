@@ -101,7 +101,7 @@ void main() {
 
   group('parsePlate', () {
     test('splits a letters-first plate into the dropdowns + digits', () {
-      final PlateParts p = parsePlate('ABJ1234');
+      final p = parsePlate('ABJ1234');
       expect(p.letter1, 'A');
       expect(p.letter2, 'B');
       expect(p.letter3, 'J');
@@ -111,7 +111,7 @@ void main() {
     });
 
     test('records digits-first order so it round-trips (D-471)', () {
-      final PlateParts p = parsePlate('1234ABJ');
+      final p = parsePlate('1234ABJ');
       expect(p.digitsFirst, isTrue);
       expect(
         assemblePlate(
@@ -126,7 +126,7 @@ void main() {
     });
 
     test('normalises an Arabic-script plate to the Latin dropdown codes', () {
-      final PlateParts p = parsePlate('ابح١٢٣٤');
+      final p = parsePlate('ابح١٢٣٤');
       expect(p.letter1, 'A');
       expect(p.letter2, 'B');
       expect(p.letter3, 'J');
@@ -135,7 +135,7 @@ void main() {
     });
 
     test('blank → an empty override that clears the field', () {
-      final PlateParts p = parsePlate('');
+      final p = parsePlate('');
       expect(p.rawOverride, '');
       expect(p.letter1, isNull);
       expect(p.digits, '');
@@ -144,7 +144,7 @@ void main() {
     test('keeps a non-conforming code verbatim as rawOverride (D-468)', () {
       // 'C' is not one of the 17 plate letters, so the dropdowns can't
       // represent it — the value is kept rather than silently erased.
-      final PlateParts p = parsePlate('ABC1234');
+      final p = parsePlate('ABC1234');
       expect(p.rawOverride, isNotNull);
       expect(p.letter1, isNull);
     });

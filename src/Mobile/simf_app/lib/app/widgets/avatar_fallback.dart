@@ -8,7 +8,7 @@ import 'package:simf_app/app/widgets/simf_logo.dart';
 /// contrast on every surface — the navy scaffold, the my-area card, and the
 /// gold badge strip alike.
 class AvatarFallback extends StatelessWidget {
-  const AvatarFallback({required this.size});
+  const AvatarFallback({required this.size, super.key});
 
   final double size;
 

@@ -146,7 +146,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
   }
 
   Widget _buildList(
-      AppL10n l10n, MeetingAccess access, List<AppRequestItem> items) {
+      AppL10n l10n, MeetingAccess access, List<AppRequestItem> items,) {
     final isArabic = l10n.isArabic;
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     return SimfPullToRefresh(

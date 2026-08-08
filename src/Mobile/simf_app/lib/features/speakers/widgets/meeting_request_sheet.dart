@@ -439,9 +439,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   Widget _subjectField(AppL10n l10n) => TextField(
         key: const ValueKey<String>('meeting-subject'),
         controller: _subject,
-        textAlign: TextAlign.start,
         maxLength: FieldLimits.meetingRequestMessage,
-        maxLines: 1,
         style: SimfTokens.bodyInputMd,
         decoration: InputDecoration(
           counterText: '',
@@ -454,15 +452,13 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
             vertical: SimfTokens.space3,
           ),
           enabledBorder: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
             borderSide: BorderSide(color: SimfTokens.beigeBorder),
           ),
           focusedBorder: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
             borderSide: BorderSide(color: SimfTokens.accent),
           ),
           border: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
+            
           ),
         ),
       );

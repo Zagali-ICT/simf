@@ -67,10 +67,9 @@ class _FormRepo implements FeedbackRepository {
   @override
   Future<void> submit({
     required String ratingTypeId,
-    String? targetId,
+    required Map<String, int> answers, String? targetId,
     int? overallStars,
     String? comment,
-    required Map<String, int> answers,
   }) async {}
 }
 

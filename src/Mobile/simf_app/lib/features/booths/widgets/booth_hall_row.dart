@@ -37,7 +37,6 @@ class BoothHallRow extends StatelessWidget {
     // Frame 922:2626 — RTL: the hall box at the inline start (right); the A-12
     // code pill at the inline end (left).
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Expanded(
           child: hasBoth

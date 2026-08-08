@@ -412,7 +412,6 @@ class _DelegationMeetingRequestSheetState
   Widget _attendeesField(AppL10n l10n) => TextField(
         key: const ValueKey<String>('delegation-attendees'),
         controller: _attendees,
-        textAlign: TextAlign.start,
         keyboardType: TextInputType.number,
         inputFormatters: <TextInputFormatter>[
           FilteringTextInputFormatter.digitsOnly,
@@ -429,15 +428,13 @@ class _DelegationMeetingRequestSheetState
             vertical: SimfTokens.space3,
           ),
           enabledBorder: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
             borderSide: BorderSide(color: SimfTokens.beigeBorder),
           ),
           focusedBorder: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
             borderSide: BorderSide(color: SimfTokens.accent),
           ),
           border: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
+            
           ),
         ),
       );
@@ -445,9 +442,7 @@ class _DelegationMeetingRequestSheetState
   Widget _subjectField(AppL10n l10n) => TextField(
         key: const ValueKey<String>('delegation-subject'),
         controller: _subject,
-        textAlign: TextAlign.start,
         maxLength: FieldLimits.meetingRequestMessage,
-        maxLines: 1,
         style: SimfTokens.bodyInputMd,
         decoration: InputDecoration(
           counterText: '',
@@ -460,15 +455,13 @@ class _DelegationMeetingRequestSheetState
             vertical: SimfTokens.space3,
           ),
           enabledBorder: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
             borderSide: BorderSide(color: SimfTokens.beigeBorder),
           ),
           focusedBorder: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
             borderSide: BorderSide(color: SimfTokens.accent),
           ),
           border: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
+            
           ),
         ),
       );

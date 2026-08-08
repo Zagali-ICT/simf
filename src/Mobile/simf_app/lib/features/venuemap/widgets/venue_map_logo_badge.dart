@@ -14,10 +14,7 @@ import 'package:simf_app/core/net/asset_urls.dart';
 const double _badgeSize = 60;
 
 class VenueMapLogoBadge extends StatelessWidget {
-  const VenueMapLogoBadge({
-    required this.boothId,
-    required this.baseUrl,
-    required this.name,
+  const VenueMapLogoBadge({required this.boothId, required this.baseUrl, required this.name, super.key,
   });
 
   final String boothId;

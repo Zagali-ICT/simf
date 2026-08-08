@@ -11,7 +11,7 @@ import 'package:simf_app/features/news/widgets/news_image_fallback.dart';
 /// fetch
 /// -failure fall-back. 155 wide, stretched to the card height.
 class NewsThumbnail extends StatelessWidget {
-  const NewsThumbnail({required this.imageUrl, required this.category});
+  const NewsThumbnail({required this.imageUrl, required this.category, super.key});
 
   final String imageUrl;
   final String category;

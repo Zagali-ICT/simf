@@ -66,15 +66,15 @@ Future<void> _pump(WidgetTester tester, BoothDetail detail) async {
         simfDataConfigProvider.overrideWithValue(_testConfig),
         venueMapRepositoryProvider.overrideWithValue(_FakeRepo(detail)),
       ],
-      child: MaterialApp(
+      child: const MaterialApp(
         supportedLocales: AppL10n.supportedLocales,
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const ExhibitorDetailScreen(boothId: 'b1'),
+        home: ExhibitorDetailScreen(boothId: 'b1'),
       ),
     ),
   );

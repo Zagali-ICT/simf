@@ -58,7 +58,7 @@ class MoreProfileCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space3),
-              SimfAvatar(name: name, currentUser: true, size: SimfTokens.moreProfileCardSizeMd),
+              SimfAvatar(name: name, currentUser: true),
               const SizedBox(width: SimfTokens.space2),
               const SimfSvgIcon(
                 AppAssets.icCaretLeft,

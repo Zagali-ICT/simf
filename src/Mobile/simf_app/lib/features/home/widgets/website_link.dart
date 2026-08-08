@@ -9,7 +9,7 @@ import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 /// asks to confirm leaving the app, then opens the site externally (same launch
 /// path as the social buttons). Rendered only when the CP sets a website.
 class WebsiteLink extends StatelessWidget {
-  const WebsiteLink({required this.url, required this.label});
+  const WebsiteLink({required this.url, required this.label, super.key});
 
   final String url;
   final String label;

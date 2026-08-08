@@ -5,7 +5,7 @@ import 'package:video_player/video_player.dart';
 /// The `video_player` surface: a 16:9-aware [VideoPlayer] with a play/pause FAB
 /// (the HLS/MP4 fallback path).
 class Player extends StatelessWidget {
-  const Player({required this.controller, required this.onToggle});
+  const Player({required this.controller, required this.onToggle, super.key});
 
   final VideoPlayerController controller;
   final VoidCallback onToggle;

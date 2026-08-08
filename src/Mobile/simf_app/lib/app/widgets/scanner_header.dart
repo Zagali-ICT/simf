@@ -5,7 +5,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// the inline start over a centred white title — mirrors `AccountSubHeader` with
 /// `circular: true` (kept local so `app/` doesn't depend on `features/`).
 class ScannerHeader extends StatelessWidget {
-  const ScannerHeader({required this.title, required this.onBack});
+  const ScannerHeader({required this.title, required this.onBack, super.key});
 
   final String title;
   final VoidCallback onBack;

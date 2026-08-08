@@ -49,7 +49,6 @@ class BoothCompanyHeader extends StatelessWidget {
       // (right), the name column in the middle, the country flag at the
       // inline-end (left).
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           // Frame 922:2560 — the 48×48 logo tile (the booth's own BoothLogo,
           // short-name fallback) at the inline-start (right).

@@ -202,7 +202,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         repo.getMyProfile(),
         repo.getCountries(),
         repo.getProfileTypes(isVisitor: _isVisitorType),
-        repo.searchOrganisations(top: 20),
+        repo.searchOrganisations(),
       ]);
       if (!mounted) {
         return;
@@ -363,7 +363,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     });
     final repo = ref.read(profileRepositoryProvider);
     try {
-      final results = await repo.searchOrganisations(search: value, top: 20);
+      final results = await repo.searchOrganisations(search: value);
       if (!mounted) {
         return;
       }
@@ -979,7 +979,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   List<_BirthRegionOption> _activeBirthRegions() {
     // ref.read (not watch): this runs from both build helpers and the picker's
     // async handler. build() owns the watch so the field still rebuilds on data.
-    final List<RegionItem>? api =
+    final api =
         ref.read(regionsProvider).asData?.value;
     if (api != null && api.isNotEmpty) {
       return <_BirthRegionOption>[
@@ -1003,7 +1003,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     if (code == null) {
       return null;
     }
-    for (final _BirthRegionOption r in _activeBirthRegions()) {
+    for (final r in _activeBirthRegions()) {
       if (r.code == code) {
         return r;
       }
@@ -1080,8 +1080,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   Widget _buildPlaceOfBirthField(AppL10n l10n) {
-    final bool isArabic = l10n.isArabic;
-    final String? regionName = _birthRegionCode == null
+    final isArabic = l10n.isArabic;
+    final regionName = _birthRegionCode == null
         ? null
         : _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic);
     // Keep the stored name in the active locale while a region is selected, so a
@@ -1177,13 +1177,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// a value the 17-letter dropdowns can't represent is kept verbatim in [_plate]
   /// so an unrelated profile edit never silently erases it (D-468 review).
   void _setPlateFromCode(String? code) {
-    final PlateParts parts = parsePlate(code);
+    final parts = parsePlate(code);
     _plateLetter1 = parts.letter1;
     _plateLetter2 = parts.letter2;
     _plateLetter3 = parts.letter3;
     _plateDigits.text = parts.digits;
     _plateDigitsFirst = parts.digitsFirst;
-    final String? override = parts.rawOverride;
+    final override = parts.rawOverride;
     if (override != null) {
       _plate.text = override;
     } else {

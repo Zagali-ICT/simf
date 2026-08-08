@@ -6,7 +6,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// localized category name in gold 12px SemiBold. Rendered only when the session
 /// carries a category, so an uncategorised session keeps the pre-PAR-D3 layout.
 class CategoryPill extends StatelessWidget {
-  const CategoryPill({required this.label});
+  const CategoryPill({required this.label, super.key});
 
   final String label;
 

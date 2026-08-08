@@ -36,7 +36,7 @@ VoidCallback _shellOrGo(BuildContext context, SimfTab tab, String routeName) {
 enum SimfTab { home, sessions, badge, map, profile }
 
 class SimfBottomNav extends StatelessWidget {
-  const SimfBottomNav({super.key, required this.current});
+  const SimfBottomNav({required this.current, super.key});
 
   final SimfTab? current;
 

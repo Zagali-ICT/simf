@@ -35,7 +35,7 @@ class ArchiveBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isArabic = l10n.isArabic;
     final detail = ref.watch(archiveEditionDetailProvider(selected.id));
-    final ArchiveEditionDetail? d = detail.asData?.value;
+    final d = detail.asData?.value;
 
     final summary =
         d?.localizedSummary(isArabic) ?? selected.localizedSummary(isArabic);

@@ -55,7 +55,7 @@ class SessionsSearchField extends StatelessWidget {
             ),
           ),
           prefixIconConstraints:
-              const BoxConstraints(minWidth: 0, minHeight: 0),
+              const BoxConstraints(),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: SimfTokens.space3,
             vertical: SimfTokens.space3,

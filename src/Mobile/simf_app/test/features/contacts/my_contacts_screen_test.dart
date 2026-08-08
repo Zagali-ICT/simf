@@ -31,16 +31,16 @@ Future<void> _pump(WidgetTester tester, FakeContactsRepo repo) async {
       overrides: <Override>[
         contactsRepositoryProvider.overrideWithValue(repo),
       ],
-      child: MaterialApp(
-        locale: const Locale('en'),
+      child: const MaterialApp(
+        locale: Locale('en'),
         supportedLocales: AppL10n.supportedLocales,
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const MyContactsScreen(),
+        home: MyContactsScreen(),
       ),
     ),
   );

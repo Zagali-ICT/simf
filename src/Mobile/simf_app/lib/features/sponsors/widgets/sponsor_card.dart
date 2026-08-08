@@ -41,12 +41,11 @@ class SponsorCard extends StatelessWidget {
     // Frame 922:2824 — the sponsor name is white on BOTH the gold hero card
     // (925:2979 `text-white`) and the navy premium card; only the secondary
     // line changes colour with the card.
-    final Color subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
+    final subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
     final flip = !AppL10n.of(context).isArabic;
     return SimfCard(
       onTap: onTap,
       color: hero ? SimfTokens.accent : SimfTokens.navyDeep,
-      borderColor: SimfTokens.beigeBorder,
       child: ConstrainedBox(
         constraints: const BoxConstraints(
           minHeight: SimfTokens.sponsorRowHeight,

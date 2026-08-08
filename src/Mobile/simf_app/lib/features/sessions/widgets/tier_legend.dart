@@ -8,7 +8,7 @@ import 'package:simf_app/features/sessions/widgets/legend_item.dart';
 /// Reuses [LegendItem] so both legends stay one component, and is forced LTR
 /// like the state legend so it never mirrors with the RTL page.
 class TierLegend extends StatelessWidget {
-  const TierLegend({required this.l10n, required this.swatchSize});
+  const TierLegend({required this.l10n, required this.swatchSize, super.key});
 
   final AppL10n l10n;
   final double swatchSize;

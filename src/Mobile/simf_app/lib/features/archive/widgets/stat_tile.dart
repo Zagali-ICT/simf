@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class StatTile extends StatelessWidget {
-  const StatTile({required this.value, required this.label});
+  const StatTile({required this.value, required this.label, super.key});
 
   final int value;
   final String label;

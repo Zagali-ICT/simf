@@ -17,7 +17,7 @@ import 'package:simf_app/features/accessibility/data/accessibility_controller.da
 /// `/app/ai/live-translation/chunk` endpoint) — it is an owner decision, not
 /// something this surface fakes.
 class CaptionStrip extends ConsumerWidget {
-  const CaptionStrip({required this.hint, this.caption});
+  const CaptionStrip({required this.hint, super.key, this.caption});
 
   /// The organiser's caption text, or null to show the placeholder [hint].
   final String? caption;

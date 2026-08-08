@@ -6,7 +6,7 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 /// supplies its own play/pause + CC controls (the latter covers الترجمة الفورية
 /// for YouTube feeds), so no extra play FAB is added here.
 class YoutubeView extends StatelessWidget {
-  const YoutubeView({required this.controller});
+  const YoutubeView({required this.controller, super.key});
 
   final YoutubePlayerController controller;
 
@@ -18,7 +18,6 @@ class YoutubeView extends StatelessWidget {
       borderRadius: BorderRadius.circular(SimfTokens.radius),
       child: YoutubePlayer(
         controller: controller,
-        aspectRatio: SimfTokens.videoAspectRatio,
       ),
     );
   }

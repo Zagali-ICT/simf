@@ -204,7 +204,7 @@ class SimfPageShell extends StatelessWidget {
             height: SimfTokens.simfPageShellHeightSm,
             child: onBack == null
                 ? null
-                : SimfCircledBackButton(onBack: onBack!, mirrorInRtl: false),
+                : SimfCircledBackButton(onBack: onBack!),
           ),
           Expanded(
             child: Text(

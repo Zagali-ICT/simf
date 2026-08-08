@@ -60,7 +60,7 @@ class EntityLinkRow extends StatelessWidget {
         fontSize: valueSize,
       ),
     );
-    final bool hasLabel = label.isNotEmpty;
+    final hasLabel = label.isNotEmpty;
     final Widget labelText = Text(
       label,
       textAlign: TextAlign.start,
@@ -73,7 +73,7 @@ class EntityLinkRow extends StatelessWidget {
       ),
     );
     // Guard the label (an empty one would add a blank line + an 8px gap).
-    final List<Widget> lines = valueOnTop
+    final lines = valueOnTop
         ? <Widget>[
             valueText,
             if (hasLabel) const SizedBox(height: SimfTokens.space2),

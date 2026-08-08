@@ -235,7 +235,7 @@ void main() {
     testWidgets('no sessionId shows the pick-a-session empty state',
         (tester) async {
       final repo = _FakeLiveRepo(session: _liveSession());
-      await _pump(tester, repo: repo, sessionId: null);
+      await _pump(tester, repo: repo);
 
       expect(
         find.text('No live session selected — open a session to watch.'),
@@ -262,7 +262,6 @@ void main() {
       await _pump(
         tester,
         repo: repo,
-        sessionId: null,
         profile: _orgProfile(
           liveStreamUrl: 'https://www.youtube.com/watch?v=simf',
         ),
@@ -879,7 +878,6 @@ void main() {
       await _pump(
         tester,
         repo: _FakeLiveRepo(session: _liveSession()),
-        sessionId: null,
         profile: _orgProfile(
           liveStreamUrl: 'https://www.youtube.com/watch?v=simf',
         ),

@@ -19,12 +19,7 @@ const Color otpMutedBlue = SimfTokens.mutedBlue;
 /// node and rebuilds on [onChanged].
 class OtpCodeBoxes extends StatelessWidget {
   const OtpCodeBoxes({
-    super.key,
-    required this.controller,
-    required this.focusNode,
-    required this.enabled,
-    required this.onChanged,
-    required this.onSubmitted,
+    required this.controller, required this.focusNode, required this.enabled, required this.onChanged, required this.onSubmitted, super.key,
   });
 
   final TextEditingController controller;
@@ -110,7 +105,7 @@ class OtpCodeBoxes extends StatelessWidget {
 /// The OTP frame's gold-ringed circular mark (mail icon on the verify
 /// screens — Figma 505:969).
 class OtpMark extends StatelessWidget {
-  const OtpMark({super.key, required this.icon});
+  const OtpMark({required this.icon, super.key});
 
   final IconData icon;
 

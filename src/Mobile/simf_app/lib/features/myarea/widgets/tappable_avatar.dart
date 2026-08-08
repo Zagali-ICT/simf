@@ -6,8 +6,7 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 /// rounded avatar plus a small camera badge at the corner. A null [onTap] (the
 /// limited/pending view) renders a plain avatar with no camera badge.
 class TappableAvatar extends StatelessWidget {
-  const TappableAvatar({
-    required this.name,
+  const TappableAvatar({required this.name, super.key,
     this.onTap,
     this.tooltip,
   });

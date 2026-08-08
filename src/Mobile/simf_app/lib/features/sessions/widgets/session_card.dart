@@ -7,7 +7,7 @@ import 'package:simf_app/features/sessions/widgets/seat_chip.dart';
 /// The "الجلسة" card (frame 905:1556): the session label, its title, then the
 /// seat (مقعد) + row (الصف) chips — right-aligned on the navy `navyDeep` fill.
 class SessionCard extends StatelessWidget {
-  const SessionCard({required this.map, required this.l10n});
+  const SessionCard({required this.map, required this.l10n, super.key});
 
   final SessionSeatMap map;
   final AppL10n l10n;

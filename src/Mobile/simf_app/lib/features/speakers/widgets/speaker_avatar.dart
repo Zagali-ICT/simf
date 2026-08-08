@@ -33,7 +33,7 @@ class SpeakerAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     // The Figma placeholder is the gold SIMF anchor icon on white;
     // text initials are used only when the SVG itself fails to load.
-    final placeholder = Center(
+    const placeholder = Center(
       child: SimfSvgIcon(
         AppAssets.speakerPlaceholder,
         size: 64,

@@ -7,11 +7,7 @@ import 'package:simf_app/features/delegations/data/delegation_models.dart';
 /// member count, with a selected (gold) outline. Mirrors [SpeakerOptionTile]'s
 /// role for the speaker picker.
 class DelegationOptionTile extends StatelessWidget {
-  const DelegationOptionTile({
-    required this.delegation,
-    required this.isArabic,
-    required this.selected,
-    required this.onTap,
+  const DelegationOptionTile({required this.delegation, required this.isArabic, required this.selected, required this.onTap, super.key,
   });
 
   final DelegationItem delegation;

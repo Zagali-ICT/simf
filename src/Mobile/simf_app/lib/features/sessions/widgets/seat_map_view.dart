@@ -9,10 +9,7 @@ import 'package:simf_app/features/sessions/widgets/session_card.dart';
 import 'package:simf_app/features/sessions/widgets/sessions_actions.dart';
 
 class SeatMapView extends StatelessWidget {
-  const SeatMapView({
-    required this.map,
-    required this.l10n,
-    required this.onNavigate,
+  const SeatMapView({required this.map, required this.l10n, required this.onNavigate, super.key,
     this.onShare,
     this.onChangeSeat,
   });

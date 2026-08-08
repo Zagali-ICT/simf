@@ -7,8 +7,8 @@ import 'package:flutter/services.dart';
 /// only match `[0-9]`, on the client and the server — so a number typed on an
 /// Arabic keyboard must fold before it is validated or sent.
 String toWesternDigits(String value) {
-  final StringBuffer buffer = StringBuffer();
-  for (final int rune in value.runes) {
+  final buffer = StringBuffer();
+  for (final rune in value.runes) {
     if (rune >= 0x0660 && rune <= 0x0669) {
       buffer.writeCharCode(0x30 + (rune - 0x0660));
     } else if (rune >= 0x06F0 && rune <= 0x06F9) {
@@ -33,14 +33,13 @@ class WesternDigitsFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final String folded = toWesternDigits(newValue.text);
+    final folded = toWesternDigits(newValue.text);
     if (folded == newValue.text) {
       return newValue;
     }
     return TextEditingValue(
       text: folded,
       selection: newValue.selection,
-      composing: TextRange.empty,
     );
   }
 }
@@ -57,29 +56,28 @@ class PhoneNumberFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final String source = toWesternDigits(newValue.text);
-    final StringBuffer buffer = StringBuffer();
-    int removedBeforeCaret = 0;
-    final int caret = newValue.selection.end;
-    for (int i = 0; i < source.length; i++) {
-      final int unit = source.codeUnitAt(i);
-      final bool isDigit = unit >= 0x30 && unit <= 0x39;
-      final bool isLeadingPlus = unit == 0x2B && buffer.isEmpty && i == 0;
+    final source = toWesternDigits(newValue.text);
+    final buffer = StringBuffer();
+    var removedBeforeCaret = 0;
+    final caret = newValue.selection.end;
+    for (var i = 0; i < source.length; i++) {
+      final unit = source.codeUnitAt(i);
+      final isDigit = unit >= 0x30 && unit <= 0x39;
+      final isLeadingPlus = unit == 0x2B && buffer.isEmpty && i == 0;
       if (isDigit || isLeadingPlus) {
         buffer.writeCharCode(unit);
       } else if (i < caret) {
         removedBeforeCaret++;
       }
     }
-    final String text = buffer.toString();
+    final text = buffer.toString();
     if (text == newValue.text) {
       return newValue;
     }
-    final int offset = (caret - removedBeforeCaret).clamp(0, text.length);
+    final offset = (caret - removedBeforeCaret).clamp(0, text.length);
     return TextEditingValue(
       text: text,
       selection: TextSelection.collapsed(offset: offset),
-      composing: TextRange.empty,
     );
   }
 }

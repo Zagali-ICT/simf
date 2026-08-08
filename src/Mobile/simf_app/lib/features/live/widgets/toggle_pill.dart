@@ -5,10 +5,7 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 /// One feed-toggle pill — the gold/navy view-pill language shared with the
 /// sessions screen: active = solid gold, inactive = bordered navy card.
 class TogglePill extends StatelessWidget {
-  const TogglePill({
-    required this.label,
-    required this.active,
-    required this.onTap,
+  const TogglePill({required this.label, required this.active, required this.onTap, super.key,
     this.icon,
   });
 

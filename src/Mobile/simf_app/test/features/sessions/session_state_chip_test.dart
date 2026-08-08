@@ -48,9 +48,9 @@ void main() {
 
     test('an ended plain (held/scheduled) session shows no chip', () {
       expect(_chips(phase: SessionPhase.ended, status: SessionStatus.held),
-          isEmpty);
+          isEmpty,);
       expect(
-        _chips(phase: SessionPhase.ended, status: SessionStatus.scheduled),
+        _chips(phase: SessionPhase.ended),
         isEmpty,
       );
     });

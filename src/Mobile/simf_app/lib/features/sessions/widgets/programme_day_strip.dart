@@ -59,11 +59,11 @@ class ProgrammeDayStrip extends StatelessWidget {
   Widget _buildBand(List<_CalendarDay> entries) {
     return LayoutBuilder(
       builder: (context, constraints) {
-          const double gap = SimfTokens.space1;
+          const gap = SimfTokens.space1;
           // Comfortable per-day width (owner 2026-06-30 — the strip was cramped);
           // when the full date range exceeds the width the band scrolls
           // horizontally rather than squeezing every day.
-          const double minCell = SimfTokens.dayStripCellWidth;
+          const minCell = SimfTokens.dayStripCellWidth;
           final width = entries.length * minCell + (entries.length - 1) * gap;
           // Guard the unbounded-width case (e.g. if ever placed outside a
           // width-bounded parent) so the Expanded row can't throw.

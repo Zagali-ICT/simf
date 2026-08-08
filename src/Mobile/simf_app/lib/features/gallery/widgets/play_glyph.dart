@@ -4,7 +4,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// The video play glyph (frame node 949:4059): a navy-70% circle with a centred
 /// play triangle.
 class PlayGlyph extends StatelessWidget {
-  const PlayGlyph();
+  const PlayGlyph({super.key});
 
   @override
   Widget build(BuildContext context) {

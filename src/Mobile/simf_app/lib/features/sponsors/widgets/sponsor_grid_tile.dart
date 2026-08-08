@@ -6,12 +6,7 @@ import 'package:simf_app/features/sponsors/widgets/sponsor_logo.dart';
 /// beige hairline holding the sponsor logo above its name (12px SemiBold white,
 /// centred). The logo fills the area above the name; initials are the fallback.
 class SponsorGridTile extends StatelessWidget {
-  const SponsorGridTile({
-    required this.id,
-    required this.baseUrl,
-    required this.name,
-    required this.initials,
-    required this.onTap,
+  const SponsorGridTile({required this.id, required this.baseUrl, required this.name, required this.initials, required this.onTap, super.key,
   });
 
   final String id;

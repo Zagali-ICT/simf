@@ -395,15 +395,25 @@ stages:
     # Analyze SIMF-owned Dart only. third_party/video_player_android is a VENDORED
     # upstream plugin (D-768) whose generated *.mocks.dart carry ~325 analyzer
     # errors from an upstream mockito mismatch - not ours to fix, so it is not
-    # analysed here. --no-fatal-infos/--no-fatal-warnings keeps the
-    # very_good_analysis ratchet documented in analysis_options.yaml advisory
-    # (repo-wide zero is explicitly NOT the gate yet); a real analyzer ERROR in
-    # our own code still fails the step.
+    # analysed here.
+    #
+    # WARNINGS ARE NOW FATAL (2026-08-09). `--no-fatal-warnings` was dropped once
+    # the count reached zero: the only two left were unused constructor
+    # parameters on test fakes, kept deliberately and now carrying a targeted
+    # `// ignore:` that states why. A warning is a defect the analyzer is certain
+    # about, and the previous flag let one sit unnoticed indefinitely.
+    #
+    # `--no-fatal-infos` STAYS. The very_good_analysis ratchet is still open at
+    # ~2146 infos, most of them style preferences (avoid_positional_boolean_parameters,
+    # prefer_constructors_over_static_methods, comment_references). Making those
+    # fatal today would fail every build and the flag would come straight back
+    # off, which is what happened to the .NET test gate. The ratchet closes in
+    # its own increments; see analysis_options.yaml.
     - powershell: |
         $ErrorActionPreference = 'Stop'
         Set-Location '$(flutterApp)'
-        flutter analyze --no-fatal-infos --no-fatal-warnings lib test integration_test packages
-        if ($LASTEXITCODE -ne 0) { throw "flutter analyze found errors in SIMF Dart sources (exit $LASTEXITCODE)." }
+        flutter analyze --no-fatal-infos lib test integration_test packages
+        if ($LASTEXITCODE -ne 0) { throw "flutter analyze found errors or warnings in SIMF Dart sources (exit $LASTEXITCODE)." }
       displayName: 'flutter analyze (lib + test + integration_test + packages)'
 
     # --- Convention gate (SIMF-CQP-001). Detects the code-quality classes that

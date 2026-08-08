@@ -19,7 +19,7 @@ void main() {
     // The bug this rule fixed: an operational role saw a join affordance the
     // router then refused.
     test('is NOT offered to operational roles', () {
-      for (final AppRole role in <AppRole>[
+      for (final role in <AppRole>[
         AppRole.moderator,
         AppRole.staff,
       ]) {

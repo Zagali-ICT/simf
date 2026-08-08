@@ -49,7 +49,6 @@ class NotificationCard extends StatelessWidget {
         // deep-link is unreachable. _onTapItem is a no-op for read,
         // non-actionable rows.
         onTap: onTap,
-        color: SimfTokens.navyDeep,
         borderColor: SimfTokens.transparent,
         borderWidth: 0,
         child: Stack(

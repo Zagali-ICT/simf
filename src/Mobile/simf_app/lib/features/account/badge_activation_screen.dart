@@ -202,7 +202,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
   }
 
   String _passwordRequirementMessage(
-      PasswordRequirement req, AppL10n l10n) {
+      PasswordRequirement req, AppL10n l10n,) {
     switch (req) {
       case PasswordRequirement.length:
         return l10n.passwordLength;

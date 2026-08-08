@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class PlayerLoading extends StatelessWidget {
-  const PlayerLoading();
+  const PlayerLoading({super.key});
 
   @override
   Widget build(BuildContext context) {

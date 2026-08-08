@@ -114,16 +114,16 @@ Future<_FakeSeatingRepo> _pump(
         seatMapRepositoryProvider.overrideWithValue(_FakeSeatMapRepo()),
         staffSeatingRepositoryProvider.overrideWithValue(seating),
       ],
-      child: MaterialApp(
-        locale: const Locale('en'),
+      child: const MaterialApp(
+        locale: Locale('en'),
         supportedLocales: AppL10n.supportedLocales,
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const StaffSeatingScreen(sessionId: 's1'),
+        home: StaffSeatingScreen(sessionId: 's1'),
       ),
     ),
   );

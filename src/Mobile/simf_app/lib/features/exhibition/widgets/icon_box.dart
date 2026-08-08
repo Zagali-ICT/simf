@@ -6,7 +6,7 @@ import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 /// beige hairline, radius-4, with a 20px gold glyph centred. A bundled Figma
 /// SVG ([iconAsset]) takes precedence over the Material [icon] when supplied.
 class IconBox extends StatelessWidget {
-  const IconBox({required this.icon, this.iconAsset});
+  const IconBox({required this.icon, super.key, this.iconAsset});
 
   final IconData icon;
   final String? iconAsset;

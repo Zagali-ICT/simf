@@ -213,7 +213,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
           watchedSession,
           _watchedWhen(isArabic, form.targetStart),
         ),
-      ));
+      ),);
       children.add(const SizedBox(height: SimfTokens.space5));
     }
 

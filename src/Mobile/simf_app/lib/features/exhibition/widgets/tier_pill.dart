@@ -5,7 +5,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// radius-8, px-20/py-8, gap-8; the 16px medal glyph at the inline start (right
 /// in RTL, node 1439:11899) then the gold Bold-14 label (node 1439:11903).
 class TierPill extends StatelessWidget {
-  const TierPill({required this.label});
+  const TierPill({required this.label, super.key});
 
   final String label;
 

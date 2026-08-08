@@ -84,7 +84,7 @@ class SimfSearchField extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radius),
-            borderSide: const BorderSide(color: SimfTokens.accent, width: 1),
+            borderSide: const BorderSide(color: SimfTokens.accent),
           ),
         ),
       ),

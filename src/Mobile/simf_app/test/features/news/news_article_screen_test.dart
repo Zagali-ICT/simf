@@ -44,16 +44,16 @@ Future<void> _pump(WidgetTester tester, NewsRepository repo) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[newsRepositoryProvider.overrideWithValue(repo)],
-      child: MaterialApp(
-        locale: const Locale('en'),
+      child: const MaterialApp(
+        locale: Locale('en'),
         supportedLocales: AppL10n.supportedLocales,
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const NewsArticleScreen(newsId: 'n1'),
+        home: NewsArticleScreen(newsId: 'n1'),
       ),
     ),
   );

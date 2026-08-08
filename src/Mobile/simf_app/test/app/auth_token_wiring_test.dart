@@ -161,7 +161,6 @@ void main() {
           final dio = Dio(
             BaseOptions(
               baseUrl: config.baseUrl,
-              responseType: ResponseType.json,
               validateStatus: (_) => true,
             ),
           )..httpClientAdapter = adapter;

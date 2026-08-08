@@ -13,10 +13,7 @@ import 'package:simf_app/features/sessions/widgets/session_card_meta.dart';
 import 'package:simf_app/features/sessions/widgets/session_state_chip.dart';
 
 class MySessionsTabbedList extends StatelessWidget {
-  const MySessionsTabbedList({
-    required this.items,
-    required this.tabLabel,
-    required this.l10n,
+  const MySessionsTabbedList({required this.items, required this.tabLabel, required this.l10n, super.key,
   });
 
   final List<MyAreaSessionItem> items;
@@ -70,7 +67,7 @@ class MySessionsTabbedList extends StatelessWidget {
 /// One my-session card: the heart on the trailing edge, the title over a
 /// clock·time line with the category chip, and the primary speaker + hall.
 class MySessionCard extends StatelessWidget {
-  const MySessionCard({required this.item, required this.isArabic});
+  const MySessionCard({required this.item, required this.isArabic, super.key});
 
   final MyAreaSessionItem item;
   final bool isArabic;

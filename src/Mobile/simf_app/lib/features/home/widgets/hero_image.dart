@@ -7,7 +7,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// banner's pasted [fallbackUrl], then the bundled discover photo — so the hero
 /// always shows something even before an image is uploaded.
 class HeroImage extends StatelessWidget {
-  const HeroImage({required this.url, this.fallbackUrl});
+  const HeroImage({required this.url, super.key, this.fallbackUrl});
 
   final String url;
   final String? fallbackUrl;

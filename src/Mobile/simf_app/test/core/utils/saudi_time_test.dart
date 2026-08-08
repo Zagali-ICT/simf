@@ -57,7 +57,7 @@ void main() {
       // string's fields on a machine in Riyadh, London or Los Angeles alike.
       final a = parseWireDateTime('2026-11-23T09:00:00', 'start');
       expect(<int>[a.year, a.month, a.day, a.hour, a.minute],
-          <int>[2026, 11, 23, 9, 0]);
+          <int>[2026, 11, 23, 9, 0],);
     });
 
     test('a missing or unparseable value throws instead of yielding 1970', () {

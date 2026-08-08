@@ -16,13 +16,7 @@ import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 import 'package:simf_app/features/sessions/widgets/session_summry_button.dart';
 
 class PresentationsBody extends StatelessWidget {
-  const PresentationsBody({
-    required this.items,
-    required this.sessionsById,
-    required this.dayTab,
-    required this.onDayTab,
-    required this.onRefresh,
-    required this.l10n,
+  const PresentationsBody({required this.items, required this.sessionsById, required this.dayTab, required this.onDayTab, required this.onRefresh, required this.l10n, super.key,
   });
 
   final List<PresentationItem> items;
@@ -113,11 +107,7 @@ class PresentationsBody extends StatelessWidget {
 /// One session card — tapping it opens the session detail (17); the gold تحميل
 /// button opens that session's summary (34). Owner 2026-07-03.
 class PresentationCard extends StatelessWidget {
-  const PresentationCard({
-    required this.item,
-    required this.isArabic,
-    required this.dayLabel,
-    required this.summaryEnabled,
+  const PresentationCard({required this.item, required this.isArabic, required this.dayLabel, required this.summaryEnabled, super.key,
   });
 
   final PresentationItem item;

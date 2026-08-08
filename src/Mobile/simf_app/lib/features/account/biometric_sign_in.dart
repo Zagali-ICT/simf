@@ -21,7 +21,7 @@ Future<void> runBiometricSignIn({
   required void Function(String? message) onError,
   required void Function({required bool busy}) onBusy,
 }) async {
-  final BiometricAuth biometric = ref.read(biometricAuthProvider);
+  final biometric = ref.read(biometricAuthProvider);
   final notifier = ref.read(authControllerProvider.notifier);
 
   // (1) The device must have a usable biometric / secured lock.
@@ -46,7 +46,7 @@ Future<void> runBiometricSignIn({
   }
 
   // (3) OS prompt - biometric-first, device-PIN fallback (D-738).
-  final LocalAuthOutcome outcome =
+  final outcome =
       await biometric.confirmDeviceIdentity(l10n.biometricSignInTooltip);
   if (!context.mounted) {
     return;

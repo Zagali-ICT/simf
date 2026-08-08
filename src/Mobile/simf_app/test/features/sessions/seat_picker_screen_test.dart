@@ -81,7 +81,7 @@ class _FakePickerRepo implements SeatMapRepository {
     required int seatNumber,
   }) async {
     if (failReserve) {
-      throw ApiFailure(
+      throw const ApiFailure(
         code: 'SEAT_ALREADY_RESERVED',
         message: 'taken',
         httpStatus: 409,
@@ -103,7 +103,7 @@ class _FakePickerRepo implements SeatMapRepository {
   Future<MyReservation> reserveRandom(String sessionId) async {
     randomCalls++;
     if (randomSessionFull) {
-      throw ApiFailure(
+      throw const ApiFailure(
         code: 'SEAT_SESSION_FULL',
         message: 'full',
         httpStatus: 409,

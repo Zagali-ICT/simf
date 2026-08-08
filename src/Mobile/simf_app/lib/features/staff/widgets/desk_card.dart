@@ -4,7 +4,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// The desk's navy surface — one shared card so the scanner, the result and the
 /// error state never drift apart.
 class DeskCard extends StatelessWidget {
-  const DeskCard({required this.child});
+  const DeskCard({required this.child, super.key});
 
   final Widget child;
 

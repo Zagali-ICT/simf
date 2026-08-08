@@ -433,7 +433,6 @@ void main() {
         'copy, not the raw dio string', (tester) async {
       final repo = _FakeRepo(
         slots: _twoDaySlots,
-        failSubmitStatus: null,
         failSubmitCode: ApiErrorCodes.clientNetwork,
         failSubmitMessage: 'Network is unreachable.',
       );

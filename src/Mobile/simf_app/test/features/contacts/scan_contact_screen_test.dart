@@ -16,17 +16,17 @@ Future<void> _pump(WidgetTester tester, FakeContactsRepo repo) async {
       overrides: <Override>[
         contactsRepositoryProvider.overrideWithValue(repo),
       ],
-      child: MaterialApp(
-        locale: const Locale('en'),
+      child: const MaterialApp(
+        locale: Locale('en'),
         supportedLocales: AppL10n.supportedLocales,
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
         // Camera off — the manual-entry path is what the tests drive.
-        home: const ScanContactScreen(enableCamera: false),
+        home: ScanContactScreen(enableCamera: false),
       ),
     ),
   );

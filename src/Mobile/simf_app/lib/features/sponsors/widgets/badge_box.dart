@@ -7,7 +7,7 @@ import 'package:simf_app/features/sponsors/widgets/sponsor_logo.dart';
 /// navy-filled with a gold edge. Hosts the real [SponsorLogo] (clipped to fill),
 /// falling back to the acronym initials.
 class BadgeBox extends StatelessWidget {
-  const BadgeBox({required this.child, required this.hero});
+  const BadgeBox({required this.child, required this.hero, super.key});
 
   final Widget child;
   final bool hero;

@@ -106,13 +106,10 @@ class MyAreaScheduleItem {
   const MyAreaScheduleItem({
     required this.kind,
     required this.start,
-    this.end,
-    required this.titleEn,
-    required this.titleAr,
+    required this.titleEn, required this.titleAr, required this.status, this.end,
     this.hallNameEn,
     this.hallNameAr,
     this.subject,
-    required this.status,
     this.sessionId,
     this.meetingId,
   });

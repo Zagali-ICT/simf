@@ -41,7 +41,7 @@ Future<void> _pump(
         simfDataConfigProvider.overrideWithValue(_config),
         sponsorDetailProvider.overrideWith((ref, id) async {
           if (fail) {
-            throw ApiFailure(
+            throw const ApiFailure(
               code: ApiErrorCodes.clientNetwork,
               message: 'x',
               httpStatus: 500,

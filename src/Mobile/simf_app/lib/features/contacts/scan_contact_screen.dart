@@ -44,7 +44,7 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
     final messenger = ScaffoldMessenger.of(context);
     // The app's own share QR is a vCard with the token embedded (D-737); a
     // native phone's vCard, or an old QR, carries no token → clear guidance.
-    String code = scanned.trim();
+    var code = scanned.trim();
     if (isVCardPayload(code)) {
       final embedded = extractShareToken(code);
       if (embedded == null || embedded.isEmpty) {

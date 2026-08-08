@@ -86,16 +86,16 @@ Future<void> _pump(
       overrides: <Override>[
         notificationsRepositoryProvider.overrideWithValue(repo),
       ],
-      child: MaterialApp(
-        locale: const Locale('en'),
+      child: const MaterialApp(
+        locale: Locale('en'),
         supportedLocales: AppL10n.supportedLocales,
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const NotificationsScreen(),
+        home: NotificationsScreen(),
       ),
     ),
   );
@@ -434,7 +434,7 @@ void main() {
       await _pump(
         tester,
         repo: _FakeNotificationsRepository(
-          items: <NotificationItem>[_item(kind: 'SessionReminder')],
+          items: <NotificationItem>[_item()],
         ),
       );
       expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);

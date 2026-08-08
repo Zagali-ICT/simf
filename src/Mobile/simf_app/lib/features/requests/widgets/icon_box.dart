@@ -4,7 +4,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// The gold rounded type-icon box at the inline start of a card (Figma
 /// 1408:9783 — 32px, radius-4, a 16px navy glyph).
 class IconBox extends StatelessWidget {
-  const IconBox({required this.icon});
+  const IconBox({required this.icon, super.key});
 
   final IconData icon;
 

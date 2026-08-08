@@ -4,7 +4,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// The gold category chip overlaid on the thumbnail (frame node 958:2203): a
 /// solid-gold rounded pill with white bold text.
 class CategoryChip extends StatelessWidget {
-  const CategoryChip({required this.label});
+  const CategoryChip({required this.label, super.key});
 
   final String label;
 

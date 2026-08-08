@@ -6,10 +6,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// The raised gold QR centre action (frame 758:1476 "boxicons:qr", 56px) — the
 /// bundled multi-colour SVG (gold disc, cream ring, navy glyph) rendered as-is.
 class CentreAction extends StatelessWidget {
-  const CentreAction({
-    required this.active,
-    required this.label,
-    required this.onTap,
+  const CentreAction({required this.active, required this.label, required this.onTap, super.key,
   });
 
   final bool active;

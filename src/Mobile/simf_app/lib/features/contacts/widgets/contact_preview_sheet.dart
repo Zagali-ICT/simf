@@ -13,7 +13,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// The resolved-card preview + save sheet. Holds the optional note and the save
 /// call; pops `true` on a successful save, surfacing the self-save 400 inline.
 class ContactPreviewSheet extends ConsumerStatefulWidget {
-  const ContactPreviewSheet({required this.token, required this.card});
+  const ContactPreviewSheet({required this.token, required this.card, super.key});
 
   final String token;
   final VisitorCard card;

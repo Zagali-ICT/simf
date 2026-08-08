@@ -4,11 +4,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// One bordered seat/row chip (frame 905:1577 / 905:1579): a gold label word
 /// next to its value, centred on a navyDeep fill with a thin gold/beige border.
 class SeatChip extends StatelessWidget {
-  const SeatChip({
-    required this.goldLabel,
-    required this.value,
-    required this.borderColor,
-    required this.borderWidth,
+  const SeatChip({required this.goldLabel, required this.value, required this.borderColor, required this.borderWidth, super.key,
   });
 
   final String goldLabel;

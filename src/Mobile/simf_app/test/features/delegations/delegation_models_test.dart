@@ -105,7 +105,7 @@ void main() {
     });
 
     test('matches filters by country name, code and head', () {
-      final item = _item(name: 'United States', nameAr: 'الولايات المتحدة', head: 'James Mitchell');
+      final item = _item(head: 'James Mitchell');
       expect(item.matches(''), isTrue);
       expect(item.matches('united'), isTrue);
       expect(item.matches('الولايات'), isTrue);
@@ -122,7 +122,7 @@ void main() {
     });
 
     test('localized helpers pick per locale', () {
-      final item = _item(name: 'United States', nameAr: 'الولايات المتحدة');
+      final item = _item();
       expect(item.localizedCountry(false), 'United States');
       expect(item.localizedCountry(true), 'الولايات المتحدة');
       expect(item.localizedCountrySubtitle(false), 'الولايات المتحدة');

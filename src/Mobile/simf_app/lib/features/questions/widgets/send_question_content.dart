@@ -147,7 +147,6 @@ class SendQuestionComposer extends StatelessWidget {
             maxLength: FieldLimits.sessionQuestion,
             maxLines: null,
             expands: true,
-            textAlign: TextAlign.start,
             textAlignVertical: TextAlignVertical.top,
             textInputAction: TextInputAction.newline,
             style: SimfTokens.bodyWhiteSm,

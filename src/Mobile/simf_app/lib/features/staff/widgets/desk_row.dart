@@ -3,7 +3,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 
 /// One label / value line in the result card.
 class DeskRow extends StatelessWidget {
-  const DeskRow({required this.label, required this.value});
+  const DeskRow({required this.label, required this.value, super.key});
 
   final String label;
   final String value;

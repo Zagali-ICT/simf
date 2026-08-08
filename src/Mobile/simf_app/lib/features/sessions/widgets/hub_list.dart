@@ -8,7 +8,7 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/hub_row.dart';
 
 class HubList extends StatelessWidget {
-  const HubList({required this.items, required this.l10n});
+  const HubList({required this.items, required this.l10n, super.key});
 
   final List<SessionListItem> items;
   final AppL10n l10n;

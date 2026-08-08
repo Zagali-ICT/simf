@@ -83,7 +83,7 @@ class RequestActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = active ? SimfTokens.surface : SimfTokens.beigeBorder;
+    final fg = active ? SimfTokens.surface : SimfTokens.beigeBorder;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radius),

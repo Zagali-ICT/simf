@@ -5,7 +5,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// the inline-end (left) of the header. Figma renders a full flag image; the app
 /// renders the country **emoji** (its only flag form), centred on the navy tile.
 class CountryFlagTile extends StatelessWidget {
-  const CountryFlagTile({required this.flag});
+  const CountryFlagTile({required this.flag, super.key});
 
   final String flag;
 

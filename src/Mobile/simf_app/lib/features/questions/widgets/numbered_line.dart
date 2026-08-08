@@ -7,7 +7,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// in RTL) before the right-aligned beige body, matching the frame's
 /// `list-decimal` marker.
 class NumberedLine extends StatelessWidget {
-  const NumberedLine({required this.index, required this.text});
+  const NumberedLine({required this.index, required this.text, super.key});
 
   final int index;
   final String text;

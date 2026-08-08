@@ -5,7 +5,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// day-ordinal in white extrabold, always LTR (e.g. "02"); a longer fallback
 /// code scales down to fit rather than overflowing the badge.
 class IndexBadge extends StatelessWidget {
-  const IndexBadge({required this.text});
+  const IndexBadge({required this.text, super.key});
 
   final String text;
 

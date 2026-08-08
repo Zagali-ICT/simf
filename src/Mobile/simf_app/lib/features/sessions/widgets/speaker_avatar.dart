@@ -6,7 +6,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// (D-357), falling back to a navy person glyph while it loads or when the
 /// speaker has no photo (the asset route 404s).
 class SpeakerAvatar extends StatelessWidget {
-  const SpeakerAvatar({required this.imageUrl});
+  const SpeakerAvatar({required this.imageUrl, super.key});
 
   final String imageUrl;
 

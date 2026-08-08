@@ -42,7 +42,7 @@ class _StubOrgProfile extends OrgProfileController {
   Future<void> warm() async {}
 }
 
-OrgProfile _orgProfile() => OrgProfile(
+OrgProfile _orgProfile() => const OrgProfile(
       name: 'The International Maritime Forum',
       nameArabic: 'الملتقى الدولي البحري',
       title: 'The Saudi Forum',
@@ -53,8 +53,8 @@ OrgProfile _orgProfile() => OrgProfile(
       contactPhone: '+966 11 000 0000',
       contactEmail: 'info@simf.example',
       contactWebsite: 'https://simf.example',
-      social: const OrgSocial(),
-      aboutItems: const <OrgAboutItem>[
+      social: OrgSocial(),
+      aboutItems: <OrgAboutItem>[
         OrgAboutItem(
           title: 'Mission',
           titleArabic: 'الرسالة',
@@ -62,7 +62,7 @@ OrgProfile _orgProfile() => OrgProfile(
           textArabic: 'تعزيز الحوار',
         ),
       ],
-      details: const <OrgDetail>[
+      details: <OrgDetail>[
         // A language-neutral value (a year) — no Arabic value; falls back.
         OrgDetail(name: 'Year', nameArabic: 'السنة', value: '2026'),
         // A language-specific value — the Arabic reader sees the Arabic value.

@@ -14,9 +14,7 @@ import 'package:simf_app/features/contacts/widgets/channel_row.dart';
 /// SIMF-VID-001.
 class ContactCard extends StatelessWidget {
   const ContactCard({
-    super.key,
-    required this.name,
-    required this.available,
+    required this.name, required this.available, super.key,
     this.jobTitle,
     this.organisation,
     this.country,

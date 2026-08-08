@@ -3,7 +3,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 
 /// One icon + label pair in the meta line (frame 889:2687/889:2686).
 class MetaItem extends StatelessWidget {
-  const MetaItem({required this.icon, required this.label});
+  const MetaItem({required this.icon, required this.label, super.key});
 
   final IconData icon;
   final String label;

@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class CvTab extends StatelessWidget {
-  const CvTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
+  const CvTab({required this.label, required this.selected, required this.onTap, super.key,
   });
 
   final String label;

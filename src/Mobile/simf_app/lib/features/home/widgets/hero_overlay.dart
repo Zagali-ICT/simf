@@ -7,7 +7,7 @@ import 'package:simf_app/features/home/widgets/meta_line.dart';
 /// The hero text overlay: the forum edition (name + theme + date range +
 /// location) when the profile is loaded, otherwise the original discover copy.
 class HeroOverlay extends StatelessWidget {
-  const HeroOverlay({required this.l10n, required this.profile});
+  const HeroOverlay({required this.l10n, required this.profile, super.key});
 
   final AppL10n l10n;
   final OrgProfile? profile;

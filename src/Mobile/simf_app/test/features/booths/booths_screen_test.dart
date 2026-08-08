@@ -73,6 +73,8 @@ const _other = BoothSummary(
 class _FakeRepo implements VenueMapRepository {
   _FakeRepo({
     this.booths = const <BoothSummary>[],
+    // Part of the fake's surface even where a given test does not set it.
+    // ignore: unused_element_parameter
     this.detail,
     this.fail = false,
   });

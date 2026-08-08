@@ -5,7 +5,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// not-live) — keeps the frame's full-bleed black band, centring an icon +
 /// message where the feed would play.
 class MessageSurface extends StatelessWidget {
-  const MessageSurface({required this.icon, required this.message});
+  const MessageSurface({required this.icon, required this.message, super.key});
 
   final IconData icon;
   final String message;

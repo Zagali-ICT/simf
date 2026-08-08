@@ -5,7 +5,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// the flag sits at the inline-start of the name (physical left in this
 /// LTR-forced header), 8px before it; the name ellipsises if it is too long.
 class NameLine extends StatelessWidget {
-  const NameLine({required this.title, required this.flag});
+  const NameLine({required this.title, required this.flag, super.key});
 
   final String title;
   final String flag;

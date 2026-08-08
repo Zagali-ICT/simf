@@ -36,7 +36,7 @@ class SimfCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final BorderRadius br = BorderRadius.all(Radius.circular(radius));
+    final br = BorderRadius.all(Radius.circular(radius));
     return Material(
       color: color,
       shape: RoundedRectangleBorder(
@@ -146,8 +146,6 @@ class SimfLinkRow extends StatelessWidget {
     return SimfCard(
       onTap: onTap,
       color: SimfTokens.transparent,
-      borderColor: SimfTokens.beigeBorder,
-      borderWidth: SimfTokens.hairline,
       child: SizedBox(
         height: SimfTokens.simfCardsHeightSm,
         child: Padding(

@@ -3,7 +3,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class ErrorState extends StatelessWidget {
-  const ErrorState({required this.message, required this.onRetry});
+  const ErrorState({required this.message, required this.onRetry, super.key});
 
   final String message;
   final VoidCallback onRetry;

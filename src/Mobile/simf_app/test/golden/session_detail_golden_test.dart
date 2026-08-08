@@ -108,14 +108,13 @@ const _mySeatCell = SeatCell(
   kind: SeatReservationKind.userBooking,
 );
 
-SessionSeatMap _seatMap() => SessionSeatMap(
-      rowLabels: const <String>['A', 'B'],
+SessionSeatMap _seatMap() => const SessionSeatMap(
+      rowLabels: <String>['A', 'B'],
       seatsPerRow: 12,
-      reservedCells: const <SeatCell>[],
+      reservedCells: <SeatCell>[],
       activeReservedCount: 0,
       hallCapacity: 24,
       myCell: _mySeatCell,
-      mode: SeatSelectionMode.assignedSeat,
     );
 
 CurrentUser _visitor() => CurrentUser(
@@ -130,7 +129,7 @@ CurrentUser _visitor() => CurrentUser(
 Session _session() => Session(
       accessToken: 'A',
       refreshToken: 'R',
-      accessTokenExpiresAt: DateTime.utc(2099, 1, 1),
+      accessTokenExpiresAt: DateTime.utc(2099),
       user: _visitor(),
     );
 

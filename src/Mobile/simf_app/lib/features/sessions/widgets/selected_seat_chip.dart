@@ -6,7 +6,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// with the my-seat chips) — kept forced-LTR-agnostic (it reads inside the RTL
 /// picker body).
 class SelectedSeatChip extends StatelessWidget {
-  const SelectedSeatChip({required this.label});
+  const SelectedSeatChip({required this.label, super.key});
 
   final String label;
 

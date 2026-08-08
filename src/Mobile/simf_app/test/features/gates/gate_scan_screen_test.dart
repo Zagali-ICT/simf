@@ -379,7 +379,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Allowed (offline) — saved for confirmation.'),
-          findsOneWidget);
+          findsOneWidget,);
       // NOT the server's allowed card: the decision is still the server's when
       // the queue drains, and the operator must not read this as final.
       expect(find.text('Allowed'), findsNothing);

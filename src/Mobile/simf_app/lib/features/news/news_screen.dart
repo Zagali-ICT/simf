@@ -51,14 +51,14 @@ class NewsScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
               SimfTokens.space4,
               SimfTokens.space2,
               SimfTokens.space4,
               SimfTokens.space2,
             ),
-            child: const MediaCoverageTabs(active: MediaCoverageTab.latestUpdates),
+            child: MediaCoverageTabs(active: MediaCoverageTab.latestUpdates),
           ),
           Expanded(
             child: news.when(

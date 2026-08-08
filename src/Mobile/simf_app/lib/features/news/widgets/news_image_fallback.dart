@@ -3,7 +3,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 
 /// The no-image / failed-fetch fall-back: a navy box with the article glyph.
 class NewsImageFallback extends StatelessWidget {
-  const NewsImageFallback();
+  const NewsImageFallback({super.key});
 
   @override
   Widget build(BuildContext context) => const ColoredBox(

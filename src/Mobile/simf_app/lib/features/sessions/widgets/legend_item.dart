@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 class LegendItem extends StatelessWidget {
-  const LegendItem({
-    required this.color,
-    required this.label,
-    required this.size,
+  const LegendItem({required this.color, required this.label, required this.size, super.key,
     this.borderColor,
     this.icon,
     this.iconColor,

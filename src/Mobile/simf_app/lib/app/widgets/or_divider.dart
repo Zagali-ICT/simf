@@ -3,7 +3,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 
 /// The gold "or" divider between the camera and manual paths.
 class OrDivider extends StatelessWidget {
-  const OrDivider({required this.label});
+  const OrDivider({required this.label, super.key});
 
   final String label;
 

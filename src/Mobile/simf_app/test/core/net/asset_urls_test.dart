@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
 
 void main() {
-  const String base = 'https://api.example.com/api/v1';
+  const base = 'https://api.example.com/api/v1';
 
   group('AssetUrls', () {
     test('builds the D-357 asset route', () {

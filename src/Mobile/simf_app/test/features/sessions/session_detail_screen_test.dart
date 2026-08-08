@@ -259,7 +259,7 @@ class _FakeSeatRepo implements SeatMapRepository {
     getSeatMapCalls++;
     final m = map;
     if (m == null) {
-      throw ApiFailure(
+      throw const ApiFailure(
         code: ApiErrorCodes.clientNetwork,
         message: 'x',
         httpStatus: 403,
@@ -515,7 +515,7 @@ Future<GoRouter> _pumpRatePrompt(
         simfDataConfigProvider.overrideWithValue(_testConfig),
         simfPrefsStorageProvider.overrideWithValue(prefs),
         sessionDetailRepositoryProvider.overrideWithValue(repo),
-        seatMapRepositoryProvider.overrideWithValue(_FakeSeatRepo(map: null)),
+        seatMapRepositoryProvider.overrideWithValue(_FakeSeatRepo()),
         sessionCalendarProvider.overrideWithValue(_FakeCalendar()),
         authControllerProvider.overrideWith(() => controller),
       ],
@@ -809,7 +809,7 @@ void main() {
       // real 409 reason was swallowed behind a generic toast.
       final seatRepo = _FakeSeatRepo(
         map: _seatMap(myCell: _mySeatCell),
-        releaseFailure: ApiFailure(
+        releaseFailure: const ApiFailure(
           code: ApiErrorCodes.clientNetwork,
           message: 'You cannot cancel after the session has started',
           httpStatus: 409,
@@ -841,7 +841,7 @@ void main() {
         'generic toast', (tester) async {
       final seatRepo = _FakeSeatRepo(
         map: _seatMap(myCell: _mySeatCell),
-        releaseFailure: ApiFailure(
+        releaseFailure: const ApiFailure(
           code: ApiErrorCodes.clientNetwork,
           message: '   ', // whitespace-only → no usable reason
           httpStatus: 500,
@@ -1044,7 +1044,7 @@ void main() {
       await _pump(
         tester,
         repo: _FakeDetailRepo(detail: _detail()),
-        seatMap: _seatMap(mode: SeatSelectionMode.assignedSeat),
+        seatMap: _seatMap(),
         controller: _SignedInController(),
       );
 
@@ -1078,16 +1078,16 @@ void main() {
             sessionCalendarProvider.overrideWithValue(_FakeCalendar()),
             authControllerProvider.overrideWith(_SignedInController.new),
           ],
-          child: MaterialApp(
-            locale: const Locale('en'),
+          child: const MaterialApp(
+            locale: Locale('en'),
             supportedLocales: AppL10n.supportedLocales,
-            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+            localizationsDelegates: <LocalizationsDelegate<dynamic>>[
               ...AppL10n.localizationsDelegates,
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            home: const SessionDetailScreen(sessionId: 's1'),
+            home: SessionDetailScreen(sessionId: 's1'),
           ),
         ),
       );

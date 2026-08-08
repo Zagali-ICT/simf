@@ -32,6 +32,6 @@ LiveSession globalLiveSession(OrgProfile profile, String url) => LiveSession(
 /// The frame's header line, "يُبث الآن · {hall}", or just the label when the
 /// broadcasting hall is not known.
 String broadcastLabel(AppL10n l10n, {required bool isLive, String? hall}) {
-  final String base = isLive ? l10n.liveNowBroadcasting : l10n.liveSessionLabel;
+  final base = isLive ? l10n.liveNowBroadcasting : l10n.liveSessionLabel;
   return hall == null ? base : '$base · $hall';
 }

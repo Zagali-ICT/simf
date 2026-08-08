@@ -6,7 +6,7 @@ import 'package:simf_app/features/gallery/widgets/gallery_placeholder_box.dart';
 /// loads and a fall-back to the kind icon when [imageUrl] is null or the fetch
 /// fails.
 class Thumbnail extends StatelessWidget {
-  const Thumbnail({required this.imageUrl, required this.isVideo});
+  const Thumbnail({required this.imageUrl, required this.isVideo, super.key});
 
   final String? imageUrl;
   final bool isVideo;

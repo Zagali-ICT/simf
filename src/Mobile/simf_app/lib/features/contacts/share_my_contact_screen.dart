@@ -184,9 +184,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
                 padding: const EdgeInsets.all(SimfTokens.space6),
                 child: QrImageView(
                   data: buildShareQrPayload(vcard, _token ?? ''),
-                  version: QrVersions.auto,
                   size: SimfTokens.shareMyContactScreenSize,
-                  gapless: true,
                 ),
               ),
             ),
@@ -219,7 +217,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
                   : () => unawaited(_rotate()),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
-                side: const BorderSide(color: SimfTokens.accent, width: 1),
+                side: const BorderSide(color: SimfTokens.accent),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                 ),

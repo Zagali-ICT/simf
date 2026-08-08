@@ -349,7 +349,6 @@ class UserProfileResponse {
         placeOfBirth: placeOfBirth,
         isSaudi: isSaudi,
         gender: gender,
-        profileTypeId: null,
         jobTitle: jobTitle,
         dateOfBirth: dateOfBirth,
         nationalId: nationalId,

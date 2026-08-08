@@ -64,10 +64,10 @@ void main() {
       ProviderScope(
         overrides: <Override>[
           siteSettingsProvider.overrideWith(
-            (ref) => SiteSettings(
+            (ref) => const SiteSettings(
               registrationMessageAr: 'تهانينا، مرحباً بكم في الملتقى السعودي الرابع',
               registrationMessageEn: 'Welcome to the Fourth Saudi Forum!',
-              social: const SiteSocialLinks(),
+              social: SiteSocialLinks(),
             ),
           ),
         ],

@@ -4,7 +4,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// The gold-bordered "المسرح · STAGE" band at the top of the hall card
 /// (frame 905:1584): a full-width navyDeep pill, gold hairline, gold label.
 class StageBar extends StatelessWidget {
-  const StageBar({required this.label});
+  const StageBar({required this.label, super.key});
 
   final String label;
 

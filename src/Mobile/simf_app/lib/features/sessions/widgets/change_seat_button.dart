@@ -7,7 +7,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// icon is decorative (no `semanticLabel`), so a screen reader announces exactly
 /// "تغيير المقعد" / "Change seat" once.
 class ChangeSeatButton extends StatelessWidget {
-  const ChangeSeatButton({required this.l10n, required this.onChangeSeat});
+  const ChangeSeatButton({required this.l10n, required this.onChangeSeat, super.key});
 
   final AppL10n l10n;
   final VoidCallback onChangeSeat;
