@@ -4,6 +4,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/media_coverage_tabs.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/responsive/grid_columns.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/media_partners/data/media_partners_repository.dart';
 import 'package:simf_app/features/media_partners/widgets/partner_card.dart';
@@ -97,8 +98,8 @@ class MediaPartnersScreen extends ConsumerWidget {
                       SimfTokens.space6,
                     ),
                     gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
+                        SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: responsiveGridColumns(context, compact: 2),
                       mainAxisSpacing: SimfTokens.space4,
                       crossAxisSpacing: SimfTokens.space4,
                       childAspectRatio: SimfTokens.partnerCardAspectRatio,

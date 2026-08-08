@@ -6,6 +6,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/responsive/grid_columns.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
@@ -126,7 +127,7 @@ class SignUpInterestsBody extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: SimfTokens.space8),
-                  _chips(l10n),
+                  _chips(context, l10n),
                   const SizedBox(height: SimfTokens.space6),
                   Text(
                     l10n.interestsCounter(selected.length),
@@ -196,9 +197,9 @@ class SignUpInterestsBody extends StatelessWidget {
     );
   }
 
-/// The design's two-column pill grid (Figma 505:1222): gold when selected,
-  /// `navyDeep` with a muted border otherwise.
-  Widget _chips(AppL10n l10n) {
+  /// The design's pill grid (Figma 505:1222, two columns on a phone): gold
+  /// when selected, `navyDeep` with a muted border otherwise.
+  Widget _chips(BuildContext context, AppL10n l10n) {
     if (interests.isEmpty) {
       return Text(
         l10n.interestsEmpty,
@@ -208,8 +209,8 @@ class SignUpInterestsBody extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: responsiveGridColumns(context, compact: 2),
         crossAxisSpacing: 10,
         mainAxisSpacing: 12,
         mainAxisExtent: SimfTokens.signUpInterestsScreenExtent,

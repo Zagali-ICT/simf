@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/responsive/grid_columns.dart';
 import 'package:simf_app/features/gallery/data/media_models.dart';
 import 'package:simf_app/features/gallery/widgets/gallery_media_tile.dart';
 
@@ -23,8 +23,8 @@ class MediaGrid extends StatelessWidget {
       shrinkWrap: true,
       primary: false,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: responsiveGridColumns(context, compact: 2),
         mainAxisSpacing: SimfTokens.space4,
         crossAxisSpacing: SimfTokens.space4,
         // Frame tiles are 164×104 → ~1.58 aspect.
