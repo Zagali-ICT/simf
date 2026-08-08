@@ -274,6 +274,56 @@ unstated.
 The gate progresses in three stages: no new violations, then zero violations in
 each feature as its wave lands, then zero across the repository at Wave 6.
 
+## 10.1 The remaining 18 findings, and why they are not being forced to zero
+
+Eight of the nine rules report zero. SIMF-C3 reports 18, all of them `_build*`
+methods in five screens:
+
+| Screen | Lines | Findings |
+|--------|-------|----------|
+| `sign_up_visitor_screen.dart` | 1305 | 10 |
+| `staff/register_visitor_screen.dart` | 1262 | 3 |
+| `sign_up_interests_screen.dart` | 469 | 3 |
+| `live_broadcast_screen.dart` | 507 | 1 |
+| `session_detail_screen.dart` | 468 | 1 |
+
+Every one of these methods reads instance state. The state each would need as a
+widget was measured rather than estimated:
+
+| Method | Distinct pieces of state |
+|--------|--------------------------|
+| `_buildOrganisationField` | 9 |
+| `_buildProfileTypeField` | 8 |
+| `_buildPlateField` | 8 |
+| `_buildIdImageField` | 6 |
+
+Converting these to widgets means eight or nine constructor parameters each,
+several of them callbacks. That satisfies the rule and makes the code harder to
+read: the same coupling, expressed with more ceremony. It would be a change made
+for the metric rather than for the reader.
+
+What has been taken out of these screens is everything that genuinely did not
+belong in a widget, and each move was verified by tests that could not exist
+before it:
+
+* the 8 visitor-profile validators, now pure functions with 16 tests;
+* the sign-in validators, with the load-bearing rule that sign-in does NOT
+  apply the sign-up password policy, pinned by a test;
+* the 100-line device-key sign-in flow;
+* the session-detail eligibility rules, with 7 tests covering the defect ids
+  they were filed under.
+
+What remains is the screens themselves. `sign_up_visitor_screen` collects around
+twenty fields spanning identity, documents, contact, vehicle and photographs in
+one form. The honest fix is to split it into form sections that own their own
+state, which is a redesign of the highest-traffic registration flow in the
+product, not a refactor. It needs its own decision, its own plan and its own
+verification.
+
+These 18 are therefore recorded as a **known, argued exception** rather than
+churned to zero. The gate holds them at exactly this count, so the number cannot
+grow quietly while the redesign is decided.
+
 ## 11. Out of scope
 
 * Renaming existing value named tokens. The review did not raise it, and

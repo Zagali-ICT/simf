@@ -27,13 +27,20 @@ an external code review, so it can be read and handed over directly.
 ## The baseline
 
 `baseline.json` records the findings tolerated today. `--check` fails only on a
-finding that is NOT in it, so pre-existing debt does not block work while the
-remediation waves land, and a newly introduced violation fails the build on the
-commit that introduced it.
+finding that is NOT in it, so a newly introduced violation fails the build on
+the commit that introduced it.
 
-Entries are removed as waves land. **Nothing is ever added to the baseline by
-hand.** Re-record it with `--write-baseline` only after a wave has genuinely
-reduced the count, and review the resulting diff.
+It now holds **18 entries**, all `_build*` methods in five large screens. They
+are a deliberate, argued exception, not leftover debt: see SIMF-CQP-001 section
+10.1 for the measurement behind the decision. Eight of the nine rules report
+zero, so for those the baseline is already equivalent to `--strict`.
+
+**Nothing is ever added to the baseline by hand.** Re-record it with
+`--write-baseline` only after a change has genuinely reduced the count, and
+review the resulting diff: the diff should only ever remove entries.
+
+When the five screens are split, delete `baseline.json` and change the pipeline
+step to `--check --strict`.
 
 ## Design notes
 

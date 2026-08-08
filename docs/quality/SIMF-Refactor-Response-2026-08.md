@@ -4,8 +4,8 @@
 |-------|-------|
 | Document ID | SIMF-CQR-001 |
 | Title | Response to the external code review, August 2026 |
-| Version | 0.1 (Wave 0, structure and category positions) |
-| Status | In progress |
+| Version | 1.0 |
+| Status | Complete, pending owner approval |
 | Classification | Confidential, to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team |
 | Owner | Solution Architect |
@@ -17,6 +17,7 @@
 | Version | Date | Summary of change |
 |---------|------|-------------------|
 | 0.1 | 2026-08-08 | Wave 0. Structure, verified counts, and the position taken on each category. |
+| 1.0 | 2026-08-08 | Programme complete. 1056 findings to 18, eight of nine rules at zero, the remaining 18 recorded as an argued exception. |
 
 ---
 
@@ -52,22 +53,32 @@ The verification is now automated. `tool/conventions` reproduces the review
 mechanically and is run before every delivery. Its current output is in
 `docs/quality/convention-report.md`.
 
-## 4. Verified findings at Wave 0
+## 4. Findings and outcome
 
-| Category | Rule | Findings | Position |
-|----------|------|----------|----------|
-| Raw numeric literals | SIMF-C1 | 599 | Fixed, partly differently, see 5.1 |
-| Hardcoded endpoint and asset URLs | SIMF-C2 | 123 | Fixed differently, see 5.2 |
-| Private widgets and build methods | SIMF-C3 | 192 | Fixed as proposed, see 5.3 |
-| Hardcoded user facing strings | SIMF-C4 | 6 | Fixed as proposed |
-| Hardcoded bundled asset paths | SIMF-C5 | 31 | Fixed as proposed |
-| Models inside repository files | SIMF-C6 | 9 | Fixed as proposed |
-| Raw form controls | SIMF-C7 | 12 | Fixed as proposed, see 5.4 |
+| Category | Rule | Found | Now | Position |
+|----------|------|-------|-----|----------|
+| Raw numeric literals | SIMF-C1 | 599 | **0** | Fixed, partly differently, see 5.1 |
+| Hardcoded endpoint and asset URLs | SIMF-C2 | 123 | **0** | Fixed differently, see 5.2 |
+| Private widgets and build methods | SIMF-C3 | 192 | 18 | Fixed as proposed, see 5.3 and 5.6 |
+| Hardcoded user facing strings | SIMF-C4 | 6 | **0** | Fixed as proposed |
+| Hardcoded bundled asset paths | SIMF-C5 | 31 | **0** | Fixed as proposed |
+| Models inside repository files | SIMF-C6 | 9 | **0** | Fixed as proposed |
+| Raw form controls | SIMF-C7 | 12 | **0** | Fixed as proposed, see 5.4 |
 
 The review covered the mobile application. The same programme additionally
 covers the Control Panel and Website, which were not in the review: 17 inline
-style attributes (SIMF-N1) and 67 raw hex colours outside the token stylesheet
-(SIMF-N2).
+style attributes (SIMF-N1, now 0) and 67 raw hex colours outside the token
+stylesheet (SIMF-N2, now 0).
+
+**1056 findings at the start, 18 now.** Every private widget class named in the
+review has its own file. The 18 remaining are `_build*` methods in five large
+screens, held as an argued exception rather than forced to zero; section 5.6
+explains why, and SIMF-CQP-001 section 10.1 records it in full.
+
+Every change was verified the same way: the full application test suite green
+including every golden image, so the work is behaviour preserving and pixel
+preserving. The suite grew from 1351 tests to 1379, because several of the moves
+made rules testable that previously were not.
 
 ## 5. Positions taken
 
@@ -79,10 +90,10 @@ because applying it there would reduce quality rather than improve it.
 
 | Literal | Our location | Reason |
 |---------|--------------|--------|
-| `maxLength` | `*_field_limits.dart` | The value must mirror the backend FluentValidation `MaximumLength(N)` and Entity Framework `HasMaxLength(N)`. Holding a validation contract in a design token file breaks the alignment rule that keeps the three in step. |
-| `Duration` | `core/net/timeouts.dart` or a feature policy constant | A timeout or cooldown is network and behaviour policy. It has no design meaning and would not change when the design changes. |
-| `maxLines`, `minLines` | A named layout constant | A token named for its own value, such as `maxLines2`, carries no more meaning than the literal it replaces. |
-| `crossAxisCount` | Derived from `core/responsive/breakpoints.dart` | A fixed column count is the defect. The correct fix is to derive it from the breakpoint, not to freeze it under a new name. |
+| `maxLength` | `core/validation/field_limits.dart` | The value must mirror the backend FluentValidation `MaximumLength(N)` and Entity Framework `HasMaxLength(N)`. Holding a validation contract in a design token file breaks the alignment rule that keeps the three in step. The backend was checked field by field, and the sorted set of limits was proven identical before and after the move. |
+| `Duration` | `core/motion/motion_durations.dart`, split into `MotionDurations` and `TimeoutPolicy` | An animation length and a deadline are different things: exceeding a deadline is a failure path, not an effect. Neither has design meaning. |
+| `maxLines`, `minLines` | Left as written | `maxLines: 2` already states its own meaning. `TextClamp.cardTitle` adds a hop and no information. |
+| `crossAxisCount` | Raised as a separate proposal | Deriving the column count from the breakpoint is the right answer AND it changes the layout on a tablet. That is a design decision, so it is put to the owner rather than made inside a cleanup pass. |
 
 Tokens created by this work are named for their role rather than their value.
 
@@ -140,6 +151,50 @@ cited for a hardcoded font size of 22. That file uses design tokens throughout
 and contains no numeric literal. Its only valid finding is the private widget
 one, which is accepted. Items in this class are listed per wave in section 6
 with the position "Already correct".
+
+### 5.6 The 18 findings not forced to zero
+
+All 18 are `_build*` methods in five screens. Every one reads instance state,
+so converting it to a widget means passing that state through a constructor.
+The cost was measured, not estimated: `_buildOrganisationField` reads 9
+distinct pieces of state, `_buildProfileTypeField` and `_buildPlateField` 8
+each, several of them callbacks. As widgets they would take eight or nine
+constructor parameters, which is the same coupling with more ceremony, and
+harder to read than what is there now.
+
+Everything in those screens that genuinely did not belong in a widget has been
+taken out, and each move is covered by tests that could not exist before it:
+the visitor-profile validators (16 tests), the sign-in validators, the
+device-key sign-in flow, and the session-detail eligibility rules (7 tests).
+
+What is left is the screens themselves. `sign_up_visitor_screen` collects
+around twenty fields across identity, documents, contact, vehicle and
+photographs in a single form. Splitting that into form sections that own their
+own state is a redesign of the most important registration flow in the product.
+It is worth doing and it needs its own decision and its own verification; doing
+it inside a cleanup pass would be the wrong way to change a flow that matters
+this much.
+
+The gate holds these 18 at exactly this count, so the number cannot grow while
+that decision is taken.
+
+### 5.7 Where our rules were wrong, not the code
+
+Five of the nine rules had to be narrowed during the work, because the blunt
+version condemned correct code. This is recorded because a gate that flags
+correct code is a gate that gets switched off, and because three of these
+narrowings changed the reported total without changing a line of product code.
+
+| Rule | What it wrongly flagged | Corrected to |
+|------|------------------------|--------------|
+| SIMF-C7 | Field components, for wrapping `TextFormField` | Only screens that hand-roll a field |
+| SIMF-N1 | `style="--fill:@Percent"`, a runtime value feeding a CSS custom property | Only static inline styling |
+| SIMF-C1 | `const Duration saudiOffset = Duration(hours: 3)`, the named constant the rule asks for | Only inline call-site literals |
+| SIMF-N2 | The `:root` token definitions themselves | Only use sites bypassing a token |
+| SIMF-C3 | All 78 `_build*` methods | Only those in files over the size limit |
+
+Each narrowing is pinned by a test asserting the rule stays SILENT on the
+correct form, so the scope cannot quietly widen again.
 
 ## 6. Item level record
 
