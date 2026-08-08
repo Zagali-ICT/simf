@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 import '../../../core/country_flag.dart';
+import '../../../core/net/asset_urls.dart';
 import '../data/speaker_models.dart';
 import 'speaker_photo_tile.dart';
 
@@ -49,7 +50,11 @@ class SpeakerOptionTile extends StatelessWidget {
             children: <Widget>[
               SpeakerPhotoTile(
                 imageUrl:
-                    '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
+                    AssetUrls.image(
+                      baseUrl,
+                      AssetKind.speakerPhoto,
+                      speaker.id,
+                    ),
                 size: 40,
               ),
               const SizedBox(width: SimfTokens.space3),

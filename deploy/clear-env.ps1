@@ -6,7 +6,7 @@
 #
 # By DEFAULT it PRESERVES the non-secret, CP/Website-facing shared config so a
 # clear does not knock the Control Panel / Website offline. The one that matters
-# most is SIMF_Api__BaseUrl — without it the CP falls back to http://localhost:5175
+# most is SIMF_Api__BaseUrl - without it the CP falls back to http://localhost:5175
 # and shows "The SIMF service could not be reached". Use -Full to wipe everything
 # (a true scrub / decommission), which also drops those shared values.
 #
@@ -25,7 +25,7 @@
 param(
     # Wipe EVERY SIMF_* variable, including the non-secret shared config that is
     # normally preserved (SIMF_Api__BaseUrl, CORS origins, AI routing). Use for a
-    # full scrub / decommission — it WILL take the CP + Website offline until
+    # full scrub / decommission - it WILL take the CP + Website offline until
     # set-env is run again.
     [switch]$Full,
 
@@ -41,9 +41,22 @@ $ErrorActionPreference = "Stop"
 # These are public values (URLs / origins / model id), never credentials.
 $preserveExact = @(
     "SIMF_Api__BaseUrl"                     # CP + Website -> API endpoint (public URL)
-    "SIMF_Api__AllowSelfSignedCertificate"  # CP/Web accept self-signed API cert (non-secret toggle)
     "SIMF_Ai__DefaultProvider"              # non-secret AI routing
     "SIMF_Ai__Anthropic__DefaultModel"      # non-secret model id
+)
+
+# RETIRED variables: ALWAYS removed - without -Full, and even though one of them
+# used to be on the preserve list above.
+#
+# SIMF_Api__AllowSelfSignedCertificate installed a blanket
+# accept-any-certificate handler on the CP/Website API clients, and was deleted
+# on 2026-08-08. No application reads it any more, so leaving it set changes
+# nothing today - but a box provisioned before that date still carries the
+# value, and a stale security toggle sitting in the machine environment is
+# exactly what gets "restored" by someone debugging a TLS error later. Removing
+# it here is the supported way to clean an already-provisioned server.
+$retired = @(
+    "SIMF_Api__AllowSelfSignedCertificate"
 )
 $preservePrefix = @(
     "SIMF_Cors__WebAppOrigins__"         # public web-app origin(s)
@@ -67,6 +80,12 @@ if ($simfNames.Count -eq 0) {
     Write-Host "  No SIMF_* Machine variables found - nothing to clear." -ForegroundColor DarkGray
 } else {
     foreach ($name in $simfNames) {
+        if ($retired -contains $name) {
+            [Environment]::SetEnvironmentVariable($name, $null, [EnvironmentVariableTarget]::Machine)
+            Write-Host ("  removed {0} (RETIRED - no application reads it)" -f $name) -ForegroundColor Yellow
+            $removed++
+            continue
+        }
         if (-not $Full -and (Test-Preserved $name)) {
             Write-Host ("  keep    {0} (non-secret shared config)" -f $name) -ForegroundColor DarkCyan
             $kept++

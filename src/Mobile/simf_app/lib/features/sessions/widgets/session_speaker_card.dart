@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../core/country_flag.dart';
+import '../../../core/net/asset_urls.dart';
 import '../data/session_models.dart';
 
 /// One speaker card (frame 889:2722/889:2737/889:2747): a navy box with a beige
@@ -44,7 +45,8 @@ class SessionSpeakerCard extends StatelessWidget {
         child: Row(
           children: <Widget>[
             _SpeakerAvatar(
-              imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
+              imageUrl:
+                  AssetUrls.image(baseUrl, AssetKind.speakerPhoto, speaker.id),
             ),
             const SizedBox(width: SimfTokens.space4),
             Expanded(

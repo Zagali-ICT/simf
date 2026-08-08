@@ -118,11 +118,20 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_SessionRecordingStorage__MaxUploadBytes"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 1073741824 (1 GiB)" }
 
     # --- How CP and Web reach the API -----------------------------------------
-    # Loopback on purpose: it avoids a NAT hairpin through the public name. The
-    # self-signed allowance exists because the loopback certificate cannot match
-    # "localhost"; it applies to that hop only, never to a public origin.
-    [pscustomobject]@{ Name = "SIMF_Api__BaseUrl"; Value = "https://api.simrsnf.com/"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "must be HTTPS outside Development" }
-    [pscustomobject]@{ Name = "SIMF_Api__AllowSelfSignedCertificate"; Value = "true"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "accepts the API loopback cert only" }
+    # SIMF_Api__AllowSelfSignedCertificate is GONE (2026-08-08). It installed
+    # DangerousAcceptAnyServerCertificateValidator on the clients that carry the
+    # admin password, the TOTP code and the perm:* bearer token, so anything that
+    # answered for the configured host received them. It existed because the old
+    # underscore hostnames could not get a public CA certificate; D-868 moved the
+    # estate to simrsnf.com and D-872 installed a real one, which removed the
+    # reason. Setting it now does nothing - the hosts no longer read it, and a
+    # test fails the build if the key comes back.
+    #
+    # The consequence, stated plainly: if the API certificate is expired, missing
+    # or does not match this address, the Control Panel and Website CANNOT reach
+    # the API and there is no switch to make them. That is an outage to fix on
+    # the server. Certificate renewal is now a commitment this deployment has.
+    [pscustomobject]@{ Name = "SIMF_Api__BaseUrl"; Value = "https://api.simrsnf.com/"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "must be HTTPS outside Development; its certificate must validate" }
 
     # --- Meeting confirmation links -------------------------------------------
     # Empty => the speaker double-opt-in email cannot be built, and the Approve /
@@ -142,6 +151,7 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_SuperAdmin__Email"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC" }
     [pscustomobject]@{ Name = "SIMF_SuperAdmin__TempPassword"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "rotate after first sign-in; no monotonic runs" }
     [pscustomobject]@{ Name = "SIMF_SuperAdmin__TotpSecret"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "base32 TOTP seed for the admin second factor" }
+    [pscustomobject]@{ Name = "SIMF_SuperAdmin__PasswordChangeRequired"; Value = "false"; Secret = $false; Gate = $false; Apps = "API"; Note = "true => the seeded password must be changed at first sign-in" }
 
     # --- Demo seed ------------------------------------------------------------
     # Empty is the correct PRODUCTION posture: the demo-account seed is skipped
@@ -153,16 +163,16 @@ $vars = @(
     # mail is delivered, which blocks visitor sign-up and the whole speaker flow.
     [pscustomobject]@{ Name = "SIMF_Email__Host"; Value = "smtp.zoho.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "SMTP host" }
     [pscustomobject]@{ Name = "SIMF_Email__Port"; Value = "587"; Secret = $false; Gate = $false; Apps = "API"; Note = "STARTTLS submission port" }
-    [pscustomobject]@{ Name = "SIMF_Email__User"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP user — set on the server, never here" }
-    [pscustomobject]@{ Name = "SIMF_Email__Password"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP app password — set on the server, never here" }
+    [pscustomobject]@{ Name = "SIMF_Email__User"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP user - set on the server, never here" }
+    [pscustomobject]@{ Name = "SIMF_Email__Password"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "SMTP app password - set on the server, never here" }
     # The From domain must be a VERIFIED sender on the Zoho account. Tested
     # 2026-08-07 against the live relay: no-reply@apexium.com.sa was refused with
     # "Sender is not allowed to relay emails", while no-reply@ammn.com.sa sent
-    # fine on the same credentials. The send FAILS — it does not fall back — and
+    # fine on the same credentials. The send FAILS - it does not fall back - and
     # on this system that stops sign-up codes, password resets and 2FA. So do not
     # change this until apexium.com.sa is a verified domain in Zoho with its
     # SPF/DKIM records published, then re-run the same test before committing.
-    [pscustomobject]@{ Name = "SIMF_Email__FromAddress"; Value = "no-reply@ammn.com.sa"; Secret = $false; Gate = $false; Apps = "API"; Note = "sending address — must be a verified Zoho sender (D-873)" }
+    [pscustomobject]@{ Name = "SIMF_Email__FromAddress"; Value = "no-reply@ammn.com.sa"; Secret = $false; Gate = $false; Apps = "API"; Note = "sending address - must be a verified Zoho sender (D-873)" }
     [pscustomobject]@{ Name = "SIMF_Email__FromName"; Value = "SIMF"; Secret = $false; Gate = $false; Apps = "API"; Note = "display name on outbound mail" }
 
     # --- AI providers ---------------------------------------------------------
@@ -171,14 +181,23 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_Ai__DefaultProvider"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "Echo | Gemini | Anthropic | OpenAi" }
     [pscustomobject]@{ Name = "SIMF_Ai__Gemini__ApiKey"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "" }
     [pscustomobject]@{ Name = "SIMF_Ai__Anthropic__ApiKey"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "" }
+    # Non-secret Anthropic routing. Carried over from the superseded set-env-api.ps1
+    # (2026-08-08) - the consolidated template never declared them, so they would
+    # have been silently dropped when that file was deleted and the provider would
+    # have fallen back to its compiled defaults.
+    [pscustomobject]@{ Name = "SIMF_Ai__Anthropic__BaseUrl"; Value = "https://api.anthropic.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "provider endpoint" }
+    [pscustomobject]@{ Name = "SIMF_Ai__Anthropic__DefaultModel"; Value = "claude-haiku-4-5-20251001"; Secret = $false; Gate = $false; Apps = "API"; Note = "model id" }
+    [pscustomobject]@{ Name = "SIMF_Ai__Anthropic__AnthropicVersion"; Value = "2023-06-01"; Secret = $false; Gate = $false; Apps = "API"; Note = "API version header" }
+    [pscustomobject]@{ Name = "SIMF_Ai__Anthropic__DefaultMaxTokens"; Value = "2048"; Secret = $false; Gate = $false; Apps = "API"; Note = "response cap" }
     [pscustomobject]@{ Name = "SIMF_Ai__OpenAi__ApiKey"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "" }
 
     # --- Edge / proxy / CORS --------------------------------------------------
     # KnownProxies missing => the API sees the reverse proxy's IP as the client
     # IP, so rate limiting and every audit row record the wrong address.
     [pscustomobject]@{ Name = "SIMF_ReverseProxy__KnownProxies__0"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC: reverse-proxy IP (repeat __1, __2, ...)" }
-    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__0"; Value = "https://web.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "browser origin allowed to call the API — Website + the Flutter web build (D-868)" }
-    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__1"; Value = "https://cp.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "Control Panel origin. Add __2, __3, … for further origins" }
+    [pscustomobject]@{ Name = "SIMF_ReverseProxy__KnownProxies__1"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "second proxy address (IIS on the same box answers on ::1 as well as 127.0.0.1)" }
+    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__0"; Value = "https://web.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "browser origin allowed to call the API - Website + the Flutter web build (D-868)" }
+    [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__1"; Value = "https://cp.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "Control Panel origin. Add __2, __3, ... for further origins" }
     [pscustomobject]@{ Name = "SIMF_RateLimit__PermitLimit"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 20" }
     [pscustomobject]@{ Name = "SIMF_RateLimit__WindowSeconds"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 60" }
 
@@ -212,7 +231,12 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_Swagger__Password"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "only if AllowSwagger=true" }
 
     # --- Misc -----------------------------------------------------------------
-    [pscustomobject]@{ Name = "SIMF_OrganizationHeroVideo__PublicApiBaseUrl"; Value = "https://api.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "public API origin used to build hero-video URLs (D-868)" }
+    # MUST include the /api/v1 route prefix. OrganizationHeroVideoRoutes.ServedUrl
+    # prepends the prefix ONLY on the request-derived fallback; when this value is
+    # set it is used verbatim, so a bare origin composes a 404 URL. The upload
+    # still reports success and persists that unplayable URL, so it surfaces later
+    # as a blank hero rather than as an error at upload time.
+    [pscustomobject]@{ Name = "SIMF_OrganizationHeroVideo__PublicApiBaseUrl"; Value = "https://api.simrsnf.com/api/v1"; Secret = $false; Gate = $false; Apps = "API"; Note = "public API base INCLUDING the /api/v1 prefix (D-868)" }
     [pscustomobject]@{ Name = "SIMF_UploadScanning__Enabled"; Value = "true"; Secret = $false; Gate = $false; Apps = "API"; Note = "leave ON in Production" }
 )
 

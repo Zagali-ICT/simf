@@ -4,6 +4,12 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!-- Blazor publishes some static assets through more than one path, which
+         fails the publish. The property belongs here rather than on every
+         caller: the CI pipeline and publish.ps1 each used to pass
+         -p:ErrorOnDuplicatePublishOutputFiles=false, so a new way to publish
+         this project silently inherited the failure. -->
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
 
   <ItemGroup>

@@ -173,7 +173,6 @@ public sealed class DeploymentEnvTemplateTests
                      "SIMF_Ai__OpenAi__ApiKey",
                      "SIMF_Storage__LogDirectory",
                      "SIMF_Api__BaseUrl",
-                     "SIMF_Api__AllowSelfSignedCertificate",
                      "SIMF_Session__LifetimeHours",
                  })
         {
@@ -181,6 +180,130 @@ public sealed class DeploymentEnvTemplateTests
                 template.Contains(key, StringComparison.Ordinal),
                 $"{TemplateName} is missing the required key {key}.");
         }
+    }
+
+    private static string SingleValue(MatchCollection entries, string name)
+    {
+        var values = entries
+            .Where(m => m.Groups["name"].Value == name)
+            .Select(m => m.Groups["value"].Value)
+            .ToList();
+
+        Assert.True(
+            values.Count == 1,
+            $"{TemplateName} should declare {name} exactly once; found {values.Count}.");
+        return values[0];
+    }
+
+    /// <summary>The trust-all setting is GONE, not merely defaulted to false.
+    /// While it existed, the template shipped it paired with a public BaseUrl and
+    /// the key-presence test above stayed green throughout - a default is a value
+    /// someone can change on a server, and this one disabled certificate
+    /// validation on the clients carrying the admin password, the TOTP code and
+    /// the perm:* bearer token. Deleting the key is what makes that
+    /// unreachable; this stops it being reintroduced as "just a toggle".</summary>
+    [Fact]
+    public void The_env_template_does_not_declare_the_retired_trust_all_setting()
+    {
+        var template = ReadRepoFile("deploy", TemplateName);
+        var declared = EntryPattern.Matches(template)
+            .Select(match => match.Groups["name"].Value)
+            .ToList();
+
+        Assert.DoesNotContain("SIMF_Api__AllowSelfSignedCertificate", declared);
+
+        // BaseUrl stays required, and stays HTTPS: it is the address whose
+        // certificate now has to validate for the CP and Website to start.
+        var baseUrl = SingleValue(EntryPattern.Matches(template), "SIMF_Api__BaseUrl");
+        Assert.StartsWith("https://", baseUrl, StringComparison.Ordinal);
+    }
+
+    /// <summary>Windows PowerShell 5.1 decodes a BOM-less file as the ANSI
+    /// codepage, so one em dash in a comment becomes three characters - and one
+    /// of them is a quote, which terminates the string and stops the script
+    /// parsing. The template carried six em dashes and one ellipsis, and failed
+    /// with 8 parse errors under powershell.exe until 2026-08-07, while the same
+    /// file was fine under pwsh 7 (UTF-8 by default). An operator on Windows
+    /// Server therefore ran it and set NOTHING. Pure ASCII is the fix that does
+    /// not depend on a BOM surviving an editor round-trip.</summary>
+    /// <summary>The runbook's health probe validates the certificate like any
+    /// other client. It used to trust any certificate so it could probe loopback,
+    /// whose certificate cannot match "localhost" - but the probe is the only
+    /// verification the script performs, and an unvalidated one reports a
+    /// deployment healthy on an answer from anything at all. It now probes the
+    /// public origin, where the real certificate applies.
+    /// (CertificateValidationBypassTests enforces the absence repo-wide; this
+    /// pins the probe's own shape.)</summary>
+    [Fact]
+    public void The_runbook_health_probe_validates_the_certificate()
+    {
+        var runbook = ReadRepoFile("deploy", RunbookName);
+
+        Assert.DoesNotContain("ServerCertificateValidationCallback", runbook, StringComparison.Ordinal);
+
+        var healthUrl = Regex.Match(runbook, @"\$HealthUrl\s*=\s*""(?<url>[^""]+)""");
+        Assert.True(healthUrl.Success, $"{RunbookName} no longer declares a $HealthUrl default.");
+        Assert.False(
+            new Uri(healthUrl.Groups["url"].Value).IsLoopback,
+            $"{RunbookName} probes {healthUrl.Groups["url"].Value}. A loopback probe cannot "
+            + "validate a certificate issued for the public host, and there is no longer an "
+            + "allowance to skip validation - so the default must be the public origin.");
+    }
+
+    // The filled overlays are gitignored: they exist only on a provisioned
+    // machine, so they cannot be held to a repo standard.
+    private static readonly string[] UntrackedOverlays =
+    {
+        "set-env.ps1", "set-env-api.ps1", "set-env-prod.ps1",
+    };
+
+    /// <summary>Windows PowerShell 5.1 decodes a BOM-less file as the ANSI
+    /// codepage. An em dash becomes three characters, one of which is a quote -
+    /// and inside a string literal that quote ends the string, so the script
+    /// stops parsing. set-env.template.ps1 carried six and failed with 8 parse
+    /// errors under powershell.exe until 2026-08-07 while parsing fine under
+    /// pwsh 7, so an operator on Windows Server ran it and set NOTHING.
+    /// <para>
+    /// A script is safe either way: pure ASCII, or a BOM telling 5.1 to read
+    /// UTF-8. publish-app-web.ps1 needs the second form because its Arabic is
+    /// content, not decoration. Checked across the whole directory rather than a
+    /// named list, so a NEW deploy script is covered the day it lands.
+    /// </para></summary>
+    [Fact]
+    public void Every_tracked_deploy_script_decodes_under_windows_powershell()
+    {
+        var deployDirectory = Path.Combine(RepoRoot(), "deploy");
+        var scripts = Directory
+            .EnumerateFiles(deployDirectory, "*.ps1", SearchOption.AllDirectories)
+            .Where(path => !UntrackedOverlays.Contains(
+                Path.GetFileName(path), StringComparer.OrdinalIgnoreCase))
+            .Where(path => !Path.GetFileName(path)
+                .EndsWith(".local.ps1", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // Guards the guard: a broken glob would make this vacuously green.
+        Assert.True(
+            scripts.Count >= 5,
+            $"Only {scripts.Count} deploy scripts were found under {deployDirectory}; "
+            + "the enumeration is wrong.");
+
+        var undecodable = scripts
+            .Where(path =>
+            {
+                var bytes = File.ReadAllBytes(path);
+                var hasBom = bytes.Length >= 3
+                             && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+                return !hasBom && File.ReadAllText(path).Any(character => character > '\x007F');
+            })
+            .Select(Path.GetFileName)
+            .ToList();
+
+        Assert.True(
+            undecodable.Count == 0,
+            $"BOM-less deploy scripts contain non-ASCII: {string.Join(", ", undecodable)}. "
+            + "Windows PowerShell 5.1 reads them as ANSI, which corrupts the characters and "
+            + "breaks the parse when one lands inside a string literal. Either use ASCII "
+            + "('-' for an em dash, '...' for an ellipsis) or save the file with a UTF-8 BOM.");
     }
 
     [Fact]

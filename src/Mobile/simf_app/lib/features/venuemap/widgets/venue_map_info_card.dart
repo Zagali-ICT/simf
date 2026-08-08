@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_logo_image.dart';
+import '../../../core/net/asset_urls.dart';
 import '../data/venue_map_models.dart';
 
 /// The bottom white info card for the selected node (frame node 215:562's
@@ -209,7 +210,7 @@ class _LogoBadge extends StatelessWidget {
       child: id.isEmpty
           ? fallbackTile
           : SimfLogoImage(
-              url: '$baseUrl/app/assets/BoothLogo/$id/image',
+              url: AssetUrls.image(baseUrl, AssetKind.boothLogo, id),
               placeholder: fallbackTile,
               semanticLabel: name,
               // Decode-cap to the painted badge at up to 2x DPR.

@@ -133,36 +133,22 @@ builder.Services.AddScoped<CpPreferences>();
 // in the circuit for the interactive callbacks that follow.
 builder.Services.AddHttpContextAccessor();
 
-// SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
-// certificate on the server-to-server API calls (the API uses a self-signed
-// cert whose name does not match the host). Default false → normal TLS
-// validation, so dev and any other environment are unaffected.
-var allowSelfSignedApiCert =
-    builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
-Func<HttpMessageHandler> apiPrimaryHandler = () =>
-{
-    var handler = new HttpClientHandler();
-    if (allowSelfSignedApiCert)
-    {
-        handler.ServerCertificateCustomValidationCallback =
-            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-    }
-    return handler;
-};
-
-// Typed clients share one validated API base address (SimfApiBaseAddress) —
-// server-to-server, so the token never reaches the browser. The self-signed
-// cert handler (above) is applied to each so production over a self-signed
-// API cert works when SIMF_Api__AllowSelfSignedCertificate=true.
+// Typed clients share one validated API base address - server-to-server, so the
+// token never reaches the browser.
+//
+// No primary handler is configured, which is the point: these clients get the
+// platform's default, with ordinary certificate-chain validation. There is no
+// setting that can turn that off. An "accept any certificate" option cannot be
+// offered safely here, because these are the clients that carry the admin
+// password, the TOTP code and the perm:* bearer token - anything that answers
+// for the configured host would receive them. If the API's certificate does not
+// validate, that is an outage to fix on the server, not a check to disable.
 var apiBaseUri = SimfApiBaseAddress.Resolve(
     builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
 
-builder.Services.AddHttpClient<SimfAuthClient>(client => client.BaseAddress = apiBaseUri)
-    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
-builder.Services.AddHttpClient<SimfAccountClient>(client => client.BaseAddress = apiBaseUri)
-    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
-builder.Services.AddHttpClient<SimfAdminClient>(client => client.BaseAddress = apiBaseUri)
-    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
+builder.Services.AddHttpClient<SimfAuthClient>(client => client.BaseAddress = apiBaseUri);
+builder.Services.AddHttpClient<SimfAccountClient>(client => client.BaseAddress = apiBaseUri);
+builder.Services.AddHttpClient<SimfAdminClient>(client => client.BaseAddress = apiBaseUri);
 
 var app = builder.Build();
 

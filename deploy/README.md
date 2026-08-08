@@ -6,9 +6,19 @@ SIMF web apps and deploy them to IIS, mirroring the V10 ERP pipeline.
 
 | App | Project | Artifact zip | IIS (placeholder) |
 |-----|---------|--------------|-------------------|
-| SimfAPI | `src/Backend/SIMF.Api/SIMF.Api.csproj` | `api/SIMF.Api.zip` | site `SIMF.API`, path `D:\SIMF\API` |
-| SimfCP | `src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj` | `cp/SIMF.ControlPanel.zip` | site `SIMF.CP`, path `D:\SIMF\CP` |
-| SimfWeb | `src/Website/SIMF.Web/SIMF.Web.csproj` | `web/SIMF.Web.zip` | site `SIMF.WEB`, path `D:\SIMF\WEB` |
+| SimfAPI | `src/Backend/SIMF.Api/SIMF.Api.csproj` | `api/SIMF.Api.zip` | site `SIMF.API`, path `D:\System\v1.0.1\api` |
+| SimfCP | `src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj` | `cp/SIMF.ControlPanel.zip` | site `SIMF.CP`, path `D:\System\v1.0.1\cp` |
+| SimfWeb | `src/Website/SIMF.Web/SIMF.Web.csproj` | `web/SIMF.Web.zip` | site `SIMF.WEB`, path `D:\System\v1.0.1\web` |
+
+All three sites and the SQL Server are addressed by hostname, not by IP: every
+certificate bypass was removed on 2026-08-08, so the API certificate has to
+validate and no public CA issues one for a private address. Point DNS (or the
+hosts file on the web server) at the estate's addresses instead.
+
+The deploy root is VERSIONED (`v1.0.1`). Two consequences: the IIS sites' physical
+paths must be repointed when the version changes, and nothing that must survive a
+release may live under it - uploads and logs are configured outside this tree for
+exactly that reason (`SIMF_FileStorage__RootPath`, `SIMF_Storage__LogDirectory`).
 
 The **Flutter app's web build** (a static IIS site, proof of concept — D-376) is
 published separately by [`app-web/publish-app-web.ps1`](app-web/publish-app-web.ps1)
@@ -29,6 +39,42 @@ Build, Test & Publish ──▶ Deploy to IIS
 - **Deploy to IIS** — downloads `drop`, extracts the three zips, then runs
   [`iis-deploy.ps1`](iis-deploy.ps1) which stops each site + app pool, releases
   file locks, `robocopy /MIR`s the files, and restarts.
+
+## Building a package locally (`publish.ps1`)
+
+[`publish.ps1`](../publish.ps1) at the repository root builds the same three web
+apps outside the pipeline, for a manual release or a handover package. It cleans
+the old output, runs `dotnet clean` on each project (so a stale DLL cannot ship),
+restores, then publishes each sequentially in `Release`, stopping at the first
+failure — and on a failure it re-runs that publish verbosely so the real error is
+visible rather than swallowed.
+
+Output folders are named to match the `iis-deploy.ps1` contract, so the package
+deploys with no repackaging step:
+
+```powershell
+.\publish.ps1
+# -> publish\api  publish\cp  publish\web
+
+.\deploy\iis-deploy.ps1 -ArtifactRoot .\publish `
+    -ApiSiteName "SIMF.API" -ApiPath "D:\System\v1.0.1\api" `
+    -CpSiteName  "SIMF.CP"  -CpPath  "D:\System\v1.0.1\cp"  `
+    -WebSiteName "SIMF.WEB" -WebPath "D:\System\v1.0.1\web"
+```
+
+`publish/` is git-ignored. There is no separate Worker output because the
+background workers run in-process inside the API app pool (see below).
+
+The Control Panel and Website need `ErrorOnDuplicatePublishOutputFiles=false` or
+their publish fails on duplicate static assets. That property lives in **their
+`.csproj`**, not in this script or the pipeline: it used to be passed as a
+`-p:` flag by both, which meant any new way of publishing those projects
+inherited the failure until someone remembered the flag. No caller passes it
+now.
+
+The script builds and packages **only**. It applies no configuration and no
+secrets — those remain Machine-scope environment variables set on the server by
+`set-env.ps1`, below.
 
 ## Operating the sites (`ops.ps1`)
 
@@ -108,7 +154,7 @@ Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
 
 Until 2026-08-06 there were three scripts, one per service. They wrote to the
 same Machine-scope namespace and overlapped on `ASPNETCORE_ENVIRONMENT`,
-`SIMF_Api__BaseUrl`, `SIMF_Api__AllowSelfSignedCertificate` and
+`SIMF_Api__BaseUrl`, `SIMF_Api__AllowSelfSignedCertificate` (since retired) and
 `SIMF_Storage__LogDirectory`, each noting that "running both is fine, the last
 writer wins". That holds only while the copies agree; edit one and the box
 silently takes whichever ran last. They are now a single file, so a deployment

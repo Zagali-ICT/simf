@@ -1,4 +1,4 @@
-# SIMF — publish the Flutter web app for IIS (D-376).
+﻿# SIMF — publish the Flutter web app for IIS (D-376).
 #
 # Builds simf_app for web in release/prod mode with the API base baked in,
 # then assembles a deployable folder (build output + web.config) ready to be

@@ -10,6 +10,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/net/asset_urls.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
 import 'widgets/programme_day_banner.dart';
@@ -161,7 +162,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       orElse: () => _days.first,
     );
     final dayImageUrl = selected.hasImage
-        ? '$baseUrl/app/assets/ProgrammeDayImage/${selected.id}/image'
+        ? AssetUrls.image(baseUrl, AssetKind.programmeDayImage, selected.id)
         : null;
 
     // The selected day's sessions, filtered by the active type tab + the search.

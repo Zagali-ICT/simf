@@ -5,6 +5,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../../../core/country_flag.dart';
+import '../../../core/net/asset_urls.dart';
 import '../data/speaker_models.dart';
 import 'speaker_photo_tile.dart';
 
@@ -49,7 +50,8 @@ class SpeakerListCard extends StatelessWidget {
         child: Row(
           children: <Widget>[
             SpeakerPhotoTile(
-              imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
+              imageUrl:
+                  AssetUrls.image(baseUrl, AssetKind.speakerPhoto, speaker.id),
             ),
             const SizedBox(width: SimfTokens.space4),
             Expanded(

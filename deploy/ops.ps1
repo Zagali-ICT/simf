@@ -39,11 +39,11 @@ param (
     # IIS site names + physical paths. Defaults match deploy/README.md; override
     # per server if the sites were created with other names or paths.
     [string]$ApiSiteName = 'SIMF.API',
-    [string]$ApiPath     = 'D:\SIMF\API',
+    [string]$ApiPath     = 'D:\System\v1.0.1\api',
     [string]$CpSiteName  = 'SIMF.CP',
-    [string]$CpPath      = 'D:\SIMF\CP',
+    [string]$CpPath      = 'D:\System\v1.0.1\cp',
     [string]$WebSiteName = 'SIMF.WEB',
-    [string]$WebPath     = 'D:\SIMF\WEB',
+    [string]$WebPath     = 'D:\System\v1.0.1\web',
 
     # Install only: the HTTP port + optional host header for a newly created site.
     # TLS bindings and the CA certificate are configured separately (see the HLD /

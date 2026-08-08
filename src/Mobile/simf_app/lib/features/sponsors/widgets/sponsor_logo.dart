@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_logo_image.dart';
+import '../../../core/net/asset_urls.dart';
 import '../data/sponsor_models.dart';
 
 /// The sponsor's real logo (D-357 `SponsorLogo` asset, served anonymously at
@@ -66,7 +67,7 @@ class SponsorLogo extends StatelessWidget {
     // decision recorded above, and also carries the accessible name and the
     // tap-to-full-size affordance. Kept this side.
     return SimfLogoImage(
-      url: '$baseUrl/app/assets/SponsorLogo/$id/image',
+      url: AssetUrls.image(baseUrl, AssetKind.sponsorLogo, id),
       placeholder: fallback,
       semanticLabel: name,
       width: double.infinity,

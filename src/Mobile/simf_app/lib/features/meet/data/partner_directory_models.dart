@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/net/asset_urls.dart';
+
 /// One row of the "Meet People Like You" partner directory — mirrors
 /// `SIMF.Contracts.Networking.PartnerDirectoryEntry`. [kind] discriminates the
 /// tap target and the logo asset: `speaker`, `sponsor`, `booth` or `person`.
@@ -61,15 +63,15 @@ class PartnerDirectoryEntry {
     switch (kind) {
       case PartnerDirectoryKind.speaker:
         return logoRelativePath != null
-            ? '$baseUrl/app/assets/SpeakerPhoto/$id/image'
+            ? AssetUrls.image(baseUrl, AssetKind.speakerPhoto, id)
             : null;
       case PartnerDirectoryKind.sponsor:
         return logoRelativePath != null
-            ? '$baseUrl/app/assets/SponsorLogo/$id/image'
+            ? AssetUrls.image(baseUrl, AssetKind.sponsorLogo, id)
             : null;
       case PartnerDirectoryKind.booth:
         return logoContactId != null
-            ? '$baseUrl/app/assets/CompanyLogo/$logoContactId/image'
+            ? AssetUrls.image(baseUrl, AssetKind.companyLogo, logoContactId!)
             : null;
       default:
         return null;

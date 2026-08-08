@@ -251,7 +251,10 @@ stages:
         arguments: '--configuration $(buildConfiguration)'
 
     # --- Publish (zips by default; one folder per app under the staging dir).
-    #     Blazor apps (CP + Web) set ErrorOnDuplicatePublishOutputFiles=false. ---
+    #     The Blazor apps (CP + Web) need ErrorOnDuplicatePublishOutputFiles=false;
+    #     that now lives in their .csproj, so every way of publishing them gets it
+    #     (it used to be passed here AND by publish.ps1, which meant a new caller
+    #     silently inherited the failure). ---
     - task: DotNetCoreCLI@2
       displayName: 'Publish API'
       inputs:
@@ -267,7 +270,7 @@ stages:
         command: 'publish'
         publishWebProjects: false
         projects: '$(Build.SourcesDirectory)/src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj'
-        arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/cp -p:ErrorOnDuplicatePublishOutputFiles=false'
+        arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/cp'
         zipAfterPublish: true
 
     - task: DotNetCoreCLI@2
@@ -276,7 +279,7 @@ stages:
         command: 'publish'
         publishWebProjects: false
         projects: '$(Build.SourcesDirectory)/src/Website/SIMF.Web/SIMF.Web.csproj'
-        arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/web -p:ErrorOnDuplicatePublishOutputFiles=false'
+        arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/web'
         zipAfterPublish: true
 
     - task: PublishBuildArtifacts@1
@@ -352,6 +355,34 @@ stages:
         flutter analyze --no-fatal-infos --no-fatal-warnings lib test integration_test packages
         if ($LASTEXITCODE -ne 0) { throw "flutter analyze found errors in SIMF Dart sources (exit $LASTEXITCODE)." }
       displayName: 'flutter analyze (lib + test + integration_test + packages)'
+
+    # --- Convention gate (SIMF-CQP-001). Detects the code-quality classes that
+    #     NO Dart lint can see - magic numbers, hardcoded endpoint paths,
+    #     private-widget placement, un-localized strings, bundled-asset paths,
+    #     models declared inside repository files, and raw form controls where a
+    #     shared component exists. Those seven classes are exactly what the
+    #     August 2026 external review reported by hand; this step is how that
+    #     review stops arriving as a document.
+    #
+    #     Deliberately SEPARATE from `flutter analyze` above, which stays
+    #     advisory (see the ADOPTION note in analysis_options.yaml). This step is
+    #     FATAL from day one because it gates against a recorded baseline, so
+    #     "no NEW violations" is satisfiable immediately while the remediation
+    #     waves land. It tightens to --strict (zero violations) at Wave 6.
+    #
+    #     The checker's own test suite runs first: a broken checker would
+    #     otherwise pass everything silently, which is the failure mode this
+    #     whole gate exists to prevent.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        Set-Location '$(Build.SourcesDirectory)/tool/conventions'
+        dart pub get
+        if ($LASTEXITCODE -ne 0) { throw "dart pub get failed for the convention checker (exit $LASTEXITCODE)." }
+        dart test
+        if ($LASTEXITCODE -ne 0) { throw "The convention checker's own tests failed (exit $LASTEXITCODE) - fix the checker before trusting its verdict." }
+        dart run bin/simf_conventions.dart --check
+        if ($LASTEXITCODE -ne 0) { throw "NEW convention violations introduced. See the list above and docs/SIMF-CQP-001-Code-Quality-Programme.md section 5 for where each literal belongs." }
+      displayName: 'Convention gate (SIMF-CQP-001)'
 
     # Test gate. The two local packages are green (15 + 46 tests as of
     # 2026-07-26). The app suite runs 1096 tests, of which 2 in
@@ -486,9 +517,9 @@ stages:
           - powershell: |
               ./deploy/iis-deploy.ps1 `
                 -ArtifactRoot "$(Pipeline.Workspace)\drop_root" `
-                -ApiSiteName  "SIMF.API"  -ApiPath  "D:\SIMF\API" `
-                -CpSiteName   "SIMF.CP"   -CpPath   "D:\SIMF\CP" `
-                -WebSiteName  "SIMF.WEB"  -WebPath  "D:\SIMF\WEB"
+                -ApiSiteName  "SIMF.API"  -ApiPath  "D:\System\v1.0.1\api" `
+                -CpSiteName   "SIMF.CP"   -CpPath   "D:\System\v1.0.1\cp" `
+                -WebSiteName  "SIMF.WEB"  -WebPath  "D:\System\v1.0.1\web"
             displayName: 'Deploy to IIS'
             # PLACEHOLDERS above: confirm the IIS site names and physical paths
             # for the SIMF server before this stage runs. See deploy/README.md.

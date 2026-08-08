@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/net/asset_urls.dart';
+
 /// One media partner — mirrors `PublicMediaPartnerItem` (`name`/`nameArabic`).
 @immutable
 class MediaPartner {
@@ -9,10 +11,6 @@ class MediaPartner {
     required this.nameArabic,
     this.logoRelativePath,
   });
-
-  /// The D-357 asset category whose anonymous serve route carries a partner's
-  /// uploaded logo bytes.
-  static const String _logoAssetCategory = 'MediaPartnerLogo';
 
   final String id;
   final String name;
@@ -36,7 +34,7 @@ class MediaPartner {
   /// when the partner has no uploaded logo, so the caller falls back to the
   /// partner's initials.
   String logoAssetUrl(String baseUrl) =>
-      '$baseUrl/app/assets/$_logoAssetCategory/$id/image';
+      AssetUrls.image(baseUrl, AssetKind.mediaPartnerLogo, id);
 
   static MediaPartner fromJson(Map<String, dynamic> json) => MediaPartner(
         id: json['id'] as String? ?? '',

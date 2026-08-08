@@ -10,6 +10,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/net/asset_urls.dart';
 import '../../core/utils/refresh.dart';
 import '../exhibition/entity_detail_helpers.dart';
 import '../exhibition/entity_detail_scaffold.dart';
@@ -84,10 +85,18 @@ class ExhibitorDetailScreen extends ConsumerWidget {
         // CompanyLogo (existing data) then to initials.
         url: booth.exhibitorId == null
             ? null
-            : '$baseUrl/app/assets/ExhibitorLogo/${booth.exhibitorId}/image',
+            : AssetUrls.image(
+                baseUrl,
+                AssetKind.exhibitorLogo,
+                booth.exhibitorId!,
+              ),
         fallbackUrl: booth.exhibitorContactId == null
             ? null
-            : '$baseUrl/app/assets/CompanyLogo/${booth.exhibitorContactId}/image',
+            : AssetUrls.image(
+                baseUrl,
+                AssetKind.companyLogo,
+                booth.exhibitorContactId!,
+              ),
         initials: entityInitials(name),
         name: name,
       ),

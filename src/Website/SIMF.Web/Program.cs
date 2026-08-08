@@ -43,35 +43,18 @@ builder.Services.AddLocalization(options => options.ResourcesPath = "Resources")
 // PublicEditions).
 builder.Services.AddMemoryCache();
 
-// SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
-// certificate on the server-to-server API calls (the API uses a self-signed
-// cert whose name does not match the host). Default false → normal TLS
-// validation, so dev and any other environment are unaffected.
-var allowSelfSignedApiCert =
-    builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
-Func<HttpMessageHandler> apiPrimaryHandler = () =>
-{
-    var handler = new HttpClientHandler();
-    if (allowSelfSignedApiCert)
-    {
-        handler.ServerCertificateCustomValidationCallback =
-            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-    }
-    return handler;
-};
-
-// The typed client shares one validated API base address (SimfApiBaseAddress) —
-// server-to-server. The self-signed cert handler (above) is applied so
-// production over a self-signed API cert works when
-// SIMF_Api__AllowSelfSignedCertificate=true.
+// The typed client shares one validated API base address - server-to-server.
+//
+// No primary handler is configured, which is the point: the client gets the
+// platform's default, with ordinary certificate-chain validation, and there is
+// no setting that can turn that off. See SimfApiBaseAddress.
 var apiBaseUri = SimfApiBaseAddress.Resolve(
     builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
 
 // The typed client for the SIMF anonymous public-read endpoints.
 // Anonymous, so no bearer token; BaseAddress only — the public endpoints do
 // not require an X-App-Key header in this build.
-builder.Services.AddHttpClient<SimfPublicClient>(client => client.BaseAddress = apiBaseUri)
-    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
+builder.Services.AddHttpClient<SimfPublicClient>(client => client.BaseAddress = apiBaseUri);
 
 // Resolves the forum event dates from the public OrganizationProfile (cached) and
 // formats the shared bilingual range for the marketing pages, so the date is

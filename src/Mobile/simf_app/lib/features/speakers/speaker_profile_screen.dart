@@ -11,6 +11,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/net/asset_urls.dart';
 import '../account/data/profile_repository.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
@@ -218,7 +219,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       ),
       children: <Widget>[
         SpeakerAvatar(
-          imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
+          imageUrl:
+              AssetUrls.image(baseUrl, AssetKind.speakerPhoto, speaker.id),
           initials: speakerInitials(speaker.localizedName(isArabic)),
           name: speaker.localizedName(isArabic),
         ),

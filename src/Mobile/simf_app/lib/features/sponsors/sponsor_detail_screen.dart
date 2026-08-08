@@ -8,6 +8,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/net/asset_urls.dart';
 import '../../core/utils/refresh.dart';
 import '../exhibition/entity_detail_helpers.dart';
 import '../exhibition/entity_detail_scaffold.dart';
@@ -82,7 +83,7 @@ class SponsorDetailScreen extends ConsumerWidget {
       aboutHeader: l10n.sponsorAboutHeader,
       websiteLabel: l10n.websiteLabel,
       logo: EntityLogoImage(
-        url: '$baseUrl/app/assets/SponsorLogo/${sponsor.id}/image',
+        url: AssetUrls.image(baseUrl, AssetKind.sponsorLogo, sponsor.id),
         initials: entityInitials(name),
         name: name,
       ),

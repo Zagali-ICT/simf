@@ -54,8 +54,11 @@ param(
     # Skip the app-pool restart + health check (e.g. IIS is not up yet).
     [switch]$SkipRestart,
 
-    # The API health endpoint used for the post-restart check.
-    [string]$HealthUrl = "https://localhost:12340/health",
+    # The API health endpoint used for the post-restart check. The PUBLIC origin,
+    # not loopback: the probe validates the certificate chain like any other
+    # client, and the certificate is issued for this name - it cannot match
+    # "localhost". There is deliberately no option to skip validation.
+    [string]$HealthUrl = "https://api.simrsnf.com/health",
 
     # IIS app pools to recycle so w3wp picks up the new Machine variables.
     [string[]]$AppPools = @("SIMF.API", "SIMF.CP", "SIMF.WEB")
@@ -329,35 +332,38 @@ foreach ($pool in $AppPools) {
 Write-Host ""
 Write-Host ("Health check: {0}" -f $HealthUrl)
 
-# The server presents a self-signed certificate in the current deployment, so
-# the loopback health probe accepts it. This affects THIS process only.
-$originalCallback = [System.Net.ServicePointManager]::ServerCertificateValidationCallback
-[System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
-try {
-    $ok = $false
-    foreach ($attempt in 1..10) {
-        try {
-            $response = Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 10
-            if ($response.StatusCode -eq 200) {
-                Write-Host ("  healthy (HTTP 200) after {0} attempt(s)." -f $attempt) -ForegroundColor Green
-                $ok = $true
-                break
-            }
-            Write-Host ("  attempt {0}: HTTP {1}" -f $attempt, $response.StatusCode) -ForegroundColor DarkGray
+# NO certificate-validation override. This probe uses ordinary chain validation,
+# so "healthy" means the API answered over TLS that actually authenticates it. A
+# probe that trusted any certificate would report a deployment healthy on an
+# answer from anything at all, which defeats the only check this script performs.
+#
+# That is also why HealthUrl defaults to the PUBLIC origin rather than loopback:
+# the deployment's certificate is issued for that name and cannot match
+# "localhost", so a loopback probe would fail validation and there is no longer
+# an allowance to let it through. A TLS failure here is a real finding - the
+# Control Panel and Website reach the API over the same certificate and will not
+# start if it does not validate.
+$ok = $false
+foreach ($attempt in 1..10) {
+    try {
+        $response = Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 10
+        if ($response.StatusCode -eq 200) {
+            Write-Host ("  healthy (HTTP 200) after {0} attempt(s)." -f $attempt) -ForegroundColor Green
+            $ok = $true
+            break
         }
-        catch {
-            Write-Host ("  attempt {0}: not ready yet" -f $attempt) -ForegroundColor DarkGray
-        }
-        Start-Sleep -Seconds 5
+        Write-Host ("  attempt {0}: HTTP {1}" -f $attempt, $response.StatusCode) -ForegroundColor DarkGray
     }
-
-    if (-not $ok) {
-        Write-Warning "The API did not report healthy. Check the API log under {Storage:LogDirectory}\SIMF.Api\."
-        Write-Warning "A boot gate refuses to start Production without SIMF_FileStorage__EncryptionKey, SIMF_Storage__UserIdDocumentEncryptionKey or SIMF_Ai__PromptHash__Secret."
+    catch {
+        Write-Host ("  attempt {0}: not ready yet ({1})" -f $attempt, $_.Exception.Message) -ForegroundColor DarkGray
     }
+    Start-Sleep -Seconds 5
 }
-finally {
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = $originalCallback
+
+if (-not $ok) {
+    Write-Warning "The API did not report healthy. Check the API log under {Storage:LogDirectory}\SIMF.Api\."
+    Write-Warning "A boot gate refuses to start Production without SIMF_FileStorage__EncryptionKey, SIMF_Storage__UserIdDocumentEncryptionKey or SIMF_Ai__PromptHash__Secret."
+    Write-Warning "If the failure is a TLS/trust error, the API certificate does not validate. FIX THE CERTIFICATE - there is deliberately no option to skip validation."
 }
 
 Write-Host ""
