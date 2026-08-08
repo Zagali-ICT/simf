@@ -329,10 +329,22 @@ foreach ($pool in $AppPools) {
 Write-Host ""
 Write-Host ("Health check: {0}" -f $HealthUrl)
 
-# The server presents a self-signed certificate in the current deployment, so
-# the loopback health probe accepts it. This affects THIS process only.
+# The deployment's certificate cannot match "localhost", so a LOOPBACK probe
+# accepts it. This affects THIS process only and is undone in the finally.
+#
+# Gated on the address because -HealthUrl is a parameter and can point anywhere.
+# Against a public origin an unvalidated probe lets whoever answers for the name
+# return the 200 this script treats as proof the deploy is healthy - it would
+# defeat the verification rather than perform it. Same rule as the API clients:
+# the trust-all is a loopback-only allowance (see SimfApiBaseAddress.Resolve).
+$healthUrlIsLoopback = ([Uri]$HealthUrl).IsLoopback
 $originalCallback = [System.Net.ServicePointManager]::ServerCertificateValidationCallback
-[System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+if ($healthUrlIsLoopback) {
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+}
+else {
+    Write-Host "  (ordinary TLS validation - HealthUrl is not a loopback address)"
+}
 try {
     $ok = $false
     foreach ($attempt in 1..10) {

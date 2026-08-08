@@ -238,6 +238,36 @@ public sealed class DeploymentEnvTemplateTests
     /// file was fine under pwsh 7 (UTF-8 by default). An operator on Windows
     /// Server therefore ran it and set NOTHING. Pure ASCII is the fix that does
     /// not depend on a BOM surviving an editor round-trip.</summary>
+    /// <summary>The runbook's health probe disables certificate validation so it
+    /// can accept the deployment's own certificate, which cannot match
+    /// "localhost". -HealthUrl is a PARAMETER though, so that allowance has to be
+    /// gated on the address: against a public origin an unvalidated probe lets
+    /// whoever answers for the name return the 200 the script treats as proof the
+    /// deploy is healthy, defeating the verification instead of performing it.
+    /// Same rule the API clients enforce in SimfApiBaseAddress.Resolve.</summary>
+    [Fact]
+    public void The_runbook_only_trusts_any_certificate_on_a_loopback_health_probe()
+    {
+        var runbook = ReadRepoFile("deploy", RunbookName);
+
+        // The bypass exists...
+        Assert.Contains(
+            "ServerCertificateValidationCallback = { $true }", runbook, StringComparison.Ordinal);
+
+        // ...and is reached only behind the loopback test.
+        Assert.Contains("([Uri]$HealthUrl).IsLoopback", runbook, StringComparison.Ordinal);
+
+        var guardIndex = runbook.IndexOf("IsLoopback", StringComparison.Ordinal);
+        var bypassIndex = runbook.IndexOf(
+            "ServerCertificateValidationCallback = { $true }", StringComparison.Ordinal);
+
+        Assert.True(
+            guardIndex < bypassIndex,
+            $"{RunbookName} sets the accept-any-certificate callback before testing whether "
+            + "HealthUrl is loopback. The allowance must be gated on the address, not applied "
+            + "unconditionally.");
+    }
+
     // The filled overlays are gitignored: they exist only on a provisioned
     // machine, so they cannot be held to a repo standard.
     private static readonly string[] UntrackedOverlays =
