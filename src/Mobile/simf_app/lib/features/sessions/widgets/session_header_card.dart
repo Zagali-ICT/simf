@@ -9,6 +9,7 @@ import 'category_pill.dart';
 import 'header_action_button.dart';
 import 'index_badge.dart';
 import 'meta_item.dart';
+import 'session_meta_row.dart';
 
 /// The session header card (frame 889:2716): a navy box holding the title +
 /// gold index badge, the category tag pill (PAR-D3, when the session carries a
@@ -102,7 +103,7 @@ class SessionHeaderCard extends StatelessWidget {
           ],
 
           const SizedBox(height: SimfTokens.space4),
-          _MetaRow(detail: detail, isArabic: isArabic),
+          SessionMetaRow(detail: detail, isArabic: isArabic),
           // Frame 889:2715 — both action buttons keep their slots (layout
           // unchanged), but each is GATED on the session's state (owner
           // 2026-07-14, superseding the 2026-06-30 "always both active"):
@@ -141,55 +142,3 @@ class SessionHeaderCard extends StatelessWidget {
   }
 }
 
-/// The meta line (frame 889:2698): a clock + time range, a separator dot, and a
-/// calendar + weekday/day, in beige paragraph text. Laid **LTR** so each segment
-/// is icon→text (icon leads at the left, owner 2026-06-30) and the time reads
-/// "09:00 — 10:30" start→end; the time segment sits left, the date segment right
-/// (matching the frame). The Arabic date still renders RTL within its own box.
-class _MetaRow extends StatelessWidget {
-  const _MetaRow({required this.detail, required this.isArabic});
-
-  final SessionDetail detail;
-  final bool isArabic;
-
-  @override
-  Widget build(BuildContext context) {
-    final start = detail.startLocal;
-    final end = detail.endLocal;
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Wrap(
-        alignment: WrapAlignment.start,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: SimfTokens.space3,
-        runSpacing: SimfTokens.space1,
-        children: <Widget>[
-          MetaItem(
-            icon: Icons.schedule_outlined,
-            label: '${_time(start)} — ${_time(end)}',
-          ),
-          const Text(
-            '·',
-            // Frame 889:2702 — the separator dot is white (#FFFFFF), heavier than
-            // the beige time/date items beside it.
-            style: SimfTokens.labelWhiteBlackLg,
-          ),
-          MetaItem(
-            icon: Icons.calendar_today_outlined,
-            label: '${gregorianWeekdayName(start, isArabic)} · '
-                '${start.day.toString().padLeft(2, '0')} '
-                '${gregorianMonthName(start.month, isArabic)}',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Interim local time format: `HH:MM` (device-local). Final locale-aware
-/// formatting lands with the designer pass (SIMF-VID-001).
-String _time(DateTime local) {
-  final hour = local.hour.toString().padLeft(2, '0');
-  final minute = local.minute.toString().padLeft(2, '0');
-  return '$hour:$minute';
-}

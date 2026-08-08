@@ -6,8 +6,8 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 
 | Rule | Findings |
 |------|----------|
-| SIMF-C3 | 35 |
-| **Total** | **35** |
+| SIMF-C3 | 31 |
+| **Total** | **31** |
 
 ## account feature
 
@@ -92,13 +92,6 @@ Fix : its own file under widgets/
 Issue : private widget _MySessionCard extends StatelessWidget  (line 178, SIMF-C3)
 Fix : its own file under widgets/
 
-## questions feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/questions/widgets/send_question_content.dart
-Issue : private widget _NumberedLine extends StatelessWidget  (line 240, SIMF-C3)
-Fix : its own file under widgets/
-
 ## sessions feature
 
 
@@ -120,18 +113,6 @@ Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/hall_seat_map.dar
 Issue : private widget _SeatGridRow extends StatelessWidget  (line 227, SIMF-C3)
 Fix : its own file under widgets/
 Issue : private widget _SeatBox extends StatelessWidget  (line 380, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/programme_day_strip.dart
-Issue : private widget _DayCell extends StatelessWidget  (line 145, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/session_header_card.dart
-Issue : private widget _MetaRow extends StatelessWidget  (line 144, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/session_timeline_row.dart
-Issue : private widget _TimeRail extends StatelessWidget  (line 134, SIMF-C3)
 Fix : its own file under widgets/
 
 ## staff feature
