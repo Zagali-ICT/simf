@@ -285,8 +285,8 @@ class _DelegationMeetingRequestSheetState
         children: <Widget>[
           Center(
             child: Container(
-              width: 80,
-              height: 5,
+              width: SimfTokens.delegationMeetingRequestSheetWidthMd,
+              height: SimfTokens.delegationMeetingRequestSheetHeightSm,
               decoration: BoxDecoration(
                 color: SimfTokens.accent,
                 borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
@@ -339,10 +339,10 @@ class _DelegationMeetingRequestSheetState
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: SimfTokens.space2),
             child: SizedBox(
-              width: 20,
-              height: 20,
+              width: SimfTokens.space5,
+              height: SimfTokens.space5,
               child: CircularProgressIndicator(
-                strokeWidth: 2,
+                strokeWidth: SimfTokens.delegationMeetingRequestSheetStrokeWidth,
                 color: SimfTokens.accent,
               ),
             ),
@@ -483,10 +483,10 @@ class _DelegationMeetingRequestSheetState
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: SimfTokens.space2),
           child: SizedBox(
-            width: 20,
-            height: 20,
+            width: SimfTokens.space5,
+            height: SimfTokens.space5,
             child: CircularProgressIndicator(
-              strokeWidth: 2,
+              strokeWidth: SimfTokens.delegationMeetingRequestSheetStrokeWidth,
               color: SimfTokens.accent,
             ),
           ),
@@ -507,7 +507,7 @@ class _DelegationMeetingRequestSheetState
           _hint(l10n.speakersNoMatches)
         else
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 264),
+            constraints: const BoxConstraints(maxHeight: SimfTokens.delegationMeetingRequestSheetMaxHeight),
             child: ListView.separated(
               shrinkWrap: true,
               padding: EdgeInsets.zero,
@@ -540,7 +540,7 @@ class _DelegationMeetingRequestSheetState
           prefixIcon: const Icon(
             Icons.search,
             color: SimfTokens.greyText,
-            size: 18,
+            size: SimfTokens.delegationMeetingRequestSheetSize,
           ),
           filled: true,
           fillColor: SimfTokens.surface,

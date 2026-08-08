@@ -82,16 +82,16 @@ class ChatComposer extends StatelessWidget {
                 ),
                 child: sending
                     ? const SizedBox(
-                        width: 12,
-                        height: 12,
+                        width: SimfTokens.space3,
+                        height: SimfTokens.space3,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                          strokeWidth: SimfTokens.chatComposerStrokeWidth,
                           color: SimfTokens.surface,
                         ),
                       )
                     : const Icon(
                         Icons.send,
-                        size: 14,
+                        size: SimfTokens.chatComposerSize,
                         color: SimfTokens.surface,
                       ),
               ),

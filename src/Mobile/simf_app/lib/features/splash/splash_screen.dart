@@ -48,7 +48,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const SimfLogo(size: 136),
+              const SimfLogo(size: SimfTokens.splashScreenSize),
               const SizedBox(height: SimfTokens.space2),
               Text(
                 l10n.splashTagline,

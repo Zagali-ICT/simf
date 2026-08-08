@@ -22,7 +22,7 @@ class CarouselDots extends StatelessWidget {
           duration: MotionDurations.dotFade,
           margin: const EdgeInsets.symmetric(horizontal: 3),
           width: active ? 16 : 6,
-          height: 6,
+          height: SimfTokens.carouselDotsHeight,
           decoration: BoxDecoration(
             color: active
                 ? SimfTokens.accent

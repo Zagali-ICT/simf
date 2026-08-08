@@ -32,7 +32,7 @@ class MyAreaIdentityCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(color: SimfTokens.accent, width: 0.2),
+        border: Border.all(color: SimfTokens.accent, width: SimfTokens.myAreaIdentityCardWidthSm),
       ),
       child: Row(
         children: <Widget>[
@@ -74,12 +74,12 @@ class MyAreaIdentityCard extends StatelessWidget {
               onTap: onShare,
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               child: Container(
-                width: 48,
-                height: 48,
+                width: SimfTokens.myAreaIdentityCardWidthLg,
+                height: SimfTokens.myAreaIdentityCardHeight,
                 decoration: BoxDecoration(
                   color: SimfTokens.navy,
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                  border: Border.all(color: SimfTokens.accent, width: 0.5),
+                  border: Border.all(color: SimfTokens.accent, width: SimfTokens.myAreaIdentityCardWidthMd),
                 ),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -90,7 +90,7 @@ class MyAreaIdentityCard extends StatelessWidget {
                       children: <Widget>[
                         const Icon(
                           Icons.share_outlined,
-                          size: 18,
+                          size: SimfTokens.myAreaIdentityCardSize,
                           color: SimfTokens.accent,
                         ),
                         if (shareLabel != null)

@@ -290,7 +290,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     vertical: 56,
                   ),
                   child: MaxWidthBody(
-                    maxWidth: 560,
+                    maxWidth: SimfTokens.signInScreenMaxWidth,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,

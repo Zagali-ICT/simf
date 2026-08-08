@@ -30,7 +30,7 @@ class CameraErrorCard extends StatelessWidget {
             const Icon(
               Icons.no_photography_outlined,
               color: SimfTokens.accent,
-              size: 40,
+              size: SimfTokens.cameraErrorCardSize,
             ),
             const SizedBox(height: SimfTokens.space3),
             Text(

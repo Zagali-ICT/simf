@@ -31,20 +31,20 @@ class SimfCheckboxTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         SizedBox(
-          width: 19,
-          height: 19,
+          width: SimfTokens.simfCheckboxTileWidthLg,
+          height: SimfTokens.simfCheckboxTileHeight,
           child: Checkbox(
             value: value,
             onChanged: enabled ? (v) => onChanged(v ?? false) : null,
             activeColor: SimfTokens.accent,
-            side: const BorderSide(color: SimfTokens.greyText, width: 1.5),
+            side: const BorderSide(color: SimfTokens.greyText, width: SimfTokens.simfCheckboxTileWidthSm),
             shape: const RoundedRectangleBorder(
               borderRadius: SimfTokens.borderRadiusSmall,
             ),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: SimfTokens.space2),
         Expanded(
           child: GestureDetector(
             onTap: enabled ? () => onChanged(!value) : null,
@@ -52,7 +52,7 @@ class SimfCheckboxTile extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: SimfTokens.simfCheckboxTileFontSize,
                 color: labelColor,
               ),
             ),

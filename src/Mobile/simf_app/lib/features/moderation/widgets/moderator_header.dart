@@ -45,7 +45,7 @@ class ModeratorDeskHeader extends StatelessWidget {
                   child: Icon(
                     Icons.chevron_left,
                     color: SimfTokens.surface,
-                    size: 26,
+                    size: SimfTokens.moderatorHeaderSize,
                   ),
                 ),
               ),

@@ -28,7 +28,7 @@ class MediaTab extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: SizedBox(
-          height: 48,
+          height: SimfTokens.mediaTabHeight,
           child: Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),

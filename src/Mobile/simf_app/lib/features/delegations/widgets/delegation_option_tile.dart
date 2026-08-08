@@ -43,7 +43,7 @@ class DelegationOptionTile extends StatelessWidget {
             children: <Widget>[
               Text(
                 delegation.flagEmoji,
-                style: const TextStyle(fontSize: 22),
+                style: const TextStyle(fontSize: SimfTokens.delegationOptionTileFontSize),
               ),
               const SizedBox(width: SimfTokens.space3),
               Expanded(

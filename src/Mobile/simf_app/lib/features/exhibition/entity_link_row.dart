@@ -111,7 +111,7 @@ class EntityLinkRow extends StatelessWidget {
               flipX: Directionality.of(context) == TextDirection.ltr,
               child: const SimfSvgIcon(
                 AppAssets.icBack,
-                size: 18,
+                size: SimfTokens.entityLinkRowSize,
                 color: SimfTokens.accent,
               ),
             ),

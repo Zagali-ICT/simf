@@ -40,7 +40,7 @@ class SessionTimeoutOverlay extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(SimfTokens.space4),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 360),
+                  constraints: const BoxConstraints(maxWidth: SimfTokens.sessionTimeoutOverlayMaxWidth),
                   child: Material(
                     color: SimfTokens.navyDeep,
                     borderRadius: BorderRadius.circular(SimfTokens.radiusLg),

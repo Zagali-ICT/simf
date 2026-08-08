@@ -37,7 +37,7 @@ class SimfBottomNavItem extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              SimfSvgIcon(iconAsset, size: 24, color: color),
+              SimfSvgIcon(iconAsset, size: SimfTokens.simfBottomNavItemSize, color: color),
               if (active) ...<Widget>[
                 const SizedBox(height: SimfTokens.space1),
                 Text(

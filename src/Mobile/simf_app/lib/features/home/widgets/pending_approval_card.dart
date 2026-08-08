@@ -65,7 +65,7 @@ class PendingApprovalCard extends ConsumerWidget {
               const Icon(
                 Icons.hourglass_top,
                 color: SimfTokens.accent,
-                size: 24,
+                size: SimfTokens.pendingApprovalCardSize,
               ),
               const SizedBox(width: SimfTokens.space2),
               Expanded(

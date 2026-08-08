@@ -56,7 +56,7 @@ class MoreRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: SizedBox(
-          height: 48,
+          height: SimfTokens.moreListHeight,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
             child: Row(
@@ -83,7 +83,7 @@ class MoreRow extends StatelessWidget {
                 const SimfForwardChevron(
                   AppAssets.icCaretLeft,
                   color: SimfTokens.surface,
-                  size: 22,
+                  size: SimfTokens.moreListSize,
                 ),
               ],
             ),

@@ -33,14 +33,14 @@ class InfoRow extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Container(
-            width: 40,
-            height: 40,
+            width: SimfTokens.space10,
+            height: SimfTokens.space10,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
               color: SimfTokens.accent,
               borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
             ),
-            child: Icon(icon, color: SimfTokens.navy, size: 18),
+            child: Icon(icon, color: SimfTokens.navy, size: SimfTokens.infoRowSize),
           ),
           const SizedBox(width: SimfTokens.space2),
           Expanded(

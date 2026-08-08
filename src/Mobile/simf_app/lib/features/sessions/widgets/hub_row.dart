@@ -49,7 +49,7 @@ class HubRow extends StatelessWidget {
             // back to pointing right) — SimfSvgIcon never mirrors (D-601).
             const SimfSvgIcon(
               AppAssets.icBack,
-              size: 20,
+              size: SimfTokens.hubRowSize,
               color: SimfTokens.beigeBorder,
             ),
           ],

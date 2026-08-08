@@ -31,7 +31,7 @@ class NeedLoginState extends StatelessWidget {
           children: <Widget>[
             const Icon(
               Icons.lock_outline,
-              size: 56,
+              size: SimfTokens.liveContentSizeMd,
               color: SimfTokens.beigeBorder,
             ),
             const SizedBox(height: SimfTokens.space3),
@@ -133,7 +133,7 @@ class GoldBullet extends StatelessWidget {
               color: color,
               fontSize: fontSize,
               fontWeight: fontWeight,
-              height: 1.5,
+              height: SimfTokens.liveContentHeightSm,
             ),
           ),
         ),
@@ -141,8 +141,8 @@ class GoldBullet extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: SimfTokens.gap6),
           child: Container(
-            width: 5,
-            height: 5,
+            width: SimfTokens.liveContentWidth,
+            height: SimfTokens.liveContentHeightMd,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
         ),
@@ -164,7 +164,7 @@ class SignLanguageNote extends StatelessWidget {
       children: <Widget>[
         const Icon(
           Icons.sign_language_outlined,
-          size: 18,
+          size: SimfTokens.liveContentSizeSm,
           color: SimfTokens.accent,
         ),
         const SizedBox(width: SimfTokens.space2),
@@ -233,7 +233,7 @@ class AskQuestionButton extends StatelessWidget {
       height: SimfTokens.controlHeight,
       child: FilledButton.icon(
         onPressed: onTap,
-        icon: const Icon(Icons.help_outline, size: 18),
+        icon: const Icon(Icons.help_outline, size: SimfTokens.liveContentSizeSm),
         // The size/weight ride the label Text (not styleFrom.textStyle) so the
         // Arabic label keeps the theme's brand font — an inline
         // `styleFrom.textStyle` drops fontFamily and tofus the Arabic (the

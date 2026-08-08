@@ -52,7 +52,7 @@ class ActiveFilterChip extends StatelessWidget {
                 label: clearLabel,
                 child: const Icon(
                   Icons.close,
-                  size: 14,
+                  size: SimfTokens.activeFilterChipSize,
                   color: SimfTokens.accent,
                 ),
               ),

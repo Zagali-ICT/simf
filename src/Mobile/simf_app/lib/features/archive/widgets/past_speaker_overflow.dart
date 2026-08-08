@@ -12,13 +12,13 @@ class PastSpeakerOverflow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 72,
+      width: SimfTokens.pastSpeakerOverflowWidth,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Container(
-            width: 72,
-            height: 72,
+            width: SimfTokens.pastSpeakerOverflowWidth,
+            height: SimfTokens.pastSpeakerOverflowHeight,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: SimfTokens.navyDeep,

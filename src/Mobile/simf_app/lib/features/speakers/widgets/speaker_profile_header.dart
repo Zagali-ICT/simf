@@ -32,8 +32,8 @@ class SpeakerProfileHeader extends StatelessWidget {
         textDirection: TextDirection.ltr,
         children: <Widget>[
           SizedBox(
-            width: 42,
-            height: 42,
+            width: SimfTokens.speakerProfileHeaderWidth,
+            height: SimfTokens.speakerProfileHeaderHeight,
             child: SimfCircledBackButton(onBack: onBack),
           ),
           Expanded(
@@ -55,7 +55,7 @@ class SpeakerProfileHeader extends StatelessWidget {
             ),
           ),
           // Balances the leading back button so the two-line title stays centred.
-          const SizedBox(width: 42, height: 42),
+          const SizedBox(width: SimfTokens.speakerProfileHeaderWidth, height: SimfTokens.speakerProfileHeaderHeight),
         ],
       ),
     );

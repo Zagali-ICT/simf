@@ -71,7 +71,7 @@ class MyAreaScheduleRow extends StatelessWidget {
             const SizedBox(width: SimfTokens.space3),
             const Icon(
               Icons.star_rounded,
-              size: 20,
+              size: SimfTokens.myAreaRowsSize,
               color: SimfTokens.accent,
             ),
           ],
@@ -131,7 +131,7 @@ class MyAreaMoreRow extends StatelessWidget {
             ),
             const SimfForwardChevron(
               AppAssets.icBack,
-              size: 20,
+              size: SimfTokens.myAreaRowsSize,
               color: SimfTokens.surface,
             ),
           ],
@@ -160,13 +160,13 @@ class MyAreaShareTile extends StatelessWidget {
     return SimfCard(
       onTap: onTap,
       child: SizedBox(
-        height: 48,
+        height: SimfTokens.myAreaRowsHeight,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              SimfSvgIcon(iconAsset, size: 20, color: SimfTokens.accent),
+              SimfSvgIcon(iconAsset, size: SimfTokens.myAreaRowsSize, color: SimfTokens.accent),
               const SizedBox(width: SimfTokens.space2),
               Flexible(
                 child: Text(

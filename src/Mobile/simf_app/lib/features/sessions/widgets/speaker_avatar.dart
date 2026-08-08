@@ -19,8 +19,8 @@ class SpeakerAvatar extends StatelessWidget {
       ),
     );
     return Container(
-      width: 40,
-      height: 40,
+      width: SimfTokens.space10,
+      height: SimfTokens.space10,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: SimfTokens.navy,

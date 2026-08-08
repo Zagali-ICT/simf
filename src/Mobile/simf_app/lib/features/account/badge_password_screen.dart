@@ -151,13 +151,13 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.badgePasswordScreenMaxWidth,
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const SizedBox(height: 48),
+              const SizedBox(height: SimfTokens.badgePasswordScreenHeight),
               if (name != null && name.isNotEmpty) ...<Widget>[
                 Text(
                   l10n.badgeWelcomeName(name),
@@ -224,7 +224,7 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.badgePasswordScreenMaxWidth,
         child: AuthSubmitButton(
           label: l10n.signInButton,
           busy: _busy,

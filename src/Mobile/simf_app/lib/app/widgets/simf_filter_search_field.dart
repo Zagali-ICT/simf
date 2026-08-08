@@ -29,7 +29,7 @@ class SimfFilterSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 48,
+      height: SimfTokens.simfFilterSearchFieldHeight,
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -42,7 +42,7 @@ class SimfFilterSearchField extends StatelessWidget {
         children: <Widget>[
           const Padding(
             padding: EdgeInsetsDirectional.only(start: SimfTokens.space3),
-            child: Icon(Icons.search, color: SimfTokens.beigeBorder, size: 16),
+            child: Icon(Icons.search, color: SimfTokens.beigeBorder, size: SimfTokens.simfFilterSearchFieldSize),
           ),
           Expanded(
             // The placeholder is a separate node that disappears once the user
@@ -70,7 +70,7 @@ class SimfFilterSearchField extends StatelessWidget {
           ),
           if (showFilterIcon)
             Container(
-              width: 40,
+              width: SimfTokens.space10,
               // Fill the 48-high field so the divider is a full-height wall,
               // not a short stub (a bare Row centres children on the cross
               // axis).
@@ -87,7 +87,7 @@ class SimfFilterSearchField extends StatelessWidget {
               child: const Icon(
                 Icons.tune,
                 color: SimfTokens.beigeBorder,
-                size: 16,
+                size: SimfTokens.simfFilterSearchFieldSize,
               ),
             ),
         ],

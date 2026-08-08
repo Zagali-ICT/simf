@@ -137,7 +137,7 @@ class AccountPasswordField extends StatelessWidget {
                 // the field.
                 icon: SimfSvgIcon(
                   obscure ? AppAssets.authEyeOff : AppAssets.authEye,
-                  size: 16,
+                  size: SimfTokens.accountFormFieldSize,
                   color: SimfTokens.beigeBorder,
                 ),
                 onPressed: onToggleObscure,

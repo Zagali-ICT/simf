@@ -34,7 +34,7 @@ class PlayerError extends StatelessWidget {
               children: <Widget>[
                 const Icon(
                   Icons.error_outline,
-                  size: 36,
+                  size: SimfTokens.playerErrorSize,
                   color: SimfTokens.beigeBorder,
                 ),
                 const SizedBox(height: SimfTokens.space2),

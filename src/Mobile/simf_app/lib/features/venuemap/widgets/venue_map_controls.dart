@@ -34,7 +34,7 @@ class VenueMapControl extends StatelessWidget {
           child: SizedBox(
             width: SimfTokens.mapControlSize,
             height: SimfTokens.mapControlSize,
-            child: Icon(icon, size: 20, color: SimfTokens.navy),
+            child: Icon(icon, size: SimfTokens.venueMapControlsSize, color: SimfTokens.navy),
           ),
         ),
       ),

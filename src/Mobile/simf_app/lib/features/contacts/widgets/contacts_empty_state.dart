@@ -28,7 +28,7 @@ class ContactsEmptyState extends StatelessWidget {
           children: <Widget>[
             const Icon(
               Icons.contacts_outlined,
-              size: 56,
+              size: SimfTokens.contactsEmptyStateSize,
               color: SimfTokens.inkMuted,
             ),
             const SizedBox(height: SimfTokens.space3),

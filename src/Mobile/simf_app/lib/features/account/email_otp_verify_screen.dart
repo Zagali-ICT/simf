@@ -216,10 +216,10 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.emailOtpVerifyScreenMaxWidth,
         child: Column(
           children: <Widget>[
-            const SizedBox(height: 48),
+            const SizedBox(height: SimfTokens.emailOtpVerifyScreenHeightSm),
             const OtpMark(icon: Icons.mail_outline),
             const SizedBox(height: SimfTokens.space6),
             Text(
@@ -235,7 +235,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
               recipient: email,
               fallback: l10n.otpBody,
             ),
-            const SizedBox(height: 64),
+            const SizedBox(height: SimfTokens.emailOtpVerifyScreenHeightMd),
             OtpCodeBoxes(
               controller: _code,
               focusNode: _codeFocus,
@@ -272,7 +272,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.emailOtpVerifyScreenMaxWidth,
         child: SizedBox(
           width: double.infinity,
           child: AuthSubmitButton(

@@ -252,7 +252,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
                     vertical: 56,
                   ),
                   child: MaxWidthBody(
-                    maxWidth: 560,
+                    maxWidth: SimfTokens.signUpFormScreenMaxWidth,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,

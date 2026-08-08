@@ -224,10 +224,10 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.biometricStepUpScreenMaxWidth,
         child: Column(
           children: <Widget>[
-            const SizedBox(height: 48),
+            const SizedBox(height: SimfTokens.biometricStepUpScreenHeight),
             const OtpMark(icon: Icons.fingerprint),
             const SizedBox(height: SimfTokens.space6),
             Text(
@@ -250,7 +250,7 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
                 style: SimfTokens.labelGoldMedium,
               ),
             ],
-            const SizedBox(height: 48),
+            const SizedBox(height: SimfTokens.biometricStepUpScreenHeight),
             OtpCodeBoxes(
               controller: _code,
               focusNode: _codeFocus,
@@ -297,7 +297,7 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.biometricStepUpScreenMaxWidth,
         child: SizedBox(
           width: double.infinity,
           child: AuthSubmitButton(

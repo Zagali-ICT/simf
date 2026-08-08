@@ -81,8 +81,8 @@ class SummaryBullet extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.only(top: SimfTokens.bulletTopNudge),
           child: SizedBox(
-            width: 6,
-            height: 6,
+            width: SimfTokens.summaryContentCardWidth,
+            height: SimfTokens.summaryContentCardHeight,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: SimfTokens.accent,

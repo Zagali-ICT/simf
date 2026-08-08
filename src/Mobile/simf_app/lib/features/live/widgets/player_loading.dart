@@ -17,8 +17,8 @@ class PlayerLoading extends StatelessWidget {
         ),
         child: Center(
           child: Container(
-            width: 52,
-            height: 52,
+            width: SimfTokens.playerLoadingWidth,
+            height: SimfTokens.playerLoadingHeight,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
               color: SimfTokens.playScrim,
@@ -26,7 +26,7 @@ class PlayerLoading extends StatelessWidget {
             ),
             child: const Icon(
               Icons.play_arrow,
-              size: 22,
+              size: SimfTokens.playerLoadingSize,
               color: SimfTokens.surface,
             ),
           ),

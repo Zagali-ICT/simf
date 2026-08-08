@@ -294,7 +294,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
                     Positioned(
                       left: (_positions[node.id] ?? Offset.zero).dx - 40,
                       top: (_positions[node.id] ?? Offset.zero).dy - 40,
-                      width: 80,
+                      width: SimfTokens.venueMapScreenWidth,
                       child: VenueMapMarker(
                         node: node,
                         isArabic: isArabic,

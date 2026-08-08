@@ -19,7 +19,7 @@ class AttachBox extends StatelessWidget {
       onTap: onTap,
       borderRadius: SimfTokens.borderRadiusSmall,
       child: Container(
-        height: 56,
+        height: SimfTokens.attachBoxHeight,
         decoration: BoxDecoration(
           border: Border.all(color: SimfTokens.beigeBorder),
           borderRadius: SimfTokens.borderRadiusSmall,
@@ -32,7 +32,7 @@ class AttachBox extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(icon, size: 24, color: SimfTokens.accent),
+              Icon(icon, size: SimfTokens.attachBoxSize, color: SimfTokens.accent),
               const SizedBox(width: SimfTokens.space2),
               // BUG-019 — the box has a fixed height and sits in a half-width
               // tablet column, so a longer attach label must ellipsize instead

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../app/theme/tokens.dart';
 import 'simf_field_label.dart';
 import 'simf_field_style.dart';
 
@@ -33,7 +34,7 @@ class SimfLabeledTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(label),
-        const SizedBox(height: 8),
+        const SizedBox(height: SimfTokens.space2),
         // The visible [SimfFieldLabel] is a sibling Text, not the field's own
         // name, so a screen reader announced a bare "edit box" (BUG-012).
         // Attaching the label here names the field without changing the paint.

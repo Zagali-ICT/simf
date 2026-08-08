@@ -30,7 +30,7 @@ class TierPill extends StatelessWidget {
         children: <Widget>[
           const Icon(
             Icons.workspace_premium_outlined,
-            size: 16,
+            size: SimfTokens.tierPillSize,
             color: SimfTokens.accent,
           ),
           const SizedBox(width: SimfTokens.space2),

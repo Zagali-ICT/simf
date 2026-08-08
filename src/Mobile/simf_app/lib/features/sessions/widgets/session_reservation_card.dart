@@ -74,7 +74,7 @@ class SessionReservationCard extends StatelessWidget {
               // so it stays left-pointing in RTL (same fix as speakers_screen).
               const SimfSvgIcon(
                 AppAssets.icBack,
-                size: 20,
+                size: SimfTokens.sessionReservationCardSize,
                 color: SimfTokens.beigeBorder,
               ),
             ],

@@ -41,11 +41,11 @@ class TappableAvatar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: SimfTokens.accent,
                   shape: BoxShape.circle,
-                  border: Border.all(color: SimfTokens.navyDeep, width: 1.5),
+                  border: Border.all(color: SimfTokens.navyDeep, width: SimfTokens.tappableAvatarWidth),
                 ),
                 child: const Icon(
                   Icons.photo_camera_outlined,
-                  size: 12,
+                  size: SimfTokens.tappableAvatarSize,
                   color: SimfTokens.navy,
                 ),
               ),

@@ -113,8 +113,8 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
             child: Transform.rotate(
               angle: 0.4936, // 28.28°
               child: Container(
-                width: 313,
-                height: 323,
+                width: SimfTokens.termsScreenWidth,
+                height: SimfTokens.termsScreenHeightMd,
                 decoration: BoxDecoration(
                   color: SimfTokens.surfaceTint,
                   borderRadius: BorderRadius.circular(40),
@@ -127,7 +127,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
               children: <Widget>[
                 // Header band (Figma 505:1558): chevron left, centred title.
                 SizedBox(
-                  height: 56,
+                  height: SimfTokens.termsScreenHeightSm,
                   child: Stack(
                     alignment: Alignment.center,
                     children: <Widget>[
@@ -142,7 +142,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                             icon: const Icon(
                               Icons.arrow_back_ios_new,
                               color: SimfTokens.surface,
-                              size: 20,
+                              size: SimfTokens.termsScreenSize,
                               textDirection: TextDirection.ltr,
                             ),
                           ),

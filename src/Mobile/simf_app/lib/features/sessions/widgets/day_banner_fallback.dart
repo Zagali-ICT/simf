@@ -12,7 +12,7 @@ class DayBannerFallback extends StatelessWidget {
         child: Center(
           child: Icon(
             Icons.image_outlined,
-            size: 28,
+            size: SimfTokens.dayBannerFallbackSize,
             color: SimfTokens.beigeBorder,
           ),
         ),

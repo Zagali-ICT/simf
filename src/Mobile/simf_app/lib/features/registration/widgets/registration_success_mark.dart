@@ -11,17 +11,17 @@ class RegistrationSuccessMark extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        width: 104,
-        height: 104,
+        width: SimfTokens.registrationSuccessMarkWidthMd,
+        height: SimfTokens.registrationSuccessMarkHeight,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: SimfTokens.navyDeep,
           shape: BoxShape.circle,
-          border: Border.all(color: SimfTokens.statusAccepted, width: 2.4),
+          border: Border.all(color: SimfTokens.statusAccepted, width: SimfTokens.registrationSuccessMarkWidthSm),
         ),
         child: const Icon(
           Icons.check_rounded,
-          size: 40,
+          size: SimfTokens.registrationSuccessMarkSize,
           color: SimfTokens.statusAccepted,
         ),
       ),

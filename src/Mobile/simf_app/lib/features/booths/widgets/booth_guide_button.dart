@@ -48,7 +48,7 @@ class BoothGuideButton extends StatelessWidget {
               const SizedBox(width: SimfTokens.space2),
               const SimfSvgIcon(
                 AppAssets.navLocation,
-                size: 18,
+                size: SimfTokens.boothGuideButtonSize,
                 color: SimfTokens.surface,
               ),
             ],

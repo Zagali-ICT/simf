@@ -51,7 +51,7 @@ class SessionsPill extends StatelessWidget {
                   children: <Widget>[
                     Flexible(child: text),
                     const SizedBox(width: SimfTokens.space1), // gap-4
-                    Icon(icon, size: 14, color: fg),
+                    Icon(icon, size: SimfTokens.sessionsPillSize, color: fg),
                   ],
                 ),
         ),

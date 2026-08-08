@@ -8,7 +8,7 @@ class ScanLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 2,
+      height: SimfTokens.scanLineHeight,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: <Color>[
@@ -18,7 +18,7 @@ class ScanLine extends StatelessWidget {
           ],
         ),
         boxShadow: const <BoxShadow>[
-          BoxShadow(color: SimfTokens.accent, blurRadius: 8),
+          BoxShadow(color: SimfTokens.accent, blurRadius: SimfTokens.scanLineBlurRadius),
         ],
       ),
     );

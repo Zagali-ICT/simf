@@ -109,7 +109,7 @@ class SpeakerListCard extends StatelessWidget {
               flipX: flip,
               child: const SimfSvgIcon(
                 AppAssets.icBack,
-                size: 20,
+                size: SimfTokens.speakerListCardSize,
                 color: SimfTokens.accent,
               ),
             ),

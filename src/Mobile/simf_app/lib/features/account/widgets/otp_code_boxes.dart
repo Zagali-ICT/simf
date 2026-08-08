@@ -38,7 +38,7 @@ class OtpCodeBoxes extends StatelessWidget {
     final digits = controller.text;
     final activeIndex = digits.length.clamp(0, 5);
     return SizedBox(
-      height: 52,
+      height: SimfTokens.otpCodeBoxesHeightSm,
       child: Stack(
         children: <Widget>[
           Positioned.fill(
@@ -79,12 +79,12 @@ class OtpCodeBoxes extends StatelessWidget {
                   if (i > 0) const SizedBox(width: SimfTokens.space4),
                   Expanded(
                     child: Container(
-                      height: 52,
+                      height: SimfTokens.otpCodeBoxesHeightSm,
                       decoration: BoxDecoration(
                         color: SimfTokens.navy,
                         borderRadius: BorderRadius.circular(SimfTokens.radius14),
                         border: Border.all(
-                          width: 1.5,
+                          width: SimfTokens.otpCodeBoxesWidthMd,
                           color: focusNode.hasFocus && i == activeIndex
                               ? SimfTokens.accent
                               : otpCodeBoxBorder,
@@ -117,15 +117,15 @@ class OtpMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 96,
-      height: 96,
+      width: SimfTokens.otpCodeBoxesWidthLg,
+      height: SimfTokens.otpCodeBoxesHeightMd,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: SimfTokens.navyDeep,
-        border: Border.all(color: SimfTokens.accent, width: 1.2),
+        border: Border.all(color: SimfTokens.accent, width: SimfTokens.otpCodeBoxesWidthSm),
       ),
       alignment: Alignment.center,
-      child: Icon(icon, color: SimfTokens.accent, size: 34),
+      child: Icon(icon, color: SimfTokens.accent, size: SimfTokens.otpCodeBoxesSize),
     );
   }
 }

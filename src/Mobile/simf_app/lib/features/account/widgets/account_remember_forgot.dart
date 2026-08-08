@@ -34,8 +34,8 @@ class AccountRememberForgot extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               SizedBox(
-                width: 19,
-                height: 19,
+                width: SimfTokens.accountRememberForgotWidthLg,
+                height: SimfTokens.accountRememberForgotHeight,
                 child: Checkbox(
                   value: rememberMe,
                   // The caption is a sibling Text, so the box itself announced
@@ -47,7 +47,7 @@ class AccountRememberForgot extends StatelessWidget {
                   activeColor: SimfTokens.accent,
                   side: const BorderSide(
                     color: SimfTokens.greyText,
-                    width: 1.5,
+                    width: SimfTokens.accountRememberForgotWidthSm,
                   ),
                   shape: const RoundedRectangleBorder(
                     borderRadius: SimfTokens.borderRadiusSmall,
@@ -55,7 +55,7 @@ class AccountRememberForgot extends StatelessWidget {
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: SimfTokens.accountRememberForgotWidthMd),
               Flexible(
                 child: Text(
                   rememberLabel,

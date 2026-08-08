@@ -11,8 +11,8 @@ class FlagBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 48,
-      height: 48,
+      width: SimfTokens.flagBadgeWidth,
+      height: SimfTokens.flagBadgeHeight,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: SimfTokens.flagBadgeBg,

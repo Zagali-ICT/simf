@@ -18,7 +18,7 @@ class IconBox extends StatelessWidget {
         color: SimfTokens.accent,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
-      child: Icon(icon, size: 16, color: SimfTokens.navy),
+      child: Icon(icon, size: SimfTokens.iconBoxSize2, color: SimfTokens.navy),
     );
   }
 }

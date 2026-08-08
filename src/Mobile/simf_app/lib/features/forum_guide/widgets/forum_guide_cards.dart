@@ -38,7 +38,7 @@ class ForumGuideBanner extends StatelessWidget {
           const Icon(
             Icons.menu_book_outlined,
             color: SimfTokens.surface,
-            size: 14,
+            size: SimfTokens.forumGuideCardsSizeSm,
           ),
         ],
       ),
@@ -78,8 +78,8 @@ class ForumGuideStep extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Container(
-            width: 32,
-            height: 32,
+            width: SimfTokens.space8,
+            height: SimfTokens.space8,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
               color: SimfTokens.accent,
@@ -114,7 +114,7 @@ class ForumGuideStep extends StatelessWidget {
           const SimfSvgIcon(
             AppAssets.icCaretLeft,
             color: SimfTokens.accent,
-            size: 20,
+            size: SimfTokens.forumGuideCardsSizeMd,
           ),
         ],
       ),

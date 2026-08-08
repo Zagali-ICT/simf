@@ -131,7 +131,7 @@ class _FlagSpot extends StatelessWidget {
                 borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               )
             : null,
-        child: Text(flag, style: const TextStyle(fontSize: 14)),
+        child: Text(flag, style: const TextStyle(fontSize: SimfTokens.delegationsStatsStripFontSize)),
       ),
     );
   }

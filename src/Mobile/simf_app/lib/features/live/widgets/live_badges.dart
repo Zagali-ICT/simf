@@ -39,8 +39,8 @@ class LiveBadge extends StatelessWidget {
           ),
           const SizedBox(width: SimfTokens.gap5),
           Container(
-            width: 7,
-            height: 7,
+            width: SimfTokens.liveBadgesWidth,
+            height: SimfTokens.liveBadgesHeight,
             decoration: const BoxDecoration(
               color: SimfTokens.surface,
               shape: BoxShape.circle,
@@ -89,7 +89,7 @@ class LanguageChip extends ConsumerWidget {
                 style: SimfTokens.bodyWhiteRegularSm,
               ),
               const SizedBox(width: SimfTokens.gap5),
-              const Icon(Icons.language, size: 14, color: SimfTokens.surface),
+              const Icon(Icons.language, size: SimfTokens.liveBadgesSize, color: SimfTokens.surface),
             ],
           ),
         ),

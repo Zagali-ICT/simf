@@ -68,7 +68,7 @@ class LiveCaptureView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: SimfTokens.white70,
-                fontSize: 15,
+                fontSize: SimfTokens.identityCaptureViewFontSizeSm,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -77,14 +77,14 @@ class LiveCaptureView extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 promptLeading,
-                const SizedBox(width: 10),
+                const SizedBox(width: SimfTokens.identityCaptureViewWidthSm),
                 Flexible(
                   child: Text(
                     promptText,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: SimfTokens.surface,
-                      fontSize: 26,
+                      fontSize: SimfTokens.identityCaptureViewFontSizeMd,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -108,8 +108,8 @@ class LiveCaptureView extends StatelessWidget {
   }
 
   Widget _dash({required bool done}) => Container(
-        width: 32,
-        height: 6,
+        width: SimfTokens.space8,
+        height: SimfTokens.identityCaptureViewHeightSm,
         decoration: BoxDecoration(
           color: done ? SimfTokens.accent : SimfTokens.beigeFill50,
           borderRadius: BorderRadius.circular(3),
@@ -118,5 +118,5 @@ class LiveCaptureView extends StatelessWidget {
 
   // CameraPreview needs a finite size inside the FittedBox/BoxFit.cover.
   Widget _sized(Widget child) =>
-      SizedBox(width: 1080, height: 1440, child: child);
+      SizedBox(width: SimfTokens.identityCaptureViewWidthLg, height: SimfTokens.identityCaptureViewHeightMd, child: child);
 }

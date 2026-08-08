@@ -55,7 +55,7 @@ class SpeakerOptionTile extends StatelessWidget {
                       AssetKind.speakerPhoto,
                       speaker.id,
                     ),
-                size: 40,
+                size: SimfTokens.speakerOptionTileSizeMd,
               ),
               const SizedBox(width: SimfTokens.space3),
               Expanded(
@@ -104,7 +104,7 @@ class SpeakerOptionTile extends StatelessWidget {
                 const Icon(
                   Icons.check_circle,
                   color: SimfTokens.accent,
-                  size: 20,
+                  size: SimfTokens.speakerOptionTileSizeSm,
                 ),
               ],
             ],

@@ -9,8 +9,8 @@ class UnreadDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 14,
-      height: 14,
+      width: SimfTokens.unreadDotWidth,
+      height: SimfTokens.unreadDotHeight,
       decoration: const BoxDecoration(
         color: SimfTokens.danger,
         shape: BoxShape.circle,

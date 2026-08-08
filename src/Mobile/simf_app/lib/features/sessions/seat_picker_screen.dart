@@ -297,7 +297,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
                 borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               ),
             ),
-            icon: const Icon(Icons.event_seat, size: 20),
+            icon: const Icon(Icons.event_seat, size: SimfTokens.seatPickerScreenSize),
             label: Text(
               held == null
                   ? l10n.seatPickerConfirmCta
@@ -319,7 +319,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                 ),
               ),
-              icon: const Icon(Icons.shuffle, size: 20),
+              icon: const Icon(Icons.shuffle, size: SimfTokens.seatPickerScreenSize),
               label: Text(
                 l10n.seatPickerRandomCta,
                 style: SimfTokens.titleBold,

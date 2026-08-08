@@ -42,7 +42,7 @@ class AskHostCard extends StatelessWidget {
             // glyph (bundled), not Material's person_outline.
             SimfSvgIcon(
               AppAssets.navUser,
-              size: 24,
+              size: SimfTokens.askHostCardSize,
               color: iconColor,
             ),
             const SizedBox(height: SimfTokens.space2),

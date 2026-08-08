@@ -21,8 +21,8 @@ class SocialButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: Container(
-          width: 48,
-          height: 48,
+          width: SimfTokens.socialButtonWidth,
+          height: SimfTokens.socialButtonHeight,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: SimfTokens.navy,
@@ -32,7 +32,7 @@ class SocialButton extends StatelessWidget {
               width: SimfTokens.hairline,
             ),
           ),
-          child: Icon(icon, color: SimfTokens.surface, size: 20),
+          child: Icon(icon, color: SimfTokens.surface, size: SimfTokens.socialButtonSize),
         ),
       ),
     );

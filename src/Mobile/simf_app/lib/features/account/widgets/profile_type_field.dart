@@ -49,10 +49,10 @@ class ProfileTypeField extends StatelessWidget {
           child: Row(
             children: <Widget>[
               const SizedBox(
-                width: 16,
-                height: 16,
+                width: SimfTokens.space4,
+                height: SimfTokens.space4,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
+                  strokeWidth: SimfTokens.profileTypeFieldStrokeWidth,
                   color: SimfTokens.accent,
                 ),
               ),

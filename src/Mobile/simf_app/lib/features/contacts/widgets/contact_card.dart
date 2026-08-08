@@ -49,7 +49,7 @@ class ContactCard extends StatelessWidget {
             Row(
               children: <Widget>[
                 CircleAvatar(
-                  radius: 26,
+                  radius: SimfTokens.contactCardRadius,
                   backgroundColor: SimfTokens.accent,
                   child: Text(
                     _initials(name),

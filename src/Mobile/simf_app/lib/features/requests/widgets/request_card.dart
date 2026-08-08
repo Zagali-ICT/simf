@@ -101,7 +101,7 @@ class _RequestCardState extends State<RequestCard> {
                     angle: _expanded ? math.pi / 2 : -math.pi / 2,
                     child: const SimfSvgIcon(
                       AppAssets.chevronLeft,
-                      size: 20,
+                      size: SimfTokens.requestCardSizeMd,
                       color: SimfTokens.accent,
                     ),
                   ),
@@ -140,8 +140,8 @@ class _RequestCardState extends State<RequestCard> {
           Row(
             children: <Widget>[
               Container(
-                width: 8,
-                height: 8,
+                width: SimfTokens.space2,
+                height: SimfTokens.space2,
                 decoration:
                     BoxDecoration(color: statusColor, shape: BoxShape.circle),
               ),
@@ -174,7 +174,7 @@ class _RequestCardState extends State<RequestCard> {
               alignment: AlignmentDirectional.centerEnd,
               child: OutlinedButton.icon(
                 onPressed: widget.onCancel,
-                icon: const Icon(Icons.close, size: 16, color: SimfTokens.danger),
+                icon: const Icon(Icons.close, size: SimfTokens.requestCardSizeSm, color: SimfTokens.danger),
                 label: Text(
                   l10n.requestCancel,
                   style: SimfTokens.bodyDanger,

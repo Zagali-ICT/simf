@@ -20,13 +20,13 @@ class ArchivePastSpeakerCard extends StatelessWidget {
     );
     final showPhoto = isHttpUrl(photoUrl);
     return SizedBox(
-      width: 72,
+      width: SimfTokens.archivePastSpeakerCardWidth,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Container(
-            width: 72,
-            height: 72,
+            width: SimfTokens.archivePastSpeakerCardWidth,
+            height: SimfTokens.archivePastSpeakerCardHeight,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: SimfTokens.navyDeep,
@@ -35,8 +35,8 @@ class ArchivePastSpeakerCard extends StatelessWidget {
             child: showPhoto
                 ? Image.network(
                     photoUrl!,
-                    width: 72,
-                    height: 72,
+                    width: SimfTokens.archivePastSpeakerCardWidth,
+                    height: SimfTokens.archivePastSpeakerCardHeight,
                     fit: BoxFit.cover,
                     gaplessPlayback: true,
                     loadingBuilder: (context, child, progress) =>

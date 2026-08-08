@@ -36,7 +36,7 @@ class ModeratedSessionTile extends StatelessWidget {
       badgeOutlined: true,
       badge: const Icon(
         Icons.forum_outlined,
-        size: 32,
+        size: SimfTokens.moderatedSessionTileSize,
         color: SimfTokens.accent,
       ),
       onTap: onTap,

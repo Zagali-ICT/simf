@@ -31,7 +31,7 @@ class InterestChip extends StatelessWidget {
           color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            width: 1.2,
+            width: SimfTokens.interestChipWidth,
             color: selected ? SimfTokens.accent : SimfTokens.chipBorderNavy,
           ),
         ),

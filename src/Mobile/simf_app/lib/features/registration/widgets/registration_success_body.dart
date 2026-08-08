@@ -38,7 +38,7 @@ class RegistrationSuccessBody extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
+          constraints: const BoxConstraints(maxWidth: SimfTokens.registrationSuccessBodyMaxWidth),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[

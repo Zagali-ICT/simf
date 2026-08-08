@@ -31,7 +31,7 @@ class StaffHome extends StatelessWidget {
             badgeOutlined: true,
             badge: const Icon(
               Icons.qr_code_scanner,
-              size: 32,
+              size: SimfTokens.operationalHomesSize,
               color: SimfTokens.accent,
             ),
             onTap: () => context.pushNamed(RouteNames.gateScanner),
@@ -42,7 +42,7 @@ class StaffHome extends StatelessWidget {
             badgeOutlined: true,
             badge: const Icon(
               Icons.person_add_alt_1_outlined,
-              size: 32,
+              size: SimfTokens.operationalHomesSize,
               color: SimfTokens.accent,
             ),
             onTap: () => context.pushNamed(RouteNames.staffRegisterVisitor),
@@ -110,7 +110,7 @@ class ModeratorHome extends ConsumerWidget {
             badgeOutlined: true,
             badge: const Icon(
               Icons.forum_outlined,
-              size: 32,
+              size: SimfTokens.operationalHomesSize,
               color: SimfTokens.accent,
             ),
             onTap: () => context.pushNamed(RouteNames.sessions),

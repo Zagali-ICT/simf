@@ -201,8 +201,8 @@ class SimfPageShell extends StatelessWidget {
           // Leading: the 42×42 navy back box (Figma 758:1473) on the LEFT; the
           // chevron is not mirrored (the frame's chevron points left).
           SizedBox(
-            width: 42,
-            height: 42,
+            width: SimfTokens.simfPageShellWidthSm,
+            height: SimfTokens.simfPageShellHeightSm,
             child: onBack == null
                 ? null
                 : SimfCircledBackButton(onBack: onBack!, mirrorInRtl: false),
@@ -236,7 +236,7 @@ class SimfPageShell extends StatelessWidget {
           else
             // المزيد (1129:17224) drops the header pill; the spacer balances the
             // 42-wide back box so the title stays centred.
-            const SizedBox(width: 42, height: 42),
+            const SizedBox(width: SimfTokens.simfPageShellWidthSm, height: SimfTokens.simfPageShellHeightSm),
         ],
       ),
     );
@@ -281,7 +281,7 @@ class SimfCircledBackButton extends StatelessWidget {
         flipX: flip,
         child: const SimfSvgIcon(
           AppAssets.icBack,
-          size: 24,
+          size: SimfTokens.simfPageShellSizeMd,
           color: SimfTokens.surface,
         ),
       ),
@@ -305,7 +305,7 @@ class SimfMenuButton extends StatelessWidget {
         backgroundColor: SimfTokens.navyDeep,
         shape: const CircleBorder(),
       ),
-      icon: const Icon(Icons.menu, color: SimfTokens.surface, size: 20),
+      icon: const Icon(Icons.menu, color: SimfTokens.surface, size: SimfTokens.simfPageShellSizeSm),
     );
   }
 }
@@ -447,8 +447,8 @@ class SimfSweepBackground extends StatelessWidget {
       child: Transform.rotate(
         angle: 0.4936,
         child: Container(
-          width: 313,
-          height: 323,
+          width: SimfTokens.simfPageShellWidthMd,
+          height: SimfTokens.simfPageShellHeightMd,
           decoration: const BoxDecoration(
             color: SimfTokens.surfaceTint,
             borderRadius: BorderRadius.all(Radius.circular(40)),

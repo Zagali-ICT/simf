@@ -21,7 +21,7 @@ class ArchiveGalleryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 104,
+      height: SimfTokens.archiveGalleryRowHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,

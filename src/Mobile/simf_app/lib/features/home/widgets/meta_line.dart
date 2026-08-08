@@ -13,7 +13,7 @@ class MetaLine extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Icon(icon, size: 14, color: SimfTokens.surface),
+        Icon(icon, size: SimfTokens.metaLineSize, color: SimfTokens.surface),
         const SizedBox(width: SimfTokens.space1),
         Flexible(
           child: Text(

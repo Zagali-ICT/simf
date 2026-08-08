@@ -118,7 +118,7 @@ class SponsorCard extends StatelessWidget {
                   // Frame 925:2990 — the iconamoon thin chevron (navy on the gold
                   // hero card, gold on a premium card), NOT a filled triangle.
                   AppAssets.icBack,
-                  size: 20,
+                  size: SimfTokens.sponsorCardSize,
                   color: hero ? SimfTokens.navy : SimfTokens.accent,
                 ),
               ),

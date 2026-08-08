@@ -28,7 +28,7 @@ class ChangeSeatButton extends StatelessWidget {
           vertical: SimfTokens.space3,
         ),
       ),
-      icon: const Icon(Icons.swap_horiz, size: 18),
+      icon: const Icon(Icons.swap_horiz, size: SimfTokens.changeSeatButtonSize),
       label: Text(l10n.seatChangeCta, style: SimfTokens.labelSemiboldSm),
     );
   }

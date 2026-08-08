@@ -42,7 +42,7 @@ class SpeakerSortControl extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(Icons.swap_vert, size: 18, color: tint),
+              Icon(Icons.swap_vert, size: SimfTokens.speakerSortControlSize, color: tint),
               const SizedBox(width: SimfTokens.space2),
               Text(
                 label,
@@ -55,7 +55,7 @@ class SpeakerSortControl extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space1),
-              Icon(Icons.keyboard_arrow_down, size: 18, color: tint),
+              Icon(Icons.keyboard_arrow_down, size: SimfTokens.speakerSortControlSize, color: tint),
             ],
           ),
         ),

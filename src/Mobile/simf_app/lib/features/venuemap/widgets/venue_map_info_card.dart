@@ -71,7 +71,7 @@ class VenueMapInfoCard extends StatelessWidget {
           BoxShadow(
             color: SimfTokens.cardShadow,
             offset: Offset(0, 1),
-            blurRadius: 8,
+            blurRadius: SimfTokens.venueMapInfoCardBlurRadius,
           ),
         ],
       ),
@@ -141,7 +141,7 @@ class VenueMapInfoCard extends StatelessWidget {
                 tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                 icon: const Icon(
                   Icons.close,
-                  size: 20,
+                  size: SimfTokens.venueMapInfoCardSizeMd,
                   color: SimfTokens.greyText,
                 ),
               ),
@@ -156,7 +156,7 @@ class VenueMapInfoCard extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(SimfTokens.tapTarget),
                   ),
-                  icon: const Icon(Icons.navigation_outlined, size: 18),
+                  icon: const Icon(Icons.navigation_outlined, size: SimfTokens.venueMapInfoCardSizeSm),
                   label: Text(l10n.venueMapDirectMe),
                 ),
               ),

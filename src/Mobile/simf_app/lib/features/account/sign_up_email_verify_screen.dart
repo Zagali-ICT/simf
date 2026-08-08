@@ -224,10 +224,10 @@ class _SignUpEmailVerifyScreenState
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.signUpEmailVerifyScreenMaxWidth,
         child: Column(
           children: <Widget>[
-            const SizedBox(height: 48),
+            const SizedBox(height: SimfTokens.signUpEmailVerifyScreenHeight),
             // Gold-ringed mail mark (Figma 505:969).
             const OtpMark(icon: Icons.mail_outline),
             const SizedBox(height: SimfTokens.space6),
@@ -240,7 +240,7 @@ class _SignUpEmailVerifyScreenState
               prefix: l10n.emailVerifySentTo,
               recipient: widget.email,
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: SimfTokens.signUpEmailVerifyScreenHeight),
             OtpCodeBoxes(
               controller: _code,
               focusNode: _codeFocus,
@@ -277,7 +277,7 @@ class _SignUpEmailVerifyScreenState
           l10n.resendInLabel,
           style: const TextStyle(color: otpMutedBlue, fontSize: SimfTokens.textMd),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: SimfTokens.signUpEmailVerifyScreenWidth),
         Text(
           _formatCooldown(_cooldown),
           textDirection: TextDirection.ltr,
@@ -292,7 +292,7 @@ class _SignUpEmailVerifyScreenState
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.signUpEmailVerifyScreenMaxWidth,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -313,7 +313,7 @@ class _SignUpEmailVerifyScreenState
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: SimfTokens.signUpEmailVerifyScreenWidth),
                 TextButton(
                   onPressed: _canResend ? () => unawaited(_resend()) : null,
                   style: authLinkButtonStyle(SimfTokens.accent),

@@ -17,7 +17,7 @@ class FileIcon extends StatelessWidget {
       ),
       child: const Icon(
         Icons.description_outlined,
-        size: 20,
+        size: SimfTokens.fileIconSize,
         color: SimfTokens.beigeBorder,
       ),
     );

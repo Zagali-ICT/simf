@@ -186,7 +186,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
                 child: QrImageView(
                   data: buildShareQrPayload(vcard, _token ?? ''),
                   version: QrVersions.auto,
-                  size: 240,
+                  size: SimfTokens.shareMyContactScreenSize,
                   gapless: true,
                 ),
               ),
@@ -227,9 +227,9 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
               ),
               icon: _rotating
                   ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      width: SimfTokens.space4,
+                      height: SimfTokens.space4,
+                      child: CircularProgressIndicator(strokeWidth: SimfTokens.shareMyContactScreenStrokeWidth),
                     )
                   : const Icon(Icons.autorenew, color: SimfTokens.accent),
               label: Text(

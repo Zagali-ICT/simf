@@ -72,8 +72,8 @@ class AttachmentField extends StatelessWidget {
                   ClipOval(
                     child: Image.memory(
                       data,
-                      width: 40,
-                      height: 40,
+                      width: SimfTokens.space10,
+                      height: SimfTokens.space10,
                       fit: BoxFit.cover,
                     ),
                   )
@@ -82,8 +82,8 @@ class AttachmentField extends StatelessWidget {
                     borderRadius: SimfTokens.borderRadiusSmall,
                     child: Image.memory(
                       data,
-                      width: 40,
-                      height: 40,
+                      width: SimfTokens.space10,
+                      height: SimfTokens.space10,
                       fit: BoxFit.cover,
                     ),
                   ),

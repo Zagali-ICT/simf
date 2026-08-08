@@ -131,7 +131,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: SimfTokens.scrimBlack25,
-            blurRadius: 60,
+            blurRadius: SimfTokens.simfScannerFrameBlurRadius,
             offset: Offset(0, 24),
           ),
         ],
@@ -170,7 +170,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
               child: Icon(
                 Icons.qr_code_scanner,
                 color: SimfTokens.accent,
-                size: 64,
+                size: SimfTokens.simfScannerFrameSize,
               ),
             ),
             _buildScanLine(windowHeight),
@@ -220,14 +220,14 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
             child: Text(
               widget.statusLabel,
               textDirection: TextDirection.rtl,
-              style: const TextStyle(color: SimfTokens.mutedBlue, fontSize: 12),
+              style: const TextStyle(color: SimfTokens.mutedBlue, fontSize: SimfTokens.simfScannerFrameFontSize),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: SimfTokens.space2),
           ClipRRect(
             borderRadius: BorderRadius.circular(100),
             child: const SizedBox(
-              height: 6,
+              height: SimfTokens.simfScannerFrameHeightSm,
               child: ColoredBox(color: SimfTokens.scannerTrack),
             ),
           ),
@@ -248,8 +248,8 @@ class _Bracket extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 28,
-      height: 28,
+      width: SimfTokens.simfScannerFrameWidth,
+      height: SimfTokens.simfScannerFrameHeightLg,
       decoration: BoxDecoration(
         border: Border(
           top: top ? _bracketSide : BorderSide.none,

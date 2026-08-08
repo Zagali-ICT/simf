@@ -123,7 +123,7 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
         const SizedBox(height: SimfTokens.space6),
         const Icon(
           Icons.handshake_outlined,
-          size: 64,
+          size: SimfTokens.meetingConfirmScreenSize,
           color: SimfTokens.accent,
         ),
         const SizedBox(height: SimfTokens.space4),
@@ -160,7 +160,7 @@ class _MeetingConfirmScreenState extends ConsumerState<MeetingConfirmScreen> {
         const SizedBox(height: SimfTokens.space6),
         Icon(
           _declined ? Icons.cancel_outlined : Icons.check_circle_outline,
-          size: 64,
+          size: SimfTokens.meetingConfirmScreenSize,
           color: SimfTokens.accent,
         ),
         const SizedBox(height: SimfTokens.space4),

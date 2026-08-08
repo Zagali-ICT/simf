@@ -197,13 +197,13 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.resetPasswordScreenMaxWidth,
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const SizedBox(height: 48),
+              const SizedBox(height: SimfTokens.resetPasswordScreenHeight),
               const Center(child: OtpMark(icon: Icons.lock_outline)),
               const SizedBox(height: SimfTokens.space6),
               Text(
@@ -281,7 +281,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.resetPasswordScreenMaxWidth,
         child: AuthSubmitButton(
           label: l10n.resetPasswordButton,
           busy: _busy,

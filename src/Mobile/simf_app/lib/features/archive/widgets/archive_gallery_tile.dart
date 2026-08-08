@@ -22,8 +22,8 @@ class ArchiveGalleryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final showImage = !item.isVideo && isHttpUrl(item.url);
     return Container(
-      width: 104,
-      height: 104,
+      width: SimfTokens.archiveGalleryTileWidth,
+      height: SimfTokens.archiveGalleryTileHeight,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
@@ -72,7 +72,7 @@ class ArchiveGalleryTile extends StatelessWidget {
         child: Icon(
           item.isVideo ? Icons.play_circle_outline : Icons.image_outlined,
           color: SimfTokens.accent,
-          size: 28,
+          size: SimfTokens.archiveGalleryTileSize,
         ),
       );
 }

@@ -12,8 +12,8 @@ class CountryFlagTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 40,
-      height: 40,
+      width: SimfTokens.space10,
+      height: SimfTokens.space10,
       alignment: Alignment.center,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -23,7 +23,7 @@ class CountryFlagTile extends StatelessWidget {
       child: Text(
         flag,
         textDirection: TextDirection.ltr,
-        style: const TextStyle(fontSize: 28, height: 1),
+        style: const TextStyle(fontSize: SimfTokens.countryFlagTileFontSize, height: 1),
       ),
     );
   }

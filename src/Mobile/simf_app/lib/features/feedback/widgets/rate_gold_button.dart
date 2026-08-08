@@ -30,10 +30,10 @@ class RateGoldButton extends StatelessWidget {
           child: Center(
             child: loading
                 ? const SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: SimfTokens.space5,
+                    height: SimfTokens.space5,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
+                      strokeWidth: SimfTokens.rateGoldButtonStrokeWidth,
                       color: SimfTokens.surface,
                     ),
                   )

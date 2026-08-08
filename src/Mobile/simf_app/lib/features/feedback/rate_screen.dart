@@ -235,7 +235,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
           const SizedBox(height: SimfTokens.space6),
           StarRow(
             value: _overall,
-            size: 30,
+            size: SimfTokens.rateScreenSize,
             gap: SimfTokens.space3,
             onChanged: (v) => setState(() => _overall = v),
           ),

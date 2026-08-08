@@ -19,7 +19,7 @@ class ChannelRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(icon, size: 18, color: SimfTokens.accent),
+          Icon(icon, size: SimfTokens.channelRowSize, color: SimfTokens.accent),
           const SizedBox(width: SimfTokens.space2),
           Expanded(child: Text(value!)),
         ],

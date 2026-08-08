@@ -31,9 +31,9 @@ class Thumbnail extends StatelessWidget {
           color: SimfTokens.navyDeep,
           alignment: Alignment.center,
           child: const SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            width: SimfTokens.thumbnailWidth,
+            height: SimfTokens.thumbnailHeight,
+            child: CircularProgressIndicator(strokeWidth: SimfTokens.thumbnailStrokeWidth),
           ),
         );
       },

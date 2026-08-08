@@ -11,7 +11,7 @@ class NewsImageFallback extends StatelessWidget {
         child: Center(
           child: Icon(
             Icons.article_outlined,
-            size: 28,
+            size: SimfTokens.newsImageFallbackSize,
             color: SimfTokens.accent,
           ),
         ),

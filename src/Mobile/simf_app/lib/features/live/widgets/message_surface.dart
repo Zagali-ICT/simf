@@ -32,7 +32,7 @@ class MessageSurface extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Icon(icon, size: 40, color: SimfTokens.beigeBorder),
+                    Icon(icon, size: SimfTokens.messageSurfaceSize, color: SimfTokens.beigeBorder),
                     const SizedBox(height: SimfTokens.space2),
                     Text(
                       message,

@@ -40,16 +40,16 @@ class HighlightSlide extends StatelessWidget {
                           ? child
                           : const Center(
                               child: SizedBox(
-                                width: 18,
-                                height: 18,
+                                width: SimfTokens.highlightSlideWidth,
+                                height: SimfTokens.highlightSlideHeight2,
                                 child:
-                                    CircularProgressIndicator(strokeWidth: 2),
+                                    CircularProgressIndicator(strokeWidth: SimfTokens.highlightSlideStrokeWidth),
                               ),
                             ),
                   errorBuilder: (context, error, stackTrace) => const Center(
                     child: Icon(
                       Icons.image_outlined,
-                      size: 28,
+                      size: SimfTokens.highlightSlideSize,
                       color: SimfTokens.beigeBorder,
                     ),
                   ),

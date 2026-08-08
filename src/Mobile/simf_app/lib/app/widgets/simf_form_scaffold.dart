@@ -115,7 +115,7 @@ class SimfFormScaffold extends ConsumerWidget {
         children: <Widget>[
           topBar,
           header,
-          const SizedBox(height: 24),
+          const SizedBox(height: SimfTokens.space6),
           Expanded(child: child),
         ],
       );
@@ -131,13 +131,13 @@ class SimfFormScaffold extends ConsumerWidget {
               // the owner runs on; at phone width the body is narrower than this
               // anyway, so the phone goldens are unaffected.
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
+                constraints: const BoxConstraints(maxWidth: SimfTokens.simfFormScaffoldMaxWidth),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     header,
-                    const SizedBox(height: 40),
+                    const SizedBox(height: SimfTokens.space10),
                     // Non-pinned (auth) mode owns the beige card; pinned
                     // (profile) places [child] raw so it can use a Material
                     // card for its interactive-tile ink.

@@ -29,7 +29,7 @@ class TogglePill extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             if (icon != null) ...<Widget>[
-              Icon(icon, size: 16, color: SimfTokens.surface),
+              Icon(icon, size: SimfTokens.togglePillSize, color: SimfTokens.surface),
               const SizedBox(width: SimfTokens.space1),
             ],
             Flexible(

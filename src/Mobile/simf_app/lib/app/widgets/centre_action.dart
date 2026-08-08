@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_assets.dart';
+import '../theme/tokens.dart';
 
 /// The raised gold QR centre action (frame 758:1476 "boxicons:qr", 56px) — the
 /// bundled multi-colour SVG (gold disc, cream ring, navy glyph) rendered as-is.
@@ -28,8 +29,8 @@ class CentreAction extends StatelessWidget {
             customBorder: const CircleBorder(),
             child: SvgPicture.asset(
               AppAssets.navQr,
-              width: 56,
-              height: 56,
+              width: SimfTokens.centreActionWidth,
+              height: SimfTokens.centreActionHeight,
             ),
           ),
         ),

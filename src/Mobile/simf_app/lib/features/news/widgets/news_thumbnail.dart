@@ -39,9 +39,9 @@ class NewsThumbnail extends StatelessWidget {
                   color: SimfTokens.navy,
                   child: Center(
                     child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      width: SimfTokens.newsThumbnailWidth,
+                      height: SimfTokens.newsThumbnailHeight,
+                      child: CircularProgressIndicator(strokeWidth: SimfTokens.newsThumbnailStrokeWidth),
                     ),
                   ),
                 );

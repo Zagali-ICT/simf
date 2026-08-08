@@ -13,7 +13,7 @@ class ScannerHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 56,
+      height: SimfTokens.scannerHeaderHeight,
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
@@ -37,7 +37,7 @@ class ScannerHeader extends StatelessWidget {
                   icon: const Icon(
                     Icons.arrow_back_ios_new,
                     color: SimfTokens.surface,
-                    size: 20,
+                    size: SimfTokens.scannerHeaderSize,
                     textDirection: TextDirection.ltr,
                   ),
                 ),
@@ -48,7 +48,7 @@ class ScannerHeader extends StatelessWidget {
             title,
             style: const TextStyle(
               color: SimfTokens.surface,
-              fontSize: 24,
+              fontSize: SimfTokens.scannerHeaderFontSize,
               fontWeight: FontWeight.w500,
             ),
           ),

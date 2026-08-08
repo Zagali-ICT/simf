@@ -19,7 +19,7 @@ class RegistrationSuccessHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 56,
+      height: SimfTokens.registrationSuccessHeaderHeight,
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
@@ -33,7 +33,7 @@ class RegistrationSuccessHeader extends StatelessWidget {
                 icon: const Icon(
                   Icons.arrow_back_ios_new,
                   color: SimfTokens.surface,
-                  size: 20,
+                  size: SimfTokens.registrationSuccessHeaderSize,
                   textDirection: TextDirection.ltr,
                 ),
               ),

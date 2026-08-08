@@ -153,7 +153,7 @@ class MeetingCard extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          SpeakerPhotoTile(imageUrl: photoUrl, size: 38),
+          SpeakerPhotoTile(imageUrl: photoUrl, size: SimfTokens.meetingCardSizeLg),
           const SizedBox(width: SimfTokens.space2),
           Flexible(
             child: Text(
@@ -170,7 +170,7 @@ class MeetingCard extends StatelessWidget {
               angle: -math.pi / 2,
               child: const SimfSvgIcon(
                 AppAssets.chevronLeft,
-                size: 20,
+                size: SimfTokens.meetingCardSizeMd,
                 color: SimfTokens.accent,
               ),
             ),
@@ -195,7 +195,7 @@ class MeetingCard extends StatelessWidget {
           const SizedBox(width: SimfTokens.space1),
           const Icon(
             Icons.schedule,
-            size: 12,
+            size: SimfTokens.meetingCardSizeSm,
             color: SimfTokens.beigeBorder,
           ),
         ],

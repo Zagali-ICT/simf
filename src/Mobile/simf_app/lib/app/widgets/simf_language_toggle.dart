@@ -58,8 +58,8 @@ class SimfLanguageToggle extends StatelessWidget {
           onTap: busy ? null : onPressed,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            width: 48,
-            height: 24,
+            width: SimfTokens.simfLanguageToggleWidth,
+            height: SimfTokens.space6,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: SimfTokens.navyDeep,

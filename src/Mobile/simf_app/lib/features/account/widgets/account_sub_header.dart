@@ -43,7 +43,7 @@ class AccountSubHeader extends StatelessWidget {
       ),
     );
     return SizedBox(
-      height: 56,
+      height: SimfTokens.accountSubHeaderHeight,
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[

@@ -63,7 +63,7 @@ class ProgrammeDayBanner extends StatelessWidget {
                 ),
                 child: const Icon(
                   Icons.anchor,
-                  size: 16,
+                  size: SimfTokens.programmeDayBannerSize,
                   color: SimfTokens.navy,
                 ),
               ),

@@ -40,7 +40,7 @@ class OnboardingTopBar extends StatelessWidget {
                 icon: const Icon(
                   Icons.arrow_back_ios_new,
                   color: SimfTokens.surface,
-                  size: 20,
+                  size: SimfTokens.onboardingTopBarSize,
                   textDirection: TextDirection.ltr,
                 ),
               ),

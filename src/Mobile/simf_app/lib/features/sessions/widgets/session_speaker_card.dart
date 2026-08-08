@@ -107,7 +107,7 @@ class SessionSpeakerCard extends StatelessWidget {
                             Icons.star_rounded,
                             // Matches the header meta glyphs (14) beside the
                             // 12px beige sub-line.
-                            size: 14,
+                            size: SimfTokens.sessionSpeakerCardSize,
                             color: SimfTokens.accent,
                           ),
                           const SizedBox(width: SimfTokens.space1),

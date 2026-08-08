@@ -15,7 +15,7 @@ class GalleryPlaceholderBox extends StatelessWidget {
         alignment: Alignment.center,
         child: Icon(
           isVideo ? Icons.movie_outlined : Icons.image_outlined,
-          size: 32,
+          size: SimfTokens.galleryPlaceholderBoxSize,
           color: SimfTokens.accent,
         ),
       );

@@ -53,7 +53,7 @@ class SummaryGenerateCard extends StatelessWidget {
                         children: <Widget>[
                           const Icon(
                             Icons.auto_awesome,
-                            size: 18,
+                            size: SimfTokens.summaryGenerateCardSizeSm,
                             color: SimfTokens.surface,
                           ),
                           const SizedBox(width: SimfTokens.space2),
@@ -72,7 +72,7 @@ class SummaryGenerateCard extends StatelessWidget {
                       expanded
                           ? Icons.keyboard_arrow_up
                           : Icons.keyboard_arrow_down,
-                      size: 20,
+                      size: SimfTokens.summaryGenerateCardSizeMd,
                       color: SimfTokens.surface,
                     ),
                   ],

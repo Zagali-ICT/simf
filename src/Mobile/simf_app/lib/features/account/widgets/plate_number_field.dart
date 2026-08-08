@@ -64,7 +64,7 @@ class PlateNumberField extends StatelessWidget {
             SizedBox(
               // Sized for exactly the 4 digits, so the three letter pickers
               // (Expanded) absorb the freed width and show the picked letter.
-              width: 92,
+              width: SimfTokens.plateNumberFieldWidth,
               // a11y: name the digit field (its hint vanishes on input).
               child: Semantics(
                 label: l10n.plateDigitsLabel,

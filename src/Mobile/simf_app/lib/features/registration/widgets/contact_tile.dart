@@ -15,13 +15,13 @@ class ContactTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radius10),
       child: Container(
-        height: 52,
+        height: SimfTokens.contactTileHeight,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          border: Border.all(color: SimfTokens.tileBorderNavy, width: 0.8),
+          border: Border.all(color: SimfTokens.tileBorderNavy, width: SimfTokens.contactTileWidth),
           borderRadius: BorderRadius.circular(SimfTokens.radius10),
         ),
-        child: Icon(icon, color: SimfTokens.surface, size: 24),
+        child: Icon(icon, color: SimfTokens.surface, size: SimfTokens.contactTileSize),
       ),
     );
   }

@@ -36,7 +36,7 @@ class SessionsActions extends StatelessWidget {
             ),
             icon: const SimfSvgIcon(
               AppAssets.icLocation,
-              size: 18,
+              size: SimfTokens.sessionsActionsSize,
               color: SimfTokens.surface,
             ),
             label: Text(
@@ -60,7 +60,7 @@ class SessionsActions extends StatelessWidget {
                 vertical: SimfTokens.space3,
               ),
             ),
-            icon: const Icon(Icons.share_outlined, size: 18),
+            icon: const Icon(Icons.share_outlined, size: SimfTokens.sessionsActionsSize),
             label: Text(
               l10n.shareLocation,
               style: SimfTokens.labelSemiboldSm,

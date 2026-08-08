@@ -252,7 +252,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
             children: <Widget>[
               for (final s in socials)
                 ActionChip(
-                  avatar: Icon(s.icon, size: 18),
+                  avatar: Icon(s.icon, size: SimfTokens.speakerProfileScreenSize),
                   label: Text(l10n.copyLinkLabel),
                   onPressed: () => unawaited(_copyLink(s.url, l10n)),
                 ),

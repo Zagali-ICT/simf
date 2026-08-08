@@ -119,7 +119,7 @@ class BadgeQrCard extends StatelessWidget {
                 SimfAvatar(
                   name: name,
                   currentUser: true,
-                  size: 64,
+                  size: SimfTokens.badgeQrCardSize,
                   enableFullScreen: true,
                 ),
                 const SizedBox(width: SimfTokens.space2),

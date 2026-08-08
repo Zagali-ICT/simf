@@ -23,7 +23,7 @@ class SizeChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: Container(
-          height: 36,
+          height: SimfTokens.sizeChipHeight,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: selected ? SimfTokens.accent : SimfTokens.transparent,

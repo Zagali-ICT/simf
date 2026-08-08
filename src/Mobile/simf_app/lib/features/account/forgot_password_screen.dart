@@ -137,13 +137,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.forgotPasswordScreenMaxWidth,
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const SizedBox(height: 48),
+              const SizedBox(height: SimfTokens.forgotPasswordScreenHeight),
               const Center(child: OtpMark(icon: Icons.lock_outline)),
               const SizedBox(height: SimfTokens.space6),
               Text(
@@ -164,7 +164,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 suffixIcon: const Icon(
                   Icons.mail_outline,
                   color: SimfTokens.greyText,
-                  size: 18,
+                  size: SimfTokens.forgotPasswordScreenSize,
                 ),
                 validator: _validateEmail,
                 onChanged: (_) => setState(() {}),
@@ -195,7 +195,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: MaxWidthBody(
-        maxWidth: 560,
+        maxWidth: SimfTokens.forgotPasswordScreenMaxWidth,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -218,7 +218,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: SimfTokens.forgotPasswordScreenWidth),
                 Flexible(
                   child: TextButton(
                     onPressed: _busy ? null : () => context.goNamed(RouteNames.signIn),

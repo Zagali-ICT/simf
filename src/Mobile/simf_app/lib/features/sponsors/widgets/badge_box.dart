@@ -15,8 +15,8 @@ class BadgeBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 53,
-      height: 53,
+      width: SimfTokens.badgeBoxWidth,
+      height: SimfTokens.badgeBoxHeight,
       clipBehavior: Clip.antiAlias,
       alignment: Alignment.center,
       decoration: BoxDecoration(

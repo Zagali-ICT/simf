@@ -50,20 +50,20 @@ class SimfSearchField extends StatelessWidget {
           prefixIcon: const SimfSvgIcon(
             AppAssets.icSearch,
             // Figma search frames (1341:3565 etc.) — 14px magnifier.
-            size: 14,
+            size: SimfTokens.simfSearchFieldSizeSm,
             color: SimfTokens.beigeBorder,
           ),
           prefixIconConstraints:
-              const BoxConstraints(minWidth: 44, minHeight: 44),
+              const BoxConstraints(minWidth: SimfTokens.simfSearchFieldMinWidth, minHeight: SimfTokens.simfSearchFieldMinHeight),
           suffixIcon: showTuningIcon
               ? const SimfSvgIcon(
                   AppAssets.icTuning,
-                  size: 18,
+                  size: SimfTokens.simfSearchFieldSizeMd,
                   color: SimfTokens.beigeBorder,
                 )
               : null,
           suffixIconConstraints:
-              const BoxConstraints(minWidth: 44, minHeight: 44),
+              const BoxConstraints(minWidth: SimfTokens.simfSearchFieldMinWidth, minHeight: SimfTokens.simfSearchFieldMinHeight),
           // Figma search frames (908/922/758) — an unfilled box with a 0.2px
           // beige hairline; the navy page shows through (no card-like fill).
           filled: false,

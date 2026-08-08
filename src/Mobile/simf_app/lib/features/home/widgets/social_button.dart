@@ -42,7 +42,7 @@ class SocialButton extends StatelessWidget {
             child: Center(
               child: SimfSvgIcon(
                 asset,
-                size: 20,
+                size: SimfTokens.socialButtonSize,
                 color: SimfTokens.beigeBorder,
               ),
             ),

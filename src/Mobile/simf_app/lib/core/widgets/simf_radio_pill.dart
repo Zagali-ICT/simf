@@ -30,7 +30,7 @@ class SimfRadioPill extends StatelessWidget {
       onTap: onTap,
       borderRadius: SimfTokens.borderRadiusSmall,
       child: Container(
-        height: 48,
+        height: SimfTokens.simfRadioPillHeightLg,
         decoration: const BoxDecoration(
           color: SimfTokens.scrimWhite90, // white at 90% over the beige card
           borderRadius: SimfTokens.borderRadiusSmall,
@@ -42,17 +42,17 @@ class SimfRadioPill extends StatelessWidget {
             // D-698 — the gold ring leads (rightmost under the forced RTL), the
             // label follows, per the owner's icon-first request.
             Container(
-              width: 18,
-              height: 18,
+              width: SimfTokens.simfRadioPillWidthXl,
+              height: SimfTokens.simfRadioPillHeightMd,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: SimfTokens.accent, width: 1.2),
+                border: Border.all(color: SimfTokens.accent, width: SimfTokens.simfRadioPillWidthSm),
               ),
               alignment: Alignment.center,
               child: selected
                   ? Container(
-                      width: 10,
-                      height: 10,
+                      width: SimfTokens.simfRadioPillWidthMd,
+                      height: SimfTokens.simfRadioPillHeightSm,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         color: SimfTokens.accent,
@@ -60,11 +60,11 @@ class SimfRadioPill extends StatelessWidget {
                     )
                   : null,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: SimfTokens.space3),
             Text(
               label,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: SimfTokens.simfRadioPillFontSize,
                 fontWeight: FontWeight.w500,
                 color: SimfTokens.navy,
               ),

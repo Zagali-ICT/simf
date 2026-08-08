@@ -124,8 +124,8 @@ class SessionStateChip extends StatelessWidget {
           ),
           const SizedBox(width: SimfTokens.space2),
           Container(
-            width: 8,
-            height: 8,
+            width: SimfTokens.space2,
+            height: SimfTokens.space2,
             decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
           ),
         ],

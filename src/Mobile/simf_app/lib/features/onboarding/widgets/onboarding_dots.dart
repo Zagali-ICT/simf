@@ -27,7 +27,7 @@ class OnboardingDots extends StatelessWidget {
             duration: MotionDurations.onboardingDotFade,
             margin: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
             width: i == activeIndex ? 32 : 16,
-            height: 8,
+            height: SimfTokens.space2,
             decoration: BoxDecoration(
               color: i == activeIndex
                   ? SimfTokens.beigeBorder

@@ -757,7 +757,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         // §13.7 — form content caps at the 560 form width (MaxWidthBody), so it
         // fills a phone but doesn't stretch edge-to-edge on a tablet.
         child: MaxWidthBody(
-          maxWidth: 560,
+          maxWidth: SimfTokens.signUpVisitorScreenMaxWidth,
           // A Material (not a decorated Container) so the ListTile/switch
           // ink inside the card renders above the beige fill.
           child: Material(
@@ -902,7 +902,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: SimfTokens.danger,
-                        fontSize: 13,
+                        fontSize: SimfTokens.signUpVisitorScreenFontSize,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

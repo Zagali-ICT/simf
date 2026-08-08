@@ -182,7 +182,7 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
             child: MaxWidthBody(
-              maxWidth: 560,
+              maxWidth: SimfTokens.myMobileScreenMaxWidth,
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -204,7 +204,7 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
                       textAlign: TextAlign.start,
                       style: const TextStyle(
                         color: SimfTokens.accent,
-                        fontSize: 15,
+                        fontSize: SimfTokens.myMobileScreenFontSize,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -243,7 +243,7 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
             SimfTokens.space6,
           ),
           child: MaxWidthBody(
-            maxWidth: 560,
+            maxWidth: SimfTokens.myMobileScreenMaxWidth,
             child: SizedBox(
               width: double.infinity,
               child: AuthSubmitButton(

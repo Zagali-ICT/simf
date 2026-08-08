@@ -339,7 +339,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
             child: MaxWidthBody(
-              maxWidth: 560,
+              maxWidth: SimfTokens.signUpInterestsScreenMaxWidth,
               child: Column(
                 children: <Widget>[
                   const SizedBox(height: SimfTokens.space6),
@@ -391,7 +391,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(SimfTokens.space4, 0, SimfTokens.space4, SimfTokens.space6),
           child: MaxWidthBody(
-            maxWidth: 560,
+            maxWidth: SimfTokens.signUpInterestsScreenMaxWidth,
             child: SizedBox(
               width: double.infinity,
               child: AuthSubmitButton(
@@ -453,7 +453,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 10,
         mainAxisSpacing: 12,
-        mainAxisExtent: 43,
+        mainAxisExtent: SimfTokens.signUpInterestsScreenExtent,
       ),
       itemCount: _interests.length,
       itemBuilder: (context, index) {

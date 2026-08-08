@@ -68,7 +68,7 @@ class SimfBottomNav extends StatelessWidget {
             vertical: SimfTokens.space2,
           ),
           child: SizedBox(
-            height: 64,
+            height: SimfTokens.simfBottomNavHeight,
             child: Row(
               children: <Widget>[
                 SimfBottomNavItem(

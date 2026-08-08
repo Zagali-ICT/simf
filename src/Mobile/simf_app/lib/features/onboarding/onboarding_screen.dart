@@ -178,7 +178,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   onToggleLanguage: _toggleLanguage,
                 ),
                 const SizedBox(height: SimfTokens.space2),
-                const SimfLogo(size: 136),
+                const SimfLogo(size: SimfTokens.onboardingScreenSize),
                 const SizedBox(height: SimfTokens.space10),
                 SizedBox(
                   height: SimfTokens.onboardCarouselHeight,

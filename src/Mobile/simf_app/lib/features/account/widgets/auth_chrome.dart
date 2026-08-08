@@ -46,7 +46,7 @@ class AuthAltButton extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: SimfTokens.authChromeWidthSm),
           icon,
         ],
       ),
@@ -96,10 +96,10 @@ class AuthSubmitButton extends StatelessWidget {
       style: authSubmitButtonStyle,
       child: busy
           ? const SizedBox(
-              width: 20,
-              height: 20,
+              width: SimfTokens.space5,
+              height: SimfTokens.space5,
               child: CircularProgressIndicator(
-                strokeWidth: 2,
+                strokeWidth: SimfTokens.authChromeStrokeWidth,
                 color: SimfTokens.surface,
               ),
             )

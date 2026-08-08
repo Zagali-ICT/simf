@@ -30,7 +30,7 @@ class WebsiteLink extends StatelessWidget {
             children: <Widget>[
               const SimfSvgIcon(
                 AppAssets.authGlobe,
-                size: 16,
+                size: SimfTokens.websiteLinkSize,
                 color: SimfTokens.accent,
               ),
               const SizedBox(width: SimfTokens.space2),

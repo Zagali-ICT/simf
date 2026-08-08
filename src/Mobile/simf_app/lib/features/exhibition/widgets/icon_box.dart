@@ -14,8 +14,8 @@ class IconBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 44,
-      height: 44,
+      width: SimfTokens.iconBoxWidth,
+      height: SimfTokens.iconBoxHeight,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: SimfTokens.beigeFill10,
@@ -26,8 +26,8 @@ class IconBox extends StatelessWidget {
         ),
       ),
       child: iconAsset == null
-          ? Icon(icon, size: 20, color: SimfTokens.accent)
-          : SimfSvgIcon(iconAsset!, size: 20, color: SimfTokens.accent),
+          ? Icon(icon, size: SimfTokens.iconBoxSize, color: SimfTokens.accent)
+          : SimfSvgIcon(iconAsset!, size: SimfTokens.iconBoxSize, color: SimfTokens.accent),
     );
   }
 }

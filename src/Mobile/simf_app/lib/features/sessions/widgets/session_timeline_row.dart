@@ -102,7 +102,7 @@ class SessionTimelineRow extends StatelessWidget {
                           padding: EdgeInsets.only(top: 1),
                           child: Icon(
                             Icons.calendar_today_outlined,
-                            size: 14,
+                            size: SimfTokens.sessionTimelineRowSize,
                             color: SimfTokens.accent,
                           ),
                         ),

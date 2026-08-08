@@ -69,7 +69,7 @@ class SimfEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, size: 56, color: SimfTokens.beigeBorder),
+            Icon(icon, size: SimfTokens.simfStatesSize, color: SimfTokens.beigeBorder),
             const SizedBox(height: SimfTokens.space3),
             Text(
               message,

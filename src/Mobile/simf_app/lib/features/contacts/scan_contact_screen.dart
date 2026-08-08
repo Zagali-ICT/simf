@@ -242,9 +242,9 @@ class _ContactPreviewSheetState extends ConsumerState<_ContactPreviewSheet> {
                 onPressed: _saving ? null : () => unawaited(_save()),
                 icon: _saving
                     ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        width: SimfTokens.space4,
+                        height: SimfTokens.space4,
+                        child: CircularProgressIndicator(strokeWidth: SimfTokens.scanContactScreenStrokeWidth),
                       )
                     : const Icon(Icons.person_add_alt_1),
                 label: Text(l10n.saveContactLabel),

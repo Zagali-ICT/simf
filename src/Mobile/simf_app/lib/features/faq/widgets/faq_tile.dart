@@ -46,7 +46,7 @@ class _FaqTileState extends State<FaqTile> {
                       ? Icons.keyboard_arrow_up_rounded
                       : Icons.keyboard_arrow_down_rounded,
                   color: SimfTokens.accent,
-                  size: 20,
+                  size: SimfTokens.faqTileSize,
                 ),
               ],
             ),

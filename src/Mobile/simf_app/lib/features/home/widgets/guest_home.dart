@@ -102,7 +102,7 @@ class GuestHome extends StatelessWidget {
             badgeOutlined: true,
             badge: const Icon(
               Icons.help_outline,
-              size: 32,
+              size: SimfTokens.guestHomeSize,
               color: SimfTokens.accent,
             ),
             // Wave 1 added the public FAQ screen (GET /app/faq); the row opens

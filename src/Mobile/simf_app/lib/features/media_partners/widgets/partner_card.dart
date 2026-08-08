@@ -103,9 +103,9 @@ class _PartnerLogo extends StatelessWidget {
             color: SimfTokens.navyDeep,
             child: Center(
               child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                width: SimfTokens.partnerCardWidth,
+                height: SimfTokens.partnerCardHeight,
+                child: CircularProgressIndicator(strokeWidth: SimfTokens.partnerCardStrokeWidth),
               ),
             ),
           ),

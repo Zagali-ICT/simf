@@ -115,7 +115,7 @@ class SessionCtaRow extends StatelessWidget {
               children: <Widget>[
                 const Icon(
                   Icons.calendar_today_outlined,
-                  size: 24,
+                  size: SimfTokens.sessionBookingActionsSize,
                   color: SimfTokens.surface,
                 ),
                 const SizedBox(width: SimfTokens.space2),
@@ -151,7 +151,7 @@ class SessionCtaRow extends StatelessWidget {
             children: <Widget>[
               const Icon(
                 Icons.schedule_outlined,
-                size: 24,
+                size: SimfTokens.sessionBookingActionsSize,
                 color: SimfTokens.surface,
               ),
               const SizedBox(width: SimfTokens.space2),

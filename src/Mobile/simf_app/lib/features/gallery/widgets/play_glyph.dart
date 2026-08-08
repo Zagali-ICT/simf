@@ -10,8 +10,8 @@ class PlayGlyph extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        width: 52,
-        height: 52,
+        width: SimfTokens.playGlyphWidth,
+        height: SimfTokens.playGlyphHeight,
         decoration: const BoxDecoration(
           color: SimfTokens.navyFill70,
           shape: BoxShape.circle,
@@ -19,7 +19,7 @@ class PlayGlyph extends StatelessWidget {
         alignment: Alignment.center,
         child: const Icon(
           Icons.play_arrow_rounded,
-          size: 30,
+          size: SimfTokens.playGlyphSize,
           color: SimfTokens.surface,
         ),
       ),
