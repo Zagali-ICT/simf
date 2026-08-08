@@ -15,6 +15,7 @@ import '../../app/widgets/simf_refresh.dart';
 import '../../core/responsive/breakpoints.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/digit_normalization.dart';
+import '../../core/validation/field_limits.dart';
 import '../../core/validation/name_validation.dart';
 import '../../core/validation/phone_validation.dart';
 import '../../core/validation/required_validation.dart';
@@ -809,7 +810,7 @@ class _StaffRegisterVisitorScreenState
               child: SimfLabeledTextField(
                 label: l10n.jobTitleLabel,
                 controller: _jobTitle,
-                maxLength: 100,
+                maxLength: FieldLimits.fullName,
                 textDirection: TextDirection.ltr,
                 // D-723 — required (matches the app self-registration form).
                 validator: (v) =>
@@ -824,7 +825,7 @@ class _StaffRegisterVisitorScreenState
             SimfLabeledTextField(
               label: l10n.jobTitleArabicLabel,
               controller: _jobTitleArabic,
-              maxLength: 100,
+              maxLength: FieldLimits.fullName,
               textDirection: TextDirection.rtl,
               validator: (v) => _serverError('JobTitleArabic', v),
             ),
@@ -840,7 +841,7 @@ class _StaffRegisterVisitorScreenState
             SimfLabeledTextField(
               label: l10n.staffEmailLabel,
               controller: _email,
-              maxLength: 50,
+              maxLength: FieldLimits.email,
               keyboardType: TextInputType.emailAddress,
               textDirection: TextDirection.ltr,
               validator: (v) => _serverError('Email', v),
@@ -1080,7 +1081,7 @@ class _StaffRegisterVisitorScreenState
             label: l10n.nationalIdLabel,
             controller: _nationalId,
             keyboardType: TextInputType.number,
-            maxLength: 10,
+            maxLength: FieldLimits.nationalId,
             // The id renders LTR (digits) even under Arabic — genuinely-LTR
             // content, unlike the surrounding layout (19b).
             textDirection: TextDirection.ltr,

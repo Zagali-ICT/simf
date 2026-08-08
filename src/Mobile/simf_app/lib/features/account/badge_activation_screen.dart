@@ -12,11 +12,12 @@ import '../../app/theme/tokens.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/email_validation.dart';
+import '../../core/validation/field_limits.dart';
 import '../../core/validation/password_validation.dart';
 import '../../core/validation/required_validation.dart';
-import 'widgets/navi_form_field.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
+import 'widgets/navi_form_field.dart';
 import 'widgets/navy_password_toggle.dart';
 import 'widgets/otp_code_boxes.dart';
 
@@ -282,7 +283,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           controller: _email,
           keyboardType: TextInputType.emailAddress,
           textDirection: TextDirection.ltr,
-          maxLength: 50,
+          maxLength: FieldLimits.email,
           enabled: !_busy,
           autovalidateMode: AutovalidateMode.disabled,
           onChanged: (_) => setState(() {}),
@@ -304,7 +305,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           controller: _code,
           keyboardType: TextInputType.number,
           textDirection: TextDirection.ltr,
-          maxLength: 6,
+          maxLength: FieldLimits.otpCode,
           enabled: !_busy,
           autovalidateMode: AutovalidateMode.disabled,
           inputFormatters: <TextInputFormatter>[
@@ -318,7 +319,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           label: l10n.newPasswordLabel,
           controller: _password,
           obscureText: _obscure,
-          maxLength: 128,
+          maxLength: FieldLimits.password,
           enabled: !_busy,
           autovalidateMode: AutovalidateMode.disabled,
           onChanged: _onPasswordChanged,
@@ -334,7 +335,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           label: l10n.confirmPasswordLabel,
           controller: _confirm,
           obscureText: _obscure,
-          maxLength: 128,
+          maxLength: FieldLimits.password,
           enabled: !_busy,
           autovalidateMode: AutovalidateMode.disabled,
           onChanged: (_) => setState(() {}),

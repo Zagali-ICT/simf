@@ -4,10 +4,11 @@ import 'package:flutter/services.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/validation/digit_normalization.dart';
+import '../../../core/validation/field_limits.dart';
+import '../../../core/validation/plate_validation.dart';
 import '../../../core/widgets/simf_field_label.dart';
 import '../../../core/widgets/simf_field_style.dart';
 import '../../../core/widgets/simf_picker_field.dart';
-import '../../../core/validation/plate_validation.dart';
 
 /// C6 (D-371/D-459) — رقم اللوحة, optional. Three letter pickers over the 17
 /// official Saudi plate letters (shown "Arabic · Latin") plus a 1–4 digit field.
@@ -71,7 +72,7 @@ class PlateNumberField extends StatelessWidget {
                 child: TextFormField(
                   controller: digits,
                   textDirection: TextDirection.ltr,
-                  maxLength: 4,
+                  maxLength: FieldLimits.plateDigits,
                   keyboardType: TextInputType.number,
                   inputFormatters: <TextInputFormatter>[
                     const WesternDigitsFormatter(),

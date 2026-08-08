@@ -11,6 +11,7 @@ import '../../app/theme/tokens.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/email_validation.dart';
+import '../../core/validation/field_limits.dart';
 import '../../core/validation/required_validation.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
@@ -156,7 +157,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 controller: _email,
                 enabled: !_busy,
                 keyboardType: TextInputType.emailAddress,
-                maxLength: 50,
+                maxLength: FieldLimits.email,
                 hintText: l10n.emailHintExample,
                 // The mail glyph matches the hint colour (D-674); as a suffix it
                 // renders at the inline-start (left under RTL), per the frame.

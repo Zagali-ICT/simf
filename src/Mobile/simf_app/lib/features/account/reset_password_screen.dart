@@ -13,6 +13,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/validation/field_limits.dart';
 import '../../core/validation/password_validation.dart';
 import '../../core/validation/required_validation.dart';
 import 'widgets/account_sub_header.dart';
@@ -217,7 +218,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 enabled: !_busy,
                 keyboardType: TextInputType.number,
                 textDirection: TextDirection.ltr,
-                maxLength: 6,
+                maxLength: FieldLimits.otpCode,
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.digitsOnly,
                 ],
@@ -234,7 +235,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 controller: _password,
                 enabled: !_busy,
                 obscureText: _obscure,
-                maxLength: 128,
+                maxLength: FieldLimits.password,
                 suffixIcon: NavyPasswordToggle(
                   obscure: _obscure,
                   onToggle: () => setState(() => _obscure = !_obscure),
@@ -250,7 +251,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 controller: _confirm,
                 enabled: !_busy,
                 obscureText: _obscure,
-                maxLength: 128,
+                maxLength: FieldLimits.password,
                 // Must equal the new password typed above.
                 validator: (value) =>
                     value == _password.text ? null : l10n.passwordsDoNotMatch,

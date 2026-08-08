@@ -14,8 +14,8 @@ import '../localization/app_l10n.dart';
 import '../route_names.dart';
 import '../router.dart';
 import '../theme/tokens.dart';
-import 'simf_confirm_dialog.dart';
 import 'drawer_tile.dart';
+import 'simf_confirm_dialog.dart';
 
 /// The shell's side drawer — the المزيد menu as a slide-in panel, opened by the
 /// shared top bar's ☰ (in RTL it slides from the right). Holds the navigation

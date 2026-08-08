@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../core/validation/field_limits.dart';
 import '../../../core/widgets/simf_radio_pill.dart';
 
 /// The frame 943:3750 footnote — a single centred gold bullet, the bold gold
@@ -142,7 +143,7 @@ class SendQuestionComposer extends StatelessWidget {
           ),
           child: TextField(
             controller: controller,
-            maxLength: 500,
+            maxLength: FieldLimits.sessionQuestion,
             maxLines: null,
             expands: true,
             textAlign: TextAlign.start,

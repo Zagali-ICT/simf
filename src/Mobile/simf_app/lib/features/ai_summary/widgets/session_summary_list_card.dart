@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' show DateFormat;
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/route_names.dart';
@@ -11,7 +12,6 @@ import '../../sessions/data/session_models.dart';
 import '../../sessions/widgets/favourite_heart_button.dart';
 import '../../sessions/widgets/session_card_meta.dart';
 import '../../sessions/widgets/session_state_chip.dart';
-import 'package:simf_app/core/utils/saudi_time.dart';
 import 'category_pill.dart';
 
 /// One rich session-summary card (Figma 1388:8392): heart on the trailing edge,

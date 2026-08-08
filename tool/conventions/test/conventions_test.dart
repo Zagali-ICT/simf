@@ -54,8 +54,8 @@ void main() {
     // so a checker that only visits InstanceCreationExpression misses it.
     test('routes Duration to the timeout policy in BOTH call forms', () {
       for (final String form in <String>[
-        'var d = Duration(seconds: 30);',
-        'var d = const Duration(seconds: 30);',
+        'Widget b() => A(duration: Duration(seconds: 30));',
+        'Widget b() => A(duration: const Duration(seconds: 30));',
       ]) {
         final List<Violation> found = ofRule(run(form), 'SIMF-C1');
         expect(found, hasLength(1), reason: form);
@@ -65,10 +65,25 @@ void main() {
 
     test('fires on positional EdgeInsets values in both call forms', () {
       for (final String form in <String>[
-        'var p = EdgeInsets.all(16);',
-        'var p = const EdgeInsets.all(16);',
+        'Widget b() => A(padding: EdgeInsets.all(16));',
+        'Widget b() => A(padding: const EdgeInsets.all(16));',
       ]) {
         expect(ofRule(run(form), 'SIMF-C1'), hasLength(1), reason: form);
+      }
+    });
+
+    // A value that ALREADY has a name is not a magic number - it is the fix.
+    // Flagging `const Duration saudiOffset = Duration(hours: 3);` would make the
+    // rule unsatisfiable, because that declaration is what resolving one looks
+    // like.
+    test('is silent when the literal already has a name', () {
+      for (final String form in <String>[
+        'const Duration saudiOffset = Duration(hours: 3);',
+        'class A { static const double tileSize = 48; }',
+        'class A { const A({this.tick = const Duration(seconds: 15)}); '
+            'final Duration tick; }',
+      ]) {
+        expect(ofRule(run(form), 'SIMF-C1'), isEmpty, reason: form);
       }
     });
 

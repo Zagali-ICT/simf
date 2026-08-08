@@ -5,9 +5,9 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_filter_search_field.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../data/delegation_models.dart';
+import 'active_filter_chip.dart';
 import 'delegation_card.dart';
 import 'delegations_stats_strip.dart';
-import 'active_filter_chip.dart';
 
 /// The loaded Delegations list — the stats strip, the search box, then the
 /// filtered per-country cards (or the empty / no-results state). Tapping a flag

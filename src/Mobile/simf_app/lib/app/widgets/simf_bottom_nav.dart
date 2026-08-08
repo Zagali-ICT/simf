@@ -5,9 +5,9 @@ import '../localization/app_l10n.dart';
 import '../route_names.dart';
 import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
+import 'centre_action.dart';
 import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
 import 'simf_bottom_nav_item.dart';
-import 'centre_action.dart';
 
 /// When inside [SimfAppShell] (i.e., when [SimfShellScope] is the nearest
 /// inherited ancestor), switch tabs via the shell. Outside the shell, navigate

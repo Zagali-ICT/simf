@@ -5,8 +5,8 @@ import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
-import 'sponsor_logo.dart';
 import 'badge_box.dart';
+import 'sponsor_logo.dart';
 
 /// One sponsor card — frame 922:2824's 72-high row. RTL puts the square logo
 /// badge on the inline-start (physical right), the name + secondary line next

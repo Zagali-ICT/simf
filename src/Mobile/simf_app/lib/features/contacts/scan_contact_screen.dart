@@ -9,6 +9,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/qr_scan_view.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../core/sharing/content_sharer.dart';
+import '../../core/validation/field_limits.dart';
 import 'data/contact_models.dart';
 import 'data/contacts_repository.dart';
 import 'data/share_qr_payload.dart';
@@ -234,7 +235,7 @@ class _ContactPreviewSheetState extends ConsumerState<_ContactPreviewSheet> {
                   labelText: l10n.saveContactNoteHint,
                   border: const OutlineInputBorder(),
                 ),
-                maxLength: 280,
+                maxLength: FieldLimits.contactNote,
               ),
               const SizedBox(height: SimfTokens.space2),
               FilledButton.icon(

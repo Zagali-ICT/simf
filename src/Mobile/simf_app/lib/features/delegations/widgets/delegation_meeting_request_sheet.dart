@@ -10,6 +10,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../core/utils/gregorian_month_names.dart';
 import '../../../core/utils/saudi_time.dart';
 import '../../../core/utils/weekday_names.dart';
+import '../../../core/validation/field_limits.dart';
 import '../../speakers/widgets/meeting_slot_pickers.dart';
 import '../data/delegation_models.dart';
 import '../data/delegations_repository.dart';
@@ -446,7 +447,7 @@ class _DelegationMeetingRequestSheetState
         key: const ValueKey<String>('delegation-subject'),
         controller: _subject,
         textAlign: TextAlign.start,
-        maxLength: 1000,
+        maxLength: FieldLimits.meetingRequestMessage,
         maxLines: 1,
         style: SimfTokens.bodyInputMd,
         decoration: InputDecoration(

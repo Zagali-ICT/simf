@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../app/route_names.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/sponsor_models.dart';
-import 'sponsor_logo.dart';
 import 'sponsor_grid_tile.dart';
+import 'sponsor_logo.dart';
 
 /// The lowest-tier band rendered as the frame's compact 3-column logo grid
 /// (frame 922:2824 "رعاة ذهبيون"): each tile is the sponsor's logo over its

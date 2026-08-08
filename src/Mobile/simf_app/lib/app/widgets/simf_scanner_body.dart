@@ -7,9 +7,9 @@ import '../../core/utils/scan_gate.dart';
 import '../../core/widgets/simf_field_style.dart';
 import '../localization/app_l10n.dart';
 import '../theme/tokens.dart';
-import 'simf_scanner_frame.dart';
-import 'or_divider.dart';
 import 'camera_error_card.dart';
+import 'or_divider.dart';
+import 'simf_scanner_frame.dart';
 
 /// The single QR-scanning experience shared by every scanner in the app
 /// (badge sign-in, gate console, contact scan, exhibitor lead capture) — D-737.

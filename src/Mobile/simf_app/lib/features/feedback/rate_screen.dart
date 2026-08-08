@@ -9,6 +9,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/utils/gregorian_month_names.dart';
 import '../../core/utils/saudi_time.dart';
+import '../../core/validation/field_limits.dart';
 import 'data/feedback_repository.dart';
 import 'data/rating_models.dart';
 import 'widgets/rate_category_row.dart';
@@ -281,7 +282,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
       children.add(const SizedBox(height: SimfTokens.space2));
       children.add(TextField(
         controller: _comment,
-        maxLength: 2000,
+        maxLength: FieldLimits.feedbackComment,
         maxLines: 4,
         minLines: 4,
         style: SimfTokens.bodyWhiteMd,

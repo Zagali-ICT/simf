@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
@@ -14,7 +15,6 @@ import '../sessions/widgets/session_filter_tabs.dart';
 import '../sessions/widgets/session_state_chip.dart';
 import 'data/my_sessions_models.dart';
 import 'data/my_sessions_repository.dart';
-import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// **My sessions** — App "تفاصيل الجلسات" (Figma 1388:9067, Approved account),
 /// reached from the My-Area "my sessions" counter. The caller's booked / joined

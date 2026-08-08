@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/seat_map_models.dart';
-import 'stage_bar.dart';
 import 'legend.dart';
+import 'stage_bar.dart';
 import 'tier_legend.dart';
 
 /// The hall seat-map card shared by **My-Seat** (Figma 898:2873 — read-only)

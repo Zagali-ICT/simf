@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/seat_map_models.dart';
-import 'hall_seat_map.dart';
 import 'change_seat_button.dart';
+import 'hall_seat_map.dart';
 import 'session_card.dart';
 import 'sessions_actions.dart';
 

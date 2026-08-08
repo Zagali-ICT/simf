@@ -10,12 +10,13 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/validation/field_limits.dart';
 import '../../core/validation/required_validation.dart';
-import 'widgets/navi_form_field.dart';
 import 'biometric_auth.dart';
 import 'post_auth_route.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
+import 'widgets/navi_form_field.dart';
 import 'widgets/navy_password_toggle.dart';
 
 /// Badge password — إكمال تسجيل الدخول · route: [RouteNames.badgePassword]
@@ -179,7 +180,7 @@ class _BadgePasswordScreenState extends ConsumerState<BadgePasswordScreen> {
                 label: l10n.passwordLabel,
                 controller: _password,
                 obscureText: _obscure,
-                maxLength: 128,
+                maxLength: FieldLimits.password,
                 enabled: !_busy,
                 autovalidateMode: AutovalidateMode.disabled,
                 onChanged: (_) => setState(() {}),

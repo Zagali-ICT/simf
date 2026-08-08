@@ -8,8 +8,8 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../../../core/utils/saudi_time.dart';
 import '../data/request_models.dart';
-import 'request_status_style.dart';
 import 'icon_box.dart';
+import 'request_status_style.dart';
 
 /// One expandable request card: the type icon, headline + context line + date,
 /// a status-coloured leading strip, and (when expanded) the status detail and a

@@ -12,9 +12,9 @@ import '../../app/widgets/simf_page_shell.dart';
 import 'data/contact_models.dart';
 import 'data/contacts_repository.dart';
 import 'widgets/contacts_empty_state.dart';
+import 'widgets/error_state.dart';
 import 'widgets/saved_contact_sheet.dart';
 import 'widgets/saved_contact_tile.dart';
-import 'widgets/error_state.dart';
 
 /// My Contacts (SIMF-FDS-014 §5.6, D-286). **Auth-gated** (Approved only). Lists
 /// the cards the visitor saved (`GET /app/contacts`, resolved on read — no PII

@@ -10,6 +10,7 @@ import '../../../core/errors/api_error_l10n.dart';
 import '../../../core/utils/gregorian_month_names.dart';
 import '../../../core/utils/saudi_time.dart';
 import '../../../core/utils/weekday_names.dart';
+import '../../../core/validation/field_limits.dart';
 import '../data/speaker_models.dart';
 import '../data/speakers_repository.dart';
 import 'meeting_slot_pickers.dart';
@@ -440,7 +441,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         key: const ValueKey<String>('meeting-subject'),
         controller: _subject,
         textAlign: TextAlign.start,
-        maxLength: 1000,
+        maxLength: FieldLimits.meetingRequestMessage,
         maxLines: 1,
         style: SimfTokens.bodyInputMd,
         decoration: InputDecoration(

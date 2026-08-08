@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../core/validation/digit_normalization.dart';
+import '../../../core/validation/field_limits.dart';
 import '../../../core/validation/phone_validation.dart';
 import '../../../core/widgets/simf_field_label.dart';
 import '../../../core/widgets/simf_field_style.dart';
@@ -68,7 +69,7 @@ class MobileField extends StatelessWidget {
           inputFormatters: const <TextInputFormatter>[PhoneNumberFormatter()],
           // Covers Saudi 05XXXXXXXX / +9665XXXXXXXX / 009665XXXXXXXX and
           // international +[1-9]\d{7,14} / 00[1-9]\d{7,14}.
-          maxLength: 17,
+          maxLength: FieldLimits.phone,
           style: simfInputStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: validator,

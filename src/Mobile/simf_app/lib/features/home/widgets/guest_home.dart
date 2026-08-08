@@ -7,9 +7,9 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_bottom_nav.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import 'discover_saudi_row.dart';
+import 'guest_banner.dart';
 import 'home_icons.dart';
 import 'pending_approval_card.dart';
-import 'guest_banner.dart';
 
 /// Guest / unapproved layout (frame 758:2910 — "الرئيسية • ضيف", 2×2 tiles):
 /// shown to a not-signed-in guest AND a signed-in but unapproved account.

@@ -15,6 +15,7 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/digit_normalization.dart';
+import '../../core/validation/field_limits.dart';
 import '../../core/validation/name_validation.dart';
 import '../../core/validation/phone_validation.dart';
 import '../../core/validation/plate_validation.dart';
@@ -26,6 +27,7 @@ import '../../core/widgets/simf_picker_field.dart';
 import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
+import 'data/region_models.dart';
 import 'data/region_repository.dart';
 import 'saudi_regions.dart';
 import 'widgets/attachment_field.dart';
@@ -40,7 +42,6 @@ import 'widgets/plate_number_field.dart';
 import 'widgets/profile_type_field.dart';
 import 'widgets/sign_up_visitor_header_avatar.dart';
 import 'widgets/terms_and_next_buttons.dart';
-import 'data/region_models.dart';
 
 /// Page 007 — إنشاء ملف شخصى · Sign up — profile **data**. The KSA-Project
 /// Figma design (node 168:2972 — D-368): the login-style navy header (logo +
@@ -801,7 +802,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.arabicNameLabel,
                     controller: _arabicName,
-                    maxLength: 50,
+                    maxLength: FieldLimits.email,
                     // Arabic letters + spaces only — block other scripts at
                     // the keystroke so the field can never hold mixed text.
                     inputFormatters: <TextInputFormatter>[
@@ -813,7 +814,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.englishNameLabel,
                     controller: _englishName,
-                    maxLength: 50,
+                    maxLength: FieldLimits.email,
                     textDirection: TextDirection.ltr,
                     // Latin letters + spaces only.
                     inputFormatters: <TextInputFormatter>[
@@ -835,7 +836,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.jobTitleLabel,
                     controller: _jobTitle,
-                    maxLength: 100,
+                    maxLength: FieldLimits.fullName,
                     textDirection: TextDirection.ltr,
                     // Latin letters + spaces only — mirror the English name
                     // field so the English job title can never hold Arabic.
@@ -854,7 +855,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.jobTitleArabicLabel,
                     controller: _jobTitleArabic,
-                    maxLength: 100,
+                    maxLength: FieldLimits.fullName,
                     textDirection: TextDirection.rtl,
                     // Arabic letters + spaces only — mirror the Arabic name
                     // field so the Arabic job title can never hold Latin text.
@@ -1131,7 +1132,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           label: l10n.nationalIdLabel,
           controller: _nationalId,
           keyboardType: TextInputType.number,
-          maxLength: 10,
+          maxLength: FieldLimits.nationalId,
           // Accept an id typed in Arabic-Indic digits — fold to Western so it
           // validates and submits as `1XXXXXXXXX` (owner 2026-07-06).
           inputFormatters: <TextInputFormatter>[

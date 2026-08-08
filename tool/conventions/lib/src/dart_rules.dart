@@ -116,6 +116,31 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
 
   bool _isSignificant(num? value) => value != null && value != 0 && value != 1;
 
+  /// True when this literal is ALREADY the value of something with a name.
+  ///
+  /// `const Duration saudiOffset = Duration(hours: 3);` and
+  /// `this.tickInterval = const Duration(seconds: 15)` are not magic numbers:
+  /// they are the named constant and the named default the rule is asking for.
+  /// Flagging them makes the rule unsatisfiable, because the fix for a magic
+  /// number is to write exactly this. Only a literal used inline at a call site,
+  /// `duration: const Duration(milliseconds: 250)`, is a finding.
+  bool _hasOwnName(AstNode node) {
+    AstNode? current = node.parent;
+    while (current != null) {
+      if (current is VariableDeclaration || current is DefaultFormalParameter) {
+        return true;
+      }
+      // Stop at the first node that means "used here", rather than "declared as".
+      if (current is Statement ||
+          current is ClassMember && current is! FieldDeclaration ||
+          current is CompilationUnit) {
+        return false;
+      }
+      current = current.parent;
+    }
+    return false;
+  }
+
   // ── SIMF-C1 / C7 / C4 ───────────────────────────────────────────────────
   //
   // Both visitors funnel into [_checkConstructorLike]. This matters: because the
@@ -152,7 +177,9 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
 
     if (typeName == 'Duration') {
       for (final Expression arg in argumentList.arguments) {
-        if (arg is NamedExpression && _isSignificant(_numericValue(arg.expression))) {
+        if (arg is NamedExpression &&
+            _isSignificant(_numericValue(arg.expression)) &&
+            !_hasOwnName(arg)) {
           _add(
             rule: 'SIMF-C1',
             offset: arg.offset,
@@ -166,7 +193,7 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
     if (_positionalDesignCtors.contains(typeName)) {
       for (final Expression arg in argumentList.arguments) {
         if (arg is NamedExpression) continue;
-        if (_isSignificant(_numericValue(arg))) {
+        if (_isSignificant(_numericValue(arg)) && !_hasOwnName(arg)) {
           _add(
             rule: 'SIMF-C1',
             offset: arg.offset,
@@ -191,7 +218,9 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
     final String name = node.name.label.name;
     final Expression value = node.expression;
 
-    if (_designNumberArgs.contains(name) && _isSignificant(_numericValue(value))) {
+    if (_designNumberArgs.contains(name) &&
+        _isSignificant(_numericValue(value)) &&
+        !_hasOwnName(node)) {
       _add(
         rule: 'SIMF-C1',
         offset: node.offset,
@@ -201,7 +230,9 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
     }
 
     final String? special = _nonDesignNumberArgs[name];
-    if (special != null && _isSignificant(_numericValue(value))) {
+    if (special != null &&
+        _isSignificant(_numericValue(value)) &&
+        !_hasOwnName(node)) {
       _add(
         rule: 'SIMF-C1',
         offset: node.offset,

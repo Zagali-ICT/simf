@@ -9,10 +9,10 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../core/session/session_activity.dart';
 import '../youtube_url.dart';
-import 'youtube_view.dart';
 import 'player.dart';
-import 'player_loading.dart';
 import 'player_error.dart';
+import 'player_loading.dart';
+import 'youtube_view.dart';
 
 /// The device orientations to lock while the live player is (not) fullscreen
 /// (D-721): landscape in fullscreen, back to the app-wide portrait lock out of
