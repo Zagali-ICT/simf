@@ -13,6 +13,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/errors/api_error_l10n.dart';
+import '../../core/motion/motion_durations.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/digit_normalization.dart';
 import '../../core/validation/field_limits.dart';
@@ -349,7 +350,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   void _onOrganisationSearchChanged(String value) {
     _organisationDebounce?.cancel();
     _organisationDebounce = Timer(
-      const Duration(milliseconds: 350),
+      MotionDurations.searchDebounce,
       () => unawaited(_runOrganisationSearch(value)),
     );
   }

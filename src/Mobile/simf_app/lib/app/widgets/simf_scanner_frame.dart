@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/motion/motion_durations.dart';
 import '../../core/responsive/breakpoints.dart';
 import '../theme/tokens.dart';
 import 'scan_line.dart';
@@ -77,7 +78,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: MotionDurations.scannerSweep,
     );
     if (widget.active) {
       _controller.repeat(reverse: true);

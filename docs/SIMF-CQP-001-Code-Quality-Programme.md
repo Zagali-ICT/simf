@@ -135,14 +135,36 @@ The following taxonomy governs this programme.
 | Literal | Correct location | Review prescribed |
 |---------|------------------|-------------------|
 | Spacing, radius, icon size, opacity, colour, typography | `SimfTokens`, under a semantic name | `simfTokens`, agreed |
-| `maxLength` | `features/<f>/data/*_field_limits.dart`, mirroring backend `MaximumLength(N)` and `HasMaxLength(N)` | `simfTokens`, not accepted |
-| `Duration` for timeout, cooldown, debounce | `core/net/timeouts.dart` or a feature policy constant | `simfTokens`, not accepted |
-| `maxLines`, `minLines` | A named layout constant | `simfTokens`, not accepted |
-| `crossAxisCount` | Derived from `core/responsive/breakpoints.dart` | `simfTokens`, not accepted |
+| `maxLength` | `core/validation/field_limits.dart`, mirroring backend `MaximumLength(N)` and `HasMaxLength(N)` | `simfTokens`, not accepted |
+| `Duration` for animation | `core/motion/motion_durations.dart` (`MotionDurations`) | `simfTokens`, not accepted |
+| `Duration` for a deadline | the same file (`TimeoutPolicy`); exceeding one is a failure path, not an effect | `simfTokens`, not accepted |
+| `maxLines`, `minLines` | left as written, see 5.1 | `simfTokens`, not accepted |
+| `crossAxisCount` | a separate responsive proposal, see 5.2 | `simfTokens`, not accepted |
 | API endpoint path | `features/<f>/data/*_endpoints.dart` | Single central file, not accepted, see section 8 |
 | Bundled asset path | `AppAssets` | `app_assets.dart`, agreed |
 | User facing string | `AppL10n` | Localization, agreed |
 | External host such as `youtube.com` | A URL policy constant in `core/` | `simfTokens`, not accepted |
+
+A literal that is ALREADY the value of a named declaration or a parameter
+default is not a finding. `const Duration saudiOffset = Duration(hours: 3);`
+and `this.tickInterval = const Duration(seconds: 15)` are the named constant
+and the named default the rule asks for; flagging them would make the rule
+unsatisfiable, because writing exactly that is what resolving a magic number
+looks like. 87 of the original 599 were this.
+
+### 5.1 Why `maxLines` is left alone
+
+`maxLines: 2` already states its own meaning: at most two lines. Replacing it
+with `TextClamp.cardTitle` adds a hop and no information. A rule earns its
+place where the number is opaque, as in `height: 37`, not where the parameter
+name already carries the meaning.
+
+### 5.2 Why `crossAxisCount` is a separate proposal
+
+Deriving the column count from `core/responsive/breakpoints.dart` is the right
+answer and is worth doing. It also CHANGES the layout on a tablet, which is a
+design decision, not a cleanup. Making it inside a refactor wave would be a
+visual change disguised as tidying, so it is raised on its own.
 
 Tokens created during this programme are named semantically from the outset.
 Renaming the existing value named tokens, for example `gap5`, `radius10` and

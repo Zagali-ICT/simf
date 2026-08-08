@@ -48,11 +48,20 @@ const Set<String> _designNumberArgs = <String>{
 
 /// Named arguments that are NOT design quantities. The external review told us
 /// to put all of these in `simfTokens`; each actually belongs somewhere else.
+///
+/// Two arguments the review also listed are DELIBERATELY absent:
+///
+/// * `maxLines` / `minLines`. `maxLines: 2` already says what it means - at
+///   most two lines. Replacing it with `TextClamp.cardTitle` adds a hop without
+///   adding information, and the literal is the clearer expression. A rule
+///   should fire where the number is opaque (`height: 37`), not where the
+///   parameter name carries the meaning.
+/// * `crossAxisCount`. The right fix IS to derive the column count from
+///   `core/responsive/breakpoints.dart` - but that CHANGES the layout on a
+///   tablet. That is a design decision, not a cleanup, so it is raised as its
+///   own proposal instead of being smuggled into a refactor wave.
 const Map<String, String> _nonDesignNumberArgs = <String, String>{
   'maxLength': Remedy.fieldLimit,
-  'maxLines': Remedy.layoutIntent,
-  'minLines': Remedy.layoutIntent,
-  'crossAxisCount': Remedy.responsive,
 };
 
 /// Constructors whose POSITIONAL numeric arguments are design quantities.

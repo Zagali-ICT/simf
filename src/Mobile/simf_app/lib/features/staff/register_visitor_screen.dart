@@ -12,6 +12,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
 import '../../app/widgets/simf_refresh.dart';
+import '../../core/motion/motion_durations.dart';
 import '../../core/responsive/breakpoints.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/digit_normalization.dart';
@@ -437,7 +438,7 @@ class _StaffRegisterVisitorScreenState
       Scrollable.ensureVisible(
         anchor,
         alignment: 0.15,
-        duration: const Duration(milliseconds: 250),
+        duration: MotionDurations.dotFade,
       ),
     );
   }

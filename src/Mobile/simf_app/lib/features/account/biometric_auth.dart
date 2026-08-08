@@ -12,6 +12,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
+import '../../core/motion/motion_durations.dart';
 
 /// Maps a non-success [LocalAuthOutcome] to a localized message, so the sign-in
 /// prompt and the enrol step-up share one mapping (D-738). Returns null for
@@ -200,7 +201,7 @@ Future<void> maybeOfferBiometricEnrolment(
     ..showSnackBar(
       SnackBar(
         content: Text(l10n.biometricPromptBody),
-        duration: const Duration(seconds: 8),
+        duration: TimeoutPolicy.biometricPrompt,
         action: SnackBarAction(
           label: l10n.biometricPromptEnable,
           // #7a — the nudge tap is the confirmation; route to the step-up

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../core/motion/motion_durations.dart';
 
 /// The carousel position dots — the active one is a wider gold pill, the rest
 /// are faint beige. Shared by the home highlights carousel and the home hero
@@ -18,7 +19,7 @@ class CarouselDots extends StatelessWidget {
       children: List<Widget>.generate(count, (i) {
         final active = i == index;
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
+          duration: MotionDurations.dotFade,
           margin: const EdgeInsets.symmetric(horizontal: 3),
           width: active ? 16 : 6,
           height: 6,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/motion/motion_durations.dart';
 import '../../../core/net/asset_urls.dart';
 import '../../news/data/news_models.dart';
 import 'carousel_dots.dart';
@@ -61,7 +62,7 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
       final next = (_index + 1) % widget.items.length;
       _controller.animateToPage(
         next,
-        duration: const Duration(milliseconds: 450),
+        duration: MotionDurations.carouselSlide,
         curve: Curves.easeInOut,
       );
     });

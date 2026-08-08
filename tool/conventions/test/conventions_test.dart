@@ -34,19 +34,14 @@ void main() {
       expect(found.single.remedy, Remedy.fieldLimit);
     });
 
-    test('routes maxLines to a layout constant', () {
+    // Deliberately silent: `maxLines: 2` already says "at most two lines", and
+    // crossAxisCount is a responsive DESIGN change raised separately rather
+    // than smuggled into a cleanup wave.
+    test('does NOT fire on maxLines or crossAxisCount', () {
+      expect(ofRule(run('Widget b() => T(maxLines: 2);'), 'SIMF-C1'), isEmpty);
       expect(
-        ofRule(run('Widget b() => T(maxLines: 2);'), 'SIMF-C1').single.remedy,
-        Remedy.layoutIntent,
-      );
-    });
-
-    test('routes crossAxisCount to the responsive layer', () {
-      expect(
-        ofRule(run('Widget b() => G(crossAxisCount: 3);'), 'SIMF-C1')
-            .single
-            .remedy,
-        Remedy.responsive,
+        ofRule(run('Widget b() => G(crossAxisCount: 3);'), 'SIMF-C1'),
+        isEmpty,
       );
     });
 

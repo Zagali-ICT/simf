@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/motion/motion_durations.dart';
 import '../../../core/organization_profile/organization_profile.dart';
 import '../../banners/data/banner_models.dart';
 import 'carousel_dots.dart';
@@ -87,7 +88,7 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
       final next = (_index + 1) % widget.banners.length;
       _controller.animateToPage(
         next,
-        duration: const Duration(milliseconds: 450),
+        duration: MotionDurations.carouselSlide,
         curve: Curves.easeInOut,
       );
     });

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
 
+import '../../core/motion/motion_durations.dart';
 import '../../core/utils/scan_gate.dart';
 import '../../core/widgets/simf_field_style.dart';
 import '../localization/app_l10n.dart';
@@ -130,7 +131,7 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
   void _armWatchdog() {
     _awaitingController = true;
     _watchdog?.cancel();
-    _watchdog = Timer(const Duration(seconds: 8), () {
+    _watchdog = Timer(TimeoutPolicy.qrScan, () {
       if (mounted && _awaitingController) {
         setState(() {
           _cameraError = true;
