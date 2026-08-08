@@ -157,7 +157,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 enabled: !_busy,
                 keyboardType: TextInputType.emailAddress,
                 maxLength: 50,
-                hintText: 'example@email.com',
+                hintText: l10n.emailHintExample,
                 // The mail glyph matches the hint colour (D-674); as a suffix it
                 // renders at the inline-start (left under RTL), per the frame.
                 suffixIcon: const Icon(

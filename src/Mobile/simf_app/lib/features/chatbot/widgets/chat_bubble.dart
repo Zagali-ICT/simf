@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/chat_message.dart';
 
@@ -79,8 +80,8 @@ class _AiBadge extends StatelessWidget {
         color: SimfTokens.accent,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
-      child: const Text(
-        'AI',
+      child: Text(
+        AppL10n.of(context).aiBadgeLabel,
         style: SimfTokens.labelWhiteBold12Tall,
       ),
     );

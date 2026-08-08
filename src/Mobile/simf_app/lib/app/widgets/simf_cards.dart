@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../localization/app_l10n.dart';
+import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
 import 'simf_svg_icon.dart';
 
@@ -172,7 +173,7 @@ class SimfLinkRow extends StatelessWidget {
               Transform.flip(
                 flipX: flip,
                 child: const SimfSvgIcon(
-                  'assets/icons/ic_caret_left.svg',
+                  AppAssets.icCaretLeft,
                   color: SimfTokens.surface,
                   size: 24,
                 ),
@@ -267,7 +268,7 @@ class SimfListRow extends StatelessWidget {
             Transform.flip(
               flipX: flip,
               child: const SimfSvgIcon(
-                'assets/icons/ic_caret_left.svg',
+                AppAssets.icCaretLeft,
                 color: SimfTokens.accent,
                 size: 24,
               ),

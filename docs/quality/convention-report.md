@@ -8,13 +8,11 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 |------|----------|
 | SIMF-C1 | 599 |
 | SIMF-C3 | 192 |
-| SIMF-C4 | 6 |
-| SIMF-C5 | 31 |
 | SIMF-C6 | 9 |
 | SIMF-C7 | 12 |
 | SIMF-N1 | 17 |
 | SIMF-N2 | 67 |
-| **Total** | **933** |
+| **Total** | **896** |
 
 ## ControlPanel feature
 
@@ -184,19 +182,19 @@ Issue : raw hex #244a77  (line 394, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #498fbd  (line 394, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fff  (line 572, SIMF-N2)
-Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #e0e0e0  (line 572, SIMF-N2)
+Fix : theme.tokens.css (the CSS token SSOT)
+Issue : raw hex #fff  (line 572, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #e7e9f1  (line 575, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #fff  (line 576, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #e0e0e0  (line 578, SIMF-N2)
-Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #212121  (line 578, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #fafafa  (line 578, SIMF-N2)
+Fix : theme.tokens.css (the CSS token SSOT)
+Issue : raw hex #e0e0e0  (line 578, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #000  (line 592, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
@@ -349,8 +347,6 @@ Issue : height: 48  (line 145, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : maxLength: 50  (line 159, SIMF-C1)
 Fix : features/<f>/data/*_field_limits.dart (mirror backend MaxLength)
-Issue : hintText: 'example@email.com'  (line 160, SIMF-C4)
-Fix : AppL10n
 Issue : size: 18  (line 166, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : widget-building method _buildBottomActions() returning Widget  (line 191, SIMF-C3)
@@ -682,10 +678,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## app (shared shell) feature
 
 
-Issue file : src/Mobile/simf_app/lib/app/app.dart
-Issue : title: 'SIMF'  (line 39, SIMF-C4)
-Fix : AppL10n
-
 Issue file : src/Mobile/simf_app/lib/app/theme/app_theme.dart
 Issue : Size.fromHeight(48)  (line 45, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
@@ -717,49 +709,35 @@ Issue : fontSize: 24  (line 153, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_bottom_nav.dart
-Issue : Offset(-1)  (line 51, SIMF-C1)
+Issue : Offset(-1)  (line 52, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : blurRadius: 6  (line 52, SIMF-C1)
+Issue : blurRadius: 6  (line 53, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 64  (line 70, SIMF-C1)
+Issue : height: 64  (line 71, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : bundled asset path: assets/icons/nav_home.svg  (line 76, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/nav_calendar.svg  (line 83, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/nav_location.svg  (line 99, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/nav_user.svg  (line 106, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : private widget _Item extends StatelessWidget  (line 119, SIMF-C3)
+Issue : private widget _Item extends StatelessWidget  (line 120, SIMF-C3)
 Fix : its own file under widgets/
-Issue : size: 24  (line 152, SIMF-C1)
+Issue : size: 24  (line 153, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _CentreAction extends StatelessWidget  (line 173, SIMF-C3)
+Issue : private widget _CentreAction extends StatelessWidget  (line 174, SIMF-C3)
 Fix : its own file under widgets/
-Issue : bundled asset path: assets/icons/nav_qr.svg  (line 198, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : width: 56  (line 199, SIMF-C1)
+Issue : width: 56  (line 200, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 56  (line 200, SIMF-C1)
+Issue : height: 56  (line 201, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_cards.dart
-Issue : size: 16  (line 122, SIMF-C1)
+Issue : size: 16  (line 123, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 48  (line 151, SIMF-C1)
+Issue : height: 48  (line 152, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : bundled asset path: assets/icons/ic_caret_left.svg  (line 175, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : size: 24  (line 177, SIMF-C1)
+Issue : size: 24  (line 178, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : width: 72  (line 227, SIMF-C1)
+Issue : width: 72  (line 228, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 64  (line 228, SIMF-C1)
+Issue : height: 64  (line 229, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : bundled asset path: assets/icons/ic_caret_left.svg  (line 270, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : size: 24  (line 272, SIMF-C1)
+Issue : size: 24  (line 273, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_filter_search_field.dart
@@ -791,15 +769,13 @@ Issue : EdgeInsets.all(24)  (line 145, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_identity_cell.dart
-Issue : maxLines: 2  (line 96, SIMF-C1)
+Issue : maxLines: 2  (line 97, SIMF-C1)
 Fix : a named layout const (never a value-named token)
-Issue : bundled asset path: assets/icons/ic_back.svg  (line 109, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : size: 20  (line 110, SIMF-C1)
+Issue : size: 20  (line 111, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _LogoOrInitials extends StatelessWidget  (line 136, SIMF-C3)
+Issue : private widget _LogoOrInitials extends StatelessWidget  (line 137, SIMF-C3)
 Fix : its own file under widgets/
-Issue : private widget _InitialsAvatar extends StatelessWidget  (line 170, SIMF-C3)
+Issue : private widget _InitialsAvatar extends StatelessWidget  (line 171, SIMF-C3)
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_language_toggle.dart
@@ -820,34 +796,28 @@ Fix : SimfTokens (semantic name, not a value-name)
 Issue : BorderRadius.circular(12)  (line 66, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
-Issue file : src/Mobile/simf_app/lib/app/widgets/simf_logo.dart
-Issue : bundled asset path: assets/images/simf_logo.png  (line 17, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_page_shell.dart
-Issue : width: 42  (line 204, SIMF-C1)
+Issue : width: 42  (line 205, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 42  (line 205, SIMF-C1)
+Issue : height: 42  (line 206, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : width: 42  (line 239, SIMF-C1)
+Issue : height: 42  (line 240, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 42  (line 239, SIMF-C1)
+Issue : width: 42  (line 240, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _ScreenAnnouncer extends ConsumerStatefulWidget  (line 246, SIMF-C3)
+Issue : private widget _ScreenAnnouncer extends ConsumerStatefulWidget  (line 247, SIMF-C3)
 Fix : its own file under widgets/
-Issue : bundled asset path: assets/icons/ic_back.svg  (line 333, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : size: 24  (line 334, SIMF-C1)
+Issue : size: 24  (line 335, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : size: 20  (line 358, SIMF-C1)
+Issue : size: 20  (line 359, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : width: 313  (line 500, SIMF-C1)
+Issue : width: 313  (line 501, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 323  (line 501, SIMF-C1)
+Issue : height: 323  (line 502, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Radius.circular(40)  (line 504, SIMF-C1)
+Issue : Radius.circular(40)  (line 505, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _AvatarFallback extends StatelessWidget  (line 579, SIMF-C3)
+Issue : private widget _AvatarFallback extends StatelessWidget  (line 580, SIMF-C3)
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_scanner_body.dart
@@ -879,11 +849,11 @@ Issue : blurRadius: 60  (line 132, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(24)  (line 133, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : EdgeInsets.fromLTRB(4)  (line 145, SIMF-C1)
+Issue : EdgeInsets.fromLTRB(20)  (line 145, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : EdgeInsets.fromLTRB(16)  (line 145, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : EdgeInsets.fromLTRB(20)  (line 145, SIMF-C1)
+Issue : EdgeInsets.fromLTRB(4)  (line 145, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : EdgeInsets.fromLTRB(16)  (line 145, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
@@ -919,21 +889,17 @@ Issue : height: 28  (line 274, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_search_field.dart
-Issue : bundled asset path: assets/icons/ic_search.svg  (line 50, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : size: 14  (line 52, SIMF-C1)
+Issue : size: 14  (line 53, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : minWidth: 44  (line 56, SIMF-C1)
+Issue : minHeight: 44  (line 57, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : minHeight: 44  (line 56, SIMF-C1)
+Issue : minWidth: 44  (line 57, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : bundled asset path: assets/icons/ic_tuning.svg  (line 59, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : size: 18  (line 60, SIMF-C1)
+Issue : size: 18  (line 61, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : minHeight: 44  (line 65, SIMF-C1)
+Issue : minHeight: 44  (line 66, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : minWidth: 44  (line 65, SIMF-C1)
+Issue : minWidth: 44  (line 66, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_states.dart
@@ -1069,12 +1035,10 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 
 Issue file : src/Mobile/simf_app/lib/features/chatbot/widgets/chat_bubble.dart
-Issue : height: 1.5  (line 26, SIMF-C1)
+Issue : height: 1.5  (line 27, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _AiBadge extends StatelessWidget  (line 66, SIMF-C3)
+Issue : private widget _AiBadge extends StatelessWidget  (line 67, SIMF-C3)
 Fix : its own file under widgets/
-Issue : Text(...) 'AI'  (line 83, SIMF-C4)
-Fix : AppL10n
 
 Issue file : src/Mobile/simf_app/lib/features/chatbot/widgets/chat_composer.dart
 Issue : maxLines: 4  (line 51, SIMF-C1)
@@ -1348,9 +1312,9 @@ Issue : Offset(0.30)  (line 47, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.60)  (line 47, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.25)  (line 48, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.16)  (line 48, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : Offset(0.25)  (line 48, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.42)  (line 49, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
@@ -1360,21 +1324,21 @@ Issue : Offset(0.46)  (line 50, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.16)  (line 50, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.09)  (line 51, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.48)  (line 51, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : Offset(0.09)  (line 51, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.22)  (line 52, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.76)  (line 52, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.63)  (line 53, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.30)  (line 53, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.54)  (line 54, SIMF-C1)
+Issue : Offset(0.63)  (line 53, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.18)  (line 54, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : Offset(0.54)  (line 54, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : private widget _FlagSpot extends StatelessWidget  (line 104, SIMF-C3)
 Fix : its own file under widgets/
@@ -1558,10 +1522,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 Issue : BorderRadius.circular(3)  (line 29, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
-Issue file : src/Mobile/simf_app/lib/features/home/widgets/discover_saudi_row.dart
-Issue : Text(...) 'KSA'  (line 31, SIMF-C4)
-Fix : AppL10n
-
 Issue file : src/Mobile/simf_app/lib/features/home/widgets/follow_us_section.dart
 Issue : private widget _SocialButton extends StatelessWidget  (line 106, SIMF-C3)
 Fix : its own file under widgets/
@@ -1618,38 +1578,6 @@ Fix : its own file under widgets/
 Issue : size: 14  (line 279, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
-Issue file : src/Mobile/simf_app/lib/features/home/widgets/home_icons.dart
-Issue : bundled asset path: assets/icons/home_about_sessions.svg  (line 8, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_delegations.svg  (line 11, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_booths.svg  (line 12, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_people.svg  (line 13, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_ask_moderator.svg  (line 15, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_archive.svg  (line 17, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_bilateral.svg  (line 18, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_meet_people.svg  (line 19, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_ai_assistant.svg  (line 20, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_session_summary.svg  (line 21, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_badge.svg  (line 22, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_speakers.svg  (line 24, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_sessions.svg  (line 25, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_map.svg  (line 26, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : bundled asset path: assets/icons/home_exhibition.svg  (line 27, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-
 Issue file : src/Mobile/simf_app/lib/features/home/widgets/operational_homes.dart
 Issue : size: 32  (line 34, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
@@ -1682,10 +1610,6 @@ Issue : width: 7  (line 42, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : height: 7  (line 43, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Text(...) 'English'  (line 88, SIMF-C4)
-Fix : AppL10n
-Issue : Text(...) 'العربية'  (line 88, SIMF-C4)
-Fix : AppL10n
 Issue : size: 14  (line 92, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
@@ -1818,19 +1742,15 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 
 Issue file : src/Mobile/simf_app/lib/features/more/widgets/more_list.dart
-Issue : height: 48  (line 58, SIMF-C1)
+Issue : height: 48  (line 59, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : bundled asset path: assets/icons/ic_caret_left.svg  (line 83, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : size: 22  (line 85, SIMF-C1)
+Issue : size: 22  (line 86, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/more/widgets/more_profile_card.dart
-Issue : size: 42  (line 60, SIMF-C1)
+Issue : size: 42  (line 61, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : bundled asset path: assets/icons/ic_caret_left.svg  (line 63, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : size: 24  (line 65, SIMF-C1)
+Issue : size: 24  (line 66, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 ## myarea feature
@@ -1885,9 +1805,9 @@ Issue : height: 6  (line 112, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : BorderRadius.circular(3)  (line 115, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 1440  (line 121, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : width: 1080  (line 121, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : height: 1440  (line 121, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/myarea/widgets/identity_fallback_view.dart
@@ -1895,10 +1815,6 @@ Issue : size: 56  (line 30, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Size.fromHeight(48)  (line 45, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-
-Issue file : src/Mobile/simf_app/lib/features/myarea/widgets/my_area_dashboard_body.dart
-Issue : bundled asset path: assets/icons/share_contact.svg  (line 76, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
 
 Issue file : src/Mobile/simf_app/lib/features/myarea/widgets/my_area_identity_card.dart
 Issue : width: 0.2  (line 35, SIMF-C1)
@@ -1921,15 +1837,13 @@ Issue : size: 12  (line 161, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/myarea/widgets/my_area_rows.dart
-Issue : size: 20  (line 73, SIMF-C1)
+Issue : size: 20  (line 74, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : bundled asset path: assets/icons/ic_back.svg  (line 132, SIMF-C5)
-Fix : AppAssets (app/theme/app_assets.dart)
-Issue : size: 20  (line 133, SIMF-C1)
+Issue : size: 20  (line 134, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 48  (line 162, SIMF-C1)
+Issue : height: 48  (line 163, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : size: 20  (line 168, SIMF-C1)
+Issue : size: 20  (line 169, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 ## news feature
@@ -2387,9 +2301,9 @@ Issue : width: 42  (line 34, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : height: 42  (line 35, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 42  (line 57, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : width: 42  (line 57, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : height: 42  (line 57, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : private widget _NameLine extends StatelessWidget  (line 64, SIMF-C3)
 Fix : its own file under widgets/

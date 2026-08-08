@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
 import 'simf_svg_icon.dart';
 
@@ -47,7 +48,7 @@ class SimfSearchField extends StatelessWidget {
           // Muted beige placeholder (matches the Figma search frames 908/922/758).
           hintStyle: SimfTokens.labelBeigeSm,
           prefixIcon: const SimfSvgIcon(
-            'assets/icons/ic_search.svg',
+            AppAssets.icSearch,
             // Figma search frames (1341:3565 etc.) — 14px magnifier.
             size: 14,
             color: SimfTokens.beigeBorder,
@@ -56,7 +57,7 @@ class SimfSearchField extends StatelessWidget {
               const BoxConstraints(minWidth: 44, minHeight: 44),
           suffixIcon: showTuningIcon
               ? const SimfSvgIcon(
-                  'assets/icons/ic_tuning.svg',
+                  AppAssets.icTuning,
                   size: 18,
                   color: SimfTokens.beigeBorder,
                 )

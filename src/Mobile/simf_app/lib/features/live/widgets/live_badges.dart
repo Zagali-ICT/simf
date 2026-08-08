@@ -60,7 +60,7 @@ class LanguageChip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isArabic = AppL10n.of(context).isArabic;
+    final l10n = AppL10n.of(context);
     return Material(
       // Frame 934:3604 — a translucent dark glassy pill with a gold hairline and
       // white text/icon (was a solid white chip with navy glyphs).
@@ -85,7 +85,7 @@ class LanguageChip extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                isArabic ? 'العربية' : 'English',
+                l10n.currentLanguageAutonym,
                 style: SimfTokens.bodyWhiteRegularSm,
               ),
               const SizedBox(width: SimfTokens.gap5),

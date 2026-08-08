@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../localization/app_l10n.dart';
 import '../route_names.dart';
+import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
 import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
 import 'simf_svg_icon.dart';
@@ -73,14 +74,14 @@ class SimfBottomNav extends StatelessWidget {
                 _Item(
                   tab: SimfTab.home,
                   current: current,
-                  iconAsset: 'assets/icons/nav_home.svg',
+                  iconAsset: AppAssets.navHome,
                   label: l10n.homeTitle,
                   onTap: _shellOrGo(context, SimfTab.home, RouteNames.home),
                 ),
                 _Item(
                   tab: SimfTab.sessions,
                   current: current,
-                  iconAsset: 'assets/icons/nav_calendar.svg',
+                  iconAsset: AppAssets.navCalendar,
                   // D-750 (owner 2026-07-20) — the program tab now reads
                   // "الأجندة" (agendaTitle), reversing the earlier 206:1732
                   // "الجلسات" label. sessionsTitle still titles the Sessions
@@ -96,14 +97,14 @@ class SimfBottomNav extends StatelessWidget {
                 _Item(
                   tab: SimfTab.map,
                   current: current,
-                  iconAsset: 'assets/icons/nav_location.svg',
+                  iconAsset: AppAssets.navLocation,
                   label: l10n.tileVenueMap,
                   onTap: _shellOrGo(context, SimfTab.map, RouteNames.venueMap),
                 ),
                 _Item(
                   tab: SimfTab.profile,
                   current: current,
-                  iconAsset: 'assets/icons/nav_user.svg',
+                  iconAsset: AppAssets.navUser,
                   label: l10n.navProfile,
                   onTap: _shellOrGo(context, SimfTab.profile, RouteNames.myArea),
                 ),
@@ -195,7 +196,7 @@ class _CentreAction extends StatelessWidget {
             onTap: active ? null : onTap,
             customBorder: const CircleBorder(),
             child: SvgPicture.asset(
-              'assets/icons/nav_qr.svg',
+              AppAssets.navQr,
               width: 56,
               height: 56,
             ),

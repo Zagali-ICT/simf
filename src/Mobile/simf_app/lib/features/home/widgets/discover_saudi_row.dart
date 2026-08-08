@@ -28,7 +28,7 @@ class DiscoverSaudiRow extends StatelessWidget {
       // Guest = outlined gold "KSA" (758:2910); signed-in = filled gold
       // "السعودية" SemiBold (758:1280/1281).
       badge: Text(
-        outlined ? 'KSA' : l10n.discoverSaudiBadge,
+        outlined ? l10n.discoverSaudiBadgeShort : l10n.discoverSaudiBadge,
         textAlign: TextAlign.center,
         style: TextStyle(
           color: outlined ? SimfTokens.accent : SimfTokens.surface,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/country_flag.dart';
+import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
 import 'simf_page_shell.dart';
 import 'simf_svg_icon.dart';
@@ -106,7 +107,7 @@ class SimfIdentityCell extends StatelessWidget {
               Transform.flip(
                 flipX: flip,
                 child: const SimfSvgIcon(
-                  'assets/icons/ic_back.svg',
+                  AppAssets.icBack,
                   size: 20,
                   color: SimfTokens.accent,
                 ),

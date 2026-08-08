@@ -13,6 +13,7 @@ import '../../features/notifications/data/notifications_repository.dart'
 import '../localization/app_l10n.dart';
 import '../localization/locale_controller.dart';
 import '../route_names.dart';
+import '../theme/app_assets.dart';
 import '../theme/tokens.dart';
 import 'more_drawer.dart';
 import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
@@ -330,7 +331,7 @@ class SimfCircledBackButton extends StatelessWidget {
       icon: Transform.flip(
         flipX: flip,
         child: const SimfSvgIcon(
-          'assets/icons/ic_back.svg',
+          AppAssets.icBack,
           size: 24,
           color: SimfTokens.surface,
         ),

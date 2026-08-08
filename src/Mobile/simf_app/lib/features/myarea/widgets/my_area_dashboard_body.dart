@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/route_names.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../account/biometric_auth.dart';
@@ -73,7 +74,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
         // duplicate of this exact navigation and was dropped (owner).
         MyAreaShareTile(
           label: l10n.shareContact,
-          iconAsset: 'assets/icons/share_contact.svg',
+          iconAsset: AppAssets.shareContact,
           onTap: () => context.pushNamed(RouteNames.shareMyContact),
         ),
         const SizedBox(height: SimfTokens.space6),

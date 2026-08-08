@@ -44,8 +44,43 @@ class AppAssets {
   static const String socialYoutube = 'assets/icons/social_youtube.svg';
   static const String socialTiktok = 'assets/icons/social_tiktok.svg';
 
+  // ── Brand ───────────────────────────────────────────────────────────────
+  /// The in-app brand mark. NOT the launcher icon, which is generated from
+  /// `icon/app_icon.png` at build time and is never referenced from Dart.
+  static const String simfLogo = 'assets/images/simf_logo.png';
+
+  // ── Bottom navigation (Figma 206:1732) ──────────────────────────────────
+  static const String navHome = 'assets/icons/nav_home.svg';
+  static const String navCalendar = 'assets/icons/nav_calendar.svg';
+  static const String navQr = 'assets/icons/nav_qr.svg';
+
+  // ── Shared controls ─────────────────────────────────────────────────────
+  static const String icTuning = 'assets/icons/ic_tuning.svg';
+  static const String shareContact = 'assets/icons/share_contact.svg';
+
   // ── Home ────────────────────────────────────────────────────────────────
   static const String discoverHero = 'assets/images/discover_hero.jpg';
+
+  // Home navigation tiles (KSA frame 758:1134). These are iconify glyphs
+  // (solar / ph / streamline) bundled as SVGs because they have no 1:1
+  // Material equivalent.
+  static const String homeAboutSessions =
+      'assets/icons/home_about_sessions.svg';
+  static const String homeAiAssistant = 'assets/icons/home_ai_assistant.svg';
+  static const String homeArchive = 'assets/icons/home_archive.svg';
+  static const String homeAskModerator = 'assets/icons/home_ask_moderator.svg';
+  static const String homeBadge = 'assets/icons/home_badge.svg';
+  static const String homeBilateral = 'assets/icons/home_bilateral.svg';
+  static const String homeBooths = 'assets/icons/home_booths.svg';
+  static const String homeDelegations = 'assets/icons/home_delegations.svg';
+  static const String homeExhibition = 'assets/icons/home_exhibition.svg';
+  static const String homeMap = 'assets/icons/home_map.svg';
+  static const String homeMeetPeople = 'assets/icons/home_meet_people.svg';
+  static const String homePeople = 'assets/icons/home_people.svg';
+  static const String homeSessions = 'assets/icons/home_sessions.svg';
+  static const String homeSessionSummary =
+      'assets/icons/home_session_summary.svg';
+  static const String homeSpeakers = 'assets/icons/home_speakers.svg';
 
   // ── Requests / meetings ─────────────────────────────────────────────────
   static const String requestNew = 'assets/icons/request_new.svg';
