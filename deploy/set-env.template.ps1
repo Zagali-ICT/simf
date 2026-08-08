@@ -151,6 +151,7 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_SuperAdmin__Email"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC" }
     [pscustomobject]@{ Name = "SIMF_SuperAdmin__TempPassword"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "rotate after first sign-in; no monotonic runs" }
     [pscustomobject]@{ Name = "SIMF_SuperAdmin__TotpSecret"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "base32 TOTP seed for the admin second factor" }
+    [pscustomobject]@{ Name = "SIMF_SuperAdmin__PasswordChangeRequired"; Value = "false"; Secret = $false; Gate = $false; Apps = "API"; Note = "true => the seeded password must be changed at first sign-in" }
 
     # --- Demo seed ------------------------------------------------------------
     # Empty is the correct PRODUCTION posture: the demo-account seed is skipped
@@ -180,12 +181,21 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_Ai__DefaultProvider"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "Echo | Gemini | Anthropic | OpenAi" }
     [pscustomobject]@{ Name = "SIMF_Ai__Gemini__ApiKey"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "" }
     [pscustomobject]@{ Name = "SIMF_Ai__Anthropic__ApiKey"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "" }
+    # Non-secret Anthropic routing. Carried over from the superseded set-env-api.ps1
+    # (2026-08-08) - the consolidated template never declared them, so they would
+    # have been silently dropped when that file was deleted and the provider would
+    # have fallen back to its compiled defaults.
+    [pscustomobject]@{ Name = "SIMF_Ai__Anthropic__BaseUrl"; Value = "https://api.anthropic.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "provider endpoint" }
+    [pscustomobject]@{ Name = "SIMF_Ai__Anthropic__DefaultModel"; Value = "claude-haiku-4-5-20251001"; Secret = $false; Gate = $false; Apps = "API"; Note = "model id" }
+    [pscustomobject]@{ Name = "SIMF_Ai__Anthropic__AnthropicVersion"; Value = "2023-06-01"; Secret = $false; Gate = $false; Apps = "API"; Note = "API version header" }
+    [pscustomobject]@{ Name = "SIMF_Ai__Anthropic__DefaultMaxTokens"; Value = "2048"; Secret = $false; Gate = $false; Apps = "API"; Note = "response cap" }
     [pscustomobject]@{ Name = "SIMF_Ai__OpenAi__ApiKey"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "" }
 
     # --- Edge / proxy / CORS --------------------------------------------------
     # KnownProxies missing => the API sees the reverse proxy's IP as the client
     # IP, so rate limiting and every audit row record the wrong address.
     [pscustomobject]@{ Name = "SIMF_ReverseProxy__KnownProxies__0"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "SITE-SPECIFIC: reverse-proxy IP (repeat __1, __2, ...)" }
+    [pscustomobject]@{ Name = "SIMF_ReverseProxy__KnownProxies__1"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "second proxy address (IIS on the same box answers on ::1 as well as 127.0.0.1)" }
     [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__0"; Value = "https://web.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "browser origin allowed to call the API - Website + the Flutter web build (D-868)" }
     [pscustomobject]@{ Name = "SIMF_Cors__WebAppOrigins__1"; Value = "https://cp.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "Control Panel origin. Add __2, __3, ... for further origins" }
     [pscustomobject]@{ Name = "SIMF_RateLimit__PermitLimit"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 20" }
@@ -221,7 +231,12 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_Swagger__Password"; Value = ""; Secret = $true; Gate = $false; Apps = "API"; Note = "only if AllowSwagger=true" }
 
     # --- Misc -----------------------------------------------------------------
-    [pscustomobject]@{ Name = "SIMF_OrganizationHeroVideo__PublicApiBaseUrl"; Value = "https://api.simrsnf.com"; Secret = $false; Gate = $false; Apps = "API"; Note = "public API origin used to build hero-video URLs (D-868)" }
+    # MUST include the /api/v1 route prefix. OrganizationHeroVideoRoutes.ServedUrl
+    # prepends the prefix ONLY on the request-derived fallback; when this value is
+    # set it is used verbatim, so a bare origin composes a 404 URL. The upload
+    # still reports success and persists that unplayable URL, so it surfaces later
+    # as a blank hero rather than as an error at upload time.
+    [pscustomobject]@{ Name = "SIMF_OrganizationHeroVideo__PublicApiBaseUrl"; Value = "https://api.simrsnf.com/api/v1"; Secret = $false; Gate = $false; Apps = "API"; Note = "public API base INCLUDING the /api/v1 prefix (D-868)" }
     [pscustomobject]@{ Name = "SIMF_UploadScanning__Enabled"; Value = "true"; Secret = $false; Gate = $false; Apps = "API"; Note = "leave ON in Production" }
 )
 
