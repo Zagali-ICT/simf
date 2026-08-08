@@ -6,110 +6,45 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 
 | Rule | Findings |
 |------|----------|
-| SIMF-C3 | 98 |
-| **Total** | **98** |
+| SIMF-C3 | 39 |
+| **Total** | **39** |
 
 ## account feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/account/badge_activation_screen.dart
-Issue : widget-building method _buildPasswordErrors() returning Widget  (line 185, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildBody() returning Widget  (line 243, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildBottomActions() returning Widget  (line 352, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/account/badge_password_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 148, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildSubmit() returning Widget  (line 223, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/account/biometric_step_up_screen.dart
-Issue : widget-building method _buildContent() returning Widget  (line 223, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildSubmitButton() returning Widget  (line 296, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildResendRow() returning Widget  (line 313, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/account/email_otp_verify_screen.dart
-Issue : widget-building method _buildContent() returning Widget  (line 215, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildSubmitButton() returning Widget  (line 271, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildResendRow() returning Widget  (line 288, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/account/forgot_password_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 136, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildBottomActions() returning Widget  (line 192, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/account/reset_password_screen.dart
-Issue : widget-building method _buildPasswordErrors() returning Widget  (line 75, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildBody() returning Widget  (line 196, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildBottomActions() returning Widget  (line 280, SIMF-C3)
-Fix : its own file under widgets/
-
 Issue file : src/Mobile/simf_app/lib/features/account/sign_in_screen.dart
-Issue : widget-building method _buildCard() returning Widget  (line 319, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/account/sign_up_email_verify_screen.dart
-Issue : widget-building method _buildContent() returning Widget  (line 223, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildCooldownRow() returning Widget  (line 272, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildBottomActions() returning Widget  (line 290, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/account/sign_up_form_screen.dart
-Issue : widget-building method _buildPasswordErrors() returning Widget  (line 93, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildCard() returning Widget  (line 280, SIMF-C3)
-Fix : its own file under widgets/
+Issue : _buildCard() returning Widget in a 418-line file (limit 400)  (line 319, SIMF-C3)
+Fix : split the file; move this and its state into a widget
 
 Issue file : src/Mobile/simf_app/lib/features/account/sign_up_interests_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 303, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildLoadError() returning Widget  (line 411, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildChips() returning Widget  (line 440, SIMF-C3)
-Fix : its own file under widgets/
+Issue : _buildBody() returning Widget in a 470-line file (limit 400)  (line 303, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildLoadError() returning Widget in a 470-line file (limit 400)  (line 411, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildChips() returning Widget in a 470-line file (limit 400)  (line 440, SIMF-C3)
+Fix : split the file; move this and its state into a widget
 
 Issue file : src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 738, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildLoadError() returning Widget  (line 921, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildProfileTypeField() returning Widget  (line 955, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildNationalityField() returning Widget  (line 994, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildDocumentFields() returning List<Widget>  (line 1129, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildPlaceOfBirthField() returning Widget  (line 1170, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildPlateField() returning Widget  (line 1191, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildIdImageField() returning Widget  (line 1282, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildFacePhotoField() returning Widget  (line 1302, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildOrganisationField() returning Widget  (line 1331, SIMF-C3)
-Fix : its own file under widgets/
-
-## ai_summary feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/ai_summary/session_summary_list_screen.dart
-Issue : widget-building method _buildList() returning Widget  (line 102, SIMF-C3)
-Fix : its own file under widgets/
+Issue : _buildBody() returning Widget in a 1393-line file (limit 400)  (line 738, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildLoadError() returning Widget in a 1393-line file (limit 400)  (line 921, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildProfileTypeField() returning Widget in a 1393-line file (limit 400)  (line 955, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildNationalityField() returning Widget in a 1393-line file (limit 400)  (line 994, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildDocumentFields() returning List<Widget> in a 1393-line file (limit 400)  (line 1129, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildPlaceOfBirthField() returning Widget in a 1393-line file (limit 400)  (line 1170, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildPlateField() returning Widget in a 1393-line file (limit 400)  (line 1191, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildIdImageField() returning Widget in a 1393-line file (limit 400)  (line 1282, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildFacePhotoField() returning Widget in a 1393-line file (limit 400)  (line 1302, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildOrganisationField() returning Widget in a 1393-line file (limit 400)  (line 1331, SIMF-C3)
+Fix : split the file; move this and its state into a widget
 
 ## app (shared shell) feature
 
@@ -120,39 +55,12 @@ Fix : its own file under widgets/
 Issue : private widget _InitialsAvatar extends StatelessWidget  (line 171, SIMF-C3)
 Fix : its own file under widgets/
 
-Issue file : src/Mobile/simf_app/lib/app/widgets/simf_scanner_body.dart
-Issue : widget-building method _buildCameraSection() returning Widget  (line 219, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildManual() returning Widget  (line 306, SIMF-C3)
-Fix : its own file under widgets/
-
 Issue file : src/Mobile/simf_app/lib/app/widgets/simf_scanner_frame.dart
-Issue : widget-building method _buildWindow() returning Widget  (line 155, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildScanLine() returning Widget  (line 183, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildStatusRow() returning Widget  (line 210, SIMF-C3)
-Fix : its own file under widgets/
 Issue : private widget _Bracket extends StatelessWidget  (line 240, SIMF-C3)
-Fix : its own file under widgets/
-
-## badge feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/badge/badge_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 117, SIMF-C3)
 Fix : its own file under widgets/
 
 ## booths feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/booths/booths_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 126, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/booths/exhibitor_detail_screen.dart
-Issue : widget-building method _build() returning Widget  (line 67, SIMF-C3)
-Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/booths/widgets/booth_company_header.dart
 Issue : private widget _LogoTile extends StatelessWidget  (line 88, SIMF-C3)
@@ -161,25 +69,8 @@ Fix : its own file under widgets/
 ## contacts feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/contacts/my_contacts_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 109, SIMF-C3)
-Fix : its own file under widgets/
-
 Issue file : src/Mobile/simf_app/lib/features/contacts/scan_contact_screen.dart
 Issue : private widget _ContactPreviewSheet extends ConsumerStatefulWidget  (line 147, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/contacts/share_my_contact_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 157, SIMF-C3)
-Fix : its own file under widgets/
-
-## content feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/content/terms_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 176, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildContent() returning Widget  (line 206, SIMF-C3)
 Fix : its own file under widgets/
 
 ## delegations feature
@@ -187,20 +78,6 @@ Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/delegations/widgets/delegations_stats_strip.dart
 Issue : private widget _FlagSpot extends StatelessWidget  (line 105, SIMF-C3)
-Fix : its own file under widgets/
-
-## exhibitor feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/exhibitor/my_visitors_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 99, SIMF-C3)
-Fix : its own file under widgets/
-
-## feedback feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/feedback/rate_screen.dart
-Issue : widget-building method _buildForm() returning Widget  (line 204, SIMF-C3)
 Fix : its own file under widgets/
 
 ## home feature
@@ -214,8 +91,8 @@ Fix : its own file under widgets/
 
 
 Issue file : src/Mobile/simf_app/lib/features/live/live_broadcast_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 275, SIMF-C3)
-Fix : its own file under widgets/
+Issue : _buildBody() returning Widget in a 508-line file (limit 400)  (line 275, SIMF-C3)
+Fix : split the file; move this and its state into a widget
 
 ## media_partners feature
 
@@ -224,31 +101,8 @@ Issue file : src/Mobile/simf_app/lib/features/media_partners/widgets/partner_car
 Issue : private widget _PartnerLogo extends StatelessWidget  (line 63, SIMF-C3)
 Fix : its own file under widgets/
 
-## meetings feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/meetings/meetings_screen.dart
-Issue : widget-building method _buildList() returning Widget  (line 149, SIMF-C3)
-Fix : its own file under widgets/
-
 ## myarea feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/myarea/my_area_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 161, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildErrorState() returning Widget  (line 187, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildLimited() returning Widget  (line 202, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildDashboard() returning Widget  (line 225, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/myarea/my_mobile_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 168, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildLoadError() returning Widget  (line 262, SIMF-C3)
-Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/myarea/my_sessions_screen.dart
 Issue : private widget _TabbedList extends StatelessWidget  (line 123, SIMF-C3)
@@ -256,47 +110,11 @@ Fix : its own file under widgets/
 Issue : private widget _MySessionCard extends StatelessWidget  (line 178, SIMF-C3)
 Fix : its own file under widgets/
 
-## news feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/news/news_article_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 77, SIMF-C3)
-Fix : its own file under widgets/
-
-## notifications feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/notifications/notifications_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 278, SIMF-C3)
-Fix : its own file under widgets/
-
 ## questions feature
 
 
 Issue file : src/Mobile/simf_app/lib/features/questions/widgets/send_question_content.dart
 Issue : private widget _NumberedLine extends StatelessWidget  (line 240, SIMF-C3)
-Fix : its own file under widgets/
-
-## registration feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/registration/registration_status_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 117, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildStatusView() returning Widget  (line 129, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildError() returning Widget  (line 216, SIMF-C3)
-Fix : its own file under widgets/
-
-## requests feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/requests/requests_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 132, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/requests/widgets/request_card.dart
-Issue : widget-building method _buildDetail() returning Widget  (line 128, SIMF-C3)
 Fix : its own file under widgets/
 
 ## sessions feature
@@ -307,17 +125,13 @@ Issue : private widget _HubList extends StatelessWidget  (line 70, SIMF-C3)
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/session_detail_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 424, SIMF-C3)
-Fix : its own file under widgets/
+Issue : _buildBody() returning Widget in a 510-line file (limit 400)  (line 424, SIMF-C3)
+Fix : split the file; move this and its state into a widget
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/session_presentations_screen.dart
 Issue : private widget _Body extends StatelessWidget  (line 103, SIMF-C3)
 Fix : its own file under widgets/
 Issue : private widget _PresentationCard extends StatelessWidget  (line 198, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/sessions_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 127, SIMF-C3)
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/hall_seat_map.dart
@@ -327,8 +141,6 @@ Issue : private widget _SeatBox extends StatelessWidget  (line 380, SIMF-C3)
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/programme_day_strip.dart
-Issue : widget-building method _buildBand() returning Widget  (line 58, SIMF-C3)
-Fix : its own file under widgets/
 Issue : private widget _DayCell extends StatelessWidget  (line 145, SIMF-C3)
 Fix : its own file under widgets/
 
@@ -340,47 +152,19 @@ Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/session_timeline_
 Issue : private widget _TimeRail extends StatelessWidget  (line 134, SIMF-C3)
 Fix : its own file under widgets/
 
-## speakers feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/speakers/speaker_profile_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 142, SIMF-C3)
-Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/speakers/speakers_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 93, SIMF-C3)
-Fix : its own file under widgets/
-
-## sponsors feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/sponsors/sponsor_detail_screen.dart
-Issue : widget-building method _build() returning Widget  (line 70, SIMF-C3)
-Fix : its own file under widgets/
-
 ## staff feature
 
 
 Issue file : src/Mobile/simf_app/lib/features/staff/register_visitor_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 644, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildLoadError() returning Widget  (line 679, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildForm() returning Widget  (line 709, SIMF-C3)
-Fix : its own file under widgets/
+Issue : _buildBody() returning Widget in a 1264-line file (limit 400)  (line 644, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildLoadError() returning Widget in a 1264-line file (limit 400)  (line 679, SIMF-C3)
+Fix : split the file; move this and its state into a widget
+Issue : _buildForm() returning Widget in a 1264-line file (limit 400)  (line 709, SIMF-C3)
+Fix : split the file; move this and its state into a widget
 
 ## venuemap feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/venuemap/venue_map_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 234, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildError() returning Widget  (line 247, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildEmpty() returning Widget  (line 261, SIMF-C3)
-Fix : its own file under widgets/
-Issue : widget-building method _buildMap() returning Widget  (line 271, SIMF-C3)
-Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/venuemap/widgets/venue_map_info_card.dart
 Issue : private widget _LogoBadge extends StatelessWidget  (line 171, SIMF-C3)

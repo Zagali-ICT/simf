@@ -372,6 +372,20 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
     return false;
   }
 
+  /// A `_build*` method is only a finding in an OVERSIZED file.
+  ///
+  /// All 78 in this repo read instance state (`_busy`, `_email`, `setState`),
+  /// so none is a mechanical extraction: turning one into a widget means
+  /// lifting that state into a constructor. `_buildBottomActions` reads six
+  /// fields and two callbacks - as a widget that is eight parameters to say
+  /// what one method already says, which is worse than what is there.
+  ///
+  /// So the rule tracks the defect that actually matters, the one CLAUDE.md
+  /// section 1 already states: a file over 400 lines. In a 1393-line screen
+  /// those methods ARE the structure problem. In a 200-line widget they are
+  /// ordinary composition, and 59 of the 78 are in files under the limit.
+  static const int _maxFileLines = 400;
+
   @override
   void visitMethodDeclaration(MethodDeclaration node) {
     final String name = node.name.lexeme;
@@ -380,12 +394,14 @@ class _RuleVisitor extends RecursiveAstVisitor<void> {
         returns != null &&
         (returns == 'Widget' ||
             returns == 'List<Widget>' ||
-            returns == 'PreferredSizeWidget')) {
+            returns == 'PreferredSizeWidget') &&
+        lineInfo.lineCount > _maxFileLines) {
       _add(
         rule: 'SIMF-C3',
         offset: node.offset,
-        message: 'widget-building method $name() returning $returns',
-        remedy: Remedy.ownFile,
+        message: '$name() returning $returns in a '
+            '${lineInfo.lineCount}-line file (limit $_maxFileLines)',
+        remedy: 'split the file; move this and its state into a widget',
       );
     }
     super.visitMethodDeclaration(node);

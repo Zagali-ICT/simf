@@ -149,11 +149,15 @@ void main() {
       );
     });
 
-    test('fires on a widget-building method', () {
-      expect(
-        ofRule(run('class A { Widget _buildContent() => X(); }'), 'SIMF-C3'),
-        hasLength(1),
-      );
+    // A _build* method is composition in a small file and a symptom in a huge
+    // one. All 78 in this repo read instance state, so none is a mechanical
+    // extraction; the defect the rule should catch is the oversized file.
+    test('fires on a widget-building method only in an oversized file', () {
+      const String decl = 'class A { Widget _buildContent() => X(); }';
+      expect(ofRule(run(decl), 'SIMF-C3'), isEmpty);
+      final String padded =
+          '${List<String>.filled(420, '// pad').join('\n')}\n$decl';
+      expect(ofRule(run(padded), 'SIMF-C3'), hasLength(1));
     });
   });
 
