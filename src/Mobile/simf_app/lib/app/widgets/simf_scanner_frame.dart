@@ -6,9 +6,7 @@ import '../../core/motion/motion_durations.dart';
 import '../../core/responsive/breakpoints.dart';
 import '../theme/tokens.dart';
 import 'scan_line.dart';
-
-/// The gold border weight of the viewfinder's corner brackets (Figma 758:4579).
-const BorderSide _bracketSide = BorderSide(color: SimfTokens.accent, width: 2.36);
+import 'scanner_bracket.dart';
 
 /// Card widths per window-size class (BUG-019 / 19e). Figma draws the phone card
 /// at 343 (758:4735); pinning that on a tablet left the gate operator squinting
@@ -162,10 +160,10 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
           children: <Widget>[
             ColoredBox(color: SimfTokens.black, child: widget.camera),
             const ColoredBox(color: SimfTokens.scrimBlack35), // black @ 35%
-            const Positioned(top: 16, left: 16, child: _Bracket(top: true, left: true)),
-            const Positioned(top: 16, right: 16, child: _Bracket(top: true, left: false)),
-            const Positioned(bottom: 16, left: 16, child: _Bracket(top: false, left: true)),
-            const Positioned(bottom: 16, right: 16, child: _Bracket(top: false, left: false)),
+            const Positioned(top: 16, left: 16, child: ScannerBracket(top: true, left: true)),
+            const Positioned(top: 16, right: 16, child: ScannerBracket(top: true, left: false)),
+            const Positioned(bottom: 16, left: 16, child: ScannerBracket(top: false, left: true)),
+            const Positioned(bottom: 16, right: 16, child: ScannerBracket(top: false, left: false)),
             const Center(
               child: Icon(
                 Icons.qr_code_scanner,
@@ -239,25 +237,3 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
 
 /// One gold L-shaped corner bracket of the viewfinder (Figma 758:4579-4582):
 /// a 28px square drawing the [top]-or-bottom and [left]-or-right edges in gold.
-class _Bracket extends StatelessWidget {
-  const _Bracket({required this.top, required this.left});
-
-  final bool top;
-  final bool left;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: SimfTokens.simfScannerFrameWidth,
-      height: SimfTokens.simfScannerFrameHeightLg,
-      decoration: BoxDecoration(
-        border: Border(
-          top: top ? _bracketSide : BorderSide.none,
-          bottom: top ? BorderSide.none : _bracketSide,
-          left: left ? _bracketSide : BorderSide.none,
-          right: left ? BorderSide.none : _bracketSide,
-        ),
-      ),
-    );
-  }
-}

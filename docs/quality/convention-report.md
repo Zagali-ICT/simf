@@ -6,8 +6,8 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 
 | Rule | Findings |
 |------|----------|
-| SIMF-C3 | 39 |
-| **Total** | **39** |
+| SIMF-C3 | 35 |
+| **Total** | **35** |
 
 ## account feature
 
@@ -55,17 +55,6 @@ Fix : its own file under widgets/
 Issue : private widget _InitialsAvatar extends StatelessWidget  (line 171, SIMF-C3)
 Fix : its own file under widgets/
 
-Issue file : src/Mobile/simf_app/lib/app/widgets/simf_scanner_frame.dart
-Issue : private widget _Bracket extends StatelessWidget  (line 240, SIMF-C3)
-Fix : its own file under widgets/
-
-## booths feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/booths/widgets/booth_company_header.dart
-Issue : private widget _LogoTile extends StatelessWidget  (line 88, SIMF-C3)
-Fix : its own file under widgets/
-
 ## contacts feature
 
 
@@ -93,13 +82,6 @@ Fix : its own file under widgets/
 Issue file : src/Mobile/simf_app/lib/features/live/live_broadcast_screen.dart
 Issue : _buildBody() returning Widget in a 508-line file (limit 400)  (line 275, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-
-## media_partners feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/media_partners/widgets/partner_card.dart
-Issue : private widget _PartnerLogo extends StatelessWidget  (line 63, SIMF-C3)
-Fix : its own file under widgets/
 
 ## myarea feature
 
@@ -162,11 +144,4 @@ Issue : _buildLoadError() returning Widget in a 1264-line file (limit 400)  (lin
 Fix : split the file; move this and its state into a widget
 Issue : _buildForm() returning Widget in a 1264-line file (limit 400)  (line 709, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-
-## venuemap feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/venuemap/widgets/venue_map_info_card.dart
-Issue : private widget _LogoBadge extends StatelessWidget  (line 171, SIMF-C3)
-Fix : its own file under widgets/
 
