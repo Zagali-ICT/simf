@@ -7,7 +7,7 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 | Rule | Findings |
 |------|----------|
 | SIMF-C1 | 599 |
-| SIMF-C2 | 123 |
+| SIMF-C2 | 104 |
 | SIMF-C3 | 192 |
 | SIMF-C4 | 6 |
 | SIMF-C5 | 31 |
@@ -15,7 +15,7 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 | SIMF-C7 | 12 |
 | SIMF-N1 | 17 |
 | SIMF-N2 | 67 |
-| **Total** | **1056** |
+| **Total** | **1037** |
 
 ## ControlPanel feature
 
@@ -910,13 +910,13 @@ Issue : blurRadius: 60  (line 132, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(24)  (line 133, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
+Issue : EdgeInsets.fromLTRB(4)  (line 145, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
 Issue : EdgeInsets.fromLTRB(16)  (line 145, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : EdgeInsets.fromLTRB(20)  (line 145, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : EdgeInsets.fromLTRB(16)  (line 145, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
-Issue : EdgeInsets.fromLTRB(4)  (line 145, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : widget-building method _buildWindow() returning Widget  (line 153, SIMF-C3)
 Fix : its own file under widgets/
@@ -1064,10 +1064,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## banners feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/banners/data/banner_models.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/Banner/$id/image'  (line 33, SIMF-C2)
-Fix : core/net/asset_urls.dart
-
 Issue file : src/Mobile/simf_app/lib/features/banners/data/banners_repository.dart
 Issue : endpoint path: /app/banners  (line 13, SIMF-C2)
 Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
@@ -1080,26 +1076,20 @@ Issue : widget-building method _buildBody() returning Widget  (line 126, SIMF-C3
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/booths/exhibitor_detail_screen.dart
-Issue : widget-building method _build() returning Widget  (line 66, SIMF-C3)
+Issue : widget-building method _build() returning Widget  (line 67, SIMF-C3)
 Fix : its own file under widgets/
-Issue : asset URL built inline: '$baseUrl/app/assets/ExhibitorLogo/${booth.exhibitorId}/image'  (line 87, SIMF-C2)
-Fix : core/net/asset_urls.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/CompanyLogo/${booth.exhibitorContactId}/image'  (line 90, SIMF-C2)
-Fix : core/net/asset_urls.dart
 
 Issue file : src/Mobile/simf_app/lib/features/booths/widgets/booth_company_header.dart
-Issue : private widget _CountryFlagTile extends StatelessWidget  (line 86, SIMF-C3)
+Issue : private widget _CountryFlagTile extends StatelessWidget  (line 87, SIMF-C3)
 Fix : its own file under widgets/
-Issue : width: 40  (line 97, SIMF-C1)
+Issue : width: 40  (line 98, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 40  (line 98, SIMF-C1)
+Issue : height: 40  (line 99, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : fontSize: 28  (line 108, SIMF-C1)
+Issue : fontSize: 28  (line 109, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _LogoTile extends StatelessWidget  (line 114, SIMF-C3)
+Issue : private widget _LogoTile extends StatelessWidget  (line 115, SIMF-C3)
 Fix : its own file under widgets/
-Issue : asset URL built inline: '$baseUrl/app/assets/BoothLogo/$id/image'  (line 176, SIMF-C2)
-Fix : core/net/asset_urls.dart
 
 Issue file : src/Mobile/simf_app/lib/features/booths/widgets/booth_contact_box.dart
 Issue : size: 16  (line 38, SIMF-C1)
@@ -1452,21 +1442,21 @@ Issue : size: 14  (line 186, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/delegations/widgets/delegations_stats_strip.dart
-Issue : Offset(0.60)  (line 47, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.30)  (line 47, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : Offset(0.60)  (line 47, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.25)  (line 48, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.16)  (line 48, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.42)  (line 49, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.10)  (line 49, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.46)  (line 50, SIMF-C1)
+Issue : Offset(0.42)  (line 49, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.16)  (line 50, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : Offset(0.46)  (line 50, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.48)  (line 51, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
@@ -1476,13 +1466,13 @@ Issue : Offset(0.76)  (line 52, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.22)  (line 52, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.63)  (line 53, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.30)  (line 53, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.18)  (line 54, SIMF-C1)
+Issue : Offset(0.63)  (line 53, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.54)  (line 54, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : Offset(0.18)  (line 54, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : private widget _FlagSpot extends StatelessWidget  (line 104, SIMF-C3)
 Fix : its own file under widgets/
@@ -1719,23 +1709,21 @@ Issue : private widget _GuestBanner extends StatelessWidget  (line 131, SIMF-C3)
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/home/widgets/highlights_carousel.dart
-Issue : Duration(seconds: 4)  (line 36, SIMF-C1)
+Issue : Duration(seconds: 4)  (line 37, SIMF-C1)
 Fix : core/net/timeouts.dart or a feature policy const
-Issue : Duration(milliseconds: 450)  (line 62, SIMF-C1)
+Issue : Duration(milliseconds: 450)  (line 63, SIMF-C1)
 Fix : core/net/timeouts.dart or a feature policy const
-Issue : asset URL built inline: '${widget.baseUrl}/app/assets/NewsImage/${post.id}/image'  (line 90, SIMF-C2)
-Fix : core/net/asset_urls.dart
-Issue : private widget _HighlightSlide extends StatelessWidget  (line 105, SIMF-C3)
+Issue : private widget _HighlightSlide extends StatelessWidget  (line 109, SIMF-C3)
 Fix : its own file under widgets/
-Issue : width: 18  (line 144, SIMF-C1)
+Issue : width: 18  (line 148, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 18  (line 145, SIMF-C1)
+Issue : height: 18  (line 149, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : strokeWidth: 2  (line 147, SIMF-C1)
+Issue : strokeWidth: 2  (line 151, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : size: 28  (line 153, SIMF-C1)
+Issue : size: 28  (line 157, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : maxLines: 2  (line 175, SIMF-C1)
+Issue : maxLines: 2  (line 179, SIMF-C1)
 Fix : a named layout const (never a value-named token)
 
 Issue file : src/Mobile/simf_app/lib/features/home/widgets/home_banners.dart
@@ -1888,10 +1876,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## media_partners feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/media_partners/data/media_partner_models.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/$_logoAssetCategory/$id/image'  (line 39, SIMF-C2)
-Fix : core/net/asset_urls.dart
-
 Issue file : src/Mobile/simf_app/lib/features/media_partners/data/media_partners_repository.dart
 Issue : endpoint path: /app/media-partners  (line 11, SIMF-C2)
 Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
@@ -1921,14 +1905,6 @@ Issue file : src/Mobile/simf_app/lib/features/meet/data/meet_repository.dart
 Issue : endpoint path: /app/networking/partner-directory  (line 14, SIMF-C2)
 Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
-Issue file : src/Mobile/simf_app/lib/features/meet/data/partner_directory_models.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/SpeakerPhoto/$id/image'  (line 64, SIMF-C2)
-Fix : core/net/asset_urls.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/SponsorLogo/$id/image'  (line 68, SIMF-C2)
-Fix : core/net/asset_urls.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/CompanyLogo/$logoContactId/image'  (line 72, SIMF-C2)
-Fix : core/net/asset_urls.dart
-
 ## meetings feature
 
 
@@ -1943,19 +1919,17 @@ Issue : widget-building method _buildList() returning Widget  (line 149, SIMF-C3
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/meetings/widgets/meeting_card.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/SpeakerPhoto/${item.speakerId}/image'  (line 140, SIMF-C2)
-Fix : core/net/asset_urls.dart
-Issue : size: 38  (line 154, SIMF-C1)
+Issue : size: 38  (line 155, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : size: 20  (line 171, SIMF-C1)
+Issue : size: 20  (line 172, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : size: 12  (line 196, SIMF-C1)
+Issue : size: 12  (line 197, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _FlagBadge extends StatelessWidget  (line 246, SIMF-C3)
+Issue : private widget _FlagBadge extends StatelessWidget  (line 247, SIMF-C3)
 Fix : its own file under widgets/
-Issue : width: 48  (line 256, SIMF-C1)
+Issue : width: 48  (line 257, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 48  (line 257, SIMF-C1)
+Issue : height: 48  (line 258, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 ## moderation feature
@@ -2145,23 +2119,21 @@ Issue : widget-building method _buildBody() returning Widget  (line 77, SIMF-C3)
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/news/widgets/news_card.dart
-Issue : maxLines: 2  (line 70, SIMF-C1)
+Issue : maxLines: 2  (line 71, SIMF-C1)
 Fix : a named layout const (never a value-named token)
-Issue : asset URL built inline: '$baseUrl/app/assets/NewsImage/${item.id}/image'  (line 80, SIMF-C2)
-Fix : core/net/asset_urls.dart
-Issue : private widget _NewsThumbnail extends StatelessWidget  (line 100, SIMF-C3)
+Issue : private widget _NewsThumbnail extends StatelessWidget  (line 101, SIMF-C3)
 Fix : its own file under widgets/
-Issue : width: 18  (line 136, SIMF-C1)
+Issue : width: 18  (line 137, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 18  (line 137, SIMF-C1)
+Issue : height: 18  (line 138, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : strokeWidth: 2  (line 138, SIMF-C1)
+Issue : strokeWidth: 2  (line 139, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _NewsImageFallback extends StatelessWidget  (line 172, SIMF-C3)
+Issue : private widget _NewsImageFallback extends StatelessWidget  (line 173, SIMF-C3)
 Fix : its own file under widgets/
-Issue : size: 28  (line 182, SIMF-C1)
+Issue : size: 28  (line 183, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _CategoryChip extends StatelessWidget  (line 189, SIMF-C3)
+Issue : private widget _CategoryChip extends StatelessWidget  (line 190, SIMF-C3)
 Fix : its own file under widgets/
 
 ## notifications feature
@@ -2463,10 +2435,8 @@ Issue : private widget _SessionSummryButton extends StatelessWidget  (line 322, 
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/sessions_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 126, SIMF-C3)
+Issue : widget-building method _buildBody() returning Widget  (line 127, SIMF-C3)
 Fix : its own file under widgets/
-Issue : asset URL built inline: '$baseUrl/app/assets/ProgrammeDayImage/${selected.id}/image'  (line 164, SIMF-C2)
-Fix : core/net/asset_urls.dart
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/ask_host_card.dart
 Issue : size: 24  (line 45, SIMF-C1)
@@ -2557,17 +2527,15 @@ Issue : private widget _SeatMarker extends StatelessWidget  (line 87, SIMF-C3)
 Fix : its own file under widgets/
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/session_speaker_card.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image'  (line 47, SIMF-C2)
-Fix : core/net/asset_urls.dart
-Issue : size: 14  (line 107, SIMF-C1)
+Issue : size: 14  (line 109, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _SpeakerAvatar extends StatelessWidget  (line 126, SIMF-C3)
+Issue : private widget _SpeakerAvatar extends StatelessWidget  (line 128, SIMF-C3)
 Fix : its own file under widgets/
-Issue : size: 20  (line 140, SIMF-C1)
+Issue : size: 20  (line 142, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : width: 40  (line 144, SIMF-C1)
+Issue : width: 40  (line 146, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 40  (line 145, SIMF-C1)
+Issue : height: 40  (line 147, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/widgets/session_state_chip.dart
@@ -2610,11 +2578,9 @@ Issue : model SpeakerSlot declared inside a repository file  (line 76, SIMF-C6)
 Fix : a sibling *_models.dart
 
 Issue file : src/Mobile/simf_app/lib/features/speakers/speaker_profile_screen.dart
-Issue : widget-building method _buildBody() returning Widget  (line 141, SIMF-C3)
+Issue : widget-building method _buildBody() returning Widget  (line 142, SIMF-C3)
 Fix : its own file under widgets/
-Issue : asset URL built inline: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image'  (line 221, SIMF-C2)
-Fix : core/net/asset_urls.dart
-Issue : size: 18  (line 253, SIMF-C1)
+Issue : size: 18  (line 255, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/speakers/speakers_screen.dart
@@ -2664,17 +2630,13 @@ Issue : height: 1.2  (line 91, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/speakers/widgets/speaker_list_card.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image'  (line 52, SIMF-C2)
-Fix : core/net/asset_urls.dart
-Issue : size: 20  (line 110, SIMF-C1)
+Issue : size: 20  (line 112, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/speakers/widgets/speaker_option_tile.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image'  (line 52, SIMF-C2)
-Fix : core/net/asset_urls.dart
-Issue : size: 40  (line 53, SIMF-C1)
+Issue : size: 40  (line 58, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : size: 20  (line 102, SIMF-C1)
+Issue : size: 20  (line 107, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/speakers/widgets/speaker_profile_header.dart
@@ -2718,12 +2680,10 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 
 Issue file : src/Mobile/simf_app/lib/features/sponsors/sponsor_detail_screen.dart
-Issue : endpoint path: '/app/sponsors/$id'  (line 22, SIMF-C2)
+Issue : endpoint path: '/app/sponsors/$id'  (line 23, SIMF-C2)
 Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : widget-building method _build() returning Widget  (line 68, SIMF-C3)
+Issue : widget-building method _build() returning Widget  (line 69, SIMF-C3)
 Fix : its own file under widgets/
-Issue : asset URL built inline: '$baseUrl/app/assets/SponsorLogo/${sponsor.id}/image'  (line 85, SIMF-C2)
-Fix : core/net/asset_urls.dart
 
 Issue file : src/Mobile/simf_app/lib/features/sponsors/sponsors_screen.dart
 Issue : endpoint path: /app/sponsors  (line 21, SIMF-C2)
@@ -2746,10 +2706,6 @@ Issue : crossAxisCount: 3  (line 33, SIMF-C1)
 Fix : computed from core/responsive/breakpoints.dart
 Issue : private widget _SponsorGridTile extends StatelessWidget  (line 54, SIMF-C3)
 Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/sponsors/widgets/sponsor_logo.dart
-Issue : asset URL built inline: '$baseUrl/app/assets/SponsorLogo/$id/image'  (line 69, SIMF-C2)
-Fix : core/net/asset_urls.dart
 
 ## staff feature
 
@@ -2832,16 +2788,14 @@ Issue : size: 20  (line 37, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/venuemap/widgets/venue_map_info_card.dart
-Issue : blurRadius: 8  (line 73, SIMF-C1)
+Issue : blurRadius: 8  (line 74, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : size: 20  (line 143, SIMF-C1)
+Issue : size: 20  (line 144, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : size: 18  (line 158, SIMF-C1)
+Issue : size: 18  (line 159, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : private widget _LogoBadge extends StatelessWidget  (line 170, SIMF-C3)
+Issue : private widget _LogoBadge extends StatelessWidget  (line 171, SIMF-C3)
 Fix : its own file under widgets/
-Issue : asset URL built inline: '$baseUrl/app/assets/BoothLogo/$id/image'  (line 212, SIMF-C2)
-Fix : core/net/asset_urls.dart
 
 Issue file : src/Mobile/simf_app/lib/features/venuemap/widgets/venue_map_marker.dart
 Issue : width: 34  (line 29, SIMF-C1)

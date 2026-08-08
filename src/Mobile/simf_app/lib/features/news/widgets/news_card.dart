@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../core/net/asset_urls.dart';
 import '../data/news_models.dart';
 
 /// One news row — frame node 957:2197: a borderless navy (radius-8) card laid
@@ -77,7 +78,7 @@ class NewsCard extends StatelessWidget {
             ),
             // Inline-end (left in RTL): the thumbnail + overlaid category chip.
             _NewsThumbnail(
-              imageUrl: '$baseUrl/app/assets/NewsImage/${item.id}/image',
+              imageUrl: AssetUrls.image(baseUrl, AssetKind.newsImage, item.id),
               category: category,
             ),
           ],

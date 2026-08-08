@@ -1,3 +1,5 @@
+import '../../../core/net/asset_urls.dart';
+
 /// One public home banner (`GET /app/banners`, D-173) — the rotating home-hero
 /// image source (#43). The image is an uploaded asset served by the row id
 /// (`/app/assets/Banner/{id}/image`); [imageUrl] is an optional pasted-URL
@@ -30,7 +32,7 @@ class PublicBannerItem {
   /// `/api/v1`, so it is not re-appended. A 404 (no upload) → the caller falls
   /// back to [imageUrl] then a placeholder.
   String assetImageUrl(String baseUrl) =>
-      '$baseUrl/app/assets/Banner/$id/image';
+      AssetUrls.image(baseUrl, AssetKind.banner, id);
 
   static PublicBannerItem fromJson(Map<String, dynamic> json) =>
       PublicBannerItem(

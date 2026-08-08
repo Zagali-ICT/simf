@@ -60,8 +60,9 @@ quality:
 * `analysis_options.yaml`, `very_good_analysis` plus approximately sixty
   hand selected lint rules.
 
-What does not exist is anything that executes them. The only pipeline step that
-touches the application is in `azure-pipelines.yml`:
+What is almost entirely missing is anything that executes them. One narrow
+exception exists and is important, see 3.1. Otherwise the only pipeline step
+that touches the application is in `azure-pipelines.yml`:
 
 ```
 flutter analyze --no-fatal-infos --no-fatal-warnings lib test integration_test packages
@@ -79,6 +80,25 @@ human reading, and the only person doing that reading was the client. A previous
 tokenisation sweep did not prevent this, because that sweep targeted Figma visual
 literals and therefore never looked at `maxLength`, `Duration`, `maxLines` or
 `crossAxisCount`.
+
+### 3.1 The proof, inside this codebase
+
+One mechanical convention gate already exists:
+`test/repo/design_token_ratchet_test.dart`. It pins two rules, that no raw
+colour literal appears outside `tokens.dart` and that swept files carry no
+inline `TextStyle`, and because it is an ordinary test it already runs in the
+pipeline through `flutter test`. Its own header records why it was written:
+the rule "held nowhere except by review, so it kept drifting back".
+
+Now compare that against the external review. Across 24 pages it raises **not
+one** finding about a raw colour or an inline text style, in a codebase where
+those were previously among the most common defects.
+
+Where a mechanical gate exists, the reviewer found nothing. Where none exists,
+the same reviewer found more than a thousand. The argument of this document is
+therefore not a proposal to be evaluated: it has already been tested here, on
+this code, and it worked. This programme generalises that one test into the
+remaining categories.
 
 The corrective action is therefore not another cleanup pass. It is to make the
 review itself executable.

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_logo_image.dart';
 import '../../../core/country_flag.dart';
+import '../../../core/net/asset_urls.dart';
 import '../../venuemap/data/venue_map_models.dart';
 
 /// The card header (frame node 922:2556): the company **logo tile** on the
@@ -173,7 +174,7 @@ class _LogoTile extends StatelessWidget {
       child: id.isEmpty
           ? fallbackText
           : SimfLogoImage(
-              url: '$baseUrl/app/assets/BoothLogo/$id/image',
+              url: AssetUrls.image(baseUrl, AssetKind.boothLogo, id),
               placeholder: fallbackText,
               semanticLabel: fallback,
               width: _markSize,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/net/asset_urls.dart';
 import '../../news/data/news_models.dart';
 import 'carousel_dots.dart';
 
@@ -86,8 +87,11 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
               final post = widget.items[i];
               return _HighlightSlide(
                 title: post.localizedTitle(widget.l10n.isArabic),
-                imageUrl:
-                    '${widget.baseUrl}/app/assets/NewsImage/${post.id}/image',
+                imageUrl: AssetUrls.image(
+                  widget.baseUrl,
+                  AssetKind.newsImage,
+                  post.id,
+                ),
                 onTap: () => widget.onTap(post),
               );
             },

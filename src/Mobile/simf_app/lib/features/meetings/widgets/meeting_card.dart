@@ -7,6 +7,7 @@ import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../../../core/country_flag.dart';
+import '../../../core/net/asset_urls.dart';
 import '../../../core/utils/saudi_time.dart';
 import '../../requests/data/request_models.dart';
 import '../../requests/widgets/request_status_style.dart';
@@ -137,7 +138,7 @@ class MeetingCard extends StatelessWidget {
   // Row 2 — the speaker photo + name (gold), with a chevron when tappable.
   Widget _speakerRow() {
     final photoUrl = item.speakerId != null
-        ? '$baseUrl/app/assets/SpeakerPhoto/${item.speakerId}/image'
+        ? AssetUrls.image(baseUrl, AssetKind.speakerPhoto, item.speakerId!)
         : null;
     return Container(
       padding: const EdgeInsets.only(bottom: SimfTokens.space2),
