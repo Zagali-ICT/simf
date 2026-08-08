@@ -27,6 +27,7 @@ import '../../core/widgets/simf_labeled_text_field.dart';
 import '../../core/widgets/simf_picker_field.dart';
 import '../account/data/profile_models.dart';
 import '../account/data/profile_repository.dart';
+import '../account/data/visitor_profile_validators.dart';
 import '../account/widgets/attachment_field.dart';
 import '../account/widgets/beige_tabs.dart';
 import '../account/widgets/gender_pills_field.dart';
@@ -70,8 +71,6 @@ class StaffRegisterVisitorScreen extends ConsumerStatefulWidget {
   ConsumerState<StaffRegisterVisitorScreen> createState() =>
       _StaffRegisterVisitorScreenState();
 }
-
-enum _DocType { iqama, passport }
 
 /// The two optional images the desk can attach after the account is created.
 enum _Attachment { idDocument, photo }
@@ -129,7 +128,7 @@ class _StaffRegisterVisitorScreenState
   String? _nationalityCode;
   String? _organisationId;
   String? _profileTypeId;
-  _DocType _docType = _DocType.iqama;
+  VisitorDocType _docType = VisitorDocType.iqama;
 
   bool get _isSaudi => _nationalityCode == 'SA';
 
@@ -303,10 +302,10 @@ class _StaffRegisterVisitorScreenState
       jobTitleArabic: _emptyToNull(_jobTitleArabic.text),
       organisationId: _organisationId,
       nationalId: isSaudi ? _emptyToNull(_nationalId.text) : null,
-      iqamaNumber: !isSaudi && _docType == _DocType.iqama
+      iqamaNumber: !isSaudi && _docType == VisitorDocType.iqama
           ? _emptyToNull(_documentNumber.text)
           : null,
-      passportNumber: !isSaudi && _docType == _DocType.passport
+      passportNumber: !isSaudi && _docType == VisitorDocType.passport
           ? _emptyToNull(_documentNumber.text)
           : null,
       saudiMobile: isSaudi ? _emptyToNull(_phone.text) : null,
@@ -603,7 +602,7 @@ class _StaffRegisterVisitorScreenState
       _nationalId.clear();
       _documentNumber.clear();
       _gender = AppGender.male;
-      _docType = _DocType.iqama;
+      _docType = VisitorDocType.iqama;
       _idBytes = null;
       _idName = null;
       _photoBytes = null;
@@ -1105,9 +1104,9 @@ class _StaffRegisterVisitorScreenState
           label: l10n.documentTypeLabel,
           child: BeigeTabs(
             options: <String>[l10n.iqamaSegment, l10n.passportSegment],
-            selectedIndex: _docType == _DocType.iqama ? 0 : 1,
+            selectedIndex: _docType == VisitorDocType.iqama ? 0 : 1,
             onChanged: (index) => setState(() {
-              _docType = index == 0 ? _DocType.iqama : _DocType.passport;
+              _docType = index == 0 ? VisitorDocType.iqama : VisitorDocType.passport;
               _documentNumber.clear();
             }),
           ),
@@ -1124,7 +1123,7 @@ class _StaffRegisterVisitorScreenState
         child: SimfLabeledTextField(
           label: l10n.documentNumberLabel,
           controller: _documentNumber,
-          maxLength: _docType == _DocType.iqama ? 10 : 9,
+          maxLength: _docType == VisitorDocType.iqama ? 10 : 9,
           textDirection: TextDirection.ltr,
           inputFormatters: const <TextInputFormatter>[WesternDigitsFormatter()],
           validator: (v) => _validateDocumentNumber(l10n, v),
@@ -1231,7 +1230,7 @@ class _StaffRegisterVisitorScreenState
     if (number.isEmpty) {
       return _required(l10n, value);
     }
-    if (_docType == _DocType.iqama) {
+    if (_docType == VisitorDocType.iqama) {
       return isValidIqama(number)
           ? _serverError('IqamaNumber', value)
           : l10n.iqamaInvalid;

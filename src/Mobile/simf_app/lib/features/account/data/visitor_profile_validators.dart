@@ -6,8 +6,10 @@ import '../../../core/validation/saudi_id_validation.dart';
 
 /// Which identity document a non-Saudi visitor is registering with.
 ///
-/// Public and here rather than private to the screen: the document validator
-/// below needs it, and the staff walk-in desk registers the same profile.
+/// One definition for both registration surfaces. It was declared privately and
+/// identically in `sign_up_visitor_screen.dart` and
+/// `staff/register_visitor_screen.dart`, so adding a third document type meant
+/// finding both.
 enum VisitorDocType { iqama, passport }
 
 /// Field validators for the visitor profile form.
@@ -20,6 +22,12 @@ enum VisitorDocType { iqama, passport }
 /// The shape rules themselves stay in `core/validation/*`; these add the order
 /// of checks and the per-field message, mirroring
 /// `UpsertUserProfileRequestValidator` on the server.
+///
+/// The staff walk-in desk deliberately keeps its OWN validators rather than
+/// calling these. They look like duplicates and are not: the desk echoes
+/// per-field server errors back into the form, so a valid-shaped value can
+/// still fail with the server's reason. Same rules, different error surfacing.
+/// Merging them would drop that echo and hide walk-in registration failures.
 ///
 /// A name must be non-empty, use only [lettersOnly] script, and carry at least
 /// two parts. [lettersOnlyMsg] is the per-script message, so Arabic and English
