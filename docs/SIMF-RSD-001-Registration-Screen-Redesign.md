@@ -76,10 +76,18 @@ screens**. They collect the same visitor profile through different chrome:
 * Both already share `VisitorDocType` and, in part, the same validators
   (unified 2026-08-08).
 
-They submit to **different endpoints** with **different request types**
-(`/app/account/user-profile` with `UpsertUserProfileRequest`;
-`/app/staff/visitors/register-onsite` with `StaffWalkInRequest`), so the wire
-contract is untouched by anything proposed here.
+They submit to **different endpoints**, each with its own server contract:
+
+| Screen | Endpoint | Dart model | Server DTO |
+|--------|----------|------------|------------|
+| sign_up_visitor | `/app/account/user-profile` | `UpsertUserProfileRequest` | `SIMF.Contracts/UserProfile/UserProfile.cs` |
+| register_visitor | `/app/staff/visitors/register-onsite` | `StaffWalkInRequest` | `AdminWalkInRegistrationRequest`, `SIMF.Contracts/Authentication/AdminAccount.cs` |
+
+`StaffWalkInRequest` is an app-side model that mirrors the CP desk's
+`AdminWalkInRegistrationRequest` (D-509), trimmed to the fields the staff form
+collects; the two server DTOs are separate classes in separate files. Nothing
+proposed here changes an endpoint, a DTO or a JSON key, so the wire contract
+(D-219) is untouched.
 
 The duplication is in the FORM, not in the transport.
 
