@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'session_models.dart';
+import 'sessions_endpoints.dart';
 
 /// Data layer for the session detail (Page_017). Two reads, both reusing the
 /// shipped endpoints (no new API — D-265): the **anonymous** detail and the
@@ -17,7 +18,7 @@ class SessionDetailRepository {
   /// (`SessionNotFound`) when the session is missing / soft-deleted.
   Future<SessionDetail> getDetail(String sessionId) {
     return _client.get<SessionDetail>(
-      '/app/programme/sessions/$sessionId',
+      SessionsEndpoints.detail(sessionId),
       decodeData: (data) => SessionDetail.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       ),
@@ -29,7 +30,7 @@ class SessionDetailRepository {
   /// and a 401/403 throws so the screen hides the card (L-3).
   Future<MySeat?> getMySeat(String sessionId) {
     return _client.get<MySeat?>(
-      '/app/sessions/$sessionId/seats',
+      SessionsEndpoints.seats(sessionId),
       decodeData: MySeat.fromSeatMap,
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'questions_endpoints.dart';
+
 /// Data layer for sending a question (Page_026). One write, reusing the shipped
 /// endpoint (no new API — D-169/D-174): `POST /app/sessions/{id}/questions`
 /// (`RequireApprovedAccount`). S-5 — the `isAtVenue` flag is sent `false`: the
@@ -24,7 +26,7 @@ class QuestionsRepository {
     required int recipientIndex,
   }) {
     return _client.post<bool>(
-      '/app/sessions/$sessionId/questions',
+      QuestionsEndpoints.forSession(sessionId),
       body: <String, dynamic>{
         'questionText': questionText,
         // S-5 (owner) — the app does NOT self-certify venue presence: hardcoding

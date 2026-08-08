@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../../core/utils/saudi_time.dart';
+import 'sessions_endpoints.dart';
 
 /// How the attendee's presence in the hall was recorded — an operator scanning
 /// the badge QR at the door, or the attendee's own device crossing the GPS
@@ -92,7 +93,7 @@ class HallAttendanceRepository {
   /// `GET /app/sessions/{id}/attendance` → the caller's current state.
   Future<HallAttendanceStatus> getStatus(String sessionId) {
     return _client.get<HallAttendanceStatus>(
-      '/app/sessions/$sessionId/attendance',
+      SessionsEndpoints.attendance(sessionId),
       decodeData: _decodeStatus,
     );
   }
@@ -104,7 +105,7 @@ class HallAttendanceRepository {
     required double lon,
   }) {
     return _client.post<HallAttendanceStatus>(
-      '/app/sessions/$sessionId/arrival',
+      SessionsEndpoints.arrival(sessionId),
       body: <String, dynamic>{'lat': lat, 'lon': lon},
       decodeData: _decodeStatus,
     );
@@ -113,7 +114,7 @@ class HallAttendanceRepository {
   /// `POST /app/sessions/{id}/departure` → close the open attendance row.
   Future<HallAttendanceStatus> recordDeparture(String sessionId) {
     return _client.post<HallAttendanceStatus>(
-      '/app/sessions/$sessionId/departure',
+      SessionsEndpoints.departure(sessionId),
       // An empty JSON object, not a null body — a bodyless POST is rejected
       // with 400 VALIDATION_FAILED before the handler runs.
       body: const <String, dynamic>{},

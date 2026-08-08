@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../sessions/data/seat_map_models.dart';
+import 'staff_endpoints.dart';
 
 /// D-771 (owner 2026-07-26) — one resolved seat occupant, mirroring
 /// `SIMF.Contracts.Sessions.StaffSeatOccupant`. The staff seating desk renders a
@@ -109,7 +110,7 @@ class StaffSeatingRepository {
   /// badge is not recognised; a valid badge with no seat returns `found: false`.
   Future<StaffSeatOccupant> lookupByBadge(String sessionId, String qrId) {
     return _client.post<StaffSeatOccupant>(
-      '/app/staff/sessions/$sessionId/seating/by-badge',
+      StaffEndpoints.seatingByBadge(sessionId),
       body: <String, dynamic>{'qrId': qrId},
       decodeData: _decode,
     );
@@ -123,7 +124,7 @@ class StaffSeatingRepository {
     required int seatNumber,
   }) {
     return _client.get<StaffSeatOccupant>(
-      '/app/staff/sessions/$sessionId/seating/seat',
+      StaffEndpoints.seatingSeat(sessionId),
       queryParameters: <String, dynamic>{
         'rowLabel': rowLabel,
         'seatNumber': seatNumber,
@@ -140,7 +141,7 @@ class StaffSeatingRepository {
   Future<Uint8List?> occupantPhoto(String sessionId, String userId) async {
     try {
       return await _client.getBytes(
-        '/app/staff/sessions/$sessionId/seating/occupant/$userId/photo',
+        StaffEndpoints.seatingOccupantPhoto(sessionId, userId),
       );
     } on ApiFailure {
       return null;

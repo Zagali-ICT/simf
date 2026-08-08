@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'session_models.dart';
+import 'sessions_endpoints.dart';
 
 /// App-local data layer for the sessions list (Page_016). The read is **public**
 /// (`AllowAnonymous`) — a Guest sees the full programme. The app fetches the
@@ -17,7 +18,7 @@ class SessionsRepository {
   /// `PublicSessions = { items: [...] }`), time-ordered (L-5).
   Future<List<SessionListItem>> getSessions() {
     return _client.get<List<SessionListItem>>(
-      '/app/programme/sessions',
+      SessionsEndpoints.programme,
       decodeData: (data) => SessionsPage.fromJson(data).items,
     );
   }
@@ -28,7 +29,7 @@ class SessionsRepository {
   /// screen's day banner ("تفاصيل اليوم"), the day strip and the type tabs.
   Future<List<ProgrammeDay>> getDays() {
     return _client.get<List<ProgrammeDay>>(
-      '/app/programme/days',
+      SessionsEndpoints.programmeDays,
       decodeData: (data) => ProgrammeDaysPage.fromJson(data).days,
     );
   }

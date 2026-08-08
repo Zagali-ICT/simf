@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'delegation_models.dart';
+import 'delegations_endpoints.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Data layer for the Delegations screen — App "الوفود" (Figma 1426:10771). One
@@ -15,7 +16,7 @@ class DelegationsRepository {
 
   Future<Delegations> getDelegations() {
     return _client.get<Delegations>(
-      '/app/delegations',
+      DelegationsEndpoints.list,
       decodeData: Delegations.fromData,
     );
   }
@@ -26,7 +27,7 @@ class DelegationsRepository {
   /// (the request can still be sent subject-only).
   Future<List<DelegationSlot>> getAvailableSlots(int countryId) {
     return _client.get<List<DelegationSlot>>(
-      '/app/countries/$countryId/available-slots',
+      DelegationsEndpoints.availableSlots(countryId),
       decodeData: (data) => (data as List? ?? const <dynamic>[])
           .whereType<Map<dynamic, dynamic>>()
           .map((e) => DelegationSlot.fromJson(e.cast<String, dynamic>()))
@@ -46,7 +47,7 @@ class DelegationsRepository {
     DateTime? slotEnd,
   }) {
     return _client.post<bool>(
-      '/app/delegation-meeting-requests',
+      DelegationsEndpoints.meetingRequests,
       body: <String, dynamic>{
         'targetCountryCode': targetCountryCode,
         'attendeeCount': attendeeCount,
@@ -67,7 +68,7 @@ class DelegationsRepository {
   /// Maps 403 (not the other party) / 409 (not awaiting confirmation).
   Future<DelegationMeetingSummary> confirmMeeting(String requestId) {
     return _client.post<DelegationMeetingSummary>(
-      '/app/delegation-meeting-requests/$requestId/confirm',
+      DelegationsEndpoints.confirmMeeting(requestId),
       body: const <String, dynamic>{},
       decodeData: (data) => DelegationMeetingSummary.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
@@ -82,7 +83,7 @@ class DelegationsRepository {
   /// Maps 403 (not the other party) / 409 (not awaiting confirmation).
   Future<DelegationMeetingSummary> declineMeeting(String requestId) {
     return _client.post<DelegationMeetingSummary>(
-      '/app/delegation-meeting-requests/$requestId/decline',
+      DelegationsEndpoints.declineMeeting(requestId),
       body: const <String, dynamic>{},
       decodeData: (data) => DelegationMeetingSummary.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},

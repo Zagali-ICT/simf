@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../contacts/data/contact_models.dart';
+import 'exhibitor_endpoints.dart';
 import 'exhibitor_models.dart';
 
 /// D-426 — exhibitor ("Other" profile type) lead capture. Scans a visitor's
@@ -19,7 +20,7 @@ class ExhibitorRepository {
   /// Scan a visitor badge by its QR id → the captured visitor's full card.
   Future<VisitorCard> scanByBadge(String qrId, {String? note}) {
     return _client.post<VisitorCard>(
-      '/app/exhibitor/visitors/scan',
+      ExhibitorEndpoints.scanVisitor,
       body: <String, dynamic>{
         'qrId': qrId.trim(),
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
@@ -33,7 +34,7 @@ class ExhibitorRepository {
   /// booth sees the same leads.
   Future<List<ExhibitorVisitor>> listMyVisitors() {
     return _client.get<List<ExhibitorVisitor>>(
-      '/app/exhibitor/visitors',
+      ExhibitorEndpoints.visitors,
       decodeData: ExhibitorVisitor.listFromData,
     );
   }
@@ -42,7 +43,7 @@ class ExhibitorRepository {
   /// from the booth's list (soft-delete server-side, idempotent).
   Future<void> removeVisitor(String id) {
     return _client.delete<bool>(
-      '/app/exhibitor/visitors/$id',
+      ExhibitorEndpoints.visitorById(id),
       decodeData: (_) => true,
     );
   }
@@ -50,7 +51,7 @@ class ExhibitorRepository {
   /// `GET /app/exhibitor/visitors/{id}/vcard` — FR-EXH-002: raw vCard 3.0 text
   /// for one captured lead, the same export My Contacts offers.
   Future<String> getVcard(String id) =>
-      _client.getText('/app/exhibitor/visitors/$id/vcard');
+      _client.getText(ExhibitorEndpoints.visitorVcard(id));
 }
 
 final exhibitorRepositoryProvider = Provider<ExhibitorRepository>((ref) {

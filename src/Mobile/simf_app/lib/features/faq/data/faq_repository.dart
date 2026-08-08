@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'faq_endpoints.dart';
 import 'faq_models.dart';
 
 /// Data layer for the public FAQ accordion (`GET /app/faq`, anonymous —
@@ -13,7 +14,7 @@ class FaqRepository {
 
   Future<List<FaqGroup>> getFaq() {
     return _client.get<List<FaqGroup>>(
-      '/app/faq',
+      FaqEndpoints.list,
       decodeData: (data) => ((data as List?) ?? const <dynamic>[])
           .map((e) => FaqGroup.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),

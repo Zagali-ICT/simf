@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
+import '../../sessions/data/sessions_endpoints.dart';
+
 /// The slice of the public session detail the Live broadcast screen needs
 /// (Page_025). The session-detail repository (`features/sessions`) does NOT
 /// expose the broadcast fields, so this tiny model decodes just the live
@@ -211,7 +213,7 @@ class LiveRepository {
   /// `GET /app/programme/sessions/{id}` → the live broadcast slice (E2).
   Future<LiveSession> getLiveSession(String sessionId) {
     return _client.get<LiveSession>(
-      '/app/programme/sessions/$sessionId',
+      SessionsEndpoints.detail(sessionId),
       decodeData: (data) => LiveSession.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       ),
@@ -227,7 +229,7 @@ class LiveRepository {
     int take = 3,
   }) {
     return _client.get<List<UpcomingSession>>(
-      '/app/programme/sessions',
+      SessionsEndpoints.programme,
       decodeData: (data) {
         final items = (data is Map ? data['items'] : null) as List? ??
             const <dynamic>[];

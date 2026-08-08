@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'staff_endpoints.dart';
 import 'staff_models.dart';
 
 /// Maps an image filename to the MIME the upload gate accepts (jpeg/png/webp).
@@ -35,7 +36,7 @@ class StaffRepository {
   /// server's bilingual message on a 400).
   Future<StaffWalkInResult> registerVisitor(StaffWalkInRequest request) {
     return _client.post<StaffWalkInResult>(
-      '/app/staff/visitors/register-onsite',
+      StaffEndpoints.registerOnsite,
       body: request.toJson(),
       decodeData: (data) => StaffWalkInResult.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
@@ -52,7 +53,7 @@ class StaffRepository {
     required String filename,
   }) {
     return _client.upload<bool>(
-      '/app/staff/visitors/$userId/id-document',
+      StaffEndpoints.visitorIdDocument(userId),
       bytes: bytes,
       filename: filename,
       contentType: _mimeForFilename(filename),
@@ -68,7 +69,7 @@ class StaffRepository {
     required String filename,
   }) {
     return _client.upload<bool>(
-      '/app/staff/visitors/$userId/avatar',
+      StaffEndpoints.visitorAvatar(userId),
       bytes: bytes,
       filename: filename,
       contentType: _mimeForFilename(filename),

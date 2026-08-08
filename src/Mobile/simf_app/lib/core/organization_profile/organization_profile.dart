@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../net/core_endpoints.dart';
 import '../utils/event_date_range.dart';
 
 /// Coerce a decoded JSON value into a `Map<String, dynamic>` (empty when
@@ -270,7 +271,7 @@ class OrgProfileRepository {
   /// server reports `304` (unchanged) so the caller keeps the cached value.
   Future<OrgProfile?> refresh() async {
     final result = await _client.getConditional<Object?>(
-      '/app/organization-profile',
+      CoreEndpoints.organizationProfile,
       ifModifiedSince: _prefs.getString(StorageKeys.orgProfileLastModified),
       decodeData: (data) => data,
     );

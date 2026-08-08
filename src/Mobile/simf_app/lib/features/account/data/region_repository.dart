@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'account_endpoints.dart';
+
 /// App-local data layer for the region lookup (D-547): the single public read of
 /// the official Saudi administrative regions, over the authenticated
 /// `GET /app/regions` endpoint (sign-in only). Throws [ApiFailure] (from
@@ -19,7 +21,7 @@ class RegionRepository {
   /// The active regions, ordered by SortOrder (server-side), for the picker.
   Future<List<RegionItem>> getRegions() {
     return _client.get<List<RegionItem>>(
-      '/app/regions',
+      AccountEndpoints.regions,
       // The endpoint returns a bare JSON array (ApiResult<IReadOnlyList<...>>),
       // mirroring ProfileRepository.searchOrganisations.
       decodeData: (data) => (data as List<dynamic>? ?? const <dynamic>[])

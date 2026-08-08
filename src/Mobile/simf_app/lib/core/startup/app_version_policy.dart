@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../net/core_endpoints.dart';
 import 'app_update_checker.dart';
 
 /// D-736 — the server app-update policy (`GET /app/version-policy`): the
@@ -57,7 +58,7 @@ class AppVersionPolicyRepository {
   final SimfApiClient _client;
 
   Future<AppVersionPolicy> fetch() => _client.get<AppVersionPolicy>(
-        '/app/version-policy',
+        CoreEndpoints.versionPolicy,
         decodeData: (data) => AppVersionPolicy.fromJson(
           (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
         ),

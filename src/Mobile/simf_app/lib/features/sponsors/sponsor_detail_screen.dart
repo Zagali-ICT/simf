@@ -14,13 +14,14 @@ import '../exhibition/entity_detail_helpers.dart';
 import '../exhibition/entity_detail_scaffold.dart';
 import '../exhibition/entity_logo_image.dart';
 import 'data/sponsor_models.dart';
+import 'data/sponsors_endpoints.dart';
 
 /// `GET /app/sponsors/{id}` → the full sponsor detail (Figma 1439:11826).
 final sponsorDetailProvider =
     FutureProvider.autoDispose.family<SponsorDetail, String>((ref, id) async {
   final client = ref.watch(simfApiClientProvider);
   return client.get<SponsorDetail>(
-    '/app/sponsors/$id',
+    SponsorsEndpoints.byId(id),
     decodeData: SponsorDetail.fromData,
   );
 });

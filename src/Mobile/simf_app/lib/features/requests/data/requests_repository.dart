@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'request_models.dart';
+import 'requests_endpoints.dart';
 
 /// D-500 (Wave 5, الطلبات 1408:9726) — data layer for the unified requests feed:
 /// the user's requests across all kinds (`GET /app/my-requests`), the two new
@@ -16,7 +17,7 @@ class RequestsRepository {
   /// `GET /app/my-requests` → the user's requests, newest first.
   Future<List<AppRequestItem>> getMyRequests() {
     return _client.get<List<AppRequestItem>>(
-      '/app/my-requests',
+      RequestsEndpoints.mine,
       decodeData: AppRequestItem.listFromData,
     );
   }
@@ -27,7 +28,7 @@ class RequestsRepository {
     String? note,
   }) {
     return _client.post<bool>(
-      '/app/document-requests',
+      RequestsEndpoints.documentRequests,
       body: <String, dynamic>{
         'documentType': documentType.wireValue,
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
@@ -42,7 +43,7 @@ class RequestsRepository {
     String? note,
   }) {
     return _client.post<bool>(
-      '/app/badge-requests',
+      RequestsEndpoints.badgeRequests,
       body: <String, dynamic>{
         'requestedJobTitle': requestedJobTitle.trim(),
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
@@ -58,7 +59,7 @@ class RequestsRepository {
     required String id,
   }) {
     return _client.post<bool>(
-      '/app/my-requests/cancel',
+      RequestsEndpoints.cancel,
       body: <String, dynamic>{'kind': kind.wireValue, 'id': id},
       decodeData: (_) => true,
     );

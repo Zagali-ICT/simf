@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'contact_us_endpoints.dart';
+
 /// Data layer for the contact form (`POST /app/contact-inquiry`, anonymous —
 /// Figma 1388:7567). One write; throws [ApiFailure] on a wire error (the screen
 /// maps it to the send-failed toast). The server captures the signed-in
@@ -16,7 +18,7 @@ class ContactUsRepository {
     required String message,
   }) {
     return _client.post<bool>(
-      '/app/contact-inquiry',
+      ContactUsEndpoints.inquiry,
       body: <String, dynamic>{
         'name': name,
         'email': email,

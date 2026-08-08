@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'contact_models.dart';
+import 'contacts_endpoints.dart';
 
 /// Data layer for visitor-to-visitor contact sharing (SIMF-FDS-014 §5.7, D-286).
 /// Every call requires an **Approved** account (`RequireApprovedAccount` + the
@@ -17,7 +18,7 @@ class ContactsRepository {
   Future<String> getMyShareToken() {
     return _client
         .get<VisitorShareToken>(
-          '/app/account/share-token',
+          ContactsEndpoints.shareToken,
           decodeData: VisitorShareToken.fromData,
         )
         .then((t) => t.token);
@@ -28,7 +29,7 @@ class ContactsRepository {
   Future<String> rotateShareToken() {
     return _client
         .post<VisitorShareToken>(
-          '/app/account/share-token/rotate',
+          ContactsEndpoints.rotateShareToken,
           decodeData: VisitorShareToken.fromData,
         )
         .then((t) => t.token);
@@ -38,7 +39,7 @@ class ContactsRepository {
   /// the token is unknown or was rotated away (E2E-MMC-008).
   Future<VisitorCard> resolve(String token) {
     return _client.post<VisitorCard>(
-      '/app/contacts/resolve',
+      ContactsEndpoints.resolve,
       body: <String, dynamic>{'token': token},
       decodeData: VisitorCard.fromData,
     );
@@ -48,7 +49,7 @@ class ContactsRepository {
   /// (owner, subject); saving your own token is a 400 (E2E-MMC-009).
   Future<SavedContactRow> save(String token, String? note) {
     return _client.post<SavedContactRow>(
-      '/app/contacts/save',
+      ContactsEndpoints.save,
       body: <String, dynamic>{
         'token': token,
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
@@ -60,7 +61,7 @@ class ContactsRepository {
   /// `GET /app/contacts` → the caller's My-Contacts list (resolved on read).
   Future<List<SavedContactRow>> listSaved() {
     return _client.get<List<SavedContactRow>>(
-      '/app/contacts',
+      ContactsEndpoints.list,
       decodeData: SavedContactRow.listFromData,
     );
   }
@@ -68,13 +69,13 @@ class ContactsRepository {
   /// `DELETE /app/contacts/{id}` → soft-deletes one saved contact (idempotent).
   Future<void> remove(String id) {
     return _client.delete<bool>(
-      '/app/contacts/$id',
+      ContactsEndpoints.byId(id),
       decodeData: (_) => true,
     );
   }
 
   /// `GET /app/contacts/{id}/vcard` → raw vCard 3.0 text for a saved contact.
-  Future<String> getVcard(String id) => _client.getText('/app/contacts/$id/vcard');
+  Future<String> getVcard(String id) => _client.getText(ContactsEndpoints.vcard(id));
 }
 
 final contactsRepositoryProvider = Provider<ContactsRepository>((ref) {

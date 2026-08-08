@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'presentation_models.dart';
+import 'sessions_endpoints.dart';
 
 /// Data layer for the session-presentations screen — App "الجلسات"
 /// (Figma 1388:7621). Lists every active session (`GET /app/presentations`;
@@ -21,7 +22,7 @@ class PresentationRepository {
 
   Future<PresentationsPage> list() {
     return _client.get<PresentationsPage>(
-      '/app/presentations',
+      SessionsEndpoints.presentations,
       decodeData: PresentationsPage.fromData,
     );
   }
@@ -29,7 +30,7 @@ class PresentationRepository {
   /// The stored file bytes for one presentation (for the تحميل share/save). A
   /// 404 surfaces as an [ApiFailure] the screen reports.
   Future<Uint8List> downloadFile(String presentationId) {
-    return _client.getBytes('/app/presentations/$presentationId/file');
+    return _client.getBytes(SessionsEndpoints.presentationFile(presentationId));
   }
 }
 

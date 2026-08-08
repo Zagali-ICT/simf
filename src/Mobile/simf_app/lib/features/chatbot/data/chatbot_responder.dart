@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'chatbot_endpoints.dart';
+
 /// The seam that turns a user prompt into an assistant reply.
 ///
 /// Backed by the centralised AI (`POST /app/ai/assistance` — the `assistance`
@@ -20,7 +22,7 @@ class ApiChatbotResponder implements ChatbotResponder {
   @override
   Future<String> reply(String prompt, {required bool isArabic}) {
     return _client.post<String>(
-      '/app/ai/assistance',
+      ChatbotEndpoints.assistance,
       body: <String, dynamic>{
         'message': prompt,
         'locale': isArabic ? 'ar' : 'en',

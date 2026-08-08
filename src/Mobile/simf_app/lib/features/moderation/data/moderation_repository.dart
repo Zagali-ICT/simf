@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'moderation_endpoints.dart';
 import 'moderation_models.dart';
 
 /// Data layer for the per-session moderator Q&A desk (Figma 758:5307, D-405).
@@ -20,7 +21,7 @@ class ModerationRepository {
   /// operational home list.
   Future<List<ModeratedSession>> getMySessions() {
     return _client.get<List<ModeratedSession>>(
-      '/app/sessions/moderated',
+      ModerationEndpoints.moderatedSessions,
       decodeData: ModeratedSession.listFromData,
     );
   }
@@ -37,7 +38,7 @@ class ModerationRepository {
   }) {
     final query = status == null ? '' : '?status=${status.wireName}';
     return _client.get<List<ModeratorQuestion>>(
-      '/app/sessions/$sessionId/questions/moderate$query',
+      ModerationEndpoints.moderateQuestions(sessionId, query),
       decodeData: ModeratorQuestion.listFromData,
     );
   }
@@ -46,7 +47,7 @@ class ModerationRepository {
   /// Idempotent server-side.
   Future<ModeratorQuestion> push(String sessionId, String questionId) {
     return _client.put<ModeratorQuestion>(
-      '/app/sessions/$sessionId/questions/$questionId/push',
+      ModerationEndpoints.pushQuestion(sessionId, questionId),
       decodeData: (data) => ModeratorQuestion.fromJson(_asMap(data)),
     );
   }
@@ -59,7 +60,7 @@ class ModerationRepository {
     required bool isHidden,
   }) {
     return _client.put<ModeratorQuestion>(
-      '/app/sessions/$sessionId/questions/$questionId/hide',
+      ModerationEndpoints.hideQuestion(sessionId, questionId),
       body: <String, dynamic>{'isHidden': isHidden},
       decodeData: (data) => ModeratorQuestion.fromJson(_asMap(data)),
     );
@@ -74,7 +75,7 @@ class ModerationRepository {
     required bool isAnswered,
   }) {
     return _client.put<ModeratorQuestion>(
-      '/app/sessions/$sessionId/questions/$questionId/answered',
+      ModerationEndpoints.answeredQuestion(sessionId, questionId),
       body: <String, dynamic>{'isAnswered': isAnswered},
       decodeData: (data) => ModeratorQuestion.fromJson(_asMap(data)),
     );
@@ -86,7 +87,7 @@ class ModerationRepository {
   /// caller sends the full desk in its new order, not just the moved row.
   Future<void> reorder(String sessionId, List<String> orderedQuestionIds) {
     return _client.put<bool>(
-      '/app/sessions/$sessionId/questions/reorder',
+      ModerationEndpoints.reorderQuestions(sessionId),
       body: <String, dynamic>{'orderedQuestionIds': orderedQuestionIds},
       decodeData: (_) => true,
     );

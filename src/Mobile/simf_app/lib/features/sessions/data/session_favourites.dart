@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'sessions_endpoints.dart';
+
 /// Session favourites (المفضلة) — the per-user heart shown on the
 /// session-summaries (Figma 1388:8392) and my-sessions (1388:9067) screens.
 ///
@@ -16,7 +18,7 @@ class SessionFavouritesController extends AsyncNotifier<Set<String>> {
   Future<Set<String>> build() async {
     final client = ref.watch(simfApiClientProvider);
     final ids = await client.get<List<String>>(
-      '/app/sessions/favourites',
+      SessionsEndpoints.favourites,
       decodeData: _decodeIds,
     );
     return ids.toSet();
@@ -48,12 +50,12 @@ class SessionFavouritesController extends AsyncNotifier<Set<String>> {
     try {
       if (wasFavourite) {
         await client.delete<bool>(
-          '/app/sessions/$sessionId/favourite',
+          SessionsEndpoints.favourite(sessionId),
           decodeData: (_) => true,
         );
       } else {
         await client.post<bool>(
-          '/app/sessions/$sessionId/favourite',
+          SessionsEndpoints.favourite(sessionId),
           decodeData: (_) => true,
         );
       }

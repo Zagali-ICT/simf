@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'speaker_models.dart';
+import 'speakers_endpoints.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Data layer for the speakers list (Page_019) + profile (Page_020). The two
@@ -16,7 +17,7 @@ class SpeakersRepository {
   /// `GET /app/speakers` → the ordered speaker summaries (E1).
   Future<List<SpeakerSummary>> getSpeakers() {
     return _client.get<List<SpeakerSummary>>(
-      '/app/speakers',
+      SpeakersEndpoints.list,
       decodeData: (data) =>
           ((data is Map ? data['items'] : null) as List? ?? const <dynamic>[])
               .whereType<Map<dynamic, dynamic>>()
@@ -28,7 +29,7 @@ class SpeakersRepository {
   /// `GET /app/speakers/{id}` → the full profile (E1). 404 when missing.
   Future<SpeakerDetail> getSpeaker(String id) {
     return _client.get<SpeakerDetail>(
-      '/app/speakers/$id',
+      SpeakersEndpoints.byId(id),
       decodeData: (data) => SpeakerDetail.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       ),
@@ -39,7 +40,7 @@ class SpeakersRepository {
   /// meeting slots derived from the speaker's availability windows.
   Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) {
     return _client.get<List<SpeakerSlot>>(
-      '/app/speakers/$speakerId/available-slots',
+      SpeakersEndpoints.availableSlots(speakerId),
       decodeData: (data) => (data as List? ?? const <dynamic>[])
           .whereType<Map<dynamic, dynamic>>()
           .map((e) => SpeakerSlot.fromJson(e.cast<String, dynamic>()))
@@ -59,7 +60,7 @@ class SpeakersRepository {
     DateTime? slotEnd,
   }) {
     return _client.post<bool>(
-      '/app/speakers/$speakerId/meeting-requests',
+      SpeakersEndpoints.meetingRequests(speakerId),
       body: <String, dynamic>{
         'requesterName': requesterName,
         'subject': subject,

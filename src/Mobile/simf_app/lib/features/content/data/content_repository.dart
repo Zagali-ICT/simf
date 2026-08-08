@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'content_endpoints.dart';
 import 'content_models.dart';
 
 /// App-local data layer for the public CMS read (`GET /app/content/{key}`,
@@ -16,7 +17,7 @@ class ContentRepository {
 
   Future<ContentBlock> getContentBlock(String key) {
     return _client.get<ContentBlock>(
-      '/app/content/$key',
+      ContentEndpoints.byKey(key),
       decodeData: (data) => ContentBlock.fromJson(_asMap(data)),
     );
   }

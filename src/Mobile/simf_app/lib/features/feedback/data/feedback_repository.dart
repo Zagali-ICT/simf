@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'feedback_endpoints.dart';
 import 'rating_models.dart';
 
 /// Data layer for the dynamic rating form (Page_040).
@@ -22,7 +23,7 @@ class FeedbackRepository {
     String? targetId,
   }) {
     return _client.get<RatingFormView>(
-      '/app/feedback/form',
+      FeedbackEndpoints.form,
       queryParameters: <String, dynamic>{
         if (code != null) 'code': code,
         if (ratingTypeId != null) 'ratingTypeId': ratingTypeId,
@@ -40,7 +41,7 @@ class FeedbackRepository {
     required Map<String, int> answers,
   }) {
     return _client.post<bool>(
-      '/app/feedback/submit',
+      FeedbackEndpoints.submit,
       body: <String, dynamic>{
         'ratingTypeId': ratingTypeId,
         'targetId': targetId,

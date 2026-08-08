@@ -7,7 +7,6 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 | Rule | Findings |
 |------|----------|
 | SIMF-C1 | 599 |
-| SIMF-C2 | 104 |
 | SIMF-C3 | 192 |
 | SIMF-C4 | 6 |
 | SIMF-C5 | 31 |
@@ -15,7 +14,7 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 | SIMF-C7 | 12 |
 | SIMF-N1 | 17 |
 | SIMF-N2 | 67 |
-| **Total** | **1037** |
+| **Total** | **933** |
 
 ## ControlPanel feature
 
@@ -193,11 +192,11 @@ Issue : raw hex #e7e9f1  (line 575, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #fff  (line 576, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #fafafa  (line 578, SIMF-N2)
+Issue : raw hex #e0e0e0  (line 578, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #212121  (line 578, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
-Issue : raw hex #e0e0e0  (line 578, SIMF-N2)
+Issue : raw hex #fafafa  (line 578, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
 Issue : raw hex #000  (line 592, SIMF-N2)
 Fix : theme.tokens.css (the CSS token SSOT)
@@ -243,10 +242,6 @@ Fix : core/net/timeouts.dart or a feature policy const
 
 ## accessibility feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/accessibility/data/accessibility_preferences_repository.dart
-Issue : endpoint path: /app/account/preferences  (line 23, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/accessibility/widgets/accessibility_font_size_card.dart
 Issue : private widget _SizeChip extends StatelessWidget  (line 64, SIMF-C3)
@@ -325,30 +320,8 @@ Fix : SimfTokens (semantic name, not a value-name)
 Issue : widget-building method _buildResendRow() returning Widget  (line 313, SIMF-C3)
 Fix : its own file under widgets/
 
-Issue file : src/Mobile/simf_app/lib/features/account/data/profile_repository.dart
-Issue : endpoint path: /app/account/user-profile  (line 20, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/user-profile  (line 31, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/user-profile/countries  (line 41, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/profile-types  (line 50, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/interests  (line 61, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/organisations  (line 76, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/user-profile/id-image  (line 94, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/avatar  (line 112, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/account/avatar/${user.id}'  (line 269, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/account/data/region_repository.dart
-Issue : endpoint path: /app/regions  (line 22, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : model RegionItem declared inside a repository file  (line 35, SIMF-C6)
+Issue : model RegionItem declared inside a repository file  (line 37, SIMF-C6)
 Fix : a sibling *_models.dart
 
 Issue file : src/Mobile/simf_app/lib/features/account/email_otp_verify_screen.dart
@@ -670,9 +643,9 @@ Issue : height: 40  (line 23, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : size: 24  (line 31, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : height: 40  (line 37, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : width: 40  (line 37, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : height: 40  (line 37, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/account/widgets/terms_and_next_buttons.dart
@@ -685,10 +658,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 ## ai_summary feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/ai_summary/data/session_summary_repository.dart
-Issue : endpoint path: '/app/programme/sessions/$sessionId/summary'  (line 20, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/ai_summary/session_summary_list_screen.dart
 Issue : widget-building method _buildList() returning Widget  (line 102, SIMF-C3)
@@ -982,12 +951,6 @@ Fix : its own file under widgets/
 ## archive feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/archive/archive_screen.dart
-Issue : endpoint path: /app/archive  (line 16, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/archive/$id'  (line 28, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/archive/widgets/archive_bullet.dart
 Issue : width: 5  (line 31, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
@@ -1061,13 +1024,6 @@ Issue file : src/Mobile/simf_app/lib/features/badge/widgets/badge_qr_card.dart
 Issue : size: 64  (line 122, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
-## banners feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/banners/data/banners_repository.dart
-Issue : endpoint path: /app/banners  (line 13, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 ## booths feature
 
 
@@ -1112,14 +1068,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## chatbot feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/chatbot/data/ai_chat_history_repository.dart
-Issue : endpoint path: /app/ai/assistance/history  (line 18, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
-Issue file : src/Mobile/simf_app/lib/features/chatbot/data/chatbot_responder.dart
-Issue : endpoint path: /app/ai/assistance  (line 23, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/chatbot/widgets/chat_bubble.dart
 Issue : height: 1.5  (line 26, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
@@ -1146,10 +1094,6 @@ Fix : its own file under widgets/
 
 ## contact_us feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/contact_us/data/contact_us_repository.dart
-Issue : endpoint path: /app/contact-inquiry  (line 19, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/contact_us/widgets/contact_field.dart
 Issue : raw TextFormField  (line 37, SIMF-C7)
@@ -1187,22 +1131,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 ## contacts feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/contacts/data/contacts_repository.dart
-Issue : endpoint path: /app/account/share-token  (line 20, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/share-token/rotate  (line 31, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/contacts/resolve  (line 41, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/contacts/save  (line 51, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/contacts  (line 63, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/contacts/$id'  (line 71, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/contacts/$id/vcard'  (line 77, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/contacts/my_contacts_screen.dart
 Issue : widget-building method _buildBody() returning Widget  (line 108, SIMF-C3)
@@ -1249,10 +1177,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## content feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/content/data/content_repository.dart
-Issue : endpoint path: '/app/content/$key'  (line 19, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/content/terms_screen.dart
 Issue : width: 313  (line 116, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
@@ -1276,10 +1200,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## core feature
 
 
-Issue file : src/Mobile/simf_app/lib/core/organization_profile/organization_profile.dart
-Issue : endpoint path: /app/organization-profile  (line 273, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/core/session/session_guard.dart
 Issue : Duration(seconds: 15)  (line 32, SIMF-C1)
 Fix : core/net/timeouts.dart or a feature policy const
@@ -1297,14 +1217,6 @@ Issue : Size.fromHeight(48)  (line 75, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Size.fromHeight(48)  (line 85, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-
-Issue file : src/Mobile/simf_app/lib/core/site_settings/site_settings.dart
-Issue : endpoint path: /app/site-settings  (line 92, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
-Issue file : src/Mobile/simf_app/lib/core/startup/app_version_policy.dart
-Issue : endpoint path: /app/version-policy  (line 60, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/core/startup/server_app_update_checker.dart
 Issue : Duration(days: 3)  (line 24, SIMF-C1)
@@ -1382,19 +1294,9 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 
 Issue file : src/Mobile/simf_app/lib/features/delegations/data/delegations_repository.dart
-Issue : endpoint path: /app/delegations  (line 18, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/countries/$countryId/available-slots'  (line 29, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/delegation-meeting-requests  (line 49, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/delegation-meeting-requests/$requestId/confirm'  (line 70, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/delegation-meeting-requests/$requestId/decline'  (line 85, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : model DelegationSlot declared inside a repository file  (line 94, SIMF-C6)
+Issue : model DelegationSlot declared inside a repository file  (line 95, SIMF-C6)
 Fix : a sibling *_models.dart
-Issue : model DelegationMeetingSummary declared inside a repository file  (line 108, SIMF-C6)
+Issue : model DelegationMeetingSummary declared inside a repository file  (line 109, SIMF-C6)
 Fix : a sibling *_models.dart
 
 Issue file : src/Mobile/simf_app/lib/features/delegations/widgets/delegation_card.dart
@@ -1450,25 +1352,25 @@ Issue : Offset(0.25)  (line 48, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.16)  (line 48, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.10)  (line 49, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.42)  (line 49, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.16)  (line 50, SIMF-C1)
+Issue : Offset(0.10)  (line 49, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.46)  (line 50, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.48)  (line 51, SIMF-C1)
+Issue : Offset(0.16)  (line 50, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.09)  (line 51, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.76)  (line 52, SIMF-C1)
+Issue : Offset(0.48)  (line 51, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.22)  (line 52, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : Offset(0.30)  (line 53, SIMF-C1)
+Issue : Offset(0.76)  (line 52, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.63)  (line 53, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : Offset(0.30)  (line 53, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : Offset(0.54)  (line 54, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
@@ -1513,16 +1415,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## exhibitor feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/exhibitor/data/exhibitor_repository.dart
-Issue : endpoint path: /app/exhibitor/visitors/scan  (line 22, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/exhibitor/visitors  (line 36, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/exhibitor/visitors/$id'  (line 45, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/exhibitor/visitors/$id/vcard'  (line 53, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/exhibitor/my_visitors_screen.dart
 Issue : widget-building method _buildBody() returning Widget  (line 99, SIMF-C3)
 Fix : its own file under widgets/
@@ -1530,22 +1422,12 @@ Fix : its own file under widgets/
 ## faq feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/faq/data/faq_repository.dart
-Issue : endpoint path: /app/faq  (line 16, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/faq/widgets/faq_tile.dart
 Issue : size: 20  (line 49, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 ## feedback feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/feedback/data/feedback_repository.dart
-Issue : endpoint path: /app/feedback/form  (line 25, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/feedback/submit  (line 43, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/feedback/rate_screen.dart
 Issue : widget-building method _buildForm() returning Widget  (line 203, SIMF-C3)
@@ -1591,10 +1473,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## gallery feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/gallery/data/media_repository.dart
-Issue : endpoint path: /app/media  (line 11, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/gallery/widgets/coverage_tabs.dart
 Issue : private widget _CoverageTab extends StatelessWidget  (line 54, SIMF-C3)
 Fix : its own file under widgets/
@@ -1629,14 +1507,6 @@ Fix : computed from core/responsive/breakpoints.dart
 
 ## gates feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/gates/data/gates_repository.dart
-Issue : endpoint path: /app/gates/my-assignments  (line 28, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/gates/offline-config  (line 40, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/gates/$gateId/scans'  (line 68, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/gates/gate_scan_screen.dart
 Issue : size: 26  (line 323, SIMF-C1)
@@ -1796,16 +1666,12 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 
 Issue file : src/Mobile/simf_app/lib/features/live/data/live_repository.dart
-Issue : model LiveSession declared inside a repository file  (line 5, SIMF-C6)
+Issue : model LiveSession declared inside a repository file  (line 7, SIMF-C6)
 Fix : a sibling *_models.dart
-Issue : model LiveSpeaker declared inside a repository file  (line 141, SIMF-C6)
+Issue : model LiveSpeaker declared inside a repository file  (line 143, SIMF-C6)
 Fix : a sibling *_models.dart
-Issue : model UpcomingSession declared inside a repository file  (line 161, SIMF-C6)
+Issue : model UpcomingSession declared inside a repository file  (line 163, SIMF-C6)
 Fix : a sibling *_models.dart
-Issue : endpoint path: '/app/programme/sessions/$sessionId'  (line 214, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/programme/sessions  (line 230, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/live/live_broadcast_screen.dart
 Issue : widget-building method _buildBody() returning Widget  (line 274, SIMF-C3)
@@ -1876,10 +1742,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## media_partners feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/media_partners/data/media_partners_repository.dart
-Issue : endpoint path: /app/media-partners  (line 11, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/media_partners/media_partners_screen.dart
 Issue : crossAxisCount: 2  (line 102, SIMF-C1)
 Fix : computed from core/responsive/breakpoints.dart
@@ -1897,13 +1759,6 @@ Issue : strokeWidth: 2  (line 107, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : private widget _InitialsTile extends StatelessWidget  (line 121, SIMF-C3)
 Fix : its own file under widgets/
-
-## meet feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/meet/data/meet_repository.dart
-Issue : endpoint path: /app/networking/partner-directory  (line 14, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 ## meetings feature
 
@@ -1934,20 +1789,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 ## moderation feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/moderation/data/moderation_repository.dart
-Issue : endpoint path: /app/sessions/moderated  (line 23, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/questions/moderate$query'  (line 40, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/questions/$questionId/push'  (line 49, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/questions/$questionId/hide'  (line 62, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/questions/$questionId/answered'  (line 77, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/questions/reorder'  (line 89, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/moderation/widgets/moderated_session_tile.dart
 Issue : size: 32  (line 39, SIMF-C1)
@@ -1994,20 +1835,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 ## myarea feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/myarea/data/my_sessions_repository.dart
-Issue : endpoint path: /app/account/sessions  (line 18, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
-Issue file : src/Mobile/simf_app/lib/features/myarea/data/myarea_repository.dart
-Issue : endpoint path: /app/account/dashboard  (line 18, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/contact-card.vcf  (line 25, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/calendar.ics  (line 29, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/avatar  (line 39, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/myarea/identity_verification_screen.dart
 Issue : fontSize: 30  (line 281, SIMF-C1)
@@ -2058,9 +1885,9 @@ Issue : height: 6  (line 112, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : BorderRadius.circular(3)  (line 115, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : width: 1080  (line 121, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : height: 1440  (line 121, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : width: 1080  (line 121, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 
 Issue file : src/Mobile/simf_app/lib/features/myarea/widgets/identity_fallback_view.dart
@@ -2108,12 +1935,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## news feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/news/data/news_repository.dart
-Issue : endpoint path: /app/news  (line 13, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/news/$id'  (line 29, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/news/news_article_screen.dart
 Issue : widget-building method _buildBody() returning Widget  (line 77, SIMF-C3)
 Fix : its own file under widgets/
@@ -2138,16 +1959,6 @@ Fix : its own file under widgets/
 
 ## notifications feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/notifications/data/notifications_repository.dart
-Issue : endpoint path: /app/account/notifications/unread-count  (line 25, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/notifications/list  (line 38, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/account/notifications/$id/read'  (line 47, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/account/notifications/read-all  (line 55, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/notifications/notifications_screen.dart
 Issue : widget-building method _buildBody() returning Widget  (line 278, SIMF-C3)
@@ -2194,10 +2005,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 ## questions feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/questions/data/questions_repository.dart
-Issue : endpoint path: '/app/sessions/$sessionId/questions'  (line 27, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/questions/widgets/send_question_content.dart
 Issue : maxLength: 500  (line 145, SIMF-C1)
@@ -2295,16 +2102,6 @@ Fix : SimfTokens (semantic name, not a value-name)
 ## requests feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/requests/data/requests_repository.dart
-Issue : endpoint path: /app/my-requests  (line 19, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/document-requests  (line 30, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/badge-requests  (line 45, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/my-requests/cancel  (line 61, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/requests/requests_screen.dart
 Issue : widget-building method _buildBody() returning Widget  (line 132, SIMF-C3)
 Fix : its own file under widgets/
@@ -2335,54 +2132,8 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/data/hall_attendance_repository.dart
-Issue : model HallAttendanceStatus declared inside a repository file  (line 39, SIMF-C6)
+Issue : model HallAttendanceStatus declared inside a repository file  (line 40, SIMF-C6)
 Fix : a sibling *_models.dart
-Issue : endpoint path: '/app/sessions/$sessionId/attendance'  (line 95, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/arrival'  (line 107, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/departure'  (line 116, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/data/presentation_repository.dart
-Issue : endpoint path: /app/presentations  (line 24, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/presentations/$presentationId/file'  (line 32, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/data/seat_map_repository.dart
-Issue : endpoint path: '/app/sessions/$sessionId/seats'  (line 19, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/seats/reserve'  (line 37, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/seats/reserve-random'  (line 47, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/seats/join'  (line 61, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/seats/move'  (line 82, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/seats/mine'  (line 92, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/data/session_detail_repository.dart
-Issue : endpoint path: '/app/programme/sessions/$sessionId'  (line 20, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/seats'  (line 32, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/data/session_favourites.dart
-Issue : endpoint path: /app/sessions/favourites  (line 19, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/favourite'  (line 51, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/sessions/$sessionId/favourite'  (line 56, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
-Issue file : src/Mobile/simf_app/lib/features/sessions/data/sessions_repository.dart
-Issue : endpoint path: /app/programme/sessions  (line 20, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/programme/days  (line 31, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/join_session_hub_screen.dart
 Issue : private widget _HubList extends StatelessWidget  (line 71, SIMF-C3)
@@ -2566,15 +2317,7 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 
 Issue file : src/Mobile/simf_app/lib/features/speakers/data/speakers_repository.dart
-Issue : endpoint path: /app/speakers  (line 19, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/speakers/$id'  (line 31, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/speakers/$speakerId/available-slots'  (line 42, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/speakers/$speakerId/meeting-requests'  (line 62, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : model SpeakerSlot declared inside a repository file  (line 76, SIMF-C6)
+Issue : model SpeakerSlot declared inside a repository file  (line 77, SIMF-C6)
 Fix : a sibling *_models.dart
 
 Issue file : src/Mobile/simf_app/lib/features/speakers/speaker_profile_screen.dart
@@ -2644,9 +2387,9 @@ Issue : width: 42  (line 34, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : height: 42  (line 35, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
-Issue : width: 42  (line 57, SIMF-C1)
-Fix : SimfTokens (semantic name, not a value-name)
 Issue : height: 42  (line 57, SIMF-C1)
+Fix : SimfTokens (semantic name, not a value-name)
+Issue : width: 42  (line 57, SIMF-C1)
 Fix : SimfTokens (semantic name, not a value-name)
 Issue : private widget _NameLine extends StatelessWidget  (line 64, SIMF-C3)
 Fix : its own file under widgets/
@@ -2680,14 +2423,8 @@ Fix : SimfTokens (semantic name, not a value-name)
 
 
 Issue file : src/Mobile/simf_app/lib/features/sponsors/sponsor_detail_screen.dart
-Issue : endpoint path: '/app/sponsors/$id'  (line 23, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : widget-building method _build() returning Widget  (line 69, SIMF-C3)
+Issue : widget-building method _build() returning Widget  (line 70, SIMF-C3)
 Fix : its own file under widgets/
-
-Issue file : src/Mobile/simf_app/lib/features/sponsors/sponsors_screen.dart
-Issue : endpoint path: /app/sponsors  (line 21, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/sponsors/widgets/sponsor_card.dart
 Issue : maxLines: 2  (line 88, SIMF-C1)
@@ -2710,23 +2447,9 @@ Fix : its own file under widgets/
 ## staff feature
 
 
-Issue file : src/Mobile/simf_app/lib/features/staff/data/staff_repository.dart
-Issue : endpoint path: /app/staff/visitors/register-onsite  (line 38, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/staff/visitors/$userId/id-document'  (line 55, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/staff/visitors/$userId/avatar'  (line 71, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-
 Issue file : src/Mobile/simf_app/lib/features/staff/data/staff_seating_repository.dart
-Issue : model StaffSeatOccupant declared inside a repository file  (line 9, SIMF-C6)
+Issue : model StaffSeatOccupant declared inside a repository file  (line 10, SIMF-C6)
 Fix : a sibling *_models.dart
-Issue : endpoint path: '/app/staff/sessions/$sessionId/seating/by-badge'  (line 112, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/staff/sessions/$sessionId/seating/seat'  (line 126, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/staff/sessions/$sessionId/seating/occupant/$userId/photo'  (line 143, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/staff/register_visitor_screen.dart
 Issue : Duration(milliseconds: 250)  (line 439, SIMF-C1)
@@ -2756,14 +2479,6 @@ Fix : its own file under widgets/
 
 ## venuemap feature
 
-
-Issue file : src/Mobile/simf_app/lib/features/venuemap/data/venue_map_repository.dart
-Issue : endpoint path: /app/venue-map  (line 18, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: /app/booths  (line 27, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
-Issue : endpoint path: '/app/booths/$id'  (line 36, SIMF-C2)
-Fix : features/<f>/data/*_endpoints.dart (D-545: the repo owns its path)
 
 Issue file : src/Mobile/simf_app/lib/features/venuemap/venue_map_screen.dart
 Issue : widget-building method _buildBody() returning Widget  (line 234, SIMF-C3)
