@@ -53,7 +53,7 @@ Fix : split the file; move this and its state into a widget
 
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/session_detail_screen.dart
-Issue : _buildBody() returning Widget in a 510-line file (limit 400)  (line 424, SIMF-C3)
+Issue : _buildBody() returning Widget in a 469-line file (limit 400)  (line 383, SIMF-C3)
 Fix : split the file; move this and its state into a widget
 
 ## staff feature
