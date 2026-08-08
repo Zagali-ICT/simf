@@ -16,6 +16,7 @@ import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
 import 'biometric_auth.dart';
+import 'biometric_sign_in.dart';
 import 'data/sign_in_validators.dart';
 import 'post_auth_route.dart';
 import 'widgets/account_auth_prompt.dart';
@@ -26,7 +27,6 @@ import 'widgets/account_remember_forgot.dart';
 import 'widgets/account_top_controls.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/sign_in_alt_actions.dart';
-import 'biometric_sign_in.dart';
 
 /// Page 003 — تسجيل الدخول · Sign in. The KSA-Project Figma design (node
 /// 168:2800), promoted from the D-358 preview to the official sign-in

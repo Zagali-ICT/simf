@@ -6,8 +6,8 @@ Generated 2026-08-08 by `dart run tool/conventions`.
 
 | Rule | Findings |
 |------|----------|
-| SIMF-C3 | 18 |
-| **Total** | **18** |
+| SIMF-C3 | 17 |
+| **Total** | **17** |
 
 ## account feature
 
@@ -21,39 +21,32 @@ Issue : _buildChips() returning Widget in a 470-line file (limit 400)  (line 440
 Fix : split the file; move this and its state into a widget
 
 Issue file : src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart
-Issue : _buildBody() returning Widget in a 1306-line file (limit 400)  (line 651, SIMF-C3)
+Issue : _buildBody() returning Widget in a 1305-line file (limit 400)  (line 650, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildLoadError() returning Widget in a 1306-line file (limit 400)  (line 834, SIMF-C3)
+Issue : _buildLoadError() returning Widget in a 1305-line file (limit 400)  (line 833, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildProfileTypeField() returning Widget in a 1306-line file (limit 400)  (line 868, SIMF-C3)
+Issue : _buildProfileTypeField() returning Widget in a 1305-line file (limit 400)  (line 867, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildNationalityField() returning Widget in a 1306-line file (limit 400)  (line 907, SIMF-C3)
+Issue : _buildNationalityField() returning Widget in a 1305-line file (limit 400)  (line 906, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildDocumentFields() returning List<Widget> in a 1306-line file (limit 400)  (line 1042, SIMF-C3)
+Issue : _buildDocumentFields() returning List<Widget> in a 1305-line file (limit 400)  (line 1041, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildPlaceOfBirthField() returning Widget in a 1306-line file (limit 400)  (line 1083, SIMF-C3)
+Issue : _buildPlaceOfBirthField() returning Widget in a 1305-line file (limit 400)  (line 1082, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildPlateField() returning Widget in a 1306-line file (limit 400)  (line 1104, SIMF-C3)
+Issue : _buildPlateField() returning Widget in a 1305-line file (limit 400)  (line 1103, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildIdImageField() returning Widget in a 1306-line file (limit 400)  (line 1195, SIMF-C3)
+Issue : _buildIdImageField() returning Widget in a 1305-line file (limit 400)  (line 1194, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildFacePhotoField() returning Widget in a 1306-line file (limit 400)  (line 1215, SIMF-C3)
+Issue : _buildFacePhotoField() returning Widget in a 1305-line file (limit 400)  (line 1214, SIMF-C3)
 Fix : split the file; move this and its state into a widget
-Issue : _buildOrganisationField() returning Widget in a 1306-line file (limit 400)  (line 1244, SIMF-C3)
-Fix : split the file; move this and its state into a widget
-
-## live feature
-
-
-Issue file : src/Mobile/simf_app/lib/features/live/live_broadcast_screen.dart
-Issue : _buildBody() returning Widget in a 508-line file (limit 400)  (line 275, SIMF-C3)
+Issue : _buildOrganisationField() returning Widget in a 1305-line file (limit 400)  (line 1243, SIMF-C3)
 Fix : split the file; move this and its state into a widget
 
 ## sessions feature
 
 
 Issue file : src/Mobile/simf_app/lib/features/sessions/session_detail_screen.dart
-Issue : _buildBody() returning Widget in a 469-line file (limit 400)  (line 383, SIMF-C3)
+Issue : _buildBody() returning Widget in a 468-line file (limit 400)  (line 382, SIMF-C3)
 Fix : split the file; move this and its state into a widget
 
 ## staff feature

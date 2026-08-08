@@ -8,7 +8,6 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
-import '../../app/router.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_info_dialog.dart';
@@ -18,13 +17,13 @@ import '../moderation/data/moderation_repository.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'data/session_calendar.dart';
+import 'data/session_detail_eligibility.dart';
 import 'data/session_detail_repository.dart';
 import 'data/session_lifecycle.dart';
 import 'data/session_models.dart';
 import 'widgets/session_arrival_action.dart';
 import 'widgets/session_detail_body.dart';
 import 'widgets/session_detail_header.dart';
-import 'data/session_detail_eligibility.dart';
 
 /// Page 017 — تفاصيل الجلسة · Session detail (#17, `/sessions/:sessionId`),
 /// rebuilt to the KSA-Project Figma frame **889:2450 "Session detail"** on the
