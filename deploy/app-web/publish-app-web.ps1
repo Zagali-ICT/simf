@@ -4,10 +4,12 @@
 # then assembles a deployable folder (build output + web.config) ready to be
 # copied to the IIS site's physical path.
 #
-# Usage (PowerShell, any directory):
+# Usage (PowerShell, any directory) - both now default to the production estate,
+# so it runs with no arguments:
+#   .\publish-app-web.ps1
 #   .\publish-app-web.ps1 `
 #       -ApiBase  "https://api.simrsnf.com/api/v1" `
-#       -OutDir   "D:\SIMF\Publish\simf-app-web" `
+#       -OutDir   "D:\SIMF\System\V1.0.0\publish" `
 #       [-AppKey  "<prod app key>"] `
 #       [-SupportPhone "+9665XXXXXXXX"] [-SupportEmail "support@..."] `
 #       [-SocialX "https://x.com/..."] [-SocialInstagram "..."] `
@@ -22,8 +24,14 @@
 #   Cors:WebAppOrigins to the site origin (see docs/deploy/SIMF-AppWeb-IIS-Deploy.md).
 
 param(
-    [Parameter(Mandatory = $true)] [string] $ApiBase,
-    [Parameter(Mandatory = $true)] [string] $OutDir,
+    # Defaulted to the production estate (D-868) rather than prompted. It is
+    # COMPILED INTO the bundle, so it was mandatory to stop anyone shipping a
+    # build pointed at the wrong host - but a prompt is a poor way to enforce
+    # that: it stops the script being runnable from CI and teaches people to
+    # type past it. The check below enforces the same thing and also catches the
+    # mistake a prompt never could, a base missing the /api/v1 route prefix.
+    [string] $ApiBase = 'https://api.simrsnf.com/api/v1',
+    [string] $OutDir  = 'D:\SIMF\System\V1.0.0\publish',
     [string] $AppKey = '',
     [string] $SupportPhone = '',
     [string] $SupportEmail = '',
@@ -39,6 +47,34 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# --- validate the compiled-in API base ---------------------------------------
+# This value cannot be corrected after the build: there is no runtime config for
+# a browser bundle, so a wrong base ships as an app that calls the wrong host and
+# only fails in someone's browser. Both mistakes are caught here.
+if ($ApiBase -notmatch '^https://') {
+    throw "-ApiBase must be https (got '$ApiBase'). The app is served over HTTPS, so a cleartext API base is blocked as mixed content by the browser."
+}
+if ($ApiBase -notmatch '/api/v1/?$') {
+    throw "-ApiBase must end with the /api/v1 route prefix (got '$ApiBase'). The API mounts every endpoint under it, so a bare origin builds an app whose every call 404s."
+}
+
+# Flutter is not always at the vendored path; fall back to PATH before failing.
+if (-not (Test-Path $FlutterBat)) {
+    $onPath = (Get-Command flutter -ErrorAction SilentlyContinue).Source
+    if ($onPath) {
+        Write-Host "flutter not at $FlutterBat - using $onPath" -ForegroundColor DarkGray
+        $FlutterBat = $onPath
+    }
+    else {
+        throw "Flutter SDK not found at '$FlutterBat' and 'flutter' is not on PATH. Pass -FlutterBat with the full path to flutter.bat."
+    }
+}
+
+Write-Host ""
+Write-Host "  ApiBase : $ApiBase   (COMPILED IN - rebuild to change)" -ForegroundColor Cyan
+Write-Host "  OutDir  : $OutDir" -ForegroundColor Cyan
+Write-Host ""
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $appDir = Join-Path $repoRoot 'src\Mobile\simf_app'
