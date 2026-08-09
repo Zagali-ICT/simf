@@ -57,7 +57,7 @@ class IdentitySection extends StatelessWidget {
         SimfLabeledTextField(
           label: l10n.arabicNameLabel,
           controller: arabicName,
-          maxLength: FieldLimits.email,
+          maxLength: FieldLimits.profileName,
           // Arabic letters + spaces only - block other scripts at the
           // keystroke so the field can never hold mixed text.
           inputFormatters: <TextInputFormatter>[
@@ -69,7 +69,7 @@ class IdentitySection extends StatelessWidget {
         SimfLabeledTextField(
           label: l10n.englishNameLabel,
           controller: englishName,
-          maxLength: FieldLimits.email,
+          maxLength: FieldLimits.profileName,
           textDirection: TextDirection.ltr,
           // Latin letters + spaces only.
           inputFormatters: <TextInputFormatter>[

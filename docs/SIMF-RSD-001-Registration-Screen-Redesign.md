@@ -179,8 +179,43 @@ Ordered so the risky step is last and every step is independently revertible.
 | 3 | Extract `identity_section` and `contact_section`, sign_up only. | sign_up under 900 lines |
 | 4 | **DONE.** Extract `nationality_section` and `document_section`, sign_up only. | 1252 to 1199 lines, findings 14 to 12 |
 | 4b | Extract the SUBMIT PIPELINE to `visitor_profile/data`: the nine cross-field rules in `_next` (105 lines), plus `_buildRequest`, `_applyProfile` and `_load`. | sign_up under 400, its remaining findings close |
-| 5 | Adopt the same sections in `register_visitor_screen`, preserving the server-error echo. | staff suite + golden green, its 3 findings close |
+| 5 | **NOT ADOPTED.** See 7.2: the desk's fields differ structurally, and forcing the shared sections onto them would cost more than the duplication does. The genuinely shared value (`FieldLimits.profileName`) is unified instead. | staff suite + golden green |
 | 6 | Delete the duplicated state and validators left behind; re-record the convention baseline. | Gate at 1 finding; docs updated in the same changeset |
+
+### 7.2 Correction: step 5's sections do not fit the walk-in desk
+
+Step 5 assumed the desk could adopt IdentitySection and ContactSection as they
+stand. Reading it field by field, it cannot, and the reasons are structural
+rather than cosmetic:
+
+* **Scroll anchors (19l).** Eight `GlobalKey` anchors sit in visual order so a
+  blocked submit brings the FIRST problem into view instead of leaving the
+  operator at the bottom of a long form with every error off-screen above. Each
+  field is wrapped in a `KeyedSubtree`.
+* **Two-column tablet layout.** Fields are paired through `_twoCol`, because
+  the desk runs on a tablet and the self-service form does not.
+* **Server-error echo.** Every validator is `_required(...) ?? _serverError(...)`,
+  so a value that passes every client rule can still fail with the server's
+  reason.
+* **Different text direction.** The desk pins the Arabic name RTL; sign-up
+  leaves it ambient.
+
+That is 53 uses of desk-specific machinery threaded through the fields. Making
+the shared sections accept anchors, a layout strategy, an error-decorator and a
+direction override would produce a widget with more configuration than content,
+and every one of those options would exist to serve exactly one caller. The
+duplication is cheaper than that abstraction.
+
+What WAS shared is the value: both surfaces cap a profile name at 50, the desk
+through a local `_nameMaxLength` and sign-up through `FieldLimits.email` -
+which is 50 by COINCIDENCE, not because a name is an email. Both now read
+`FieldLimits.profileName`, documented against the real column
+(`UserProfile.Name` nvarchar(50)) and the DEF-STF-003 defect where the desk
+accepted 100 and round-tripped into an unexplained 400.
+
+This is the third estimate in this document corrected by measurement. The
+pattern is consistent: the sequence was planned from what the code LOOKED like
+rather than from what it does.
 
 ### 7.1 Correction: step 4 was scoped from a line count
 

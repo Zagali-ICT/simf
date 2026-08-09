@@ -85,12 +85,6 @@ class _ServerFieldError {
   final String rejectedValue;
 }
 
-/// The desk's name fields are `UserProfile.Name` / `NameArabic` — nvarchar(50)
-/// in EF, `MaximumLength(50)` in AdminWalkInRegistrationRequestValidator. The
-/// input caps at the SAME 50 (DEF-STF-003: it used to accept 100, so a long
-/// name round-tripped into a 400 with nothing highlighted).
-const int _nameMaxLength = 50;
-
 /// The card's content cap: a phone/compact window gets the 560 form width the
 /// Create-profile screen uses; a tablet gets the wider reading width so the
 /// two-column grid has room (both are [MaxWidthBody]'s documented values).
@@ -751,7 +745,7 @@ class _StaffRegisterVisitorScreenState
               child: SimfLabeledTextField(
                 label: l10n.arabicNameLabel,
                 controller: _arabicName,
-                maxLength: _nameMaxLength,
+                maxLength: FieldLimits.profileName,
                 textDirection: TextDirection.rtl,
                 // MERGE (BUG-019 rebuild + BUG-021): the rebuilt field keeps the
                 // shared widget, but the character class is the widened shared one
@@ -771,7 +765,7 @@ class _StaffRegisterVisitorScreenState
               child: SimfLabeledTextField(
                 label: l10n.englishNameLabel,
                 controller: _englishName,
-                maxLength: _nameMaxLength,
+                maxLength: FieldLimits.profileName,
                 textDirection: TextDirection.ltr,
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
