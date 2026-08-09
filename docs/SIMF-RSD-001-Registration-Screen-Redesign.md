@@ -177,9 +177,32 @@ Ordered so the risky step is last and every step is independently revertible.
 | 1 | **DONE.** Create `features/visitor_profile/`, move `VisitorDocType` and the shared validators into it. No behaviour change. | Suites green, both screens unchanged in behaviour |
 | 2 | `visitor_profile_form_state` holding the 17 shared fields, used by sign_up ONLY. | sign_up suite + golden green |
 | 3 | Extract `identity_section` and `contact_section`, sign_up only. | sign_up under 900 lines |
-| 4 | Extract `nationality_section` and `document_section`, sign_up only. | sign_up under 400 lines, its 10 findings close |
+| 4 | **DONE.** Extract `nationality_section` and `document_section`, sign_up only. | 1252 to 1199 lines, findings 14 to 12 |
+| 4b | Extract the SUBMIT PIPELINE to `visitor_profile/data`: the nine cross-field rules in `_next` (105 lines), plus `_buildRequest`, `_applyProfile` and `_load`. | sign_up under 400, its remaining findings close |
 | 5 | Adopt the same sections in `register_visitor_screen`, preserving the server-error echo. | staff suite + golden green, its 3 findings close |
 | 6 | Delete the duplicated state and validators left behind; re-record the convention baseline. | Gate at 1 finding; docs updated in the same changeset |
+
+### 7.1 Correction: step 4 was scoped from a line count
+
+The original step 4 promised "under 400 lines, its 10 findings close". It
+delivered 1199 lines and closed 2. The estimate was wrong because it counted
+lines without asking what they DO, and the remaining bulk is not UI:
+
+| Method | Lines | What it is |
+|--------|-------|------------|
+| `_buildBody` | 143 | layout, the last genuinely UI part |
+| `_next` | 105 | NINE cross-field submit rules, each with a decision id |
+| `_applyProfile` | 44 | prefill mapping |
+| `_load` | 36 | concurrent lookup + profile fetch |
+| `_buildRequest` | 32 | payload assembly |
+
+`_next` alone carries D-221 (organisation required), D-373 (nationality gates
+the document section), D-723 (place of birth), D-471 (profile-type picker) and
+the two-photo mandatory/optional split. Those are RULES. They belong beside the
+validators in `visitor_profile/data`, where the walk-in desk can share them and
+where they can be unit tested, not inside a section widget.
+
+Step 4b is that work, and it is where the file actually gets under 400.
 
 Steps 1 to 4 touch only the self-service flow. Step 5 is where the walk-in desk
 changes, and it is deliberately last: if the owner stops after step 4, the
