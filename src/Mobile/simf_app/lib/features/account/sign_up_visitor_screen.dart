@@ -32,6 +32,7 @@ import 'package:simf_app/features/account/widgets/profile_type_field.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_header_avatar.dart';
 import 'package:simf_app/features/account/widgets/terms_and_next_buttons.dart';
 import 'package:simf_app/features/myarea/identity_verification_screen.dart' show CapturedSelfie;
+import 'package:simf_app/features/visitor_profile/data/visitor_profile_completeness.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_form_state.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 import 'package:simf_app/features/visitor_profile/widgets/contact_section.dart';
@@ -477,32 +478,35 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
     setState(() => _form.triedSubmit = true);
     final formValid = _formKey.currentState?.validate() ?? false;
-    final dateOfBirthValid = _dateOfBirth != null;
-    // B3 — D-221 (الجهة): organisation is required (server enforces it too).
-    final organisationValid = _form.organisationId != null;
-    // D-373 — nationality drives the document section and is required server-
-    // side; the picker is not a FormField, so its inline error (line ~985)
-    // must also gate Next, otherwise an empty code reaches the server (400).
-    final nationalityValid = _form.nationalityCode != null;
-    // D-723 — place of birth is required. Non-Saudi uses the free-text field
-    // (caught by the form validator); Saudi uses the region picker (not a
-    // FormField), so its required gate lives here.
-    final placeOfBirthValid = !_isSaudi || _birthRegionCode != null;
-    // D-471 — the profile-type picker is now a searchable field, not a FormField,
-    // so its required gate (only when the "Other" picker is actually shown — never
-    // when Visitor-locked, loading, failed or empty, per L-6) lives here.
-    final profileTypePickerShown = !_isVisitorType &&
-        !_profileTypesLoading &&
-        !_profileTypesFailed &&
-        _form.profileTypes.isNotEmpty;
-    final profileTypeValid = !profileTypePickerShown || _form.profileTypeId != null;
-    // Two-photo split — the ID DOCUMENT is mandatory for every registrant; the
-    // FACE photo is mandatory for men and optional for women. Either a fresh
-    // pick or an already-stored image satisfies each.
-    final idImageValid = _idImageBytes != null || _hasExistingIdImage;
-    final faceImageValid = _form.gender != AppGender.male ||
-        _faceImageBytes != null ||
-        _hasExistingAvatar;
+    // The cross-field gates the Form itself cannot express: every control below
+    // is a picker, a segmented tab or an image slot, not a FormField. The rules
+    // and the decisions behind them live in VisitorProfileCompleteness.
+    final dateOfBirthValid =
+        VisitorProfileCompleteness.dateOfBirth(_dateOfBirth);
+    final organisationValid =
+        VisitorProfileCompleteness.organisation(_form.organisationId);
+    final nationalityValid =
+        VisitorProfileCompleteness.nationality(_form.nationalityCode);
+    final placeOfBirthValid = VisitorProfileCompleteness.placeOfBirth(
+      isSaudi: _isSaudi,
+      birthRegionCode: _birthRegionCode,
+    );
+    final profileTypeValid = VisitorProfileCompleteness.profileType(
+      isVisitorType: _isVisitorType,
+      loading: _profileTypesLoading,
+      failed: _profileTypesFailed,
+      hasItems: _form.profileTypes.isNotEmpty,
+      profileTypeId: _form.profileTypeId,
+    );
+    final idImageValid = VisitorProfileCompleteness.idImage(
+      hasPickedImage: _idImageBytes != null,
+      hasStoredImage: _hasExistingIdImage,
+    );
+    final faceImageValid = VisitorProfileCompleteness.facePhoto(
+      gender: _form.gender,
+      hasPickedImage: _faceImageBytes != null,
+      hasStoredImage: _hasExistingAvatar,
+    );
     if (!formValid ||
         !dateOfBirthValid ||
         !organisationValid ||
