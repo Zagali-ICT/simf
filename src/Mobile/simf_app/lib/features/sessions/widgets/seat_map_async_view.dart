@@ -2,11 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../data/seat_map_models.dart';
 
 /// The shared async guard for the seat-map screens (My-Seat #18 + Seat-picker
 /// #109): both read the same `GET …/seats` via `seatMapProvider`, so this renders

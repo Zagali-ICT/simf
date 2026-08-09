@@ -2,21 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/core/validation/field_limits.dart';
+import 'package:simf_app/features/feedback/data/feedback_repository.dart';
+import 'package:simf_app/features/feedback/data/rating_models.dart';
+import 'package:simf_app/features/feedback/widgets/rate_category_row.dart';
+import 'package:simf_app/features/feedback/widgets/rate_gold_button.dart';
+import 'package:simf_app/features/feedback/widgets/rate_load_error.dart';
+import 'package:simf_app/features/feedback/widgets/rate_navy_note_chip.dart';
+import 'package:simf_app/features/feedback/widgets/star_row.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/gregorian_month_names.dart';
-import '../../core/utils/saudi_time.dart';
-import '../../core/validation/field_limits.dart';
-import 'data/feedback_repository.dart';
-import 'data/rating_models.dart';
-import 'widgets/rate_category_row.dart';
-import 'widgets/rate_gold_button.dart';
-import 'widgets/rate_load_error.dart';
-import 'widgets/rate_navy_note_chip.dart';
-import 'widgets/star_row.dart';
 
 /// Page 040 — تقييم الملتقى · Rate (#40, `/rate`, login-only).
 ///
@@ -214,7 +213,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
           watchedSession,
           _watchedWhen(isArabic, form.targetStart),
         ),
-      ));
+      ),);
       children.add(const SizedBox(height: SimfTokens.space5));
     }
 

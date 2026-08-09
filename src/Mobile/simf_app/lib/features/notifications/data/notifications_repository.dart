@@ -1,9 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/notifications/data/notification_models.dart';
+import 'package:simf_app/features/notifications/data/notifications_endpoints.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'notification_models.dart';
-import 'notifications_endpoints.dart';
 
 /// App-local data layer for the notifications feature — the bell's unread count
 /// (`GET /app/account/notifications/unread-count`, signed-in only — Page_013 E1)

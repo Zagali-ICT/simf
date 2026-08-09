@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-
-import '../../core/country_flag.dart';
-import '../theme/app_assets.dart';
-import '../theme/tokens.dart';
-import 'identity_logo_or_initials.dart';
-import 'simf_page_shell.dart';
-import 'simf_svg_icon.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/identity_logo_or_initials.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/core/country_flag.dart';
 
 /// A shared identity row (Build #13): the navy [SimfCard] chrome carrying — in
 /// RTL — a 44x44 logo/photo tile (or a gold initials avatar) at the inline start,

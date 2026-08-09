@@ -3,24 +3,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/router.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/confirm_external_link.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/env/build_config.dart';
+import 'package:simf_app/core/startup/app_version_policy.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/account/sign_out.dart';
+import 'package:simf_app/features/more/widgets/more_list.dart';
+import 'package:simf_app/features/more/widgets/more_profile_card.dart';
+import 'package:simf_app/features/myarea/data/myarea_models.dart';
+import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/localization/locale_controller.dart';
-import '../../app/route_names.dart';
-import '../../app/router.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/confirm_external_link.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/env/build_config.dart';
-import '../../core/startup/app_version_policy.dart';
-import '../../core/utils/refresh.dart';
-import '../account/sign_out.dart';
-import '../myarea/data/myarea_models.dart';
-import '../myarea/data/myarea_repository.dart';
-import 'widgets/more_list.dart';
-import 'widgets/more_profile_card.dart';
 
 /// Best-effort profile for the منطقتي header card — the real name + tier live
 /// App-side (not in the Identity-issued token). Resolves to null while loading /

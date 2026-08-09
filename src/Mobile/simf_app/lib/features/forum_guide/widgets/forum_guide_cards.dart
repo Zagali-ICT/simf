@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The gold intro banner (frame node 1388:7503): the welcome paragraph with a
 /// guide glyph at the inline end, on the solid gold card.

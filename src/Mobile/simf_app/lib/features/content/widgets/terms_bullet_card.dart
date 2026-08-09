@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One gold-hairline bullet card (Figma 505:1639): the gold • at the inline
 /// start, the term text in `beigeBorder`.

@@ -3,21 +3,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/core/site_settings/site_settings.dart';
+import 'package:simf_app/features/live/data/live_models.dart';
+import 'package:simf_app/features/live/data/live_presentation.dart';
+import 'package:simf_app/features/live/data/live_repository.dart';
+import 'package:simf_app/features/live/widgets/live_content.dart';
+import 'package:simf_app/features/live/widgets/live_content_view.dart';
+import 'package:simf_app/features/sessions/data/rate_prompt_tracker.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/widgets/simf_bottom_nav.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/organization_profile/organization_profile.dart';
-import '../../core/site_settings/site_settings.dart';
-import '../sessions/data/rate_prompt_tracker.dart';
-import 'data/live_models.dart';
-import 'data/live_presentation.dart';
-import 'data/live_repository.dart';
-import 'widgets/live_content.dart';
-import 'widgets/live_content_view.dart';
 
 /// Page 025 — البث المباشر · Live broadcast (#25, `/live?sessionId=`), rebuilt
 /// to the KSA-Project Figma frame **934:3450** on the shared navy shell.

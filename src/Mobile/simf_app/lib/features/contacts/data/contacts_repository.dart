@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/contacts/data/contact_models.dart';
+import 'package:simf_app/features/contacts/data/contacts_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'contact_models.dart';
-import 'contacts_endpoints.dart';
 
 /// Data layer for visitor-to-visitor contact sharing (SIMF-FDS-014 §5.7, D-286).
 /// Every call requires an **Approved** account (`RequireApprovedAccount` + the

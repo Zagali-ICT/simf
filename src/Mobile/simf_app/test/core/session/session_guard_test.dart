@@ -252,7 +252,7 @@ void main() {
       }
       await tester.pump(const Duration(seconds: 1)); // one guard tick at this moment
       expect(find.byType(SessionTimeoutOverlay), findsNothing,
-          reason: 'the extend-session overlay appeared at ${elapsedSeconds}s of watching');
+          reason: 'the extend-session overlay appeared at ${elapsedSeconds}s of watching',);
     }
 
     // Never interrupted, never signed out across the whole watch.

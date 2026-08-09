@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../core/utils/saudi_time.dart';
-import '../data/hall_attendance_repository.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/sessions/data/hall_attendance_repository.dart';
 
 /// FR-305 / FR-506 — the attendee's own **hall check-in status** on the session
 /// detail. Read-only: it reports what the door recorded, it never claims an

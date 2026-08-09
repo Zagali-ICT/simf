@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'session_models.dart';
-import 'sessions_endpoints.dart';
 
 /// Data layer for the attendee's own hall arrival / departure (FR-305/506,
 /// D-241). The device reports its position; the SERVER decides — it checks the

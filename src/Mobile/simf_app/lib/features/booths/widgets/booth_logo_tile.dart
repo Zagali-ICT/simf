@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_logo_image.dart';
-import '../../../core/net/asset_urls.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo_image.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
 
 /// The square booth-logo tile (frame node 922:2560): a 48×48 navy square with a
 /// beige hairline. Renders the booth's own BoothLogo (the D-357 asset owned by
@@ -22,10 +22,7 @@ import '../../../core/net/asset_urls.dart';
 /// logo. The inset is square now and the mark is painted at the box's real
 /// [_markSize], so nothing is cropped.
 class BoothLogoTile extends StatelessWidget {
-  const BoothLogoTile({
-    required this.boothId,
-    required this.baseUrl,
-    required this.fallback,
+  const BoothLogoTile({required this.boothId, required this.baseUrl, required this.fallback, super.key,
   });
 
   final String boothId;

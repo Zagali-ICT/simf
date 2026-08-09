@@ -83,7 +83,7 @@ final _days = <ProgrammeDay>[
         titleEn: 'The Future of Maritime Security',
         descAr:
             'نظرة معمّقة على مستقبل الأمن البحري والتحديات الإقليمية والدولية وأثرها على الممرات الملاحية.',
-        start: DateTime.utc(2026, 6, 20, 5, 0),
+        start: DateTime.utc(2026, 6, 20, 5),
         type: SessionType.workshop,
       ),
       _session(
@@ -111,7 +111,7 @@ final _days = <ProgrammeDay>[
         titleAr: 'حفل الافتتاح',
         titleEn: 'Opening Ceremony',
         descAr: 'حفل افتتاح الملتقى البحري السعودي الدولي وكلمات الرعاة.',
-        start: DateTime.utc(2026, 6, 21, 6, 0),
+        start: DateTime.utc(2026, 6, 21, 6),
         type: SessionType.event,
       ),
     ],

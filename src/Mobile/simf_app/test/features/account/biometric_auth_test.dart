@@ -16,6 +16,10 @@ class _FakeBiometricAuth implements BiometricAuth {
   _FakeBiometricAuth({
     this.available = true,
     this.enabled = false,
+    // Part of the fake's surface even where a given test does not set it:
+    // a fake that only exposes what is currently used has to be edited
+    // every time a new case needs the other outcome.
+    // ignore: unused_element_parameter
     this.confirmOutcome = LocalAuthOutcome.success,
   });
 
@@ -132,7 +136,7 @@ void main() {
   group('maybeOfferBiometricEnrolment nudge (D-441 / D-445; #7a)', () {
     testWidgets('available + not enabled → shows the nudge; tapping Enable '
         'routes to the step-up screen', (tester) async {
-      final biometric = _FakeBiometricAuth(available: true, enabled: false);
+      final biometric = _FakeBiometricAuth();
       await _pump(tester, _nudgeHost(), biometric: biometric);
 
       await tester.tap(find.text('GO'));
@@ -148,7 +152,7 @@ void main() {
     });
 
     testWidgets('already enabled → no nudge', (tester) async {
-      final biometric = _FakeBiometricAuth(available: true, enabled: true);
+      final biometric = _FakeBiometricAuth(enabled: true);
       await _pump(tester, _nudgeHost(), biometric: biometric);
 
       await tester.tap(find.text('GO'));
@@ -157,7 +161,7 @@ void main() {
     });
 
     testWidgets('biometrics unavailable → no nudge', (tester) async {
-      final biometric = _FakeBiometricAuth(available: false, enabled: false);
+      final biometric = _FakeBiometricAuth(available: false);
       await _pump(tester, _nudgeHost(), biometric: biometric);
 
       await tester.tap(find.text('GO'));
@@ -169,7 +173,7 @@ void main() {
         (tester) async {
       // A pending account presents as guest via effectiveAppRole, so the nudge
       // is skipped even though biometrics are available and not yet enabled.
-      final biometric = _FakeBiometricAuth(available: true, enabled: false);
+      final biometric = _FakeBiometricAuth();
       await _pump(
         tester,
         _nudgeHost(),
@@ -186,7 +190,7 @@ void main() {
   group('FaceIdToggleTile (D-445; #7a)', () {
     testWidgets('hidden when the device has no usable biometric',
         (tester) async {
-      final biometric = _FakeBiometricAuth(available: false, enabled: false);
+      final biometric = _FakeBiometricAuth(available: false);
       await _pump(
         tester,
         const Scaffold(body: FaceIdToggleTile()),
@@ -197,7 +201,7 @@ void main() {
 
     testWidgets('toggling on confirms intent, then routes to the step-up screen',
         (tester) async {
-      final biometric = _FakeBiometricAuth(available: true, enabled: false);
+      final biometric = _FakeBiometricAuth();
       await _pump(
         tester,
         const Scaffold(body: FaceIdToggleTile()),
@@ -222,7 +226,7 @@ void main() {
     testWidgets(
         'toggling off asks to confirm the permanent delete; confirming revokes',
         (tester) async {
-      final biometric = _FakeBiometricAuth(available: true, enabled: true);
+      final biometric = _FakeBiometricAuth(enabled: true);
       await _pump(
         tester,
         const Scaffold(body: FaceIdToggleTile()),
@@ -251,7 +255,7 @@ void main() {
 
     testWidgets('cancelling the disable confirm keeps the device key',
         (tester) async {
-      final biometric = _FakeBiometricAuth(available: true, enabled: true);
+      final biometric = _FakeBiometricAuth(enabled: true);
       await _pump(
         tester,
         const Scaffold(body: FaceIdToggleTile()),

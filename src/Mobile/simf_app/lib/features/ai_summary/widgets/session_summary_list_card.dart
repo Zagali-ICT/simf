@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' show DateFormat;
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../sessions/data/session_models.dart';
-import '../../sessions/widgets/favourite_heart_button.dart';
-import '../../sessions/widgets/session_card_meta.dart';
-import '../../sessions/widgets/session_state_chip.dart';
-import 'category_pill.dart';
+import 'package:simf_app/features/ai_summary/widgets/category_pill.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/widgets/favourite_heart_button.dart';
+import 'package:simf_app/features/sessions/widgets/session_card_meta.dart';
+import 'package:simf_app/features/sessions/widgets/session_state_chip.dart';
 
 /// One rich session-summary card (Figma 1388:8392): heart on the trailing edge,
 /// the title over the clock·time·duration line, the primary speaker + hall, and

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/utils/http_url.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/utils/http_url.dart';
 
 /// One past-speaker tile (frame node 927:3346): a 72×72 rounded-rect (r8) photo
 /// — the real avatar when [photoUrl] is an absolute http(s) url, else the gold

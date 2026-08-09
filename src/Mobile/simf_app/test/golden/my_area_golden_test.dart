@@ -14,7 +14,6 @@ import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/myarea/my_area_screen.dart';
 import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'golden_fonts.dart';
 

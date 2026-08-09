@@ -3,16 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/core/session/session_activity.dart';
+import 'package:simf_app/features/live/widgets/player.dart';
+import 'package:simf_app/features/live/widgets/player_error.dart';
+import 'package:simf_app/features/live/widgets/player_loading.dart';
+import 'package:simf_app/features/live/widgets/youtube_view.dart';
+import 'package:simf_app/features/live/youtube_url.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../core/session/session_activity.dart';
-import '../youtube_url.dart';
-import 'player.dart';
-import 'player_error.dart';
-import 'player_loading.dart';
-import 'youtube_view.dart';
 
 /// The device orientations to lock while the live player is (not) fullscreen
 /// (D-721): landscape in fullscreen, back to the app-wide portrait lock out of

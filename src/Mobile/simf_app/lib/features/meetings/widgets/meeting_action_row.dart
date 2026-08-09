@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../requests/widgets/request_action_row.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/requests/widgets/request_action_row.dart';
 
 /// Bi-Meeting rework — the اللقاءات الثنائية top action area. The owner's two
 /// request buttons — **"طلب مقابلة متحدث"** (speaker) and **"طلب اجتماع وفد"**

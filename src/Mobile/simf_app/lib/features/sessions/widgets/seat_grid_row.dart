@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/seat_map_models.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 
 /// One rendered row of the hall seat map, its seat squares, and the seat
 /// state they share.
@@ -12,18 +12,7 @@ import '../data/seat_map_models.dart';
 /// and SeatBox renders it. Splitting them would mean making the enum
 /// public to no other reader.
 class SeatGridRow extends StatelessWidget {
-  const SeatGridRow({
-    required this.rowLabel,
-    required this.seatCount,
-    required this.tier,
-    required this.eligible,
-    required this.inspectMode,
-    required this.seatSize,
-    required this.rowLabelWidth,
-    required this.reserved,
-    required this.map,
-    required this.l10n,
-    required this.availableBorderColor,
+  const SeatGridRow({required this.rowLabel, required this.seatCount, required this.tier, required this.eligible, required this.inspectMode, required this.seatSize, required this.rowLabelWidth, required this.reserved, required this.map, required this.l10n, required this.availableBorderColor, super.key,
     this.selectedRowLabel,
     this.selectedSeatNumber,
     this.onSeatTap,
@@ -165,12 +154,7 @@ Color tierBandColor(SeatTier tier) => switch (tier) {
 enum SeatStatus { mine, selected, reserved, confirmed, available, ineligible }
 
 class SeatBox extends StatelessWidget {
-  const SeatBox({
-    required this.status,
-    required this.size,
-    required this.seatNumber,
-    required this.availableBorderColor,
-    required this.semanticsLabel,
+  const SeatBox({required this.status, required this.size, required this.seatNumber, required this.availableBorderColor, required this.semanticsLabel, super.key,
     this.onTap,
   });
 

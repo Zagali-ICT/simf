@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The left time column of a timeline row, with its HH:mm formatter.
 /// The trailing vertical time rail (frame 1310:3241): the start time at the top
@@ -8,7 +8,7 @@ import '../../../app/theme/tokens.dart';
 /// the bottom (white). Clock values stay LTR. Sized to fit "HH:MM" on one line,
 /// full row height.
 class SessionTimeRail extends StatelessWidget {
-  const SessionTimeRail({required this.start, required this.end});
+  const SessionTimeRail({required this.start, required this.end, super.key});
 
   final DateTime start;
   final DateTime end;
@@ -34,7 +34,6 @@ class SessionTimeRail extends StatelessWidget {
       child: SizedBox(
         width: SimfTokens.timeRailWidth,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Text(
               _hhmm(start),

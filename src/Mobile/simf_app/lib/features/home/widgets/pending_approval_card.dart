@@ -3,12 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/registration/widgets/registration_sign_out_link.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
-import '../../../app/theme/tokens.dart';
-import '../../registration/widgets/registration_sign_out_link.dart';
 
 /// The home block for a signed-in but **not-yet-approved** account (D-666): the
 /// "awaiting approval" note, a single **Registration status** button that opens

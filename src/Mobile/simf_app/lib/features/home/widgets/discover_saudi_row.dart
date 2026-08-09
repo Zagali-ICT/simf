@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/confirm_external_link.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../core/env/build_config.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/confirm_external_link.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/env/build_config.dart';
 
 /// The روح السعودية discover row, shared by the guest + signed-in layouts —
 /// opens the configured Visit-Saudi link externally.

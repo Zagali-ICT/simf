@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The "Exhibitor · Sector" sub-line; renders only the parts that are present.
 class SubLine extends StatelessWidget {
-  const SubLine(this.exhibitor, this.sector);
+  const SubLine(this.exhibitor, this.sector, {super.key});
 
   final String? exhibitor;
   final String? sector;

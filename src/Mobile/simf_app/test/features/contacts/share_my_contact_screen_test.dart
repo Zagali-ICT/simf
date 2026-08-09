@@ -41,16 +41,16 @@ Future<void> _pump(
         contactsRepositoryProvider.overrideWithValue(repo),
         myAreaRepositoryProvider.overrideWithValue(myArea ?? _FakeMyAreaRepo()),
       ],
-      child: MaterialApp(
-        locale: const Locale('en'),
+      child: const MaterialApp(
+        locale: Locale('en'),
         supportedLocales: AppL10n.supportedLocales,
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const ShareMyContactScreen(),
+        home: ShareMyContactScreen(),
       ),
     ),
   );

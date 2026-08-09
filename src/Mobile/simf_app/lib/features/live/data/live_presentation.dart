@@ -1,8 +1,7 @@
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/features/live/data/live_models.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../core/organization_profile/organization_profile.dart';
-import 'live_models.dart';
 
 /// Presentation rules for the live-broadcast screen, as pure functions.
 ///
@@ -33,6 +32,6 @@ LiveSession globalLiveSession(OrgProfile profile, String url) => LiveSession(
 /// The frame's header line, "يُبث الآن · {hall}", or just the label when the
 /// broadcasting hall is not known.
 String broadcastLabel(AppL10n l10n, {required bool isLive, String? hall}) {
-  final String base = isLive ? l10n.liveNowBroadcasting : l10n.liveSessionLabel;
+  final base = isLive ? l10n.liveNowBroadcasting : l10n.liveSessionLabel;
   return hall == null ? base : '$base · $hall';
 }

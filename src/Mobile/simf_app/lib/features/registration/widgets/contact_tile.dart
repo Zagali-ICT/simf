@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One bordered contact tile (Figma 522:2223). Inert (null [onTap]) until its
 /// BuildConfig contact value is supplied (D-369).
 class ContactTile extends StatelessWidget {
-  const ContactTile({required this.icon, this.onTap});
+  const ContactTile({required this.icon, super.key, this.onTap});
 
   final IconData icon;
   final VoidCallback? onTap;

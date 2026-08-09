@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One carousel slide (758:1239): the news image filling a rounded card with a
 /// bottom scrim and the title overlaid — image + text only. Tapping opens the
 /// article. The image rides the D-357 anonymous `NewsImage` route; a spinner
 /// shows while it loads and a navy image-glyph box is the no-image fall-back.
 class HighlightSlide extends StatelessWidget {
-  const HighlightSlide({
-    required this.title,
-    required this.imageUrl,
-    required this.onTap,
+  const HighlightSlide({required this.title, required this.imageUrl, required this.onTap, super.key,
   });
 
   final String title;

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/media_coverage_tabs.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/responsive/grid_columns.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/media_partners/data/media_partners_repository.dart';
+import 'package:simf_app/features/media_partners/widgets/partner_card.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/media_coverage_tabs.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import 'data/media_partners_repository.dart';
-import 'widgets/partner_card.dart';
 
 // The partner model + provider live in `data/`; re-exported so the existing
 // `MediaPartner` / `mediaPartnersProvider` imports (the media-partners test)
@@ -50,14 +50,14 @@ class MediaPartnersScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
               SimfTokens.space4,
               SimfTokens.space2,
               SimfTokens.space4,
               SimfTokens.space2,
             ),
-            child: const MediaCoverageTabs(active: MediaCoverageTab.partners),
+            child: MediaCoverageTabs(active: MediaCoverageTab.partners),
           ),
           Expanded(
             child: partners.when(
@@ -98,8 +98,8 @@ class MediaPartnersScreen extends ConsumerWidget {
                       SimfTokens.space6,
                     ),
                     gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
+                        SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: responsiveGridColumns(context, compact: 2),
                       mainAxisSpacing: SimfTokens.space4,
                       crossAxisSpacing: SimfTokens.space4,
                       childAspectRatio: SimfTokens.partnerCardAspectRatio,

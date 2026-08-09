@@ -1,17 +1,14 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/staff_seating_models.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/staff/data/staff_seating_models.dart';
 
 /// The guest's photo + name. The bytes arrive from the authenticated Dio path
 /// (D-422); until they do (or when there is no photo) a labelled placeholder
 /// keeps the row's height stable and the a11y tree named.
 class OccupantHeader extends StatelessWidget {
-  const OccupantHeader({
-    required this.result,
-    required this.photo,
-    required this.l10n,
+  const OccupantHeader({required this.result, required this.photo, required this.l10n, super.key,
   });
 
   final StaffSeatOccupant result;

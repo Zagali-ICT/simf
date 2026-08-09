@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../data/media_models.dart';
-import 'play_glyph.dart';
-import 'thumbnail.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/gallery/data/media_models.dart';
+import 'package:simf_app/features/gallery/widgets/play_glyph.dart';
+import 'package:simf_app/features/gallery/widgets/thumbnail.dart';
 
 /// One media tile (frame node 949:4043): a rounded bitmap with a navy
 /// bottom-gradient; video tiles overlay a centred play glyph. The localised
@@ -26,7 +26,7 @@ class GalleryMediaTile extends StatelessWidget {
     final isVideo = item.kind == MediaKind.video;
     // Prefer the lighter thumbnail for the grid; fall back to the full image;
     // null when the item carries no bitmap (then the kind icon is shown).
-    final String? tileUrl = item.hasThumbnail
+    final tileUrl = item.hasThumbnail
         ? '$baseUrl/app/media/${item.id}/thumbnail'
         : item.hasImage
             ? '$baseUrl/app/media/${item.id}/image'

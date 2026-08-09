@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The removable filter pill shown when a stats-strip flag is selected: the
 /// country name with a close glyph; the whole pill clears the filter.
 class ActiveFilterChip extends StatelessWidget {
-  const ActiveFilterChip({
-    required this.country,
-    required this.clearLabel,
-    required this.onClear,
+  const ActiveFilterChip({required this.country, required this.clearLabel, required this.onClear, super.key,
   });
 
   final String country;

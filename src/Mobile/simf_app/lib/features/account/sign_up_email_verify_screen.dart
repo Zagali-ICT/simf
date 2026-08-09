@@ -4,19 +4,18 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/errors/api_error_l10n.dart';
+import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
+import 'package:simf_app/features/account/widgets/account_sub_header.dart';
+import 'package:simf_app/features/account/widgets/auth_chrome.dart';
+import 'package:simf_app/features/account/widgets/otp_code_boxes.dart';
+import 'package:simf_app/features/account/widgets/otp_sent_to.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../core/errors/api_error_l10n.dart';
-import '../../core/responsive/max_width_body.dart';
-import '../../core/widgets/simf_auth_sweep.dart';
-import 'widgets/account_sub_header.dart';
-import 'widgets/auth_chrome.dart';
-import 'widgets/otp_code_boxes.dart';
-import 'widgets/otp_sent_to.dart';
 
 /// Page 006 — التحقق بالبريد · Email verification. The KSA-Project Figma
 /// design (node 505:837 — D-364): navy surface with the decorative sweep, a

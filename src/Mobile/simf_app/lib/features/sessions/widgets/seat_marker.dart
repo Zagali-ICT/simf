@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The gold filled marker box on the my-seat card (frame 894:2779): a 44×44
 /// gold-bordered tile wrapping a small gold filled square.
 class SeatMarker extends StatelessWidget {
-  const SeatMarker();
+  const SeatMarker({super.key});
 
   @override
   Widget build(BuildContext context) {

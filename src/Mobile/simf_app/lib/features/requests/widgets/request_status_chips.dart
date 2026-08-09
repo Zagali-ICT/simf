@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/request_models.dart';
-import 'request_status_style.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/requests/data/request_models.dart';
+import 'package:simf_app/features/requests/widgets/request_status_style.dart';
 
 /// The horizontally-scrolling status filter chips — each populated status with
 /// its count (no "All" chip; السجل in the top row serves "all"). Figma chip row.

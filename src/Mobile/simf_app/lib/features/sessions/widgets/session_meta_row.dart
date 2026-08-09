@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/utils/gregorian_month_names.dart';
-import '../../../core/utils/weekday_names.dart';
-import '../data/session_models.dart';
-import 'meta_item.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/weekday_names.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/widgets/meta_item.dart';
 
 /// The icon + label meta row on the session header, with its time formatter.
 /// Interim local time format: `HH:MM` (device-local). Final locale-aware
@@ -21,7 +21,7 @@ String _time(DateTime local) {
 /// "09:00 — 10:30" start→end; the time segment sits left, the date segment right
 /// (matching the frame). The Arabic date still renders RTL within its own box.
 class SessionMetaRow extends StatelessWidget {
-  const SessionMetaRow({required this.detail, required this.isArabic});
+  const SessionMetaRow({required this.detail, required this.isArabic, super.key});
 
   final SessionDetail detail;
   final bool isArabic;
@@ -33,7 +33,6 @@ class SessionMetaRow extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Wrap(
-        alignment: WrapAlignment.start,
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: SimfTokens.space3,
         runSpacing: SimfTokens.space1,

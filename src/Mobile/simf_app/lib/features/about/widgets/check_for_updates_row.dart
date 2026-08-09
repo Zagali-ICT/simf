@@ -2,15 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
+import 'package:simf_app/app/widgets/simf_info_dialog.dart';
+import 'package:simf_app/core/external_link.dart';
+import 'package:simf_app/core/startup/app_update_checker.dart';
+import 'package:simf_app/core/startup/app_version_policy.dart';
+import 'package:simf_app/features/more/widgets/more_list.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/widgets/simf_confirm_dialog.dart';
-import '../../../app/widgets/simf_info_dialog.dart';
-import '../../../core/external_link.dart';
-import '../../../core/startup/app_update_checker.dart';
-import '../../../core/startup/app_version_policy.dart';
-import '../../more/widgets/more_list.dart';
 
 /// D-736 — the About-the-app "Check for updates" row: fetches the server
 /// version policy on demand and tells the user explicitly what it found —

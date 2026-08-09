@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_assets.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
 
 /// The SIMF compass/palm/anchor brand mark — a white mark on a transparent
 /// square, bundled once at 4x (544 px) so it renders crisp from the 44 px
@@ -8,7 +8,7 @@ import '../theme/app_assets.dart';
 /// 2026-07-13 to match the launcher icon (`icon/app_icon*.png`); the asset stays
 /// transparent (no navy field) so it composites onto the navy screens.
 class SimfLogo extends StatelessWidget {
-  const SimfLogo({super.key, required this.size});
+  const SimfLogo({required this.size, super.key});
 
   /// Rendered width and height in logical pixels (the mark is square).
   final double size;

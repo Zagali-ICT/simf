@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The full-width tier pill (Figma 1439:11898): beige-10% fill, beige hairline,
 /// radius-8, px-20/py-8, gap-8; the 16px medal glyph at the inline start (right
 /// in RTL, node 1439:11899) then the gold Bold-14 label (node 1439:11903).
 class TierPill extends StatelessWidget {
-  const TierPill({required this.label});
+  const TierPill({required this.label, super.key});
 
   final String label;
 

@@ -2,21 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/ai_summary/data/session_summary_models.dart';
+import 'package:simf_app/features/ai_summary/data/session_summary_repository.dart';
+import 'package:simf_app/features/ai_summary/widgets/summary_content_card.dart';
+import 'package:simf_app/features/ai_summary/widgets/summary_generate_card.dart';
+import 'package:simf_app/features/ai_summary/widgets/summary_session_card.dart';
+import 'package:simf_app/features/ai_summary/widgets/summary_video_card.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_repository.dart';
+import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import '../sessions/data/session_models.dart';
-import '../sessions/data/sessions_repository.dart';
-import '../sessions/widgets/session_filter_tabs.dart';
-import 'data/session_summary_models.dart';
-import 'data/session_summary_repository.dart';
-import 'widgets/summary_content_card.dart';
-import 'widgets/summary_generate_card.dart';
-import 'widgets/summary_session_card.dart';
-import 'widgets/summary_video_card.dart';
 
 /// The three summary tabs (Figma 1072:14647), in RTL display order
 /// (right→left): أبرز النقاط · التوصيات · المتحدثون. أبرز النقاط is the default.

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/qr_scan_view.dart';
+import 'package:simf_app/features/exhibitor/data/exhibitor_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/widgets/qr_scan_view.dart';
-import 'data/exhibitor_repository.dart';
 
 /// D-426 — مسح بطاقة زائر / scan a visitor's entry-badge QR (exhibitor "Other"
 /// lead capture). On a successful scan the visitor is captured server-side and

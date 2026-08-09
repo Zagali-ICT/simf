@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// Shown when the camera cannot start (permission denied / no camera / init
 /// failure). Points at system settings and keeps the manual path below usable,
 /// so the scanner is never a silent black dead-end.
 class CameraErrorCard extends StatelessWidget {
-  const CameraErrorCard({
-    required this.message,
-    required this.retryLabel,
-    required this.onRetry,
+  const CameraErrorCard({required this.message, required this.retryLabel, required this.onRetry, super.key,
   });
 
   final String message;

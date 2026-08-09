@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_forward_chevron.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_forward_chevron.dart';
 
 /// A titled group of nav rows (frames 1129:17… "معلومات الملتقى" etc.).
 class MoreSection extends StatelessWidget {

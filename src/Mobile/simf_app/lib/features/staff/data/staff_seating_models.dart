@@ -7,7 +7,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 
-import '../../sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 
 /// D-771 (owner 2026-07-26) — one resolved seat occupant, mirroring
 /// `SIMF.Contracts.Sessions.StaffSeatOccupant`. The staff seating desk renders a

@@ -1,12 +1,12 @@
-import '../../../app/localization/app_l10n.dart';
-import '../../../core/validation/email_validation.dart';
-import '../../../core/validation/required_validation.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/core/validation/email_validation.dart';
+import 'package:simf_app/core/validation/required_validation.dart';
 
 /// Field validators for the sign-in form.
 ///
 /// Pure functions of their input, so they read without the screen around them
 /// and are testable without pumping the form. Separate from
-/// `visitor_profile_validators.dart` on purpose: signing IN and registering a
+/// the visitor-profile validators on purpose: signing IN and registering a
 /// profile answer different questions about the same field.
 String? validateSignInEmail(String? value, AppL10n l10n) {
   final email = value?.trim() ?? '';

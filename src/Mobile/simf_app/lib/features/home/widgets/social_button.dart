@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/confirm_external_link.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/confirm_external_link.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 class SocialButton extends StatelessWidget {
-  const SocialButton({
-    required this.asset,
-    required this.url,
-    required this.label,
+  const SocialButton({required this.asset, required this.url, required this.label, super.key,
   });
 
   final String asset;

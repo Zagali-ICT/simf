@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/delegation_models.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/delegations/data/delegation_models.dart';
 
 /// One selectable delegation row in the picker — flag + localized country name +
 /// member count, with a selected (gold) outline. Mirrors [SpeakerOptionTile]'s
 /// role for the speaker picker.
 class DelegationOptionTile extends StatelessWidget {
-  const DelegationOptionTile({
-    required this.delegation,
-    required this.isArabic,
-    required this.selected,
-    required this.onTap,
+  const DelegationOptionTile({required this.delegation, required this.isArabic, required this.selected, required this.onTap, super.key,
   });
 
   final DelegationItem delegation;

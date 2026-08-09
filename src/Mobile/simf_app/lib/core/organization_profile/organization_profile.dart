@@ -1,10 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/net/core_endpoints.dart';
+import 'package:simf_app/core/utils/event_date_range.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../net/core_endpoints.dart';
-import '../utils/event_date_range.dart';
 
 /// Coerce a decoded JSON value into a `Map<String, dynamic>` (empty when
 /// absent).

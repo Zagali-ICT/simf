@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../core/utils/hex_color.dart';
-import '../../myarea/data/myarea_models.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/hex_color.dart';
+import 'package:simf_app/features/myarea/data/myarea_models.dart';
 
 /// The issued badge card (frame node tree under 758:1469): the gold-bordered
 /// white card holding the QR, the "امسح للدخول" hint and the identity strip
@@ -56,7 +56,7 @@ class BadgeQrCard extends StatelessWidget {
         color: SimfTokens.surface,
         borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
         // Frame 758:1469 — the gold card edge is a thin 1-px stroke.
-        border: Border.all(color: SimfTokens.accent, width: 1),
+        border: Border.all(color: SimfTokens.accent),
       ),
       child: Column(
         children: <Widget>[
@@ -77,23 +77,7 @@ class BadgeQrCard extends StatelessWidget {
                     : maxByHeight;
                 return QrImageView(
                   data: qrId,
-                  version: QrVersions.auto,
                   size: qrSize,
-                  gapless: true,
-                  // Standard square QR. Do NOT re-add the round "circle" style
-                  // (old D-423): round eyes + dot modules read on a phone's ML
-                  // camera but the in-app ZXing reader (flutter_zxing) can NOT
-                  // decode them, so every in-app badge scan (sign-in / gate /
-                  // exhibitor) failed. Owner chose plain square (2026-07-11);
-                  // content/data is unchanged.
-                  eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.square,
-                    color: SimfTokens.black,
-                  ),
-                  dataModuleStyle: const QrDataModuleStyle(
-                    dataModuleShape: QrDataModuleShape.square,
-                    color: SimfTokens.black,
-                  ),
                 );
               },
             ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_logo_image.dart';
-import '../../../core/net/asset_urls.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo_image.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
 
 /// The selected booth's logo badge — its own BoothLogo (D-357) shown whole via
 /// the shared [SimfLogoImage], falling back to the booth NAME on the navy tile
@@ -14,10 +14,7 @@ import '../../../core/net/asset_urls.dart';
 const double _badgeSize = 60;
 
 class VenueMapLogoBadge extends StatelessWidget {
-  const VenueMapLogoBadge({
-    required this.boothId,
-    required this.baseUrl,
-    required this.name,
+  const VenueMapLogoBadge({required this.boothId, required this.baseUrl, required this.name, super.key,
   });
 
   final String boothId;

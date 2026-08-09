@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 class QuickReplyChip extends StatelessWidget {
-  const QuickReplyChip({required this.label, required this.onTap});
+  const QuickReplyChip({required this.label, required this.onTap, super.key});
 
   final String label;
   final VoidCallback onTap;

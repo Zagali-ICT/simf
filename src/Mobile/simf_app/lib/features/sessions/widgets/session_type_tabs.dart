@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/session_models.dart';
-import 'type_tab.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/widgets/type_tab.dart';
 
 /// The three type tabs (frame node 883:2320): الكل (all) / جلسات (sessions) /
 /// ورش العمل (workshops). The active tab is solid gold; the rest are bordered

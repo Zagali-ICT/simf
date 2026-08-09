@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A navy chip with a leading accent glyph + a beige message, shown above the
 /// rating form. Two call sites: the D-713 "watched at" line (event icon) and

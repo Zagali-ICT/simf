@@ -1,6 +1,5 @@
+import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
 
 /// Maps an [ApiFailure] to a user-safe message in the active language.
 ///

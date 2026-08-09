@@ -4,7 +4,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/account/data/sign_in_validators.dart';
 
 void main() {
-  const AppL10n en = AppL10n(Locale('en'));
+  const en = AppL10n(Locale('en'));
 
   group('email', () {
     test('is required', () {
@@ -32,7 +32,7 @@ void main() {
     // value. Tightening this to the sign-up rules would lock out existing
     // users, so this test exists to stop that "consistency" fix.
     test('does NOT apply the sign-up password policy', () {
-      for (final String weak in <String>['a', 'password', '12345678']) {
+      for (final weak in <String>['a', 'password', '12345678']) {
         expect(validateSignInPassword(weak, en), isNull, reason: weak);
       }
     });

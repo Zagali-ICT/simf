@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import 'widgets/forum_guide_cards.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/forum_guide/widgets/forum_guide_cards.dart';
 
 /// Page 200 — دليل الملتقى · Forum guide (`/forum-guide`, public). Pixel-parity
 /// to KSA Figma frame **1388:7493**: the navy [SimfPageShell] shell, a gold intro

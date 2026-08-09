@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_bottom_nav.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import 'discover_saudi_row.dart';
-import 'guest_banner.dart';
-import 'home_icons.dart';
-import 'pending_approval_card.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/home/widgets/discover_saudi_row.dart';
+import 'package:simf_app/features/home/widgets/guest_banner.dart';
+import 'package:simf_app/features/home/widgets/home_icons.dart';
+import 'package:simf_app/features/home/widgets/pending_approval_card.dart';
 
 /// Guest / unapproved layout (frame 758:2910 — "الرئيسية • ضيف", 2×2 tiles):
 /// shown to a not-signed-in guest AND a signed-in but unapproved account.

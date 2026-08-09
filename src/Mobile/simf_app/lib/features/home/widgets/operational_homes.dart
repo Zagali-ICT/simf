@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_bottom_nav.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../moderation/data/moderation_models.dart';
-import '../../moderation/data/moderation_repository.dart';
-import '../../moderation/widgets/moderated_session_tile.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/moderation/data/moderation_models.dart';
+import 'package:simf_app/features/moderation/data/moderation_repository.dart';
+import 'package:simf_app/features/moderation/widgets/moderated_session_tile.dart';
 
 /// Staff (gate) home — the two gate operations: scan a badge + register a
 /// walk-in visitor. The attendee experience is intentionally absent (D-519).

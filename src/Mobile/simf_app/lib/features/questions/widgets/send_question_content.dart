@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/validation/field_limits.dart';
-import '../../../core/widgets/simf_radio_pill.dart';
-import 'numbered_line.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/validation/field_limits.dart';
+import 'package:simf_app/core/widgets/simf_radio_pill.dart';
+import 'package:simf_app/features/questions/widgets/numbered_line.dart';
 
 /// The frame 943:3750 footnote — a single centred gold bullet, the bold gold
 /// "ملاحظة" word, then the muted-beige "reviewed before air" body.
@@ -147,7 +147,6 @@ class SendQuestionComposer extends StatelessWidget {
             maxLength: FieldLimits.sessionQuestion,
             maxLines: null,
             expands: true,
-            textAlign: TextAlign.start,
             textAlignVertical: TextAlignVertical.top,
             textInputAction: TextInputAction.newline,
             style: SimfTokens.bodyWhiteSm,

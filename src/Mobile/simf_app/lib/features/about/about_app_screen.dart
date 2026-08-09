@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/organization_profile/organization_profile.dart';
-import '../../core/startup/app_version_policy.dart';
-import '../more/widgets/more_list.dart';
-import 'widgets/about_cards.dart';
-import 'widgets/check_for_updates_row.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/core/startup/app_version_policy.dart';
+import 'package:simf_app/features/about/widgets/about_cards.dart';
+import 'package:simf_app/features/about/widgets/check_for_updates_row.dart';
+import 'package:simf_app/features/more/widgets/more_list.dart';
 
 /// About the app — عن التطبيق · route: [RouteNames.aboutApp]
 /// Purpose: the APP's own about page — version, release date, organizer, a

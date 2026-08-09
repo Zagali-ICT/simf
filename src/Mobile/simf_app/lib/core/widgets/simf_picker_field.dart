@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/tokens.dart';
-import 'simf_field_style.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/widgets/simf_field_style.dart';
 
 /// A tappable "open the searchable picker" field — the shared chrome (beige
 /// field + down chevron) every lookup field uses (nationality, birth-region,

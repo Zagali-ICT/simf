@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'star_row.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/feedback/widgets/star_row.dart';
 
 /// One per-element row: the beige-hairline 48-high box with the element name at
 /// the inline start and the small star bar at the inline end.

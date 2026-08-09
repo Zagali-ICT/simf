@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../core/utils/gregorian_month_names.dart';
-import '../../../core/utils/saudi_time.dart';
-import '../data/notification_models.dart';
-import 'notification_card.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/notifications/data/notification_models.dart';
+import 'package:simf_app/features/notifications/widgets/notification_card.dart';
 
 /// The day-grouped list: a "اليوم / أمس / date" header per run of same-day
 /// items, then the cards for that day.

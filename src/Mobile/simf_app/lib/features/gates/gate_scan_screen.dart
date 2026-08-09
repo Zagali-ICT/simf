@@ -3,18 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_scanner_body.dart';
+import 'package:simf_app/core/utils/uuid_v4.dart';
+import 'package:simf_app/features/gates/data/gate_models.dart';
+import 'package:simf_app/features/gates/data/gates_repository.dart';
+import 'package:simf_app/features/gates/widgets/gate_result_view.dart';
+import 'package:simf_app/features/gates/widgets/gate_setup_view.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../app/widgets/simf_scanner_body.dart';
-import '../../core/utils/uuid_v4.dart';
-import 'data/gate_models.dart';
-import 'data/gates_repository.dart';
-import 'widgets/gate_result_view.dart';
-import 'widgets/gate_setup_view.dart';
 
 /// Staff gate-operator console — Figma 758:4651 (setup: pick gate + movement),
 /// 758:4819 (ممنوع / denied), 758:4886 (مسموح / allowed), D-406 / D-509.

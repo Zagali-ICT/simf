@@ -2,16 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/contacts/widgets/contact_card.dart';
+import 'package:simf_app/features/exhibitor/data/exhibitor_models.dart';
+import 'package:simf_app/features/exhibitor/data/exhibitor_repository.dart';
+import 'package:simf_app/features/exhibitor/widgets/captured_visitor_sheet.dart';
+import 'package:simf_app/features/exhibitor/widgets/exhibitor_centered.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../contacts/widgets/contact_card.dart';
-import 'data/exhibitor_models.dart';
-import 'data/exhibitor_repository.dart';
-import 'widgets/captured_visitor_sheet.dart';
-import 'widgets/exhibitor_centered.dart';
 
 /// D-426 — زوار جناحي / My Booth Visitors. The exhibitor's ("Other" profile
 /// type) captured visitors: everyone they scanned at their booth, newest first,

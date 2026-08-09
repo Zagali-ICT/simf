@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../data/delegation_models.dart';
-import 'flag_box.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/delegations/data/delegation_models.dart';
+import 'package:simf_app/features/delegations/widgets/flag_box.dart';
 
 /// One delegation card (Figma 1426:10838): the country identity row (flag +
 /// bilingual name). The head-of-delegation box and the member-count / date-range

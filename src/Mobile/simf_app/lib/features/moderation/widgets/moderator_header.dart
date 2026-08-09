@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'role_pill.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/moderation/widgets/role_pill.dart';
 
 /// The moderator desk navy header (Figma 1461:12565): back button (left),
 /// centred RTL title, and the gold role pill (right). Forced LTR so the back

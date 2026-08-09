@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 class EditionPill extends StatelessWidget {
-  const EditionPill({
-    required this.label,
-    required this.active,
-    required this.onTap,
+  const EditionPill({required this.label, required this.active, required this.onTap, super.key,
   });
 
   final String label;

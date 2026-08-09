@@ -5,44 +5,41 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_form_scaffold.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/errors/api_error_l10n.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/validation/phone_validation.dart';
+import 'package:simf_app/core/validation/plate_validation.dart';
+import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
+import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/account/data/region_models.dart';
+import 'package:simf_app/features/account/data/region_repository.dart';
+import 'package:simf_app/features/account/saudi_regions.dart';
+import 'package:simf_app/features/account/widgets/attachment_field.dart';
+import 'package:simf_app/features/account/widgets/beige_tabs.dart';
+import 'package:simf_app/features/account/widgets/date_of_birth_field.dart';
+import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
+import 'package:simf_app/features/account/widgets/organisation_typeahead_field.dart';
+import 'package:simf_app/features/account/widgets/place_of_birth_field.dart';
+import 'package:simf_app/features/account/widgets/plate_number_field.dart';
+import 'package:simf_app/features/account/widgets/profile_type_field.dart';
+import 'package:simf_app/features/account/widgets/sign_up_visitor_header_avatar.dart';
+import 'package:simf_app/features/account/widgets/terms_and_next_buttons.dart';
+import 'package:simf_app/features/myarea/identity_verification_screen.dart' show CapturedSelfie;
+import 'package:simf_app/features/visitor_profile/data/visitor_profile_completeness.dart';
+import 'package:simf_app/features/visitor_profile/data/visitor_profile_form_state.dart';
+import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
+import 'package:simf_app/features/visitor_profile/widgets/contact_section.dart';
+import 'package:simf_app/features/visitor_profile/widgets/document_section.dart';
+import 'package:simf_app/features/visitor_profile/widgets/identity_section.dart';
+import 'package:simf_app/features/visitor_profile/widgets/nationality_section.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_form_scaffold.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/errors/api_error_l10n.dart';
-import '../../core/motion/motion_durations.dart';
-import '../../core/responsive/max_width_body.dart';
-import '../../core/validation/digit_normalization.dart';
-import '../../core/validation/field_limits.dart';
-import '../../core/validation/name_validation.dart';
-import '../../core/validation/phone_validation.dart';
-import '../../core/validation/plate_validation.dart';
-import '../../core/widgets/simf_auth_sweep.dart';
-import '../../core/widgets/simf_field_label.dart';
-import '../../core/widgets/simf_labeled_text_field.dart';
-import '../../core/widgets/simf_picker_field.dart';
-import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
-import 'data/profile_models.dart';
-import 'data/profile_repository.dart';
-import 'data/region_models.dart';
-import 'data/region_repository.dart';
-import 'data/visitor_profile_validators.dart';
-import 'saudi_regions.dart';
-import 'widgets/attachment_field.dart';
-import 'widgets/beige_tabs.dart';
-import 'widgets/date_of_birth_field.dart';
-import 'widgets/gender_pills_field.dart';
-import 'widgets/lookup_search_sheet.dart';
-import 'widgets/mobile_field.dart';
-import 'widgets/organisation_typeahead_field.dart';
-import 'widgets/place_of_birth_field.dart';
-import 'widgets/plate_number_field.dart';
-import 'widgets/profile_type_field.dart';
-import 'widgets/sign_up_visitor_header_avatar.dart';
-import 'widgets/terms_and_next_buttons.dart';
 
 /// Page 007 — إنشاء ملف شخصى · Sign up — profile **data**. The KSA-Project
 /// Figma design (node 168:2972 — D-368): the login-style navy header (logo +
@@ -78,6 +75,11 @@ class SignUpVisitorScreen extends ConsumerStatefulWidget {
 class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  /// The fields both registration surfaces share (SIMF-RSD-001 step 2). The
+  /// text controllers below stay here: a controller owns its own value and
+  /// must be disposed by whoever creates it.
+  final VisitorProfileFormState _form = VisitorProfileFormState();
+
   final TextEditingController _arabicName = TextEditingController();
   final TextEditingController _englishName = TextEditingController();
   final TextEditingController _jobTitle = TextEditingController();
@@ -110,21 +112,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   bool _isVisitorType = true;
   // D-373 — Saudi-ness derives from the nationality pick (the explicit
   // switch was removed): SA → national-ID field, else Iqama/Passport.
-  bool get _isSaudi => _nationalityCode == 'SA';
-  VisitorDocType _docType = VisitorDocType.iqama;
+  bool get _isSaudi => _form.isSaudi;
   DateTime? _dateOfBirth;
-  AppGender _gender = AppGender.unspecified;
-  String? _nationalityCode;
-  String? _profileTypeId;
-  String? _organisationId;
   String? _organisationLabel;
 
   /// Any interest ids already on the profile (pre-fill). Carried forward in the
   /// draft so the interests screen (Page 007‑01) pre-selects them on re-entry.
   List<String> _existingInterestIds = const <String>[];
 
-  List<CountryItem> _countries = const <CountryItem>[];
-  List<ProfileTypeItem> _profileTypes = const <ProfileTypeItem>[];
   List<OrganisationItem> _organisationResults = const <OrganisationItem>[];
 
   // D-375 — API-fed pickers always surface their fetch state (owner rule:
@@ -153,7 +148,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   bool _loading = true;
   String? _loadError;
-  bool _triedSubmit = false;
   // D-684 — the profile is saved on THIS step now (profile-first), so any server
   // error (e.g. the name) surfaces here, not two screens later on interests.
   bool _saving = false;
@@ -186,6 +180,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _plate.dispose();
     _plateDigits.dispose();
     _organisationSearch.dispose();
+    _form.dispose();
     super.dispose();
   }
 
@@ -202,14 +197,16 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         repo.getMyProfile(),
         repo.getCountries(),
         repo.getProfileTypes(isVisitor: _isVisitorType),
-        repo.searchOrganisations(top: 20),
+        repo.searchOrganisations(),
       ]);
       if (!mounted) {
         return;
       }
       setState(() {
-        _countries = results[1] as List<CountryItem>;
-        _profileTypes = results[2] as List<ProfileTypeItem>;
+        _form.setLookups(
+          countries: results[1] as List<CountryItem>,
+          profileTypes: results[2] as List<ProfileTypeItem>,
+        );
         _organisationResults = results[3] as List<OrganisationItem>;
         _applyProfile(results[0] as UserProfileResponse);
         _lockVisitorProfileType();
@@ -239,10 +236,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _birthRegionCode = regionByName(profile.placeOfBirth)?.code;
     _nationalId.text = profile.nationalId ?? '';
     if ((profile.iqamaNumber ?? '').isNotEmpty) {
-      _docType = VisitorDocType.iqama;
+      _form.docType = VisitorDocType.iqama;
       _documentNumber.text = profile.iqamaNumber!;
     } else if ((profile.passportNumber ?? '').isNotEmpty) {
-      _docType = VisitorDocType.passport;
+      _form.docType = VisitorDocType.passport;
       _documentNumber.text = profile.passportNumber!;
     }
     _saudiMobile.text = profile.saudiMobile ?? '';
@@ -250,21 +247,21 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _setPlateFromCode(profile.plateNumber);
     // D-373 defaults — Male and Saudi Arabia pre-selected on a first-time
     // (empty) profile; a saved profile keeps its own values.
-    _gender = profile.gender == AppGender.unspecified
+    _form.gender = profile.gender == AppGender.unspecified
         ? AppGender.male
         : profile.gender;
     _hasExistingIdImage = profile.hasIdImage;
     _hasExistingAvatar = profile.hasAvatar;
 
     final code = profile.nationalityCode;
-    _nationalityCode = _countries.any((c) => c.code == code)
+    _form.nationalityCode = _form.countries.any((c) => c.code == code)
         ? code
-        : (_countries.any((c) => c.code == 'SA') ? 'SA' : null);
+        : (_form.countries.any((c) => c.code == 'SA') ? 'SA' : null);
 
     final typeId = profile.profileTypeId;
-    _profileTypeId = _profileTypes.any((t) => t.id == typeId) ? typeId : null;
+    _form.profileTypeId = _form.profileTypes.any((t) => t.id == typeId) ? typeId : null;
 
-    _organisationId = profile.organisationId;
+    _form.organisationId = profile.organisationId;
     _organisationLabel = null;
 
     if ((profile.dateOfBirth ?? '').isNotEmpty) {
@@ -288,13 +285,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return;
     }
     final normal =
-        _profileTypes.where((t) => t.name == 'Normal').toList();
+        _form.profileTypes.where((t) => t.name == 'Normal').toList();
     if (normal.isNotEmpty) {
-      _profileTypeId = normal.first.id;
-    } else if (_profileTypes.length == 1) {
-      _profileTypeId = _profileTypes.first.id;
+      _form.profileTypeId = normal.first.id;
+    } else if (_form.profileTypes.length == 1) {
+      _form.profileTypeId = _form.profileTypes.first.id;
     } else {
-      _profileTypeId = null;
+      _form.profileTypeId = null;
     }
   }
 
@@ -307,8 +304,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
     setState(() {
       _isVisitorType = isVisitor;
-      _profileTypeId = null;
-      _profileTypes = const <ProfileTypeItem>[];
+      _form.profileTypeId = null;
+      _form.setLookups(profileTypes: const <ProfileTypeItem>[]);
     });
     await _fetchProfileTypes();
   }
@@ -328,7 +325,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         return;
       }
       setState(() {
-        _profileTypes = types;
+        _form.setLookups(profileTypes: types);
         _profileTypesLoading = false;
         _lockVisitorProfileType();
       });
@@ -363,7 +360,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     });
     final repo = ref.read(profileRepositoryProvider);
     try {
-      final results = await repo.searchOrganisations(search: value, top: 20);
+      final results = await repo.searchOrganisations(search: value);
       if (!mounted) {
         return;
       }
@@ -384,7 +381,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   void _selectOrganisation(OrganisationItem organisation, AppL10n l10n) {
     setState(() {
-      _organisationId = organisation.id;
+      _form.organisationId = organisation.id;
       _organisationLabel = l10n.isArabic
           ? organisation.nameAr
           : (organisation.nameEn ?? organisation.nameAr);
@@ -394,7 +391,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   void _clearOrganisation() {
     setState(() {
-      _organisationId = null;
+      _form.organisationId = null;
       _organisationLabel = null;
       _organisationSearch.clear();
     });
@@ -479,34 +476,37 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     if (_saving) {
       return;
     }
-    setState(() => _triedSubmit = true);
+    setState(() => _form.triedSubmit = true);
     final formValid = _formKey.currentState?.validate() ?? false;
-    final dateOfBirthValid = _dateOfBirth != null;
-    // B3 — D-221 (الجهة): organisation is required (server enforces it too).
-    final organisationValid = _organisationId != null;
-    // D-373 — nationality drives the document section and is required server-
-    // side; the picker is not a FormField, so its inline error (line ~985)
-    // must also gate Next, otherwise an empty code reaches the server (400).
-    final nationalityValid = _nationalityCode != null;
-    // D-723 — place of birth is required. Non-Saudi uses the free-text field
-    // (caught by the form validator); Saudi uses the region picker (not a
-    // FormField), so its required gate lives here.
-    final placeOfBirthValid = !_isSaudi || _birthRegionCode != null;
-    // D-471 — the profile-type picker is now a searchable field, not a FormField,
-    // so its required gate (only when the "Other" picker is actually shown — never
-    // when Visitor-locked, loading, failed or empty, per L-6) lives here.
-    final profileTypePickerShown = !_isVisitorType &&
-        !_profileTypesLoading &&
-        !_profileTypesFailed &&
-        _profileTypes.isNotEmpty;
-    final profileTypeValid = !profileTypePickerShown || _profileTypeId != null;
-    // Two-photo split — the ID DOCUMENT is mandatory for every registrant; the
-    // FACE photo is mandatory for men and optional for women. Either a fresh
-    // pick or an already-stored image satisfies each.
-    final idImageValid = _idImageBytes != null || _hasExistingIdImage;
-    final faceImageValid = _gender != AppGender.male ||
-        _faceImageBytes != null ||
-        _hasExistingAvatar;
+    // The cross-field gates the Form itself cannot express: every control below
+    // is a picker, a segmented tab or an image slot, not a FormField. The rules
+    // and the decisions behind them live in VisitorProfileCompleteness.
+    final dateOfBirthValid =
+        VisitorProfileCompleteness.dateOfBirth(_dateOfBirth);
+    final organisationValid =
+        VisitorProfileCompleteness.organisation(_form.organisationId);
+    final nationalityValid =
+        VisitorProfileCompleteness.nationality(_form.nationalityCode);
+    final placeOfBirthValid = VisitorProfileCompleteness.placeOfBirth(
+      isSaudi: _isSaudi,
+      birthRegionCode: _birthRegionCode,
+    );
+    final profileTypeValid = VisitorProfileCompleteness.profileType(
+      isVisitorType: _isVisitorType,
+      loading: _profileTypesLoading,
+      failed: _profileTypesFailed,
+      hasItems: _form.profileTypes.isNotEmpty,
+      profileTypeId: _form.profileTypeId,
+    );
+    final idImageValid = VisitorProfileCompleteness.idImage(
+      hasPickedImage: _idImageBytes != null,
+      hasStoredImage: _hasExistingIdImage,
+    );
+    final faceImageValid = VisitorProfileCompleteness.facePhoto(
+      gender: _form.gender,
+      hasPickedImage: _faceImageBytes != null,
+      hasStoredImage: _hasExistingAvatar,
+    );
     if (!formValid ||
         !dateOfBirthValid ||
         !organisationValid ||
@@ -554,7 +554,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           ref.read(avatarBustProvider.notifier).state++;
         } on ApiFailure {
           if (!mounted) return;
-          if (_gender == AppGender.male) {
+          if (_form.gender == AppGender.male) {
             setState(() => _saveError = l10n.facePhotoUploadFailed);
             return;
           }
@@ -588,21 +588,21 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   UpsertUserProfileRequest _buildRequest() {
     final isSaudi = _isSaudi;
     return UpsertUserProfileRequest(
-      profileTypeId: _profileTypeId,
+      profileTypeId: _form.profileTypeId,
       interestIds: _existingInterestIds,
       arabicName: _arabicName.text.trim(),
       englishName: _englishName.text.trim(),
       jobTitle: _emptyToNull(_jobTitle.text),
       jobTitleArabic: _emptyToNull(_jobTitleArabic.text),
-      nationalityCode: _nationalityCode ?? '',
+      nationalityCode: _form.nationalityCode ?? '',
       dateOfBirth: _dateOfBirth == null ? null : _formatDate(_dateOfBirth!),
       placeOfBirth: _placeOfBirth.text.trim(),
       isSaudi: isSaudi,
       nationalId: isSaudi ? _emptyToNull(_nationalId.text) : null,
-      iqamaNumber: !isSaudi && _docType == VisitorDocType.iqama
+      iqamaNumber: !isSaudi && _form.docType == VisitorDocType.iqama
           ? _emptyToNull(_documentNumber.text)
           : null,
-      passportNumber: !isSaudi && _docType == VisitorDocType.passport
+      passportNumber: !isSaudi && _form.docType == VisitorDocType.passport
           ? _emptyToNull(_documentNumber.text)
           : null,
       // Submit the canonical phone — Arabic digits folded, a leading `00`
@@ -613,8 +613,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           ? _emptyToNull(normalizePhone(_internationalMobile.text))
           : null,
       plateNumber: _emptyToNull(_plate.text),
-      organisationId: _organisationId,
-      gender: _gender,
+      organisationId: _form.organisationId,
+      gender: _form.gender,
       showInMeetLikeYou: _showInMeetLikeYou,
     );
   }
@@ -712,91 +712,53 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   const SizedBox(height: SimfTokens.space6),
                   _buildProfileTypeField(l10n),
                   const SizedBox(height: SimfTokens.space4),
-                  SimfLabeledTextField(
-                    label: l10n.arabicNameLabel,
-                    controller: _arabicName,
-                    maxLength: FieldLimits.email,
-                    // Arabic letters + spaces only — block other scripts at
-                    // the keystroke so the field can never hold mixed text.
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(arabicNameCharacters),
-                    ],
-                    validator: (v) => validateArabicName(v, l10n),
+                  IdentitySection(
+                    l10n: l10n,
+                    arabicName: _arabicName,
+                    englishName: _englishName,
+                    jobTitle: _jobTitle,
+                    jobTitleArabic: _jobTitleArabic,
+                    gender: _form.gender,
+                    onGenderChanged: (value) =>
+                        setState(() => _form.gender = value),
+                    organisationField: _buildOrganisationField(l10n),
                   ),
                   const SizedBox(height: SimfTokens.space4),
-                  SimfLabeledTextField(
-                    label: l10n.englishNameLabel,
-                    controller: _englishName,
-                    maxLength: FieldLimits.email,
-                    textDirection: TextDirection.ltr,
-                    // Latin letters + spaces only.
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
-                    ],
-                    validator: (v) => validateEnglishName(v, l10n),
+                  NationalitySection(
+                    l10n: l10n,
+                    countries: _form.countries,
+                    selectedCode: _form.nationalityCode,
+                    showError:
+                        _form.triedSubmit && _form.nationalityCode == null,
+                    onTap: () => unawaited(_pickNationality(l10n)),
                   ),
-                  const SizedBox(height: SimfTokens.space4),
-                  SimfFieldLabel(l10n.genderLabel),
-                  const SizedBox(height: SimfTokens.space2),
-                  GenderPillsField(
-                    gender: _gender,
-                    onChanged: (value) =>
-                        setState(() => _gender = value),
-                  ),
-                  const SizedBox(height: SimfTokens.space4),
-                  _buildOrganisationField(l10n),
-                  const SizedBox(height: SimfTokens.space4),
-                  SimfLabeledTextField(
-                    label: l10n.jobTitleLabel,
-                    controller: _jobTitle,
-                    maxLength: FieldLimits.fullName,
-                    textDirection: TextDirection.ltr,
-                    // Latin letters + spaces only — mirror the English name
-                    // field so the English job title can never hold Arabic.
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
-                    ],
-                    // D-723 — required (only the plate number stays optional).
-                    validator: (String? v) => (v == null || v.trim().isEmpty)
-                        ? l10n.jobTitleRequired
-                        : null,
-                  ),
-                  const SizedBox(height: SimfTokens.space4),
-                  // Optional Arabic job title — the backend + CP already
-                  // carry UserProfile.JobTitleArabic; captured here too
-                  // (server validates only when present).
-                  SimfLabeledTextField(
-                    label: l10n.jobTitleArabicLabel,
-                    controller: _jobTitleArabic,
-                    maxLength: FieldLimits.fullName,
-                    textDirection: TextDirection.rtl,
-                    // Arabic letters + spaces only — mirror the Arabic name
-                    // field so the Arabic job title can never hold Latin text.
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(arabicNameCharacters),
-                    ],
-                  ),
-                  const SizedBox(height: SimfTokens.space4),
-                  _buildNationalityField(l10n),
                   const SizedBox(height: SimfTokens.space4),
                   // D-373 — the Saudi switch is gone: the nationality pick
                   // drives national-ID vs iqama/passport (SA → national ID).
-                  ..._buildDocumentFields(l10n),
+                  DocumentSection(
+                    l10n: l10n,
+                    isSaudi: _isSaudi,
+                    docType: _form.docType,
+                    nationalId: _nationalId,
+                    documentNumber: _documentNumber,
+                    onDocTypeChanged: (value) => setState(() {
+                      _form.docType = value;
+                      _documentNumber.clear();
+                    }),
+                  ),
                   const SizedBox(height: SimfTokens.space4),
-                  MobileField(
-                    saudi: _isSaudi,
-                    controller:
-                        _isSaudi ? _saudiMobile : _internationalMobile,
-                    validator: _isSaudi
-                        ? (v) => validateSaudiMobile(v, l10n)
-                        : (v) => validateInternationalMobile(v, l10n),
+                  ContactSection(
+                    l10n: l10n,
+                    isSaudi: _isSaudi,
+                    saudiMobile: _saudiMobile,
+                    internationalMobile: _internationalMobile,
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   DateOfBirthField(
                     displayValue: _dateOfBirth == null
                         ? '—'
                         : _formatDateDisplay(_dateOfBirth!),
-                    hasError: _triedSubmit && _dateOfBirth == null,
+                    hasError: _form.triedSubmit && _dateOfBirth == null,
                     onTap: () => unawaited(_pickDateOfBirth()),
                   ),
                   const SizedBox(height: SimfTokens.space4),
@@ -874,11 +836,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       l10n: l10n,
       loading: _profileTypesLoading,
       failed: _profileTypesFailed,
-      items: _profileTypes,
-      selectedId: _profileTypeId,
-      showError: _triedSubmit && _profileTypeId == null,
+      items: _form.profileTypes,
+      selectedId: _form.profileTypeId,
+      showError: _form.triedSubmit && _form.profileTypeId == null,
       onRetry: () => unawaited(_fetchProfileTypes()),
-      onChanged: (String? id) => setState(() => _profileTypeId = id),
+      onChanged: (String? id) => setState(() => _form.profileTypeId = id),
     );
   }
 
@@ -903,41 +865,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
-  /// D-373 — the 57-country list gets the shared searchable picker. Switching
-  /// nationality also drives the document section (SA → national ID, else
-  /// Iqama/Passport).
-  Widget _buildNationalityField(AppL10n l10n) {
-    final selected = _countries
-        .where((c) => c.code == _nationalityCode)
-        .toList();
-    final hasValue = selected.isNotEmpty;
-    final label = hasValue
-        ? (l10n.isArabic ? selected.first.nameArabic : selected.first.name)
-        : l10n.nationalityLabel;
-    final showError = _triedSubmit && _nationalityCode == null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfFieldLabel(l10n.nationalityLabel),
-        const SizedBox(height: SimfTokens.space2),
-        SimfPickerField(
-          fieldKey: 'nationalityPicker',
-          displayText: label,
-          isPlaceholder: !hasValue,
-          onTap: () => unawaited(_pickNationality(l10n)),
-          errorText: showError ? l10n.nationalityRequired : null,
-        ),
-      ],
-    );
-  }
-
   /// Opens the searchable country sheet and applies the pick. Clearing the
   /// stale national-id/iqama input when the Saudi-ness flips keeps the
   /// derived document section consistent (D-373).
   Future<void> _pickNationality(AppL10n l10n) async {
     final pickedCode = await _openLookupSheet(
       options: <PickerOption>[
-        for (final CountryItem c in _countries)
+        for (final CountryItem c in _form.countries)
           PickerOption(
             value: c.code,
             label: l10n.isArabic ? c.nameArabic : c.name,
@@ -952,7 +886,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
     setState(() {
       final wasSaudi = _isSaudi;
-      _nationalityCode = pickedCode;
+      _form.nationalityCode = pickedCode;
       if (wasSaudi != _isSaudi) {
         _nationalId.clear();
         _documentNumber.clear();
@@ -979,7 +913,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   List<_BirthRegionOption> _activeBirthRegions() {
     // ref.read (not watch): this runs from both build helpers and the picker's
     // async handler. build() owns the watch so the field still rebuilds on data.
-    final List<RegionItem>? api =
+    final api =
         ref.read(regionsProvider).asData?.value;
     if (api != null && api.isNotEmpty) {
       return <_BirthRegionOption>[
@@ -1003,7 +937,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     if (code == null) {
       return null;
     }
-    for (final _BirthRegionOption r in _activeBirthRegions()) {
+    for (final r in _activeBirthRegions()) {
       if (r.code == code) {
         return r;
       }
@@ -1038,50 +972,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     });
   }
 
-  List<Widget> _buildDocumentFields(AppL10n l10n) {
-    if (_isSaudi) {
-      return <Widget>[
-        SimfLabeledTextField(
-          label: l10n.nationalIdLabel,
-          controller: _nationalId,
-          keyboardType: TextInputType.number,
-          maxLength: FieldLimits.nationalId,
-          // Accept an id typed in Arabic-Indic digits — fold to Western so it
-          // validates and submits as `1XXXXXXXXX` (owner 2026-07-06).
-          inputFormatters: <TextInputFormatter>[
-            const WesternDigitsFormatter(),
-            FilteringTextInputFormatter.digitsOnly,
-          ],
-          validator: (v) => validateNationalId(v, l10n),
-        ),
-      ];
-    }
-    return <Widget>[
-      SimfFieldLabel(l10n.documentTypeLabel),
-      const SizedBox(height: SimfTokens.space2),
-      BeigeTabs(
-        options: <String>[l10n.iqamaSegment, l10n.passportSegment],
-        selectedIndex: _docType == VisitorDocType.iqama ? 0 : 1,
-        onChanged: (index) => setState(() {
-          _docType = index == 0 ? VisitorDocType.iqama : VisitorDocType.passport;
-          _documentNumber.clear();
-        }),
-      ),
-      const SizedBox(height: SimfTokens.space4),
-      SimfLabeledTextField(
-        label: l10n.documentNumberLabel,
-        controller: _documentNumber,
-        maxLength: _docType == VisitorDocType.iqama ? 10 : 9,
-        // Fold Arabic-Indic digits to Western (letters pass for passports).
-        inputFormatters: const <TextInputFormatter>[WesternDigitsFormatter()],
-        validator: (v) => validateDocumentNumber(v, l10n, _docType),
-      ),
-    ];
-  }
-
   Widget _buildPlaceOfBirthField(AppL10n l10n) {
-    final bool isArabic = l10n.isArabic;
-    final String? regionName = _birthRegionCode == null
+    final isArabic = l10n.isArabic;
+    final regionName = _birthRegionCode == null
         ? null
         : _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic);
     // Keep the stored name in the active locale while a region is selected, so a
@@ -1095,7 +988,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       controller: _placeOfBirth,
       regionDisplayName: regionName,
       hasRegion: _birthRegionCode != null,
-      showRegionError: _triedSubmit && _birthRegionCode == null,
+      showRegionError: _form.triedSubmit && _birthRegionCode == null,
       onPickRegion: () => unawaited(_pickBirthRegion(l10n, isArabic)),
     );
   }
@@ -1177,13 +1070,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// a value the 17-letter dropdowns can't represent is kept verbatim in [_plate]
   /// so an unrelated profile edit never silently erases it (D-468 review).
   void _setPlateFromCode(String? code) {
-    final PlateParts parts = parsePlate(code);
+    final parts = parsePlate(code);
     _plateLetter1 = parts.letter1;
     _plateLetter2 = parts.letter2;
     _plateLetter3 = parts.letter3;
     _plateDigits.text = parts.digits;
     _plateDigitsFirst = parts.digitsFirst;
-    final String? override = parts.rawOverride;
+    final override = parts.rawOverride;
     if (override != null) {
       _plate.text = override;
     } else {
@@ -1198,7 +1091,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     final needsImage = _idImageBytes == null && !_hasExistingIdImage;
     return AttachmentField(
       label: l10n.attachmentsLabel,
-      hintText: (_triedSubmit && needsImage) ? l10n.idImageRequired : null,
+      hintText: (_form.triedSubmit && needsImage) ? l10n.idImageRequired : null,
       hintDanger: true,
       bytes: _idImageBytes,
       round: false,
@@ -1219,10 +1112,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   Widget _buildFacePhotoField(AppL10n l10n) {
     final bytes = _faceImageBytes;
     final maleNeedsFace =
-        _gender == AppGender.male && bytes == null && !_hasExistingAvatar;
+        _form.gender == AppGender.male && bytes == null && !_hasExistingAvatar;
     final showOptionalHint =
         bytes == null && !_hasExistingAvatar && !maleNeedsFace;
-    final showRequiredHint = _triedSubmit && maleNeedsFace;
+    final showRequiredHint = _form.triedSubmit && maleNeedsFace;
     return AttachmentField(
       label: l10n.facePhotoLabel,
       hintText: showRequiredHint
@@ -1244,12 +1137,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return OrganisationTypeaheadField(
       l10n: l10n,
       controller: _organisationSearch,
-      selectedId: _organisationId,
+      selectedId: _form.organisationId,
       selectedLabel: _organisationLabel,
       searching: _organisationSearching,
       searchFailed: _organisationSearchFailed,
       results: _organisationResults,
-      showError: _triedSubmit && _organisationId == null,
+      showError: _form.triedSubmit && _form.organisationId == null,
       onSearchChanged: _onOrganisationSearchChanged,
       onRetry: () => unawaited(
         _runOrganisationSearch(_organisationSearch.text.trim()),

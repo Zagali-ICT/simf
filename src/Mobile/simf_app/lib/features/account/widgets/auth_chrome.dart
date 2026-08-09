@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The beige-bordered, 48-high outlined "alternative action" button used below
 /// the sign-in card's "or" divider (Face-ID, printed-badge QR). Label sits at

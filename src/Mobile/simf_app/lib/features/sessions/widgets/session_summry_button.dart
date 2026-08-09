@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The gold ملخص الجلسة button (Figma 1388:7621) — opens the session summary
 /// (34). When [enabled] is false (no published summary yet) it greys out with
 /// the shell's disabled tokens and stops tapping — inactive, not hidden (owner
 /// 2026-07-14, same treatment as the detail header's ملخص الجلسة button).
 class SessionSummryButton extends StatelessWidget {
-  const SessionSummryButton({
-    required this.label,
-    required this.enabled,
-    required this.onTap,
+  const SessionSummryButton({required this.label, required this.enabled, required this.onTap, super.key,
   });
 
   final String label;

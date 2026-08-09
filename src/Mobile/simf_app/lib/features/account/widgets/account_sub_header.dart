@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The account sub-pages' header band (56-high): the white back chevron pinned
 /// at the inline start over a centred white title. Shared by the forgot / reset

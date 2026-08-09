@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A labeled checkbox row for the app's light forms: a 19x19 gold-active box
 /// (matching the sign-up terms / remember-me control) with a tappable label that

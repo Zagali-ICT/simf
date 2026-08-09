@@ -3,18 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/contacts/data/contact_models.dart';
+import 'package:simf_app/features/contacts/data/contacts_repository.dart';
+import 'package:simf_app/features/contacts/widgets/contacts_empty_state.dart';
+import 'package:simf_app/features/contacts/widgets/error_state.dart';
+import 'package:simf_app/features/contacts/widgets/saved_contact_sheet.dart';
+import 'package:simf_app/features/contacts/widgets/saved_contact_tile.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import 'data/contact_models.dart';
-import 'data/contacts_repository.dart';
-import 'widgets/contacts_empty_state.dart';
-import 'widgets/error_state.dart';
-import 'widgets/saved_contact_sheet.dart';
-import 'widgets/saved_contact_tile.dart';
 
 /// My Contacts (SIMF-FDS-014 §5.6, D-286). **Auth-gated** (Approved only). Lists
 /// the cards the visitor saved (`GET /app/contacts`, resolved on read — no PII

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'server_app_update_checker.dart';
+import 'package:simf_app/core/startup/server_app_update_checker.dart';
 
 /// The outcome of the launch-time app-version check (Page_001 Logic L-2).
 enum AppUpdateStatus {

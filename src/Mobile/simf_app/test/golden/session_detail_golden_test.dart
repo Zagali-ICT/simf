@@ -9,12 +9,12 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
+import 'package:simf_app/features/sessions/data/hall_attendance_repository.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/data/session_calendar.dart';
 import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
-import 'package:simf_app/features/sessions/data/hall_attendance_repository.dart';
 import 'package:simf_app/features/sessions/session_detail_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -108,14 +108,13 @@ const _mySeatCell = SeatCell(
   kind: SeatReservationKind.userBooking,
 );
 
-SessionSeatMap _seatMap() => SessionSeatMap(
-      rowLabels: const <String>['A', 'B'],
+SessionSeatMap _seatMap() => const SessionSeatMap(
+      rowLabels: <String>['A', 'B'],
       seatsPerRow: 12,
-      reservedCells: const <SeatCell>[],
+      reservedCells: <SeatCell>[],
       activeReservedCount: 0,
       hallCapacity: 24,
       myCell: _mySeatCell,
-      mode: SeatSelectionMode.assignedSeat,
     );
 
 CurrentUser _visitor() => CurrentUser(
@@ -130,7 +129,7 @@ CurrentUser _visitor() => CurrentUser(
 Session _session() => Session(
       accessToken: 'A',
       refreshToken: 'R',
-      accessTokenExpiresAt: DateTime.utc(2099, 1, 1),
+      accessTokenExpiresAt: DateTime.utc(2099),
       user: _visitor(),
     );
 

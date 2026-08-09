@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../core/utils/saudi_time.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One downloadable session presentation — App "عروض الجلسات" (Figma
 /// 1388:7621),

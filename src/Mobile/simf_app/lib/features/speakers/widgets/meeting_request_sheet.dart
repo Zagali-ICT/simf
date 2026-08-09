@@ -2,19 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/errors/api_error_l10n.dart';
+import 'package:simf_app/core/utils/gregorian_month_names.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/core/utils/weekday_names.dart';
+import 'package:simf_app/core/validation/field_limits.dart';
+import 'package:simf_app/features/speakers/data/speaker_models.dart';
+import 'package:simf_app/features/speakers/data/speakers_repository.dart';
+import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_option_tile.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../core/errors/api_error_l10n.dart';
-import '../../../core/utils/gregorian_month_names.dart';
-import '../../../core/utils/saudi_time.dart';
-import '../../../core/utils/weekday_names.dart';
-import '../../../core/validation/field_limits.dart';
-import '../data/speaker_models.dart';
-import '../data/speakers_repository.dart';
-import 'meeting_slot_pickers.dart';
-import 'speaker_option_tile.dart';
 
 /// The meeting-request form (bottom sheet) — approved-account only (E2). The
 /// beige "طلب مقابلة" sheet, Figma **1776:5036**: a gold drag handle, the
@@ -440,9 +439,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   Widget _subjectField(AppL10n l10n) => TextField(
         key: const ValueKey<String>('meeting-subject'),
         controller: _subject,
-        textAlign: TextAlign.start,
         maxLength: FieldLimits.meetingRequestMessage,
-        maxLines: 1,
         style: SimfTokens.bodyInputMd,
         decoration: InputDecoration(
           counterText: '',
@@ -455,15 +452,13 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
             vertical: SimfTokens.space3,
           ),
           enabledBorder: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
             borderSide: BorderSide(color: SimfTokens.beigeBorder),
           ),
           focusedBorder: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
             borderSide: BorderSide(color: SimfTokens.accent),
           ),
           border: const OutlineInputBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
+            
           ),
         ),
       );

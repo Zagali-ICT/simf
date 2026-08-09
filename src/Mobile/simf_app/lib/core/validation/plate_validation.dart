@@ -23,7 +23,7 @@ class SaudiPlateLetter {
 /// The [SaudiPlateLetter] for a stored Latin [code], or null when the code is
 /// not one of the 17 (a pre-D-459 or hand-entered plate).
 SaudiPlateLetter? plateLetterByCode(String code) {
-  for (final SaudiPlateLetter letter in saudiPlateLetters) {
+  for (final letter in saudiPlateLetters) {
     if (letter.code == code) {
       return letter;
     }
@@ -78,9 +78,9 @@ final RegExp _arabicPlate = RegExp(
 /// (variant Arabic glyphs normalised, Arabic-Indic digits → Western, Latin
 /// upper-cased), preserving character order. Mirrors `SaudiPlate.Prepare`.
 String _prepare(String value) {
-  final StringBuffer buffer = StringBuffer();
-  for (final int rune in value.trim().runes) {
-    int c = rune;
+  final buffer = StringBuffer();
+  for (final rune in value.trim().runes) {
+    var c = rune;
     if (c == 0x20 || c == 0x2D || c == 0xA0) {
       continue; // space, dash, non-breaking space
     } else if (c == 0x0623 || c == 0x0625 || c == 0x0622 || c == 0x0671) {
@@ -103,7 +103,7 @@ bool isStandardPlateNumber(String value) {
   if (value.trim().isEmpty) {
     return false;
   }
-  final String prepared = _prepare(value);
+  final prepared = _prepare(value);
   return _latinPlate.hasMatch(prepared) || _arabicPlate.hasMatch(prepared);
 }
 
@@ -113,9 +113,9 @@ String? normalizePlate(String value) {
   if (value.trim().isEmpty) {
     return null;
   }
-  final StringBuffer buffer = StringBuffer();
-  for (final int rune in _prepare(value).runes) {
-    final String ch = String.fromCharCode(rune);
+  final buffer = StringBuffer();
+  for (final rune in _prepare(value).runes) {
+    final ch = String.fromCharCode(rune);
     buffer.write(_arToEn[ch] ?? ch);
   }
   return buffer.toString();
@@ -124,13 +124,13 @@ String? normalizePlate(String value) {
 /// The Arabic rendering (Arabic letters + Arabic-Indic digits) of [value], or
 /// `null` when blank.
 String? toArabicPlate(String value) {
-  final String? code = normalizePlate(value);
+  final code = normalizePlate(value);
   if (code == null) {
     return null;
   }
-  final StringBuffer buffer = StringBuffer();
-  for (final int rune in code.runes) {
-    final String ch = String.fromCharCode(rune);
+  final buffer = StringBuffer();
+  for (final rune in code.runes) {
+    final ch = String.fromCharCode(rune);
     if (_enToAr.containsKey(ch)) {
       buffer.write(_enToAr[ch]);
     } else if (rune >= 0x30 && rune <= 0x39) {
@@ -173,14 +173,12 @@ class PlateParts {
 /// preserving [digitsFirst] order. Empty when nothing is set (the plate is
 /// optional). The pure form of the sign-up screen's `_syncPlate`.
 String assemblePlate({
-  String? letter1,
+  required String digits, required bool digitsFirst, String? letter1,
   String? letter2,
   String? letter3,
-  required String digits,
-  required bool digitsFirst,
 }) {
-  final String letters = '${letter1 ?? ''}${letter2 ?? ''}${letter3 ?? ''}';
-  final String d = digits.trim();
+  final letters = '${letter1 ?? ''}${letter2 ?? ''}${letter3 ?? ''}';
+  final d = digits.trim();
   if (letters.isEmpty && d.isEmpty) {
     return '';
   }
@@ -193,24 +191,24 @@ String assemblePlate({
 /// plate still parses; a code the 17-letter dropdowns can't represent comes
 /// back as [PlateParts.rawOverride]. Blank → an empty override (clears it).
 PlateParts parsePlate(String? code) {
-  final String raw = code?.trim() ?? '';
+  final raw = code?.trim() ?? '';
   if (raw.isEmpty) {
     return const PlateParts(rawOverride: '');
   }
-  final String canonical = normalizePlate(raw) ?? raw;
-  final List<String> letters = <String>[];
-  final StringBuffer digits = StringBuffer();
-  for (final int rune in canonical.runes) {
+  final canonical = normalizePlate(raw) ?? raw;
+  final letters = <String>[];
+  final digits = StringBuffer();
+  for (final rune in canonical.runes) {
     if (rune >= 0x30 && rune <= 0x39) {
       digits.writeCharCode(rune);
     } else {
       letters.add(String.fromCharCode(rune).toUpperCase());
     }
   }
-  final Set<String> codes =
+  final codes =
       saudiPlateLetters.map((SaudiPlateLetter l) => l.code).toSet();
   if (letters.length == 3 && letters.every(codes.contains)) {
-    final int firstRune = canonical.runes.first;
+    final firstRune = canonical.runes.first;
     return PlateParts(
       letter1: letters[0],
       letter2: letters[1],

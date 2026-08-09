@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../data/session_models.dart';
-import 'programme_day_banner.dart';
-import 'session_state_chip.dart';
-import 'session_time_rail.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/widgets/programme_day_banner.dart';
+import 'package:simf_app/features/sessions/widgets/session_state_chip.dart';
+import 'package:simf_app/features/sessions/widgets/session_time_rail.dart';
 
 /// One المواعيد timeline row (frame 1310:3213 collapsed / 1310:3232 featured):
 /// a navy radius-8 card holding, inline-start→end, the content column (a 14px

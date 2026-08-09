@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/moderation_models.dart';
-import 'moderation_chip.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/moderation/data/moderation_models.dart';
+import 'package:simf_app/features/moderation/widgets/moderation_chip.dart';
 
 /// The moderator queue filter bar (Figma 805:1876): five equal-width chips
 /// filling the row (الكل / جديد / الأسئلة المقبولة / تمت الإجابة / مرفوض), each

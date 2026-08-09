@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import '../data/request_models.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/requests/data/request_models.dart';
 
 /// The top action row (Figma 1408:9736): two equal buttons — "طلب جديد" (opens
 /// the new-request sheet, beige-outlined) and "السجل" (the gold-filled "all/log"
@@ -83,7 +83,7 @@ class RequestActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = active ? SimfTokens.surface : SimfTokens.beigeBorder;
+    final fg = active ? SimfTokens.surface : SimfTokens.beigeBorder;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radius),

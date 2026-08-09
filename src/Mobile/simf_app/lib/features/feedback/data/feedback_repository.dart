@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/feedback/data/feedback_endpoints.dart';
+import 'package:simf_app/features/feedback/data/rating_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'feedback_endpoints.dart';
-import 'rating_models.dart';
 
 /// Data layer for the dynamic rating form (Page_040).
 ///
@@ -35,10 +34,9 @@ class FeedbackRepository {
 
   Future<void> submit({
     required String ratingTypeId,
-    String? targetId,
+    required Map<String, int> answers, String? targetId,
     int? overallStars,
     String? comment,
-    required Map<String, int> answers,
   }) {
     return _client.post<bool>(
       FeedbackEndpoints.submit,

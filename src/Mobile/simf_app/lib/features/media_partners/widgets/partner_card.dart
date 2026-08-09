@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_image_viewer.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import 'partner_logo.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_image_viewer.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/media_partners/widgets/partner_logo.dart';
 
 /// One partner — frame node 958:2263: the navy KSA card with a centred gold
 /// rounded-square logo holder over the partner name (white 12px SemiBold).

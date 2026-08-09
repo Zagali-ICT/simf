@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The deep-navy hall box (frame node 922:2624): a 48-high `#01132D` box with a
 /// beige hairline. When the hall ships both names it reads "HALL A · القاعة

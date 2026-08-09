@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A section heading on the accessibility screen (العرض · الصوت والقراءة). Kept
 /// screen-local, not `SimfSectionHeader` — this heading is `textLg`/`w600`, a

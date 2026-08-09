@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The 48×48 nationality flag badge (Figma 1408:9726): the flag emoji on a soft
 /// green well.
 class FlagBadge extends StatelessWidget {
-  const FlagBadge({required this.flag});
+  const FlagBadge({required this.flag, super.key});
 
   final String flag;
 

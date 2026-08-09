@@ -175,5 +175,5 @@ class _GuestHomeHost extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
-      GuestHome(l10n: AppL10n.of(context), pendingApproval: false);
+      GuestHome(l10n: AppL10n.of(context));
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'booth_contact_box.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/booths/widgets/booth_contact_box.dart';
 
 /// The booth-officer contact boxes (frame 922:2810): email + phone in two
 /// bordered navy boxes side by side, each with a trailing glyph. D-432 — only

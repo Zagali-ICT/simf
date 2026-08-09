@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The black player-band placeholder for the non-live states (recording /
 /// not-live) — keeps the frame's full-bleed black band, centring an icon +
 /// message where the feed would play.
 class MessageSurface extends StatelessWidget {
-  const MessageSurface({required this.icon, required this.message});
+  const MessageSurface({required this.icon, required this.message, super.key});
 
   final IconData icon;
   final String message;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The green-ringed success check (Figma 505:1343): a 104px navy-deep circle
 /// with a 2.4px approval-green ring and a centred check.

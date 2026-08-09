@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/gate_models.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_theme.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/gates/data/gate_models.dart';
 
 /// The assigned-gates dropdown (setup stage), keyed by `gateId`.
 ///

@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 class InfoRow extends StatelessWidget {
-  const InfoRow({
-    required this.icon,
-    required this.value,
-    required this.sublabel,
-    required this.valueLtr,
+  const InfoRow({required this.icon, required this.value, required this.sublabel, required this.valueLtr, super.key,
   });
 
   final IconData icon;

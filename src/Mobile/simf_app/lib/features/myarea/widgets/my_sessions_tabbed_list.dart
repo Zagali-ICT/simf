@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_cards.dart';
-import '../../../app/widgets/simf_states.dart';
-import '../../../core/utils/saudi_time.dart';
-import '../../sessions/data/session_lifecycle.dart';
-import '../../sessions/widgets/favourite_heart_button.dart';
-import '../../sessions/widgets/session_card_meta.dart';
-import '../../sessions/widgets/session_state_chip.dart';
-import '../data/my_sessions_models.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_cards.dart';
+import 'package:simf_app/app/widgets/simf_states.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/myarea/data/my_sessions_models.dart';
+import 'package:simf_app/features/sessions/data/session_lifecycle.dart';
+import 'package:simf_app/features/sessions/widgets/favourite_heart_button.dart';
+import 'package:simf_app/features/sessions/widgets/session_card_meta.dart';
+import 'package:simf_app/features/sessions/widgets/session_state_chip.dart';
 
 class MySessionsTabbedList extends StatelessWidget {
-  const MySessionsTabbedList({
-    required this.items,
-    required this.tabLabel,
-    required this.l10n,
+  const MySessionsTabbedList({required this.items, required this.tabLabel, required this.l10n, super.key,
   });
 
   final List<MyAreaSessionItem> items;
@@ -71,7 +67,7 @@ class MySessionsTabbedList extends StatelessWidget {
 /// One my-session card: the heart on the trailing edge, the title over a
 /// clock·time line with the category chip, and the primary speaker + hall.
 class MySessionCard extends StatelessWidget {
-  const MySessionCard({required this.item, required this.isArabic});
+  const MySessionCard({required this.item, required this.isArabic, super.key});
 
   final MyAreaSessionItem item;
   final bool isArabic;

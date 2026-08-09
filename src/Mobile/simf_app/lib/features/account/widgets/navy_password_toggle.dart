@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The show/hide eye toggle used inside the navy-family password fields
 /// (reset-password / badge-activation) — the beige Material eye wired to the

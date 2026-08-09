@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
+import 'package:simf_app/app/router.dart';
+import 'package:simf_app/app/theme/app_theme.dart';
+import 'package:simf_app/core/session/session_guard.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../core/session/session_guard.dart';
-import '../features/accessibility/data/accessibility_controller.dart';
-import 'localization/app_l10n.dart';
-import 'localization/locale_controller.dart';
-import 'router.dart';
-import 'theme/app_theme.dart';
 
 /// The root widget. `MaterialApp.router` is wired to the go_router instance
 /// from [routerProvider], and the current locale comes from

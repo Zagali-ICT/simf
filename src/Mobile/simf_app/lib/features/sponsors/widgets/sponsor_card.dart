@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import 'badge_box.dart';
-import 'sponsor_logo.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/sponsors/widgets/badge_box.dart';
+import 'package:simf_app/features/sponsors/widgets/sponsor_logo.dart';
 
 /// One sponsor card — frame 922:2824's 72-high row. RTL puts the square logo
 /// badge on the inline-start (physical right), the name + secondary line next
@@ -41,12 +41,11 @@ class SponsorCard extends StatelessWidget {
     // Frame 922:2824 — the sponsor name is white on BOTH the gold hero card
     // (925:2979 `text-white`) and the navy premium card; only the secondary
     // line changes colour with the card.
-    final Color subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
+    final subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
     final flip = !AppL10n.of(context).isArabic;
     return SimfCard(
       onTap: onTap,
       color: hero ? SimfTokens.accent : SimfTokens.navyDeep,
-      borderColor: SimfTokens.beigeBorder,
       child: ConstrainedBox(
         constraints: const BoxConstraints(
           minHeight: SimfTokens.sponsorRowHeight,

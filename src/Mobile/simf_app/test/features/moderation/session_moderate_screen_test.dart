@@ -138,7 +138,7 @@ class _FakeRepo implements ModerationRepository {
 
   void _failIfAsked() {
     if (failWrites) {
-      throw ApiFailure(
+      throw const ApiFailure(
         code: ApiErrorCodes.clientNetwork,
         message: 'x',
         httpStatus: 500,

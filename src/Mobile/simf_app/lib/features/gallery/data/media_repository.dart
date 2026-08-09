@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/gallery/data/gallery_endpoints.dart';
+import 'package:simf_app/features/gallery/data/media_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'gallery_endpoints.dart';
-import 'media_models.dart';
 
 /// `GET /app/media` → the media items (public, D-199).
 final mediaItemsProvider =

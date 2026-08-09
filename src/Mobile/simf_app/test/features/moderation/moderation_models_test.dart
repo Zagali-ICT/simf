@@ -92,7 +92,7 @@ void main() {
       expect(filterModeratorQueue(desk, ModeratorQueueFilter.all), hasLength(3));
       expect(
         filterModeratorQueue(desk, ModeratorQueueFilter.all,
-            rejected: <ModeratorQuestion>[q('r', status: 2)]).map((q) => q.id),
+            rejected: <ModeratorQuestion>[q('r', status: 2)],).map((q) => q.id),
         <String>['a', 'b', 'c', 'r'],
       );
     });
@@ -136,12 +136,12 @@ void main() {
       final rejected = <ModeratorQuestion>[q('r', status: 2)];
       expect(
         filterModeratorQueue(desk, ModeratorQueueFilter.rejected,
-            rejected: rejected).map((q) => q.id),
+            rejected: rejected,).map((q) => q.id),
         <String>['r'],
       );
       expect(
         filterModeratorQueue(desk, ModeratorQueueFilter.fresh,
-            rejected: rejected).map((q) => q.id),
+            rejected: rejected,).map((q) => q.id),
         <String>['a', 'c'],
       );
     });

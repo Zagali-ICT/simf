@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/gallery/data/media_repository.dart';
+import 'package:simf_app/features/gallery/widgets/coverage_tabs.dart';
+import 'package:simf_app/features/gallery/widgets/gallery_body.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import 'data/media_repository.dart';
-import 'widgets/coverage_tabs.dart';
-import 'widgets/gallery_body.dart';
 
 // The media model + provider live in `data/`; re-exported so existing imports
 // (`MediaItem` / `MediaKind` / `mediaItemsProvider` off this screen — the gallery

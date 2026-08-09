@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/confirm_external_link.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/confirm_external_link.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The org website line under the social row: a centred gold globe + label that
 /// asks to confirm leaving the app, then opens the site externally (same launch
 /// path as the social buttons). Rendered only when the CP sets a website.
 class WebsiteLink extends StatelessWidget {
-  const WebsiteLink({required this.url, required this.label});
+  const WebsiteLink({required this.url, required this.label, super.key});
 
   final String url;
   final String label;

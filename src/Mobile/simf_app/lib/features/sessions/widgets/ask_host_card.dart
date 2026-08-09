@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The اسأل المحاور card (frame 1056:12876): a full-width navy box with a beige
 /// hairline holding a centred user glyph over the 12px SemiBold label. Opens

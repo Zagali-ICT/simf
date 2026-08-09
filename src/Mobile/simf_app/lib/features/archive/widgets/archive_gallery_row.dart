@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../data/archive_models.dart';
-import 'archive_gallery_tile.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/widgets/archive_gallery_tile.dart';
 
 /// The archive gallery row (node 24-01 "الصور والفيديو"): a horizontal strip of
 /// thumbnail tiles. P6 — D-440: an image item whose `url` is an absolute http(s)

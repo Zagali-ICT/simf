@@ -202,17 +202,17 @@ void main() {
       final caretFinder = find.byWidgetPredicate((w) =>
           w is SimfSvgIcon &&
           w.asset.contains('back') &&
-          w.color == SimfTokens.accent);
+          w.color == SimfTokens.accent,);
       final caretDx = tester.getCenter(caretFinder.first).dx;
       final caretDy = tester.getCenter(caretFinder.first).dy;
       // Figma (Arabic/RTL frame 908:1744): the gold anchor tile is the right-
       // most element (right of the name), the caret is the left-most.
       expect(anchorDx, greaterThan(nameDx),
-          reason: 'anchor tile must be right of the name (Figma 908:1744)');
+          reason: 'anchor tile must be right of the name (Figma 908:1744)',);
       expect(caretDx, lessThan(nameDx),
-          reason: 'caret must be left of the name (Figma 908:1744)');
+          reason: 'caret must be left of the name (Figma 908:1744)',);
       expect((caretDy - nameDy).abs(), lessThan(60),
-          reason: 'caret shares the first card row');
+          reason: 'caret shares the first card row',);
     });
 
     testWidgets('the search box filters the list to matching speakers (908:1744)',

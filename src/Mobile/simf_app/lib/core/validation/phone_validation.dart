@@ -8,7 +8,7 @@
 /// `+`-prefixed form the server's shapes require.
 library;
 
-import 'digit_normalization.dart';
+import 'package:simf_app/core/validation/digit_normalization.dart';
 
 final RegExp _saudiMobileShape = RegExp(r'^(05\d{8}|\+9665\d{8})$');
 final RegExp _internationalShape = RegExp(r'^\+[1-9]\d{7,14}$');
@@ -17,7 +17,7 @@ final RegExp _internationalShape = RegExp(r'^\+[1-9]\d{7,14}$');
 /// spaces / dashes stripped, and a leading `00` international prefix rewritten
 /// to `+`. Used both to validate and to produce the value that is submitted.
 String normalizePhone(String value) {
-  final String stripped =
+  final stripped =
       toWesternDigits(value.trim()).replaceAll(' ', '').replaceAll('-', '');
   return stripped.startsWith('00') ? '+${stripped.substring(2)}' : stripped;
 }

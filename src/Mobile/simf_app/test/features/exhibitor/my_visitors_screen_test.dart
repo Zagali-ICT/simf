@@ -96,7 +96,7 @@ Future<void> _pump(WidgetTester tester, _FakeExhibitorRepo repo) async {
 
 ExhibitorVisitor _visitor(String name) => ExhibitorVisitor(
       id: 'v-$name',
-      scannedAt: DateTime.utc(2026, 1, 1),
+      scannedAt: DateTime.utc(2026),
       card: VisitorCard(userId: 'u-$name', name: name, nameArabic: name, available: true),
     );
 

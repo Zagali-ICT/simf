@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/request_models.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/requests/data/request_models.dart';
 
 /// The localized label for a request [status] (shared by the status chips + the
 /// expanded card detail).

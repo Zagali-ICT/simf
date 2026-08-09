@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// Builds the app's [ThemeData] from [SimfTokens] + the **IBM Plex Sans Arabic**
 /// type family (the `Mockup.html` app font, D-329). Widgets read colour and type
@@ -63,14 +63,11 @@ class SimfTheme {
       fontFamilyFallback: fontFamilyFallback,
       colorScheme: const ColorScheme.light(
         primary: SimfTokens.navy,
-        onPrimary: SimfTokens.surface,
         secondary: SimfTokens.accent,
         onSecondary: SimfTokens.navy,
-        surface: SimfTokens.surface,
         onSurface: SimfTokens.ink,
         onSurfaceVariant: SimfTokens.inkMuted,
         error: SimfTokens.danger,
-        onError: SimfTokens.surface,
       ),
       scaffoldBackgroundColor: SimfTokens.background,
       appBarTheme: _appBar(SimfTokens.navy, SimfTokens.surface),
@@ -109,7 +106,6 @@ class SimfTheme {
         secondary: SimfTokens.accent,
         onSecondary: SimfTokens.navy,
         surface: SimfTokens.navy,
-        onSurface: SimfTokens.surface,
         onSurfaceVariant: SimfTokens.txtSecondary,
         outline: SimfTokens.line,
         error: SimfTokens.danger,
@@ -215,13 +211,9 @@ class SimfTheme {
       fontFamilyFallback: fontFamilyFallback,
       colorScheme: const ColorScheme.light(
         primary: SimfTokens.hcLightInk,
-        onPrimary: SimfTokens.hcLightSurface,
         secondary: SimfTokens.hcLightInk,
         onSecondary: SimfTokens.hcLightSurface,
-        surface: SimfTokens.hcLightSurface,
-        onSurface: SimfTokens.hcLightInk,
         error: SimfTokens.danger,
-        onError: SimfTokens.hcLightSurface,
       ),
       scaffoldBackgroundColor: SimfTokens.hcLightSurface,
       appBarTheme: _appBar(SimfTokens.hcLightInk, SimfTokens.hcLightSurface),
@@ -244,7 +236,6 @@ class SimfTheme {
         fillColor: SimfTokens.hcLightField,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
-          borderSide: BorderSide(color: SimfTokens.hcLightInk),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
@@ -261,11 +252,8 @@ class SimfTheme {
       fontFamilyFallback: fontFamilyFallback,
       colorScheme: const ColorScheme.dark(
         primary: SimfTokens.hcDarkInk,
-        onPrimary: SimfTokens.hcDarkSurface,
         secondary: SimfTokens.hcDarkInk,
-        onSecondary: SimfTokens.hcDarkSurface,
         surface: SimfTokens.hcDarkSurface,
-        onSurface: SimfTokens.hcDarkInk,
         error: SimfTokens.danger,
         onError: SimfTokens.hcDarkInk,
       ),

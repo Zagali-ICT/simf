@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The horizontal glowing gold scan line (Figma 758:4735).
 class ScanLine extends StatelessWidget {
-  const ScanLine();
+  const ScanLine({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: SimfTokens.scanLineHeight,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
           colors: <Color>[
             SimfTokens.accentFade,
             SimfTokens.accent,
             SimfTokens.accentFade,
           ],
         ),
-        boxShadow: const <BoxShadow>[
+        boxShadow: <BoxShadow>[
           BoxShadow(color: SimfTokens.accent, blurRadius: SimfTokens.scanLineBlurRadius),
         ],
       ),

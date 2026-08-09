@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/localization/app_l10n.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import 'data/presentation_repository.dart';
-import 'data/presentation_summary_gate.dart';
-import 'data/session_models.dart';
-import 'data/sessions_repository.dart';
-import 'widgets/presentations_body.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/sessions/data/presentation_repository.dart';
+import 'package:simf_app/features/sessions/data/presentation_summary_gate.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_repository.dart';
+import 'package:simf_app/features/sessions/widgets/presentations_body.dart';
 
 /// **Sessions** — App "الجلسات" (Figma 1388:7621, Approved account), reached
 /// from the Home "الجلسات" tile. Sessions grouped by event day, each card a file

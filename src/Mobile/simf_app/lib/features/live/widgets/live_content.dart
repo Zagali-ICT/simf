@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../data/live_models.dart';
-import 'time_chip.dart';
-import 'toggle_pill.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/live/data/live_models.dart';
+import 'package:simf_app/features/live/widgets/time_chip.dart';
+import 'package:simf_app/features/live/widgets/toggle_pill.dart';
 
 /// Login-gate state (owner, D-577): the live stream is login-only, so a
 /// signed-out guest sees this prompt — an icon, a message, and a gold Sign-in

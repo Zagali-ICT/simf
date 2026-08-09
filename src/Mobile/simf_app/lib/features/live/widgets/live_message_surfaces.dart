@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'message_surface.dart';
+import 'package:simf_app/features/live/widgets/message_surface.dart';
 
 /// The black surface shown when there is no live stream but a recording exists —
 /// keeps the frame's black player band, with a recording note instead of a feed.

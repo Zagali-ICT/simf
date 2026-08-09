@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/seat_map_models.dart';
-import 'legend.dart';
-import 'seat_grid_row.dart';
-import 'stage_bar.dart';
-import 'tier_legend.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/widgets/legend.dart';
+import 'package:simf_app/features/sessions/widgets/seat_grid_row.dart';
+import 'package:simf_app/features/sessions/widgets/stage_bar.dart';
+import 'package:simf_app/features/sessions/widgets/tier_legend.dart';
 
 /// The hall seat-map card shared by **My-Seat** (Figma 898:2873 — read-only)
 /// and the **Seat-Picker** (D-485 — selectable): the gold-bordered stage band,

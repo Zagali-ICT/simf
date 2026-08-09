@@ -253,7 +253,7 @@ void main() {
       await _pump(
         tester,
         repo: _FakeMyAreaRepository(
-          dashboard: _dashboard(qrId: 'ABC123', isVisitor: true),
+          dashboard: _dashboard(qrId: 'ABC123'),
         ),
       );
 

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The empty 56px bordered attach box: a centred label + trailing icon.
 class AttachBox extends StatelessWidget {
-  const AttachBox({
-    required this.label,
-    required this.icon,
-    required this.onTap,
+  const AttachBox({required this.label, required this.icon, required this.onTap, super.key,
   });
 
   final String label;

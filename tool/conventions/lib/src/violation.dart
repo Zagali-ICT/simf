@@ -35,7 +35,15 @@ class Violation {
   /// Deliberately EXCLUDES the line number: adding an import at the top of a
   /// file shifts every line below it, and a baseline keyed on line numbers
   /// would report the whole file as newly-violating.
-  String get fingerprint => '$rule|$file|$message';
+  ///
+  /// It also strips any NUMBER out of the message, because a message can carry
+  /// one without looking like a line reference. C3 reports "in a 1305-line
+  /// file", so deleting seventeen unused imports renamed all fourteen
+  /// fingerprints at once and the gate cried wolf over code nobody had touched.
+  /// The identity is the rule, the file and the SHAPE of the finding, never a
+  /// count that legitimate edits move.
+  String get fingerprint =>
+      '$rule|$file|${message.replaceAll(RegExp(r'\d+'), '#')}';
 
   Map<String, Object?> toJson() => <String, Object?>{
         'rule': rule,

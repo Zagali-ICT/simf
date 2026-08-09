@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/motion/motion_durations.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
 
 /// The design's pill page dots — active 32×8 beige, inactive 16×8 soft gold.
 /// Forced LTR so the active dot travels left → right exactly as in the

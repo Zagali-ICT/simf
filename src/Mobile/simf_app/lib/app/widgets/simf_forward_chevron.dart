@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import 'simf_svg_icon.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// A forward-navigation chevron — the "tap to open" caret at a list row's
 /// inline end.

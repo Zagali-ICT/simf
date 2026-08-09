@@ -1,14 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../core/motion/motion_durations.dart';
-import '../../../core/net/asset_urls.dart';
-import '../../news/data/news_models.dart';
-import 'carousel_dots.dart';
-import 'highlight_slide.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/features/home/widgets/carousel_dots.dart';
+import 'package:simf_app/features/home/widgets/highlight_slide.dart';
+import 'package:simf_app/features/news/data/news_models.dart';
 
 /// ابرز الاحداث — the highlights carousel (frame node 758:1239): an
 /// auto-advancing, swipeable PageView of image+title slides drawn from the most

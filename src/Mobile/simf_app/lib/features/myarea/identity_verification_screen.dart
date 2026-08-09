@@ -9,12 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show DeviceOrientation;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import 'data/liveness.dart';
-import 'widgets/identity_capture_view.dart';
-import 'widgets/identity_fallback_view.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/myarea/data/liveness.dart';
+import 'package:simf_app/features/myarea/widgets/identity_capture_view.dart';
+import 'package:simf_app/features/myarea/widgets/identity_fallback_view.dart';
 
 // The liveness step model + pure gate + prompt helper live in `data/liveness.dart`
 // (unit-testable without a camera); re-exported so existing imports of this
@@ -102,7 +102,6 @@ class _IdentityVerificationScreenState
       _detector = FaceDetector(
         options: FaceDetectorOptions(
           enableClassification: true,
-          performanceMode: FaceDetectorMode.fast,
         ),
       );
       if (!mounted) {

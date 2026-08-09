@@ -1,4 +1,4 @@
-import '../data/venue_map_models.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 
 /// The min/max extent of the loaded nodes, used to normalise `(x, y)` into
 /// `[0, 1]` before mapping onto the canvas (Page_015 L-4).

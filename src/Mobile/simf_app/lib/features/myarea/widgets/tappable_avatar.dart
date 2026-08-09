@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
 
 /// The profile avatar with a tap-to-change affordance (frame 213:963): the gold
 /// rounded avatar plus a small camera badge at the corner. A null [onTap] (the
 /// limited/pending view) renders a plain avatar with no camera badge.
 class TappableAvatar extends StatelessWidget {
-  const TappableAvatar({
-    required this.name,
+  const TappableAvatar({required this.name, super.key,
     this.onTap,
     this.tooltip,
   });

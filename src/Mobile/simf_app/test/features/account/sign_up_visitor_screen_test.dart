@@ -7,11 +7,11 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/account/data/region_models.dart';
 import 'package:simf_app/features/account/data/region_repository.dart';
 import 'package:simf_app/features/account/sign_up_visitor_screen.dart';
 import 'package:simf_app/features/account/widgets/mobile_field.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-import 'package:simf_app/features/account/data/region_models.dart';
 
 /// A fake profile repository — returns canned lookups + a configurable profile,
 /// and records the profile-types filter, so the data screen's load → validate →

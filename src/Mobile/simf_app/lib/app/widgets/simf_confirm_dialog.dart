@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../localization/app_l10n.dart';
-import '../theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// App-wide confirm dialog whose two actions are ALWAYS laid out side-by-side
 /// in one row (owner 2026-06-30, D-565). Flutter's default [AlertDialog] feeds

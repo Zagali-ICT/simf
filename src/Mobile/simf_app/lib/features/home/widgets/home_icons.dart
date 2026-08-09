@@ -1,4 +1,4 @@
-import '../../../app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
 
 /// The home tile glyphs — the exact iconify SVGs from KSA frames 758:1134
 /// (signed-in) and 758:2910 (guest); no 1:1 Material equivalent, bundled and

@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/myarea/data/my_sessions_models.dart';
+import 'package:simf_app/features/myarea/data/myarea_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'my_sessions_models.dart';
-import 'myarea_endpoints.dart';
 
 /// Data layer for the "my sessions" list — App "تفاصيل الجلسات" (Figma 1388:9067).
 /// One read of the caller's booked / joined sessions (`GET /app/account/sessions`,

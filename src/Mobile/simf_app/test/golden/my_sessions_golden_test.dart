@@ -49,7 +49,7 @@ MyAreaSessionItem _item({
       title: titleEn,
       titleArabic: titleAr,
       // Far future → always "upcoming"; only the time-of-day is rendered.
-      start: DateTime.utc(2099, 6, 20, hourUtc, 0),
+      start: DateTime.utc(2099, 6, 20, hourUtc),
       end: DateTime.utc(2099, 6, 20, hourUtc + 1, 30),
       status: SessionStatus.scheduled,
       attended: false,

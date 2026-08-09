@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/localization/app_l10n.dart';
-import '../../app/widgets/simf_bottom_nav.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import 'data/sessions_repository.dart';
-import 'widgets/hub_list.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/sessions/data/sessions_repository.dart';
+import 'package:simf_app/features/sessions/widgets/hub_list.dart';
 
 /// D-485 — **Join a session** hub (`/sessions/join`, approved Visitor). The
 /// standalone entry into the join flow (the other entry is the Join CTA on the

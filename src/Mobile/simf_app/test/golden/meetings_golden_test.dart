@@ -44,7 +44,7 @@ final List<AppRequestItem> _meetings = <AppRequestItem>[
     titleArabic: 'د. محمد العمري',
     status: AppRequestStatus.accepted,
     eventDate: DateTime.utc(2035, 6, 20, 7, 45),
-    createdAt: DateTime.utc(2035, 6, 1),
+    createdAt: DateTime.utc(2035, 6),
     canCancel: false,
     subtitle: 'باحث بيئي',
     speakerId: 's1',

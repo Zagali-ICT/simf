@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../localization/app_l10n.dart';
-import '../route_names.dart';
-import '../theme/tokens.dart';
-import 'media_tab.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/media_tab.dart';
 
 /// Which media-coverage tab is active on the current screen.
 enum MediaCoverageTab { partners, latestUpdates }

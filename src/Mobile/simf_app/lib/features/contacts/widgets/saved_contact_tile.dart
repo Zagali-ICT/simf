@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/contact_models.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/contacts/data/contact_models.dart';
 
 /// One saved-contact row — name, an org/title subtitle, chevron. Tapping opens
 /// the detail sheet. (Named `Tile` to avoid clashing with the `SavedContactRow`

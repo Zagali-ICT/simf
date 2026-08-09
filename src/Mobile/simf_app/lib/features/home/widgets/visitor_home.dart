@@ -3,23 +3,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_bottom_nav.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../core/organization_profile/organization_profile.dart';
-import '../../banners/data/banner_models.dart';
-import '../../live/data/current_live_session.dart';
-import '../../news/data/news_models.dart';
-import 'discover_saudi_row.dart';
-import 'follow_us_section.dart';
-import 'greeting_header.dart';
-import 'highlights_carousel.dart';
-import 'home_banners.dart';
-import 'home_hero_banner.dart';
-import 'home_icons.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/features/banners/data/banner_models.dart';
+import 'package:simf_app/features/home/widgets/discover_saudi_row.dart';
+import 'package:simf_app/features/home/widgets/follow_us_section.dart';
+import 'package:simf_app/features/home/widgets/greeting_header.dart';
+import 'package:simf_app/features/home/widgets/highlights_carousel.dart';
+import 'package:simf_app/features/home/widgets/home_banners.dart';
+import 'package:simf_app/features/home/widgets/home_hero_banner.dart';
+import 'package:simf_app/features/home/widgets/home_icons.dart';
+import 'package:simf_app/features/live/data/current_live_session.dart';
+import 'package:simf_app/features/news/data/news_models.dart';
 
 /// Signed-in layout (frame 758:1134 — greeting home, exact parity): the
 /// greeting header, discover hero, live banner, the "عن الملتقى" section bar +

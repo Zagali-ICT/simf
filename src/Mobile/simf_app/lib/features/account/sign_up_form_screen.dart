@@ -4,24 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show TextInput;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/errors/api_error_l10n.dart';
+import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/validation/email_validation.dart';
+import 'package:simf_app/core/validation/password_validation.dart';
+import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
+import 'package:simf_app/features/account/widgets/account_auth_prompt.dart';
+import 'package:simf_app/features/account/widgets/account_card.dart';
+import 'package:simf_app/features/account/widgets/account_form_field.dart';
+import 'package:simf_app/features/account/widgets/account_header.dart';
+import 'package:simf_app/features/account/widgets/account_terms_checkbox.dart';
+import 'package:simf_app/features/account/widgets/account_top_controls.dart';
+import 'package:simf_app/features/account/widgets/auth_chrome.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/localization/locale_controller.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../core/errors/api_error_l10n.dart';
-import '../../core/responsive/max_width_body.dart';
-import '../../core/validation/email_validation.dart';
-import '../../core/validation/password_validation.dart';
-import '../../core/widgets/simf_auth_sweep.dart';
-import 'widgets/account_auth_prompt.dart';
-import 'widgets/account_card.dart';
-import 'widgets/account_form_field.dart';
-import 'widgets/account_header.dart';
-import 'widgets/account_terms_checkbox.dart';
-import 'widgets/account_top_controls.dart';
-import 'widgets/auth_chrome.dart';
 
 /// Page 005 — إنشاء حساب · Sign up. The KSA-Project Figma design (node
 /// 168:3454), replacing the mockup screen at the official `/sign-up`

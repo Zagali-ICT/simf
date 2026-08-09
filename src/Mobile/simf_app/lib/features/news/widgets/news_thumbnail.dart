@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
-import 'category_chip.dart';
-import 'news_image_fallback.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/news/widgets/category_chip.dart';
+import 'package:simf_app/features/news/widgets/news_image_fallback.dart';
 
 /// The news thumbnail (frame node 958:2202): the article's `NewsImage` asset
 /// (fetched from the public anonymous D-357 route) under a navy
@@ -11,7 +11,7 @@ import 'news_image_fallback.dart';
 /// fetch
 /// -failure fall-back. 155 wide, stretched to the card height.
 class NewsThumbnail extends StatelessWidget {
-  const NewsThumbnail({required this.imageUrl, required this.category});
+  const NewsThumbnail({required this.imageUrl, required this.category, super.key});
 
   final String imageUrl;
   final String category;

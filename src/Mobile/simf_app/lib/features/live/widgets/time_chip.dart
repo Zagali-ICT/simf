@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A gold time chip showing the local HH:mm (frame 934:3628).
 class TimeChip extends StatelessWidget {
-  const TimeChip({required this.time});
+  const TimeChip({required this.time, super.key});
 
   final DateTime? time;
 

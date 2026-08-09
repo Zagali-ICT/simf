@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The action row (frame 908:1733 / 908:1737): a gold-outlined "share location"
 /// next to a gold-filled "guide me to my seat".
 class SessionsActions extends StatelessWidget {
-  const SessionsActions({required this.l10n, required this.onNavigate, this.onShare});
+  const SessionsActions({required this.l10n, required this.onNavigate, super.key, this.onShare});
 
   final AppL10n l10n;
   final VoidCallback onNavigate;

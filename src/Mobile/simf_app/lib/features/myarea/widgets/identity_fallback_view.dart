@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// Shown when no live camera is available (web / test / no camera / permission
 /// denied / a device without Google Play Services): a "camera required" message

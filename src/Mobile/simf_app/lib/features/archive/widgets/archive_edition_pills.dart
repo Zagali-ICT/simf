@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/archive_models.dart';
-import 'edition_pill.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/widgets/edition_pill.dart';
 
 /// The edition-selector pills (frame node 925:3248): one pill per edition,
 /// **equal-width** and filling the row (frame `flex-1`, 16px gap). The selected

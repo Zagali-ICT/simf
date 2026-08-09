@@ -2,16 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/features/contact_us/data/contact_us_repository.dart';
+import 'package:simf_app/features/contact_us/widgets/contact_info_card.dart';
+import 'package:simf_app/features/contact_us/widgets/contact_send_message_card.dart';
+import 'package:simf_app/features/contact_us/widgets/contact_social_card.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/organization_profile/organization_profile.dart';
-import 'data/contact_us_repository.dart';
-import 'widgets/contact_info_card.dart';
-import 'widgets/contact_send_message_card.dart';
-import 'widgets/contact_social_card.dart';
 
 /// Page 203 — تواصل معنا · Contact us (`/contact-us`, public). Pixel-parity to
 /// KSA Figma frame **1388:7711**: the navy [SimfPageShell] shell over a "أرسل رسالة"

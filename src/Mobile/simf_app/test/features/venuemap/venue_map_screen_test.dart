@@ -214,7 +214,6 @@ void main() {
         tester,
         repo: _FakeVenueMapRepository(
           nodes: const <VenueMapNode>[_hallNode, _farNode],
-          booths: const <BoothSummary>[],
         ),
       );
 
@@ -231,7 +230,6 @@ void main() {
         tester,
         repo: _FakeVenueMapRepository(
           nodes: const <VenueMapNode>[_hallNode, _farNode],
-          booths: const <BoothSummary>[],
         ),
       );
 
@@ -270,7 +268,6 @@ void main() {
         tester,
         repo: _FakeVenueMapRepository(
           nodes: const <VenueMapNode>[_hallNode],
-          booths: const <BoothSummary>[],
         ),
         locale: const Locale('ar'),
       );

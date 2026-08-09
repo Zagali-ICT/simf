@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/archive_models.dart';
-import 'archive_past_speaker_card.dart';
-import 'past_speaker_overflow.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/widgets/archive_past_speaker_card.dart';
+import 'package:simf_app/features/archive/widgets/past_speaker_overflow.dart';
 
 /// The past-speakers row (frame node 927:3347): up to four 72-wide tiles spread
 /// across the width — each a 72×72 rounded-rect photo over a centred name. With

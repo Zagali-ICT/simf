@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// Back chevron (inline start) + centred title (Figma 1701:3794/3796). A plain
 /// white chevron — the gate frame does not use the standard circled back box.

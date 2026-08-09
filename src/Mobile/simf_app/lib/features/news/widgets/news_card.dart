@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/net/asset_urls.dart';
-import '../data/news_models.dart';
-import 'news_thumbnail.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/features/news/data/news_models.dart';
+import 'package:simf_app/features/news/widgets/news_thumbnail.dart';
 
 /// One news row — frame node 957:2197: a borderless navy (radius-8) card laid
 /// out horizontally. In RTL the text block sits at the inline-start (right) —

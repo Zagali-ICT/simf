@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
-import 'simf_logo.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo.dart';
 
 /// The default avatar when a user has no photo (or the photo fails to load):
 /// the SIMF brand mark on a navy box. The owner chose the logo over a cultural
@@ -8,7 +8,7 @@ import 'simf_logo.dart';
 /// contrast on every surface — the navy scaffold, the my-area card, and the
 /// gold badge strip alike.
 class AvatarFallback extends StatelessWidget {
-  const AvatarFallback({required this.size});
+  const AvatarFallback({required this.size, super.key});
 
   final double size;
 

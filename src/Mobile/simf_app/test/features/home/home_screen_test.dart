@@ -546,7 +546,7 @@ void main() {
       await _pump(
         tester,
         controller: _SignedInController(),
-        profile: _dashboard(nameEn: 'Mohaned Zagali'),
+        profile: _dashboard(),
       );
       // The App-profile name wins over the auth session display name; the
       // greeting shows the first name only (owner 2026-07-21).

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// Owner 2026-06-30 — the Join CTA for an approved account holding no
 /// reservation: a single full-width gold "الانضمام إلى الجلسة" button (no hint,

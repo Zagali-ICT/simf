@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../localization/app_l10n.dart';
-import '../theme/tokens.dart';
-import 'scanner_header.dart';
-import 'simf_scanner_body.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/scanner_header.dart';
+import 'package:simf_app/app/widgets/simf_scanner_body.dart';
 
 /// The shared, EMUI-safe full-page QR scanner used by the visitor-facing
 /// scanners (contact scan, exhibitor lead capture) and badge sign-in — D-430,

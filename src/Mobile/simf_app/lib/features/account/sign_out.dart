@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/widgets/simf_confirm_dialog.dart';
 
 /// Confirms, then revokes the session (D-373) and lands on sign-in. Shared by
 /// the المزيد page (Figma 1129:17224 "تسجيل الخروج") and the shell drawer so the

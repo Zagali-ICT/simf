@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../core/utils/http_url.dart';
-import '../data/archive_models.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/utils/http_url.dart';
+import 'package:simf_app/features/archive/data/archive_models.dart';
 
 /// One gallery thumbnail (frame node 926:3299): a 104×104 rounded square — the
 /// real photo (cover-filled) under a bottom-to-navy gradient scrim, or a navy

@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/gates/data/gate_models.dart';
 import 'package:simf_app/features/gates/data/gate_offline_config.dart';
-import 'package:simf_app/features/gates/data/offline_badge.dart';
 import 'package:simf_app/features/gates/data/gates_repository.dart';
+import 'package:simf_app/features/gates/data/offline_badge.dart';
 import 'package:simf_app/features/gates/gate_scan_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -379,7 +379,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Allowed (offline) — saved for confirmation.'),
-          findsOneWidget);
+          findsOneWidget,);
       // NOT the server's allowed card: the decision is still the server's when
       // the queue drains, and the operator must not read this as final.
       expect(find.text('Allowed'), findsNothing);

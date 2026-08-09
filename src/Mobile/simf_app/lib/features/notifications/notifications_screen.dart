@@ -3,17 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_search_field.dart';
+import 'package:simf_app/features/notifications/data/notification_models.dart';
+import 'package:simf_app/features/notifications/data/notifications_repository.dart';
+import 'package:simf_app/features/notifications/widgets/notification_filter_chip.dart';
+import 'package:simf_app/features/notifications/widgets/notification_grouped_list.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../app/widgets/simf_search_field.dart';
-import 'data/notification_models.dart';
-import 'data/notifications_repository.dart';
-import 'widgets/notification_filter_chip.dart';
-import 'widgets/notification_grouped_list.dart';
 
 /// The chips filter by the server `group` code (D-678). The "جلسات" chip covers
 /// the event-flow groups; "VIP" covers the VIP group; "الكل" shows everything.
@@ -318,7 +317,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           child: SimfSearchField(
             hint: l10n.notificationsSearchHint,
             onChanged: (v) => setState(() => _query = v),
-            showTuningIcon: false,
           ),
         ),
         Padding(

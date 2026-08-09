@@ -28,6 +28,20 @@ abstract final class FieldLimits {
   /// A person's full name. Backend: `MaximumLength(100)`.
   static const int fullName = 100;
 
+  /// A profile name part, Arabic or English: `UserProfile.Name` /
+  /// `NameArabic`, nvarchar(50) in EF and `MaximumLength(50)` in both
+  /// UpsertUserProfileRequestValidator and
+  /// AdminWalkInRegistrationRequestValidator.
+  ///
+  /// DEF-STF-003: the walk-in desk used to accept 100 here, so a long name
+  /// round-tripped into a 400 with nothing highlighted. It is the same column
+  /// on both registration surfaces, so it is one constant.
+  ///
+  /// It happens to equal [email], which is why sign-up was reading THAT name.
+  /// A shared value is not a shared meaning: if the email column ever widens,
+  /// a name field must not silently widen with it.
+  static const int profileName = 50;
+
   /// Place of birth. Backend: `MaximumLength(128)`.
   static const int placeOfBirth = 128;
 

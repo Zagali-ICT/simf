@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One labelled channel line (icon + value). Renders nothing when the value is
 /// blank, so the card only shows the channels the subject actually exposes.
 class ChannelRow extends StatelessWidget {
-  const ChannelRow({required this.icon, required this.value});
+  const ChannelRow({required this.icon, required this.value, super.key});
 
   final IconData icon;
   final String? value;

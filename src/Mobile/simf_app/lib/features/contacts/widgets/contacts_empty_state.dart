@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The saved-contacts empty state: the contacts glyph, a bold title, a muted
 /// hint and the scan-to-add CTA. Shown when the list resolves to no rows.

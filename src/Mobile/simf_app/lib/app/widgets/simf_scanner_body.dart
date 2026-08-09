@@ -2,15 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
-
-import '../../core/motion/motion_durations.dart';
-import '../../core/utils/scan_gate.dart';
-import '../../core/widgets/simf_field_style.dart';
-import '../localization/app_l10n.dart';
-import '../theme/tokens.dart';
-import 'camera_error_card.dart';
-import 'or_divider.dart';
-import 'simf_scanner_frame.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/camera_error_card.dart';
+import 'package:simf_app/app/widgets/or_divider.dart';
+import 'package:simf_app/app/widgets/simf_scanner_frame.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/core/utils/scan_gate.dart';
+import 'package:simf_app/core/widgets/simf_field_style.dart';
 
 /// The single QR-scanning experience shared by every scanner in the app
 /// (badge sign-in, gate console, contact scan, exhibitor lead capture) — D-737.

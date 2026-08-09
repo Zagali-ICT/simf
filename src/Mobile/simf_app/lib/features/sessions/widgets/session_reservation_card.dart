@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-import '../data/seat_map_models.dart';
-import 'seat_marker.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/widgets/seat_marker.dart';
 
 /// D-485 — the reservation card: the held seat (الصف · مقعد) or "general
 /// admission" for an open-seating join, plus the pending-approval hint. A

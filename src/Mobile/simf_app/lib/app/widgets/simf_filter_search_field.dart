@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The bordered filter-search field (Figma 1426:10819 / 1388:8402): a 48-high
 /// navy-deep field with a beige hairline, a 16px search glyph + hint at the

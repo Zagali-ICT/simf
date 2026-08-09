@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../core/net/asset_urls.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
 
 /// One row of the "Meet People Like You" partner directory — mirrors
 /// `SIMF.Contracts.Networking.PartnerDirectoryEntry`. [kind] discriminates the

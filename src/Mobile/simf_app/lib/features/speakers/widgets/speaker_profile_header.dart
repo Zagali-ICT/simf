@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import 'name_line.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/speakers/widgets/name_line.dart';
 
 /// The speaker-profile header (frame 908:2110): the two-line title (white name
 /// over the beige rank, with the nationality flag leading the name) flanked by

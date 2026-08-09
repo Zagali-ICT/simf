@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_language_toggle.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_language_toggle.dart';
 
 /// The onboarding top bar: a back chevron on steps 2–3 at the physical left and
 /// the gold language globe at the physical right (matching the sign-in top).

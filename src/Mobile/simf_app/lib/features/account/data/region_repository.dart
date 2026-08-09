@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/account/data/account_endpoints.dart';
+import 'package:simf_app/features/account/data/region_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'account_endpoints.dart';
-import 'region_models.dart';
 
 /// App-local data layer for the region lookup (D-547): the single public read of
 /// the official Saudi administrative regions, over the authenticated

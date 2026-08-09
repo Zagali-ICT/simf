@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 class FlagBox extends StatelessWidget {
-  const FlagBox({required this.emoji});
+  const FlagBox({required this.emoji, super.key});
 
   final String emoji;
 

@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/localization/locale_controller.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The red LIVE badge (frame 934:3609): a white pulse dot after the label.
 class LiveBadge extends StatelessWidget {

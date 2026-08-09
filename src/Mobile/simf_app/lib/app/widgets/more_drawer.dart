@@ -3,19 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/router.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/drawer_tile.dart';
+import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
+import 'package:simf_app/core/sharing/content_sharer.dart';
+import 'package:simf_app/features/account/biometric_auth.dart';
+import 'package:simf_app/features/more/more_menu_items.dart';
+import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../core/sharing/content_sharer.dart';
-import '../../features/account/biometric_auth.dart';
-import '../../features/more/more_menu_items.dart';
-import '../../features/myarea/data/myarea_repository.dart';
-import '../localization/app_l10n.dart';
-import '../route_names.dart';
-import '../router.dart';
-import '../theme/tokens.dart';
-import 'drawer_tile.dart';
-import 'simf_confirm_dialog.dart';
 
 /// The shell's side drawer — the المزيد menu as a slide-in panel, opened by the
 /// shared top bar's ☰ (in RTL it slides from the right). Holds the navigation

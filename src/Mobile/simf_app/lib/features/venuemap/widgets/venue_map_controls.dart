@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One floating gold map control (frame nodes: locate / + / −).
 class VenueMapControl extends StatelessWidget {

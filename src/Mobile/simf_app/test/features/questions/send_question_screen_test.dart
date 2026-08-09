@@ -48,7 +48,7 @@ class _FakeSessionDetailRepo implements SessionDetailRepository {
   @override
   Future<SessionDetail> getDetail(String sessionId) async {
     if (fail) {
-      throw ApiFailure(
+      throw const ApiFailure(
         code: ApiErrorCodes.clientNetwork,
         message: 'x',
         httpStatus: 500,

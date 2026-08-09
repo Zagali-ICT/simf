@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/chatbot/data/chatbot_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'chatbot_endpoints.dart';
 
 /// The seam that turns a user prompt into an assistant reply.
 ///

@@ -10,16 +10,16 @@ Future<void> _pumpAt(WidgetTester tester, Size size) async {
   addTearDown(tester.view.reset);
 
   await tester.pumpWidget(
-    MaterialApp(
-      locale: const Locale('en'),
+    const MaterialApp(
+      locale: Locale('en'),
       supportedLocales: AppL10n.supportedLocales,
-      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+      localizationsDelegates: <LocalizationsDelegate<dynamic>>[
         ...AppL10n.localizationsDelegates,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const Scaffold(
+      home: Scaffold(
         body: Center(child: SimfScannerFrame(statusLabel: 'Scanning')),
       ),
     ),

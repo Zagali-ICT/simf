@@ -3,16 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_search_field.dart';
+import 'package:simf_app/features/booths/widgets/booth_card.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../app/widgets/simf_search_field.dart';
-import '../venuemap/data/venue_map_models.dart';
-import '../venuemap/data/venue_map_repository.dart';
-import 'widgets/booth_card.dart';
 
 /// Page 022 — الأجنحة · Booths (#22, `/booths`, Guest+), rebuilt to the
 /// KSA-Project Figma frame **922:2458 "Halls"** on the shared KSA shell.

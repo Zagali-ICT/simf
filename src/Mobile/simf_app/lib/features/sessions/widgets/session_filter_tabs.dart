@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import 'sessions_pill.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/widgets/sessions_pill.dart';
 
 /// The pill-tab bar shared by the session-summaries (Figma 1388:8392),
 /// my-sessions (1388:9067) and presentations (1388:7621) screens: pills with the

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The unread marker (frame 758:2491) — a 14-px red dot at the card's top
 /// inline-end corner.
 class UnreadDot extends StatelessWidget {
-  const UnreadDot();
+  const UnreadDot({super.key});
 
   @override
   Widget build(BuildContext context) {

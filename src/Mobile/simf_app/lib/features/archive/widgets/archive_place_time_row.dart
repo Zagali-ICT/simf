@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import 'labelled_bullet.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/archive/widgets/labelled_bullet.dart';
 
 /// The المكان / الزمن two-column row (node 926:3284): a gold inline-start
 /// divider between the place column and the time column.

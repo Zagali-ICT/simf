@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/session_lifecycle.dart';
-import '../data/session_models.dart' show SessionStatus;
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/data/session_lifecycle.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart' show SessionStatus;
 
 /// A visible session-state chip (owner 2026-07-14) — the small pills the agenda,
 /// my-sessions and summary cards show so a session's state reads at a glance.

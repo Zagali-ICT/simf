@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../core/utils/saudi_time.dart';
-import '../data/notification_models.dart';
-import 'notification_category_icon.dart';
-import 'unread_dot.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/notifications/data/notification_models.dart';
+import 'package:simf_app/features/notifications/widgets/notification_category_icon.dart';
+import 'package:simf_app/features/notifications/widgets/unread_dot.dart';
 
 /// One 12-hour formatter for the card timestamps (hoisted off the build path).
 final DateFormat _timeFormat = DateFormat('hh:mm a');
@@ -49,7 +49,6 @@ class NotificationCard extends StatelessWidget {
         // deep-link is unreachable. _onTapItem is a no-op for read,
         // non-actionable rows.
         onTap: onTap,
-        color: SimfTokens.navyDeep,
         borderColor: SimfTokens.transparent,
         borderWidth: 0,
         child: Stack(

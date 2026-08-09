@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// A speaker photo tile (Figma 908:2004): a rounded-square ([size]px, 4px radius)
 /// navy tile on a 0.2px beige hairline showing the speaker's uploaded photo (the

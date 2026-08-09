@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 class SocialButton extends StatelessWidget {
-  const SocialButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
+  const SocialButton({required this.icon, required this.label, required this.onTap, super.key,
   });
 
   final IconData icon;

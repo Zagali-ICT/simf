@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The gold index badge (frame 889:2604): a 40×40 gold rounded square with the
 /// day-ordinal in white extrabold, always LTR (e.g. "02"); a longer fallback
 /// code scales down to fit rather than overflowing the badge.
 class IndexBadge extends StatelessWidget {
-  const IndexBadge({required this.text});
+  const IndexBadge({required this.text, super.key});
 
   final String text;
 

@@ -2,18 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart' show referenceNumberProvider;
+import 'package:simf_app/features/badge/widgets/badge_actions.dart';
+import 'package:simf_app/features/badge/widgets/badge_qr_card.dart';
+import 'package:simf_app/features/myarea/data/myarea_models.dart';
+import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_bottom_nav.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../account/data/profile_repository.dart' show referenceNumberProvider;
-import '../myarea/data/myarea_models.dart';
-import '../myarea/data/myarea_repository.dart';
-import 'widgets/badge_actions.dart';
-import 'widgets/badge_qr_card.dart';
 
 /// Page 032 — بطاقة الدخول · Entry badge (#32, `/badge`), rebuilt to the
 /// KSA frame **758:1469 "QR"** on the shared shell.

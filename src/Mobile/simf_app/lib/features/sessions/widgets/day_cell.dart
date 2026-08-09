@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A short 3-letter English weekday for the day strip (LTR, as in the frame).
 String _weekdayEn(DateTime day) {
@@ -9,11 +9,7 @@ String _weekdayEn(DateTime day) {
 }
 
 class DayCell extends StatelessWidget {
-  const DayCell({
-    required this.date,
-    required this.hasSessions,
-    required this.selected,
-    required this.onTap,
+  const DayCell({required this.date, required this.hasSessions, required this.selected, required this.onTap, super.key,
   });
 
   final DateTime date;
@@ -28,7 +24,7 @@ class DayCell extends StatelessWidget {
     // empty day is uniformly muted grey (#C2C2C2). The weekend-red weekday
     // accent applies only to active (session) days — the frame shows the greyed
     // neighbour days (incl. SAT/SUN) with a plain grey label.
-    final bool isWeekend =
+    final isWeekend =
         date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
     final Color fill;
     final Color numberColor;

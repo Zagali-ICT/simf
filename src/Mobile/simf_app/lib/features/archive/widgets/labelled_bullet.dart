@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import 'archive_bullet.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/archive/widgets/archive_bullet.dart';
 
 /// A white label over an optional beige bulleted value (one column of the
 /// المكان / الزمن row).
 class LabelledBullet extends StatelessWidget {
-  const LabelledBullet({required this.label, required this.value});
+  const LabelledBullet({required this.label, required this.value, super.key});
 
   final String label;
   final String? value;

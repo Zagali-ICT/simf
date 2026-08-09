@@ -2,10 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/staff/data/staff_endpoints.dart';
+import 'package:simf_app/features/staff/data/staff_seating_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'staff_endpoints.dart';
-import 'staff_seating_models.dart';
 
 /// D-771 — data layer for the staff seating desk. Three reads, all gated
 /// server-side on `Seating.Assist` (an operational permission the Staff app role

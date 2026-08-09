@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The speaker's photo on a speaker card (frame 1060:12892): a 40×40 rounded
 /// square with a beige hairline. Renders the uploaded SpeakerPhoto asset
 /// (D-357), falling back to a navy person glyph while it loads or when the
 /// speaker has no photo (the asset route 404s).
 class SpeakerAvatar extends StatelessWidget {
-  const SpeakerAvatar({required this.imageUrl});
+  const SpeakerAvatar({required this.imageUrl, super.key});
 
   final String imageUrl;
 

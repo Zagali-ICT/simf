@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../data/venue_map_models.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 
 /// One node marker, styled by [VenueMapNode.kind]; the selected node carries
 /// a gold ring. All markers are tappable (selection drives the info card).

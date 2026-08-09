@@ -3,22 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/delegations/widgets/delegation_meeting_request_sheet.dart';
+import 'package:simf_app/features/meetings/data/meetings_provider.dart';
+import 'package:simf_app/features/meetings/widgets/meeting_action_row.dart';
+import 'package:simf_app/features/meetings/widgets/meeting_card.dart';
+import 'package:simf_app/features/requests/data/request_models.dart';
+import 'package:simf_app/features/requests/data/requests_repository.dart';
+import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/utils/refresh.dart';
-import '../account/data/profile_repository.dart';
-import '../delegations/widgets/delegation_meeting_request_sheet.dart';
-import '../requests/data/request_models.dart';
-import '../requests/data/requests_repository.dart';
-import '../speakers/widgets/meeting_request_sheet.dart';
-import 'data/meetings_provider.dart';
-import 'widgets/meeting_action_row.dart';
-import 'widgets/meeting_card.dart';
 
 /// Bilateral meetings — اللقاءات الثنائية · route: [RouteNames.meetings]
 /// Purpose: lists **all** the user's bilateral meeting requests (speaker +
@@ -147,7 +146,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
   }
 
   Widget _buildList(
-      AppL10n l10n, MeetingAccess access, List<AppRequestItem> items) {
+      AppL10n l10n, MeetingAccess access, List<AppRequestItem> items,) {
     final isArabic = l10n.isArabic;
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     return SimfPullToRefresh(

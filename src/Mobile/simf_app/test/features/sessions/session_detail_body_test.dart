@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/ask_host_card.dart';
 import 'package:simf_app/features/sessions/widgets/session_detail_body.dart';
 import 'package:simf_app/features/sessions/widgets/session_speaker_card.dart';
-import 'package:simf_app/core/utils/saudi_time.dart';
 
 const _speaker = SessionSpeaker(
   id: 'sp1',

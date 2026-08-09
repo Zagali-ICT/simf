@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// D-726 (owner item 11) — the idle session-timeout warning the session guard
 /// paints as an in-tree overlay (not a Navigator dialog, so it needs no router

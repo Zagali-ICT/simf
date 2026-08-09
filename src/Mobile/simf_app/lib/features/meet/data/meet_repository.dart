@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/meet/data/meet_endpoints.dart';
+import 'package:simf_app/features/meet/data/partner_directory_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'meet_endpoints.dart';
-import 'partner_directory_models.dart';
 
 /// Build #13 — `GET /app/networking/partner-directory` → the "Meet People Like
 /// You" partner directory (RequireApprovedAccount): the deduped union of curated

@@ -58,7 +58,7 @@ ContentBlock _block() => ContentBlock(
       key: 'terms',
       content: 'These are the terms.',
       contentArabic: 'هذه هي الشروط.',
-      lastUpdatedAt: DateTime.utc(2026, 9, 1),
+      lastUpdatedAt: DateTime.utc(2026, 9),
     );
 
 void main() {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_logo_image.dart';
-import '../../../core/net/asset_urls.dart';
-import '../data/sponsor_models.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_logo_image.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
 
 /// The sponsor's real logo (D-357 `SponsorLogo` asset, served anonymously at
 /// `{base}/app/assets/SponsorLogo/{id}/image`) shown **whole** inside its parent

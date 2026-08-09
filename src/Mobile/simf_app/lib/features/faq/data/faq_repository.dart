@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/faq/data/faq_endpoints.dart';
+import 'package:simf_app/features/faq/data/faq_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'faq_endpoints.dart';
-import 'faq_models.dart';
 
 /// Data layer for the public FAQ accordion (`GET /app/faq`, anonymous —
 /// Figma 1388:7567). Returns the active groups (each with its active entries,

@@ -29,8 +29,8 @@ class _FakeProfileRepo implements ProfileRepository {
   @override
   Future<List<CountryItem>> getCountries() async {
     if (fail) {
-      throw ApiFailure(
-          code: ApiErrorCodes.clientNetwork, message: 'x', httpStatus: 500);
+      throw const ApiFailure(
+          code: ApiErrorCodes.clientNetwork, message: 'x', httpStatus: 500,);
     }
     return const <CountryItem>[
       CountryItem(code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية'),
@@ -43,14 +43,14 @@ class _FakeProfileRepo implements ProfileRepository {
       profileTypes ??
       const <ProfileTypeItem>[
         ProfileTypeItem(
-            id: 'pt-normal', name: 'Normal', nameArabic: 'عادي', isVisitor: true),
+            id: 'pt-normal', name: 'Normal', nameArabic: 'عادي', isVisitor: true,),
         ProfileTypeItem(
-            id: 'pt-vip', name: 'VIP', nameArabic: 'كبار الزوار', isVisitor: true),
+            id: 'pt-vip', name: 'VIP', nameArabic: 'كبار الزوار', isVisitor: true,),
       ];
 
   @override
   Future<List<OrganisationItem>> searchOrganisations(
-          {String? search, int top = 20}) async =>
+          {String? search, int top = 20,}) async =>
       const <OrganisationItem>[
         OrganisationItem(id: 'org-1', nameAr: 'أكمي', nameEn: 'Acme'),
       ];
@@ -95,10 +95,10 @@ class _FakeStaffRepo implements StaffRepository {
   Future<bool> uploadIdImage(
       {required String userId,
       required List<int> bytes,
-      required String filename}) async {
+      required String filename,}) async {
     idUploadCalls++;
     if (idUploadCalls <= idUploadFailures) {
-      throw ApiFailure(
+      throw const ApiFailure(
         code: ApiErrorCodes.clientNetwork,
         message: 'upload failed',
         httpStatus: 500,
@@ -111,7 +111,7 @@ class _FakeStaffRepo implements StaffRepository {
   Future<bool> uploadAvatar(
       {required String userId,
       required List<int> bytes,
-      required String filename}) async {
+      required String filename,}) async {
     avatarUploadCalls++;
     return true;
   }
@@ -289,7 +289,7 @@ void main() {
       final emailState = tester.widget<TextField>(find.descendant(
         of: email,
         matching: find.byType(TextField),
-      ));
+      ),);
       expect(emailState.controller!.text.length, 50);
     });
 

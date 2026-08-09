@@ -254,7 +254,6 @@ void main() {
         tester,
         repo: _FakeRepo(detail: _detail()),
         controller: _SignedIn(),
-        isVip: false,
       );
       expect(find.widgetWithText(FilledButton, 'Request meeting'), findsNothing);
     });

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/accessibility_controller.dart';
-import 'size_chip.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
+import 'package:simf_app/features/accessibility/widgets/size_chip.dart';
 
 /// The "حجم الخط" card (frame 1116:16630): the label over a row of four pill
 /// chips, the selected one filled gold.

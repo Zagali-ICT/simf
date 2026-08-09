@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../data/faq_models.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/faq/data/faq_models.dart';
 
 /// One accordion card (frame 1388:7569…): the question row with a gold
 /// expand/collapse chevron, revealing the answer below a hairline when open.

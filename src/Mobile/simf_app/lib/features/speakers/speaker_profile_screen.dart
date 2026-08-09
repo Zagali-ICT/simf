@@ -4,23 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/speakers/data/speaker_models.dart';
+import 'package:simf_app/features/speakers/data/speakers_repository.dart';
+import 'package:simf_app/features/speakers/speaker_initials.dart';
+import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_avatar.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_cv.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_profile_header.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_sessions.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/net/asset_urls.dart';
-import '../account/data/profile_repository.dart';
-import 'data/speaker_models.dart';
-import 'data/speakers_repository.dart';
-import 'speaker_initials.dart';
-import 'widgets/meeting_request_sheet.dart';
-import 'widgets/speaker_avatar.dart';
-import 'widgets/speaker_cv.dart';
-import 'widgets/speaker_profile_header.dart';
-import 'widgets/speaker_sessions.dart';
 
 /// Page 020 — ملف المتحدث · Speaker profile (#20, `/speakers/:speakerId`,
 /// Guest+), rebuilt to the KSA-Project Figma frame **908:2110 "About Speaker"**

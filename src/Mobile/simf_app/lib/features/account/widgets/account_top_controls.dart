@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_language_toggle.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_language_toggle.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// The auth screens' top controls (Figma 627:2361): an optional back chevron at
 /// the inline start + the language toggle at the end, forced LTR so the sides

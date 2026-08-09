@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import 'legend_item.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sessions/widgets/legend_item.dart';
 
 /// The legend row (frame 907:1591): محجوز (deep-navy fill) · متاح (bordered) ·
 /// مقعدك (gold fill) — each a label next to its colour swatch. The reserved and
@@ -11,11 +11,7 @@ import 'legend_item.dart';
 /// the hall holds a confirmed seat, so the shipped three-item frame is
 /// unchanged for a hall nobody has entered yet.
 class Legend extends StatelessWidget {
-  const Legend({
-    required this.l10n,
-    required this.availableBorderColor,
-    required this.swatchSize,
-    required this.showConfirmed,
+  const Legend({required this.l10n, required this.availableBorderColor, required this.swatchSize, required this.showConfirmed, super.key,
   });
 
   final AppL10n l10n;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// A centred, padded message — the shared empty / forbidden surface for the
 /// exhibitor "My Visitors" screen (D-426). Extracted from `my_visitors_screen`

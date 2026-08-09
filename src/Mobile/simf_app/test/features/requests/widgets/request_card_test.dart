@@ -57,7 +57,7 @@ void main() {
     });
 
     testWidgets('omits the response note when null', (tester) async {
-      await _pumpCard(tester, _item(responseNote: null));
+      await _pumpCard(tester, _item());
       await tester.tap(find.byType(InkWell).first);
       await tester.pumpAndSettle();
       // No note text is rendered; only the status label remains in the detail.

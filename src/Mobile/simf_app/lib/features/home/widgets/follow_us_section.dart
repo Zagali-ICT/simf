@@ -2,14 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../../../core/env/build_config.dart';
-import '../../../core/organization_profile/organization_profile.dart';
-import 'social_button.dart';
-import 'website_link.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/env/build_config.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/features/home/widgets/social_button.dart';
+import 'package:simf_app/features/home/widgets/website_link.dart';
 
 /// The "تابعنا" follow-us section (frame node 758:1183): the header, the brand
 /// row and the @handle line. The links come from the CP-editable Organization

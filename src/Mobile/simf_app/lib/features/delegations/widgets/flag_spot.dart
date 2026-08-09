@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The invisible padding that grows each flag's tap target to a
 /// comfortable size without moving the painted dot.
@@ -11,10 +11,7 @@ const double flagSpotHitPad = 9;
 /// area); when [selected] the padding box is ringed in gold to mark the active
 /// filter.
 class FlagSpot extends StatelessWidget {
-  const FlagSpot({
-    required this.flag,
-    required this.selected,
-    required this.onTap,
+  const FlagSpot({required this.flag, required this.selected, required this.onTap, super.key,
   });
 
   final String flag;

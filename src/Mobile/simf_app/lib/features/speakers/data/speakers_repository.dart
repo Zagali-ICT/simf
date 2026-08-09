@@ -1,9 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/speakers/data/speaker_models.dart';
+import 'package:simf_app/features/speakers/data/speakers_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'speaker_models.dart';
-import 'speakers_endpoints.dart';
 
 /// Data layer for the speakers list (Page_019) + profile (Page_020). The two
 /// reads are **public** (`AllowAnonymous`, D-199); the meeting request is

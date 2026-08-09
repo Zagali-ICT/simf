@@ -3,16 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/sharing/content_sharer.dart';
+import 'package:simf_app/features/contacts/data/contacts_repository.dart';
+import 'package:simf_app/features/contacts/data/share_qr_payload.dart';
+import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_confirm_dialog.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/sharing/content_sharer.dart';
-import '../myarea/data/myarea_repository.dart';
-import 'data/contacts_repository.dart';
-import 'data/share_qr_payload.dart';
 
 /// Share my contact (SIMF-FDS-014 §5.4–5.5, D-286). **Auth-gated** (Approved
 /// only). On open it fetches the caller's dedicated share token
@@ -185,9 +184,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
                 padding: const EdgeInsets.all(SimfTokens.space6),
                 child: QrImageView(
                   data: buildShareQrPayload(vcard, _token ?? ''),
-                  version: QrVersions.auto,
                   size: SimfTokens.shareMyContactScreenSize,
-                  gapless: true,
                 ),
               ),
             ),
@@ -220,7 +217,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
                   : () => unawaited(_rotate()),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(SimfTokens.controlHeight),
-                side: const BorderSide(color: SimfTokens.accent, width: 1),
+                side: const BorderSide(color: SimfTokens.accent),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                 ),

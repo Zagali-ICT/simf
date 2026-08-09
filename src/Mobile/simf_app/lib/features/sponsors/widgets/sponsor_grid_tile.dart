@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
-import 'sponsor_logo.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/sponsors/widgets/sponsor_logo.dart';
 
 /// One gold-tier grid tile (frame 925:3031): a single 72-high navy card on the
 /// beige hairline holding the sponsor logo above its name (12px SemiBold white,
 /// centred). The logo fills the area above the name; initials are the fallback.
 class SponsorGridTile extends StatelessWidget {
-  const SponsorGridTile({
-    required this.id,
-    required this.baseUrl,
-    required this.name,
-    required this.initials,
-    required this.onTap,
+  const SponsorGridTile({required this.id, required this.baseUrl, required this.name, required this.initials, required this.onTap, super.key,
   });
 
   final String id;

@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// One header-card action button (frame 889:2708/889:2709): a 34-high navy chip
 /// on the 4px radius with a centred 12px SemiBold label. The accented variant
 /// (ملخص الجلسة) carries the 0.5px gold hairline + gold text; the plain variant
 /// (رابط الجلسة) the 0.2px beige hairline + white text.
 class HeaderActionButton extends StatelessWidget {
-  const HeaderActionButton({
-    required this.label,
-    required this.accented,
-    required this.enabled,
-    required this.onTap,
+  const HeaderActionButton({required this.label, required this.accented, required this.enabled, required this.onTap, super.key,
   });
 
   final String label;

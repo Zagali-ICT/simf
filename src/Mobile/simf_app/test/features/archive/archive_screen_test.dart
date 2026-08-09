@@ -31,7 +31,7 @@ const _editions = <ArchiveEdition>[
   ),
 ];
 
-final _detail = ArchiveEditionDetail(
+const _detail = ArchiveEditionDetail(
   id: 'a1',
   year: 2024,
   titleEn: 'Saudi International Maritime Forum 2024',
@@ -47,7 +47,7 @@ final _detail = ArchiveEditionDetail(
 
 // P6 — D-440: an edition whose gallery + past-speakers carry real photo URLs
 // (plus a video and a legacy relative path that must NOT render as images).
-final _detailWithMedia = ArchiveEditionDetail(
+const _detailWithMedia = ArchiveEditionDetail(
   id: 'a1',
   year: 2024,
   titleEn: 'Saudi International Maritime Forum 2024',

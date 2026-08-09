@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'accessibility_controller.dart';
-import 'accessibility_endpoints.dart';
 
 /// `accessibility-server-sync` — the server half of the accessibility choices.
 ///

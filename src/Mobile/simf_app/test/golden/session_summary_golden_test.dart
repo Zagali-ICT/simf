@@ -57,17 +57,17 @@ final _sessions = <SessionListItem>[
   _session(
     id: 'sel',
     titleAr: 'أمن سلاسل إمداد الطاقة البحرية',
-    start: DateTime.utc(2026, 6, 21, 6, 0),
+    start: DateTime.utc(2026, 6, 21, 6),
   ),
   _session(
     id: 'a1',
     titleAr: 'الافتتاح والترحيب',
-    start: DateTime.utc(2026, 6, 21, 6, 0),
+    start: DateTime.utc(2026, 6, 21, 6),
   ),
   _session(
     id: 'a2',
     titleAr: 'حماية قاع البحار',
-    start: DateTime.utc(2026, 6, 21, 8, 0),
+    start: DateTime.utc(2026, 6, 21, 8),
   ),
   _session(
     id: 'a3',
@@ -77,7 +77,7 @@ final _sessions = <SessionListItem>[
   _session(
     id: 'a4',
     titleAr: 'جلسة الختام والتوصيات',
-    start: DateTime.utc(2026, 6, 21, 13, 0),
+    start: DateTime.utc(2026, 6, 21, 13),
   ),
 ];
 

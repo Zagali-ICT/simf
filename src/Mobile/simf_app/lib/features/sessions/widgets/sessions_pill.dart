@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 class SessionsPill extends StatelessWidget {
-  const SessionsPill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
+  const SessionsPill({required this.label, required this.selected, required this.onTap, super.key,
     this.icon,
   });
 
@@ -16,7 +13,7 @@ class SessionsPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = selected ? SimfTokens.surface : SimfTokens.beigeBorder;
+    final fg = selected ? SimfTokens.surface : SimfTokens.beigeBorder;
     final Widget text = Text(
       label,
       textAlign: TextAlign.center,

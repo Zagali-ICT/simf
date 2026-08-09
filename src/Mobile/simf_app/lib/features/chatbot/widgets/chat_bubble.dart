@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../data/chat_message.dart';
-import 'ai_badge.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/chatbot/data/chat_message.dart';
+import 'package:simf_app/features/chatbot/widgets/ai_badge.dart';
 
 /// One chat bubble — pinned to match the Figma regardless of locale: assistant
 /// bubbles to the left (navy-deep fill + a top-end gold "AI" badge, frame

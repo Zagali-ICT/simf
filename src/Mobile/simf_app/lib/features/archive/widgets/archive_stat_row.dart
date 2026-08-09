@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../data/archive_models.dart';
-import 'stat_tile.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/widgets/stat_tile.dart';
 
 /// The two stat tiles (frame node 926:3285): a big gold number over its label,
 /// in a bordered navy box. The current frame shows exactly **two** tiles —

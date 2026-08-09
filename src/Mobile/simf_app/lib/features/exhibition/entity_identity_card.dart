@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import 'entity_link_row.dart';
-import 'widgets/location_line.dart';
-import 'widgets/tier_pill.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/exhibition/entity_link_row.dart';
+import 'package:simf_app/features/exhibition/widgets/location_line.dart';
+import 'package:simf_app/features/exhibition/widgets/tier_pill.dart';
 
 /// The borderless navyDeep identity card (Figma 1439:11891): the square logo,
 /// the entity name, the gold "City، Country" line, the centred tier pill and the

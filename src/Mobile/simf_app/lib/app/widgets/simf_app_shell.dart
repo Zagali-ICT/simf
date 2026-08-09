@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-
-import '../../features/badge/badge_screen.dart';
-import '../../features/home/home_screen.dart';
-import '../../features/myarea/my_area_screen.dart';
-import '../../features/sessions/sessions_screen.dart';
-import '../../features/venuemap/venue_map_screen.dart';
-import 'simf_bottom_nav.dart' show SimfTab;
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart' show SimfTab;
+import 'package:simf_app/features/badge/badge_screen.dart';
+import 'package:simf_app/features/home/home_screen.dart';
+import 'package:simf_app/features/myarea/my_area_screen.dart';
+import 'package:simf_app/features/sessions/sessions_screen.dart';
+import 'package:simf_app/features/venuemap/venue_map_screen.dart';
 
 /// Maps a [SimfTab] to its index in the shell's tab list.
 int tabIndex(SimfTab tab) => SimfTab.values.indexOf(tab);

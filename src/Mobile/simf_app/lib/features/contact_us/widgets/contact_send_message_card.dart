@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import 'contact_card_chrome.dart';
-import 'contact_field.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/features/contact_us/widgets/contact_card_chrome.dart';
+import 'package:simf_app/features/contact_us/widgets/contact_field.dart';
 
 /// The "أرسل رسالة" form card (frame node 1388:7711): name / email / message
 /// fields over the gold send button, on the navy-deep card chrome.

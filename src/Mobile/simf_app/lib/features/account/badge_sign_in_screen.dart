@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/qr_scan_view.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/widgets/qr_scan_view.dart';
 
 /// Part B (D-430) — badge-QR sign-in entry. The holder scans the QR printed on
 /// their badge; the server resolves it and the app branches: an account that

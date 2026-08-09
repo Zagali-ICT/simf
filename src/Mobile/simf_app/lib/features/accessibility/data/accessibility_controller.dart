@@ -2,9 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_preferences_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'accessibility_preferences_repository.dart';
 
 /// The text-size choices offered on the accessibility screen (Page 038; Figma
 /// 1116:16630 صغير / متوسط / كبير / أكبر). Persisted by stable `.name`, so the

@@ -1,5 +1,5 @@
-import 'presentation_models.dart';
-import 'session_models.dart';
+import 'package:simf_app/features/sessions/data/presentation_models.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
 
 /// Whether a presentation's تحميل (open-summary) button is active (owner
 /// 2026-07-14). True only when the matched programme [session] has a published

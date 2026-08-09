@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../core/widgets/simf_field_label.dart';
-import '../../../core/widgets/simf_field_style.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/widgets/simf_field_label.dart';
+import 'package:simf_app/core/widgets/simf_field_style.dart';
 
 /// The read-only date-of-birth field: tapping it runs [onTap] (the screen's
 /// date picker). [displayValue] is the already-formatted date (or '—'); the

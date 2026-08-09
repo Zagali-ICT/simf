@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 import 'package:video_player/video_player.dart';
-import '../../../app/theme/tokens.dart';
 
 /// The `video_player` surface: a 16:9-aware [VideoPlayer] with a play/pause FAB
 /// (the HLS/MP4 fallback path).
 class Player extends StatelessWidget {
-  const Player({required this.controller, required this.onToggle});
+  const Player({required this.controller, required this.onToggle, super.key});
 
   final VideoPlayerController controller;
   final VoidCallback onToggle;

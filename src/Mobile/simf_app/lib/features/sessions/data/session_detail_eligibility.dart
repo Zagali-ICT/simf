@@ -1,9 +1,8 @@
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/router.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-
-import '../../../app/route_names.dart';
-import '../../../app/router.dart';
-import '../../../core/utils/saudi_time.dart';
-import 'session_models.dart';
 
 /// Who may do what on a session detail, as pure functions of the caller's role
 /// and the session itself.

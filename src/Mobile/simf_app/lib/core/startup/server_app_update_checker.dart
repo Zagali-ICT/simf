@@ -1,11 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/core/external_link.dart';
+import 'package:simf_app/core/startup/app_update_checker.dart';
+import 'package:simf_app/core/startup/app_version_policy.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../external_link.dart';
-import '../utils/saudi_time.dart';
-import 'app_update_checker.dart';
-import 'app_version_policy.dart';
 
 /// D-736 — the production [AppUpdateChecker]: compares the installed version
 /// against the admin-configured server policy (`GET /app/version-policy`).

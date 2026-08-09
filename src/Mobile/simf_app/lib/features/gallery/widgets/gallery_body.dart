@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_page_shell.dart';
-import '../data/media_models.dart';
-import 'media_grid.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/features/gallery/data/media_models.dart';
+import 'package:simf_app/features/gallery/widgets/media_grid.dart';
 
 /// The gallery tab content: the الصور (images) section over the الفيديوهات
 /// (videos) section, each a two-up grid of media tiles. A section renders only

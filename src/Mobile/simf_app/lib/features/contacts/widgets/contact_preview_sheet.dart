@@ -2,19 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/validation/field_limits.dart';
+import 'package:simf_app/features/contacts/data/contact_models.dart';
+import 'package:simf_app/features/contacts/data/contacts_repository.dart';
+import 'package:simf_app/features/contacts/widgets/contact_card.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../../app/localization/app_l10n.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../core/validation/field_limits.dart';
-import '../data/contact_models.dart';
-import '../data/contacts_repository.dart';
-import 'contact_card.dart';
 
 /// The resolved-card preview + save sheet. Holds the optional note and the save
 /// call; pops `true` on a successful save, surfacing the self-save 400 inline.
 class ContactPreviewSheet extends ConsumerStatefulWidget {
-  const ContactPreviewSheet({required this.token, required this.card});
+  const ContactPreviewSheet({required this.token, required this.card, super.key});
 
   final String token;
   final VisitorCard card;

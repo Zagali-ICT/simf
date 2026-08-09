@@ -3,20 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/confirm_external_link.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/exhibition/entity_detail_helpers.dart';
+import 'package:simf_app/features/exhibition/entity_detail_scaffold.dart';
+import 'package:simf_app/features/exhibition/entity_logo_image.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
+import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/confirm_external_link.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../core/net/asset_urls.dart';
-import '../../core/utils/refresh.dart';
-import '../exhibition/entity_detail_helpers.dart';
-import '../exhibition/entity_detail_scaffold.dart';
-import '../exhibition/entity_logo_image.dart';
-import '../venuemap/data/venue_map_models.dart';
-import '../venuemap/data/venue_map_repository.dart';
 
 /// `GET /app/booths/{id}` → the booth/exhibitor detail (Figma 1439:11881).
 final exhibitorDetailProvider =

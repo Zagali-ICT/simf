@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The card-head avatar: the captured face photo once taken (owner follow-up —
 /// "show at top by replacing the icon with the real profile photo"), else the

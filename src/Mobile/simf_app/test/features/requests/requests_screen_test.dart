@@ -105,7 +105,6 @@ void main() {
             kind: AppRequestKind.participationDocument,
             id: '1',
             title: 'Certificate',
-            status: AppRequestStatus.pending,
           ),
           _item(
             kind: AppRequestKind.badgeUpdate,
@@ -134,7 +133,6 @@ void main() {
             kind: AppRequestKind.participationDocument,
             id: '1',
             title: 'Certificate',
-            status: AppRequestStatus.pending,
           ),
           _item(
             kind: AppRequestKind.badgeUpdate,

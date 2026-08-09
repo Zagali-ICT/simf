@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/app_assets.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
-import '../../app/widgets/simf_svg_icon.dart';
-import 'widgets/icon_box.dart';
+import 'package:simf_app/app/theme/app_assets.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/features/exhibition/widgets/icon_box.dart';
 
 /// A label/value row with a beige-fill icon box on one end and a chevron on the
 /// other — the shared shape of the stand-code→map row (Figma 1439:11904) and the
@@ -60,7 +60,7 @@ class EntityLinkRow extends StatelessWidget {
         fontSize: valueSize,
       ),
     );
-    final bool hasLabel = label.isNotEmpty;
+    final hasLabel = label.isNotEmpty;
     final Widget labelText = Text(
       label,
       textAlign: TextAlign.start,
@@ -73,7 +73,7 @@ class EntityLinkRow extends StatelessWidget {
       ),
     );
     // Guard the label (an empty one would add a blank line + an 8px gap).
-    final List<Widget> lines = valueOnTop
+    final lines = valueOnTop
         ? <Widget>[
             valueText,
             if (hasLabel) const SizedBox(height: SimfTokens.space2),

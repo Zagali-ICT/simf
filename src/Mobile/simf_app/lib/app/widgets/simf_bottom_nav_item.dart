@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../theme/tokens.dart';
-import 'simf_bottom_nav.dart';
-import 'simf_svg_icon.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 
 /// One destination: the exact iconify glyph (inactive `#5E584B`, active gold),
 /// plus the gold label **below it only when active** (the KSA nav shows a single
 /// label under the current tab; frame 758:1476).
 class SimfBottomNavItem extends StatelessWidget {
-  const SimfBottomNavItem({
-    required this.tab,
-    required this.current,
-    required this.iconAsset,
-    required this.label,
-    required this.onTap,
+  const SimfBottomNavItem({required this.tab, required this.current, required this.iconAsset, required this.label, required this.onTap, super.key,
   });
 
   final SimfTab tab;

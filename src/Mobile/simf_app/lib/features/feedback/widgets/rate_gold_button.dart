@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 
 /// The full-width gold action button: radius-4 gold fill with the centred white
 /// label. Stays gold while [loading] (taps disabled, a white spinner replaces the

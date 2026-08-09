@@ -5,37 +5,36 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/app/widgets/simf_form_scaffold.dart';
+import 'package:simf_app/app/widgets/simf_refresh.dart';
+import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/core/responsive/breakpoints.dart';
+import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/validation/digit_normalization.dart';
+import 'package:simf_app/core/validation/field_limits.dart';
+import 'package:simf_app/core/validation/name_validation.dart';
+import 'package:simf_app/core/validation/phone_validation.dart';
+import 'package:simf_app/core/validation/required_validation.dart';
+import 'package:simf_app/core/validation/saudi_id_validation.dart';
+import 'package:simf_app/core/widgets/simf_field_label.dart';
+import 'package:simf_app/core/widgets/simf_image_source_sheet.dart';
+import 'package:simf_app/core/widgets/simf_labeled_text_field.dart';
+import 'package:simf_app/core/widgets/simf_picker_field.dart';
+import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/account/widgets/attachment_field.dart';
+import 'package:simf_app/features/account/widgets/beige_tabs.dart';
+import 'package:simf_app/features/account/widgets/gender_pills_field.dart';
+import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
+import 'package:simf_app/features/account/widgets/mobile_field.dart';
+import 'package:simf_app/features/account/widgets/terms_and_next_buttons.dart';
+import 'package:simf_app/features/staff/data/staff_models.dart';
+import 'package:simf_app/features/staff/data/staff_repository.dart';
+import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
-import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_form_scaffold.dart';
-import '../../app/widgets/simf_refresh.dart';
-import '../../core/motion/motion_durations.dart';
-import '../../core/responsive/breakpoints.dart';
-import '../../core/responsive/max_width_body.dart';
-import '../../core/validation/digit_normalization.dart';
-import '../../core/validation/field_limits.dart';
-import '../../core/validation/name_validation.dart';
-import '../../core/validation/phone_validation.dart';
-import '../../core/validation/required_validation.dart';
-import '../../core/validation/saudi_id_validation.dart';
-import '../../core/widgets/simf_field_label.dart';
-import '../../core/widgets/simf_image_source_sheet.dart';
-import '../../core/widgets/simf_labeled_text_field.dart';
-import '../../core/widgets/simf_picker_field.dart';
-import '../account/data/profile_models.dart';
-import '../account/data/profile_repository.dart';
-import '../account/data/visitor_profile_validators.dart';
-import '../account/widgets/attachment_field.dart';
-import '../account/widgets/beige_tabs.dart';
-import '../account/widgets/gender_pills_field.dart';
-import '../account/widgets/lookup_search_sheet.dart';
-import '../account/widgets/mobile_field.dart';
-import '../account/widgets/terms_and_next_buttons.dart';
-import 'data/staff_models.dart';
-import 'data/staff_repository.dart';
 
 /// D-509 — "إنشاء ملف زائر" / add a visitor at the exhibition (staff). Staff
 /// fill in the walk-in visitor's details and submit; the API creates a
@@ -85,12 +84,6 @@ class _ServerFieldError {
   final String message;
   final String rejectedValue;
 }
-
-/// The desk's name fields are `UserProfile.Name` / `NameArabic` — nvarchar(50)
-/// in EF, `MaximumLength(50)` in AdminWalkInRegistrationRequestValidator. The
-/// input caps at the SAME 50 (DEF-STF-003: it used to accept 100, so a long
-/// name round-tripped into a 400 with nothing highlighted).
-const int _nameMaxLength = 50;
 
 /// The card's content cap: a phone/compact window gets the 560 form width the
 /// Create-profile screen uses; a tablet gets the wider reading width so the
@@ -752,7 +745,7 @@ class _StaffRegisterVisitorScreenState
               child: SimfLabeledTextField(
                 label: l10n.arabicNameLabel,
                 controller: _arabicName,
-                maxLength: _nameMaxLength,
+                maxLength: FieldLimits.profileName,
                 textDirection: TextDirection.rtl,
                 // MERGE (BUG-019 rebuild + BUG-021): the rebuilt field keeps the
                 // shared widget, but the character class is the widened shared one
@@ -772,7 +765,7 @@ class _StaffRegisterVisitorScreenState
               child: SimfLabeledTextField(
                 label: l10n.englishNameLabel,
                 controller: _englishName,
-                maxLength: _nameMaxLength,
+                maxLength: FieldLimits.profileName,
                 textDirection: TextDirection.ltr,
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
