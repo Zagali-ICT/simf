@@ -30,7 +30,7 @@ an external code review, so it can be read and handed over directly.
 finding that is NOT in it, so a newly introduced violation fails the build on
 the commit that introduced it.
 
-It now holds **14 entries**, all `_build*` methods in three large screens. They
+It now holds **12 entries**, all `_build*` methods in three large screens. They
 are a deliberate, argued exception, not leftover debt: see SIMF-CQP-001 section
 10.1 for the measurement behind the decision. Eight of the nine rules report
 zero, so for those the baseline is already equivalent to `--strict`.
