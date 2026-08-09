@@ -15,7 +15,6 @@ import 'package:simf_app/core/motion/motion_durations.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/validation/digit_normalization.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
-import 'package:simf_app/core/validation/name_validation.dart';
 import 'package:simf_app/core/validation/phone_validation.dart';
 import 'package:simf_app/core/validation/plate_validation.dart';
 import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
@@ -30,9 +29,7 @@ import 'package:simf_app/features/account/saudi_regions.dart';
 import 'package:simf_app/features/account/widgets/attachment_field.dart';
 import 'package:simf_app/features/account/widgets/beige_tabs.dart';
 import 'package:simf_app/features/account/widgets/date_of_birth_field.dart';
-import 'package:simf_app/features/account/widgets/gender_pills_field.dart';
 import 'package:simf_app/features/account/widgets/lookup_search_sheet.dart';
-import 'package:simf_app/features/account/widgets/mobile_field.dart';
 import 'package:simf_app/features/account/widgets/organisation_typeahead_field.dart';
 import 'package:simf_app/features/account/widgets/place_of_birth_field.dart';
 import 'package:simf_app/features/account/widgets/plate_number_field.dart';
@@ -42,6 +39,8 @@ import 'package:simf_app/features/account/widgets/terms_and_next_buttons.dart';
 import 'package:simf_app/features/myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_form_state.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
+import 'package:simf_app/features/visitor_profile/widgets/contact_section.dart';
+import 'package:simf_app/features/visitor_profile/widgets/identity_section.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Page 007 — إنشاء ملف شخصى · Sign up — profile **data**. The KSA-Project
@@ -712,69 +711,16 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   const SizedBox(height: SimfTokens.space6),
                   _buildProfileTypeField(l10n),
                   const SizedBox(height: SimfTokens.space4),
-                  SimfLabeledTextField(
-                    label: l10n.arabicNameLabel,
-                    controller: _arabicName,
-                    maxLength: FieldLimits.email,
-                    // Arabic letters + spaces only — block other scripts at
-                    // the keystroke so the field can never hold mixed text.
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(arabicNameCharacters),
-                    ],
-                    validator: (v) => validateArabicName(v, l10n),
-                  ),
-                  const SizedBox(height: SimfTokens.space4),
-                  SimfLabeledTextField(
-                    label: l10n.englishNameLabel,
-                    controller: _englishName,
-                    maxLength: FieldLimits.email,
-                    textDirection: TextDirection.ltr,
-                    // Latin letters + spaces only.
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
-                    ],
-                    validator: (v) => validateEnglishName(v, l10n),
-                  ),
-                  const SizedBox(height: SimfTokens.space4),
-                  SimfFieldLabel(l10n.genderLabel),
-                  const SizedBox(height: SimfTokens.space2),
-                  GenderPillsField(
+                  IdentitySection(
+                    l10n: l10n,
+                    arabicName: _arabicName,
+                    englishName: _englishName,
+                    jobTitle: _jobTitle,
+                    jobTitleArabic: _jobTitleArabic,
                     gender: _form.gender,
-                    onChanged: (value) =>
+                    onGenderChanged: (value) =>
                         setState(() => _form.gender = value),
-                  ),
-                  const SizedBox(height: SimfTokens.space4),
-                  _buildOrganisationField(l10n),
-                  const SizedBox(height: SimfTokens.space4),
-                  SimfLabeledTextField(
-                    label: l10n.jobTitleLabel,
-                    controller: _jobTitle,
-                    maxLength: FieldLimits.fullName,
-                    textDirection: TextDirection.ltr,
-                    // Latin letters + spaces only — mirror the English name
-                    // field so the English job title can never hold Arabic.
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
-                    ],
-                    // D-723 — required (only the plate number stays optional).
-                    validator: (String? v) => (v == null || v.trim().isEmpty)
-                        ? l10n.jobTitleRequired
-                        : null,
-                  ),
-                  const SizedBox(height: SimfTokens.space4),
-                  // Optional Arabic job title — the backend + CP already
-                  // carry UserProfile.JobTitleArabic; captured here too
-                  // (server validates only when present).
-                  SimfLabeledTextField(
-                    label: l10n.jobTitleArabicLabel,
-                    controller: _jobTitleArabic,
-                    maxLength: FieldLimits.fullName,
-                    textDirection: TextDirection.rtl,
-                    // Arabic letters + spaces only — mirror the Arabic name
-                    // field so the Arabic job title can never hold Latin text.
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(arabicNameCharacters),
-                    ],
+                    organisationField: _buildOrganisationField(l10n),
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   _buildNationalityField(l10n),
@@ -783,13 +729,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   // drives national-ID vs iqama/passport (SA → national ID).
                   ..._buildDocumentFields(l10n),
                   const SizedBox(height: SimfTokens.space4),
-                  MobileField(
-                    saudi: _isSaudi,
-                    controller:
-                        _isSaudi ? _saudiMobile : _internationalMobile,
-                    validator: _isSaudi
-                        ? (v) => validateSaudiMobile(v, l10n)
-                        : (v) => validateInternationalMobile(v, l10n),
+                  ContactSection(
+                    l10n: l10n,
+                    isSaudi: _isSaudi,
+                    saudiMobile: _saudiMobile,
+                    internationalMobile: _internationalMobile,
                   ),
                   const SizedBox(height: SimfTokens.space4),
                   DateOfBirthField(
