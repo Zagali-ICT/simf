@@ -13,14 +13,9 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/motion/motion_durations.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
-import 'package:simf_app/core/validation/digit_normalization.dart';
-import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/core/validation/phone_validation.dart';
 import 'package:simf_app/core/validation/plate_validation.dart';
 import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
-import 'package:simf_app/core/widgets/simf_field_label.dart';
-import 'package:simf_app/core/widgets/simf_labeled_text_field.dart';
-import 'package:simf_app/core/widgets/simf_picker_field.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/account/data/region_models.dart';
@@ -40,7 +35,9 @@ import 'package:simf_app/features/myarea/identity_verification_screen.dart' show
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_form_state.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
 import 'package:simf_app/features/visitor_profile/widgets/contact_section.dart';
+import 'package:simf_app/features/visitor_profile/widgets/document_section.dart';
 import 'package:simf_app/features/visitor_profile/widgets/identity_section.dart';
+import 'package:simf_app/features/visitor_profile/widgets/nationality_section.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Page 007 — إنشاء ملف شخصى · Sign up — profile **data**. The KSA-Project
@@ -723,11 +720,28 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     organisationField: _buildOrganisationField(l10n),
                   ),
                   const SizedBox(height: SimfTokens.space4),
-                  _buildNationalityField(l10n),
+                  NationalitySection(
+                    l10n: l10n,
+                    countries: _form.countries,
+                    selectedCode: _form.nationalityCode,
+                    showError:
+                        _form.triedSubmit && _form.nationalityCode == null,
+                    onTap: () => unawaited(_pickNationality(l10n)),
+                  ),
                   const SizedBox(height: SimfTokens.space4),
                   // D-373 — the Saudi switch is gone: the nationality pick
                   // drives national-ID vs iqama/passport (SA → national ID).
-                  ..._buildDocumentFields(l10n),
+                  DocumentSection(
+                    l10n: l10n,
+                    isSaudi: _isSaudi,
+                    docType: _form.docType,
+                    nationalId: _nationalId,
+                    documentNumber: _documentNumber,
+                    onDocTypeChanged: (value) => setState(() {
+                      _form.docType = value;
+                      _documentNumber.clear();
+                    }),
+                  ),
                   const SizedBox(height: SimfTokens.space4),
                   ContactSection(
                     l10n: l10n,
@@ -847,34 +861,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
-  /// D-373 — the 57-country list gets the shared searchable picker. Switching
-  /// nationality also drives the document section (SA → national ID, else
-  /// Iqama/Passport).
-  Widget _buildNationalityField(AppL10n l10n) {
-    final selected = _form.countries
-        .where((c) => c.code == _form.nationalityCode)
-        .toList();
-    final hasValue = selected.isNotEmpty;
-    final label = hasValue
-        ? (l10n.isArabic ? selected.first.nameArabic : selected.first.name)
-        : l10n.nationalityLabel;
-    final showError = _form.triedSubmit && _form.nationalityCode == null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfFieldLabel(l10n.nationalityLabel),
-        const SizedBox(height: SimfTokens.space2),
-        SimfPickerField(
-          fieldKey: 'nationalityPicker',
-          displayText: label,
-          isPlaceholder: !hasValue,
-          onTap: () => unawaited(_pickNationality(l10n)),
-          errorText: showError ? l10n.nationalityRequired : null,
-        ),
-      ],
-    );
-  }
-
   /// Opens the searchable country sheet and applies the pick. Clearing the
   /// stale national-id/iqama input when the Saudi-ness flips keeps the
   /// derived document section consistent (D-373).
@@ -980,47 +966,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _placeOfBirth.text =
           _birthRegionByCode(pickedCode)?.name(isArabic: isArabic) ?? '';
     });
-  }
-
-  List<Widget> _buildDocumentFields(AppL10n l10n) {
-    if (_isSaudi) {
-      return <Widget>[
-        SimfLabeledTextField(
-          label: l10n.nationalIdLabel,
-          controller: _nationalId,
-          keyboardType: TextInputType.number,
-          maxLength: FieldLimits.nationalId,
-          // Accept an id typed in Arabic-Indic digits — fold to Western so it
-          // validates and submits as `1XXXXXXXXX` (owner 2026-07-06).
-          inputFormatters: <TextInputFormatter>[
-            const WesternDigitsFormatter(),
-            FilteringTextInputFormatter.digitsOnly,
-          ],
-          validator: (v) => validateNationalId(v, l10n),
-        ),
-      ];
-    }
-    return <Widget>[
-      SimfFieldLabel(l10n.documentTypeLabel),
-      const SizedBox(height: SimfTokens.space2),
-      BeigeTabs(
-        options: <String>[l10n.iqamaSegment, l10n.passportSegment],
-        selectedIndex: _form.docType == VisitorDocType.iqama ? 0 : 1,
-        onChanged: (index) => setState(() {
-          _form.docType = index == 0 ? VisitorDocType.iqama : VisitorDocType.passport;
-          _documentNumber.clear();
-        }),
-      ),
-      const SizedBox(height: SimfTokens.space4),
-      SimfLabeledTextField(
-        label: l10n.documentNumberLabel,
-        controller: _documentNumber,
-        maxLength: _form.docType == VisitorDocType.iqama ? 10 : 9,
-        // Fold Arabic-Indic digits to Western (letters pass for passports).
-        inputFormatters: const <TextInputFormatter>[WesternDigitsFormatter()],
-        validator: (v) => validateDocumentNumber(v, l10n, _form.docType),
-      ),
-    ];
   }
 
   Widget _buildPlaceOfBirthField(AppL10n l10n) {
