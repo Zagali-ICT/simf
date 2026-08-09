@@ -45,25 +45,74 @@ param (
     [string]$WebSiteName = 'SIMF.WEB',
     [string]$WebPath     = 'D:\System\v1.0.1\web',
 
-    # Install only: the HTTP port + optional host header for a newly created site.
-    # TLS bindings and the CA certificate are configured separately (see the HLD /
-    # SIMF-OPS-001). Ignored for the other actions.
+    # Install only: the HTTP port for a newly created site. Ignored otherwise.
     [int]$ApiPort = 12340,
     [int]$CpPort  = 12341,
-    [int]$WebPort = 12342
+    [int]$WebPort = 12342,
+
+    # Public host names. Install adds an SNI HTTPS binding for each when
+    # -CertThumbprint is supplied. These are the names the certificate must
+    # cover: every certificate bypass was removed on 2026-08-08, so the CP and
+    # Website will not start if the API's certificate does not validate.
+    [string]$ApiHost = 'api.simrsnf.com',
+    [string]$CpHost  = 'cp.simrsnf.com',
+    [string]$WebHost = 'web.simrsnf.com',
+
+    # Thumbprint of a certificate in Cert:\LocalMachine\My. Without it Install
+    # creates the sites on HTTP only and says so, rather than pretending TLS is
+    # configured.
+    [string]$CertThumbprint = '',
+
+    # Uploads + logs. Granted to the API pool ONLY - it holds ID documents, and
+    # the API's authorization is the only thing meant to gate them.
+    [string]$StoragePath = 'C:\SIMF\Storage',
+
+    # Run the pools as a SPECIFIC account instead of ApplicationPoolIdentity.
+    # Needed when the content sits on a UNC share, when drive ACLs are managed
+    # centrally and cannot grant a virtual account, or when the app must reach a
+    # domain resource - a virtual account leaves the machine as MACHINE$ and gets
+    # refused. Format: 'DOMAIN\user' or '.\localuser'.
+    #
+    # Use a DEDICATED service account, not a member of Administrators. This pool
+    # runs the internet-facing API, so its identity is what an attacker inherits
+    # from any code-execution bug; an admin identity turns that into full control
+    # of the server, the encryption keys in the machine environment and the
+    # certificate's private key. The ACL grants below give a plain account
+    # everything the app needs.
+    [string]$PoolIdentity = '',
+
+    # SecureString, not [string]: a plain parameter puts a service-account
+    # password into PowerShell history and into any transcript the operator has
+    # running. Pass it as (Read-Host -AsSecureString) or from a credential store.
+    [securestring]$PoolPassword
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module WebAdministration
 
+# The two go together. Half a pair is the failure this pass exists to prevent:
+# an operator passes an account, sees no error, and believes the pool runs as it
+# while IIS silently keeps ApplicationPoolIdentity.
+if (-not [string]::IsNullOrWhiteSpace($PoolIdentity) -and -not $PoolPassword) {
+    throw "-PoolIdentity was given without -PoolPassword. Pass both, e.g. -PoolPassword (Read-Host -AsSecureString), or neither to use ApplicationPoolIdentity."
+}
+if ([string]::IsNullOrWhiteSpace($PoolIdentity) -and $PoolPassword) {
+    throw "-PoolPassword was given without -PoolIdentity. There is no account to apply it to."
+}
+# A LITERAL check, not a regex: a lone backslash in a pattern is a trailing
+# escape, so `-notmatch '\\'` is a parse error rather than a test.
+if ($PoolIdentity -and -not $PoolIdentity.Contains('\')) {
+    throw "-PoolIdentity must be qualified: 'DOMAIN\user' for a domain account or '.\user' for a local one (got '$PoolIdentity')."
+}
+
 # --- the app table -----------------------------------------------------------
 # Each app is one IIS site + its application pool (the ASP.NET Core Module hosts
 # the .NET app in-process). The API pool additionally runs the background workers.
 $apps = [ordered]@{
-    Api = @{ Site = $ApiSiteName; Path = $ApiPath; Port = $ApiPort; Pool = $ApiSiteName }
-    Cp  = @{ Site = $CpSiteName;  Path = $CpPath;  Port = $CpPort;  Pool = $CpSiteName  }
-    Web = @{ Site = $WebSiteName; Path = $WebPath; Port = $WebPort; Pool = $WebSiteName }
+    Api = @{ Site = $ApiSiteName; Path = $ApiPath; Port = $ApiPort; Pool = $ApiSiteName; Host = $ApiHost; Storage = $true  }
+    Cp  = @{ Site = $CpSiteName;  Path = $CpPath;  Port = $CpPort;  Pool = $CpSiteName;  Host = $CpHost;  Storage = $false }
+    Web = @{ Site = $WebSiteName; Path = $WebPath; Port = $WebPort; Pool = $WebSiteName; Host = $WebHost; Storage = $false }
 }
 
 function Resolve-Targets([string]$requested) {
@@ -115,6 +164,120 @@ function Restart-App([hashtable]$app) {
     Start-App $app
 }
 
+# The ASP.NET Core Module is what actually starts a .NET app under IIS. Without
+# the Hosting Bundle every site returns 500.19 and nothing else in this script
+# matters, so it is checked once, up front, rather than discovered per site.
+function Test-HostingBundle {
+    $module = Get-WebGlobalModule | Where-Object Name -like 'AspNetCoreModule*'
+    if ($module) {
+        Write-Host ("  module ok {0}" -f ($module.Name -join ', ')) -ForegroundColor DarkGray
+        return
+    }
+    Write-Warning "AspNetCoreModuleV2 is NOT installed. Every SIMF site will return 500.19."
+    Write-Warning "Install the ASP.NET Core Hosting Bundle for .NET 10, then run 'iisreset'."
+}
+
+# The Windows account a pool runs as, in the form icacls and IIS both accept.
+#
+# ApplicationPoolIdentity is a VIRTUAL account: it exists only as
+# "IIS AppPool\<pool>" and cannot be granted rights on a UNC share or reach a
+# domain resource (it presents as MACHINE$). -PoolIdentity switches to a real
+# account for exactly those cases, and every ACL below must then target THAT
+# account rather than the virtual one - granting the virtual account rights a
+# custom identity never uses is the silent half of this bug.
+function Get-PoolPrincipal([hashtable]$app) {
+    if ([string]::IsNullOrWhiteSpace($PoolIdentity)) {
+        return "IIS AppPool\$($app.Pool)"
+    }
+    return $PoolIdentity
+}
+
+# Applies -PoolIdentity to a pool. Idempotent: re-running Install on a box whose
+# pool already carries the account leaves it alone rather than re-writing the
+# password.
+function Set-PoolIdentity([hashtable]$app) {
+    if ([string]::IsNullOrWhiteSpace($PoolIdentity)) { return }
+
+    $poolPath = "IIS:\AppPools\$($app.Pool)"
+    $current = (Get-ItemProperty $poolPath -Name processModel.userName).Value
+    if ($current -eq $PoolIdentity) {
+        Write-Host ("  ident ok {0} -> {1} (already set)" -f $app.Pool, $PoolIdentity) -ForegroundColor DarkGray
+        return
+    }
+
+    # SpecificUser = 3. The password is converted here and not held anywhere:
+    # IIS stores it encrypted in applicationHost.config.
+    $plain = [Runtime.InteropServices.Marshal]::PtrToStringUni(
+        [Runtime.InteropServices.Marshal]::SecureStringToBSTR($PoolPassword))
+    try {
+        Set-ItemProperty $poolPath -Name processModel.identityType -Value 3
+        Set-ItemProperty $poolPath -Name processModel.userName -Value $PoolIdentity
+        Set-ItemProperty $poolPath -Name processModel.password -Value $plain
+    }
+    finally {
+        $plain = $null
+    }
+    Write-Host ("  ident +  {0} -> {1}" -f $app.Pool, $PoolIdentity) -ForegroundColor Green
+}
+
+# Least privilege, and idempotent so re-running Install repairs a drifted box.
+#   site folder -> Read+Execute for its OWN pool identity
+#   storage     -> Modify for the API pool only
+function Grant-AppAccess([hashtable]$app) {
+    $identity = Get-PoolPrincipal $app
+
+    & icacls $app.Path /grant "${identity}:(OI)(CI)RX" /T /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { Write-Warning ("icacls failed on {0}" -f $app.Path) }
+    else { Write-Host ("  acl  ok {0} -> {1} (RX)" -f $app.Path, $identity) -ForegroundColor DarkGray }
+
+    # LOGS: all three apps write here. SIMF_Storage__LogDirectory is tagged
+    # "API CP Web", and Serilog opens its sink during startup - so a pool that
+    # cannot write to it does not log an error, it FAILS TO START. That presents
+    # as a 500 under IIS while the same build runs fine from a console, because
+    # the console runs as you and w3wp runs as the pool identity.
+    $logPath = Join-Path $StoragePath 'logs'
+    if (-not (Test-Path $logPath)) { New-Item -ItemType Directory -Force -Path $logPath | Out-Null }
+    & icacls $logPath /grant "${identity}:(OI)(CI)M" /T /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { Write-Warning ("icacls failed on {0}" -f $logPath) }
+    else { Write-Host ("  acl  ok {0} -> {1} (Modify)" -f $logPath, $identity) -ForegroundColor DarkGray }
+
+    # FILES: uploads and ID documents. API only - the API's authorization is the
+    # only thing meant to gate them, so the CP and Website pools stay out.
+    if (-not $app.Storage) { return }
+    $filePath = Join-Path $StoragePath 'files'
+    if (-not (Test-Path $filePath)) { New-Item -ItemType Directory -Force -Path $filePath | Out-Null }
+    & icacls $filePath /grant "${identity}:(OI)(CI)M" /T /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { Write-Warning ("icacls failed on {0}" -f $filePath) }
+    else { Write-Host ("  acl  ok {0} -> {1} (Modify)" -f $filePath, $identity) -ForegroundColor DarkGray }
+}
+
+# SNI, because three host names share port 443 on one box.
+function Add-HttpsBinding([hashtable]$app) {
+    if ([string]::IsNullOrWhiteSpace($CertThumbprint)) {
+        Write-Host ("  https -- {0} skipped (no -CertThumbprint); site is HTTP only" -f $app.Host) -ForegroundColor Yellow
+        return
+    }
+    $cert = Get-Item "Cert:\LocalMachine\My\$CertThumbprint" -ErrorAction SilentlyContinue
+    if (-not $cert) {
+        Write-Warning ("certificate {0} not found in Cert:\LocalMachine\My - HTTPS not bound for {1}" -f $CertThumbprint, $app.Host)
+        return
+    }
+
+    $existing = Get-WebBinding -Name $app.Site -Protocol https -ErrorAction SilentlyContinue |
+                Where-Object { $_.bindingInformation -like "*:443:$($app.Host)" }
+    if (-not $existing) {
+        New-WebBinding -Name $app.Site -Protocol https -Port 443 -HostHeader $app.Host -SslFlags 1
+        Write-Host ("  https +  {0}:443 -> {1}" -f $app.Host, $app.Site) -ForegroundColor Green
+    }
+    else {
+        Write-Host ("  https ok {0}:443 (exists)" -f $app.Host) -ForegroundColor DarkGray
+    }
+
+    $sslPath = "IIS:\SslBindings\!443!$($app.Host)"
+    if (-not (Test-Path $sslPath)) { $cert | New-Item $sslPath -SslFlags 1 | Out-Null }
+    Write-Host ("  cert ok  {0} -> {1}" -f $app.Host, $CertThumbprint.Substring(0, 8)) -ForegroundColor DarkGray
+}
+
 function Install-App([hashtable]$app) {
     if (-not (Test-Path $app.Path)) {
         New-Item -ItemType Directory -Force -Path $app.Path | Out-Null
@@ -122,20 +285,44 @@ function Install-App([hashtable]$app) {
     }
     if (-not (Test-Path "IIS:\AppPools\$($app.Pool)")) {
         New-WebAppPool -Name $app.Pool | Out-Null
-        # No Managed Code: the ASP.NET Core Module hosts the .NET runtime itself.
-        Set-ItemProperty "IIS:\AppPools\$($app.Pool)" -Name managedRuntimeVersion -Value ''
         Write-Host ("  pool +  {0}" -f $app.Pool) -ForegroundColor Green
     }
     else {
         Write-Host ("  pool ok {0} (exists)" -f $app.Pool) -ForegroundColor DarkGray
     }
+
+    # ALWAYS, not just on create. A pool made by hand (or by an older run of this
+    # script) defaults to v4.0, which loads the .NET Framework CLR into a process
+    # that is meant to host the ASP.NET Core Module - the app never starts and the
+    # error does not say why. Enforcing it every run repairs those pools.
+    $runtime = (Get-ItemProperty "IIS:\AppPools\$($app.Pool)" -Name managedRuntimeVersion).Value
+    if ($runtime -ne '') {
+        Set-ItemProperty "IIS:\AppPools\$($app.Pool)" -Name managedRuntimeVersion -Value ''
+        Write-Host ("  pool !  {0} runtime '{1}' -> No Managed Code" -f $app.Pool, $runtime) -ForegroundColor Yellow
+    }
+
     if ((Get-SiteState $app.Site) -eq 'absent') {
         New-Website -Name $app.Site -PhysicalPath $app.Path -ApplicationPool $app.Pool -Port $app.Port | Out-Null
         Write-Host ("  site +  {0} on port {1} -> {2}" -f $app.Site, $app.Port, $app.Path) -ForegroundColor Green
-        Write-Host ("          add the HTTPS binding + CA certificate separately (see the HLD / SIMF-OPS-001)." ) -ForegroundColor DarkGray
     }
     else {
         Write-Host ("  site ok {0} (exists)" -f $app.Site) -ForegroundColor DarkGray
+    }
+
+    # Identity FIRST: Grant-AppAccess grants to whatever the pool runs as, so
+    # setting it afterwards would leave the ACLs pointing at the virtual account
+    # the pool no longer uses.
+    Set-PoolIdentity $app
+    Grant-AppAccess $app
+    Add-HttpsBinding $app
+
+    # An empty folder is the commonest cause of a 403 on a fresh box: with no
+    # web.config IIS has no app to start, falls back to directory browsing and
+    # denies it. Say so here rather than leaving it to be diagnosed from a
+    # browser error page.
+    if (-not (Test-Path (Join-Path $app.Path 'web.config'))) {
+        Write-Warning ("{0} has no web.config - nothing is deployed to {1} yet." -f $app.Site, $app.Path)
+        Write-Warning "  Until iis-deploy.ps1 copies the published output there, this site returns 403."
     }
 }
 
@@ -176,7 +363,7 @@ foreach ($key in $targets) {
         'Start'     { Start-App $app }
         'Stop'      { Stop-App $app }
         'Restart'   { Restart-App $app }
-        'Install'   { Install-App $app }
+        'Install'   { if (-not $script:bundleChecked) { Test-HostingBundle; $script:bundleChecked = $true }; Install-App $app }
         'Uninstall' { Uninstall-App $app }
     }
 }
