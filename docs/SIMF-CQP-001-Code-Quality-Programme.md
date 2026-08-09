@@ -274,16 +274,22 @@ unstated.
 The gate progresses in three stages: no new violations, then zero violations in
 each feature as its wave lands, then zero across the repository at Wave 6.
 
-## 10.1 The remaining 14 findings, and why they are not being forced to zero
+## 10.1 The remaining 12 findings, and why they are not being forced to zero
 
-Eight of the nine rules report zero. SIMF-C3 reports 14, all of them `_build*`
+Eight of the nine rules report zero. SIMF-C3 reports 12, all of them `_build*`
 methods in three screens:
 
 | Screen | Lines | Findings |
 |--------|-------|----------|
-| `sign_up_visitor_screen.dart` | 1304 | 10 |
-| `staff/register_visitor_screen.dart` | 1262 | 3 |
-| `session_detail_screen.dart` | 467 | 1 |
+| `sign_up_visitor_screen.dart` | 1197 | 8 |
+| `staff/register_visitor_screen.dart` | 1255 | 3 |
+| `session_detail_screen.dart` | 466 | 1 |
+
+The registration redesign scoped in SIMF-RSD-001 has since run to completion.
+It closed 2 of these findings and produced 33 unit tests over rules that
+previously needed a 1300-line form to exercise, but it did NOT take either
+screen under the limit, and SIMF-RSD-001 section 10 records why in full. The
+position below stands.
 
 Three of the six screens originally on this list were split and are now under
 the limit: `sign_in_screen` (418 to 331), `live_broadcast_screen` (507 to 332)
@@ -331,7 +337,7 @@ state, which is a redesign of the highest-traffic registration flow in the
 product, not a refactor. It needs its own decision, its own plan and its own
 verification.
 
-These 14 are therefore recorded as a **known, argued exception** rather than
+These 12 are therefore recorded as a **known, argued exception** rather than
 churned to zero. The gate holds them at exactly this count, so the number cannot
 grow quietly while the redesign is decided.
 

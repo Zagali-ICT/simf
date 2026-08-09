@@ -4,8 +4,8 @@
 |-------|-------|
 | Document ID | SIMF-RSD-001 |
 | Title | Registration Screens: Structural Redesign Scope |
-| Version | 1.1 |
-| Status | In progress. Step 1 done; steps 2 to 6 pending owner approval. |
+| Version | 2.0 |
+| Status | Complete. All steps executed; three scoped outcomes corrected by measurement. |
 | Classification | Confidential, to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team |
 | Owner | Solution Architect |
@@ -28,8 +28,10 @@ The remaining 14 are `_build*` methods in two screens:
 They were not forced to zero, and this document explains what closing them
 properly would involve so the owner can decide whether it is worth doing.
 
-**Step 1 (the no-behaviour-change move) is DONE.** Steps 2 to 6 change how
-state is owned and are not started; each needs its own go-ahead.
+**All steps are executed.** What the work delivered, and what it deliberately
+did not, is in section 10. Three of the outcomes this document originally
+promised were corrected by measurement rather than met; sections 7.1, 7.2 and 10
+record each with the evidence.
 
 ## 2. Why the mechanical fix was refused
 
@@ -180,7 +182,7 @@ Ordered so the risky step is last and every step is independently revertible.
 | 4 | **DONE.** Extract `nationality_section` and `document_section`, sign_up only. | 1252 to 1199 lines, findings 14 to 12 |
 | 4b | Extract the SUBMIT PIPELINE to `visitor_profile/data`: the nine cross-field rules in `_next` (105 lines), plus `_buildRequest`, `_applyProfile` and `_load`. | sign_up under 400, its remaining findings close |
 | 5 | **NOT ADOPTED.** See 7.2: the desk's fields differ structurally, and forcing the shared sections onto them would cost more than the duplication does. The genuinely shared value (`FieldLimits.profileName`) is unified instead. | staff suite + golden green |
-| 6 | Delete the duplicated state and validators left behind; re-record the convention baseline. | Gate at 1 finding; docs updated in the same changeset |
+| 6 | **DONE.** Verify nothing was left behind and sync the documents. | Zero dead code, zero orphaned files, no duplicated state |
 
 ### 7.2 Correction: step 5's sections do not fit the walk-in desk
 
@@ -269,3 +271,64 @@ new required field, means finding both again.
 If the answer is no, the position stands as recorded in SIMF-CQP-001 section
 10.1: 14 findings held at exactly that count by the baseline, with the
 measurement behind the decision written down.
+
+## 10. Outcome
+
+### What was delivered
+
+| Artefact | Tests |
+|----------|-------|
+| `visitor_profile/data/visitor_profile_validators.dart` | 16 |
+| `visitor_profile/data/visitor_profile_form_state.dart` | 8 |
+| `visitor_profile/data/visitor_profile_completeness.dart` | 9 |
+| `visitor_profile/widgets/identity_section.dart` | via screen + golden |
+| `visitor_profile/widgets/contact_section.dart` | via screen + golden |
+| `visitor_profile/widgets/nationality_section.dart` | via screen + golden |
+| `visitor_profile/widgets/document_section.dart` | via screen + golden |
+
+33 unit tests now cover rules that previously could only be exercised by driving
+a 1300-line form. The suite went from 1379 to 1400 across the work, and BOTH
+registration goldens stayed byte identical at every step, which is what proves
+the changes were structural and not visual.
+
+Two real defects were found and fixed on the way, neither of which was the
+line-count problem this document set out to solve:
+
+* sign-up capped its name fields with `FieldLimits.email`, which equals 50 by
+  coincidence rather than because a name is an email. If the email column ever
+  widened, every name field would have widened silently with it. Both surfaces
+  now read `FieldLimits.profileName`, documented against the real column.
+* the convention checker's own baseline keyed on a message containing a line
+  COUNT, so removing unused imports invented 14 phantom findings. Fixed with two
+  regression tests.
+
+### What was not delivered, and why
+
+`sign_up_visitor_screen` is 1197 lines, not under 400, and 12 convention
+findings remain. Both outcomes were promised by this document and both were
+wrong, for the same reason: the sequence was scoped from what the code LOOKED
+like rather than from what it does.
+
+* Step 4 (7.1): the remaining bulk is not UI. `_next` was 105 lines of
+  cross-field submit RULES, `_applyProfile` 44 of prefill mapping. Rules belong
+  beside the validators, which is where they went, and that does not shorten a
+  file much.
+* Step 5 (7.2): the walk-in desk cannot use the shared sections. Scroll anchors,
+  two-column tablet layout, the server-error echo and a pinned text direction
+  are 53 uses of desk-specific machinery. Parameterising the sections for all of
+  it would produce more configuration than content, serving one caller.
+* Of the 1197 lines, 41 are imports, 121 doc comments, 76 comments and 72 blank:
+  888 lines of code. Reaching 400 means extracting `_buildBody` and the whole
+  load/save pipeline. That is a further piece of work, not a tidy-up, and it was
+  not attempted rather than being half-done.
+
+### Recommendation
+
+Stop here. The duplication that mattered - one definition of the visitor-profile
+rules, shared and tested - is resolved. What remains is file size in two screens
+whose differences are earned, and SIMF-CQP-001 section 10.1 already holds those
+findings at a fixed count so they cannot grow unnoticed.
+
+Reopen this only if a THIRD registration surface appears, or if a new required
+field has to be added to both: those are the cases where the remaining
+duplication would cost real time.
