@@ -68,7 +68,24 @@ secrets.json
 set-env-*.local.ps1
 
 # ── Claude Code local settings ─────────────────────────────────────
+# Deliberately NARROW: each per-machine or generated path is named, and
+# `.claude/` itself is never ignored. Git cannot re-include a file whose parent
+# directory is excluded, so a blanket `.claude/` rule could not be undone by a
+# later negation — it would silently swallow a shared config (settings.json,
+# agents/, commands/) and the `git add` would just do nothing.
 .claude/settings.local.json
+# Skills vendored from anthropics/knowledge-work-plugins. Generic knowledge-work
+# tooling installed per-developer, not SIMF source; tracking them would impose
+# one person's toolset on every clone.
+.claude/skills/
+# Transient worktrees. Each is a FULL working checkout of this repo, so a stray
+# `git add` here would recurse the entire tree into a commit.
+.claude/worktrees/
+# The lockfile pinning the skills above. Ignored, not tracked, because the
+# thing it pins is itself untracked — a lockfile for content nobody clones is
+# noise. If shared skills are ever wanted, track BOTH this and .claude/skills/,
+# not one of them.
+/skills-lock.json
 
 # ── Logs & temp ────────────────────────────────────────────────────
 # Runtime log output only — root-anchored so source-tree `Logs/` folders
