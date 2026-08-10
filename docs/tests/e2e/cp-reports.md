@@ -73,6 +73,7 @@
 | E2E-RPT-032 | Each Wave C report refuses an operator lacking its own permission | auth | P0 | authored |
 | E2E-RPT-033 | Every Wave C export is Saudi-stamped and formula-safe | i18n | P0 | authored |
 | E2E-RPT-034 | Every Wave C report renders in Arabic RTL without overflow | i18n | P1 | authored |
+| E2E-RPT-035 | Partners offers no date range; every other report still does | regression | P0 | authored ✓ (`ReportPageTests.The_partners_report_offers_no_date_range`, `Every_other_report_still_offers_the_range`) |
 
 ## Scenarios
 
@@ -388,11 +389,13 @@ range / export / empty / error scenarios, which apply to every report.
 >
 > **So never demonstrate a range-dependent scenario on partners** — E2E-RPT-005,
 > 006's re-query half, 007 and 012 must be driven on a report that actually
-> filters (registrations is the cheapest). Setting a range on partners changes
-> nothing, which reads as a broken filter rather than an inapplicable one.
-> Verified live 2026-08-10: filtering partners to 01-01-2020..02-01-2020 still
-> returned all 22. **Reported as a UX defect** — the page renders From / To /
-> Apply controls that are inert, with nothing on screen saying so.
+> filters (registrations is the cheapest).
+>
+> **The page no longer offers the control at all (fixed 2026-08-10).** It used to
+> render From / To / Apply anyway, so filtering partners to 01-01-2020..02-01-2020
+> still returned all 22 — an inert control, which reads as a broken filter rather
+> than an inapplicable one. `ReportToolbar` now takes `ShowDateRange`, defaulting
+> true, and partners passes false. See E2E-RPT-035.
 
 ### E2E-RPT-021 — Partners report flattens exhibitors, sponsors and booths
 
@@ -673,6 +676,45 @@ Scenario: A question beginning with = is neutralised in the workbook
   # CWE-1236. The guard lives in the shared ClosedXmlGridExcelExporter, so this
   # holds for every report - but engagement is the one whose cells are free
   # text typed by an attendee, so it is the realistic attack path.
+```
+
+### E2E-RPT-035 — Partners offers no date range, and only partners
+
+```gherkin
+Feature: No inert controls
+  A filter that silently changes nothing is worse than an absent one. An absent
+  filter reads as "this report has no period"; an inert one reads as a bug in
+  the data and sends someone looking in the wrong place.
+
+Scenario: The partners page has no range controls
+  Given I am signed in as "superadmin@simrsnf.com"
+  When I open "/admin/reports/partners"
+  Then there are zero input[type=date] elements
+  And there is no "Apply" button
+  And there is no "Clear" button
+  And the "Export to Excel" button is still present
+  And the four totals still render
+  And the grid still lists partners
+
+Scenario Outline: Every other report keeps its range
+  When I open "<route>"
+  Then there are exactly 2 input[type=date] elements
+  And an "Apply" button is present
+
+  Examples:
+    | route                        |
+    | /admin/reports/attendance    |
+    | /admin/reports/registrations |
+    | /admin/reports/gates         |
+    | /admin/reports/sessions      |
+    | /admin/reports/ratings       |
+    | /admin/reports/meetings      |
+    | /admin/reports/engagement    |
+
+# The second scenario is the guard rail: without it the fix could generalise
+# into "no report filters by date" and nothing would notice. Verified live on
+# 2026-08-10 for attendance, registrations and engagement, and in bUnit for
+# attendance.
 ```
 
 ### E2E-RPT-034 — Wave C reports in Arabic RTL
