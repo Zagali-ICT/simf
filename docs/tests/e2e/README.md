@@ -39,7 +39,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | Page | File | Scenarios |
 |------|------|-----------|
 | `/` (Dashboard) - shell chrome + the Wave A programme dashboard (KPI grid + grouped bar chart + per-day cards, gated on `Statistics.View`) | [`cp-dashboard.md`](cp-dashboard.md) | E2E-DSH-001..025 |
-| `/admin/reports*` - the reporting module (hub + attendance, registrations, gate activity; Saudi date range, XLSX export) | [`cp-reports.md`](cp-reports.md) | E2E-RPT-001..025 |
+| `/admin/reports*` - the reporting module: hub + all eight reports (attendance, registrations, gate activity, sessions, ratings, partners, meetings, engagement); Saudi date range, XLSX export | [`cp-reports.md`](cp-reports.md) | E2E-RPT-001..034 |
 
 ### Control Panel — People & accounts
 
