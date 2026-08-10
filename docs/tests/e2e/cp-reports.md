@@ -9,6 +9,24 @@
 | **Auth setup** | `superadmin@simrsnf.com` + TOTP via `Get-Totp` helper |
 | **Last reviewed** | 2026-08-10 |
 
+> **Execution record — 2026-08-10, local dev (API 5175 + CP 5158), Chrome
+> DevTools MCP, signed in as `superadmin@simrsnf.com`.**
+>
+> | | |
+> |--|--|
+> | **Passed against live data** | 001, 003, 006, 007, 012, 014, 015, 018 (mechanism), 019, 021, 022, 027 (empty-average case), 031, 033 (partners), 034 |
+> | **Structure passed, data blocked** | 024, 025, 026, 028, 029, 030 — columns, sortable columns, totals labels, empty state and RTL all verified; the row and figure assertions need seeded meetings / ratings / questions, of which the dev DB has **none** |
+> | **Not run** | 032 (needs the restricted-role fixture — the seeded super-admin holds `*`, which satisfies every gate, so running it as super-admin would prove nothing), 013 (needs a forced 500), 002/004/005/008/009/010/011/016/017/020 (pre-existing Wave B scenarios, not re-run in this pass) |
+>
+> Zero console errors or warnings across every page visited. Zero error banners
+> on every healthy load. Zero horizontal overflow at 1280 and 1920, in RTL, with
+> a full 20-row grid.
+>
+> Three corrections were folded back into this file **because** the run found
+> them: the hub count needed scoping to `<main>`, partners ignores the date
+> range, and engagement's workbook renames its first column. An unexecuted
+> catalogue would have kept all three wrong.
+
 > **Scope note (2026-08-10).** This file covered only the hub plus attendance,
 > registrations and gate activity — the Wave B reports. Wave C shipped
 > sessions, ratings, partners, meetings and engagement **without** extending the
@@ -70,7 +88,10 @@ Scenario: The hub shows a card per permitted report
   Given I am signed in as "superadmin@simrsnf.com"
   When I open "/admin/reports"
   Then the page title is "Reports"
-  And I see exactly 8 report cards
+  And I see exactly 8 report cards WITHIN <main>
+  # Scope to <main>. The sidebar renders the same eight routes, so an unscoped
+  # a[href^="/admin/reports/"] returns 16 and the count assertion fails against
+  # a correct page. Confirmed on 2026-08-10.
   And I see a card linking to "/admin/reports/attendance"
   And I see a card linking to "/admin/reports/registrations"
   And I see a card linking to "/admin/reports/gates"
@@ -360,6 +381,19 @@ four below is driven at its own route with its own permission; the sessions
 report is already covered by E2E-RPT-018's sort assertions and the shared
 range / export / empty / error scenarios, which apply to every report.
 
+> **The partners report ignores the date range — by design.** It is the only one
+> of the eight that does; the other seven all resolve the Saudi window through
+> `ResolveWindow`. `ReportingService.Partners` documents why: a partner directory
+> is a snapshot of who is participating, not a record of events in a period.
+>
+> **So never demonstrate a range-dependent scenario on partners** — E2E-RPT-005,
+> 006's re-query half, 007 and 012 must be driven on a report that actually
+> filters (registrations is the cheapest). Setting a range on partners changes
+> nothing, which reads as a broken filter rather than an inapplicable one.
+> Verified live 2026-08-10: filtering partners to 01-01-2020..02-01-2020 still
+> returned all 22. **Reported as a UX defect** — the page renders From / To /
+> Apply controls that are inert, with nothing on screen saying so.
+
 ### E2E-RPT-021 — Partners report flattens exhibitors, sponsors and booths
 
 ```gherkin
@@ -556,12 +590,26 @@ Scenario Outline: Every export adds its extra columns
     | engagement | "Hidden"                       |
     | ratings    | "Target"                       |
 
+# All four verified live on 2026-08-10 by unzipping the downloaded workbook and
+# reading xl/sharedStrings.xml. Note when writing a parser: ClosedXML emits
+# NAMESPACED tags (<x:t>, not <t>), so an un-namespaced regex silently matches
+# nothing and looks like an empty workbook.
+
+Scenario: Engagement's first column is renamed in the workbook
+  When I export the engagement report
+  Then the workbook's first header reads "Session code"
+  And the on-screen grid's first header reads "Code"
+  # Not a missing column - the same field under a longer label, which has room
+  # in a spreadsheet and not in a grid. Asserted so the difference is not
+  # "fixed" into a mismatch later.
+
 Scenario: The workbook row count matches the filtered total
-  Given the partners report shows a "Partners" total of 10
+  Given the registrations report shows a "Registrations" total of 8
   When I export it with the same range applied
-  Then the workbook has 10 data rows beneath the header
-  # The export must honour the SAME filter as the grid. An export that ignores
-  # the date range silently hands the organiser the wrong dataset.
+  Then the workbook has 8 data rows beneath the header
+  # Driven on registrations, NOT partners - partners ignores the range by
+  # design (see the note above), so it cannot demonstrate that the export
+  # honours the same filter as the grid.
 ```
 
 ### E2E-RPT-032 — Each Wave C report enforces its own permission
