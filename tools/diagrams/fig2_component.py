@@ -1,0 +1,114 @@
+"""Figure 2. SIMF system components and their interaction.
+
+UML component diagram, drawn to C4 container-diagram discipline: every element
+states its type and its technology, and every line is unidirectional and carries
+its protocol. Component names come from the solution source tree; the inward
+dependency rule comes from SIMF-LLD-002 section 7.1.
+"""
+
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from svgkit import Sheet, NODE_FILL  # noqa: E402
+
+OUT = r"d:\SIMF\System\V1.0.0\docs\diagrams\SIMF-Fig2-Component-Interaction"
+
+s = Sheet(1660, 1220,
+          "SIMF system components and their interaction",
+          "UML component diagram.  Every component carries its technology and "
+          "every call carries its protocol.")
+
+# --------------------------------------------------- client applications
+s.band(40, 140, 1000, 150, "Client applications")
+s.box(65, 180, 230, 96, "Mobile application", "client", "Flutter, Android and iOS")
+s.box(310, 180, 230, 96, "Public website", "client", "SIMF.Web, Blazor SSR")
+s.box(555, 180, 230, 96, "Control Panel", "client", "SIMF.ControlPanel, Blazor Server")
+s.box(800, 180, 230, 96, "Badge desk", "client", "SIMF.BadgeDesk, WinForms")
+
+# ------------------------------------------------------ API host process
+s.band(40, 340, 1000, 520, "SIMF.Api host", "single deployable process")
+s.box(70, 380, 580, 80, "SIMF.Api", "component",
+      "FastEndpoints, middleware, authorisation", fill=NODE_FILL, component=True)
+s.box(720, 380, 290, 80, "Background workers", "component",
+      "IHostedService", fill=NODE_FILL, component=True)
+s.box(70, 500, 580, 110, "SIMF.Infrastructure", "component",
+      "EF Core, storage, e-mail, identity, audit", fill=NODE_FILL, component=True)
+s.box(70, 650, 580, 72, "SIMF.Application", "component",
+      "use cases and service abstractions", fill=NODE_FILL, component=True)
+s.box(70, 752, 580, 70, "SIMF.Domain", "component",
+      "entities, aggregates, rules", fill=NODE_FILL, component=True)
+
+# ------------------------------------------------------ external systems
+s.band(1180, 140, 440, 520, "External services")
+s.box(1205, 180, 390, 80, "Video platform", "external", "live stream and captions")
+s.box(1205, 280, 390, 80, "E-mail relay", "external", "internal SMTP")
+s.box(1205, 380, 390, 80, "Log collector", "external", "syslog over TLS")
+s.box(1205, 480, 390, 80, "AI service", "external", "summaries and assistance")
+
+s.band(1180, 700, 440, 140, "Shared libraries",
+       "referenced by every client and by the API host")
+s.box(1205, 735, 390, 86, "Shared libraries", "library",
+      "SIMF.Common, .Contracts, .ApiClient, .Components")
+
+# ------------------------------------------------------------- data tier
+s.band(40, 900, 1000, 150, "Data tier")
+s.store(70, 945, 300, 60, "DB", "SIMF_Identity", "SimfIdentityDbContext")
+s.store(400, 945, 300, 60, "DB", "SIMF_App", "SimfAppDbContext")
+s.store(730, 945, 300, 60, "FS", "File share", "stored files, SMB")
+
+# --------------------------------------------------------- client to API
+s.path([(180, 276), (180, 315), (150, 315), (150, 380)], "HTTPS 443",
+       label_at=(180, 304))
+s.path([(425, 276), (425, 325), (300, 325), (300, 380)], "HTTPS 443",
+       label_at=(425, 304))
+s.path([(670, 276), (670, 335), (450, 335), (450, 380)], "HTTPS 443",
+       label_at=(670, 304))
+s.path([(915, 276), (915, 345), (580, 345), (580, 380)], "HTTPS 443",
+       label_at=(915, 304))
+
+# the stream is played by the device itself, never through a SIMF server
+s.path([(180, 180), (180, 118), (1350, 118), (1350, 180)], "HTTPS, live stream",
+       label_at=(765, 134))
+
+# ------------------------------------------------------- inward layering
+s.path([(360, 460), (360, 500)], "in-process", label_at=(360, 488))
+s.path([(360, 610), (360, 650)], "in-process", label_at=(360, 638))
+s.path([(360, 722), (360, 752)], "in-process", label_at=(360, 742))
+s.path([(760, 460), (760, 530), (650, 530)], "in-process", label_at=(705, 523))
+
+# ------------------------------------------- infrastructure to the outside
+s.path([(650, 510), (1090, 510), (1090, 220), (1205, 220)], "HTTPS 443",
+       label_at=(1147, 213))
+s.path([(650, 545), (1110, 545), (1110, 320), (1205, 320)], "SMTP 587",
+       label_at=(1157, 313))
+s.path([(650, 560), (1130, 560), (1130, 420), (1205, 420)], "syslog 6514",
+       label_at=(1167, 413))
+s.path([(650, 575), (1150, 575), (1150, 520), (1205, 520)], "HTTPS 443",
+       label_at=(1177, 513))
+
+s.path([(650, 588), (700, 588), (700, 872), (220, 872), (220, 945)], "TCP 1433",
+       label_at=(460, 865))
+s.path([(650, 598), (720, 598), (720, 882), (550, 882), (550, 945)], "TCP 1433",
+       label_at=(645, 875))
+s.path([(650, 606), (740, 606), (740, 892), (880, 892), (880, 945)], "SMB 445",
+       label_at=(815, 885))
+
+# ------------------------------------------------------------- apparatus
+s.legend(1180, 880, 440, [
+    ("comp", "Component, with its technology"),
+    ("box", "Client application or external service"),
+    ("store", "Data store"),
+    ("band", "Grouping or process boundary"),
+    ("line", "Call, labelled with protocol and port"),
+])
+
+s.note(40, 1080, 1000, [
+    "Component names and layering: SIMF solution source tree.",
+    "Inward dependency rule Api, Infrastructure, Application, Domain: "
+    "SIMF-LLD-002 section 7.1.",
+    "Background workers hosted inside the API host: IHostedService registrations.",
+    "Protocols and component roles: SIMF-LLD-002 section 2.1.",
+], "Sources")
+
+s.save(OUT)
