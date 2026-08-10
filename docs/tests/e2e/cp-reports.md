@@ -96,6 +96,7 @@
 | E2E-RPT-033 | Every Wave C export is Saudi-stamped and formula-safe | i18n | P0 | authored |
 | E2E-RPT-034 | Every Wave C report renders in Arabic RTL without overflow | i18n | P1 | authored |
 | E2E-RPT-035 | Partners offers no date range; every other report still does | regression | P0 | authored ✓ (`ReportPageTests.The_partners_report_offers_no_date_range`, `Every_other_report_still_offers_the_range`) |
+| E2E-RPT-036 | A denied export returns 403 + the bilingual envelope, never 400 + HTML | regression | P0 | authored ✓ (`DownloadErrorStatusTests`) |
 
 ## Scenarios
 
@@ -712,6 +713,55 @@ Scenario: A question beginning with = is neutralised in the workbook
   # CWE-1236. The guard lives in the shared ClosedXmlGridExcelExporter, so this
   # holds for every report - but engagement is the one whose cells are free
   # text typed by an attendee, so it is the realistic attack path.
+```
+
+### E2E-RPT-036 — A denied export reports 403, not 400 + HTML
+
+```gherkin
+Feature: A refusal must say what it is
+  Regression, found by running E2E-RPT-032 on the QA stack. Program.cs runs
+  UseStatusCodePagesWithReExecute("/not-found"), which re-executes ANY error
+  status whose response has no body. The export handler returned
+  Results.StatusCode(403) - bodiless - so the API's clean 403 reached the
+  browser as 400 with an HTML page.
+
+  Nothing leaked: the export was still refused. But the caller was told the
+  wrong thing, and simfAccount.downloadXlsx could not parse HTML as an
+  ApiResult, so it synthesised BAD_RESPONSE and the operator saw a generic
+  failure instead of "you may not export this". It only ever showed on the DENY
+  path, which is why it survived - as super-admin the export returns 200.
+
+Scenario Outline: The refusal carries the API's own error
+  Given I am signed in as a role holding Reports.View but NOT Reports.Export
+  When I POST to "/account/api/admin/reports/<slug>/export"
+  Then the status is 403
+  And the content type is "application/json"
+  And the body is an ApiResult whose error code is "FORBIDDEN"
+  And it carries both `message` and `messageArabic`
+  And the status is NOT 400
+  And the body is NOT HTML
+
+  Examples:
+    | slug       |
+    | partners   |
+    | meetings   |
+    | ratings    |
+    | engagement |
+    | sessions   |
+
+Scenario: The success path is unchanged
+  Given I am signed in as the super-admin
+  When I export the partners report
+  Then the status is 200
+  And the content type is the XLSX media type
+  And the first two bytes are 0x50 0x4B
+  # The fix must not turn a working download into an envelope. Verified on the
+  # QA stack immediately after the deny check, same session.
+
+# 16 further sites in UserDocuments, MediaAndPartners, FaqAndRoles, Gates and
+# SelfService still return a bodiless status and will misreport the same way.
+# They are document/media paths that were not driven here, so they are recorded
+# and ratcheted rather than changed blind - see DownloadErrorStatusTests.
 ```
 
 ### E2E-RPT-035 — Partners offers no date range, and only partners
