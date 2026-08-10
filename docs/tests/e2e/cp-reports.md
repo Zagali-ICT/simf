@@ -14,9 +14,31 @@
 >
 > | | |
 > |--|--|
-> | **Passed against live data** | 001, 003, 006, 007, 012, 014, 015, 018 (mechanism), 019, 021, 022, 027 (empty-average case), 031, 033 (partners), 034 |
-> | **Structure passed, data blocked** | 024, 025, 026, 028, 029, 030 — columns, sortable columns, totals labels, empty state and RTL all verified; the row and figure assertions need seeded meetings / ratings / questions, of which the dev DB has **none** |
-> | **Not run** | 032 (needs the restricted-role fixture — the seeded super-admin holds `*`, which satisfies every gate, so running it as super-admin would prove nothing), 013 (needs a forced 500), 002/004/005/008/009/010/011/016/017/020 (pre-existing Wave B scenarios, not re-run in this pass) |
+> | **Passed against live data** | 001, 003, 006, 007, 012, 014, 015, 018 (mechanism), 019, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 033, 034, 035 |
+> | **Not run** | 032 — see below · 013 (needs a forced 500) · 002/004/005/008/009/010/011/016/017/020 (pre-existing Wave B scenarios, not re-run in this pass) |
+>
+> **E2E-RPT-032 must be driven on the QA stack, not on local dev.** The seeded
+> super-admin holds the `*` wildcard, which satisfies every gate, so a green
+> result against it proves nothing. The fixture already exists —
+> `tools/qa/seed-restricted-admin.sql` clones the super-admin's password hash and
+> TOTP token onto a user holding exactly one permission — but it **deliberately
+> refuses any database whose name does not contain `_QA_`**, because a second
+> account sharing production's super-admin password would be a real
+> vulnerability. That guard is correct; do not relax it to run this locally.
+> Bring up the QA stack instead, and set its `@grantCode` to a `Reports.*` code
+> (it currently grants `Sessions.View`).
+>
+> **Second pass, same day — the six data-blocked scenarios now pass.** The dev DB
+> held no meetings, ratings or questions, so 024/025/026/028/029/030 could only be
+> verified structurally. A fixture was seeded (8 meeting requests: 3 Pending,
+> 4 checked in · 4 ratings: 5/4/4/null stars, 2 with comments · 12 questions:
+> 2 hidden, 5 pushed) and all six then passed against real figures, as did
+> E2E-RPT-031's row-count half on all four workbooks.
+>
+> **Fixture gotcha worth keeping:** `RatingResponses` carries a unique index on
+> `(UserId, RatingTypeId, TargetId)` — one person rates a given target once per
+> rating type. A fixture that reuses one user id is rejected outright with
+> Msg 2601. Use a distinct rater per row.
 >
 > Zero console errors or warnings across every page visited. Zero error banners
 > on every healthy load. Zero horizontal overflow at 1280 and 1920, in RTL, with
@@ -62,7 +84,7 @@
 | E2E-RPT-021 | Partners report flattens exhibitors, sponsors and booths into one directory | happy | P0 | authored |
 | E2E-RPT-022 | Partners totals split by kind and reconcile to the partner total | happy | P0 | authored |
 | E2E-RPT-023 | A partner with no tier, email, phone or website still renders | boundary | P1 | authored |
-| E2E-RPT-024 | Meetings report flattens speaker and delegation requests | happy | P0 | authored |
+| E2E-RPT-024 | Meetings report flattens speaker and delegation requests; an unscheduled request shows a blank slot | happy | P0 | authored |
 | E2E-RPT-025 | Meetings totals count pending and checked-in | happy | P0 | authored |
 | E2E-RPT-026 | Ratings report renders stars, scope and comment | happy | P0 | authored |
 | E2E-RPT-027 | Average rating is one decimal, and blank when there is nothing to average | boundary | P0 | authored |
@@ -464,16 +486,27 @@ Feature: One meetings list
   answered - so the report presents them as one list keyed by Kind.
 
 Scenario: Both request kinds appear
-  Given a speaker meeting request from "Ahmed Al-Otaibi" to "Dr. Sarah Nasser"
-        with subject "Naval logistics briefing" exists
-  And a delegation meeting request from "Kuwait Delegation" exists
+  Given a speaker meeting request from "Ahmed Al-Otaibi" with subject
+        "Naval logistics briefing" exists, targeting a seeded speaker
+  And a delegation meeting request exists between two countries
   When I open "/admin/reports/meetings"
   Then the grid shows columns "Kind", "Requester", "Target", "Subject", "Slot",
        "Status", "Requested"
-  And a row reads Requester "Ahmed Al-Otaibi" and Target "Dr. Sarah Nasser"
-  And a row reads Requester "Kuwait Delegation"
+  And a row reads Kind "Speaker" and Requester "Ahmed Al-Otaibi"
+  And its Target is the speaker's name
+  And a row reads Kind "Delegation" whose Requester and Target are COUNTRY names
+  # Not a free-text label. A delegation request carries RequestingCountryId /
+  # TargetCountryId, and the report projects Country.Name into both columns -
+  # confirmed live, the rows read "Argentina" and "Australia".
   And the "Kind" and "Status" columns are sortable
   And the "Slot" and "Requested" cells read dd-MM-yyyy Saudi local
+
+Scenario: An unscheduled request shows a blank slot, not a fabricated time
+  Given a meeting request exists with no agreed slot
+  When I open "/admin/reports/meetings"
+  Then its "Slot" cell is empty
+  And no time is invented for it
+  # ToRow guards this explicitly: a request can exist before a slot is agreed.
 ```
 
 ### E2E-RPT-025 — Meetings totals count pending and checked-in
@@ -492,13 +525,16 @@ Scenario: Pending and checked-in are counted across both kinds
 
 ```gherkin
 Scenario: A submitted rating appears with its scope and text
-  Given a rating of type "Session feedback" scoped to "Session"
-        with 4 stars and the comment "Well paced, good Q&A" exists
+  Given a rating of the seeded "Session" rating type with 4 stars and the
+        comment "Well paced, good Q&A" exists
   And I am signed in as "superadmin@simrsnf.com"
   When I open "/admin/reports/ratings"
   Then the grid shows columns "Rating type", "Scope", "Stars", "Comment",
        "Submitted"
-  And a row reads Rating type "Session feedback", Scope "Session", Stars "4"
+  And a row reads Rating type "Session", Scope "PerSession", Stars "4"
+  # Both are rendered values, not labels chosen here: Rating type is
+  # RatingType.Name and Scope is the RatingScope ENUM NAME, which is
+  # "PerSession", not "Session". Confirmed live.
   And its Comment cell reads "Well paced, good Q&A"
   And the "Rating type", "Stars" and "Submitted" columns are sortable
 ```
