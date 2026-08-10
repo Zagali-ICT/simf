@@ -128,6 +128,24 @@ $vars = @(
     # deploy root, which a release replaces.
     [pscustomobject]@{ Name = "SIMF_DataProtection__KeyRingPath"; Value = "C:\SIMF\Storage\keyring"; Secret = $false; Gate = $true; Apps = "CP Web"; Note = "shared key ring; back this up - losing it signs every admin out" }
 
+    # --- The mobile edge (SIMF.MobileEdge) --------------------------------------
+    # The presentation tier for the mobile clients. It takes over the public
+    # api.simrsnf.com name and forwards /api/v1/app/** to the API on its PRIVATE
+    # address, which is what allows the API to stop being published at all. The
+    # installed app compiles its base URL in, so the public name must NOT change:
+    # a new hostname means an app rebuild and a store release on both platforms.
+    #
+    # The address below is the ONE setting that decides where the edge forwards.
+    # Point it at the API's private address, never at api.simrsnf.com, or the edge
+    # forwards to the load balancer and back to itself.
+    #
+    # Both of these are boot gates: the edge REFUSES TO START without them. An
+    # empty destination 502s every app user, and an empty KnownProxies means an
+    # unverified X-Forwarded-For, which lets any caller spoof its source address
+    # past the API rate limiter and into the audit log.
+    [pscustomobject]@{ Name = "SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address"; Value = ""; Secret = $false; Gate = $true; Apps = "EDGE"; Note = "SITE-SPECIFIC; the API's PRIVATE https address, e.g. https://api-int.simrsnf.local/" }
+    [pscustomobject]@{ Name = "SIMF_ReverseProxy__KnownProxies__0"; Value = ""; Secret = $false; Gate = $true; Apps = "API EDGE"; Note = "SITE-SPECIFIC; address of the WAF / load balancer in front" }
+
     # --- How CP and Web reach the API -----------------------------------------
     # SIMF_Api__AllowSelfSignedCertificate is GONE (2026-08-08). It installed
     # DangerousAcceptAnyServerCertificateValidator on the clients that carry the

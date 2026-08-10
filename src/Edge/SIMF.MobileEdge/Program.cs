@@ -14,6 +14,7 @@
 // business logic. The shipped mobile wire contract is append-only (D-219), and
 // every field the app decodes has to survive this hop byte for byte.
 using Microsoft.AspNetCore.HttpOverrides;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,28 @@ var builder = WebApplication.CreateBuilder(args);
 // through to the YARP cluster below. ASPNETCORE_ENVIRONMENT stays un-prefixed:
 // the host reads it before configuration sources load.
 builder.Configuration.AddEnvironmentVariables("SIMF_");
+
+// Per-project log files under {Storage:LogDirectory}/SIMF.MobileEdge/log-{Date}.log,
+// the same shape and retention as the API, Control Panel and Website. This host
+// is internet-facing and is the first thing a mobile request touches, so its log
+// is where an incident starts; leaving it on default console logging would mean
+// nothing survives an app-pool recycle.
+builder.Host.UseSerilog((context, configuration) =>
+{
+    var logDir = context.Configuration["Storage:LogDirectory"] ?? "logs";
+    var appName = context.HostingEnvironment.ApplicationName ?? "SIMF.MobileEdge";
+    var path = Path.Combine(logDir, appName, "log-.log");
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.File(
+            path: path,
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 31,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} "
+                + "[{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+});
 
 // The whole point of this host. Routes and clusters are configuration, not code,
 // so a new mobile endpoint needs no rebuild - but the published path set stays a

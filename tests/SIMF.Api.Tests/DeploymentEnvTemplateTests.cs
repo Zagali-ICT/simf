@@ -175,6 +175,7 @@ public sealed class DeploymentEnvTemplateTests
                      "SIMF_Api__BaseUrl",
                      "SIMF_Session__LifetimeHours",
                      "SIMF_DataProtection__KeyRingPath",
+                     "SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address",
                  })
         {
             Assert.True(
@@ -367,6 +368,52 @@ public sealed class DeploymentEnvTemplateTests
         // runbook alone comes up without the gate satisfied and refuses to start.
         var runbook = ReadRepoFile("deploy", RunbookName);
         Assert.Contains("SIMF_DataProtection__KeyRingPath", runbook, StringComparison.Ordinal);
+    }
+
+    /// <summary>The mobile edge's forwarding address must be site-specific and
+    /// must ship empty.
+    /// <para>
+    /// It is the setting that decides where the edge sends every mobile request.
+    /// A committed default would be actively dangerous: the plausible-looking
+    /// value is the public name, and pointing the edge at api.simrsnf.com sends it
+    /// through the load balancer straight back to itself. The destination is the
+    /// API's PRIVATE address and only the site knows it, so the template must ask
+    /// rather than guess.
+    /// </para></summary>
+    [Fact]
+    public void The_mobile_edge_forwarding_address_ships_empty_and_gated()
+    {
+        var template = ReadRepoFile("deploy", TemplateName);
+
+        var entry = Regex.Match(
+            template,
+            """Name\s*=\s*"SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address"\s*;\s*Value\s*=\s*"(?<value>[^"]*)"\s*;\s*Secret\s*=\s*\$(?:true|false)\s*;\s*Gate\s*=\s*\$(?<gate>true|false)""");
+
+        Assert.True(
+            entry.Success,
+            $"{TemplateName} must declare the mobile edge's cluster destination, or the "
+            + "edge has nowhere to forward and 502s every app user.");
+
+        Assert.Equal("true", entry.Groups["gate"].Value);
+        Assert.True(
+            entry.Groups["value"].Value.Length == 0,
+            "The edge's destination must ship EMPTY. It is the API's private address, "
+            + "which only the site knows, and the plausible wrong value (the public "
+            + "name) makes the edge forward to itself through the load balancer.");
+
+        // The proxy allowlist is now needed by two hosts, not one.
+        var proxies = Regex.Match(
+            template,
+            """Name\s*=\s*"SIMF_ReverseProxy__KnownProxies__0"[^}]*Apps\s*=\s*"(?<apps>[^"]*)""");
+        Assert.True(proxies.Success, $"{TemplateName} must declare ReverseProxy KnownProxies.");
+        Assert.Contains("EDGE", proxies.Groups["apps"].Value, StringComparison.Ordinal);
+        Assert.Contains("API", proxies.Groups["apps"].Value, StringComparison.Ordinal);
+
+        var runbook = ReadRepoFile("deploy", RunbookName);
+        Assert.Contains(
+            "SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address",
+            runbook,
+            StringComparison.Ordinal);
     }
 
     /// <summary>The key ring must not be parked under the versioned deploy root.
