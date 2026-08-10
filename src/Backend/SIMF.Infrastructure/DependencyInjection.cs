@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.Abstractions;
@@ -10,6 +10,7 @@ using SIMF.Application.Notifications;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Logs;
 using SIMF.Infrastructure.Logs;
+using SIMF.Infrastructure.Operations;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Auditing;
 using SIMF.Infrastructure.Email;
@@ -368,37 +369,44 @@ public static class DependencyInjection
         // shared by the API host and every worker (no schema, no cross-process).
         services.AddSingleton<SIMF.Application.Operations.IWorkerHeartbeatRegistry,
             SIMF.Infrastructure.Operations.WorkerHeartbeatRegistry>();
-        services.AddHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
+        // Elects one API instance to run the workers below. Every one of them is
+        // a database scan or a status-claimed queue, so four instances each
+        // running their own copy would duplicate the send and race the once-only
+        // guards. Registered before them so the lease starts first; the gate does
+        // not block startup either way. EmailBackgroundService is deliberately
+        // NOT leased - see AddLeasedHostedService.
+        services.AddWorkerLease();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
         // Automated "session starting soon" reminder worker.
-        services.AddHostedService<SIMF.Infrastructure.Operations.SessionReminderWorker>();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.SessionReminderWorker>();
         // 15-min "meeting starting soon" reminder (email + app) for
         // confirmed speaker + delegation meetings.
-        services.AddHostedService<SIMF.Infrastructure.Operations.MeetingReminderWorker>();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.MeetingReminderWorker>();
         // Reverts a stuck AwaitingSpeaker speaker meeting request to Pending once
         // its 72h double-opt-in tokens expire (no re-send ever came); frees the held slot.
-        services.AddHostedService<SIMF.Infrastructure.Operations.MeetingAwaitingSpeakerExpiryWorker>();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.MeetingAwaitingSpeakerExpiryWorker>();
         // Releases seats reserved by no-shows (no check-in) 3 minutes
         // before the session starts, freeing capacity for others.
-        services.AddHostedService<SIMF.Infrastructure.Operations.ReservationNoShowReleaseWorker>();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.ReservationNoShowReleaseWorker>();
         // "The session started and you have not arrived": nudges holders of
         // an active reservation with no HallAttendance row, a few minutes after the
         // session starts. Sibling of the no-show release worker, which frees the
         // seat but notifies nobody.
-        services.AddHostedService<SIMF.Infrastructure.Operations.SessionNotAttendedReminderWorker>();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.SessionNotAttendedReminderWorker>();
         // Pushes a "you match this attendee" invitation for every candidate
         // the recommendation engine scores at or above the 80% threshold.
-        services.AddHostedService<SIMF.Infrastructure.Operations.MatchRecommendationPushWorker>();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.MatchRecommendationPushWorker>();
         // End-of-session "please rate this session" prompt worker.
-        services.AddHostedService<SIMF.Infrastructure.Operations.SessionRatingPromptWorker>();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.SessionRatingPromptWorker>();
         // End-of-day + end-of-programme rating prompt worker.
-        services.AddHostedService<SIMF.Infrastructure.Operations.ProgrammeRatingPromptWorker>();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.ProgrammeRatingPromptWorker>();
         // Chain reconciliation — closes open hall-attendance rows whose
         // session has ended (In-only hall-door gates never emit a departure).
-        services.AddHostedService<SIMF.Infrastructure.Operations.HallAttendanceCloseoutWorker>();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.HallAttendanceCloseoutWorker>();
         // Control Panel "Announcements" desk — fans out manual admin notification
         // broadcasts (in-app row + email per recipient) to a session's attendees or
         // a broad audience, paced against the bounded email queue.
-        services.AddHostedService<SIMF.Infrastructure.Operations.NotificationBroadcastWorker>();
+        services.AddLeasedHostedService<SIMF.Infrastructure.Operations.NotificationBroadcastWorker>();
         // Public-relations team: invitation CRUD +
         // VIP list + bulk-notify dispatcher.
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminInvitationService,

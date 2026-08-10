@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using SIMF.Api.Authentication;
 using SIMF.Api.Authorization;
+using SIMF.Infrastructure.Operations;
 using SIMF.Api.Endpoints.Admin;
 using SIMF.Api.Middleware;
 using SIMF.Api.RateLimiting;
@@ -100,11 +101,14 @@ builder.Host.UseSerilog((context, configuration) =>
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // NCA account-dormancy control — daily dormant-account disable sweep (no-op
-// until configured).
-builder.Services.AddHostedService<SIMF.Api.HostedServices.DormantAccountSweepService>();
+// until configured). Leased: it is a daily database sweep, so on a multi-instance
+// estate exactly one node must run it (see WorkerLeaseRegistration).
+builder.Services.AddLeasedHostedService<SIMF.Api.HostedServices.DormantAccountSweepService>();
 
 // NCA data-minimisation — daily retention purge of dead security artifacts.
-builder.Services.AddHostedService<SIMF.Api.HostedServices.RetentionSweepWorker>();
+// Leased for the same reason: a purge that four instances run concurrently
+// deletes the same rows four times over and races itself.
+builder.Services.AddLeasedHostedService<SIMF.Api.HostedServices.RetentionSweepWorker>();
 
 // The audit log reads the request context; the API supplies it from HttpContext.
 builder.Services.AddHttpContextAccessor();
