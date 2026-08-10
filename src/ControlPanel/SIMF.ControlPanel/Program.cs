@@ -1,7 +1,9 @@
 using Cropper.Blazor.Extensions;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 using SIMF.ApiClient;
+using SIMF.Common.Options;
 using SIMF.ControlPanel;
 using SIMF.ControlPanel.Components;
 using SIMF.ControlPanel.Endpoints;
@@ -150,7 +152,37 @@ builder.Services.AddHttpClient<SimfAuthClient>(client => client.BaseAddress = ap
 builder.Services.AddHttpClient<SimfAccountClient>(client => client.BaseAddress = apiBaseUri);
 builder.Services.AddHttpClient<SimfAdminClient>(client => client.BaseAddress = apiBaseUri);
 
+// The Data Protection key ring. It encrypts the auth cookie - which carries the
+// API tokens - and every antiforgery token, so two instances that do not share it
+// reject each other's cookies and bounce the admin back to /login at random.
+// Persisted to shared storage (the file server in a separated estate) and named,
+// so the Website's ring on the same share stays a distinct key set.
+var dataProtectionOptions =
+    builder.Configuration.GetSection(KeyRingOptions.SectionName).Get<KeyRingOptions>()
+    ?? new KeyRingOptions();
+
+if (!string.IsNullOrWhiteSpace(dataProtectionOptions.KeyRingPath))
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionOptions.KeyRingPath))
+        .SetApplicationName("SIMF.ControlPanel");
+}
+
 var app = builder.Build();
+
+// A per-node key ring is invisible until a second instance appears, and then it
+// presents as random sign-outs rather than as a configuration error. Refuse to
+// start without it outside Development, the same way the API refuses without its
+// reverse-proxy allowlist.
+if (!app.Environment.IsDevelopment()
+    && !app.Environment.IsEnvironment("Testing")
+    && string.IsNullOrWhiteSpace(dataProtectionOptions.KeyRingPath))
+{
+    throw new InvalidOperationException(
+        "DataProtection:KeyRingPath must be configured outside Development — "
+        + "without a shared key ring the auth cookie and antiforgery tokens are "
+        + "valid on one instance only.");
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

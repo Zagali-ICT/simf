@@ -174,6 +174,7 @@ public sealed class DeploymentEnvTemplateTests
                      "SIMF_Storage__LogDirectory",
                      "SIMF_Api__BaseUrl",
                      "SIMF_Session__LifetimeHours",
+                     "SIMF_DataProtection__KeyRingPath",
                  })
         {
             Assert.True(
@@ -321,6 +322,71 @@ public sealed class DeploymentEnvTemplateTests
         // The three Production boot gates are flagged as such, and the script
         // names them back to the operator when they are left empty.
         Assert.Contains("REFUSE TO START", template, StringComparison.Ordinal);
+    }
+
+    /// <summary>The shared Data Protection key ring is a boot gate for the two
+    /// Blazor hosts, and the template has to say so.
+    /// <para>
+    /// This is the setting whose absence is invisible. Everything else that is
+    /// gated fails loudly on one node; a per-node key ring works perfectly on one
+    /// node and only breaks when a second is added, and then it presents as admins
+    /// being bounced to /login at random rather than as a configuration error. The
+    /// tier separation adds those instances, so the gate has to be in place before
+    /// the second node exists, not after someone diagnoses the symptom.
+    /// </para></summary>
+    [Fact]
+    public void The_env_template_gates_the_shared_data_protection_key_ring()
+    {
+        var template = ReadRepoFile("deploy", TemplateName);
+
+        var entry = Regex.Match(
+            template,
+            """Name\s*=\s*"SIMF_DataProtection__KeyRingPath"\s*;\s*Value\s*=\s*"(?<value>[^"]*)"\s*;\s*Secret\s*=\s*\$(?<secret>true|false)\s*;\s*Gate\s*=\s*\$(?<gate>true|false)\s*;\s*Apps\s*=\s*"(?<apps>[^"]*)""");
+
+        Assert.True(
+            entry.Success,
+            $"{TemplateName} must declare SIMF_DataProtection__KeyRingPath in the "
+            + "standard entry shape, so the operator is given the setting that keeps "
+            + "auth cookies and antiforgery tokens valid across instances.");
+
+        Assert.Equal("true", entry.Groups["gate"].Value);
+
+        // A path is not a credential, and shipping a sensible default filled is the
+        // point of the merged template.
+        Assert.Equal("false", entry.Groups["secret"].Value);
+
+        // The API neither reads it nor needs it: bearer tokens, no antiforgery
+        // middleware, no IDataProtector. Tagging it "API" would have an operator
+        // set a value that configures nothing there.
+        var apps = entry.Groups["apps"].Value;
+        Assert.Contains("CP", apps, StringComparison.Ordinal);
+        Assert.Contains("Web", apps, StringComparison.Ordinal);
+        Assert.DoesNotContain("API", apps, StringComparison.Ordinal);
+
+        // The runbook must ask for it too, or a machine provisioned through the
+        // runbook alone comes up without the gate satisfied and refuses to start.
+        var runbook = ReadRepoFile("deploy", RunbookName);
+        Assert.Contains("SIMF_DataProtection__KeyRingPath", runbook, StringComparison.Ordinal);
+    }
+
+    /// <summary>The key ring must not be parked under the versioned deploy root.
+    /// That tree is replaced wholesale by a release, so a ring inside it is
+    /// destroyed on deploy and every signed-in admin is logged out - the same
+    /// reasoning that already keeps uploads and logs outside it.</summary>
+    [Fact]
+    public void The_key_ring_default_lives_outside_the_versioned_deploy_root()
+    {
+        var template = ReadRepoFile("deploy", TemplateName);
+        var value = Regex.Match(
+            template,
+            """Name\s*=\s*"SIMF_DataProtection__KeyRingPath"\s*;\s*Value\s*=\s*"(?<value>[^"]*)""")
+            .Groups["value"].Value;
+
+        Assert.False(string.IsNullOrWhiteSpace(value));
+        Assert.DoesNotContain(
+            @"\v1.",
+            value,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>The three per-service scripts were merged on 2026-08-06. They

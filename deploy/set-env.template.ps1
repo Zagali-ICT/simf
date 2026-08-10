@@ -117,6 +117,17 @@ $vars = @(
     [pscustomobject]@{ Name = "SIMF_Storage__LogDirectory"; Value = "C:\SIMF\Storage\logs"; Secret = $false; Gate = $false; Apps = "API CP Web"; Note = "per-app logs under {dir}/SIMF.Api, /SIMF.Workers, /SIMF.ControlPanel, /SIMF.Web" }
     [pscustomobject]@{ Name = "SIMF_SessionRecordingStorage__MaxUploadBytes"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 1073741824 (1 GiB)" }
 
+    # The shared Data Protection key ring. It encrypts the CP auth cookie (which
+    # carries the API tokens) and every antiforgery token both Blazor hosts issue.
+    # Unset, each process keeps its own ring on local disk - fine on one node, and
+    # silently broken on two, where a cookie minted on one instance is rejected by
+    # the next and the admin is bounced to /login at random. CP and Web therefore
+    # REFUSE TO START without it outside Development. Point it at the file server
+    # (a UNC path) once the tiers are separated, not at an application host: the
+    # ring must outlive any single node, and it must NOT sit under the versioned
+    # deploy root, which a release replaces.
+    [pscustomobject]@{ Name = "SIMF_DataProtection__KeyRingPath"; Value = "C:\SIMF\Storage\keyring"; Secret = $false; Gate = $true; Apps = "CP Web"; Note = "shared key ring; back this up - losing it signs every admin out" }
+
     # --- How CP and Web reach the API -----------------------------------------
     # SIMF_Api__AllowSelfSignedCertificate is GONE (2026-08-08). It installed
     # DangerousAcceptAnyServerCertificateValidator on the clients that carry the

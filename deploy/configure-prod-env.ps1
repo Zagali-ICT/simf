@@ -165,6 +165,11 @@ $promptedValues = @(
     # an operator never chose and may not be backing up.
     [pscustomobject]@{ Name = "SIMF_FileStorage__RootPath";             Secret = $false; Prompt = "file-store root for ALL uploads, e.g. C:\SIMF\Storage\files" }
     [pscustomobject]@{ Name = "SIMF_Storage__LogDirectory";             Secret = $false; Prompt = "log directory, e.g. C:\SIMF\Storage\logs" }
+    # The Control Panel and Website refuse to start without this outside
+    # Development: it is the shared Data Protection key ring behind the auth
+    # cookie and every antiforgery token, and a per-node ring breaks the moment a
+    # second instance exists. A UNC path once the tiers are separated.
+    [pscustomobject]@{ Name = "SIMF_DataProtection__KeyRingPath";       Secret = $false; Prompt = "shared key-ring directory, e.g. C:\SIMF\Storage\keyring" }
 )
 
 # Reported by the verify pass but never set here (see set-env.template.ps1).
