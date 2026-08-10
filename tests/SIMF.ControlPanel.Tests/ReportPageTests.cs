@@ -86,6 +86,47 @@ public sealed class ReportPageTests : CpComponentTestBase
     }
 
     [Fact]
+    public void The_partners_report_offers_no_date_range()
+    {
+        // GetPartnersAsync ignores From/To on purpose - a partner directory is a
+        // snapshot of who is participating, not a record of events in a period.
+        // The page rendered the range control anyway, so Apply was a silent
+        // no-op: found by driving the live page, where filtering to a period
+        // with no partners in it still returned all of them.
+        JSInterop.Setup<ApiResult<ReportPage<PartnersReportRow>>>(
+                "simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<ReportPage<PartnersReportRow>>.Ok(
+                new ReportPage<PartnersReportRow>(
+                    [new PartnersReportRow(
+                        Guid.NewGuid(), "Sponsor", "Gulf Defence Systems",
+                        "أنظمة الدفاع الخليجية", "Gold", null, null, null, true)],
+                    Total: 1, Skip: 0, Top: 25,
+                    Totals: [new ReportTotal("Admin.Reports.Total.Partners", "1")])));
+
+        var cut = RenderComponent<PartnersReport>();
+
+        Assert.Empty(cut.FindAll("input[type=date]"));
+
+        // The rest of the toolbar must survive - this hides one control, it does
+        // not strip the page.
+        Assert.Contains("Gulf Defence Systems", cut.Markup);
+        Assert.NotEmpty(cut.FindAll(".simf-report-totals"));
+        Assert.Empty(cut.FindAll(".simf-alert--error"));
+    }
+
+    [Fact]
+    public void Every_other_report_still_offers_the_range()
+    {
+        // The counterpart, so the fix cannot generalise into "no report filters
+        // by date". Partners is the ONLY service that ignores the window; the
+        // other seven resolve it through ReportingService.ResolveWindow.
+        StubList(OnePage());
+
+        Assert.Equal(2, RenderComponent<AttendanceReport>()
+            .FindAll("input[type=date]").Count);
+    }
+
+    [Fact]
     public void An_empty_report_renders_the_empty_state_and_still_no_error()
     {
         StubList(new ReportPage<AttendanceReportRow>([], 0, 0, 25, []));

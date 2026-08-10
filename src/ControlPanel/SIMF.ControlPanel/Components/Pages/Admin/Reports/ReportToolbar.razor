@@ -9,17 +9,24 @@
 @using SIMF.Contracts.Reporting
 
 <div class="simf-report-toolbar">
-    <SimfDateRange From="From"
-                   FromChanged="FromChanged"
-                   To="To"
-                   ToChanged="ToChanged"
-                   FromLabel="@L["Admin.Reports.From"]"
-                   ToLabel="@L["Admin.Reports.To"]"
-                   ApplyLabel="@L["Admin.Reports.Apply"]"
-                   ClearLabel="@L["Admin.Reports.Clear"]"
-                   InvalidRangeLabel="@L["Admin.Reports.InvalidRange"]"
-                   OnApply="OnApply"
-                   OnClear="OnClear" />
+    @* Hidden on a report whose data has no period to filter. A range control
+       that changes nothing is worse than no control: the operator sets it,
+       presses Apply, reads identical figures, and concludes the filter is
+       broken. See ShowDateRange. *@
+    @if (ShowDateRange)
+    {
+        <SimfDateRange From="From"
+                       FromChanged="FromChanged"
+                       To="To"
+                       ToChanged="ToChanged"
+                       FromLabel="@L["Admin.Reports.From"]"
+                       ToLabel="@L["Admin.Reports.To"]"
+                       ApplyLabel="@L["Admin.Reports.Apply"]"
+                       ClearLabel="@L["Admin.Reports.Clear"]"
+                       InvalidRangeLabel="@L["Admin.Reports.InvalidRange"]"
+                       OnApply="OnApply"
+                       OnClear="OnClear" />
+    }
 
     <div class="simf-report-toolbar__spacer"></div>
 
@@ -50,6 +57,15 @@
 
 @code {
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
+
+    /// <summary>
+    /// Whether to offer the Saudi date range. True for every report whose rows
+    /// are events in a period. Set false only where the service genuinely
+    /// ignores <c>From</c>/<c>To</c> — today that is the partners directory
+    /// alone, which is a snapshot of who is participating rather than a record
+    /// of what happened when.
+    /// </summary>
+    [Parameter] public bool ShowDateRange { get; set; } = true;
 
     [Parameter] public DateOnly? From { get; set; }
     [Parameter] public EventCallback<DateOnly?> FromChanged { get; set; }
