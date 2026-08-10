@@ -40,10 +40,12 @@ BEGIN
 END;
 
 -- Idempotent: drop any previous run of this fixture first.
+-- SessionQuestions before Sessions: the questions point at a session.
 DELETE FROM SessionQuestions          WHERE Id LIKE 'eeee%';
 DELETE FROM RatingResponses           WHERE Id LIKE 'eeee%';
 DELETE FROM SpeakerMeetingRequests    WHERE Id LIKE 'eeee%';
 DELETE FROM DelegationMeetingRequests WHERE Id LIKE 'eeee%';
+DELETE FROM Sessions                  WHERE Id LIKE 'eeee0005%';
 
 DECLARE @actor uniqueidentifier = '00000000-0000-0000-0000-0000000000aa';
 
@@ -141,6 +143,29 @@ VALUES
  ('eeee0004-0000-0000-0000-00000000000c', @sess, @actor, 'Is there a joint training curriculum?', 1, 12, 0, 0, NULL, '2026-08-09 13:55', 0, 3);
 
 -------------------------------------------------------------------------------
+-- SAUDI DAY BOUNDARY (E2E-RPT-005) — three sessions that pin the inclusive To.
+--
+-- Storage is ALREADY the Saudi wall clock (owner decision 2026-07-31, recorded
+-- in SaudiTime), so these values mean exactly what they read. Filtering
+-- attendance to 23-11 must keep A and B and exclude C. If the exclusive bound
+-- were "To 00:00" rather than "To + 1 day", B would vanish - and with it the
+-- last half-hour of every event day.
+-------------------------------------------------------------------------------
+DECLARE @hall uniqueidentifier;
+SELECT @hall = MIN(Id) FROM Halls;
+
+INSERT INTO Sessions
+    (Id, Code, Title, TitleArabic, HallId, Start, [End], Status,
+     CreatedAt, CreatedBy, IsActive)
+VALUES
+ ('eeee0005-0000-0000-0000-000000000001','BND-A','Boundary midday','حد الظهيرة',
+  @hall,'2026-11-23 12:00','2026-11-23 13:00',1,'2026-08-09 08:00',@actor,1),
+ ('eeee0005-0000-0000-0000-000000000002','BND-B','Boundary late evening','حد المساء',
+  @hall,'2026-11-23 23:30','2026-11-24 00:30',1,'2026-08-09 08:00',@actor,1),
+ ('eeee0005-0000-0000-0000-000000000003','BND-C','Boundary next morning','حد الصباح',
+  @hall,'2026-11-24 00:30','2026-11-24 01:30',1,'2026-08-09 08:00',@actor,1);
+
+-------------------------------------------------------------------------------
 -- Confirm what landed, so the run is checked against intent, not assumed.
 -------------------------------------------------------------------------------
 SELECT 'meetings_total=' + CAST(
@@ -158,5 +183,6 @@ SELECT 'ratings_withcomment=' + CAST((SELECT COUNT(*) FROM RatingResponses WHERE
 SELECT 'questions_total=' + CAST((SELECT COUNT(*) FROM SessionQuestions WHERE Id LIKE 'eeee%') AS varchar(9));
 SELECT 'questions_hidden=' + CAST((SELECT COUNT(*) FROM SessionQuestions WHERE Id LIKE 'eeee%' AND IsHidden = 1) AS varchar(9));
 SELECT 'questions_pushed=' + CAST((SELECT COUNT(*) FROM SessionQuestions WHERE Id LIKE 'eeee%' AND IsPushed = 1) AS varchar(9));
+SELECT 'boundary_sessions=' + CAST((SELECT COUNT(*) FROM Sessions WHERE Id LIKE 'eeee0005%') AS varchar(9));
 
 SET NOEXEC OFF;

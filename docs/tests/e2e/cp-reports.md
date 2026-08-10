@@ -15,7 +15,19 @@
 > | | |
 > |--|--|
 > | **Passed against live data** | 001, 003, 006, 007, 012, 014, 015, 018 (mechanism), 019, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 033, 034, 035 |
-> | **Not run** | 032 — see below · 013 (needs a forced 500) · 002/004/005/008/009/010/011/016/017/020 (pre-existing Wave B scenarios, not re-run in this pass) |
+> | **Not run** | 013 (needs a forced 500) · 008/009/010/011/017 (Wave B; 008/009/017 were re-proven on the Wave C reports, and 010/011 exercise the same gate as 032) |
+>
+> **Third pass — 032 and the Wave B remainder.** 032 was driven on the QA stack
+> against `tools/qa/seed-restricted-admin.sql` and PASSED in full: five routes
+> redirect to `/not-permitted`, five list and five export endpoints return 403,
+> and the two positive controls (`/admin/sessions`, `/admin/reports`) stay
+> reachable — so those are real denials, not a broken fixture. Running it found
+> the 400-instead-of-403 defect now covered by E2E-RPT-036.
+>
+> 002, 004, 005, 016 and 020 were then re-run on dev. All pass, except the
+> row-level half of 004, which needs gate scans the dev DB does not have.
+> **005 is the one worth having:** three seeded boundary sessions proved the
+> inclusive-To bound keeps a 23:30 session and excludes a next-day 00:30 one.
 >
 > **E2E-RPT-032 must be driven on the QA stack, not on local dev.** The seeded
 > super-admin holds the `*` wildcard, which satisfies every gate, so a green
@@ -198,8 +210,18 @@ Scenario: Clear removes both bounds, it does not reset to today
 
 ```gherkin
 Feature: Inclusive Saudi date range
-  The To date is the last day the operator wants INCLUDED. Instants are stored
-  as UTC, so the exclusive bound must be the start of the day AFTER To.
+  The To date is the last day the operator wants INCLUDED, so the exclusive
+  bound must be the start of the day AFTER To. Get that wrong and every event
+  day silently loses its final hours.
+
+  NOTE ON STORAGE — corrected 2026-08-10. An earlier version of this scenario
+  reasoned about instants being stored as UTC and shifted +3. That is no longer
+  true and has not been since the owner decision of 2026-07-31 recorded in
+  SaudiTime: SIMF stores every instant as a plain DateTime ALREADY on the Saudi
+  wall clock, and ResolveWindow calls itself "a relabel, not a conversion".
+  Converting a stored value today would shift it by three hours, which is the
+  very bug the old conversion existed to prevent. The assertions below were
+  always right; only the explanation was stale.
 
 Scenario: A session on the To day appears
   Given a session exists starting at 12:00 Riyadh on "23-11-2026"
@@ -214,14 +236,24 @@ Scenario: A session late on the To evening still appears
   Given a session exists starting at 23:30 Riyadh on "23-11-2026"
   When I filter From "23-11-2026" To "23-11-2026"
   Then the grid contains that session
-  # Stored as 20:30 UTC on the same day. A naive UTC-date filter would keep it,
-  # but an exclusive bound of "To 00:00" would drop it.
+  And its "Start" cell reads "23-11-2026 11:30 PM"
+  # THE point of the scenario. An exclusive bound of "To 00:00" instead of
+  # "To + 1 day" would drop this row, losing the last half-hour of every day.
 
 Scenario: A session just after midnight the next day does not appear
   Given a session exists starting at 00:30 Riyadh on "24-11-2026"
   When I filter From "23-11-2026" To "23-11-2026"
   Then the grid does not contain that session
-  # Stored as 21:30 UTC on 23-11: it is UTC-23rd but Saudi-24th.
+  And filtering From "24-11-2026" To "24-11-2026" DOES contain it
+  And its "Start" cell reads "24-11-2026 12:30 AM"
+
+# Verified live 2026-08-10 with three seeded boundary sessions (BND-A 12:00,
+# BND-B 23:30, BND-C next-day 00:30). All four assertions held.
+#
+# TRAP when driving this by API rather than by UI: GridQuery.ClampPage() CAPS
+# `take`. A request for 1000 rows silently returns 20, and because the default
+# sort is start-ascending the late-evening and next-day sessions fall past the
+# cap and read as missing data. Pass a `search` term instead of a large `take`.
 ```
 
 ### E2E-RPT-006 — An inverted range is refused before it queries
