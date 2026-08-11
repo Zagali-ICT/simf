@@ -134,15 +134,33 @@ internal static partial class AccountEndpoints
     /// whatever the status — so pass it straight through rather than
     /// discarding it. When the body is genuinely empty, emit a minimal JSON
     /// object: the point is that the response must not be bodiless.</para>
+    ///
+    /// <para><b>200 is deliberately left alone.</b> Every download guard in this
+    /// class reads roughly <c>status != 200 || contentType is null ||
+    /// bytes.Length == 0</c>, so it also fires on a SUCCESS the upstream
+    /// answered with nothing usable. StatusCodePages only re-executes bodiless
+    /// <b>4xx/5xx</b>, so a bodiless 200 was never part of the defect — and
+    /// giving it a JSON body would be actively worse: at best it reads as a
+    /// successful empty response, at worst (contentType null but bytes present)
+    /// it would serve raw image bytes labelled <c>application/json</c> with a
+    /// 200. Handling it here rather than by splitting sixteen guards keeps one
+    /// convention for every binary download in the class.</para>
     /// </summary>
-    private static IResult DownloadFailure(int status, byte[] bytes) =>
-        bytes.Length > 0
+    private static IResult DownloadFailure(int status, byte[] bytes)
+    {
+        if (status == StatusCodes.Status200OK)
+        {
+            return Results.StatusCode(StatusCodes.Status200OK);
+        }
+
+        return bytes.Length > 0
             ? Results.Content(
                 System.Text.Encoding.UTF8.GetString(bytes),
                 "application/json",
                 System.Text.Encoding.UTF8,
                 status)
             : Results.Content("{}", "application/json", System.Text.Encoding.UTF8, status);
+    }
 
     private static void MapGridExport(IEndpointRouteBuilder group, string slug)
     {

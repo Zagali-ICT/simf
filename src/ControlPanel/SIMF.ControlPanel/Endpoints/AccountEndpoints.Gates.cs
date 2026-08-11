@@ -160,7 +160,7 @@ internal static partial class AccountEndpoints
                 await api.DownloadLogAsync(project, file, token);
             if (status != 200 || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             return Results.File(bytes, "text/plain", safeFileName);
         });

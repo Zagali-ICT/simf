@@ -214,7 +214,7 @@ internal static partial class AccountEndpoints
             var (status, bytes) = await api.ExportOperationLogAsync(body, token);
             if (status != 200 || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -240,7 +240,7 @@ internal static partial class AccountEndpoints
             var (status, bytes) = await api.ExportAttendeesAsync(body, token);
             if (status != 200 || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -202,7 +202,7 @@ internal static partial class AccountEndpoints
                 await api.FetchVisitorVipPhotoAsync(id, token);
             if (status != 200 || contentType is null || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             http.Response.Headers.CacheControl = "private, max-age=60";
             return Results.File(bytes, contentType);
@@ -237,7 +237,7 @@ internal static partial class AccountEndpoints
                 await api.FetchVipRosterFileAsync(format, token);
             if (status != 200 || contentType is null || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             var fileName = format.Equals("xlsx", StringComparison.OrdinalIgnoreCase)
                 ? "vip-welcome-roster.xlsx"
@@ -257,7 +257,7 @@ internal static partial class AccountEndpoints
                 await api.FetchVisitorIdDocumentAsync(id, token);
             if (status != 200 || contentType is null || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             // A2-14 (NCA App-Sec Standard) — ID document is high-value PII; never cache.
             http.Response.Headers.CacheControl = "no-store";
@@ -273,7 +273,7 @@ internal static partial class AccountEndpoints
                 await api.FetchOtherIdDocumentAsync(id, token);
             if (status != 200 || contentType is null || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             // A2-14 (NCA App-Sec Standard) — ID document is high-value PII; never cache.
             http.Response.Headers.CacheControl = "no-store";
@@ -291,7 +291,7 @@ internal static partial class AccountEndpoints
                 await api.FetchVisitorAvatarAsync(id, token);
             if (status != 200 || contentType is null || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             http.Response.Headers.CacheControl = "private, max-age=60";
             return Results.File(bytes, contentType);
@@ -306,7 +306,7 @@ internal static partial class AccountEndpoints
                 await api.FetchOtherAvatarAsync(id, token);
             if (status != 200 || contentType is null || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             http.Response.Headers.CacheControl = "private, max-age=60";
             return Results.File(bytes, contentType);
@@ -323,7 +323,7 @@ internal static partial class AccountEndpoints
                 await api.FetchAdminAvatarAsync(id, token);
             if (status != 200 || contentType is null || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             http.Response.Headers.CacheControl = "private, max-age=60";
             return Results.File(bytes, contentType);
@@ -364,7 +364,7 @@ internal static partial class AccountEndpoints
             var (status, bytes) = await api.ExportUsersAsync(body, token);
             if (status != 200 || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -476,7 +476,7 @@ internal static partial class AccountEndpoints
             var (status, bytes) = await api.ExportVisitorsAsync(body, token);
             if (status != 200 || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -491,7 +491,7 @@ internal static partial class AccountEndpoints
             var (status, bytes) = await api.ExportOthersAsync(body, token);
             if (status != 200 || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

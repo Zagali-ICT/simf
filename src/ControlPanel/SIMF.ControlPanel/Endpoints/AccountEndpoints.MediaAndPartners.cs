@@ -150,7 +150,7 @@ internal static partial class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             var (status, contentType, bytes) = await api.FetchAssetImageAsync(category, ownerId, token);
-            if (status != 200 || bytes.Length == 0) { return Results.StatusCode(status); }
+            if (status != 200 || bytes.Length == 0) { return DownloadFailure(status, bytes); }
             return Results.File(bytes, contentType ?? "application/octet-stream");
         });
 
@@ -229,7 +229,7 @@ internal static partial class AccountEndpoints
                 await api.FetchSpeakerPresentationAsync(id, token);
             if (status != 200 || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
             string? downloadName = null;
             if (!string.IsNullOrWhiteSpace(contentDisposition)

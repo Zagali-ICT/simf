@@ -139,7 +139,7 @@ internal static partial class AccountEndpoints
             var (status, contentType, bytes) = await api.FetchAvatarAsync(userId, token);
             if (status != 200 || contentType is null || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                return DownloadFailure(status, bytes);
             }
 
             // Mirror the API's cache policy so the browser doesn't refetch on
