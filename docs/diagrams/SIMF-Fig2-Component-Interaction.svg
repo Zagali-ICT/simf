@@ -64,31 +64,19 @@
 <text x="360.0" y="773" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«component»</text>
 <text x="360.0" y="792" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">SIMF.Domain</text>
 <text x="360.0" y="809" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">entities, aggregates, rules</text>
-<rect x="1180" y="140" width="440" height="520" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<rect x="1180" y="140" width="440" height="140" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
 <text x="1194" y="162" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">External services</text>
 <rect x="1205" y="180" width="390" height="80" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="1400.0" y="201" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«external»</text>
-<text x="1400.0" y="220" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Video platform</text>
-<text x="1400.0" y="237" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">live stream and captions</text>
-<rect x="1205" y="280" width="390" height="80" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
-<text x="1400.0" y="301" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«external»</text>
-<text x="1400.0" y="320" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">E-mail relay</text>
-<text x="1400.0" y="337" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">internal SMTP</text>
-<rect x="1205" y="380" width="390" height="80" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
-<text x="1400.0" y="401" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«external»</text>
-<text x="1400.0" y="420" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Log collector</text>
-<text x="1400.0" y="437" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">syslog over TLS</text>
-<rect x="1205" y="480" width="390" height="80" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
-<text x="1400.0" y="501" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«external»</text>
-<text x="1400.0" y="520" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">AI service</text>
-<text x="1400.0" y="537" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">summaries and assistance</text>
-<rect x="1180" y="700" width="440" height="140" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
-<text x="1194" y="722" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Shared libraries</text>
-<text x="1606" y="722" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="end">referenced by every client and by the API host</text>
-<rect x="1205" y="735" width="390" height="86" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
-<text x="1400.0" y="756" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«library»</text>
-<text x="1400.0" y="775" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Shared libraries</text>
-<text x="1400.0" y="792" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">SIMF.Common, .Contracts, .ApiClient, .Components</text>
+<text x="1400.0" y="220" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Log collector</text>
+<text x="1400.0" y="237" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">syslog over TLS</text>
+<rect x="1180" y="320" width="440" height="140" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="1194" y="342" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Shared libraries</text>
+<text x="1606" y="342" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="end">referenced by every client and by the API host</text>
+<rect x="1205" y="355" width="390" height="86" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1400.0" y="376" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«library»</text>
+<text x="1400.0" y="395" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Shared libraries</text>
+<text x="1400.0" y="412" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">SIMF.Common, .Contracts, .ApiClient, .Components</text>
 <rect x="40" y="900" width="1000" height="150" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
 <text x="54" y="922" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Data tier</text>
 <path d="M 70 945 H 370 M 70 1005 H 370" stroke="#1A1A1A" stroke-width="1.4" fill="none"/>
@@ -121,9 +109,6 @@
 <path d="M 915 276 L 915 345 L 580 345 L 580 380" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
 <rect x="883.5725" y="286" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
 <text x="915" y="297" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
-<path d="M 180 180 L 180 118 L 1350 118 L 1350 180" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="706.145" y="116" width="117.71000000000001" height="15" fill="#FFFFFF" stroke="none"/>
-<text x="765" y="127" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS, live stream</text>
 <path d="M 360 460 L 360 500" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
 <rect x="325.525" y="470" width="68.95" height="15" fill="#FFFFFF" stroke="none"/>
 <text x="360" y="481" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">in-process</text>
@@ -136,18 +121,9 @@
 <path d="M 760 460 L 760 530 L 650 530" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
 <rect x="670.525" y="505" width="68.95" height="15" fill="#FFFFFF" stroke="none"/>
 <text x="705" y="516" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">in-process</text>
-<path d="M 650 510 L 1090 510 L 1090 220 L 1205 220" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="1115.5725" y="195" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
-<text x="1147" y="206" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
-<path d="M 650 545 L 1110 545 L 1110 320 L 1205 320" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="1128.62" y="295" width="56.760000000000005" height="15" fill="#FFFFFF" stroke="none"/>
-<text x="1157" y="306" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">SMTP 587</text>
-<path d="M 650 560 L 1130 560 L 1130 420 L 1205 420" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="1129.4775" y="395" width="75.045" height="15" fill="#FFFFFF" stroke="none"/>
-<text x="1167" y="406" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">syslog 6514</text>
-<path d="M 650 575 L 1150 575 L 1150 520 L 1205 520" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<rect x="1145.5725" y="495" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
-<text x="1177" y="506" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
+<path d="M 650 545 L 1130 545 L 1130 220 L 1205 220" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="1129.4775" y="195" width="75.045" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="1167" y="206" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">syslog 6514</text>
 <path d="M 650 588 L 700 588 L 700 872 L 220 872 L 220 945" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
 <rect x="431.62" y="847" width="56.760000000000005" height="15" fill="#FFFFFF" stroke="none"/>
 <text x="460" y="858" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">TCP 1433</text>
@@ -157,18 +133,18 @@
 <path d="M 650 606 L 740 606 L 740 892 L 880 892 L 880 945" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
 <rect x="789.6675" y="867" width="50.665" height="15" fill="#FFFFFF" stroke="none"/>
 <text x="815" y="878" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">SMB 445</text>
-<rect x="1180" y="880" width="440" height="139" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
-<text x="1194" y="902" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Key</text>
-<rect x="1196" y="915" width="30" height="13" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1"/><rect x="1216" y="917" width="7" height="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.9"/>
-<text x="1240" y="925" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Component, with its technology</text>
-<rect x="1196" y="936" width="30" height="13" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1"/>
-<text x="1240" y="946" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Client application or external service</text>
-<rect x="1196" y="957" width="30" height="13" fill="#D8D2C8" stroke="none"/><path d="M 1196 957 H 1226 M 1196 970 H 1226 M 1196 957 V 970 M 1207 957 V 970" stroke="#1A1A1A" stroke-width="1" fill="none"/>
-<text x="1240" y="967" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Data store</text>
-<rect x="1196" y="978" width="30" height="13" rx="2" fill="#F7F8FA" stroke="#6B7280" stroke-width="1" stroke-dasharray="4 3"/>
-<text x="1240" y="988" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Grouping or process boundary</text>
-<path d="M 1196 1005 H 1224" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
-<text x="1240" y="1009" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Call, labelled with protocol and port</text>
+<rect x="1180" y="500" width="440" height="139" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="1194" y="522" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Key</text>
+<rect x="1196" y="535" width="30" height="13" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1"/><rect x="1216" y="537" width="7" height="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.9"/>
+<text x="1240" y="545" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Component, with its technology</text>
+<rect x="1196" y="556" width="30" height="13" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1"/>
+<text x="1240" y="566" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Client application or external service</text>
+<rect x="1196" y="577" width="30" height="13" fill="#D8D2C8" stroke="none"/><path d="M 1196 577 H 1226 M 1196 590 H 1226 M 1196 577 V 590 M 1207 577 V 590" stroke="#1A1A1A" stroke-width="1" fill="none"/>
+<text x="1240" y="587" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Data store</text>
+<rect x="1196" y="598" width="30" height="13" rx="2" fill="#F7F8FA" stroke="#6B7280" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="1240" y="608" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Grouping or process boundary</text>
+<path d="M 1196 625 H 1224" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="1240" y="629" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Call, labelled with protocol and port</text>
 <rect x="40" y="1080" width="1000" height="106" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
 <text x="54" y="1101" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Sources</text>
 <text x="54" y="1121" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Component names and layering: SIMF solution source tree.</text>

@@ -40,15 +40,19 @@ s.box(70, 752, 580, 70, "SIMF.Domain", "component",
       "entities, aggregates, rules", fill=NODE_FILL, component=True)
 
 # ------------------------------------------------------ external systems
-s.band(1180, 140, 440, 520, "External services")
-s.box(1205, 180, 390, 80, "Video platform", "external", "live stream and captions")
-s.box(1205, 280, 390, 80, "E-mail relay", "external", "internal SMTP")
-s.box(1205, 380, 390, 80, "Log collector", "external", "syslog over TLS")
-s.box(1205, 480, 390, 80, "AI service", "external", "summaries and assistance")
+# The video platform, the AI service and the e-mail relay are NOT drawn here.
+# They are outbound calls to third-party URLs, not components of this solution,
+# and an architecture sheet that boxes them implies a design commitment the
+# system does not make. The data that travels to each of them is a data-flow
+# concern and is shown on the data-flow sheet instead (owner decision,
+# 2026-08-10). The log collector stays: it is infrastructure the estate depends
+# on and it receives from this host continuously.
+s.band(1180, 140, 440, 140, "External services")
+s.box(1205, 180, 390, 80, "Log collector", "external", "syslog over TLS")
 
-s.band(1180, 700, 440, 140, "Shared libraries",
+s.band(1180, 320, 440, 140, "Shared libraries",
        "referenced by every client and by the API host")
-s.box(1205, 735, 390, 86, "Shared libraries", "library",
+s.box(1205, 355, 390, 86, "Shared libraries", "library",
       "SIMF.Common, .Contracts, .ApiClient, .Components")
 
 # ------------------------------------------------------------- data tier
@@ -67,10 +71,6 @@ s.path([(670, 276), (670, 335), (450, 335), (450, 380)], "HTTPS 443",
 s.path([(915, 276), (915, 345), (580, 345), (580, 380)], "HTTPS 443",
        label_at=(915, 304))
 
-# the stream is played by the device itself, never through a SIMF server
-s.path([(180, 180), (180, 118), (1350, 118), (1350, 180)], "HTTPS, live stream",
-       label_at=(765, 134))
-
 # ------------------------------------------------------- inward layering
 s.path([(360, 460), (360, 500)], "in-process", label_at=(360, 488))
 s.path([(360, 610), (360, 650)], "in-process", label_at=(360, 638))
@@ -78,14 +78,8 @@ s.path([(360, 722), (360, 752)], "in-process", label_at=(360, 742))
 s.path([(760, 460), (760, 530), (650, 530)], "in-process", label_at=(705, 523))
 
 # ------------------------------------------- infrastructure to the outside
-s.path([(650, 510), (1090, 510), (1090, 220), (1205, 220)], "HTTPS 443",
-       label_at=(1147, 213))
-s.path([(650, 545), (1110, 545), (1110, 320), (1205, 320)], "SMTP 587",
-       label_at=(1157, 313))
-s.path([(650, 560), (1130, 560), (1130, 420), (1205, 420)], "syslog 6514",
-       label_at=(1167, 413))
-s.path([(650, 575), (1150, 575), (1150, 520), (1205, 520)], "HTTPS 443",
-       label_at=(1177, 513))
+s.path([(650, 545), (1130, 545), (1130, 220), (1205, 220)], "syslog 6514",
+       label_at=(1167, 213))
 
 s.path([(650, 588), (700, 588), (700, 872), (220, 872), (220, 945)], "TCP 1433",
        label_at=(460, 865))
@@ -95,7 +89,7 @@ s.path([(650, 606), (740, 606), (740, 892), (880, 892), (880, 945)], "SMB 445",
        label_at=(815, 885))
 
 # ------------------------------------------------------------- apparatus
-s.legend(1180, 880, 440, [
+s.legend(1180, 500, 440, [
     ("comp", "Component, with its technology"),
     ("box", "Client application or external service"),
     ("store", "Data store"),
