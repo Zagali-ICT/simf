@@ -14,9 +14,43 @@
 >
 > | | |
 > |--|--|
-> | **Passed against live data** | 001, 003, 006, 007, 012, 014, 015, 018 (mechanism), 019, 021, 022, 027 (empty-average case), 031, 033 (partners), 034 |
-> | **Structure passed, data blocked** | 024, 025, 026, 028, 029, 030 — columns, sortable columns, totals labels, empty state and RTL all verified; the row and figure assertions need seeded meetings / ratings / questions, of which the dev DB has **none** |
-> | **Not run** | 032 (needs the restricted-role fixture — the seeded super-admin holds `*`, which satisfies every gate, so running it as super-admin would prove nothing), 013 (needs a forced 500), 002/004/005/008/009/010/011/016/017/020 (pre-existing Wave B scenarios, not re-run in this pass) |
+> | **Passed against live data** | 001, 003, 006, 007, 012, 014, 015, 018 (mechanism), 019, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 033, 034, 035 |
+> | **Not run** | 013 (needs a forced 500) · 008/009/010/011/017 (Wave B; 008/009/017 were re-proven on the Wave C reports, and 010/011 exercise the same gate as 032) |
+>
+> **Third pass — 032 and the Wave B remainder.** 032 was driven on the QA stack
+> against `tools/qa/seed-restricted-admin.sql` and PASSED in full: five routes
+> redirect to `/not-permitted`, five list and five export endpoints return 403,
+> and the two positive controls (`/admin/sessions`, `/admin/reports`) stay
+> reachable — so those are real denials, not a broken fixture. Running it found
+> the 400-instead-of-403 defect now covered by E2E-RPT-036.
+>
+> 002, 004, 005, 016 and 020 were then re-run on dev. All pass, except the
+> row-level half of 004, which needs gate scans the dev DB does not have.
+> **005 is the one worth having:** three seeded boundary sessions proved the
+> inclusive-To bound keeps a 23:30 session and excludes a next-day 00:30 one.
+>
+> **E2E-RPT-032 must be driven on the QA stack, not on local dev.** The seeded
+> super-admin holds the `*` wildcard, which satisfies every gate, so a green
+> result against it proves nothing. The fixture already exists —
+> `tools/qa/seed-restricted-admin.sql` clones the super-admin's password hash and
+> TOTP token onto a user holding exactly one permission — but it **deliberately
+> refuses any database whose name does not contain `_QA_`**, because a second
+> account sharing production's super-admin password would be a real
+> vulnerability. That guard is correct; do not relax it to run this locally.
+> Bring up the QA stack instead, and set its `@grantCode` to a `Reports.*` code
+> (it currently grants `Sessions.View`).
+>
+> **Second pass, same day — the six data-blocked scenarios now pass.** The dev DB
+> held no meetings, ratings or questions, so 024/025/026/028/029/030 could only be
+> verified structurally. A fixture was seeded (8 meeting requests: 3 Pending,
+> 4 checked in · 4 ratings: 5/4/4/null stars, 2 with comments · 12 questions:
+> 2 hidden, 5 pushed) and all six then passed against real figures, as did
+> E2E-RPT-031's row-count half on all four workbooks.
+>
+> **Fixture gotcha worth keeping:** `RatingResponses` carries a unique index on
+> `(UserId, RatingTypeId, TargetId)` — one person rates a given target once per
+> rating type. A fixture that reuses one user id is rejected outright with
+> Msg 2601. Use a distinct rater per row.
 >
 > Zero console errors or warnings across every page visited. Zero error banners
 > on every healthy load. Zero horizontal overflow at 1280 and 1920, in RTL, with
@@ -62,7 +96,7 @@
 | E2E-RPT-021 | Partners report flattens exhibitors, sponsors and booths into one directory | happy | P0 | authored |
 | E2E-RPT-022 | Partners totals split by kind and reconcile to the partner total | happy | P0 | authored |
 | E2E-RPT-023 | A partner with no tier, email, phone or website still renders | boundary | P1 | authored |
-| E2E-RPT-024 | Meetings report flattens speaker and delegation requests | happy | P0 | authored |
+| E2E-RPT-024 | Meetings report flattens speaker and delegation requests; an unscheduled request shows a blank slot | happy | P0 | authored |
 | E2E-RPT-025 | Meetings totals count pending and checked-in | happy | P0 | authored |
 | E2E-RPT-026 | Ratings report renders stars, scope and comment | happy | P0 | authored |
 | E2E-RPT-027 | Average rating is one decimal, and blank when there is nothing to average | boundary | P0 | authored |
@@ -73,6 +107,8 @@
 | E2E-RPT-032 | Each Wave C report refuses an operator lacking its own permission | auth | P0 | authored |
 | E2E-RPT-033 | Every Wave C export is Saudi-stamped and formula-safe | i18n | P0 | authored |
 | E2E-RPT-034 | Every Wave C report renders in Arabic RTL without overflow | i18n | P1 | authored |
+| E2E-RPT-035 | Partners offers no date range; every other report still does | regression | P0 | authored ✓ (`ReportPageTests.The_partners_report_offers_no_date_range`, `Every_other_report_still_offers_the_range`) |
+| E2E-RPT-036 | A denied export returns 403 + the bilingual envelope, never 400 + HTML | regression | P0 | authored ✓ (`DownloadErrorStatusTests`) |
 
 ## Scenarios
 
@@ -174,8 +210,18 @@ Scenario: Clear removes both bounds, it does not reset to today
 
 ```gherkin
 Feature: Inclusive Saudi date range
-  The To date is the last day the operator wants INCLUDED. Instants are stored
-  as UTC, so the exclusive bound must be the start of the day AFTER To.
+  The To date is the last day the operator wants INCLUDED, so the exclusive
+  bound must be the start of the day AFTER To. Get that wrong and every event
+  day silently loses its final hours.
+
+  NOTE ON STORAGE — corrected 2026-08-10. An earlier version of this scenario
+  reasoned about instants being stored as UTC and shifted +3. That is no longer
+  true and has not been since the owner decision of 2026-07-31 recorded in
+  SaudiTime: SIMF stores every instant as a plain DateTime ALREADY on the Saudi
+  wall clock, and ResolveWindow calls itself "a relabel, not a conversion".
+  Converting a stored value today would shift it by three hours, which is the
+  very bug the old conversion existed to prevent. The assertions below were
+  always right; only the explanation was stale.
 
 Scenario: A session on the To day appears
   Given a session exists starting at 12:00 Riyadh on "23-11-2026"
@@ -190,14 +236,24 @@ Scenario: A session late on the To evening still appears
   Given a session exists starting at 23:30 Riyadh on "23-11-2026"
   When I filter From "23-11-2026" To "23-11-2026"
   Then the grid contains that session
-  # Stored as 20:30 UTC on the same day. A naive UTC-date filter would keep it,
-  # but an exclusive bound of "To 00:00" would drop it.
+  And its "Start" cell reads "23-11-2026 11:30 PM"
+  # THE point of the scenario. An exclusive bound of "To 00:00" instead of
+  # "To + 1 day" would drop this row, losing the last half-hour of every day.
 
 Scenario: A session just after midnight the next day does not appear
   Given a session exists starting at 00:30 Riyadh on "24-11-2026"
   When I filter From "23-11-2026" To "23-11-2026"
   Then the grid does not contain that session
-  # Stored as 21:30 UTC on 23-11: it is UTC-23rd but Saudi-24th.
+  And filtering From "24-11-2026" To "24-11-2026" DOES contain it
+  And its "Start" cell reads "24-11-2026 12:30 AM"
+
+# Verified live 2026-08-10 with three seeded boundary sessions (BND-A 12:00,
+# BND-B 23:30, BND-C next-day 00:30). All four assertions held.
+#
+# TRAP when driving this by API rather than by UI: GridQuery.ClampPage() CAPS
+# `take`. A request for 1000 rows silently returns 20, and because the default
+# sort is start-ascending the late-evening and next-day sessions fall past the
+# cap and read as missing data. Pass a `search` term instead of a large `take`.
 ```
 
 ### E2E-RPT-006 — An inverted range is refused before it queries
@@ -388,11 +444,13 @@ range / export / empty / error scenarios, which apply to every report.
 >
 > **So never demonstrate a range-dependent scenario on partners** — E2E-RPT-005,
 > 006's re-query half, 007 and 012 must be driven on a report that actually
-> filters (registrations is the cheapest). Setting a range on partners changes
-> nothing, which reads as a broken filter rather than an inapplicable one.
-> Verified live 2026-08-10: filtering partners to 01-01-2020..02-01-2020 still
-> returned all 22. **Reported as a UX defect** — the page renders From / To /
-> Apply controls that are inert, with nothing on screen saying so.
+> filters (registrations is the cheapest).
+>
+> **The page no longer offers the control at all (fixed 2026-08-10).** It used to
+> render From / To / Apply anyway, so filtering partners to 01-01-2020..02-01-2020
+> still returned all 22 — an inert control, which reads as a broken filter rather
+> than an inapplicable one. `ReportToolbar` now takes `ShowDateRange`, defaulting
+> true, and partners passes false. See E2E-RPT-035.
 
 ### E2E-RPT-021 — Partners report flattens exhibitors, sponsors and booths
 
@@ -461,16 +519,27 @@ Feature: One meetings list
   answered - so the report presents them as one list keyed by Kind.
 
 Scenario: Both request kinds appear
-  Given a speaker meeting request from "Ahmed Al-Otaibi" to "Dr. Sarah Nasser"
-        with subject "Naval logistics briefing" exists
-  And a delegation meeting request from "Kuwait Delegation" exists
+  Given a speaker meeting request from "Ahmed Al-Otaibi" with subject
+        "Naval logistics briefing" exists, targeting a seeded speaker
+  And a delegation meeting request exists between two countries
   When I open "/admin/reports/meetings"
   Then the grid shows columns "Kind", "Requester", "Target", "Subject", "Slot",
        "Status", "Requested"
-  And a row reads Requester "Ahmed Al-Otaibi" and Target "Dr. Sarah Nasser"
-  And a row reads Requester "Kuwait Delegation"
+  And a row reads Kind "Speaker" and Requester "Ahmed Al-Otaibi"
+  And its Target is the speaker's name
+  And a row reads Kind "Delegation" whose Requester and Target are COUNTRY names
+  # Not a free-text label. A delegation request carries RequestingCountryId /
+  # TargetCountryId, and the report projects Country.Name into both columns -
+  # confirmed live, the rows read "Argentina" and "Australia".
   And the "Kind" and "Status" columns are sortable
   And the "Slot" and "Requested" cells read dd-MM-yyyy Saudi local
+
+Scenario: An unscheduled request shows a blank slot, not a fabricated time
+  Given a meeting request exists with no agreed slot
+  When I open "/admin/reports/meetings"
+  Then its "Slot" cell is empty
+  And no time is invented for it
+  # ToRow guards this explicitly: a request can exist before a slot is agreed.
 ```
 
 ### E2E-RPT-025 — Meetings totals count pending and checked-in
@@ -489,13 +558,16 @@ Scenario: Pending and checked-in are counted across both kinds
 
 ```gherkin
 Scenario: A submitted rating appears with its scope and text
-  Given a rating of type "Session feedback" scoped to "Session"
-        with 4 stars and the comment "Well paced, good Q&A" exists
+  Given a rating of the seeded "Session" rating type with 4 stars and the
+        comment "Well paced, good Q&A" exists
   And I am signed in as "superadmin@simrsnf.com"
   When I open "/admin/reports/ratings"
   Then the grid shows columns "Rating type", "Scope", "Stars", "Comment",
        "Submitted"
-  And a row reads Rating type "Session feedback", Scope "Session", Stars "4"
+  And a row reads Rating type "Session", Scope "PerSession", Stars "4"
+  # Both are rendered values, not labels chosen here: Rating type is
+  # RatingType.Name and Scope is the RatingScope ENUM NAME, which is
+  # "PerSession", not "Session". Confirmed live.
   And its Comment cell reads "Well paced, good Q&A"
   And the "Rating type", "Stars" and "Submitted" columns are sortable
 ```
@@ -673,6 +745,94 @@ Scenario: A question beginning with = is neutralised in the workbook
   # CWE-1236. The guard lives in the shared ClosedXmlGridExcelExporter, so this
   # holds for every report - but engagement is the one whose cells are free
   # text typed by an attendee, so it is the realistic attack path.
+```
+
+### E2E-RPT-036 — A denied export reports 403, not 400 + HTML
+
+```gherkin
+Feature: A refusal must say what it is
+  Regression, found by running E2E-RPT-032 on the QA stack. Program.cs runs
+  UseStatusCodePagesWithReExecute("/not-found"), which re-executes ANY error
+  status whose response has no body. The export handler returned
+  Results.StatusCode(403) - bodiless - so the API's clean 403 reached the
+  browser as 400 with an HTML page.
+
+  Nothing leaked: the export was still refused. But the caller was told the
+  wrong thing, and simfAccount.downloadXlsx could not parse HTML as an
+  ApiResult, so it synthesised BAD_RESPONSE and the operator saw a generic
+  failure instead of "you may not export this". It only ever showed on the DENY
+  path, which is why it survived - as super-admin the export returns 200.
+
+Scenario Outline: The refusal carries the API's own error
+  Given I am signed in as a role holding Reports.View but NOT Reports.Export
+  When I POST to "/account/api/admin/reports/<slug>/export"
+  Then the status is 403
+  And the content type is "application/json"
+  And the body is an ApiResult whose error code is "FORBIDDEN"
+  And it carries both `message` and `messageArabic`
+  And the status is NOT 400
+  And the body is NOT HTML
+
+  Examples:
+    | slug       |
+    | partners   |
+    | meetings   |
+    | ratings    |
+    | engagement |
+    | sessions   |
+
+Scenario: The success path is unchanged
+  Given I am signed in as the super-admin
+  When I export the partners report
+  Then the status is 200
+  And the content type is the XLSX media type
+  And the first two bytes are 0x50 0x4B
+  # The fix must not turn a working download into an envelope. Verified on the
+  # QA stack immediately after the deny check, same session.
+
+# 16 further sites in UserDocuments, MediaAndPartners, FaqAndRoles, Gates and
+# SelfService still return a bodiless status and will misreport the same way.
+# They are document/media paths that were not driven here, so they are recorded
+# and ratcheted rather than changed blind - see DownloadErrorStatusTests.
+```
+
+### E2E-RPT-035 — Partners offers no date range, and only partners
+
+```gherkin
+Feature: No inert controls
+  A filter that silently changes nothing is worse than an absent one. An absent
+  filter reads as "this report has no period"; an inert one reads as a bug in
+  the data and sends someone looking in the wrong place.
+
+Scenario: The partners page has no range controls
+  Given I am signed in as "superadmin@simrsnf.com"
+  When I open "/admin/reports/partners"
+  Then there are zero input[type=date] elements
+  And there is no "Apply" button
+  And there is no "Clear" button
+  And the "Export to Excel" button is still present
+  And the four totals still render
+  And the grid still lists partners
+
+Scenario Outline: Every other report keeps its range
+  When I open "<route>"
+  Then there are exactly 2 input[type=date] elements
+  And an "Apply" button is present
+
+  Examples:
+    | route                        |
+    | /admin/reports/attendance    |
+    | /admin/reports/registrations |
+    | /admin/reports/gates         |
+    | /admin/reports/sessions      |
+    | /admin/reports/ratings       |
+    | /admin/reports/meetings      |
+    | /admin/reports/engagement    |
+
+# The second scenario is the guard rail: without it the fix could generalise
+# into "no report filters by date" and nothing would notice. Verified live on
+# 2026-08-10 for attendance, registrations and engagement, and in bUnit for
+# attendance.
 ```
 
 ### E2E-RPT-034 — Wave C reports in Arabic RTL

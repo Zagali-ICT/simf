@@ -79,6 +79,12 @@ stages:
         command: 'restore'
         projects: '$(Build.SourcesDirectory)/src/Website/SIMF.Web/SIMF.Web.csproj'
 
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore Mobile Edge'
+      inputs:
+        command: 'restore'
+        projects: '$(Build.SourcesDirectory)/src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj'
+
     # --- Build (Release; TreatWarningsAsErrors is set in Directory.Build.props,
     #     so a warning fails the build per SIMF-OPS-001 section 5) ---
     - task: DotNetCoreCLI@2
@@ -100,6 +106,13 @@ stages:
       inputs:
         command: 'build'
         projects: '$(Build.SourcesDirectory)/src/Website/SIMF.Web/SIMF.Web.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Mobile Edge'
+      inputs:
+        command: 'build'
+        projects: '$(Build.SourcesDirectory)/src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj'
         arguments: '--configuration $(buildConfiguration) --no-restore'
 
     # --- Software Composition Analysis (NCA §1-13 / A6-13). Fails the build if any
@@ -330,6 +343,18 @@ stages:
         publishWebProjects: false
         projects: '$(Build.SourcesDirectory)/src/Website/SIMF.Web/SIMF.Web.csproj'
         arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/web'
+        zipAfterPublish: true
+
+    # The mobile edge. Published into edge/ so iis-deploy.ps1 finds it when the
+    # estate has an edge site; on an estate that does not, the zip is simply
+    # unused, because -EdgeSiteName is optional there.
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish Mobile Edge'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: '$(Build.SourcesDirectory)/src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/edge'
         zipAfterPublish: true
 
     - task: PublishBuildArtifacts@1

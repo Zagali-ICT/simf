@@ -39,7 +39,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | Page | File | Scenarios |
 |------|------|-----------|
 | `/` (Dashboard) - shell chrome + the Wave A programme dashboard (KPI grid + grouped bar chart + per-day cards, gated on `Statistics.View`) | [`cp-dashboard.md`](cp-dashboard.md) | E2E-DSH-001..025 |
-| `/admin/reports*` - the reporting module: hub + all eight reports (attendance, registrations, gate activity, sessions, ratings, partners, meetings, engagement); Saudi date range, XLSX export | [`cp-reports.md`](cp-reports.md) | E2E-RPT-001..034 |
+| `/admin/reports*` - the reporting module: hub + all eight reports (attendance, registrations, gate activity, sessions, ratings, partners, meetings, engagement); Saudi date range, XLSX export | [`cp-reports.md`](cp-reports.md) | E2E-RPT-001..036 |
 
 ### Control Panel — People & accounts
 
@@ -356,10 +356,10 @@ being quoted in planning as if current.
 - **Pages catalogued:** 193 (96 Control Panel + 69 mobile + 19 Website + 8
   API-only surfaces + 1 system-wide). One of the 193 — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3052 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3068 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
-  functional total is 2671.
+  functional total is 2687.
 - **Authored:** all pages. The D-133 "pending" stubs are fully authored, and
   every event-module and P2–P5 page added since has its own file.
 - **Execution:** the canonical run today is a Chrome DevTools MCP browser pass

@@ -23,7 +23,12 @@ param (
     [Parameter(Mandatory = $true)] [string]$CpPath,
 
     [Parameter(Mandatory = $true)] [string]$WebSiteName,
-    [Parameter(Mandatory = $true)] [string]$WebPath
+    [Parameter(Mandatory = $true)] [string]$WebPath,
+
+    # The mobile edge. Optional on purpose: it exists only where the tiers have
+    # been separated, so an estate without it must still deploy.
+    [string]$EdgeSiteName = "",
+    [string]$EdgePath = ""
 )
 
 Set-StrictMode -Version Latest
@@ -169,12 +174,24 @@ function Robocopy-MirrorWithRetry([string]$From, [string]$To, [int]$MaxAttempts 
     }
 }
 
-# The three SIMF apps, in deploy order.
+# The SIMF apps, in deploy order.
 $apps = @(
     @{ Name = "API"; Site = $ApiSiteName; Path = $ApiPath; Folder = "api" },
     @{ Name = "CP";  Site = $CpSiteName;  Path = $CpPath;  Folder = "cp"  },
     @{ Name = "WEB"; Site = $WebSiteName; Path = $WebPath; Folder = "web" }
 )
+
+# The mobile edge is OPTIONAL, and deliberately not a mandatory parameter: it
+# exists only on an estate whose tiers have been separated, and making it
+# required would break the deployment of every estate that has not been. Pass
+# -EdgeSiteName and -EdgePath once the site exists and it joins the same
+# stop, copy, start sequence as the other three.
+if ($EdgeSiteName -and $EdgePath) {
+    $apps += @{ Name = "EDGE"; Site = $EdgeSiteName; Path = $EdgePath; Folder = "edge" }
+}
+else {
+    Write-Host "EDGE skipped (no -EdgeSiteName/-EdgePath supplied)."
+}
 
 Write-Host "=== SIMF IIS Deploy ==="
 Write-Host "ArtifactRoot: $ArtifactRoot"

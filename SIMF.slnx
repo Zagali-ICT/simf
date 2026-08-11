@@ -9,6 +9,9 @@
     <Project Path="src/Backend/SIMF.Domain/SIMF.Domain.csproj" />
     <Project Path="src/Backend/SIMF.Infrastructure/SIMF.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Edge/">
+    <Project Path="src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj" />
+  </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/SIMF.ApiClient/SIMF.ApiClient.csproj" />
     <Project Path="src/Shared/SIMF.Common/SIMF.Common.csproj" />

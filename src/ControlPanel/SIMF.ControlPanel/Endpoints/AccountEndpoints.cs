@@ -108,13 +108,41 @@ internal static partial class AccountEndpoints
         var (status, bytes) = await export(token);
         if (status != 200 || bytes.Length == 0)
         {
-            return Results.StatusCode(status);
+            return DownloadFailure(status, bytes);
         }
 
         return Results.File(bytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"simf-{slug}-{SimfClock.Now.FormatSaudi("yyyyMMdd-HHmmss")}.xlsx");
     }
+
+    /// <summary>
+    /// The failure half of a binary download, as a response that carries a BODY.
+    ///
+    /// <para>Not <c>Results.StatusCode(status)</c>. That writes a bodiless
+    /// response, and <c>UseStatusCodePagesWithReExecute("/not-found")</c> in
+    /// Program.cs re-executes any bodiless error status through the not-found
+    /// page — so a clean <b>403</b> from the API reached the browser as
+    /// <b>400 with an HTML body</b>. The export was still correctly denied, but
+    /// the caller was told the wrong thing, and `simfAccount.downloadXlsx` then
+    /// failed to parse the HTML and synthesised BAD_RESPONSE instead of showing
+    /// the real "you may not export this" message. Found by driving
+    /// E2E-RPT-032 against a restricted admin on the QA stack.</para>
+    ///
+    /// <para><paramref name="bytes"/> already holds the API's own bilingual
+    /// <c>ApiResult</c> error — <c>PostForBytesAsync</c> reads the content
+    /// whatever the status — so pass it straight through rather than
+    /// discarding it. When the body is genuinely empty, emit a minimal JSON
+    /// object: the point is that the response must not be bodiless.</para>
+    /// </summary>
+    private static IResult DownloadFailure(int status, byte[] bytes) =>
+        bytes.Length > 0
+            ? Results.Content(
+                System.Text.Encoding.UTF8.GetString(bytes),
+                "application/json",
+                System.Text.Encoding.UTF8,
+                status)
+            : Results.Content("{}", "application/json", System.Text.Encoding.UTF8, status);
 
     private static void MapGridExport(IEndpointRouteBuilder group, string slug)
     {
@@ -126,7 +154,9 @@ internal static partial class AccountEndpoints
             var (status, bytes) = await api.ExportGridAsync(slug, body, token);
             if (status != 200 || bytes.Length == 0)
             {
-                return Results.StatusCode(status);
+                // Same reason as ForwardReportExportAsync: a bodiless status is
+                // re-executed into /not-found and reaches the caller as 400 HTML.
+                return DownloadFailure(status, bytes);
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -174,6 +174,8 @@ public sealed class DeploymentEnvTemplateTests
                      "SIMF_Storage__LogDirectory",
                      "SIMF_Api__BaseUrl",
                      "SIMF_Session__LifetimeHours",
+                     "SIMF_DataProtection__KeyRingPath",
+                     "SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address",
                  })
         {
             Assert.True(
@@ -321,6 +323,117 @@ public sealed class DeploymentEnvTemplateTests
         // The three Production boot gates are flagged as such, and the script
         // names them back to the operator when they are left empty.
         Assert.Contains("REFUSE TO START", template, StringComparison.Ordinal);
+    }
+
+    /// <summary>The shared Data Protection key ring is a boot gate for the two
+    /// Blazor hosts, and the template has to say so.
+    /// <para>
+    /// This is the setting whose absence is invisible. Everything else that is
+    /// gated fails loudly on one node; a per-node key ring works perfectly on one
+    /// node and only breaks when a second is added, and then it presents as admins
+    /// being bounced to /login at random rather than as a configuration error. The
+    /// tier separation adds those instances, so the gate has to be in place before
+    /// the second node exists, not after someone diagnoses the symptom.
+    /// </para></summary>
+    [Fact]
+    public void The_env_template_gates_the_shared_data_protection_key_ring()
+    {
+        var template = ReadRepoFile("deploy", TemplateName);
+
+        var entry = Regex.Match(
+            template,
+            """Name\s*=\s*"SIMF_DataProtection__KeyRingPath"\s*;\s*Value\s*=\s*"(?<value>[^"]*)"\s*;\s*Secret\s*=\s*\$(?<secret>true|false)\s*;\s*Gate\s*=\s*\$(?<gate>true|false)\s*;\s*Apps\s*=\s*"(?<apps>[^"]*)""");
+
+        Assert.True(
+            entry.Success,
+            $"{TemplateName} must declare SIMF_DataProtection__KeyRingPath in the "
+            + "standard entry shape, so the operator is given the setting that keeps "
+            + "auth cookies and antiforgery tokens valid across instances.");
+
+        Assert.Equal("true", entry.Groups["gate"].Value);
+
+        // A path is not a credential, and shipping a sensible default filled is the
+        // point of the merged template.
+        Assert.Equal("false", entry.Groups["secret"].Value);
+
+        // The API neither reads it nor needs it: bearer tokens, no antiforgery
+        // middleware, no IDataProtector. Tagging it "API" would have an operator
+        // set a value that configures nothing there.
+        var apps = entry.Groups["apps"].Value;
+        Assert.Contains("CP", apps, StringComparison.Ordinal);
+        Assert.Contains("Web", apps, StringComparison.Ordinal);
+        Assert.DoesNotContain("API", apps, StringComparison.Ordinal);
+
+        // The runbook must ask for it too, or a machine provisioned through the
+        // runbook alone comes up without the gate satisfied and refuses to start.
+        var runbook = ReadRepoFile("deploy", RunbookName);
+        Assert.Contains("SIMF_DataProtection__KeyRingPath", runbook, StringComparison.Ordinal);
+    }
+
+    /// <summary>The mobile edge's forwarding address must be site-specific and
+    /// must ship empty.
+    /// <para>
+    /// It is the setting that decides where the edge sends every mobile request.
+    /// A committed default would be actively dangerous: the plausible-looking
+    /// value is the public name, and pointing the edge at api.simrsnf.com sends it
+    /// through the load balancer straight back to itself. The destination is the
+    /// API's PRIVATE address and only the site knows it, so the template must ask
+    /// rather than guess.
+    /// </para></summary>
+    [Fact]
+    public void The_mobile_edge_forwarding_address_ships_empty_and_gated()
+    {
+        var template = ReadRepoFile("deploy", TemplateName);
+
+        var entry = Regex.Match(
+            template,
+            """Name\s*=\s*"SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address"\s*;\s*Value\s*=\s*"(?<value>[^"]*)"\s*;\s*Secret\s*=\s*\$(?:true|false)\s*;\s*Gate\s*=\s*\$(?<gate>true|false)""");
+
+        Assert.True(
+            entry.Success,
+            $"{TemplateName} must declare the mobile edge's cluster destination, or the "
+            + "edge has nowhere to forward and 502s every app user.");
+
+        Assert.Equal("true", entry.Groups["gate"].Value);
+        Assert.True(
+            entry.Groups["value"].Value.Length == 0,
+            "The edge's destination must ship EMPTY. It is the API's private address, "
+            + "which only the site knows, and the plausible wrong value (the public "
+            + "name) makes the edge forward to itself through the load balancer.");
+
+        // The proxy allowlist is now needed by two hosts, not one.
+        var proxies = Regex.Match(
+            template,
+            """Name\s*=\s*"SIMF_ReverseProxy__KnownProxies__0"[^}]*Apps\s*=\s*"(?<apps>[^"]*)""");
+        Assert.True(proxies.Success, $"{TemplateName} must declare ReverseProxy KnownProxies.");
+        Assert.Contains("EDGE", proxies.Groups["apps"].Value, StringComparison.Ordinal);
+        Assert.Contains("API", proxies.Groups["apps"].Value, StringComparison.Ordinal);
+
+        var runbook = ReadRepoFile("deploy", RunbookName);
+        Assert.Contains(
+            "SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address",
+            runbook,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>The key ring must not be parked under the versioned deploy root.
+    /// That tree is replaced wholesale by a release, so a ring inside it is
+    /// destroyed on deploy and every signed-in admin is logged out - the same
+    /// reasoning that already keeps uploads and logs outside it.</summary>
+    [Fact]
+    public void The_key_ring_default_lives_outside_the_versioned_deploy_root()
+    {
+        var template = ReadRepoFile("deploy", TemplateName);
+        var value = Regex.Match(
+            template,
+            """Name\s*=\s*"SIMF_DataProtection__KeyRingPath"\s*;\s*Value\s*=\s*"(?<value>[^"]*)""")
+            .Groups["value"].Value;
+
+        Assert.False(string.IsNullOrWhiteSpace(value));
+        Assert.DoesNotContain(
+            @"\v1.",
+            value,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>The three per-service scripts were merged on 2026-08-06. They

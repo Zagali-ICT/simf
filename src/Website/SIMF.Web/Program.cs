@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 using SIMF.ApiClient;
+using SIMF.Common.Options;
 using SIMF.Web.Components;
 using SIMF.Web.Content;
 using SIMF.Web.Endpoints;
@@ -71,7 +73,34 @@ builder.Services.AddScoped<HeroMedia>();
 // never diverge from the page.
 builder.Services.AddScoped<PublicEditions>();
 
+// The Data Protection key ring. The Website has no auth cookie, but it does issue
+// antiforgery tokens for its SSR forms and its one interactive island, and a token
+// minted on one instance is rejected by the next unless the ring is shared.
+// Persisted to shared storage (the file server in a separated estate) and named,
+// so the Control Panel's ring on the same share stays a distinct key set.
+var dataProtectionOptions =
+    builder.Configuration.GetSection(KeyRingOptions.SectionName).Get<KeyRingOptions>()
+    ?? new KeyRingOptions();
+
+if (!string.IsNullOrWhiteSpace(dataProtectionOptions.KeyRingPath))
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionOptions.KeyRingPath))
+        .SetApplicationName("SIMF.Web");
+}
+
 var app = builder.Build();
+
+// A per-node key ring is invisible until a second instance appears, and then it
+// presents as forms failing validation rather than as a configuration error.
+if (!app.Environment.IsDevelopment()
+    && !app.Environment.IsEnvironment("Testing")
+    && string.IsNullOrWhiteSpace(dataProtectionOptions.KeyRingPath))
+{
+    throw new InvalidOperationException(
+        "DataProtection:KeyRingPath must be configured outside Development — "
+        + "without a shared key ring antiforgery tokens are valid on one instance only.");
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

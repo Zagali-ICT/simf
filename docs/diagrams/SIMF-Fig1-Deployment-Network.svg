@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1660" height="1020" viewBox="0 0 1660 1020">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F5D8C"/>
+  </marker>
+  <marker id="ai" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A1A1A"/>
+  </marker>
+  <pattern id="brick" width="20" height="10" patternUnits="userSpaceOnUse">
+    <rect width="20" height="10" fill="#E3E6EA"/>
+    <path d="M0 0 H20 M0 5 H20 M10 0 V5 M0 5 V10 M20 5 V10"
+          stroke="#9CA3AF" stroke-width="0.9" fill="none"/>
+  </pattern>
+</defs>
+<rect x="0" y="0" width="1660" height="1020" fill="#FFFFFF"/>
+<text x="40" y="46" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="25" fill="#1A1A1A" font-weight="600" text-anchor="start">SIMF production deployment and network architecture</text>
+<text x="40" y="74" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#6B7280" text-anchor="start">UML deployment diagram.  Node specifications are reproduced from the customer server requirements workbook.</text>
+<line x1="40" y1="90" x2="1620" y2="90" stroke="#6B7280" stroke-width="1.2"/>
+<rect x="40" y="110" width="1140" height="120" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="54" y="132" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Access zone</text>
+<text x="1166" y="132" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="end">client devices, outside the data centre</text>
+<rect x="45" y="142" width="300" height="74" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="195.0" y="163" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«device»</text>
+<text x="195.0" y="182" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Attendee mobile device</text>
+<text x="195.0" y="199" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">SIMF app, Google Play and App Store</text>
+<rect x="430" y="142" width="300" height="74" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="580.0" y="163" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«device»</text>
+<text x="580.0" y="182" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Public website browser</text>
+<text x="580.0" y="199" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">public visitors</text>
+<rect x="815" y="142" width="300" height="74" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="965.0" y="163" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«device»</text>
+<text x="965.0" y="182" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">Administrator browser</text>
+<text x="965.0" y="199" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Control Panel users</text>
+<rect x="40" y="254" width="1140" height="30" fill="url(#brick)" stroke="#1A1A1A" stroke-width="1.3"/>
+<text x="54" y="274" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Perimeter firewall</text>
+<text x="1166" y="274" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" text-anchor="end">permits inbound HTTPS 443</text>
+<rect x="40" y="308" width="1140" height="118" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="54" y="330" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Perimeter zone</text>
+<text x="1166" y="330" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="end">published entry point</text>
+<rect x="430" y="342" width="300" height="72" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="580.0" y="363" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«device»</text>
+<text x="580.0" y="382" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#1A1A1A" font-weight="600" text-anchor="middle">WAF and load balancer</text>
+<text x="580.0" y="399" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">TLS terminates here</text>
+<rect x="40" y="458" width="1140" height="222" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="54" y="480" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Application zone</text>
+<text x="1166" y="480" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="end">Windows Server 2022</text>
+<polygon points="45,500 58,487 358,487 345,500" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<polygon points="345,500 358,487 358,651 345,664" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<rect x="45" y="500" width="300" height="164" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="195.0" y="520" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«server»</text>
+<text x="195.0" y="540" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">WEB   x 2</text>
+<line x1="55" y1="550" x2="335" y2="550" stroke="#9CA3AF" stroke-width="1"/>
+<text x="195.0" y="566" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Windows Server 2022</text>
+<text x="195.0" y="581" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">32 GB RAM, 16 vCPU</text>
+<text x="195.0" y="596" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">300 GB storage</text>
+<text x="195.0" y="611" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Server + DR</text>
+<line x1="55" y1="615" x2="335" y2="615" stroke="#9CA3AF" stroke-width="1"/>
+<text x="195.0" y="627" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  SIMF.Web</text>
+<polygon points="430,500 443,487 743,487 730,500" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<polygon points="730,500 743,487 743,651 730,664" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<rect x="430" y="500" width="300" height="164" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="580.0" y="520" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«server»</text>
+<text x="580.0" y="540" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">API   x 4</text>
+<line x1="440" y1="550" x2="720" y2="550" stroke="#9CA3AF" stroke-width="1"/>
+<text x="580.0" y="566" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Windows Server 2022</text>
+<text x="580.0" y="581" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">32 GB RAM, 16 vCPU</text>
+<text x="580.0" y="596" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">300 GB storage</text>
+<text x="580.0" y="611" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Server + DR</text>
+<line x1="440" y1="615" x2="720" y2="615" stroke="#9CA3AF" stroke-width="1"/>
+<text x="580.0" y="627" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  SIMF.Api</text>
+<polygon points="815,500 828,487 1128,487 1115,500" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<polygon points="1115,500 1128,487 1128,651 1115,664" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<rect x="815" y="500" width="300" height="164" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="965.0" y="520" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«server»</text>
+<text x="965.0" y="540" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">CP   x 2</text>
+<line x1="825" y1="550" x2="1105" y2="550" stroke="#9CA3AF" stroke-width="1"/>
+<text x="965.0" y="566" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Windows Server 2022</text>
+<text x="965.0" y="581" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">32 GB RAM, 16 vCPU</text>
+<text x="965.0" y="596" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">300 GB storage</text>
+<text x="965.0" y="611" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Server + DR</text>
+<line x1="825" y1="615" x2="1105" y2="615" stroke="#9CA3AF" stroke-width="1"/>
+<text x="965.0" y="627" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  SIMF.ControlPanel</text>
+<rect x="40" y="700" width="1140" height="30" fill="url(#brick)" stroke="#1A1A1A" stroke-width="1.3"/>
+<text x="54" y="720" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Internal firewall</text>
+<text x="1166" y="720" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" text-anchor="end">permits TCP 1433 and SMB 445 from the application zone only</text>
+<rect x="40" y="754" width="1140" height="205" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="54" y="776" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Data zone</text>
+<text x="1166" y="776" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="end">Windows Server 2022</text>
+<polygon points="430,790 443,777 743,777 730,790" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<polygon points="730,790 743,777 743,932 730,945" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<rect x="430" y="790" width="300" height="155" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="580.0" y="810" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«server»</text>
+<text x="580.0" y="830" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">Database   x 2</text>
+<line x1="440" y1="840" x2="720" y2="840" stroke="#9CA3AF" stroke-width="1"/>
+<text x="580.0" y="856" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Windows Server 2022</text>
+<text x="580.0" y="871" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">64 GB RAM, 8 vCPU</text>
+<text x="580.0" y="886" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">2 TB storage</text>
+<text x="580.0" y="901" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Server + DR</text>
+<line x1="440" y1="905" x2="720" y2="905" stroke="#9CA3AF" stroke-width="1"/>
+<text x="580.0" y="917" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  SIMF_Identity + SIMF_App</text>
+<text x="580.0" y="932" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  File share (SMB)</text>
+<path d="M 195 216 L 195 326 L 480 326 L 480 342" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="163.5725" y="232" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="195" y="243" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
+<path d="M 580 216 L 580 342" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="548.5725" y="232" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="580" y="243" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
+<path d="M 965 216 L 965 326 L 680 326 L 680 342" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="933.5725" y="232" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="965" y="243" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
+<path d="M 480 414 L 480 452 L 195 452 L 195 500" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="288.5725" y="434" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="320" y="445" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
+<path d="M 580 414 L 580 500" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="548.5725" y="452" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="580" y="463" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
+<path d="M 680 414 L 680 452 L 965 452 L 965 500" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="808.5725" y="434" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="840" y="445" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
+<path d="M 358 590 L 430 590" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="362.5725" y="565" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="394" y="576" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
+<path d="M 815 590 L 743 590" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="747.5725" y="565" width="62.855000000000004" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="779" y="576" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">HTTPS 443</text>
+<path d="M 545 664 L 545 790" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="516.62" y="674" width="56.760000000000005" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="545" y="685" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">TCP 1433</text>
+<path d="M 615 664 L 615 790" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="589.6675" y="758" width="50.665" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="615" y="769" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">SMB 445</text>
+<rect x="1200" y="110" width="420" height="430" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="1214" y="132" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Pre-production environment</text>
+<text x="1606" y="132" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="end">single node per tier</text>
+<polygon points="1230,160 1243,147 1603,147 1590,160" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<polygon points="1590,160 1603,147 1603,297 1590,310" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<rect x="1230" y="160" width="360" height="150" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1410.0" y="180" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«server»</text>
+<text x="1410.0" y="200" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">Front end   x 1</text>
+<line x1="1240" y1="210" x2="1580" y2="210" stroke="#9CA3AF" stroke-width="1"/>
+<text x="1410.0" y="226" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Windows Server 2022</text>
+<text x="1410.0" y="241" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">32 GB RAM, 16 vCPU</text>
+<text x="1410.0" y="256" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">300 GB storage</text>
+<text x="1410.0" y="271" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">WEB + API + CP</text>
+<line x1="1240" y1="275" x2="1580" y2="275" stroke="#9CA3AF" stroke-width="1"/>
+<text x="1410.0" y="287" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  SIMF.Web, SIMF.Api, SIMF.ControlPanel</text>
+<polygon points="1230,360 1243,347 1603,347 1590,360" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<polygon points="1590,360 1603,347 1603,512 1590,525" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1.3"/>
+<rect x="1230" y="360" width="360" height="165" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1410.0" y="380" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#6B7280" text-anchor="middle">«server»</text>
+<text x="1410.0" y="400" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#1A1A1A" font-weight="600" text-anchor="middle">Database   x 1</text>
+<line x1="1240" y1="410" x2="1580" y2="410" stroke="#9CA3AF" stroke-width="1"/>
+<text x="1410.0" y="426" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">Windows Server 2022</text>
+<text x="1410.0" y="441" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">32 GB RAM, 8 vCPU</text>
+<text x="1410.0" y="456" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">1000 GB storage</text>
+<text x="1410.0" y="471" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">DB + File</text>
+<line x1="1240" y1="475" x2="1580" y2="475" stroke="#9CA3AF" stroke-width="1"/>
+<text x="1410.0" y="487" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  SIMF_Identity + SIMF_App</text>
+<text x="1410.0" y="502" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">«artifact»  File share (SMB)</text>
+<path d="M 1410 310 L 1410 360" fill="none" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="1354.1925" y="324" width="111.61500000000001" height="15" fill="#FFFFFF" stroke="none"/>
+<text x="1410" y="335" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="middle">TCP 1433, SMB 445</text>
+<rect x="1200" y="580" width="420" height="139" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="1214" y="602" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Key</text>
+<polygon points="1216,616 1221,611 1247,611 1242,616" fill="#D3DDE8" stroke="#1A1A1A" stroke-width="1"/><rect x="1216" y="616" width="26" height="12" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1"/>
+<text x="1260" y="625" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Server node, with its specification</text>
+<rect x="1216" y="636" width="30" height="13" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1"/>
+<text x="1260" y="646" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Client device or published entry point</text>
+<rect x="1216" y="657" width="30" height="13" fill="url(#brick)" stroke="#1A1A1A" stroke-width="1"/>
+<text x="1260" y="667" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Firewall, with the traffic it permits</text>
+<rect x="1216" y="678" width="30" height="13" rx="2" fill="#F7F8FA" stroke="#6B7280" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="1260" y="688" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Network zone</text>
+<path d="M 1216 705 H 1244" stroke="#2F5D8C" stroke-width="1.6" marker-end="url(#ar)"/>
+<text x="1260" y="709" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Communication path, labelled with protocol and port</text>
+<rect x="1200" y="755" width="420" height="123" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="1214" y="776" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Sources</text>
+<text x="1214" y="796" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Node counts and specifications: customer server</text>
+<text x="1214" y="813" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">requirements workbook, sheet List.</text>
+<text x="1214" y="830" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Mobile distribution channels: same workbook, sheet NEW1.</text>
+<text x="1214" y="847" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Deployed artifact names: SIMF solution source tree.</text>
+<text x="1214" y="864" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Zone model, firewalls and WAF: SIMF-HLD-004 as delivered.</text>
+</svg>

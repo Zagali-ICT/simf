@@ -121,3 +121,7 @@ myComment.txt
 # stale output. Nothing reads them.
 TestResults/
 *.trx
+
+# Python bytecode cache from the diagram scripts under tools/diagrams.
+__pycache__/
+*.pyc

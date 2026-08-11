@@ -14,7 +14,12 @@
 
 <div class="simf-page-wide">
     <div class="simf-surface">
-        <ReportToolbar From="From"
+        @* No date range: GetPartnersAsync ignores From/To on purpose, because a
+           partner directory is a snapshot of who is participating, not a record
+           of events in a period. Rendering the control anyway made Apply a
+           silent no-op. *@
+        <ReportToolbar ShowDateRange="false"
+                       From="From"
                        FromChanged="@(v => From = v)"
                        To="To"
                        ToChanged="@(v => To = v)"
