@@ -4,6 +4,12 @@ Data flow diagram in Gane and Sarson notation: a level 0 context view, and a
 level 1 decomposition that balances with it. Processes follow the module list in
 SIMF-LLD-002 section 5; the data stores are the two databases and the file store
 from section 6.
+
+The three third-party services appear HERE and not on the component sheet. They
+are outbound calls to public URLs, not components of this solution, so what
+matters about them is the data that crosses the boundary, which is a data-flow
+question. Every flow to one is labelled with the payload it carries (owner
+decision, 2026-08-10).
 """
 
 import os
@@ -20,18 +26,22 @@ s = Sheet(1660, 1200,
           "the level 0 context above it.")
 
 # ------------------------------------------------------------- level 0
-s.band(40, 110, 1580, 200, "Level 0, context")
+s.band(40, 110, 1580, 220, "Level 0, context")
 s.box(80, 150, 220, 60, "Attendee", "entity")
 s.box(80, 225, 220, 60, "Administrator", "entity")
 s.process(700, 155, 300, 110, "0", "SIMF platform")
-s.box(1340, 150, 220, 60, "E-mail relay", "entity")
-s.box(1340, 225, 220, 60, "Video platform", "entity")
+s.box(1340, 140, 220, 52, "E-mail relay", "entity")
+s.box(1340, 202, 220, 52, "Video platform", "entity")
+s.box(1340, 264, 220, 52, "AI service", "entity")
 
 s.path([(300, 180), (700, 180)], "requests")
 s.path([(700, 205), (300, 205)], "responses and notices")
 s.path([(300, 255), (700, 255)], "decisions and content")
-s.path([(1000, 180), (1340, 180)], "outbound mail")
-s.path([(1000, 240), (1340, 240)], "caption request")
+s.path([(1000, 166), (1340, 166)], "notifications", label_at=(1170, 166))
+s.path([(1000, 215), (1250, 215), (1250, 228), (1340, 228)],
+       "live stream, summary video", label_at=(1170, 242))
+s.path([(1000, 250), (1200, 250), (1200, 290), (1340, 290)],
+       "text for AI processing", label_at=(1270, 290))
 
 # ------------------------------------------------------------- level 1
 s.band(40, 340, 1580, 660, "Level 1, decomposition")
@@ -53,12 +63,16 @@ s.process(400, 770, 420, 80, "5", "Engagement and feedback",
 s.process(400, 860, 420, 80, "6", "Content and notifications",
           "news, media, notices")
 
-s.store(1000, 390, 460, 60, "D1", "SIMF_Identity", "accounts, roles, tokens")
-s.store(1000, 560, 460, 60, "D2", "SIMF_App", "programme, bookings, engagement")
-s.store(1000, 730, 460, 60, "D3", "File share", "stored files")
+# The right column carries three stores and three external entities. It is spaced
+# to the band rather than to the stores alone: adding the AI service without
+# re-spacing would have pushed the last entity past the band's lower edge.
+s.store(1000, 375, 460, 58, "D1", "SIMF_Identity", "accounts, roles, tokens")
+s.store(1000, 495, 460, 58, "D2", "SIMF_App", "programme, bookings, engagement")
+s.store(1000, 615, 460, 58, "D3", "File share", "stored files")
 
-s.box(1000, 840, 460, 60, "Video platform", "entity")
-s.box(1000, 925, 460, 60, "E-mail relay", "entity")
+s.box(1000, 740, 460, 62, "Video platform", "entity", "YouTube")
+s.box(1000, 818, 460, 62, "E-mail relay", "entity", "internal SMTP")
+s.box(1000, 896, 460, 62, "AI service", "entity", "Gemini API")
 
 # ------------------------------------------------------- entity to process
 s.path([(400, 390), (280, 390)], "badge, approval notice", label_at=(340, 383))
@@ -77,23 +91,30 @@ s.path([(280, 620), (330, 620), (330, 900), (400, 900)], "content and media",
        label_at=(330, 770))
 
 # -------------------------------------------------------- process to store
-s.path([(820, 410), (1000, 410)], "account record", label_at=(910, 403))
-s.path([(820, 510), (960, 510), (960, 435), (1000, 435)], "credential record",
+s.path([(820, 410), (940, 410), (940, 404), (1000, 404)], "account record",
+       label_at=(900, 397))
+s.path([(820, 510), (960, 510), (960, 420), (1000, 420)], "credential record",
        label_at=(890, 503))
-s.path([(820, 610), (950, 610), (950, 580), (1000, 580)], "session record",
+s.path([(820, 610), (950, 610), (950, 524), (1000, 524)], "session record",
        label_at=(885, 603))
-s.path([(820, 710), (940, 710), (940, 600), (1000, 600)], "reservation, scan",
-       label_at=(880, 703))
-s.path([(820, 810), (930, 810), (930, 615), (1000, 615)], "question, rating",
-       label_at=(875, 803))
-s.path([(820, 900), (960, 900), (960, 760), (1000, 760)], "media file",
-       label_at=(890, 893))
+s.path([(820, 710), (935, 710), (935, 540), (1000, 540)], "reservation, scan",
+       label_at=(878, 703))
+s.path([(820, 810), (925, 810), (925, 552), (1000, 552)], "question, rating",
+       label_at=(872, 803))
+s.path([(820, 900), (915, 900), (915, 644), (1000, 644)], "media file",
+       label_at=(868, 893))
 
 # ----------------------------------------------------- process to external
-s.path([(820, 640), (985, 640), (985, 870), (1000, 870)], "caption request",
-       label_at=(898, 633))
-s.path([(820, 925), (975, 925), (975, 955), (1000, 955)], "notification",
-       label_at=(897, 918))
+# What actually crosses the boundary to each third party, named rather than
+# implied. These labels are the whole reason the three appear on this sheet.
+s.path([(820, 640), (985, 640), (985, 770), (1000, 770)],
+       "live session stream, summary video", label_at=(893, 662))
+s.path([(820, 925), (975, 925), (975, 848), (1000, 848)], "notifications",
+       label_at=(963, 880))
+s.path([(820, 835), (895, 835), (895, 918), (1000, 918)],
+       "subtitles, summary, questions", label_at=(886, 766))
+s.path([(820, 935), (970, 935), (970, 940), (1000, 940)], "FAQ and support text",
+       label_at=(893, 962))
 
 # ------------------------------------------------------------- apparatus
 s.legend(40, 1030, 760, [
@@ -109,6 +130,7 @@ s.note(840, 1030, 780, [
     "Data stores: the two databases and the file store, section 6.",
     "Notation: Gane and Sarson.",
     "Every flow crossing the level 0 boundary reappears at level 1.",
+    "Payloads to the three third-party services: owner decision, 2026-08-10.",
 ], "Sources")
 
 s.save(OUT)
