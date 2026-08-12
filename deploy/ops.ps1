@@ -18,8 +18,8 @@
 #   .\ops.ps1 -Action Status
 #   .\ops.ps1 -Action Restart -Target Api
 #   .\ops.ps1 -Action Restart -Target Workers
-#   .\ops.ps1 -Action Install -Target All -ApiHost api-int.simrsnf.local
-#   .\ops.ps1 -Action Install -Target Edge -ApiHost api-int.simrsnf.local
+#   .\ops.ps1 -Action Install -Target All
+#   .\ops.ps1 -Action Install -Target Edge -CertThumbprint <thumbprint>
 #   .\ops.ps1 -Action Stop -Target Web
 #
 # Actions: Status | Start | Stop | Restart | Install | Uninstall
@@ -62,12 +62,17 @@ param (
     [string]$CpHost  = 'cp.simrsnf.com',
     [string]$WebHost = 'web.simrsnf.com',
 
-    # The mobile edge TAKES OVER api.simrsnf.com. That is the point of it: the
-    # installed Flutter app compiles its base URL in, so the public name has to
-    # stay the same or every user needs a store release. At that cutover the API
-    # moves to a PRIVATE name and stops being published, so -ApiHost above must
-    # be overridden with that private name on the API's own server.
-    [string]$EdgeHost = 'api.simrsnf.com',
+    # The mobile edge is published on its OWN name. api.simrsnf.com stays with
+    # the API and is reserved for it, resolving inside the estate only once the
+    # API stops being published.
+    #
+    # The consequence to plan for: the Flutter app compiles its base URL in
+    # (BuildConfig.apiBaseUrl, default https://api.simrsnf.com/api/v1), so
+    # pointing the app at the edge needs a rebuild with --dart-define and a store
+    # release on both platforms. Withdrawing the API's public record and shipping
+    # that release have to happen together, or the installed app has nothing to
+    # reach in between.
+    [string]$EdgeHost = 'edge.simrsnf.com',
 
     # Thumbprint of a certificate in Cert:\LocalMachine\My. Without it Install
     # creates the sites on HTTP only and says so, rather than pretending TLS is
@@ -129,17 +134,21 @@ $apps = [ordered]@{
     Edge = @{ Site = $EdgeSiteName; Path = $EdgePath; Port = $EdgePort; Pool = $EdgeSiteName; Host = $EdgeHost; Storage = $false }
 }
 
-# The edge exists to take api.simrsnf.com OFF the API, so the two sharing a
-# hostname means the cutover was half-applied. On one box that is an SNI
-# collision IIS resolves by luck; across two it is a DNS record pointing at
-# whichever answers first. Neither fails loudly on its own.
+# Two sites cannot share a hostname. On one box that is an SNI collision IIS
+# resolves by luck; across two it is a DNS record pointing at whichever answers
+# first. Neither fails loudly on its own, so it is checked here.
+#
+# The defaults differ (api.simrsnf.com and edge.simrsnf.com), so this fires only
+# when someone has overridden one of them onto the other - which is the shape the
+# earlier take-over-the-name plan had, and is worth catching if it comes back.
 #
 # Only checked on Install, and only when the edge is in scope: hostnames are
 # used to create SNI bindings and nothing else, so Status/Start/Stop on a
-# single-box estate that has no edge must not trip over the shared default.
+# single-box estate that has no edge must not trip over it.
 if ($Action -eq 'Install' -and $Target -in @('All', 'Edge') -and $ApiHost -eq $EdgeHost) {
-    throw ("-ApiHost and -EdgeHost are both '$ApiHost'. The edge takes the public " +
-           "name; pass the API's PRIVATE name as -ApiHost (e.g. api-int.simrsnf.local).")
+    throw ("-ApiHost and -EdgeHost are both '$ApiHost'. They are separate sites and " +
+           "need separate names: the API keeps api.simrsnf.com, the edge is " +
+           "published at edge.simrsnf.com.")
 }
 
 function Resolve-Targets([string]$requested) {

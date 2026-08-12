@@ -1,32 +1,38 @@
 # =============================================================================
 # SIMF - IIS deploy script (called by the Deploy stage of azure-pipelines.yml)
 #
-# Mirrors the V10 ERP iis-deploy.ps1, generalised from two sites to the three
-# SIMF web apps (API + Control Panel + Website). For each app it: stops the IIS
-# site and its app pool, releases file locks by killing the worker process,
-# mirrors the published files with robocopy (retried), then restarts the pool
-# and the site.
+# Mirrors the V10 ERP iis-deploy.ps1, generalised from two sites to the four
+# SIMF web apps (API + Control Panel + Website + Mobile Edge). For each app it:
+# stops the IIS site and its app pool, releases file locks by killing the worker
+# process, mirrors the published files with robocopy (retried), then restarts the
+# pool and the site.
 #
 # Artifact layout expected under -ArtifactRoot (produced by the Extract step):
-#   <ArtifactRoot>\api   <- SimfAPI published output
-#   <ArtifactRoot>\cp    <- SimfCP  published output
-#   <ArtifactRoot>\web   <- SimfWeb published output
+#   <ArtifactRoot>\api    <- SimfAPI  published output
+#   <ArtifactRoot>\cp     <- SimfCP   published output
+#   <ArtifactRoot>\web    <- SimfWeb  published output
+#   <ArtifactRoot>\edge   <- SimfEdge published output
+#
+# EVERY pair is optional. Each package now deploys to its OWN server, so a run on
+# the Website box supplies -WebSiteName/-WebPath and nothing else; the API's
+# folder is not even present in that agent's artifact root. They were mandatory
+# while one machine hosted everything, and leaving them so would force each
+# per-server job to pass three site names it must not touch. Supplying none at
+# all is still an error - that is a typo, not a deployment.
 # =============================================================================
 
 param (
     [Parameter(Mandatory = $true)] [string]$ArtifactRoot,
 
-    [Parameter(Mandatory = $true)] [string]$ApiSiteName,
-    [Parameter(Mandatory = $true)] [string]$ApiPath,
+    [string]$ApiSiteName = "",
+    [string]$ApiPath = "",
 
-    [Parameter(Mandatory = $true)] [string]$CpSiteName,
-    [Parameter(Mandatory = $true)] [string]$CpPath,
+    [string]$CpSiteName = "",
+    [string]$CpPath = "",
 
-    [Parameter(Mandatory = $true)] [string]$WebSiteName,
-    [Parameter(Mandatory = $true)] [string]$WebPath,
+    [string]$WebSiteName = "",
+    [string]$WebPath = "",
 
-    # The mobile edge. Optional on purpose: it exists only where the tiers have
-    # been separated, so an estate without it must still deploy.
     [string]$EdgeSiteName = "",
     [string]$EdgePath = ""
 )
@@ -174,23 +180,38 @@ function Robocopy-MirrorWithRetry([string]$From, [string]$To, [int]$MaxAttempts 
     }
 }
 
-# The SIMF apps, in deploy order.
-$apps = @(
-    @{ Name = "API"; Site = $ApiSiteName; Path = $ApiPath; Folder = "api" },
-    @{ Name = "CP";  Site = $CpSiteName;  Path = $CpPath;  Folder = "cp"  },
-    @{ Name = "WEB"; Site = $WebSiteName; Path = $WebPath; Folder = "web" }
+# The SIMF apps, in deploy order. Each joins the run only when its site name AND
+# its physical path are both supplied: on a per-server estate a job passes just
+# its own pair, and on a single box an operator can still pass all four.
+#
+# The API is first and the mobile edge last, which matters when they do share a
+# machine: everything calls the API, and the edge is the public front door, so it
+# should be the last thing to start accepting traffic.
+$candidates = @(
+    @{ Name = "API";  Site = $ApiSiteName;  Path = $ApiPath;  Folder = "api"  },
+    @{ Name = "CP";   Site = $CpSiteName;   Path = $CpPath;   Folder = "cp"   },
+    @{ Name = "WEB";  Site = $WebSiteName;  Path = $WebPath;  Folder = "web"  },
+    @{ Name = "EDGE"; Site = $EdgeSiteName; Path = $EdgePath; Folder = "edge" }
 )
 
-# The mobile edge is OPTIONAL, and deliberately not a mandatory parameter: it
-# exists only on an estate whose tiers have been separated, and making it
-# required would break the deployment of every estate that has not been. Pass
-# -EdgeSiteName and -EdgePath once the site exists and it joins the same
-# stop, copy, start sequence as the other three.
-if ($EdgeSiteName -and $EdgePath) {
-    $apps += @{ Name = "EDGE"; Site = $EdgeSiteName; Path = $EdgePath; Folder = "edge" }
+$apps = @()
+foreach ($candidate in $candidates) {
+    if ($candidate.Site -and $candidate.Path) {
+        $apps += $candidate
+    }
+    else {
+        Write-Host ("{0} skipped (no -{1}SiteName/-{1}Path supplied)." -f `
+            $candidate.Name, $candidate.Folder.Substring(0, 1).ToUpperInvariant() + $candidate.Folder.Substring(1))
+    }
 }
-else {
-    Write-Host "EDGE skipped (no -EdgeSiteName/-EdgePath supplied)."
+
+# Deploying nothing is a typo, not a deployment. Without this the script would
+# report a clean run having copied no files, and the pipeline would go green on
+# a release that shipped nothing at all.
+if ($apps.Count -eq 0) {
+    throw ("No site was supplied. Pass at least one -<App>SiteName/-<App>Path pair " +
+           "(Api, Cp, Web or Edge); a run with none copies nothing and would " +
+           "otherwise report success.")
 }
 
 Write-Host "=== SIMF IIS Deploy ==="

@@ -5,13 +5,13 @@ Last updated: 2026-07-25
 The Flutter app's **web build** is published as a static IIS site (proof-of-
 concept distribution of the mobile app's UI in a browser; the shipped product
 targets remain Android + iOS per SIMF-MAA-001 §2). The published build calls
-the production API at **`https://api.simrsnf.com/api/v1`**.
+the mobile edge at **`https://edge.simrsnf.com/api/v1`** (the API itself is internal to the estate).
 
 ## 1. Produce the deploy folder
 
 ```powershell
 D:\SIMF\System\V1.0.0\deploy\app-web\publish-app-web.ps1 `
-    -ApiBase "https://api.simrsnf.com/api/v1" `
+    -ApiBase "https://edge.simrsnf.com/api/v1" `
     -OutDir  "D:\SIMF\Publish\simf-app-web"
 ```
 
@@ -61,7 +61,7 @@ is no runtime config file. Optional parameters: `-AppKey`, `-SupportPhone`,
    ```
 
    Set this in the **published API's** `appsettings.json`, or as the
-   Machine-scope environment variable `SIMF_Cors__WebAppOrigins__0`
+   Machine-scope environment variable `SIMF_API_Cors__WebAppOrigins__0`
    (the `SIMF_` prefix convention, D-355 — see `deploy/set-env.template.ps1`),
    then restart the API app pool.
    If the web app is hosted on the **same origin** as the API (e.g. the API
@@ -88,7 +88,7 @@ is no runtime config file. Optional parameters: `-AppKey`, `-SupportPhone`,
 
 1. Open the site root — the splash must route to onboarding/sign-in.
 2. Register / sign in end-to-end (watch the browser network tab: all calls
-   go to `https://api.simrsnf.com/api/v1/...`, no CORS errors).
+   go to `https://edge.simrsnf.com/api/v1/...`, no CORS errors).
 3. `docs/tests/e2e/mobile-sign-in.md` scenarios are the full catalogue.
 
 ## 6. Troubleshooting

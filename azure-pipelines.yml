@@ -539,14 +539,30 @@ stages:
         if ($LASTEXITCODE -ne 0) { throw "BadgeDesk tests failed (exit $LASTEXITCODE)." }
       displayName: 'dotnet build + test (src/Tools/SIMF.BadgeDesk)'
 
+# =============================================================================
+# Deploy - ONE JOB PER SERVER
+# =============================================================================
+# Each package runs on its own box, so each gets its own deployment job bound to
+# its own Azure DevOps Environment. A single job deploying four packages assumed
+# one machine: it extracted every zip onto the same agent, and repointing it at
+# four servers would have meant one agent reaching across the estate.
+#
+# Ordering is explicit rather than incidental. The API goes first because
+# everything else calls it; the Control Panel and Website follow in parallel,
+# since neither depends on the other; the mobile edge goes LAST because it is the
+# public front door and should only start accepting traffic once the API behind
+# it is already answering.
+#
+# PLACEHOLDERS: register four Azure DevOps Environments, one per server, and bind
+# each to that machine's agent. See deploy/README.md.
 - stage: Deploy
   displayName: 'Deploy to IIS'
   dependsOn: Build
   condition: succeeded()
   jobs:
-  - deployment: IISDeploy
-    displayName: 'IIS Deployment'
-    environment: 'SIMF-Prod'   # PLACEHOLDER: the Azure DevOps Environment registered on the SIMF server
+  - deployment: DeployApi
+    displayName: 'API server'
+    environment: 'SIMF-Prod-Api'
     strategy:
       runOnce:
         deploy:
@@ -555,88 +571,76 @@ stages:
             artifact: drop
 
           - powershell: |
-              $drop = "$(Pipeline.Workspace)\drop"
-              $root = "$(Pipeline.Workspace)\drop_root"
+              ./deploy/pipeline-deploy-one.ps1 `
+                -Package  "api" `
+                -ZipName  "SIMF.Api.zip" `
+                -SiteName "SIMF.API" `
+                -SitePath "D:\System\v1.0.1\api" `
+                -Drop     "$(Pipeline.Workspace)\drop" `
+                -Root     "$(Pipeline.Workspace)\drop_root"
+            displayName: 'Deploy the API'
 
-              Remove-Item $root -Recurse -Force -ErrorAction SilentlyContinue
-              New-Item -ItemType Directory -Force -Path $root | Out-Null
-
-              $apiZip = Join-Path $drop "api\SIMF.Api.zip"
-              $cpZip  = Join-Path $drop "cp\SIMF.ControlPanel.zip"
-              $webZip = Join-Path $drop "web\SIMF.Web.zip"
-
-              if (!(Test-Path $apiZip)) { throw "API zip not found: $apiZip" }
-              if (!(Test-Path $cpZip))  { throw "CP zip not found: $cpZip" }
-              if (!(Test-Path $webZip)) { throw "WEB zip not found: $webZip" }
-
-              $apiOut = Join-Path $root "api"
-              $cpOut  = Join-Path $root "cp"
-              $webOut = Join-Path $root "web"
-
-              New-Item -ItemType Directory -Force -Path $apiOut | Out-Null
-              New-Item -ItemType Directory -Force -Path $cpOut  | Out-Null
-              New-Item -ItemType Directory -Force -Path $webOut | Out-Null
-
-              Write-Host "Extracting API: $apiZip -> $apiOut"
-              Expand-Archive -Path $apiZip -DestinationPath $apiOut -Force
-              Write-Host "Extracting CP:  $cpZip -> $cpOut"
-              Expand-Archive -Path $cpZip -DestinationPath $cpOut -Force
-              Write-Host "Extracting WEB: $webZip -> $webOut"
-              Expand-Archive -Path $webZip -DestinationPath $webOut -Force
-
-              Write-Host "drop_root ready:"
-              Get-ChildItem $root | Select-Object Name
-            displayName: 'Extract app zips to drop_root'
-
-          # Stop the four IIS sites + their app pools BEFORE the publish so no
-          # file is locked while the files are mirrored. (iis-deploy.ps1 also
-          # stops/starts each app internally; this explicit pair adds a
-          # pipeline-level guard, and the matching start step below runs even
-          # if the deploy step fails — condition: always().)
-          - powershell: |
-              Import-Module WebAdministration
-              # SIMF.EDGE first: it is the public front door, so taking it down
-              # before the API means app traffic stops at a closed door rather
-              # than reaching an API whose files are mid-mirror.
-              foreach ($s in 'SIMF.EDGE','SIMF.API','SIMF.CP','SIMF.WEB') {
-                $site = Get-Website -Name $s -ErrorAction SilentlyContinue
-                if ($null -ne $site) {
-                  Write-Host "Stopping site: $s"
-                  Stop-Website -Name $s -ErrorAction SilentlyContinue
-                  $pool = $site.applicationPool
-                  if ($pool) { Write-Host "Stopping app pool: $pool"; Stop-WebAppPool -Name $pool -ErrorAction SilentlyContinue }
-                } else { Write-Warning "IIS site not found (skip stop): $s" }
-              }
-            displayName: 'Stop IIS sites (before publish)'
+  - deployment: DeployCp
+    displayName: 'Control Panel server'
+    environment: 'SIMF-Prod-Cp'
+    dependsOn: DeployApi
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
 
           - powershell: |
-              ./deploy/iis-deploy.ps1 `
-                -ArtifactRoot "$(Pipeline.Workspace)\drop_root" `
-                -ApiSiteName  "SIMF.API"  -ApiPath  "D:\System\v1.0.1\api" `
-                -CpSiteName   "SIMF.CP"   -CpPath   "D:\System\v1.0.1\cp" `
-                -WebSiteName  "SIMF.WEB"  -WebPath  "D:\System\v1.0.1\web" `
-                -EdgeSiteName "SIMF.EDGE" -EdgePath "D:\System\v1.0.1\edge"
-            displayName: 'Deploy to IIS'
-            # PLACEHOLDERS above: confirm the IIS site names and physical paths
-            # for the SIMF server before this stage runs. See deploy/README.md.
+              ./deploy/pipeline-deploy-one.ps1 `
+                -Package  "cp" `
+                -ZipName  "SIMF.ControlPanel.zip" `
+                -SiteName "SIMF.CP" `
+                -SitePath "D:\System\v1.0.1\cp" `
+                -Drop     "$(Pipeline.Workspace)\drop" `
+                -Root     "$(Pipeline.Workspace)\drop_root"
+            displayName: 'Deploy the Control Panel'
 
-          # Start the four IIS sites + their app pools AFTER the publish.
-          # condition: always() so the sites are brought back up even if the
-          # deploy step above failed part-way (don't leave production down).
-          #
-          # SIMF.EDGE is last on purpose: it is the public front door for the
-          # mobile app, so it should come up once the API behind it is already
-          # answering, rather than accepting traffic it can only 502.
+  - deployment: DeployWeb
+    displayName: 'Website server'
+    environment: 'SIMF-Prod-Web'
+    dependsOn: DeployApi
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+
           - powershell: |
-              Import-Module WebAdministration
-              foreach ($s in 'SIMF.API','SIMF.CP','SIMF.WEB','SIMF.EDGE') {
-                $site = Get-Website -Name $s -ErrorAction SilentlyContinue
-                if ($null -ne $site) {
-                  $pool = $site.applicationPool
-                  if ($pool) { Write-Host "Starting app pool: $pool"; Start-WebAppPool -Name $pool -ErrorAction SilentlyContinue }
-                  Write-Host "Starting site: $s"
-                  Start-Website -Name $s -ErrorAction SilentlyContinue
-                } else { Write-Warning "IIS site not found (skip start): $s" }
-              }
-            displayName: 'Start IIS sites (after publish)'
-            condition: always()
+              ./deploy/pipeline-deploy-one.ps1 `
+                -Package  "web" `
+                -ZipName  "SIMF.Web.zip" `
+                -SiteName "SIMF.WEB" `
+                -SitePath "D:\System\v1.0.1\web" `
+                -Drop     "$(Pipeline.Workspace)\drop" `
+                -Root     "$(Pipeline.Workspace)\drop_root"
+            displayName: 'Deploy the Website'
+
+  - deployment: DeployEdge
+    displayName: 'Mobile edge server'
+    environment: 'SIMF-Prod-Edge'
+    dependsOn:
+    - DeployCp
+    - DeployWeb
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+
+          - powershell: |
+              ./deploy/pipeline-deploy-one.ps1 `
+                -Package  "edge" `
+                -ZipName  "SIMF.MobileEdge.zip" `
+                -SiteName "SIMF.EDGE" `
+                -SitePath "D:\System\v1.0.1\edge" `
+                -Drop     "$(Pipeline.Workspace)\drop" `
+                -Root     "$(Pipeline.Workspace)\drop_root"
+            displayName: 'Deploy the mobile edge'
