@@ -57,16 +57,16 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="EngagementReportRow" Key="recipient"
                                     Header="@L["Admin.Reports.Col.Recipient"]">
-                    <CellTemplate>@context.Recipient</CellTemplate>
+                    <CellTemplate>@EnumLabel("SessionQuestionRecipient", context.Recipient)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="EngagementReportRow" Key="status"
                                     Header="@L["Admin.Reports.Col.Status"]"
                                     Sortable="true">
-                    <CellTemplate>@context.Status</CellTemplate>
+                    <CellTemplate>@EnumLabel("QuestionStatus", context.Status)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="EngagementReportRow" Key="phase"
                                     Header="@L["Admin.Reports.Col.Phase"]">
-                    <CellTemplate>@context.Phase</CellTemplate>
+                    <CellTemplate>@EnumLabel("QuestionPhase", context.Phase)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="EngagementReportRow" Key="asked"
                                     Header="@L["Admin.Reports.Col.Asked"]"

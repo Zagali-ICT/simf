@@ -243,6 +243,33 @@ Scenario: Distinct admitted counts a repeat visitor once
   # Distinct admitted counts Allowed + CheckIn + a non-null profile, so neither
   # the denial nor a check-OUT may inflate it.
   # Verified live 2026-08-12 against tools/qa/seed-report-fixtures.sql.
+
+Scenario: No report column shows a raw enum member, in either language
+  # Widened 2026-08-12 from denial reasons alone. Report rows carry enums as
+  # someEnum.ToString(), so the grids were showing operators "CheckIn",
+  # "PerSession", "PendingApproval" and "AwaitingSpeaker" - and on the ARABIC
+  # page EVERY enum column stayed in English, which matters more, Arabic being
+  # the primary language.
+  Given I am signed in as "superadmin@simrsnf.com"
+  When I open each report in "en" and then in "ar"
+  Then the gate report's Direction reads "Check-in" / "دخول", never "CheckIn"
+  And its Outcome reads "Allowed" / "مسموح"
+  And the ratings Scope reads "Per session" / "لكل جلسة", never "PerSession"
+  And the registrations Account state reads "Pending approval" / "بانتظار الاعتماد"
+  And the meetings Status reads "Awaiting speaker" / "بانتظار المتحدث"
+  And the engagement Phase reads "Before session" / "قبل الجلسة", never "Pre"
+  And the partners Tier reads "Platinum" / "بلاتيني"
+  And NO cell in any report renders a PascalCase enum member
+
+Scenario: A denied scan keeps its "off" pill once the label is localised
+  Given a scan was denied
+  When I open "/admin/reports/gates" in "ar"
+  Then that row's outcome pill still carries the "off" variant
+  # The variant is chosen from the RAW code. Had the comparison been moved onto
+  # the localised label, every denied scan would have rendered in the "allowed"
+  # colour the moment the culture changed - a wrong signal on a security report,
+  # and invisible to anyone testing only in English.
+
 ```
 
 ### E2E-RPT-007 — Clearing the range restores the unbounded report

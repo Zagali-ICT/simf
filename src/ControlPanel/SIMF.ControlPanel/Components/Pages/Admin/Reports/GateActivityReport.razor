@@ -6,6 +6,7 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Reports.Gates)]
 @inherits ReportPageBase<GateActivityReportRow>
+@using SIMF.Common.Enums
 @using SIMF.Contracts.Reporting
 
 <PageTitle>@L["Admin.Reports.Gates.Title"] · SIMF</PageTitle>
@@ -63,25 +64,32 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="GateActivityReportRow" Key="direction"
                                     Header="@L["Admin.Reports.Col.Direction"]">
-                    <CellTemplate>@context.Direction</CellTemplate>
+                    <CellTemplate>@EnumLabel("ScanDirection", context.Direction)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="GateActivityReportRow" Key="outcome"
                                     Header="@L["Admin.Reports.Col.Outcome"]"
                                     Sortable="true">
+                    @* The variant is chosen from the RAW code, never from the
+                       label: comparing a localised string would silently pick
+                       the "allowed" colour for every denied scan in Arabic. *@
                     <CellTemplate>
-                        @if (context.Outcome == "Denied")
+                        @if (context.Outcome == nameof(ScanOutcome.Denied))
                         {
-                            <SimfPill Variant="off">@context.Outcome</SimfPill>
+                            <SimfPill Variant="off">
+                                @EnumLabel("ScanOutcome", context.Outcome)
+                            </SimfPill>
                         }
                         else
                         {
-                            <SimfPill Variant="on">@context.Outcome</SimfPill>
+                            <SimfPill Variant="on">
+                                @EnumLabel("ScanOutcome", context.Outcome)
+                            </SimfPill>
                         }
                     </CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="GateActivityReportRow" Key="denial"
                                     Header="@L["Admin.Reports.Col.DenialReason"]">
-                    <CellTemplate>@DenialReasonText(context.DenialReason)</CellTemplate>
+                    <CellTemplate>@EnumLabel("DenialReasonCode", context.DenialReason)</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <EmptyTemplate>
@@ -94,32 +102,4 @@
 @code {
     protected override string Slug => "gates";
 
-    /// <summary>
-    /// Turns the API's raw <c>DenialReasonCode</c> name into a readable, localised
-    /// label.
-    ///
-    /// <para>The report row carries <c>p.DenialReason?.ToString()</c> — the
-    /// PascalCase enum member — so before this the grid showed an operator
-    /// "HolderNotApproved" in a column headed "Denial reason". The API stays as
-    /// it is on purpose: a stable code is the right thing on the wire and in the
-    /// XLSX export, which is a data file for analysis rather than prose. Only
-    /// the on-screen cell is turned into words, in the reader's language.</para>
-    ///
-    /// <para>An unrecognised code renders AS ITSELF rather than as a missing
-    /// resource key. A new <c>DenialReasonCode</c> member would otherwise print
-    /// "Admin.Reports.DenialReason.Whatever" in the grid, which is worse than
-    /// the bare name this replaces. <c>GateActivityReportDenialReasonTests</c>
-    /// asserts every enum member has a string in both resx files, so the
-    /// fallback is a safety net, not the plan.</para>
-    /// </summary>
-    private string DenialReasonText(string? code)
-    {
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            return string.Empty;
-        }
-
-        var label = L[$"Admin.Reports.DenialReason.{code}"];
-        return label.ResourceNotFound ? code : label.Value;
-    }
 }

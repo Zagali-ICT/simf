@@ -107,6 +107,42 @@ public abstract class ReportPageBase<TRow> : ComponentBase
     /// sentences, so the figures localise with the rest of the page.</summary>
     protected string TotalLabel(ReportTotal total) => L[total.LabelKey];
 
+    /// <summary>
+    /// Turns an enum member name the API sent into a readable, localised label.
+    ///
+    /// <para>Report rows carry enums as <c>someEnum.ToString()</c> — the raw
+    /// PascalCase member. Left alone, a gate report shows an operator
+    /// "HolderNotApproved" and "CheckIn"; a ratings report shows "PerSession";
+    /// and on the ARABIC page every one of those columns stays in English,
+    /// which is the bigger problem since Arabic is the primary language.</para>
+    ///
+    /// <para><paramref name="group"/> is the namespace, normally the enum type
+    /// name. The partners report is the exception: its Tier column flattens
+    /// <c>ExhibitorTier</c> and <c>SponsorTier</c> into one string, so both
+    /// resolve under <c>PartnerTier</c>.</para>
+    ///
+    /// <para>The API and the XLSX exports keep sending the CODE, deliberately.
+    /// An export is a data file people filter and pivot on, where a stable
+    /// identifier is worth more than prose; the screen is where words belong.
+    /// Keeping the copy only here also means one source for it.</para>
+    ///
+    /// <para>An unknown member renders AS ITSELF rather than as a missing
+    /// resource key — printing "Admin.Reports.Enum.X.Y" into a grid would be
+    /// worse than the bare name. That is a safety net, not the plan:
+    /// <c>ReportEnumLabelTests</c> fails the build when any member of a rendered
+    /// enum has no label in either language.</para>
+    /// </summary>
+    protected string EnumLabel(string group, string? member)
+    {
+        if (string.IsNullOrWhiteSpace(member))
+        {
+            return string.Empty;
+        }
+
+        var label = L[$"Admin.Reports.Enum.{group}.{member}"];
+        return label.ResourceNotFound ? member : label.Value;
+    }
+
     protected string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"].Value, current, total);
 

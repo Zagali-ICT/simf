@@ -1447,15 +1447,47 @@
   <data name="Admin.Reports.Col.Direction" xml:space="preserve"><value>الاتجاه</value></data>
   <data name="Admin.Reports.Col.Outcome" xml:space="preserve"><value>النتيجة</value></data>
   <data name="Admin.Reports.Col.DenialReason" xml:space="preserve"><value>سبب الرفض</value></data>
-  <data name="Admin.Reports.DenialReason.QrUnknown" xml:space="preserve"><value>رمز غير معروف</value></data>
-  <data name="Admin.Reports.DenialReason.GateInactiveAtScan" xml:space="preserve"><value>البوابة غير نشطة</value></data>
-  <data name="Admin.Reports.DenialReason.HolderNotApproved" xml:space="preserve"><value>الحساب غير معتمد</value></data>
-  <data name="Admin.Reports.DenialReason.HolderDisabled" xml:space="preserve"><value>الحساب معطّل</value></data>
-  <data name="Admin.Reports.DenialReason.HolderLocked" xml:space="preserve"><value>الحساب مقفل</value></data>
-  <data name="Admin.Reports.DenialReason.ProfileTypeInactive" xml:space="preserve"><value>نوع الملف غير نشط</value></data>
-  <data name="Admin.Reports.DenialReason.OutsideTimeWindow" xml:space="preserve"><value>خارج ساعات العمل</value></data>
-  <data name="Admin.Reports.DenialReason.ProfileTypeNotAllowed" xml:space="preserve"><value>نوع الملف غير مسموح</value></data>
-  <data name="Admin.Reports.DenialReason.BookingRequiredMissing" xml:space="preserve"><value>يتطلب حجزاً</value></data>
+  <data name="Admin.Reports.Enum.ScanDirection.CheckIn" xml:space="preserve"><value>دخول</value></data>
+  <data name="Admin.Reports.Enum.ScanDirection.CheckOut" xml:space="preserve"><value>خروج</value></data>
+  <data name="Admin.Reports.Enum.ScanOutcome.Allowed" xml:space="preserve"><value>مسموح</value></data>
+  <data name="Admin.Reports.Enum.ScanOutcome.Denied" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.QrUnknown" xml:space="preserve"><value>رمز غير معروف</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.GateInactiveAtScan" xml:space="preserve"><value>البوابة غير نشطة</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.HolderNotApproved" xml:space="preserve"><value>الحساب غير معتمد</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.HolderDisabled" xml:space="preserve"><value>الحساب معطّل</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.HolderLocked" xml:space="preserve"><value>الحساب مقفل</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.ProfileTypeInactive" xml:space="preserve"><value>نوع الملف غير نشط</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.OutsideTimeWindow" xml:space="preserve"><value>خارج ساعات العمل</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.ProfileTypeNotAllowed" xml:space="preserve"><value>نوع الملف غير مسموح</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.BookingRequiredMissing" xml:space="preserve"><value>يتطلب حجزاً</value></data>
+  <data name="Admin.Reports.Enum.QuestionPhase.Pre" xml:space="preserve"><value>قبل الجلسة</value></data>
+  <data name="Admin.Reports.Enum.QuestionPhase.Live" xml:space="preserve"><value>أثناء الجلسة</value></data>
+  <data name="Admin.Reports.Enum.QuestionStatus.Pending" xml:space="preserve"><value>قيد المراجعة</value></data>
+  <data name="Admin.Reports.Enum.QuestionStatus.Approved" xml:space="preserve"><value>معتمد</value></data>
+  <data name="Admin.Reports.Enum.QuestionStatus.Hidden" xml:space="preserve"><value>مخفي</value></data>
+  <data name="Admin.Reports.Enum.QuestionStatus.Answered" xml:space="preserve"><value>تمت الإجابة</value></data>
+  <data name="Admin.Reports.Enum.SessionQuestionRecipient.Speaker" xml:space="preserve"><value>المتحدث</value></data>
+  <data name="Admin.Reports.Enum.SessionQuestionRecipient.Host" xml:space="preserve"><value>مدير الجلسة</value></data>
+  <data name="Admin.Reports.Enum.RatingScope.Global" xml:space="preserve"><value>عام</value></data>
+  <data name="Admin.Reports.Enum.RatingScope.PerSession" xml:space="preserve"><value>لكل جلسة</value></data>
+  <data name="Admin.Reports.Enum.RatingScope.PerDay" xml:space="preserve"><value>لكل يوم</value></data>
+  <data name="Admin.Reports.Enum.AccountState.Registered" xml:space="preserve"><value>مسجّل</value></data>
+  <data name="Admin.Reports.Enum.AccountState.EmailVerified" xml:space="preserve"><value>تم تأكيد البريد</value></data>
+  <data name="Admin.Reports.Enum.AccountState.PendingApproval" xml:space="preserve"><value>بانتظار الاعتماد</value></data>
+  <data name="Admin.Reports.Enum.AccountState.Approved" xml:space="preserve"><value>معتمد</value></data>
+  <data name="Admin.Reports.Enum.AccountState.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.Reports.Enum.AccountState.Disabled" xml:space="preserve"><value>معطّل</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.Accepted" xml:space="preserve"><value>مقبول</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.Cancelled" xml:space="preserve"><value>ملغى</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.AwaitingSpeaker" xml:space="preserve"><value>بانتظار المتحدث</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.Done" xml:space="preserve"><value>منتهٍ</value></data>
+  <data name="Admin.Reports.Enum.PartnerTier.Premium" xml:space="preserve"><value>مميز</value></data>
+  <data name="Admin.Reports.Enum.PartnerTier.Platinum" xml:space="preserve"><value>بلاتيني</value></data>
+  <data name="Admin.Reports.Enum.PartnerTier.Gold" xml:space="preserve"><value>ذهبي</value></data>
+  <data name="Admin.Reports.Enum.PartnerTier.Silver" xml:space="preserve"><value>فضي</value></data>
+  <data name="Admin.Reports.Enum.PartnerTier.Bronze" xml:space="preserve"><value>برونزي</value></data>
   <data name="Module.ReportsSessions" xml:space="preserve"><value>تقرير الجلسات</value></data>
   <data name="Module.ReportsRatings" xml:space="preserve"><value>تقرير التقييمات</value></data>
   <data name="Module.ReportsPartners" xml:space="preserve"><value>تقرير الشركاء</value></data>

@@ -1456,15 +1456,47 @@
   <data name="Admin.Reports.Col.Direction" xml:space="preserve"><value>Direction</value></data>
   <data name="Admin.Reports.Col.Outcome" xml:space="preserve"><value>Outcome</value></data>
   <data name="Admin.Reports.Col.DenialReason" xml:space="preserve"><value>Denial reason</value></data>
-  <data name="Admin.Reports.DenialReason.QrUnknown" xml:space="preserve"><value>Unrecognised code</value></data>
-  <data name="Admin.Reports.DenialReason.GateInactiveAtScan" xml:space="preserve"><value>Gate inactive</value></data>
-  <data name="Admin.Reports.DenialReason.HolderNotApproved" xml:space="preserve"><value>Account not approved</value></data>
-  <data name="Admin.Reports.DenialReason.HolderDisabled" xml:space="preserve"><value>Account disabled</value></data>
-  <data name="Admin.Reports.DenialReason.HolderLocked" xml:space="preserve"><value>Account locked</value></data>
-  <data name="Admin.Reports.DenialReason.ProfileTypeInactive" xml:space="preserve"><value>Profile type inactive</value></data>
-  <data name="Admin.Reports.DenialReason.OutsideTimeWindow" xml:space="preserve"><value>Outside opening hours</value></data>
-  <data name="Admin.Reports.DenialReason.ProfileTypeNotAllowed" xml:space="preserve"><value>Profile type not allowed</value></data>
-  <data name="Admin.Reports.DenialReason.BookingRequiredMissing" xml:space="preserve"><value>Booking required</value></data>
+  <data name="Admin.Reports.Enum.ScanDirection.CheckIn" xml:space="preserve"><value>Check-in</value></data>
+  <data name="Admin.Reports.Enum.ScanDirection.CheckOut" xml:space="preserve"><value>Check-out</value></data>
+  <data name="Admin.Reports.Enum.ScanOutcome.Allowed" xml:space="preserve"><value>Allowed</value></data>
+  <data name="Admin.Reports.Enum.ScanOutcome.Denied" xml:space="preserve"><value>Denied</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.QrUnknown" xml:space="preserve"><value>Unrecognised code</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.GateInactiveAtScan" xml:space="preserve"><value>Gate inactive</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.HolderNotApproved" xml:space="preserve"><value>Account not approved</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.HolderDisabled" xml:space="preserve"><value>Account disabled</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.HolderLocked" xml:space="preserve"><value>Account locked</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.ProfileTypeInactive" xml:space="preserve"><value>Profile type inactive</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.OutsideTimeWindow" xml:space="preserve"><value>Outside opening hours</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.ProfileTypeNotAllowed" xml:space="preserve"><value>Profile type not allowed</value></data>
+  <data name="Admin.Reports.Enum.DenialReasonCode.BookingRequiredMissing" xml:space="preserve"><value>Booking required</value></data>
+  <data name="Admin.Reports.Enum.QuestionPhase.Pre" xml:space="preserve"><value>Before session</value></data>
+  <data name="Admin.Reports.Enum.QuestionPhase.Live" xml:space="preserve"><value>During session</value></data>
+  <data name="Admin.Reports.Enum.QuestionStatus.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.Reports.Enum.QuestionStatus.Approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="Admin.Reports.Enum.QuestionStatus.Hidden" xml:space="preserve"><value>Hidden</value></data>
+  <data name="Admin.Reports.Enum.QuestionStatus.Answered" xml:space="preserve"><value>Answered</value></data>
+  <data name="Admin.Reports.Enum.SessionQuestionRecipient.Speaker" xml:space="preserve"><value>Speaker</value></data>
+  <data name="Admin.Reports.Enum.SessionQuestionRecipient.Host" xml:space="preserve"><value>Host</value></data>
+  <data name="Admin.Reports.Enum.RatingScope.Global" xml:space="preserve"><value>Global</value></data>
+  <data name="Admin.Reports.Enum.RatingScope.PerSession" xml:space="preserve"><value>Per session</value></data>
+  <data name="Admin.Reports.Enum.RatingScope.PerDay" xml:space="preserve"><value>Per day</value></data>
+  <data name="Admin.Reports.Enum.AccountState.Registered" xml:space="preserve"><value>Registered</value></data>
+  <data name="Admin.Reports.Enum.AccountState.EmailVerified" xml:space="preserve"><value>Email verified</value></data>
+  <data name="Admin.Reports.Enum.AccountState.PendingApproval" xml:space="preserve"><value>Pending approval</value></data>
+  <data name="Admin.Reports.Enum.AccountState.Approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="Admin.Reports.Enum.AccountState.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.Reports.Enum.AccountState.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.Accepted" xml:space="preserve"><value>Accepted</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.AwaitingSpeaker" xml:space="preserve"><value>Awaiting speaker</value></data>
+  <data name="Admin.Reports.Enum.MeetingRequestStatus.Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Admin.Reports.Enum.PartnerTier.Premium" xml:space="preserve"><value>Premium</value></data>
+  <data name="Admin.Reports.Enum.PartnerTier.Platinum" xml:space="preserve"><value>Platinum</value></data>
+  <data name="Admin.Reports.Enum.PartnerTier.Gold" xml:space="preserve"><value>Gold</value></data>
+  <data name="Admin.Reports.Enum.PartnerTier.Silver" xml:space="preserve"><value>Silver</value></data>
+  <data name="Admin.Reports.Enum.PartnerTier.Bronze" xml:space="preserve"><value>Bronze</value></data>
   <data name="Module.ReportsSessions" xml:space="preserve"><value>Sessions report</value></data>
   <data name="Module.ReportsRatings" xml:space="preserve"><value>Ratings report</value></data>
   <data name="Module.ReportsPartners" xml:space="preserve"><value>Partners report</value></data>
