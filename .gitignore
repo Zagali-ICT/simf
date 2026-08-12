@@ -115,6 +115,15 @@ txt.txt
 # this ignore rule.
 myComment.txt
 /*.scratch.txt
+# HANDOFF-CONTINUE-HERE.md is a per-session scratch handoff. Its own line 5 reads
+# "This file is UNTRACKED on purpose (do not commit it)" — but it was committed on
+# 2026-07-26 and had drifted three weeks out of date, still naming a branch and a
+# set of "remaining work" that no longer existed. A file that describes live state
+# cannot be maintained from inside a commit history; honour what it says about
+# itself and keep it on disk only. Untracked 2026-08-12, NOT deleted.
+# Requires `git rm --cached HANDOFF-CONTINUE-HERE.md` once, or the tracked copy
+# survives this ignore rule.
+HANDOFF-CONTINUE-HERE.md
 
 # Test run artefacts. A .trx captures the whole test console log; two of
 # these were tracked at 707 MB and 564 MB, so every clone paid 1.2 GB for

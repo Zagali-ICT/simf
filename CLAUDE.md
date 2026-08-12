@@ -1,6 +1,6 @@
 # SIMF — Project Instructions
 
-Last updated: 2026-05-31
+Last updated: 2026-08-12
 
 The global rule set at `~/.claude/CLAUDE.md` (§0–§20) applies in full. This file
 adds SIMF-specific pointers only. It does not restate or override the global rules.
@@ -34,17 +34,32 @@ documents. The conflict list is recorded in `SIMF-OLD-DRAFT-CONFLICTS.md`.
 
 ## Status
 
-Sprint 1 — Login API + frontend login + visitor lifecycle + hardening — has shipped on
-`feature/login-api`. Backend (FastEndpoints + EF Core + SQL Server), Control Panel
-(Blazor Server), Website (Blazor SSR + interactive auth islands), and shared component
-library + typed API client are all in. Decisions log: `docs/decisions/DECISIONS_LOG.md`
-runs D-001 through D-072. Sprint completion artefact:
-`docs/SIMF-Sprint1-Login-API-Completion.md`. Outstanding items the sprint accepted /
-deferred (committed secrets rotation, architectural refactor, Website skip-link, full
-bUnit harness, end-to-end lifecycle test, no-IP rate-limit hardening) are listed there.
+The programme is long past its initial login increment. If you find "Sprint 1", the
+`feature/login-api` branch, or "next stage is User Management" in an older document,
+treat it as superseded history — `docs/SIMF-Sprint1-Login-API-Completion.md` is kept
+as the artefact of that increment, not as a description of where the work stands.
 
-Next stage per the programme plan is the User Management module increment on top of
-the closed Login API foundation.
+Solution layout (`SIMF.slnx`) — use this to route before searching the tree:
+
+| Area | Projects |
+|------|----------|
+| Backend | `src/Backend/` — `SIMF.Api` (FastEndpoints), `SIMF.Application`, `SIMF.Domain`, `SIMF.Infrastructure` (EF Core + SQL Server) |
+| Presentation | `src/ControlPanel/` (Blazor Server), `src/Website/` (Blazor SSR), `src/Mobile/simf_app` (Flutter), `src/Edge/SIMF.MobileEdge` (mobile presentation tier) |
+| Shared | `src/Shared/` — `SIMF.Common`, `SIMF.Contracts`, `SIMF.Components`, `SIMF.ApiClient` |
+| Tests | `tests/` — Api, ApiClient, Application, BadgeDesk, ControlPanel, Domain, E2E, Web, plus `perf` |
+
+Conventions are enforced by a tool, not by prose: `tool/conventions` runs in CI, and
+`docs/quality/convention-report.md` records its current state.
+
+**Do not quote a decision-id range in this file.** `docs/decisions/DECISIONS_LOG.md` is
+the live record — read its "Reading an ID" preamble first, because ids collide and one
+number can label several unrelated decisions. The authoritative counts are pinned in
+`tests/SIMF.Domain.Tests/DecisionsLogIntegrityTests.cs`, so they fail the build rather
+than rot inside a sentence here.
+
+For what is in flight right now, read the git log and the decisions log. A prose status
+paragraph goes stale faster than anyone maintains it, which is exactly how the previous
+version of this section came to describe a branch that had merged months earlier.
 
 ## Access control — per-page/per-action permissions (D-207 / D-208)
 
