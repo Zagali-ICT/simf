@@ -90,27 +90,43 @@ public sealed class DownloadErrorStatusTests
     }
 
     [Fact]
-    public void The_remaining_bodiless_sites_do_not_grow()
+    public void No_endpoint_returns_a_bodiless_status()
     {
-        // 16 sites in UserDocuments, MediaAndPartners, FaqAndRoles, Gates and
-        // SelfService carry the SAME defect. They are document and media download
-        // paths that were not driven when this was found, so they are recorded
-        // rather than changed blind — but the count must not grow. A new one is a
-        // new endpoint that will misreport its own failures.
-        const int knownSites = 16;
-
+        // Was a baseline of 16 tolerated sites across UserDocuments (10),
+        // MediaAndPartners, FaqAndRoles, Gates and SelfService. All 16 are now
+        // converted, so the ratchet is at ZERO and this is a plain rule rather
+        // than a debt counter.
+        //
+        // Every one of the 16 was audited before conversion: `bytes` in scope at
+        // all of them, and — the load-bearing fact — EVERY guard can fire while
+        // status == 200 (they read `status != 200 || contentType is null ||
+        // bytes.Length == 0`). That is why DownloadFailure returns a bodiless 200
+        // untouched: giving 200 a JSON body would read as success, and where
+        // contentType is null but bytes are present it would serve raw image
+        // bytes labelled application/json.
         var sites = BodilessStatusSites();
 
         Assert.True(
-            sites.Count <= knownSites,
-            $"A new bodiless error status appeared ({sites.Count} > {knownSites}). "
-            + "Use DownloadFailure(status, bytes) so the response carries a body and "
-            + "UseStatusCodePagesWithReExecute cannot rewrite it to 400 + HTML.\n"
+            sites.Count == 0,
+            $"{sites.Count} endpoint(s) return a bodiless status. "
+            + "UseStatusCodePagesWithReExecute(\"/not-found\") re-executes any bodiless "
+            + "4xx/5xx, so the caller receives 400 + HTML instead of the real status. "
+            + "Return DownloadFailure(status, bytes) instead — it passes the upstream "
+            + "error body through with the true status, and leaves 200 alone.\n"
             + string.Join('\n', sites));
+    }
 
-        Assert.True(
-            sites.Count == knownSites,
-            $"{knownSites - sites.Count} of the known bodiless sites were fixed — "
-            + "lower `knownSites` to " + sites.Count + " so the ratchet holds the gain.");
+    [Fact]
+    public void Every_download_failure_path_routes_through_the_helper()
+    {
+        // The count is asserted, not just the absence of the old call, so a new
+        // download endpoint that invents its own bodiless failure path is caught
+        // even if it never types Results.StatusCode(status).
+        var uses = Directory
+            .EnumerateFiles(EndpointsDirectory(), "*.cs", SearchOption.AllDirectories)
+            .Sum(f => Regex.Matches(
+                File.ReadAllText(f), @"return DownloadFailure\(status, bytes\);").Count);
+
+        Assert.Equal(18, uses);
     }
 }
