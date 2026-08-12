@@ -11,6 +11,6 @@ SELECT TOP 3
        WHEN NewValuesJson LIKE '%ConcurrencyStamp%' THEN 'LEAKED'
        ELSE 'absent' END AS ConcurrencyStampStatus
 FROM [identity].[RowAudits]
-WHERE TableName='AspNetUsers'
+WHERE TableName='Users'
   AND OccurredAt > DATEADD(MINUTE,-15,SYSUTCDATETIME())
 ORDER BY OccurredAt DESC;

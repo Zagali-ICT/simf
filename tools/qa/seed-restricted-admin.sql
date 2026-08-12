@@ -59,7 +59,7 @@ DECLARE @roleName         nvarchar(256)    = N'QA-Restricted';
 DECLARE @grantCode        nvarchar(256)    = N'Sessions.View';
 
 DECLARE @superId uniqueidentifier =
-    (SELECT TOP 1 Id FROM dbo.AspNetUsers WHERE NormalizedEmail = N'SUPERADMIN@SIMF.TEST');
+    (SELECT TOP 1 Id FROM dbo.Users WHERE NormalizedEmail = N'SUPERADMIN@SIMF.TEST');
 
 IF @superId IS NULL
 BEGIN
@@ -70,12 +70,12 @@ END;
 
 /* ---- 1. The restricted role ------------------------------------------- */
 DECLARE @roleId uniqueidentifier =
-    (SELECT TOP 1 Id FROM dbo.AspNetRoles WHERE NormalizedName = UPPER(@roleName));
+    (SELECT TOP 1 Id FROM dbo.Roles WHERE NormalizedName = UPPER(@roleName));
 
 IF @roleId IS NULL
 BEGIN
     SET @roleId = NEWID();
-    INSERT INTO dbo.AspNetRoles (Id, Name, NormalizedName, ConcurrencyStamp, IsBaseline)
+    INSERT INTO dbo.Roles (Id, Name, NormalizedName, ConcurrencyStamp, IsBaseline)
     VALUES (@roleId, @roleName, UPPER(@roleName), CONVERT(nvarchar(36), NEWID()), 0);
 END;
 
@@ -103,12 +103,12 @@ WHERE RoleId = @roleId AND PermissionId <> @permissionId;
 
 /* ---- 3. The user, cloning the super-admin's credential material -------- */
 DECLARE @restrictedId uniqueidentifier =
-    (SELECT TOP 1 Id FROM dbo.AspNetUsers WHERE NormalizedEmail = UPPER(@restrictedEmail));
+    (SELECT TOP 1 Id FROM dbo.Users WHERE NormalizedEmail = UPPER(@restrictedEmail));
 
 IF @restrictedId IS NULL
 BEGIN
     SET @restrictedId = NEWID();
-    INSERT INTO dbo.AspNetUsers
+    INSERT INTO dbo.Users
         (Id, UserName, NormalizedUserName, Email, NormalizedEmail, EmailConfirmed,
          PasswordHash, SecurityStamp, ConcurrencyStamp,
          PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnabled, AccessFailedCount,
@@ -128,7 +128,7 @@ BEGIN
                            -- super-admin's own values cannot drift from the enum.
          0,   -- never force a password change: it would block the sign-in this fixture exists for
          @now
-    FROM dbo.AspNetUsers u
+    FROM dbo.Users u
     WHERE u.Id = @superId;
 END
 ELSE
@@ -141,29 +141,29 @@ BEGIN
            r.PasswordChangeRequired  = 0,
            r.LockoutEnd              = NULL,
            r.AccessFailedCount       = 0
-      FROM dbo.AspNetUsers r
-      JOIN dbo.AspNetUsers s ON s.Id = @superId
+      FROM dbo.Users r
+      JOIN dbo.Users s ON s.Id = @superId
      WHERE r.Id = @restrictedId;
 END;
 
 /* ---- 4. The TOTP secret — the part that makes CP sign-in possible ------ */
 /* SignInService forces TOTP for any user with a role, so without this row the
    fixture can authenticate its password and then never get past /login/totp. */
-IF NOT EXISTS (SELECT 1 FROM dbo.AspNetUserTokens
+IF NOT EXISTS (SELECT 1 FROM dbo.UserTokens
                WHERE UserId = @restrictedId
                  AND LoginProvider = N'[AspNetUserStore]'
                  AND Name = N'AuthenticatorKey')
-    INSERT INTO dbo.AspNetUserTokens (UserId, LoginProvider, Name, Value)
+    INSERT INTO dbo.UserTokens (UserId, LoginProvider, Name, Value)
     SELECT @restrictedId, t.LoginProvider, t.Name, t.Value
-      FROM dbo.AspNetUserTokens t
+      FROM dbo.UserTokens t
      WHERE t.UserId = @superId
        AND t.LoginProvider = N'[AspNetUserStore]'
        AND t.Name = N'AuthenticatorKey';
 ELSE
     UPDATE t
        SET t.Value = s.Value
-      FROM dbo.AspNetUserTokens t
-      JOIN dbo.AspNetUserTokens s
+      FROM dbo.UserTokens t
+      JOIN dbo.UserTokens s
         ON s.UserId = @superId
        AND s.LoginProvider = N'[AspNetUserStore]'
        AND s.Name = N'AuthenticatorKey'
@@ -172,14 +172,14 @@ ELSE
        AND t.Name = N'AuthenticatorKey';
 
 /* ---- 5. Role membership — and ONLY this role -------------------------- */
-IF NOT EXISTS (SELECT 1 FROM dbo.AspNetUserRoles
+IF NOT EXISTS (SELECT 1 FROM dbo.UserRoles
                WHERE UserId = @restrictedId AND RoleId = @roleId)
-    INSERT INTO dbo.AspNetUserRoles (UserId, RoleId)
+    INSERT INTO dbo.UserRoles (UserId, RoleId)
     VALUES (@restrictedId, @roleId);
 
 /* An extra role would hand it extra permissions and silently turn every deny
    assertion green. */
-DELETE FROM dbo.AspNetUserRoles
+DELETE FROM dbo.UserRoles
 WHERE UserId = @restrictedId AND RoleId <> @roleId;
 
 COMMIT TRANSACTION;
@@ -187,5 +187,5 @@ COMMIT TRANSACTION;
 SELECT
     N'qa-restricted@simf.test' AS RestrictedAdmin,
     (SELECT COUNT(*) FROM dbo.RolePermissions WHERE RoleId = @roleId) AS GrantCount,
-    (SELECT COUNT(*) FROM dbo.AspNetUserTokens
+    (SELECT COUNT(*) FROM dbo.UserTokens
       WHERE UserId = @restrictedId AND Name = N'AuthenticatorKey')    AS HasTotpSecret;
