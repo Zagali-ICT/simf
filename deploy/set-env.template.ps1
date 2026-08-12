@@ -113,8 +113,14 @@ $vars = @(
     # Storage:AvatarBase, VipPhotoBase and UserIdDocumentBase were removed on
     # 2026-08-05. They named per-asset stores that the unified file store
     # replaced; setting them now has no effect at all.
-    [pscustomobject]@{ Name = "SIMF_FileStorage__RootPath"; Value = "C:\SIMF\Storage\files"; Secret = $false; Gate = $false; Apps = "API"; Note = "root for ALL uploads; back this up" }
-    [pscustomobject]@{ Name = "SIMF_Storage__LogDirectory"; Value = "C:\SIMF\Storage\logs"; Secret = $false; Gate = $false; Apps = "API CP Web"; Note = "per-app logs under {dir}/SIMF.Api, /SIMF.Workers, /SIMF.ControlPanel, /SIMF.Web" }
+    # A LOCAL path only holds while one API node serves every request. With the
+    # API tier scaled out, a file uploaded through one node has to be readable
+    # from the other three, so this becomes a UNC path on the file server
+    # (\\fs.simrsnf.local\simf\files) and the pool identity needs write access to
+    # the share as well as the folder. Left local on a multi-node tier, uploads
+    # succeed and then 404 for the next request that lands elsewhere.
+    [pscustomobject]@{ Name = "SIMF_FileStorage__RootPath"; Value = "C:\SIMF\Storage\files"; Secret = $false; Gate = $false; Apps = "API"; Note = "root for ALL uploads; back this up; UNC to the file server once the API tier scales out" }
+    [pscustomobject]@{ Name = "SIMF_Storage__LogDirectory"; Value = "C:\SIMF\Storage\logs"; Secret = $false; Gate = $false; Apps = "API CP Web EDGE"; Note = "per-app logs under {dir}/SIMF.Api, /SIMF.Workers, /SIMF.ControlPanel, /SIMF.Web, /SIMF.MobileEdge" }
     [pscustomobject]@{ Name = "SIMF_SessionRecordingStorage__MaxUploadBytes"; Value = ""; Secret = $false; Gate = $false; Apps = "API"; Note = "default 1073741824 (1 GiB)" }
 
     # The shared Data Protection key ring. It encrypts the CP auth cookie (which
@@ -126,7 +132,15 @@ $vars = @(
     # (a UNC path) once the tiers are separated, not at an application host: the
     # ring must outlive any single node, and it must NOT sit under the versioned
     # deploy root, which a release replaces.
-    [pscustomobject]@{ Name = "SIMF_DataProtection__KeyRingPath"; Value = "C:\SIMF\Storage\keyring"; Secret = $false; Gate = $true; Apps = "CP Web"; Note = "shared key ring; back this up - losing it signs every admin out" }
+    #
+    # FIREWALL NOTE, and it is a real one. This is read by CP and Web, which sit
+    # in the PRESENTATION zone, while the file server sits in the DATA zone and
+    # the internal firewall as drawn permits SMB 445 from the APPLICATION zone
+    # only. On that ruleset CP and Web cannot reach the ring and, because this is
+    # a boot gate, they do not start at all. Settle it with the network team
+    # before the tiers are split: either permit SMB from presentation to the file
+    # server, or host the ring on a share presentation can already reach.
+    [pscustomobject]@{ Name = "SIMF_DataProtection__KeyRingPath"; Value = "C:\SIMF\Storage\keyring"; Secret = $false; Gate = $true; Apps = "CP Web"; Note = "shared key ring; back this up - losing it signs every admin out; UNC once the tiers are split, and presentation must be able to reach it" }
 
     # --- The mobile edge (SIMF.MobileEdge) --------------------------------------
     # The presentation tier for the mobile clients. It takes over the public
@@ -160,7 +174,24 @@ $vars = @(
     # or does not match this address, the Control Panel and Website CANNOT reach
     # the API and there is no switch to make them. That is an outage to fix on
     # the server. Certificate renewal is now a commitment this deployment has.
-    [pscustomobject]@{ Name = "SIMF_Api__BaseUrl"; Value = "https://api.simrsnf.com/"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "must be HTTPS outside Development; its certificate must validate" }
+    #
+    # ONCE THE MOBILE EDGE OWNS api.simrsnf.com, THIS MUST NOT BE api.simrsnf.com.
+    # The edge publishes ONE route, /api/v1/app/**. The Control Panel calls
+    # /api/v1/admin/** (SimfAdminClient), which the edge has no route for, so
+    # pointing CP at the public name breaks every admin page with a 404 while the
+    # mobile app carries on working - a failure that looks like "the CP is broken"
+    # and not like "the DNS cutover is half-done".
+    #
+    # Set it to the API's PRIVATE address instead. CP and Web are server-side
+    # callers sitting in the presentation zone next to the edge; they reach the
+    # application zone directly and must never traverse the public front door.
+    # Shipped pointing at the PRIVATE name rather than empty on purpose. An
+    # operator who leaves it unchanged gets a loud failure at boot - the name
+    # does not resolve, so CP and Web say so immediately. The old default,
+    # api.simrsnf.com, failed the other way: after the cutover it resolved, and
+    # answered, and returned 404 for every admin call while the mobile app kept
+    # working. A wrong value you can see beats a wrong value that half-works.
+    [pscustomobject]@{ Name = "SIMF_Api__BaseUrl"; Value = "https://api-int.simrsnf.local/"; Secret = $false; Gate = $false; Apps = "CP Web"; Note = "SITE-SPECIFIC; the API's PRIVATE https address, NOT api.simrsnf.com once the edge is live; its certificate must validate" }
 
     # --- Meeting confirmation links -------------------------------------------
     # Empty => the speaker double-opt-in email cannot be built, and the Approve /

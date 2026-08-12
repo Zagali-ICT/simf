@@ -2,19 +2,26 @@
 # SIMF - Clean Publish All Web Apps
 # Cleans old output, publishes sequentially, stops on first error.
 #
-# Publishes the three SIMF web apps into publish\api, publish\cp, publish\web.
-# Those folder names are the contract deploy\iis-deploy.ps1 expects, so the
-# output can be deployed straight away:
+# Publishes the four SIMF web apps into publish\api, publish\cp, publish\web and
+# publish\edge. Those folder names are the contract deploy\iis-deploy.ps1
+# expects, so the output can be deployed straight away:
 #
 #   .\publish.ps1
 #   .\deploy\iis-deploy.ps1 -ArtifactRoot .\publish `
-#       -ApiSiteName "SIMF.API" -ApiPath "D:\System\v1.0.1\api" `
-#       -CpSiteName  "SIMF.CP"  -CpPath  "D:\System\v1.0.1\cp"  `
-#       -WebSiteName "SIMF.WEB" -WebPath "D:\System\v1.0.1\web"
+#       -ApiSiteName  "SIMF.API"  -ApiPath  "D:\System\v1.0.1\api" `
+#       -CpSiteName   "SIMF.CP"   -CpPath   "D:\System\v1.0.1\cp"  `
+#       -WebSiteName  "SIMF.WEB"  -WebPath  "D:\System\v1.0.1\web" `
+#       -EdgeSiteName "SIMF.EDGE" -EdgePath "D:\System\v1.0.1\edge"
 #
 # Notes:
 # - There is no separate Worker project: the 10 background workers run
-#   IN-PROCESS inside the API application pool (see deploy\README.md).
+#   IN-PROCESS inside the API application pool (see deploy\README.md). One
+#   instance is elected to run them by WorkerLease, so API x4 does not send
+#   every reminder four times.
+# - The mobile edge is included here because a handover or manual release built
+#   from this script IS the package that gets installed. It used to build three
+#   apps while the pipeline built four, so a hand-built package silently had no
+#   edge and api.simrsnf.com had nothing to answer it.
 # - This script builds and publishes ONLY. It sets no configuration and no
 #   secrets - those are Machine-scope environment variables applied on the
 #   server by deploy\set-env.ps1 (SIMF-OPS-001 section 6).
@@ -28,9 +35,10 @@ $config = "Release"
 
 # Project -> output folder mapping (publishable web apps only, in deploy order).
 $projects = @(
-    @{ Name = "API";          Csproj = "src\Backend\SIMF.Api\SIMF.Api.csproj";                         Folder = "api" },
-    @{ Name = "ControlPanel"; Csproj = "src\ControlPanel\SIMF.ControlPanel\SIMF.ControlPanel.csproj";  Folder = "cp"  },
-    @{ Name = "Website";      Csproj = "src\Website\SIMF.Web\SIMF.Web.csproj";                         Folder = "web" }
+    @{ Name = "API";          Csproj = "src\Backend\SIMF.Api\SIMF.Api.csproj";                         Folder = "api"  },
+    @{ Name = "ControlPanel"; Csproj = "src\ControlPanel\SIMF.ControlPanel\SIMF.ControlPanel.csproj";  Folder = "cp"   },
+    @{ Name = "Website";      Csproj = "src\Website\SIMF.Web\SIMF.Web.csproj";                         Folder = "web"  },
+    @{ Name = "MobileEdge";   Csproj = "src\Edge\SIMF.MobileEdge\SIMF.MobileEdge.csproj";              Folder = "edge" }
 )
 
 Write-Host ""

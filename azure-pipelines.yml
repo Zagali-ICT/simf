@@ -1,15 +1,16 @@
 # SIMF CI/CD pipeline
-# Builds, tests, and publishes the three SIMF web apps, then deploys them to IIS:
+# Builds, tests, and publishes the four SIMF web apps, then deploys them to IIS:
 #   * SimfAPI -> src/Backend/SIMF.Api            (FastEndpoints, Web SDK)
 #   * SimfCP  -> src/ControlPanel/SIMF.ControlPanel (Blazor Server, Web SDK)
 #   * SimfWeb -> src/Website/SIMF.Web            (Blazor SSR, Web SDK)
+#   * SimfEdge-> src/Edge/SIMF.MobileEdge        (YARP reverse proxy, Web SDK)
 #
 # Two further, NON-deploying stages check the artefacts that are not web apps:
 #   * MobileApp -> src/Mobile/simf_app           (Flutter; analyze + test only)
 #   * BadgeDesk -> src/Tools/SIMF.BadgeDesk      (WinForms; build + store tests)
 #
 # Mirrors the V10 ERP pipeline, adapted for SIMF:
-#   * three web apps instead of two (API + Control Panel + Website);
+#   * four web apps instead of two (API + Control Panel + Website + Mobile Edge);
 #   * NO SDK-package / local-NuGet-feed machinery - SIMF has no SDK packages and
 #     no private feed (internal refs are ProjectReference; packages come from
 #     nuget.org), so a plain `dotnet restore` is used;
@@ -49,7 +50,7 @@ stages:
   displayName: 'Build, Test & Publish'
   jobs:
   - job: BuildJob
-    displayName: 'Build SIMF (API + CP + Web)'
+    displayName: 'Build SIMF (API + CP + Web + Edge)'
     steps:
     - checkout: self
       clean: true
@@ -119,10 +120,15 @@ stages:
     #     direct or transitive package has a known advisory. Complements the
     #     in-build NuGetAudit (Directory.Build.props). Uses stock `dotnet`. ---
     - powershell: |
+        # The mobile edge is included and must stay included: it is the only
+        # internet-facing component once the API is unpublished, and it is the
+        # one carrying YARP. Scanning the three it fronts but not the edge
+        # itself inverts the risk order.
         $projects = @(
           'src/Backend/SIMF.Api/SIMF.Api.csproj',
           'src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj',
-          'src/Website/SIMF.Web/SIMF.Web.csproj'
+          'src/Website/SIMF.Web/SIMF.Web.csproj',
+          'src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj'
         )
         $vulnerable = $false
         foreach ($p in $projects) {
@@ -145,6 +151,7 @@ stages:
         dotnet CycloneDX "$(Build.SourcesDirectory)/src/Backend/SIMF.Api/SIMF.Api.csproj" -o "$sbom/api"
         dotnet CycloneDX "$(Build.SourcesDirectory)/src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj" -o "$sbom/cp"
         dotnet CycloneDX "$(Build.SourcesDirectory)/src/Website/SIMF.Web/SIMF.Web.csproj" -o "$sbom/web"
+        dotnet CycloneDX "$(Build.SourcesDirectory)/src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj" -o "$sbom/edge"
       displayName: 'Generate CycloneDX SBOM'
       continueOnError: true
 
@@ -371,7 +378,7 @@ stages:
   # SIMF-owned Dart, and runs the widget/unit suites.
   #
   # dependsOn: [] so it runs in PARALLEL with Build and is NOT a dependency of
-  # Deploy - the pipeline deploys the three WEB apps, and a Flutter/agent problem
+  # Deploy - the pipeline deploys the four WEB apps, and a Flutter/agent problem
   # must never keep production down. A failure here still turns the run red,
   # which is the gate we want.
   dependsOn: []
@@ -501,7 +508,7 @@ stages:
   # nothing would have said so until a desk failed to open at the venue.
   #
   # dependsOn: [] so it runs alongside Build and is NOT a dependency of Deploy -
-  # the pipeline deploys the three WEB apps, and a desk-tool problem must never
+  # the pipeline deploys the four WEB apps, and a desk-tool problem must never
   # keep production down. A failure here still turns the run red, which is the
   # gate we want. The Build stage already uses `- powershell:` steps, so this
   # pool is Windows and net10.0-windows builds on it.
@@ -581,14 +588,17 @@ stages:
               Get-ChildItem $root | Select-Object Name
             displayName: 'Extract app zips to drop_root'
 
-          # Stop the three IIS sites + their app pools BEFORE the publish so no
+          # Stop the four IIS sites + their app pools BEFORE the publish so no
           # file is locked while the files are mirrored. (iis-deploy.ps1 also
           # stops/starts each app internally; this explicit pair adds a
           # pipeline-level guard, and the matching start step below runs even
           # if the deploy step fails — condition: always().)
           - powershell: |
               Import-Module WebAdministration
-              foreach ($s in 'SIMF.API','SIMF.CP','SIMF.WEB') {
+              # SIMF.EDGE first: it is the public front door, so taking it down
+              # before the API means app traffic stops at a closed door rather
+              # than reaching an API whose files are mid-mirror.
+              foreach ($s in 'SIMF.EDGE','SIMF.API','SIMF.CP','SIMF.WEB') {
                 $site = Get-Website -Name $s -ErrorAction SilentlyContinue
                 if ($null -ne $site) {
                   Write-Host "Stopping site: $s"
@@ -604,17 +614,22 @@ stages:
                 -ArtifactRoot "$(Pipeline.Workspace)\drop_root" `
                 -ApiSiteName  "SIMF.API"  -ApiPath  "D:\System\v1.0.1\api" `
                 -CpSiteName   "SIMF.CP"   -CpPath   "D:\System\v1.0.1\cp" `
-                -WebSiteName  "SIMF.WEB"  -WebPath  "D:\System\v1.0.1\web"
+                -WebSiteName  "SIMF.WEB"  -WebPath  "D:\System\v1.0.1\web" `
+                -EdgeSiteName "SIMF.EDGE" -EdgePath "D:\System\v1.0.1\edge"
             displayName: 'Deploy to IIS'
             # PLACEHOLDERS above: confirm the IIS site names and physical paths
             # for the SIMF server before this stage runs. See deploy/README.md.
 
-          # Start the three IIS sites + their app pools AFTER the publish.
+          # Start the four IIS sites + their app pools AFTER the publish.
           # condition: always() so the sites are brought back up even if the
           # deploy step above failed part-way (don't leave production down).
+          #
+          # SIMF.EDGE is last on purpose: it is the public front door for the
+          # mobile app, so it should come up once the API behind it is already
+          # answering, rather than accepting traffic it can only 502.
           - powershell: |
               Import-Module WebAdministration
-              foreach ($s in 'SIMF.API','SIMF.CP','SIMF.WEB') {
+              foreach ($s in 'SIMF.API','SIMF.CP','SIMF.WEB','SIMF.EDGE') {
                 $site = Get-Website -Name $s -ErrorAction SilentlyContinue
                 if ($null -ne $site) {
                   $pool = $site.applicationPool
