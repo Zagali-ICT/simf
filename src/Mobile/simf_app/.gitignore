@@ -20,6 +20,19 @@ coverage/
 *.g.dart
 *.freezed.dart
 
+# ...EXCEPT under third_party/. That rule is for code build_runner regenerates
+# locally; the vendored packages ship their generated sources as part of the
+# package. It was silently swallowing
+# third_party/video_player_android/lib/src/messages.g.dart — a Pigeon file that
+# three TRACKED files in that package import — so `flutter pub get` resolved the
+# `dependency_overrides` path in pubspec.yaml and then the app could not compile
+# from a clean clone. It built for everyone who already had the file on disk.
+#
+# The negation re-includes the DIRECTORY first: git cannot re-include a file
+# whose parent directory is excluded.
+!third_party/
+!third_party/**
+
 # Android build output / machine-local (android/.gitignore repeats these; kept
 # here so a stray copy outside android/ is caught too)
 .gradle/

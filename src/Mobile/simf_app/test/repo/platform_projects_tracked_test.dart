@@ -286,4 +286,50 @@ void main() {
       );
     });
   });
+
+  group('VENDORED PACKAGES — every file they import is in the repo', () {
+    // Same defect as BUG-010, one directory deeper. `.gitignore` carried
+    // `*.g.dart` for code build_runner regenerates locally, and it also matched
+    // third_party/video_player_android/lib/src/messages.g.dart — a Pigeon file
+    // that ships WITH the vendored package and that three tracked files in it
+    // import. pubspec.yaml pins that package through `dependency_overrides`, so
+    // every build resolves it: the app compiled for everyone who already had
+    // the file on disk and could not compile from a clean clone at all.
+    //
+    // Asserting on imports rather than on one filename, so the next vendored
+    // file an ignore rule swallows fails here too.
+    test('every relative import under third_party resolves to a real file', () {
+      final root = Directory('third_party');
+      if (!root.existsSync()) {
+        return;
+      }
+
+      final missing = <String>[];
+      // Relative imports only — a `package:` or `dart:` import is resolved by
+      // pub, not by a file sitting next to this one.
+      final pattern = RegExp(r"""import\s+['"]([^:'"]+\.dart)['"]""");
+
+      for (final file in root
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart'))) {
+        final dir = file.parent.path;
+        for (final match in pattern.allMatches(file.readAsStringSync())) {
+          if (!File('$dir/${match.group(1)}').existsSync()) {
+            missing.add('${file.path} imports ${match.group(1)}');
+          }
+        }
+      }
+
+      expect(
+        missing,
+        isEmpty,
+        reason: 'A vendored file imports something that is not in the '
+            'repository, so the app cannot build from a clean clone. Check '
+            '.gitignore — a rule written for locally GENERATED code (*.g.dart, '
+            '*.freezed.dart) also matches generated sources that ship inside a '
+            'vendored package. Missing: ${missing.join(', ')}',
+      );
+    });
+  });
 }
