@@ -1,0 +1,448 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1044" viewBox="0 0 1680 1044">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F5D8C"/>
+  </marker>
+  <marker id="ai" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A1A1A"/>
+  </marker>
+  <pattern id="brick" width="20" height="10" patternUnits="userSpaceOnUse">
+    <rect width="20" height="10" fill="#E3E6EA"/>
+    <path d="M0 0 H20 M0 5 H20 M10 0 V5 M0 5 V10 M20 5 V10"
+          stroke="#9CA3AF" stroke-width="0.9" fill="none"/>
+  </pattern>
+</defs>
+<rect x="0" y="0" width="1680" height="1044" fill="#FFFFFF"/>
+<text x="40" y="46" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="25" fill="#1A1A1A" font-weight="600" text-anchor="start">SIMF data model, sheet B: Profiles, registration and reference data</text>
+<text x="40" y="74" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#6B7280" text-anchor="start">Crow's foot entity relationship diagram, SIMF_App. Every column with its type; PK primary key, FK foreign key, U unique index.</text>
+<line x1="40" y1="90" x2="1640" y2="90" stroke="#6B7280" stroke-width="1.2"/>
+<rect x="60" y="150.0" width="372" height="398" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="60" y="150.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="246.0" y="167.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">UserProfile</text>
+<text x="246.0" y="181.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">UserProfiles</text>
+<text x="66.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="90.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Id</text>
+<text x="240.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="66.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">FK</text>
+<text x="90.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">BadgeBatchId</text>
+<text x="240.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="66.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">FK</text>
+<text x="90.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">OrganisationId</text>
+<text x="240.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="66.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">FK</text>
+<text x="90.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">ProfileTypeId</text>
+<text x="240.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="66.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">FK</text>
+<text x="90.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RegionId</text>
+<text x="240.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="66.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="90.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IqamaNumberHash</text>
+<text x="240.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(64)</text>
+<text x="66.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="90.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">NationalIdHash</text>
+<text x="240.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(64)</text>
+<text x="66.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="90.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">PassportNumberHash</text>
+<text x="240.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(64)</text>
+<text x="66.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="90.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">QrId</text>
+<text x="240.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(16)</text>
+<text x="66.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="90.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">ReferenceNumber</text>
+<text x="240.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(20)</text>
+<text x="66.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="90.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UserId</text>
+<text x="240.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="90.0" y="356.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">AccessibilityCaptions</text>
+<text x="240.0" y="356.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="90.0" y="370.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">AccessibilityConfiguredAt</text>
+<text x="240.0" y="370.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="90.0" y="384.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">AccessibilityHighContrast</text>
+<text x="240.0" y="384.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="90.0" y="398.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">AccessibilityReduceMotion</text>
+<text x="240.0" y="398.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="90.0" y="412.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">AccessibilityScreenReaderAssist</text>
+<text x="240.0" y="412.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="90.0" y="426.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">AccessibilityTextSize</text>
+<text x="240.0" y="426.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(16)</text>
+<text x="90.0" y="440.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">AllowsDelegationMeeting</text>
+<text x="240.0" y="440.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="90.0" y="454.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">AllowsSpeakerMeeting</text>
+<text x="240.0" y="454.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="90.0" y="468.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedAt</text>
+<text x="240.0" y="468.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="90.0" y="482.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedBy</text>
+<text x="240.0" y="482.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="90.0" y="496.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DateOfBirth</text>
+<text x="240.0" y="496.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">date</text>
+<text x="90.0" y="510.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DeletedAt</text>
+<text x="240.0" y="510.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="90.0" y="524.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Gender</text>
+<text x="240.0" y="524.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">int</text>
+<text x="90.0" y="538.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Honorific</text>
+<text x="240.0" y="538.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(64)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">HonorificArabic</text>
+<text x="426.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(64)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IdImageRelativePath</text>
+<text x="426.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(256)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">InternationalMobile</text>
+<text x="426.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(256)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IqamaNumber</text>
+<text x="426.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(256)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsActive</text>
+<text x="426.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsDelegate</text>
+<text x="426.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsSaudi</text>
+<text x="426.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">JobTitle</text>
+<text x="426.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(100)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">JobTitleArabic</text>
+<text x="426.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(100)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">MawjId</text>
+<text x="426.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(64)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Name</text>
+<text x="426.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(50)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="356.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">NameArabic</text>
+<text x="426.0" y="356.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(50)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="370.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">NationalId</text>
+<text x="426.0" y="370.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(256)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="384.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">NationalityId</text>
+<text x="426.0" y="384.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">int</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="398.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">PassportNumber</text>
+<text x="426.0" y="398.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(256)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="412.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">PlaceOfBirth</text>
+<text x="426.0" y="412.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="426.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">PlateNumber</text>
+<text x="426.0" y="426.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(7)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="440.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">PreferredLanguage</text>
+<text x="426.0" y="440.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(16)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="454.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RejectionReason</text>
+<text x="426.0" y="454.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(500)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="468.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RejectionReasonArabic</text>
+<text x="426.0" y="468.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(500)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="482.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">SaudiMobile</text>
+<text x="426.0" y="482.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(256)</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="496.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">ShowInMeetLikeYou</text>
+<text x="426.0" y="496.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="510.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedAt</text>
+<text x="426.0" y="510.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="524.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedBy</text>
+<text x="426.0" y="524.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<line x1="246.0" y1="190.0" x2="246.0" y2="548.0" stroke="#9CA3AF" stroke-width="0.8"/>
+<text x="276.0" y="538.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">VipPhotoRelativePath</text>
+<text x="426.0" y="538.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(260)</text>
+<rect x="456" y="150.0" width="372" height="272" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="456" y="150.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="642.0" y="167.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">UserProfileType</text>
+<text x="642.0" y="181.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">ProfileTypes</text>
+<text x="462.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="486.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Id</text>
+<text x="822.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="462.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="486.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Code</text>
+<text x="822.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">smallint</text>
+<text x="462.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="486.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Name</text>
+<text x="822.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<text x="486.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">AllowsVipMeetingSlots</text>
+<text x="822.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="486.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedAt</text>
+<text x="822.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="486.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedBy</text>
+<text x="822.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="486.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DeletedAt</text>
+<text x="822.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="486.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsActive</text>
+<text x="822.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="486.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsAppRegisterable</text>
+<text x="822.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="486.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsForVisitor</text>
+<text x="822.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="486.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">MobileAppRole</text>
+<text x="822.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(16)</text>
+<text x="486.0" y="356.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">NameArabic</text>
+<text x="822.0" y="356.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<text x="486.0" y="370.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">PageColor</text>
+<text x="822.0" y="370.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(32)</text>
+<text x="486.0" y="384.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">ShowInPartnerDirectory</text>
+<text x="822.0" y="384.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="486.0" y="398.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedAt</text>
+<text x="822.0" y="398.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="486.0" y="412.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedBy</text>
+<text x="822.0" y="412.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<rect x="852" y="150.0" width="372" height="258" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="852" y="150.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1038.0" y="167.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Organisation</text>
+<text x="1038.0" y="181.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">Organisations</text>
+<text x="858.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="882.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Id</text>
+<text x="1218.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="858.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="882.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CommercialRegistration</text>
+<text x="1218.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(32)</text>
+<text x="882.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">City</text>
+<text x="1218.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<text x="882.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedAt</text>
+<text x="1218.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="882.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedBy</text>
+<text x="1218.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="882.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DeletedAt</text>
+<text x="1218.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="882.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Email</text>
+<text x="1218.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(320)</text>
+<text x="882.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsActive</text>
+<text x="1218.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="882.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Name</text>
+<text x="1218.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(150)</text>
+<text x="882.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">NameArabic</text>
+<text x="1218.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(150)</text>
+<text x="882.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Phone</text>
+<text x="1218.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(32)</text>
+<text x="882.0" y="356.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Sector</text>
+<text x="1218.0" y="356.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<text x="882.0" y="370.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedAt</text>
+<text x="1218.0" y="370.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="882.0" y="384.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedBy</text>
+<text x="1218.0" y="384.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="882.0" y="398.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Website</text>
+<text x="1218.0" y="398.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(512)</text>
+<rect x="1248" y="150.0" width="372" height="230" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="1248" y="150.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1434.0" y="167.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Country</text>
+<text x="1434.0" y="181.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">Countries</text>
+<text x="1254.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="1278.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Id</text>
+<text x="1614.0" y="202.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">int</text>
+<text x="1254.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="1278.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Code</text>
+<text x="1614.0" y="216.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(2)</text>
+<text x="1278.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedAt</text>
+<text x="1614.0" y="230.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="1278.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DelegationArrivalDate</text>
+<text x="1614.0" y="244.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">date</text>
+<text x="1278.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DelegationDepartureDate</text>
+<text x="1614.0" y="258.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">date</text>
+<text x="1278.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DisplayOrder</text>
+<text x="1614.0" y="272.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">int</text>
+<text x="1278.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">HeadOfDelegationUserProfileId</text>
+<text x="1614.0" y="286.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="1278.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsActive</text>
+<text x="1614.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="1278.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsInvited</text>
+<text x="1614.0" y="314.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="1278.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Name</text>
+<text x="1614.0" y="328.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<text x="1278.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">NameArabic</text>
+<text x="1614.0" y="342.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<text x="1278.0" y="356.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">PhonePrefix</text>
+<text x="1614.0" y="356.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(8)</text>
+<text x="1278.0" y="370.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedAt</text>
+<text x="1614.0" y="370.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<rect x="1248" y="406.0" width="372" height="202" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="1248" y="406.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1434.0" y="423.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Region</text>
+<text x="1434.0" y="437.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">Regions</text>
+<text x="1254.0" y="458.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="1278.0" y="458.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Id</text>
+<text x="1614.0" y="458.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="1254.0" y="472.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="1278.0" y="472.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Code</text>
+<text x="1614.0" y="472.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(16)</text>
+<text x="1278.0" y="486.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedAt</text>
+<text x="1614.0" y="486.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="1278.0" y="500.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedBy</text>
+<text x="1614.0" y="500.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="1278.0" y="514.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DeletedAt</text>
+<text x="1614.0" y="514.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="1278.0" y="528.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsActive</text>
+<text x="1614.0" y="528.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="1278.0" y="542.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Name</text>
+<text x="1614.0" y="542.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(256)</text>
+<text x="1278.0" y="556.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">NameArabic</text>
+<text x="1614.0" y="556.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(256)</text>
+<text x="1278.0" y="570.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">SortOrder</text>
+<text x="1614.0" y="570.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">int</text>
+<text x="1278.0" y="584.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedAt</text>
+<text x="1614.0" y="584.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="1278.0" y="598.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedBy</text>
+<text x="1614.0" y="598.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<rect x="852" y="434.0" width="372" height="202" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="852" y="434.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1038.0" y="451.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">BadgeBatch</text>
+<text x="1038.0" y="465.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">BadgeBatches</text>
+<text x="858.0" y="486.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="882.0" y="486.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Id</text>
+<text x="1218.0" y="486.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="882.0" y="500.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CountsSummary</text>
+<text x="1218.0" y="500.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(512)</text>
+<text x="882.0" y="514.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedAt</text>
+<text x="1218.0" y="514.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="882.0" y="528.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedBy</text>
+<text x="1218.0" y="528.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="882.0" y="542.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DeletedAt</text>
+<text x="1218.0" y="542.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="882.0" y="556.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsActive</text>
+<text x="1218.0" y="556.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="882.0" y="570.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsDelegate</text>
+<text x="1218.0" y="570.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="882.0" y="584.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RecipientEmail</text>
+<text x="1218.0" y="584.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(256)</text>
+<text x="882.0" y="598.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">TotalCount</text>
+<text x="1218.0" y="598.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">int</text>
+<text x="882.0" y="612.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedAt</text>
+<text x="1218.0" y="612.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="882.0" y="626.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedBy</text>
+<text x="1218.0" y="626.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<rect x="456" y="448.0" width="372" height="188" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="456" y="448.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="642.0" y="465.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">UserInterest</text>
+<text x="642.0" y="479.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">Interests</text>
+<text x="462.0" y="500.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="486.0" y="500.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Id</text>
+<text x="822.0" y="500.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="462.0" y="514.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">U</text>
+<text x="486.0" y="514.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Name</text>
+<text x="822.0" y="514.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<text x="486.0" y="528.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedAt</text>
+<text x="822.0" y="528.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="486.0" y="542.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedBy</text>
+<text x="822.0" y="542.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="486.0" y="556.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DeletedAt</text>
+<text x="822.0" y="556.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="486.0" y="570.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DisplayOrder</text>
+<text x="822.0" y="570.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">int</text>
+<text x="486.0" y="584.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsActive</text>
+<text x="822.0" y="584.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="486.0" y="598.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">NameArabic</text>
+<text x="822.0" y="598.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<text x="486.0" y="612.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedAt</text>
+<text x="822.0" y="612.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="486.0" y="626.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UpdatedBy</text>
+<text x="822.0" y="626.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<rect x="60" y="574.0" width="372" height="188" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="60" y="574.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="246.0" y="591.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">BadgeUpdateRequest</text>
+<text x="246.0" y="605.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">BadgeUpdateRequests</text>
+<text x="66.0" y="626.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="90.0" y="626.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Id</text>
+<text x="426.0" y="626.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="90.0" y="640.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedAt</text>
+<text x="426.0" y="640.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="90.0" y="654.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CurrentJobTitle</text>
+<text x="426.0" y="654.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<text x="90.0" y="668.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Note</text>
+<text x="426.0" y="668.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(1000)</text>
+<text x="90.0" y="682.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RequestedByUserId</text>
+<text x="426.0" y="682.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="90.0" y="696.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RequestedJobTitle</text>
+<text x="426.0" y="696.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(128)</text>
+<text x="90.0" y="710.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RespondedAt</text>
+<text x="426.0" y="710.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="90.0" y="724.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RespondedByUserId</text>
+<text x="426.0" y="724.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="90.0" y="738.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">ResponseNote</text>
+<text x="426.0" y="738.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(2000)</text>
+<text x="90.0" y="752.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Status</text>
+<text x="426.0" y="752.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">int</text>
+<rect x="1248" y="634.0" width="372" height="174" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="1248" y="634.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1434.0" y="651.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">ParticipationDocumentRequest</text>
+<text x="1434.0" y="665.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">ParticipationDocumentRequests</text>
+<text x="1254.0" y="686.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="1278.0" y="686.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Id</text>
+<text x="1614.0" y="686.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="1278.0" y="700.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">CreatedAt</text>
+<text x="1614.0" y="700.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="1278.0" y="714.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">DocumentType</text>
+<text x="1614.0" y="714.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">int</text>
+<text x="1278.0" y="728.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Note</text>
+<text x="1614.0" y="728.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(1000)</text>
+<text x="1278.0" y="742.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RequestedByUserId</text>
+<text x="1614.0" y="742.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="1278.0" y="756.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RespondedAt</text>
+<text x="1614.0" y="756.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="1278.0" y="770.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">RespondedByUserId</text>
+<text x="1614.0" y="770.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="1278.0" y="784.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">ResponseNote</text>
+<text x="1614.0" y="784.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">str(2000)</text>
+<text x="1278.0" y="798.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Status</text>
+<text x="1614.0" y="798.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">int</text>
+<rect x="456" y="662.0" width="372" height="118" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="456" y="662.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="642.0" y="679.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">RegistrationGate</text>
+<text x="642.0" y="693.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">RegistrationGate</text>
+<text x="462.0" y="714.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="486.0" y="714.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">Id</text>
+<text x="822.0" y="714.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="486.0" y="728.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">AutoClose</text>
+<text x="822.0" y="728.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="486.0" y="742.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">IsOpen</text>
+<text x="822.0" y="742.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">bool</text>
+<text x="486.0" y="756.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">LastChangedAt</text>
+<text x="822.0" y="756.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">datetime</text>
+<text x="486.0" y="770.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">LastChangedByUserId</text>
+<text x="822.0" y="770.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<rect x="852" y="662.0" width="372" height="76" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.4"/>
+<rect x="852" y="662.0" width="372" height="40" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1038.0" y="679.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">UserProfileInterests</text>
+<text x="1038.0" y="693.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">UserProfileInterests</text>
+<text x="858.0" y="714.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="882.0" y="714.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">UserProfileId</text>
+<text x="1218.0" y="714.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<text x="858.0" y="728.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" font-weight="600" text-anchor="start">PK</text>
+<text x="882.0" y="728.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#1A1A1A" text-anchor="start">InterestId</text>
+<text x="1218.0" y="728.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="8.5" fill="#6B7280" text-anchor="end">guid</text>
+<path d="M 60 170.0 L 46 170.0 L 46 454.0 L 852 454.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 47 161.0 L 60 170.0 L 47 179.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="40" y1="161.0" x2="40" y2="179.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="832" y1="445.0" x2="832" y2="463.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<path d="M 60 170.0 L 36 170.0 L 36 170.0 L 852 170.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 47 161.0 L 60 170.0 L 47 179.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="40" y1="161.0" x2="40" y2="179.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="832" y1="161.0" x2="832" y2="179.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<path d="M 60 170.0 L 26 170.0 L 26 170.0 L 456 170.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 47 161.0 L 60 170.0 L 47 179.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="40" y1="161.0" x2="40" y2="179.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="436" y1="161.0" x2="436" y2="179.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<path d="M 60 170.0 L 46 170.0 L 46 426.0 L 1248 426.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 47 161.0 L 60 170.0 L 47 179.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="40" y1="161.0" x2="40" y2="179.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="1228" y1="417.0" x2="1228" y2="435.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="60" y="844.0" width="1200" height="72" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="74" y="865.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Sheet coverage</text>
+<text x="74" y="885.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Tables on this sheet: 11. Columns: 152. Foreign keys drawn: 4.</text>
+<text x="74" y="902.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Indexes are listed per table in the data dictionary at section 6.3. Every unique index column carries the U marker above.</text>
+<rect x="1280" y="844.0" width="340" height="76" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="1294" y="866.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Key</text>
+<rect x="1296" y="879.0" width="30" height="13" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1"/><rect x="1316" y="881.0" width="7" height="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.9"/>
+<text x="1340" y="889.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Table, with its columns and types</text>
+<path d="M 1296 906.0 H 1324" stroke="#6B7280" stroke-width="1.1"/>
+<text x="1340" y="910.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Foreign key, crow's foot on the many end</text>
+</svg>

@@ -1,0 +1,303 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1660" height="1180" viewBox="0 0 1660 1180">
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F5D8C"/>
+  </marker>
+  <marker id="ai" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7"
+          markerHeight="7" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A1A1A"/>
+  </marker>
+  <pattern id="brick" width="20" height="10" patternUnits="userSpaceOnUse">
+    <rect width="20" height="10" fill="#E3E6EA"/>
+    <path d="M0 0 H20 M0 5 H20 M10 0 V5 M0 5 V10 M20 5 V10"
+          stroke="#9CA3AF" stroke-width="0.9" fill="none"/>
+  </pattern>
+</defs>
+<rect x="0" y="0" width="1660" height="1180" fill="#FFFFFF"/>
+<text x="40" y="46" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="25" fill="#1A1A1A" font-weight="600" text-anchor="start">SIMF conceptual data model</text>
+<text x="40" y="74" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="15" fill="#6B7280" text-anchor="start">Conceptual entity relationship diagram, crow's foot notation. Major business entities and their named relationships. Entity names and relationships are read from the EF Core model.</text>
+<line x1="40" y1="90" x2="1620" y2="90" stroke="#6B7280" stroke-width="1.2"/>
+<rect x="60" y="150" width="236" height="470" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="74" y="172" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Identity and access</text>
+<rect x="60" y="580" width="236" height="470" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="74" y="602" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Profiles and reference data</text>
+<rect x="480" y="150" width="236" height="830" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="494" y="172" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Programme</text>
+<rect x="880" y="150" width="236" height="830" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="894" y="172" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Attendance and access</text>
+<rect x="1300" y="150" width="236" height="830" rx="4" fill="#F7F8FA" stroke="#6B7280" stroke-width="1.2" stroke-dasharray="7 4"/>
+<text x="1314" y="172" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="14" fill="#6B7280" font-weight="600" text-anchor="start">Exhibition and content</text>
+<rect x="80" y="190" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="178.0" y="214" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SimfUser</text>
+<text x="178.0" y="229" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">AspNetUsers</text>
+<rect x="80" y="280" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="178.0" y="304" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SimfRole</text>
+<text x="178.0" y="319" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">AspNetRoles</text>
+<rect x="80" y="370" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="178.0" y="394" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Permission</text>
+<text x="178.0" y="409" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Permissions</text>
+<rect x="80" y="460" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="178.0" y="484" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">RolePermission</text>
+<text x="178.0" y="499" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">RolePermissions</text>
+<rect x="80" y="620" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="178.0" y="644" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">UserProfile</text>
+<text x="178.0" y="659" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">UserProfiles</text>
+<rect x="80" y="710" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="178.0" y="734" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">UserProfileType</text>
+<text x="178.0" y="749" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">ProfileTypes</text>
+<rect x="80" y="800" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="178.0" y="824" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Organisation</text>
+<text x="178.0" y="839" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Organisations</text>
+<rect x="80" y="890" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="178.0" y="914" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Region</text>
+<text x="178.0" y="929" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Regions</text>
+<rect x="80" y="980" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="178.0" y="1004" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Country</text>
+<text x="178.0" y="1019" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Countries</text>
+<rect x="500" y="190" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="598.0" y="214" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Theme</text>
+<text x="598.0" y="229" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Themes</text>
+<rect x="500" y="280" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="598.0" y="304" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SessionTheme</text>
+<text x="598.0" y="319" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">SessionThemes</text>
+<rect x="500" y="370" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="598.0" y="394" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Session</text>
+<text x="598.0" y="409" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Sessions</text>
+<rect x="500" y="460" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="598.0" y="484" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SessionCategory</text>
+<text x="598.0" y="499" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">SessionCategories</text>
+<rect x="500" y="550" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="598.0" y="574" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Hall</text>
+<text x="598.0" y="589" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Halls</text>
+<rect x="500" y="640" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="598.0" y="664" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">ProgrammeDay</text>
+<text x="598.0" y="679" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">ProgrammeDays</text>
+<rect x="500" y="730" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="598.0" y="754" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Speaker</text>
+<text x="598.0" y="769" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Speakers</text>
+<rect x="500" y="820" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="598.0" y="844" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SessionSpeaker</text>
+<text x="598.0" y="859" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">SessionSpeakers</text>
+<rect x="500" y="910" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="598.0" y="934" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SessionSummary</text>
+<text x="598.0" y="949" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">SessionSummaries</text>
+<rect x="900" y="190" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="998.0" y="214" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SeatReservation</text>
+<text x="998.0" y="229" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">SeatReservations</text>
+<rect x="900" y="280" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="998.0" y="304" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">HallAttendance</text>
+<text x="998.0" y="319" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">HallAttendances</text>
+<rect x="900" y="370" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="998.0" y="394" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">HallSeatLayout</text>
+<text x="998.0" y="409" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">HallSeatLayouts</text>
+<rect x="900" y="460" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="998.0" y="484" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Gate</text>
+<text x="998.0" y="499" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Gates</text>
+<rect x="900" y="550" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="998.0" y="574" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">GateScan</text>
+<text x="998.0" y="589" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">GateScans</text>
+<rect x="900" y="640" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="998.0" y="664" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">BadgeBatch</text>
+<text x="998.0" y="679" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">BadgeBatches</text>
+<rect x="900" y="730" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="998.0" y="754" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SessionQuestion</text>
+<text x="998.0" y="769" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">SessionQuestions</text>
+<rect x="900" y="820" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="998.0" y="844" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SessionFavourite</text>
+<text x="998.0" y="859" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">SessionFavourites</text>
+<rect x="900" y="910" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="998.0" y="934" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">SpeakerPresentation</text>
+<text x="998.0" y="949" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">SpeakerPresentations</text>
+<rect x="1320" y="190" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1418.0" y="214" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Exhibitor</text>
+<text x="1418.0" y="229" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Exhibitors</text>
+<rect x="1320" y="280" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1418.0" y="304" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Booth</text>
+<text x="1418.0" y="319" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Booths</text>
+<rect x="1320" y="370" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1418.0" y="394" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Sponsor</text>
+<text x="1418.0" y="409" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Sponsors</text>
+<rect x="1320" y="460" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1418.0" y="484" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">MediaPartner</text>
+<text x="1418.0" y="499" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">MediaPartners</text>
+<rect x="1320" y="550" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1418.0" y="574" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">ArchiveEdition</text>
+<text x="1418.0" y="589" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">ArchiveEditions</text>
+<rect x="1320" y="640" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1418.0" y="664" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">RatingType</text>
+<text x="1418.0" y="679" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">RatingTypes</text>
+<rect x="1320" y="730" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1418.0" y="754" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">RatingResponse</text>
+<text x="1418.0" y="769" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">RatingResponses</text>
+<rect x="1320" y="820" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1418.0" y="844" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">Notification</text>
+<text x="1418.0" y="859" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">Notifications</text>
+<rect x="1320" y="910" width="196" height="50" rx="3" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1.4"/>
+<text x="1418.0" y="934" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12.5" fill="#1A1A1A" font-weight="600" text-anchor="middle">VenueMapNode</text>
+<text x="1418.0" y="949" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="9.5" fill="#6B7280" text-anchor="middle">VenueMapNodes</text>
+<path d="M 1096 575.0 L 1104 575.0 L 1104 485.0 L 1096 485.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 1109 566.0 L 1096 575.0 L 1109 584.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="1116" y1="566.0" x2="1116" y2="584.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="1116" y1="476.0" x2="1116" y2="494.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="1074.5" y="515.0" width="59.0" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="1104.0" y="525.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">scanned at</text>
+<path d="M 1320 305.0 L 1312 305.0 L 1312 215.0 L 1320 215.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 1307 296.0 L 1320 305.0 L 1307 314.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="1300" y1="296.0" x2="1300" y2="314.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="1300" y1="206.0" x2="1300" y2="224.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="1293.1" y="245.0" width="37.8" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="1312.0" y="255.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">run by</text>
+<path d="M 1320 755.0 L 1302 755.0 L 1302 665.0 L 1320 665.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 1307 746.0 L 1320 755.0 L 1307 764.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="1300" y1="746.0" x2="1300" y2="764.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="1300" y1="656.0" x2="1300" y2="674.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="1280.45" y="695.0" width="43.1" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="1302.0" y="705.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">answers</text>
+<path d="M 276 645.0 L 284 645.0 L 284 825.0 L 276 825.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 289 636.0 L 276 645.0 L 289 654.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="296" y1="636.0" x2="296" y2="654.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="296" y1="816.0" x2="296" y2="834.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="254.5" y="720.0" width="59.0" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="284.0" y="730.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">belongs to</text>
+<path d="M 276 645.0 L 294 645.0 L 294 735.0 L 276 735.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 289 636.0 L 276 645.0 L 289 654.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="296" y1="636.0" x2="296" y2="654.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="296" y1="726.0" x2="296" y2="744.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="269.8" y="675.0" width="48.400000000000006" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="294.0" y="685.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">typed by</text>
+<path d="M 276 645.0 L 304 645.0 L 304 915.0 L 276 915.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 289 636.0 L 276 645.0 L 289 654.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="296" y1="636.0" x2="296" y2="654.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="296" y1="906.0" x2="296" y2="924.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="274.5" y="765.0" width="59.0" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="304.0" y="775.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">located in</text>
+<path d="M 900 305.0 L 770 305.0 L 770 575.0 L 696 575.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 887 296.0 L 900 305.0 L 887 314.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="880" y1="296.0" x2="880" y2="314.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="566.0" x2="716" y2="584.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="737.85" y="425.0" width="64.30000000000001" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="770.0" y="435.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">recorded in</text>
+<path d="M 900 305.0 L 788 305.0 L 788 395.0 L 696 395.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 887 296.0 L 900 305.0 L 887 314.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="880" y1="296.0" x2="880" y2="314.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="386.0" x2="716" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="737.3" y="335.0" width="101.4" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="788.0" y="345.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">records attendance</text>
+<path d="M 696 395.0 L 704 395.0 L 704 485.0 L 696 485.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 709 386.0 L 696 395.0 L 709 404.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="716" y1="386.0" x2="716" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="476.0" x2="716" y2="494.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="663.9" y="425.0" width="80.2" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="704.0" y="435.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">categorised as</text>
+<path d="M 696 395.0 L 714 395.0 L 714 575.0 L 696 575.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 709 386.0 L 696 395.0 L 709 404.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="716" y1="386.0" x2="716" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="566.0" x2="716" y2="584.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="692.45" y="470.0" width="43.1" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="714.0" y="480.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">held in</text>
+<path d="M 900 845.0 L 806 845.0 L 806 395.0 L 696 395.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 887 836.0 L 900 845.0 L 887 854.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="880" y1="836.0" x2="880" y2="854.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="386.0" x2="716" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="789.75" y="605.0" width="32.5" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="806.0" y="615.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">marks</text>
+<path d="M 696 845.0 L 724 845.0 L 724 395.0 L 696 395.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 709 836.0 L 696 845.0 L 709 854.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="716" y1="836.0" x2="716" y2="854.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="386.0" x2="716" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="699.8" y="605.0" width="48.400000000000006" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="724.0" y="615.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">features</text>
+<path d="M 696 845.0 L 704 845.0 L 704 755.0 L 696 755.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 709 836.0 L 696 845.0 L 709 854.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="716" y1="836.0" x2="716" y2="854.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="746.0" x2="716" y2="764.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="674.5" y="785.0" width="59.0" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="704.0" y="795.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">appears in</text>
+<path d="M 696 935.0 L 714 935.0 L 714 395.0 L 696 395.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 709 926.0 L 696 935.0 L 709 944.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="716" y1="926.0" x2="716" y2="944.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="386.0" x2="716" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="684.5" y="650.0" width="59.0" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="714.0" y="660.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">summarises</text>
+<path d="M 696 305.0 L 724 305.0 L 724 395.0 L 696 395.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 709 296.0 L 696 305.0 L 709 314.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="716" y1="296.0" x2="716" y2="314.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="386.0" x2="716" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="705.1" y="335.0" width="37.8" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="724.0" y="345.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">covers</text>
+<path d="M 696 305.0 L 704 305.0 L 704 215.0 L 696 215.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 709 296.0 L 696 305.0 L 709 314.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="716" y1="296.0" x2="716" y2="314.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="206.0" x2="716" y2="224.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="685.1" y="245.0" width="37.8" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="704.0" y="255.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">groups</text>
+<path d="M 500 755.0 L 340 755.0 L 340 1005.0 L 276 1005.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 487 746.0 L 500 755.0 L 487 764.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="480" y1="746.0" x2="480" y2="764.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="296" y1="996.0" x2="296" y2="1014.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="326.4" y="865.0" width="27.200000000000003" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="340.0" y="875.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">from</text>
+<path d="M 900 935.0 L 824 935.0 L 824 395.0 L 696 395.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 887 926.0 L 900 935.0 L 887 944.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="880" y1="926.0" x2="880" y2="944.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="386.0" x2="716" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="789.2" y="650.0" width="69.6" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="824.0" y="660.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">presented in</text>
+<path d="M 900 935.0 L 842 935.0 L 842 755.0 L 696 755.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 887 926.0 L 900 935.0 L 887 944.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="880" y1="926.0" x2="880" y2="944.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="746.0" x2="716" y2="764.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="817.8" y="830.0" width="48.400000000000006" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="842.0" y="840.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">given by</text>
+<path d="M 900 395.0 L 860 395.0 L 860 575.0 L 696 575.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 887 386.0 L 900 395.0 L 887 404.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="880" y1="386.0" x2="880" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="566.0" x2="716" y2="584.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="835.8" y="470.0" width="48.400000000000006" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="860.0" y="480.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">lays out</text>
+<path d="M 900 215.0 L 770 215.0 L 770 395.0 L 696 395.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 887 206.0 L 900 215.0 L 887 224.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="880" y1="206.0" x2="880" y2="224.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="386.0" x2="716" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="735.2" y="290.0" width="69.6" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="770.0" y="300.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">reserves for</text>
+<path d="M 900 755.0 L 788 755.0 L 788 395.0 L 696 395.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 887 746.0 L 900 755.0 L 887 764.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="880" y1="746.0" x2="880" y2="764.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="716" y1="386.0" x2="716" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="763.8" y="560.0" width="48.400000000000006" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="788.0" y="570.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">asked in</text>
+<path d="M 1320 935.0 L 1292 935.0 L 1292 305.0 L 1320 305.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 1307 926.0 L 1320 935.0 L 1307 944.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="1300" y1="926.0" x2="1300" y2="944.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="1300" y1="296.0" x2="1300" y2="314.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="1270.45" y="605.0" width="43.1" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="1292.0" y="615.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">locates</text>
+<path d="M 276 485.0 L 284 485.0 L 284 395.0 L 276 395.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 289 476.0 L 276 485.0 L 289 494.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="296" y1="476.0" x2="296" y2="494.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="296" y1="386.0" x2="296" y2="404.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="265.1" y="425.0" width="37.8" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="284.0" y="435.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">grants</text>
+<path d="M 276 485.0 L 294 485.0 L 294 305.0 L 276 305.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<path d="M 289 476.0 L 276 485.0 L 289 494.0" fill="none" stroke="#1A1A1A" stroke-width="1.3"/>
+<line x1="296" y1="476.0" x2="296" y2="494.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<line x1="296" y1="296.0" x2="296" y2="314.0" stroke="#1A1A1A" stroke-width="1.6"/>
+<rect x="264.5" y="380.0" width="59.0" height="13" fill="#FFFFFF" stroke="none"/>
+<text x="294.0" y="390.0" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="10" fill="#6B7280" text-anchor="middle">granted to</text>
+<rect x="60" y="1064" width="900" height="106" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="74" y="1085" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13" fill="#1A1A1A" font-weight="600" text-anchor="start">Coverage</text>
+<text x="74" y="1105" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Entities shown: 36 of 98. Relationships drawn: 25 of 65.</text>
+<text x="74" y="1122" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">Links to the shared lookup tables, and every relationship between non-adjacent contexts, are drawn on the detailed</text>
+<text x="74" y="1139" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">sheets at section 6.2 rather than here, where they would cross the sheet. The full column detail is the data dictionary at 6.3.</text>
+<text x="74" y="1156" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="11.5" fill="#1A1A1A" text-anchor="start">No reference crosses the two databases: a link from business data to a user is a plain identifier, resolved on read.</text>
+<rect x="1000" y="1064" width="536" height="97" rx="3" fill="#FFFFFF" stroke="#6B7280" stroke-width="1.2"/>
+<text x="1014" y="1086" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="13.5" fill="#1A1A1A" font-weight="600" text-anchor="start">Key</text>
+<rect x="1016" y="1099" width="30" height="13" rx="2" fill="#E7EDF4" stroke="#1A1A1A" stroke-width="1"/><rect x="1036" y="1101" width="7" height="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.9"/>
+<text x="1060" y="1109" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Business entity, with its table name</text>
+<rect x="1016" y="1120" width="30" height="13" rx="2" fill="#F7F8FA" stroke="#6B7280" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="1060" y="1130" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Bounded context</text>
+<path d="M 1016 1147 H 1044" stroke="#6B7280" stroke-width="1.1"/>
+<text x="1060" y="1151" font-family="Segoe UI, Calibri, Arial, sans-serif" font-size="12" fill="#1A1A1A" text-anchor="start">Relationship, crow's foot on the many end</text>
+</svg>
