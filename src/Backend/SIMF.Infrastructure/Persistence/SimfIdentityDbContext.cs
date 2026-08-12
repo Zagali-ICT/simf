@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Domain.Auditing;
@@ -47,6 +48,29 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // The seven Identity tables carry SIMF names rather than the framework's
+        // AspNet* defaults, so an operator reading this database sees one naming
+        // convention across all of it rather than two. They sit in one block, and
+        // not spread across the configuration classes, because they are one
+        // decision and a reader has to see at a glance that the set is complete:
+        // five of the seven are stock closed generics with nothing else to
+        // configure, so splitting them would mean five files each holding a single
+        // line. The generic arguments must stay exactly the ones
+        // IdentityDbContext<SimfUser, SimfRole, Guid> maps -- a mismatched argument
+        // silently ADDS a second entity type instead of renaming the mapped one,
+        // and the model still builds.
+        // Nothing here touches the "[AspNetUserStore]" LoginProvider value that
+        // Identity writes into the tokens table: that is a row value, not a table
+        // name, and changing it would break TOTP for every enrolled account.
+        modelBuilder.Entity<SimfUser>().ToTable("Users");
+        modelBuilder.Entity<SimfRole>().ToTable("Roles");
+        modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+        modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
+        modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
+        modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
+        modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(SimfIdentityDbContext).Assembly,
             type => type.Namespace == "SIMF.Infrastructure.Persistence.Configurations");

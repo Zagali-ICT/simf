@@ -1,9 +1,9 @@
 # =============================================================================
 # SIMF - unified operations script for the on-site IIS deployment.
 #
-# One entry point to install, remove, and control the three SIMF web apps
-# (API + Control Panel + Website) as IIS sites and application pools, plus the
-# background-worker tier.
+# One entry point to install, remove, and control the four SIMF web apps
+# (API + Control Panel + Website + Mobile Edge) as IIS sites and application
+# pools, plus the background-worker tier.
 #
 # The 10 background workers (session reminders, seat-hold expiry, rating
 # prompts, the daily NCA sweeps, the email queue drain, and so on) run
@@ -18,11 +18,12 @@
 #   .\ops.ps1 -Action Status
 #   .\ops.ps1 -Action Restart -Target Api
 #   .\ops.ps1 -Action Restart -Target Workers
-#   .\ops.ps1 -Action Install -Target All
+#   .\ops.ps1 -Action Install -Target All -ApiHost api-int.simrsnf.local
+#   .\ops.ps1 -Action Install -Target Edge -ApiHost api-int.simrsnf.local
 #   .\ops.ps1 -Action Stop -Target Web
 #
 # Actions: Status | Start | Stop | Restart | Install | Uninstall
-# Targets: All (default) | Api | Cp | Web | Workers
+# Targets: All (default) | Api | Cp | Web | Edge | Workers
 # =============================================================================
 
 #Requires -RunAsAdministrator
@@ -33,7 +34,7 @@ param (
     [ValidateSet('Status', 'Start', 'Stop', 'Restart', 'Install', 'Uninstall')]
     [string]$Action,
 
-    [ValidateSet('All', 'Api', 'Cp', 'Web', 'Workers')]
+    [ValidateSet('All', 'Api', 'Cp', 'Web', 'Edge', 'Workers')]
     [string]$Target = 'All',
 
     # IIS site names + physical paths. Defaults match deploy/README.md; override
@@ -44,11 +45,14 @@ param (
     [string]$CpPath      = 'D:\System\v1.0.1\cp',
     [string]$WebSiteName = 'SIMF.WEB',
     [string]$WebPath     = 'D:\System\v1.0.1\web',
+    [string]$EdgeSiteName = 'SIMF.EDGE',
+    [string]$EdgePath     = 'D:\System\v1.0.1\edge',
 
     # Install only: the HTTP port for a newly created site. Ignored otherwise.
-    [int]$ApiPort = 12340,
-    [int]$CpPort  = 12341,
-    [int]$WebPort = 12342,
+    [int]$ApiPort  = 12340,
+    [int]$CpPort   = 12341,
+    [int]$WebPort  = 12342,
+    [int]$EdgePort = 12343,
 
     # Public host names. Install adds an SNI HTTPS binding for each when
     # -CertThumbprint is supplied. These are the names the certificate must
@@ -57,6 +61,13 @@ param (
     [string]$ApiHost = 'api.simrsnf.com',
     [string]$CpHost  = 'cp.simrsnf.com',
     [string]$WebHost = 'web.simrsnf.com',
+
+    # The mobile edge TAKES OVER api.simrsnf.com. That is the point of it: the
+    # installed Flutter app compiles its base URL in, so the public name has to
+    # stay the same or every user needs a store release. At that cutover the API
+    # moves to a PRIVATE name and stops being published, so -ApiHost above must
+    # be overridden with that private name on the API's own server.
+    [string]$EdgeHost = 'api.simrsnf.com',
 
     # Thumbprint of a certificate in Cert:\LocalMachine\My. Without it Install
     # creates the sites on HTTP only and says so, rather than pretending TLS is
@@ -110,14 +121,30 @@ if ($PoolIdentity -and -not $PoolIdentity.Contains('\')) {
 # Each app is one IIS site + its application pool (the ASP.NET Core Module hosts
 # the .NET app in-process). The API pool additionally runs the background workers.
 $apps = [ordered]@{
-    Api = @{ Site = $ApiSiteName; Path = $ApiPath; Port = $ApiPort; Pool = $ApiSiteName; Host = $ApiHost; Storage = $true  }
-    Cp  = @{ Site = $CpSiteName;  Path = $CpPath;  Port = $CpPort;  Pool = $CpSiteName;  Host = $CpHost;  Storage = $false }
-    Web = @{ Site = $WebSiteName; Path = $WebPath; Port = $WebPort; Pool = $WebSiteName; Host = $WebHost; Storage = $false }
+    Api  = @{ Site = $ApiSiteName;  Path = $ApiPath;  Port = $ApiPort;  Pool = $ApiSiteName;  Host = $ApiHost;  Storage = $true  }
+    Cp   = @{ Site = $CpSiteName;   Path = $CpPath;   Port = $CpPort;   Pool = $CpSiteName;   Host = $CpHost;   Storage = $false }
+    Web  = @{ Site = $WebSiteName;  Path = $WebPath;  Port = $WebPort;  Pool = $WebSiteName;  Host = $WebHost;  Storage = $false }
+    # Storage = $false: the edge proxies, it never touches the file store. It
+    # still gets the log grant below, which every app receives.
+    Edge = @{ Site = $EdgeSiteName; Path = $EdgePath; Port = $EdgePort; Pool = $EdgeSiteName; Host = $EdgeHost; Storage = $false }
+}
+
+# The edge exists to take api.simrsnf.com OFF the API, so the two sharing a
+# hostname means the cutover was half-applied. On one box that is an SNI
+# collision IIS resolves by luck; across two it is a DNS record pointing at
+# whichever answers first. Neither fails loudly on its own.
+#
+# Only checked on Install, and only when the edge is in scope: hostnames are
+# used to create SNI bindings and nothing else, so Status/Start/Stop on a
+# single-box estate that has no edge must not trip over the shared default.
+if ($Action -eq 'Install' -and $Target -in @('All', 'Edge') -and $ApiHost -eq $EdgeHost) {
+    throw ("-ApiHost and -EdgeHost are both '$ApiHost'. The edge takes the public " +
+           "name; pass the API's PRIVATE name as -ApiHost (e.g. api-int.simrsnf.local).")
 }
 
 function Resolve-Targets([string]$requested) {
     switch ($requested) {
-        'All'     { return @('Api', 'Cp', 'Web') }
+        'All'     { return @('Api', 'Cp', 'Web', 'Edge') }
         'Workers' { return @('Api') }   # workers run inside the API pool
         default   { return @($requested) }
     }
@@ -230,7 +257,7 @@ function Grant-AppAccess([hashtable]$app) {
     if ($LASTEXITCODE -ne 0) { Write-Warning ("icacls failed on {0}" -f $app.Path) }
     else { Write-Host ("  acl  ok {0} -> {1} (RX)" -f $app.Path, $identity) -ForegroundColor DarkGray }
 
-    # LOGS: all three apps write here. SIMF_Storage__LogDirectory is tagged
+    # LOGS: all four apps write here. SIMF_Storage__LogDirectory is tagged
     # "API CP Web", and Serilog opens its sink during startup - so a pool that
     # cannot write to it does not log an error, it FAILS TO START. That presents
     # as a 500 under IIS while the same build runs fine from a console, because
