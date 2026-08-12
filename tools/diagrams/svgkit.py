@@ -54,21 +54,6 @@ def text_width(text, size):
     return len(str(text)) * size * 0.53
 
 
-def wrap(text, width_px, size):
-    """Break text on word boundaries to fit a box, never mid-word."""
-    words, rows, line = str(text).split(), [], ""
-    for word in words:
-        candidate = f"{line} {word}".strip()
-        if line and text_width(candidate, size) > width_px:
-            rows.append(line)
-            line = word
-        else:
-            line = candidate
-    if line:
-        rows.append(line)
-    return rows
-
-
 class Sheet:
     """One diagram sheet: a titled canvas that collects SVG fragments."""
 
@@ -316,10 +301,6 @@ class Sheet:
                 self.parts.append(
                     f'<path d="M {gx} {cy - 3} H {gx + 28}" stroke="{_grey(ACCENT)}" '
                     f'stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#ar)"/>')
-            elif glyph == "plain":
-                self.parts.append(
-                    f'<path d="M {gx} {cy - 3} H {gx + 28}" stroke="{_grey(RULE)}" '
-                    f'stroke-width="1.1"/>')
             elif glyph == "band":
                 self.parts.append(
                     f'<rect x="{gx}" y="{cy - 9}" width="30" height="13" rx="2" '
@@ -340,151 +321,6 @@ class Sheet:
             cy += 20
         self.lines(x + 14, cy, rows, 11.5, INK, step=17)
         return h
-
-    # ------------------------------------------------- entity relationship
-    def entity(self, x, y, w, name, table, columns, cols_per_block=22):
-        """A crow's foot ERD entity: name, table, and its column compartment.
-
-        `columns` is a sequence of (marker, column, type). The marker is the
-        conventional PK / FK / U tag, or an empty string for a plain column.
-        Long column lists are laid out in two blocks so a wide table stays on
-        the sheet instead of running off the bottom.
-        """
-        head = 40
-        blocks = 1 if len(columns) <= cols_per_block else 2
-        rows = -(-len(columns) // blocks)
-        row_h = 14
-        h = head + rows * row_h + 8
-        self.parts.append(
-            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" '
-            f'fill="{PAPER}" stroke="{_grey(INK)}" stroke-width="1.4"/>')
-        self.parts.append(
-            f'<rect x="{x}" y="{y}" width="{w}" height="{head}" rx="2" '
-            f'fill="{_grey(NODE_FILL)}" stroke="{_grey(INK)}" stroke-width="1.4"/>')
-        self.text(x + w / 2, y + 17, name, 12.5, INK, bold=True, anchor="middle")
-        self.text(x + w / 2, y + 31, table, 10, RULE, anchor="middle")
-
-        bw = w / blocks
-        for i, (marker, col, typ) in enumerate(columns):
-            bi, ri = divmod(i, rows)
-            cx = x + bi * bw
-            cy = y + head + 12 + ri * row_h
-            if bi:
-                self.parts.append(
-                    f'<line x1="{cx}" y1="{y + head}" x2="{cx}" y2="{y + h}" '
-                    f'stroke="{_grey(FAINT)}" stroke-width="0.8"/>')
-            if marker:
-                self.text(cx + 6, cy, marker, 8.5, RULE, bold=True)
-            self.text(cx + 30, cy, col, 9.5, INK)
-            if typ:
-                self.text(cx + bw - 6, cy, typ, 8.5, RULE, anchor="end")
-        return h
-
-    def crow(self, x, y, direction, many, optional):
-        """Draw the cardinality glyph at one end of a relationship line."""
-        ink = _grey(INK)
-        dx = {"L": -1, "R": 1}.get(direction, 0)
-        dy = {"U": -1, "D": 1}.get(direction, 0)
-        span, back = 9, 13
-        out = []
-        if many:
-            if dx:
-                out.append(f'<path d="M {x + dx * back} {y - span} L {x} {y} '
-                           f'L {x + dx * back} {y + span}" fill="none" '
-                           f'stroke="{ink}" stroke-width="1.3"/>')
-            else:
-                out.append(f'<path d="M {x - span} {y + dy * back} L {x} {y} '
-                           f'L {x + span} {y + dy * back}" fill="none" '
-                           f'stroke="{ink}" stroke-width="1.3"/>')
-        bx, by = x + dx * (back + 7), y + dy * (back + 7)
-        if optional:
-            out.append(f'<circle cx="{bx}" cy="{by}" r="4.5" fill="{PAPER}" '
-                       f'stroke="{ink}" stroke-width="1.3"/>')
-        else:
-            if dx:
-                out.append(f'<line x1="{bx}" y1="{by - span}" x2="{bx}" '
-                           f'y2="{by + span}" stroke="{ink}" stroke-width="1.6"/>')
-            else:
-                out.append(f'<line x1="{bx - span}" y1="{by}" x2="{bx + span}" '
-                           f'y2="{by}" stroke="{ink}" stroke-width="1.6"/>')
-        self.parts.extend(out)
-
-    def relation(self, points, left, right, label=""):
-        """A relationship line with a crow's foot cardinality at each end.
-
-        `left` and `right` are (direction, many, optional) triples.
-        """
-        d = " ".join(("M" if i == 0 else "L") + f" {px} {py}"
-                     for i, (px, py) in enumerate(points))
-        self.parts.append(
-            f'<path d="{d}" fill="none" stroke="{_grey(INK)}" stroke-width="1.3"/>')
-        self.crow(points[0][0], points[0][1], *left)
-        self.crow(points[-1][0], points[-1][1], *right)
-        if label:
-            mid = len(points) // 2
-            ax, ay = points[mid - 1], points[mid]
-            lx, ly = (ax[0] + ay[0]) / 2, (ax[1] + ay[1]) / 2
-            tw = text_width(label, 10)
-            self.parts.append(
-                f'<rect x="{lx - tw / 2 - 3}" y="{ly - 15}" width="{tw + 6}" '
-                f'height="13" fill="{PAPER}" stroke="none"/>')
-            self.text(lx, ly - 5, label, 10, RULE, anchor="middle")
-
-    # -------------------------------------------------------- use case view
-    def actor(self, x, y, name, role=""):
-        """A UML actor: the conventional stick figure with its name beneath."""
-        ink = _grey(INK)
-        self.parts.append(
-            f'<circle cx="{x}" cy="{y}" r="9" fill="{PAPER}" stroke="{ink}" '
-            f'stroke-width="1.4"/>'
-            f'<path d="M {x} {y + 9} V {y + 32} M {x - 14} {y + 17} H {x + 14} '
-            f'M {x} {y + 32} L {x - 12} {y + 50} M {x} {y + 32} L {x + 12} '
-            f'{y + 50}" fill="none" stroke="{ink}" stroke-width="1.4"/>')
-        self.text(x, y + 66, name, 12, INK, bold=True, anchor="middle")
-        if role:
-            self.text(x, y + 80, role, 10, RULE, anchor="middle")
-
-    def usecase(self, cx, cy, rx, ry, name, ident=""):
-        """A UML use case: an ellipse carrying its identifier and name."""
-        self.parts.append(
-            f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" '
-            f'fill="{_grey(NODE_FILL)}" stroke="{_grey(INK)}" stroke-width="1.3"/>')
-        if ident:
-            self.text(cx, cy - 4, ident, 9.5, RULE, anchor="middle")
-            self.text(cx, cy + 9, name, 11, INK, anchor="middle")
-        else:
-            self.text(cx, cy + 4, name, 11, INK, anchor="middle")
-
-    def boundary(self, x, y, w, h, label):
-        """The system boundary rectangle of a use case diagram."""
-        self.parts.append(
-            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="4" '
-            f'fill="{PAPER}" stroke="{_grey(INK)}" stroke-width="1.6"/>')
-        self.text(x + w / 2, y + 26, label, 15, INK, bold=True, anchor="middle")
-
-    def assoc(self, points, dashed=False, label=""):
-        """A plain association line, no arrow head, as UML use cases use."""
-        d = " ".join(("M" if i == 0 else "L") + f" {px} {py}"
-                     for i, (px, py) in enumerate(points))
-        dash = ' stroke-dasharray="5 4"' if dashed else ""
-        self.parts.append(
-            f'<path d="{d}" fill="none" stroke="{_grey(RULE)}" '
-            f'stroke-width="1.1"{dash}/>')
-        if label:
-            mid = len(points) // 2
-            ax, ay = points[mid - 1], points[mid]
-            self.text((ax[0] + ay[0]) / 2, (ax[1] + ay[1]) / 2 - 5, label, 10,
-                      RULE, anchor="middle")
-
-    # ------------------------------------------------------------ layering
-    def layer(self, x, y, w, h, name, responsibility=""):
-        """One horizontal tier of a layered architecture view."""
-        self.parts.append(
-            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="3" '
-            f'fill="{_grey(BAND_FILL)}" stroke="{_grey(RULE)}" stroke-width="1.3"/>')
-        self.text(x + 16, y + 24, name, 14, INK, bold=True)
-        if responsibility:
-            self.text(x + w - 16, y + 24, responsibility, 11, RULE, anchor="end")
 
     # ---------------------------------------------------------------- save
     def save(self, stem):

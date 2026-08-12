@@ -1,7 +1,7 @@
 # SIMF engineering diagrams
 
-Each sheet is drawn in an established notation rather than to taste, and each
-fact is traceable to a named source.
+Three sheets, each drawn in an established notation rather than to taste, and
+each fact traceable to a named source.
 
 | Sheet | Notation | Output |
 |---|---|---|
@@ -9,19 +9,6 @@ fact is traceable to a named source.
 | Components and interaction | UML component diagram, C4 container discipline | `docs/diagrams/SIMF-Fig2-Component-Interaction.{svg,png}` |
 | System and data flow | Data flow diagram, Gane and Sarson | `docs/diagrams/SIMF-Fig3-Data-Flow.{svg,png}` |
 | Target tier separation | UML deployment diagram | `docs/diagrams/SIMF-Fig4-Target-Tier-Separation.{svg,png}` |
-| Conceptual data model | Entity relationship, crow's foot | `docs/diagrams/SIMF-Fig5-Conceptual-Data-Model.{svg,png}` |
-| Detailed data model, 10 sheets | Entity relationship, crow's foot | `docs/diagrams/SIMF-Fig6{A..J}-Data-Model-*.{svg,png}` |
-| Logical architecture | Layered architecture diagram | `docs/diagrams/SIMF-Fig7-Layered-Architecture.{svg,png}` |
-| High level use cases | UML use case diagram | `docs/diagrams/SIMF-Fig8-Use-Case.{svg,png}` |
-
-Sheets 5 and 6 are **generated from the database**, not drawn. `efschema.py`
-reads the two EF Core model snapshots under
-`src/Backend/SIMF.Infrastructure/Persistence/Migrations`, so every table,
-column, type, key, index and foreign key on those sheets comes out of the model
-that produced the database. Sheet 6 is split into one sheet per bounded context
-because a single sheet carrying 102 tables and 1283 columns cannot be read on a
-page; every table appears on exactly one sheet and the script fails loudly if a
-table is left unplaced.
 
 Sheet 4 is the same notation as sheet 1 and a different estate, not a redraw of
 it. Sheet 1 puts the web, API and Control Panel hosts together in one
@@ -38,17 +25,8 @@ figures in order of appearance and states that number in the caption, so the sam
 sheet is Figure 1 in one document and Figure 3 in another without any clash. Do
 not put a number back into a sheet title.
 
-Consumers:
-
-* `SIMF-HLD-005` v1.2: sheets 1, 4, 2 and 3, in that order, on landscape pages
-  after section 2.3, numbered Figure 1 to Figure 4 in the document.
-* `SIMF-LLD-003` v1.2: use cases at 3.1.1, conceptual model at 6.1, the ten
-  detailed sheets at 6.2, layered architecture at 7.1, components at 2.1.1 and
-  data flow at 2.2.
-
-Sheets 1 and 4 show two different estates. A document that shows one must say
-which: sheet 1 is the estate as delivered, sheet 4 the target agreed on
-2026-08-10.
+Consumers: `SIMF-HLD-005` (all three, landscape, sections 2.1 to 2.3) and
+`SIMF-LLD-003` (components at 2.1.1, data flow at 2.2, deployment at 7.1).
 
 ## Regenerate
 
@@ -57,21 +35,7 @@ python tools/diagrams/fig1_deployment.py
 python tools/diagrams/fig2_component.py
 python tools/diagrams/fig3_dataflow.py
 python tools/diagrams/fig4_tier_separation.py
-python tools/diagrams/fig5_erd_conceptual.py
-python tools/diagrams/fig6_erd_full.py          # writes 10 sheets
-python tools/diagrams/fig7_layered.py
-python tools/diagrams/fig8_usecase.py
 ```
-
-Then render every PNG in one pass:
-
-```
-python tools/diagrams/render_png.py             # all sheets
-python tools/diagrams/render_png.py SIMF-Fig8-Use-Case   # or one sheet
-```
-
-`render_png.py` wraps the headless Chrome invocation below, including both of
-its traps, so the manual command is only needed for a one-off.
 
 Each script writes the `.svg` only. Render the `.png` with headless Chrome. The
 `--screenshot` path **must be absolute**; a relative path fails with "Access
@@ -126,13 +90,6 @@ Taken from the published notation guidance, not from preference:
 | 4 | Server specifications, WEB / API / CP / database counts | customer server requirements workbook, sheet `List` |
 | 4 | Zone model, perimeter firewall, WAF | `SIMF-HLD-004` as delivered |
 | 4 | The mobile edge, the file server, and the application zone holding the API alone | owner decisions of 2026-08-10 |
-| 5, 6 | Every table, column, type, primary key, foreign key and index | the two EF Core model snapshots, read by `efschema.py` |
-| 5 | Which entities are shown, and the relationship names | the bounded contexts of `SIMF-LLD-003` section 6.1 |
-| 6 | The assignment of each table to a sheet | the same bounded contexts; the script asserts every table is placed |
-| 7 | Layer names, responsibilities and the inward dependency rule | the four backend projects and their project references |
-| 7 | Shared libraries and cross-cutting concerns | the solution source tree and the middleware pipeline |
-| 8 | Actors | the actor table in `SIMF-LLD-003` section 3.1.1 |
-| 8 | Use case identifiers | the UC numbers in `SIMF-LLD-003` section 3.1.2 |
 
 The mobile edge and the file server carry **no node count and no specification**
 on sheet 4: the customer workbook lists neither, and inventing a figure for
