@@ -497,6 +497,53 @@ stages:
         if ($failed.Count -gt 0) { throw "flutter test failed in: $($failed -join ', ')." }
       displayName: 'flutter test (app + local packages)'
 
+    # --- Android compile gate. The ONLY step that proves the shippable Android
+    #     artefact still builds from a CLEAN CHECKOUT.
+    #
+    #     Added after a real escape: `.gitignore` carried `*.g.dart` for
+    #     build_runner output, and that also matched
+    #     third_party/video_player_android/lib/src/messages.g.dart - a Pigeon
+    #     file that SHIPS WITH the vendored plugin (D-768). It was never
+    #     committed, so `flutter build apk` died with "The getter
+    #     'AndroidVideoPlayerApi' isn't defined". Verified A/B on two clean
+    #     checkouts: BUILD FAILED before the fix, `Built app-debug.apk` after.
+    #
+    #     EVERY OTHER GATE ABOVE WAS BLIND TO IT, and each for a defensible
+    #     reason:
+    #       * `flutter analyze` deliberately skips third_party (see its comment -
+    #         the vendored mocks carry ~325 upstream errors), so it never
+    #         compiled the file that was missing;
+    #       * `flutter test` runs on the host VM, where the ANDROID
+    #         implementation of a federated plugin is never compiled - the video
+    #         tests pass on a tree that cannot build an APK;
+    #       * every developer machine already had the file on disk, so it was
+    #         green everywhere a human looked.
+    #     A missing platform source is invisible until something actually
+    #     compiles for the platform. This step is that something.
+    #
+    #     --debug and a single ABI on purpose: this gate answers "does the Dart +
+    #     plugin graph still COMPILE for Android", not "is this shippable". A
+    #     release build with R8 and all four ABIs costs several times as much for
+    #     no extra signal about THIS class of defect. ~2.5 min locally.
+    #
+    #     The Android toolchain is checked first and fails with an actionable
+    #     message, matching the Flutter-on-PATH step above: a provisioning gap
+    #     must never masquerade as a passing gate.
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+        $sdk = $env:ANDROID_SDK_ROOT
+        if (-not $sdk) { $sdk = $env:ANDROID_HOME }
+        if (-not $sdk -or -not (Test-Path $sdk)) {
+          throw "Android SDK not found on the build agent (ANDROID_SDK_ROOT / ANDROID_HOME unset or missing). Install the Android SDK + platform-tools, set ANDROID_SDK_ROOT, run 'flutter doctor --android-licenses', then re-run. This step is the only proof the APK still compiles from a clean checkout."
+        }
+        Write-Host "Using Android SDK at: $sdk"
+        Set-Location '$(flutterApp)'
+        flutter build apk --debug --target-platform android-arm64
+        if ($LASTEXITCODE -ne 0) {
+          throw "The Android app does not compile from a clean checkout (exit $LASTEXITCODE). A missing PLATFORM source is the usual cause and analyze/test cannot see it - check .gitignore for a build-output rule (bin/, *.g.dart) that also matches committed source, and see test/repo/platform_projects_tracked_test.dart."
+        }
+      displayName: 'flutter build apk (clean-clone Android compile gate)'
+
 - stage: BadgeDesk
   displayName: 'Offline badge desk (build & test)'
   # D-813 - SIMF.BadgeDesk is deliberately outside SIMF.slnx because it is

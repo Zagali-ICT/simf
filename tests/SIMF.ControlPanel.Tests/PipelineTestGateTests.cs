@@ -54,13 +54,21 @@ public class PipelineTestGateTests
                 + ". Add each to the 'Run tests (fast suites)' step, or to a stage of its own.");
     }
 
-    /// The gate must not be silently switched off again. A step that should not
-    /// run gets a `condition` stating its rule; `enabled: false` is invisible in
-    /// the run summary and is how the last outage lasted five weeks.
+    /// No step may be silently switched off. A step that should not always run
+    /// gets a `condition` stating its rule; `enabled: false` is invisible in the
+    /// run summary and is how the last outage lasted five weeks.
+    ///
+    /// <para>Widened 2026-08-12 from "test steps" to EVERY step. The old rule
+    /// matched a displayName containing "test" or "LocalDB", which left the two
+    /// gates that catch the most — 'Convention gate (SIMF-CQP-001)' and the
+    /// clean-clone Android compile gate — free to be disabled without a murmur.
+    /// The pipeline carries no `enabled: false` today, so the blanket rule costs
+    /// nothing and removes the judgement call about which steps "count".</para>
     [Fact]
-    public void The_test_steps_are_not_disabled()
+    public void No_pipeline_step_is_disabled()
     {
         var lines = Pipeline().Split('\n');
+        var disabled = new List<string>();
 
         for (var i = 0; i < lines.Length; i++)
         {
@@ -73,20 +81,21 @@ public class PipelineTestGateTests
             }
 
             // Look back for the step this flag belongs to.
-            var owner = Enumerable.Range(0, i)
-                .Reverse()
-                .Select(j => lines[j])
-                .FirstOrDefault(l => l.Contains("displayName:", StringComparison.Ordinal))
-                ?? "(unknown step)";
-
-            Assert.False(
-                owner.Contains("test", StringComparison.OrdinalIgnoreCase)
-                    || owner.Contains("LocalDB", StringComparison.OrdinalIgnoreCase),
-                "A test step is disabled in azure-pipelines.yml: "
-                    + owner.Trim()
-                    + ". Use a `condition:` that states when it should run instead, so the "
-                    + "reason is visible in the run.");
+            disabled.Add(
+                Enumerable.Range(0, i)
+                    .Reverse()
+                    .Select(j => lines[j])
+                    .FirstOrDefault(l => l.Contains("displayName:", StringComparison.Ordinal))
+                    ?.Trim()
+                ?? $"(step at line {i + 1})");
         }
+
+        Assert.True(
+            disabled.Count == 0,
+            "A step is disabled in azure-pipelines.yml. Use a `condition:` that states "
+            + "when it should run instead, so the reason is visible in the run summary "
+            + "rather than hidden in the YAML:\n"
+            + string.Join('\n', disabled));
     }
 
     /// SIMF.Api.Tests must stay in its OWN step. Measured on one tree: run
