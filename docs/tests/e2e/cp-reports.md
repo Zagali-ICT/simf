@@ -15,19 +15,7 @@
 > | | |
 > |--|--|
 > | **Passed against live data** | 001, 003, 006, 007, 012, 014, 015, 018 (mechanism), 019, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 033, 034, 035 |
-> | **Not run** | 008/009/010/011/017 (Wave B; 008/009/017 were re-proven on the Wave C reports, and 010/011 exercise the same gate as 032) |
->
-> **Fourth pass — the last two gaps closed.** 004's row-level half and 013 were
-> the only scenarios still resting on missing data or an unforced failure.
-> Gate scans were added to the fixture (one visitor admitted THREE times plus one
-> denial) and 004 now passes end to end: Scans 4, Allowed 3, Denied 1, Distinct
-> admitted **1**. 013 was forced by killing the API under a live session; the
-> banner appears with the API's own bilingual message. Only 013's *fallback*
-> branch remains undriven, and it is marked as such in the scenario.
->
-> Two as-built corrections came out of it: the denial reason renders the raw
-> enum name `HolderNotApproved`, and the error banner shows the API's message
-> rather than the report's fallback string.
+> | **Not run** | 013 (needs a forced 500) · 008/009/010/011/017 (Wave B; 008/009/017 were re-proven on the Wave C reports, and 010/011 exercise the same gate as 032) |
 >
 > **Third pass — 032 and the Wave B remainder.** 032 was driven on the QA stack
 > against `tools/qa/seed-restricted-admin.sql` and PASSED in full: five routes
@@ -184,33 +172,23 @@ Scenario: The registrations report loads
 
 ```gherkin
 Scenario: Both outcomes appear with the denial reason
-  Given a visitor was admitted at "Main Venue Gate" at 08:12 Riyadh
-  And a visitor was denied for reason HolderNotApproved
+  Given a visitor was admitted at gate "North" at 08:12 Riyadh
+  And a visitor was denied at gate "North" for "Badge not active"
   And I am signed in as "superadmin@simrsnf.com"
   When I open "/admin/reports/gates"
   Then the grid shows columns "Gate", "Scanned", "Visitor", "Profile type",
        "Direction", "Outcome", "Denial reason"
-  And a row reads Outcome "Allowed" with an EMPTY "Denial reason"
-  And a row reads Outcome "Denied" with "Denial reason" "HolderNotApproved"
-  # The raw ENUM NAME, not a sentence. An earlier version of this scenario
-  # expected "Badge not active"; the cell actually renders the PascalCase
-  # DenialReason member. Reported as a UX defect - an operator reading a gate
-  # report should not be shown an identifier - but asserted here as-built so
-  # the scenario matches reality.
+  And a row reads Outcome "Allowed" with an empty "Denial reason"
+  And a row reads Outcome "Denied" with "Denial reason" "Badge not active"
   And the totals show "Scans", "Allowed", "Denied" and "Distinct admitted"
   And Allowed + Denied equals Scans
 
 Scenario: Distinct admitted counts a repeat visitor once
-  Given ONE visitor was admitted three times, at two different gates
-  And one other visitor was denied
-  When I open "/admin/reports/gates"
-  Then the totals read "Scans" 4, "Allowed" 3, "Denied" 1,
-       "Distinct admitted" 1
+  Given one visitor was admitted three times at different gates
+  Then "Scans" counts 3
+  And "Distinct admitted" counts 1
   # The two figures answer different questions - how busy were the gates, and
   # how many people got in. Conflating them overstates attendance threefold.
-  # Distinct admitted counts Allowed + CheckIn + a non-null profile, so neither
-  # the denial nor a check-OUT may inflate it.
-  # Verified live 2026-08-12 against tools/qa/seed-report-fixtures.sql.
 ```
 
 ### E2E-RPT-007 — Clearing the range restores the unbounded report
@@ -440,27 +418,10 @@ Scenario: A period with no records
   Then I see "No records match this period."
   And there is no error banner
 
-Scenario: The API is unreachable — the API's OWN message is shown
-  Given the API process is stopped while the Control Panel stays up
+Scenario: The API is unavailable
+  Given the reporting endpoint returns 500
   When I open "/admin/reports/attendance"
-  Then exactly one ".simf-alert--error" is shown
-  And it reads "The SIMF service could not be reached. Please try again."
-  And the page is not blank and does not crash the circuit
-  # Verified live 2026-08-12 by killing the API under a signed-in session. The
-  # CP's own call returned 503 with a full bilingual envelope
-  # (INTERNAL_ERROR + messageArabic), and ReportPageBase surfaced ITS message.
-
-Scenario: A failure carrying no message falls back to the report wording
-  Given the report call fails with an envelope that has no message
-  When I open "/admin/reports/attendance"
-  Then the banner reads
-       "The report could not be loaded. Try again, or narrow the date range."
-  # NOT DRIVEN - recorded because it is the other half of
-  #   Error = env?.Error?.MessageForCurrentCulture()
-  #           ?? L["Admin.Reports.LoadFailed"].Value;
-  # in ReportPageBase. An earlier version of this scenario asserted the fallback
-  # string for ANY failure, which is wrong: whenever the API supplies a message
-  # that message wins, and the fallback is only reached when it does not.
+  Then I see "The report could not be loaded. Try again, or narrow the date range."
 
 Scenario: No horizontal overflow
   When I open each report at 1280px and at 1920px

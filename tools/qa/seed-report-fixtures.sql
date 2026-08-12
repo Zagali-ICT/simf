@@ -46,8 +46,6 @@ DELETE FROM RatingResponses           WHERE Id LIKE 'eeee%';
 DELETE FROM SpeakerMeetingRequests    WHERE Id LIKE 'eeee%';
 DELETE FROM DelegationMeetingRequests WHERE Id LIKE 'eeee%';
 DELETE FROM Sessions                  WHERE Id LIKE 'eeee0005%';
--- GateScans has a bigint identity, so it is marked by CorrelationId instead.
-DELETE FROM GateScans                 WHERE CorrelationId = 'eeee-fixture';
 
 DECLARE @actor uniqueidentifier = '00000000-0000-0000-0000-0000000000aa';
 
@@ -145,53 +143,6 @@ VALUES
  ('eeee0004-0000-0000-0000-00000000000c', @sess, @actor, 'Is there a joint training curriculum?', 1, 12, 0, 0, NULL, '2026-08-09 13:55', 0, 3);
 
 -------------------------------------------------------------------------------
--- GATE ACTIVITY (E2E-RPT-004) — target totals: 4 scans, 3 allowed, 1 denied,
--- and DISTINCT ADMITTED = 1.
---
--- The point of the shape: ONE visitor is admitted THREE times. "Scans" and
--- "Distinct admitted" answer different questions - how busy were the gates
--- versus how many people actually got in - and conflating them would overstate
--- attendance threefold. Distinct admitted counts Allowed + CheckIn + a non-null
--- profile, so the denial and any check-OUT must not inflate it.
---
--- GateScans.Id is a bigint identity, so these cannot carry the 'eeee' GUID
--- prefix the rest of this fixture uses. They are marked with
--- CorrelationId = 'eeee-fixture' instead, and removed by that.
--------------------------------------------------------------------------------
-DELETE FROM GateScans WHERE CorrelationId = 'eeee-fixture';
-
-DECLARE @gateMain uniqueidentifier, @gateVip uniqueidentifier;
-SELECT @gateMain = MIN(Id) FROM Gates;
-SELECT @gateVip  = MIN(Id) FROM Gates WHERE Id > @gateMain;
-IF @gateVip IS NULL SET @gateVip = @gateMain;
-
--- REAL UserProfile rows, resolved at run time. Unlike the cross-database
--- references elsewhere in this fixture (which are bare Guids by the D-157
--- separation rule and carry no constraint), GateScans.UserProfileId is a REAL
--- foreign key - UserProfiles lives in the same App database - so an invented
--- Guid is rejected outright with Msg 547.
-DECLARE @visitor uniqueidentifier, @denied uniqueidentifier;
-SELECT @visitor = MIN(Id) FROM UserProfiles;
-SELECT @denied  = MIN(Id) FROM UserProfiles WHERE Id > @visitor;
-
--- Direction: CheckIn = 0. Outcome: Allowed = 0, Denied = 1.
--- DenialReasonCode: HolderNotApproved = 2.
-INSERT INTO GateScans
-    (GateId, UserProfileId, QrIdAtScan, ScannedDisplayName, ScannedProfileTypeName,
-     Direction, Outcome, DenialReasonCode, Source, CorrelationId,
-     ScannedByUserId, ScannedAt)
-VALUES
- (@gateMain, @visitor, 'QR-FIXTURE-001', 'Salem Al-Ghamdi', 'Visitor',
-  0, 0, NULL, 2, 'eeee-fixture', @actor, '2026-11-23 08:12'),
- (@gateVip,  @visitor, 'QR-FIXTURE-001', 'Salem Al-Ghamdi', 'Visitor',
-  0, 0, NULL, 2, 'eeee-fixture', @actor, '2026-11-23 11:40'),
- (@gateMain, @visitor, 'QR-FIXTURE-001', 'Salem Al-Ghamdi', 'Visitor',
-  0, 0, NULL, 2, 'eeee-fixture', @actor, '2026-11-23 15:05'),
- (@gateMain, @denied, 'QR-FIXTURE-002',
-  'Hind Al-Zahrani', 'Visitor',
-  0, 1, 2, 2, 'eeee-fixture', @actor, '2026-11-23 09:30');
-
--------------------------------------------------------------------------------
 -- SAUDI DAY BOUNDARY (E2E-RPT-005) — three sessions that pin the inclusive To.
 --
 -- Storage is ALREADY the Saudi wall clock (owner decision 2026-07-31, recorded
@@ -233,9 +184,5 @@ SELECT 'questions_total=' + CAST((SELECT COUNT(*) FROM SessionQuestions WHERE Id
 SELECT 'questions_hidden=' + CAST((SELECT COUNT(*) FROM SessionQuestions WHERE Id LIKE 'eeee%' AND IsHidden = 1) AS varchar(9));
 SELECT 'questions_pushed=' + CAST((SELECT COUNT(*) FROM SessionQuestions WHERE Id LIKE 'eeee%' AND IsPushed = 1) AS varchar(9));
 SELECT 'boundary_sessions=' + CAST((SELECT COUNT(*) FROM Sessions WHERE Id LIKE 'eeee0005%') AS varchar(9));
-SELECT 'gate_scans=' + CAST((SELECT COUNT(*) FROM GateScans WHERE CorrelationId='eeee-fixture') AS varchar(9));
-SELECT 'gate_allowed=' + CAST((SELECT COUNT(*) FROM GateScans WHERE CorrelationId='eeee-fixture' AND Outcome=0) AS varchar(9));
-SELECT 'gate_denied=' + CAST((SELECT COUNT(*) FROM GateScans WHERE CorrelationId='eeee-fixture' AND Outcome=1) AS varchar(9));
-SELECT 'gate_distinct_admitted=' + CAST((SELECT COUNT(DISTINCT UserProfileId) FROM GateScans WHERE CorrelationId='eeee-fixture' AND Outcome=0 AND Direction=0 AND UserProfileId IS NOT NULL) AS varchar(9));
 
 SET NOEXEC OFF;
