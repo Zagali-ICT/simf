@@ -191,14 +191,46 @@ Scenario: Both outcomes appear with the denial reason
   Then the grid shows columns "Gate", "Scanned", "Visitor", "Profile type",
        "Direction", "Outcome", "Denial reason"
   And a row reads Outcome "Allowed" with an EMPTY "Denial reason"
-  And a row reads Outcome "Denied" with "Denial reason" "HolderNotApproved"
-  # The raw ENUM NAME, not a sentence. An earlier version of this scenario
-  # expected "Badge not active"; the cell actually renders the PascalCase
-  # DenialReason member. Reported as a UX defect - an operator reading a gate
-  # report should not be shown an identifier - but asserted here as-built so
-  # the scenario matches reality.
+  And a row reads Outcome "Denied" with "Denial reason" "Account not approved"
+  And NO cell renders a PascalCase enum member such as "HolderNotApproved"
+  # THREE readings of this one line, in order, which is why it is worth the
+  # comment. It first asserted "Badge not active" - invented, no such reason
+  # exists. Driving it showed the cell actually printed the raw
+  # DenialReasonCode member, so an operator read "HolderNotApproved" under a
+  # heading that promised a reason. FIXED 2026-08-12: the grid now resolves
+  # Admin.Reports.DenialReason.<Member> in both languages.
+  #
+  # The API and the XLSX export still carry the stable CODE, deliberately. An
+  # export is a data file people pivot and filter on, where an identifier beats
+  # prose; the screen is where words belong.
   And the totals show "Scans", "Allowed", "Denied" and "Distinct admitted"
   And Allowed + Denied equals Scans
+
+Scenario: The denial reason is localised, not merely Englishified
+  Given a scan was denied for reason HolderNotApproved
+  When I switch the culture to "ar"
+  And I open "/admin/reports/gates"
+  Then its "Denial reason" cell reads "الحساب غير معتمد"
+
+Scenario Outline: Every denial reason has words in both languages
+  Then the label for <member> reads <english> in en and <arabic> in ar
+
+  Examples:
+    | member                 | english                    | arabic                |
+    | QrUnknown              | "Unrecognised code"        | "رمز غير معروف"        |
+    | GateInactiveAtScan     | "Gate inactive"            | "البوابة غير نشطة"      |
+    | HolderNotApproved      | "Account not approved"     | "الحساب غير معتمد"      |
+    | HolderDisabled         | "Account disabled"         | "الحساب معطّل"          |
+    | HolderLocked           | "Account locked"           | "الحساب مقفل"          |
+    | ProfileTypeInactive    | "Profile type inactive"    | "نوع الملف غير نشط"     |
+    | OutsideTimeWindow      | "Outside opening hours"    | "خارج ساعات العمل"      |
+    | ProfileTypeNotAllowed  | "Profile type not allowed" | "نوع الملف غير مسموح"   |
+    | BookingRequiredMissing | "Booking required"         | "يتطلب حجزاً"           |
+
+# Pinned by GateActivityReportDenialReasonTests, which fails the build when a
+# DenialReasonCode member has no label in EITHER resx. The page falls back to
+# the raw code for an unknown member, so without that test a newly added reason
+# would ship quietly showing an operator an identifier all over again.
 
 Scenario: Distinct admitted counts a repeat visitor once
   Given ONE visitor was admitted three times, at two different gates

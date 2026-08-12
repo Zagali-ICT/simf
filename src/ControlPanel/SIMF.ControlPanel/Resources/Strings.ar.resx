@@ -1447,6 +1447,15 @@
   <data name="Admin.Reports.Col.Direction" xml:space="preserve"><value>الاتجاه</value></data>
   <data name="Admin.Reports.Col.Outcome" xml:space="preserve"><value>النتيجة</value></data>
   <data name="Admin.Reports.Col.DenialReason" xml:space="preserve"><value>سبب الرفض</value></data>
+  <data name="Admin.Reports.DenialReason.QrUnknown" xml:space="preserve"><value>رمز غير معروف</value></data>
+  <data name="Admin.Reports.DenialReason.GateInactiveAtScan" xml:space="preserve"><value>البوابة غير نشطة</value></data>
+  <data name="Admin.Reports.DenialReason.HolderNotApproved" xml:space="preserve"><value>الحساب غير معتمد</value></data>
+  <data name="Admin.Reports.DenialReason.HolderDisabled" xml:space="preserve"><value>الحساب معطّل</value></data>
+  <data name="Admin.Reports.DenialReason.HolderLocked" xml:space="preserve"><value>الحساب مقفل</value></data>
+  <data name="Admin.Reports.DenialReason.ProfileTypeInactive" xml:space="preserve"><value>نوع الملف غير نشط</value></data>
+  <data name="Admin.Reports.DenialReason.OutsideTimeWindow" xml:space="preserve"><value>خارج ساعات العمل</value></data>
+  <data name="Admin.Reports.DenialReason.ProfileTypeNotAllowed" xml:space="preserve"><value>نوع الملف غير مسموح</value></data>
+  <data name="Admin.Reports.DenialReason.BookingRequiredMissing" xml:space="preserve"><value>يتطلب حجزاً</value></data>
   <data name="Module.ReportsSessions" xml:space="preserve"><value>تقرير الجلسات</value></data>
   <data name="Module.ReportsRatings" xml:space="preserve"><value>تقرير التقييمات</value></data>
   <data name="Module.ReportsPartners" xml:space="preserve"><value>تقرير الشركاء</value></data>

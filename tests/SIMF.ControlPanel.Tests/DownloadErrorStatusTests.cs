@@ -23,19 +23,24 @@ namespace SIMF.ControlPanel.Tests;
 
 public sealed class DownloadErrorStatusTests
 {
+    /// <summary>
+    /// Anchored on the Endpoints folder itself, NOT on "the directory containing
+    /// .git". In a git WORKTREE `.git` is a FILE, so that walk skips the
+    /// worktree root and finds the main checkout — the scan then reports on a
+    /// different tree than the one being built, and passes or fails for reasons
+    /// that have nothing to do with the code under test.
+    /// </summary>
     private static string EndpointsDirectory()
     {
+        var relative = Path.Combine("src", "ControlPanel", "SIMF.ControlPanel", "Endpoints");
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, ".git")))
+        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, relative)))
         {
             dir = dir.Parent;
         }
 
-        Assert.NotNull(dir);
-        var endpoints = Path.Combine(
-            dir!.FullName, "src", "ControlPanel", "SIMF.ControlPanel", "Endpoints");
-        Assert.True(Directory.Exists(endpoints), $"Endpoints directory not found at {endpoints}");
-        return endpoints;
+        Assert.True(dir is not null, $"Could not find '{relative}' above {AppContext.BaseDirectory}");
+        return Path.Combine(dir!.FullName, relative);
     }
 
     /// <summary>Lines that RETURN a bodiless status. Doc comments mentioning the

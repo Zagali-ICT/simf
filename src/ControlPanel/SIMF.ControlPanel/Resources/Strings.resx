@@ -1456,6 +1456,15 @@
   <data name="Admin.Reports.Col.Direction" xml:space="preserve"><value>Direction</value></data>
   <data name="Admin.Reports.Col.Outcome" xml:space="preserve"><value>Outcome</value></data>
   <data name="Admin.Reports.Col.DenialReason" xml:space="preserve"><value>Denial reason</value></data>
+  <data name="Admin.Reports.DenialReason.QrUnknown" xml:space="preserve"><value>Unrecognised code</value></data>
+  <data name="Admin.Reports.DenialReason.GateInactiveAtScan" xml:space="preserve"><value>Gate inactive</value></data>
+  <data name="Admin.Reports.DenialReason.HolderNotApproved" xml:space="preserve"><value>Account not approved</value></data>
+  <data name="Admin.Reports.DenialReason.HolderDisabled" xml:space="preserve"><value>Account disabled</value></data>
+  <data name="Admin.Reports.DenialReason.HolderLocked" xml:space="preserve"><value>Account locked</value></data>
+  <data name="Admin.Reports.DenialReason.ProfileTypeInactive" xml:space="preserve"><value>Profile type inactive</value></data>
+  <data name="Admin.Reports.DenialReason.OutsideTimeWindow" xml:space="preserve"><value>Outside opening hours</value></data>
+  <data name="Admin.Reports.DenialReason.ProfileTypeNotAllowed" xml:space="preserve"><value>Profile type not allowed</value></data>
+  <data name="Admin.Reports.DenialReason.BookingRequiredMissing" xml:space="preserve"><value>Booking required</value></data>
   <data name="Module.ReportsSessions" xml:space="preserve"><value>Sessions report</value></data>
   <data name="Module.ReportsRatings" xml:space="preserve"><value>Ratings report</value></data>
   <data name="Module.ReportsPartners" xml:space="preserve"><value>Partners report</value></data>
