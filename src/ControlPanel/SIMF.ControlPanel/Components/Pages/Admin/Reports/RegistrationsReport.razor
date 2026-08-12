@@ -58,7 +58,7 @@
                 <SimfDataGridColumn TItem="RegistrationReportRow" Key="state"
                                     Header="@L["Admin.Reports.Col.AccountState"]"
                                     Sortable="true">
-                    <CellTemplate>@context.AccountState</CellTemplate>
+                    <CellTemplate>@EnumLabel("AccountState", context.AccountState)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="RegistrationReportRow" Key="registered"
                                     Header="@L["Admin.Reports.Col.Registered"]"

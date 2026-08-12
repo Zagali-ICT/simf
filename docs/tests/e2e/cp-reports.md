@@ -15,7 +15,19 @@
 > | | |
 > |--|--|
 > | **Passed against live data** | 001, 003, 006, 007, 012, 014, 015, 018 (mechanism), 019, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 033, 034, 035 |
-> | **Not run** | 013 (needs a forced 500) · 008/009/010/011/017 (Wave B; 008/009/017 were re-proven on the Wave C reports, and 010/011 exercise the same gate as 032) |
+> | **Not run** | 008/009/010/011/017 (Wave B; 008/009/017 were re-proven on the Wave C reports, and 010/011 exercise the same gate as 032) |
+>
+> **Fourth pass — the last two gaps closed.** 004's row-level half and 013 were
+> the only scenarios still resting on missing data or an unforced failure.
+> Gate scans were added to the fixture (one visitor admitted THREE times plus one
+> denial) and 004 now passes end to end: Scans 4, Allowed 3, Denied 1, Distinct
+> admitted **1**. 013 was forced by killing the API under a live session; the
+> banner appears with the API's own bilingual message. Only 013's *fallback*
+> branch remains undriven, and it is marked as such in the scenario.
+>
+> Two as-built corrections came out of it: the denial reason renders the raw
+> enum name `HolderNotApproved`, and the error banner shows the API's message
+> rather than the report's fallback string.
 >
 > **Third pass — 032 and the Wave B remainder.** 032 was driven on the QA stack
 > against `tools/qa/seed-restricted-admin.sql` and PASSED in full: five routes
@@ -172,23 +184,92 @@ Scenario: The registrations report loads
 
 ```gherkin
 Scenario: Both outcomes appear with the denial reason
-  Given a visitor was admitted at gate "North" at 08:12 Riyadh
-  And a visitor was denied at gate "North" for "Badge not active"
+  Given a visitor was admitted at "Main Venue Gate" at 08:12 Riyadh
+  And a visitor was denied for reason HolderNotApproved
   And I am signed in as "superadmin@simrsnf.com"
   When I open "/admin/reports/gates"
   Then the grid shows columns "Gate", "Scanned", "Visitor", "Profile type",
        "Direction", "Outcome", "Denial reason"
-  And a row reads Outcome "Allowed" with an empty "Denial reason"
-  And a row reads Outcome "Denied" with "Denial reason" "Badge not active"
+  And a row reads Outcome "Allowed" with an EMPTY "Denial reason"
+  And a row reads Outcome "Denied" with "Denial reason" "Account not approved"
+  And NO cell renders a PascalCase enum member such as "HolderNotApproved"
+  # THREE readings of this one line, in order, which is why it is worth the
+  # comment. It first asserted "Badge not active" - invented, no such reason
+  # exists. Driving it showed the cell actually printed the raw
+  # DenialReasonCode member, so an operator read "HolderNotApproved" under a
+  # heading that promised a reason. FIXED 2026-08-12: the grid now resolves
+  # Admin.Reports.DenialReason.<Member> in both languages.
+  #
+  # The API and the XLSX export still carry the stable CODE, deliberately. An
+  # export is a data file people pivot and filter on, where an identifier beats
+  # prose; the screen is where words belong.
   And the totals show "Scans", "Allowed", "Denied" and "Distinct admitted"
   And Allowed + Denied equals Scans
 
+Scenario: The denial reason is localised, not merely Englishified
+  Given a scan was denied for reason HolderNotApproved
+  When I switch the culture to "ar"
+  And I open "/admin/reports/gates"
+  Then its "Denial reason" cell reads "الحساب غير معتمد"
+
+Scenario Outline: Every denial reason has words in both languages
+  Then the label for <member> reads <english> in en and <arabic> in ar
+
+  Examples:
+    | member                 | english                    | arabic                |
+    | QrUnknown              | "Unrecognised code"        | "رمز غير معروف"        |
+    | GateInactiveAtScan     | "Gate inactive"            | "البوابة غير نشطة"      |
+    | HolderNotApproved      | "Account not approved"     | "الحساب غير معتمد"      |
+    | HolderDisabled         | "Account disabled"         | "الحساب معطّل"          |
+    | HolderLocked           | "Account locked"           | "الحساب مقفل"          |
+    | ProfileTypeInactive    | "Profile type inactive"    | "نوع الملف غير نشط"     |
+    | OutsideTimeWindow      | "Outside opening hours"    | "خارج ساعات العمل"      |
+    | ProfileTypeNotAllowed  | "Profile type not allowed" | "نوع الملف غير مسموح"   |
+    | BookingRequiredMissing | "Booking required"         | "يتطلب حجزاً"           |
+
+# Pinned by GateActivityReportDenialReasonTests, which fails the build when a
+# DenialReasonCode member has no label in EITHER resx. The page falls back to
+# the raw code for an unknown member, so without that test a newly added reason
+# would ship quietly showing an operator an identifier all over again.
+
 Scenario: Distinct admitted counts a repeat visitor once
-  Given one visitor was admitted three times at different gates
-  Then "Scans" counts 3
-  And "Distinct admitted" counts 1
+  Given ONE visitor was admitted three times, at two different gates
+  And one other visitor was denied
+  When I open "/admin/reports/gates"
+  Then the totals read "Scans" 4, "Allowed" 3, "Denied" 1,
+       "Distinct admitted" 1
   # The two figures answer different questions - how busy were the gates, and
   # how many people got in. Conflating them overstates attendance threefold.
+  # Distinct admitted counts Allowed + CheckIn + a non-null profile, so neither
+  # the denial nor a check-OUT may inflate it.
+  # Verified live 2026-08-12 against tools/qa/seed-report-fixtures.sql.
+
+Scenario: No report column shows a raw enum member, in either language
+  # Widened 2026-08-12 from denial reasons alone. Report rows carry enums as
+  # someEnum.ToString(), so the grids were showing operators "CheckIn",
+  # "PerSession", "PendingApproval" and "AwaitingSpeaker" - and on the ARABIC
+  # page EVERY enum column stayed in English, which matters more, Arabic being
+  # the primary language.
+  Given I am signed in as "superadmin@simrsnf.com"
+  When I open each report in "en" and then in "ar"
+  Then the gate report's Direction reads "Check-in" / "دخول", never "CheckIn"
+  And its Outcome reads "Allowed" / "مسموح"
+  And the ratings Scope reads "Per session" / "لكل جلسة", never "PerSession"
+  And the registrations Account state reads "Pending approval" / "بانتظار الاعتماد"
+  And the meetings Status reads "Awaiting speaker" / "بانتظار المتحدث"
+  And the engagement Phase reads "Before session" / "قبل الجلسة", never "Pre"
+  And the partners Tier reads "Platinum" / "بلاتيني"
+  And NO cell in any report renders a PascalCase enum member
+
+Scenario: A denied scan keeps its "off" pill once the label is localised
+  Given a scan was denied
+  When I open "/admin/reports/gates" in "ar"
+  Then that row's outcome pill still carries the "off" variant
+  # The variant is chosen from the RAW code. Had the comparison been moved onto
+  # the localised label, every denied scan would have rendered in the "allowed"
+  # colour the moment the culture changed - a wrong signal on a security report,
+  # and invisible to anyone testing only in English.
+
 ```
 
 ### E2E-RPT-007 — Clearing the range restores the unbounded report
@@ -418,10 +499,27 @@ Scenario: A period with no records
   Then I see "No records match this period."
   And there is no error banner
 
-Scenario: The API is unavailable
-  Given the reporting endpoint returns 500
+Scenario: The API is unreachable — the API's OWN message is shown
+  Given the API process is stopped while the Control Panel stays up
   When I open "/admin/reports/attendance"
-  Then I see "The report could not be loaded. Try again, or narrow the date range."
+  Then exactly one ".simf-alert--error" is shown
+  And it reads "The SIMF service could not be reached. Please try again."
+  And the page is not blank and does not crash the circuit
+  # Verified live 2026-08-12 by killing the API under a signed-in session. The
+  # CP's own call returned 503 with a full bilingual envelope
+  # (INTERNAL_ERROR + messageArabic), and ReportPageBase surfaced ITS message.
+
+Scenario: A failure carrying no message falls back to the report wording
+  Given the report call fails with an envelope that has no message
+  When I open "/admin/reports/attendance"
+  Then the banner reads
+       "The report could not be loaded. Try again, or narrow the date range."
+  # NOT DRIVEN - recorded because it is the other half of
+  #   Error = env?.Error?.MessageForCurrentCulture()
+  #           ?? L["Admin.Reports.LoadFailed"].Value;
+  # in ReportPageBase. An earlier version of this scenario asserted the fallback
+  # string for ANY failure, which is wrong: whenever the API supplies a message
+  # that message wins, and the fallback is only reached when it does not.
 
 Scenario: No horizontal overflow
   When I open each report at 1280px and at 1920px

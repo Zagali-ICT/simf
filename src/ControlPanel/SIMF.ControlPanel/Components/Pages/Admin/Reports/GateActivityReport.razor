@@ -6,6 +6,7 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Reports.Gates)]
 @inherits ReportPageBase<GateActivityReportRow>
+@using SIMF.Common.Enums
 @using SIMF.Contracts.Reporting
 
 <PageTitle>@L["Admin.Reports.Gates.Title"] · SIMF</PageTitle>
@@ -63,25 +64,32 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="GateActivityReportRow" Key="direction"
                                     Header="@L["Admin.Reports.Col.Direction"]">
-                    <CellTemplate>@context.Direction</CellTemplate>
+                    <CellTemplate>@EnumLabel("ScanDirection", context.Direction)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="GateActivityReportRow" Key="outcome"
                                     Header="@L["Admin.Reports.Col.Outcome"]"
                                     Sortable="true">
+                    @* The variant is chosen from the RAW code, never from the
+                       label: comparing a localised string would silently pick
+                       the "allowed" colour for every denied scan in Arabic. *@
                     <CellTemplate>
-                        @if (context.Outcome == "Denied")
+                        @if (context.Outcome == nameof(ScanOutcome.Denied))
                         {
-                            <SimfPill Variant="off">@context.Outcome</SimfPill>
+                            <SimfPill Variant="off">
+                                @EnumLabel("ScanOutcome", context.Outcome)
+                            </SimfPill>
                         }
                         else
                         {
-                            <SimfPill Variant="on">@context.Outcome</SimfPill>
+                            <SimfPill Variant="on">
+                                @EnumLabel("ScanOutcome", context.Outcome)
+                            </SimfPill>
                         }
                     </CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="GateActivityReportRow" Key="denial"
                                     Header="@L["Admin.Reports.Col.DenialReason"]">
-                    <CellTemplate>@context.DenialReason</CellTemplate>
+                    <CellTemplate>@EnumLabel("DenialReasonCode", context.DenialReason)</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
             <EmptyTemplate>
@@ -93,4 +101,5 @@
 
 @code {
     protected override string Slug => "gates";
+
 }

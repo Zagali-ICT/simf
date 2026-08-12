@@ -66,7 +66,7 @@
                 <SimfDataGridColumn TItem="MeetingsReportRow" Key="status"
                                     Header="@L["Admin.Reports.Col.Status"]"
                                     Sortable="true">
-                    <CellTemplate>@context.Status</CellTemplate>
+                    <CellTemplate>@EnumLabel("MeetingRequestStatus", context.Status)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="MeetingsReportRow" Key="requested"
                                     Header="@L["Admin.Reports.Col.Requested"]">
