@@ -17,17 +17,23 @@
 > | **Passed against live data** | 001, 003, 006, 007, 012, 014, 015, 018 (mechanism), 019, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 033, 034, 035 |
 > | **Not run** | 008/009/010/011/017 (Wave B; 008/009/017 were re-proven on the Wave C reports, and 010/011 exercise the same gate as 032) |
 >
+> **013 is now fully driven (2026-08-12).** Its message branch was confirmed
+> live by killing the API mid-session; its fallback branch is driven in bUnit,
+> because a null envelope cannot be produced against a running API. Both are
+> mutation-proven. Nothing in this catalogue is left resting on an unforced
+> failure.
+>
 > **Fourth pass — the last two gaps closed.** 004's row-level half and 013 were
 > the only scenarios still resting on missing data or an unforced failure.
 > Gate scans were added to the fixture (one visitor admitted THREE times plus one
 > denial) and 004 now passes end to end: Scans 4, Allowed 3, Denied 1, Distinct
 > admitted **1**. 013 was forced by killing the API under a live session; the
-> banner appears with the API's own bilingual message. Only 013's *fallback*
-> branch remains undriven, and it is marked as such in the scenario.
+> banner appears with the API's own bilingual message. (Its fallback branch was
+> still undriven at that point — closed in the fifth pass above.)
 >
-> Two as-built corrections came out of it: the denial reason renders the raw
-> enum name `HolderNotApproved`, and the error banner shows the API's message
-> rather than the report's fallback string.
+> Two as-built corrections came out of it: the denial reason rendered the raw
+> enum name `HolderNotApproved` — since FIXED, see E2E-RPT-004 — and the error
+> banner shows the API's message rather than the report's fallback string.
 >
 > **Third pass — 032 and the Wave B remainder.** 032 was driven on the QA stack
 > against `tools/qa/seed-restricted-admin.sql` and PASSED in full: five routes
@@ -509,17 +515,26 @@ Scenario: The API is unreachable — the API's OWN message is shown
   # CP's own call returned 503 with a full bilingual envelope
   # (INTERNAL_ERROR + messageArabic), and ReportPageBase surfaced ITS message.
 
-Scenario: A failure carrying no message falls back to the report wording
-  Given the report call fails with an envelope that has no message
+Scenario: A NULL envelope falls back to the report wording
+  Given the report call returns no envelope at all
   When I open "/admin/reports/attendance"
   Then the banner reads
        "The report could not be loaded. Try again, or narrow the date range."
-  # NOT DRIVEN - recorded because it is the other half of
-  #   Error = env?.Error?.MessageForCurrentCulture()
-  #           ?? L["Admin.Reports.LoadFailed"].Value;
-  # in ReportPageBase. An earlier version of this scenario asserted the fallback
-  # string for ANY failure, which is wrong: whenever the API supplies a message
-  # that message wins, and the fallback is only reached when it does not.
+  # DRIVEN 2026-08-12 by ReportPageTests.A_null_envelope_falls_back_to_the_
+  # report_wording, and mutation-proven: deleting the `??` turns it red.
+  #
+  # This scenario said "an envelope that has no message" for two revisions. That
+  # case CANNOT EXIST. ApiError.Message and MessageArabic are `required`, and
+  # MessageForCurrentCulture returns one of them, so a non-null error always
+  # yields a message and the `??` never fires. What actually reaches the
+  # fallback is a NULL envelope - the interop call returning nothing, e.g. a
+  # response that never deserialised. Not reproducible against a live API, which
+  # is why it is driven in bUnit rather than left unproven.
+  #
+  # The other branch is covered too: with a message present, the API's OWN words
+  # are shown, confirmed live by killing the API mid-session (503 + a full
+  # bilingual envelope) and again by
+  # ReportPageTests.A_failure_carrying_a_message_shows_THAT_message.
 
 Scenario: No horizontal overflow
   When I open each report at 1280px and at 1920px

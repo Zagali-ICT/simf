@@ -157,4 +157,61 @@ public sealed class ReportPageTests : CpComponentTestBase
 
         Assert.NotEmpty(cut.FindAll(".simf-alert--error"));
     }
+
+    [Fact]
+    public void A_failure_carrying_a_message_shows_THAT_message()
+    {
+        // ReportPageBase prefers the API's own words:
+        //   Error = env?.Error?.MessageForCurrentCulture()
+        //           ?? L["Admin.Reports.LoadFailed"].Value;
+        // Confirmed live by killing the API under a signed-in session: the call
+        // came back 503 with a full bilingual envelope and the banner showed ITS
+        // message, not the report's. E2E-RPT-013.
+        JSInterop.Setup<ApiResult<ReportPage<AttendanceReportRow>>>(
+                "simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<ReportPage<AttendanceReportRow>>.Fail(
+                new ApiError
+                {
+                    Code = "INTERNAL_ERROR",
+                    Message = "The SIMF service could not be reached. Please try again.",
+                    MessageArabic = "تعذّر الوصول إلى خدمة SIMF. حاول مرة أخرى.",
+                }));
+
+        var cut = RenderComponent<AttendanceReport>();
+
+        Assert.Contains(
+            "The SIMF service could not be reached.",
+            cut.Find(".simf-alert--error").TextContent);
+        Assert.DoesNotContain("Admin.Reports.LoadFailed", cut.Markup);
+    }
+
+    [Fact]
+    public void A_null_envelope_falls_back_to_the_report_wording()
+    {
+        // The other branch of that `??`, and the one that had stayed unproven.
+        //
+        // Note WHAT reaches it, because the obvious guess is wrong: NOT "an
+        // error with no message". ApiError.Message and MessageArabic are
+        // `required`, and MessageForCurrentCulture returns one of them, so a
+        // non-null error ALWAYS yields a message and the `??` never fires.
+        // The fallback exists for a null envelope - the interop call returning
+        // nothing at all, e.g. a response that never deserialised. That cannot
+        // be produced against a live API, which is why it is driven here.
+        //
+        // Without this test, deleting the fallback still passes everything else:
+        // A_failed_load_does_show_an_error_banner only asserts SOME banner
+        // exists and supplies a message, so it never reaches this path.
+        JSInterop.Setup<ApiResult<ReportPage<AttendanceReportRow>>>(
+                "simfAccount.postJson", _ => true)
+            .SetResult(null!);
+
+        var cut = RenderComponent<AttendanceReport>();
+
+        // The test localizer echoes the key, so the KEY appearing proves the
+        // fallback resolved through the localizer rather than rendering an
+        // empty banner or the word "null".
+        Assert.Contains(
+            "Admin.Reports.LoadFailed",
+            cut.Find(".simf-alert--error").TextContent);
+    }
 }
