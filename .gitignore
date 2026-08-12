@@ -25,6 +25,20 @@ src/Backend/SIMF.Api/App_Data/recordings/
 # ── .NET build output ──────────────────────────────────────────────
 [Bb]in/
 [Oo]bj/
+
+# `bin/` above is a .NET build-output rule, but it matches ANY directory called
+# bin at any depth — including `tool/conventions/bin/`, which is a DART package
+# entrypoint, i.e. SOURCE. That silently kept the convention checker's `main()`
+# out of the repository: the file existed on the machine that wrote it, the gate
+# passed there, and `dart run bin/simf_conventions.dart --check` in
+# azure-pipelines.yml would fail on any clean checkout with "Could not find
+# file". The gate answering the customer's code review could not run.
+#
+# The negation must re-include the DIRECTORY, not just the file: git cannot
+# re-include anything whose parent directory is excluded, so `!.../bin/x.dart`
+# alone does nothing.
+!tool/conventions/bin/
+!tool/conventions/bin/**
 artifacts/
 publish/
 *.dll

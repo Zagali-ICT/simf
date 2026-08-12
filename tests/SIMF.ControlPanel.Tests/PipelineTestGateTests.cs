@@ -17,6 +17,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Xunit;
 
 namespace SIMF.ControlPanel.Tests;
@@ -115,6 +116,66 @@ public class PipelineTestGateTests
 
         Assert.NotEmpty(projectLines);
         Assert.DoesNotContain(projectLines, l => l.Contains("SIMF.Api.Tests", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Every script the pipeline runs must actually be IN the repository.
+    ///
+    /// <para>The convention gate ran `dart run bin/simf_conventions.dart` for
+    /// weeks against a file that was never committed: `.gitignore` carried
+    /// `[Bb]in/` for .NET build output, and it also matched
+    /// `tool/conventions/bin/` — a DART package entrypoint, i.e. source. The
+    /// file existed on the machine that wrote it, so the gate passed there and
+    /// nothing looked wrong, while a clean checkout would fail with "Could not
+    /// find file". The step that answers the customer's code review could not
+    /// run at all.</para>
+    ///
+    /// <para>This test runs from a clean CI checkout, so a script the pipeline
+    /// names but the repository lacks fails the build instead of failing the
+    /// gate silently.</para>
+    /// </summary>
+    [Fact]
+    public void Every_script_the_pipeline_runs_exists_in_the_repository()
+    {
+        var pipeline = Pipeline();
+
+        // `Set-Location '$(Build.SourcesDirectory)/<dir>'` then `dart run <path>`.
+        // Resolve each invocation against the most recent Set-Location above it,
+        // which is how the agent would resolve it.
+        var missing = new List<string>();
+        var workingDirectory = string.Empty;
+
+        foreach (var line in pipeline.Split('\n').Select(l => l.Trim()))
+        {
+            var setLocation = Regex.Match(
+                line, @"Set-Location\s+'\$\(Build\.SourcesDirectory\)/(?<dir>[^']+)'");
+            if (setLocation.Success)
+            {
+                workingDirectory = setLocation.Groups["dir"].Value;
+                continue;
+            }
+
+            var dartRun = Regex.Match(line, @"^dart\s+run\s+(?<script>[^\s]+\.dart)");
+            if (!dartRun.Success)
+            {
+                continue;
+            }
+
+            var relative = Path.Combine(workingDirectory, dartRun.Groups["script"].Value)
+                .Replace('/', Path.DirectorySeparatorChar);
+            if (!File.Exists(Path.Combine(RepoRoot, relative)))
+            {
+                missing.Add(relative);
+            }
+        }
+
+        Assert.True(
+            missing.Count == 0,
+            "azure-pipelines.yml runs a script that is NOT in the repository, so the "
+            + "step will fail on a clean checkout even though it passes wherever the "
+            + "file happens to exist locally. Check .gitignore — `[Bb]in/` matches any "
+            + "directory named bin at any depth, including Dart package entrypoints.\n"
+            + string.Join('\n', missing));
     }
 
     private static string FindRepoRoot()
