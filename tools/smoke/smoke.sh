@@ -101,7 +101,7 @@ log "[B1] sign-up status: $(echo "$R" | python -c "import sys,json; print(json.l
 
 log "[B2] Read verification code from DB; POST /auth/verify-email"
 sleep 1
-VCODE=$(sqlcmd -S . -d SIMF -Q "SET NOCOUNT ON; SELECT TOP 1 ac.Code FROM AccountCodes ac JOIN AspNetUsers u ON u.Id=ac.UserId WHERE u.Email='$FLUTTER_EMAIL' AND ac.Purpose='EmailVerification' AND ac.ConsumedAt IS NULL ORDER BY ac.CreatedAt DESC" -h -1 2>&1 | tr -d ' \r\n' | head -c 6)
+VCODE=$(sqlcmd -S . -d SIMF -Q "SET NOCOUNT ON; SELECT TOP 1 ac.Code FROM AccountCodes ac JOIN Users u ON u.Id=ac.UserId WHERE u.Email='$FLUTTER_EMAIL' AND ac.Purpose='EmailVerification' AND ac.ConsumedAt IS NULL ORDER BY ac.CreatedAt DESC" -h -1 2>&1 | tr -d ' \r\n' | head -c 6)
 log "[B2] verification code = $VCODE"
 R=$(curl -s -X POST "$API/api/v1/auth/verify-email" -H 'Content-Type: application/json' \
   -d "{\"email\":\"$FLUTTER_EMAIL\",\"code\":\"$VCODE\"}")
