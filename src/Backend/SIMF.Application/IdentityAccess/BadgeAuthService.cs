@@ -69,12 +69,24 @@ internal sealed class BadgeAuthService(
     public async Task<ResolveBadgeResponse> ResolveAsync(
         ResolveBadgeRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await ResolveApprovedUserAsync(request.QrId, cancellationToken);
-        if (user is null)
+        var holder = await ResolveApprovedHolderAsync(request.QrId, cancellationToken);
+        if (holder is null)
         {
             return new ResolveBadgeResponse(false, false, null, false, null);
         }
 
+        // No account yet — the app asks for an email and activation creates one.
+        // Deliberately the SAME shape a placeholder walk-in already returned, so
+        // this reveals nothing a badge could not already tell an anonymous
+        // caller. Whether the holder is ALLOWED to claim it is decided at the
+        // start step, again matching the placeholder path.
+        if (holder.Account is null)
+        {
+            return new ResolveBadgeResponse(
+                true, false, holder.ProfileName, true, null);
+        }
+
+        var user = holder.Account;
         if (HasPassword(user))
         {
             // Already has a password — the app routes to the normal sign-in and
@@ -94,7 +106,9 @@ internal sealed class BadgeAuthService(
     public async Task<SignInResponse> SignInAsync(
         BadgeSignInRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await ResolveApprovedUserAsync(request.QrId, cancellationToken);
+        // An attendee with no account has nothing to sign in as, and falls into
+        // the same generic refusal below rather than a distinguishable one.
+        var user = (await ResolveApprovedHolderAsync(request.QrId, cancellationToken))?.Account;
         if (user is null)
         {
             // Unknown / not-approved QR — write the same failed-sign-in audit the
@@ -131,11 +145,22 @@ internal sealed class BadgeAuthService(
     public async Task<BadgeActivationStartResponse> StartActivationAsync(
         BadgeActivationStartRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await ResolveApprovedUserAsync(request.QrId, cancellationToken)
+        var holder = await ResolveApprovedHolderAsync(request.QrId, cancellationToken)
             ?? throw BadgeNotFound();
-        EnsureNotAlreadyActivated(user);
 
         var now = timeProvider.SimfNow();
+
+        // No account yet: verify an address the holder nominates, and create the
+        // account for them at the complete step. Same two factors as every other
+        // branch here - the badge in their hand, and control of an inbox.
+        if (holder.Account is null)
+        {
+            return await StartAccountCreationAsync(holder, request, now, cancellationToken);
+        }
+
+        var user = holder.Account;
+        EnsureNotAlreadyActivated(user);
+
         string targetEmail;
         string code;
 
@@ -217,11 +242,80 @@ internal sealed class BadgeAuthService(
             MaskEmail(targetEmail), (int)CodeLifetime.TotalSeconds);
     }
 
+    /// <summary>Start of the badge-to-account flow for an attendee who holds no
+    /// account: pin the address the code is sent to, and email the code.
+    ///
+    /// <para>The address is pinned ON THE CODE ROW rather than stashed against an
+    /// account, because there is no account to stash it on yet. That is what keeps
+    /// verify-then-attach honest here: the completing request carries the code and
+    /// never the address, so holding a code cannot bind an address the code was
+    /// never sent to. A retry simply issues a newer code with a newer
+    /// address.</para></summary>
+    private async Task<BadgeActivationStartResponse> StartAccountCreationAsync(
+        BadgeHolder holder,
+        BadgeActivationStartRequest request,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        if (!MaySelfActivateWithoutAccount(holder))
+        {
+            throw BadgeNotFound();
+        }
+
+        var email = (request.Email ?? string.Empty).Trim();
+        if (email.Length == 0)
+        {
+            throw new ApiException(
+                ErrorCodes.AuthAccountNotFound, 400,
+                "An email address is required to activate this account.",
+                "البريد الإلكتروني مطلوب لتفعيل هذا الحساب.");
+        }
+
+        // Refuse an address that already signs someone in - but not one left
+        // behind by this same flow failing between the two databases, or the
+        // holder would be stuck behind a 409 forever with no way to finish. The
+        // complete step re-checks and takes that account over.
+        if (await accounts.FindByEmailAsync(email, cancellationToken) is { } existing
+            && await profiles.FindAsync(existing.Id, cancellationToken) is not null)
+        {
+            throw new ApiException(
+                ErrorCodes.AuthEmailAlreadyRegistered, 409,
+                "That email address is already in use.",
+                "البريد الإلكتروني مستخدم بالفعل.");
+        }
+
+        var code = await IssueProfileCodeAsync(holder.ProfileId, email, now, cancellationToken);
+
+        await emailQueue.TryEnqueueAsync(
+            await BuildActivationEmailAsync(email, code, cancellationToken),
+            "badge-activation", email, null, auditLog, logger, cancellationToken);
+
+        // No SubjectUserId: there is no account to name yet, and a profile id in
+        // a column that means "account" would make the audit trail lie.
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.BadgeActivationStarted,
+            Outcome = AuditOutcome.Success,
+            SubjectEmail = email,
+            Detail = $"account creation; profileId={holder.ProfileId}",
+        }, cancellationToken);
+
+        return new BadgeActivationStartResponse(
+            MaskEmail(email), (int)CodeLifetime.TotalSeconds);
+    }
+
     public async Task<BadgeActivationCompleteResponse> CompleteActivationAsync(
         BadgeActivationCompleteRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await ResolveApprovedUserAsync(request.QrId, cancellationToken)
+        var holder = await ResolveApprovedHolderAsync(request.QrId, cancellationToken)
             ?? throw BadgeNotFound();
+
+        if (holder.Account is null)
+        {
+            return await CompleteAccountCreationAsync(holder, request, cancellationToken);
+        }
+
+        var user = holder.Account;
         EnsureNotAlreadyActivated(user);
 
         var now = timeProvider.SimfNow();
@@ -357,6 +451,220 @@ internal sealed class BadgeAuthService(
         return new BadgeActivationCompleteResponse(true);
     }
 
+    /// <summary>Completion of the badge-to-account flow for an attendee who held
+    /// no account: prove the code, then create the account and link it to them.
+    ///
+    /// <para>The address comes off the CODE ROW, never off the request. That is
+    /// the whole point of pinning it at the start step - otherwise whoever holds
+    /// a code could bind an address the code was never sent to, and the emailed
+    /// code would stop being evidence of anything.</para></summary>
+    private async Task<BadgeActivationCompleteResponse> CompleteAccountCreationAsync(
+        BadgeHolder holder,
+        BadgeActivationCompleteRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!MaySelfActivateWithoutAccount(holder))
+        {
+            throw BadgeNotFound();
+        }
+
+        var now = timeProvider.SimfNow();
+        var code = await accountCodeRepository.GetLatestUnconsumedForProfileAsync(
+            holder.ProfileId, AccountCodePurpose.BadgeActivationOtp, cancellationToken);
+
+        if (code is null)
+        {
+            await AuditProfileFailureAsync(holder, ErrorCodes.AuthResetCodeInvalid, "no code", cancellationToken);
+            throw InvalidCode();
+        }
+        if (code.AttemptCount >= MaxAttempts)
+        {
+            await AuditProfileFailureAsync(holder, ErrorCodes.AuthResetCodeInvalid, "attempt cap", cancellationToken);
+            throw InvalidCode();
+        }
+        if (now >= code.ExpiresAt)
+        {
+            await AuditProfileFailureAsync(holder, ErrorCodes.AuthResetCodeExpired, "expired", cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AuthResetCodeExpired, 400,
+                "The verification code has expired. Request a new one.",
+                "انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.");
+        }
+        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
+        {
+            code.AttemptCount++;
+            await accountCodeRepository.UpdateAsync(code, cancellationToken);
+            await AuditProfileFailureAsync(holder, ErrorCodes.AuthResetCodeInvalid,
+                $"attempt {code.AttemptCount}", cancellationToken);
+            throw InvalidCode();
+        }
+
+        var email = code.PendingEmail;
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            // A code for this flow is always issued with the address it was sent
+            // to. Without one there is nothing to attach, so fail closed rather
+            // than fall back to anything the request supplied.
+            await AuditProfileFailureAsync(
+                holder, ErrorCodes.AuthAccountNotFound, "no pinned email", cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AuthAccountNotFound, 400,
+                "An email address is required to activate this account.",
+                "البريد الإلكتروني مطلوب لتفعيل هذا الحساب.");
+        }
+
+        // Resolve the captured profile fields against the live lookups BEFORE any
+        // write, so a bad country code fails cleanly rather than half-way.
+        var nationalityId = await ResolveNationalityIdAsync(
+            request.NationalityCode, cancellationToken);
+        var interestIds = await ResolveInterestIdsAsync(
+            request.InterestIds, cancellationToken);
+        var realName = FirstNonBlank(request.EnglishName, request.ArabicName);
+
+        var user = await CreateOrAdoptAccountAsync(
+            email, realName ?? holder.ProfileName, request.NewPassword, now, cancellationToken);
+
+        // Link + fill in ONE App-DB write. The account already exists at this
+        // point and the two databases have no shared transaction, so this is the
+        // window that can fail: it leaves an account nobody points at, which the
+        // adoption path above takes back on the holder's next attempt. Doing the
+        // link and the profile fill together is what stops a retry being refused
+        // with the captured details never written.
+        var profile = await profiles.GetByProfileIdWithInterestsAsync(
+            holder.ProfileId, cancellationToken);
+        if (profile is null)
+        {
+            throw BadgeNotFound();
+        }
+        if (profile.UserId is not null)
+        {
+            // Another completion won the race and linked it first. Fail closed
+            // rather than move the profile onto a second account - the filtered
+            // unique index would refuse it anyway, less legibly.
+            throw new ApiException(
+                ErrorCodes.BadgeAlreadyActivated, 409,
+                "This badge already has an account. Sign in with your email and password.",
+                "هذه الشارة لديها حساب بالفعل. سجّل الدخول بالبريد الإلكتروني وكلمة المرور.");
+        }
+        profile.UserId = user.Id;
+        if (FirstNonBlank(request.EnglishName) is { } englishName) { profile.Name = englishName; }
+        if (FirstNonBlank(request.ArabicName) is { } arabicName) { profile.NameArabic = arabicName; }
+        if (nationalityId is { } countryId) { profile.NationalityId = countryId; }
+        if (interestIds.Count > 0)
+        {
+            var alreadyPicked = profile.Interests.Select(interest => interest.Id).ToHashSet();
+            var toAdd = interestIds.Where(id => !alreadyPicked.Contains(id)).ToList();
+            if (toAdd.Count > 0)
+            {
+                foreach (var row in await profiles.GetInterestsByIdsAsync(toAdd, cancellationToken))
+                {
+                    profile.Interests.Add(row);
+                }
+            }
+        }
+        profile.UpdatedAt = now;
+        await profiles.SaveAppChangesAsync(cancellationToken);
+
+        code.ConsumedAt = now;
+        await accountCodeRepository.UpdateAsync(code, cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.BadgeActivationCompleted,
+            Outcome = AuditOutcome.Success,
+            SubjectUserId = user.Id,
+            SubjectEmail = user.Email,
+            ActorUserId = user.Id,
+            Detail = $"account created for profileId={holder.ProfileId}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Badge activation created account {UserId} for attendee {ProfileId}",
+            user.Id, holder.ProfileId);
+        return new BadgeActivationCompleteResponse(true);
+    }
+
+    /// <summary>The account for a verified address: a new one, or the one left
+    /// behind by an attempt that created it and then failed before linking it.
+    ///
+    /// <para>Adoption is safe because it is gated on the address having been
+    /// PROVEN by the code just verified, and on no attendee pointing at the
+    /// account. The password is replaced rather than kept, so an account that
+    /// reached this state by any route other than an interrupted retry cannot
+    /// carry a password its new owner did not choose.</para></summary>
+    private async Task<SimfUser> CreateOrAdoptAccountAsync(
+        string email, string displayName, string password,
+        DateTime now, CancellationToken cancellationToken)
+    {
+        var existing = await accounts.FindByEmailAsync(email, cancellationToken);
+        if (existing is null)
+        {
+            // The field-set a badge holder's account has always had, from the
+            // bulk mint: approved, confirmed, a visitor, no forced change.
+            var created = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = displayName,
+                AccountState = AccountState.Approved,
+                UserType = UserType.Visitor,
+                PasswordChangeRequired = false,
+                CreatedAt = now,
+                StateChangedAt = now,
+            };
+            var result = await accounts.CreateAsync(created, password, cancellationToken);
+            if (!result.Succeeded)
+            {
+                throw new ApiException(
+                    ErrorCodes.AuthPasswordPolicy, 400,
+                    "The new password is not allowed: "
+                        + string.Join("; ", result.Errors.Select(e => e.Description)),
+                    "كلمة المرور الجديدة غير مسموح بها.");
+            }
+            return created;
+        }
+
+        var claimedBy = await profiles.FindAsync(existing.Id, cancellationToken);
+        if (claimedBy is not null)
+        {
+            throw new ApiException(
+                ErrorCodes.AuthEmailAlreadyRegistered, 409,
+                "That email address is already in use.",
+                "البريد الإلكتروني مستخدم بالفعل.");
+        }
+
+        await accounts.RemovePasswordAsync(existing, cancellationToken).EnsureSuccessAsync();
+        var added = await accounts.AddPasswordAsync(existing, password, cancellationToken);
+        if (!added.Succeeded)
+        {
+            throw new ApiException(
+                ErrorCodes.AuthPasswordPolicy, 400,
+                "The new password is not allowed: "
+                    + string.Join("; ", added.Errors.Select(e => e.Description)),
+                "كلمة المرور الجديدة غير مسموح بها.");
+        }
+        existing.DisplayName = displayName;
+        existing.EmailConfirmed = true;
+        existing.AccountState = AccountState.Approved;
+        existing.UpdatedAt = now;
+        await accounts.UpdateAsync(existing, cancellationToken).EnsureSuccessAsync();
+        return existing;
+    }
+
+    /// <summary>The failure audit for the pre-account flow. Carries the attendee
+    /// in the detail rather than putting a profile id in a column that means
+    /// "account".</summary>
+    private Task AuditProfileFailureAsync(
+        BadgeHolder holder, string errorCode, string detail, CancellationToken cancellationToken) =>
+        auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.BadgeActivationFailed,
+            Outcome = AuditOutcome.Failure,
+            ErrorCode = errorCode,
+            Detail = $"account creation; profileId={holder.ProfileId}; {detail}",
+        }, cancellationToken);
+
     // -- Helpers --------------------------------------------------------------
 
     /// <summary>Resolves the wire ISO country code to the
@@ -461,9 +769,37 @@ internal sealed class BadgeAuthService(
         return null;
     }
 
-    /// <summary>Resolves a QR to its owning <see cref="SimfUser"/> only when the
-    /// account is Approved; null for unknown / not-approved QRs.</summary>
-    private async Task<SimfUser?> ResolveApprovedUserAsync(
+    /// <summary>Who a badge resolved to: the attendee, always, and the account
+    /// they sign in with, only if they ever asked for one. Most badges resolve
+    /// with <see cref="Account"/> null - a bulk order prints them long before
+    /// anyone claims one.</summary>
+    private sealed record BadgeHolder(
+        Guid ProfileId, string ProfileName, Guid? BadgeBatchId, SimfUser? Account);
+
+    /// <summary>Whether a badge with no account behind it may be claimed as one
+    /// by whoever is holding it.
+    ///
+    /// <para>A badge from a bulk order was handed to a named person under a
+    /// controlled distribution, so possession is evidence. A badge with no order
+    /// behind it came from the walk-in desk and is in open circulation, where
+    /// anyone who photographed one across a room could otherwise claim a full app
+    /// account - sign-in, contacts, meeting requests - from the picture. That
+    /// stays refused unless an operator deliberately arms it, and then the
+    /// refusal is the same "badge not recognised" an unknown QR gets, so it is
+    /// never an oracle for which badges exist.</para>
+    ///
+    /// <para>This distinction used to be read off the synthesized login address
+    /// (<c>walkin-</c> against <c>badge-</c>). It reads off the attendee now,
+    /// which is what will let those placeholder accounts be retired without
+    /// losing it.</para></summary>
+    private bool MaySelfActivateWithoutAccount(BadgeHolder holder) =>
+        holder.BadgeBatchId is not null
+        || walkInMode.CurrentValue.BadgeActivationAllowedForWalkIns;
+
+    /// <summary>Resolves a QR to its holder, only while the attendee is Approved
+    /// and any account they hold is too; null for unknown / not-approved QRs.
+    /// </summary>
+    private async Task<BadgeHolder?> ResolveApprovedHolderAsync(
         string? qrId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
@@ -482,6 +818,10 @@ internal sealed class BadgeAuthService(
         // badge activation is already blocked for these accounts further down.
         // The bearer of a real offline badge presents the ENCRYPTED blob, which
         // is unguessable and is what the gate reads.
+        //
+        // This guard matters MORE now that a badge with no account can be
+        // claimed as one: a guessable id would be an anonymous way to enumerate
+        // attendees and then take an account in their name.
         if (OfflineBadgeId.IsOfflineBadge(qrId.Trim().ToUpperInvariant()))
         {
             return null;
@@ -493,19 +833,27 @@ internal sealed class BadgeAuthService(
         {
             return null;
         }
-        // No account, nothing to sign in as. An approved attendee without one is
-        // perfectly normal — they hold a badge that opens gates — but signing in
-        // is the one thing a badge alone does not grant, so this is an ordinary
-        // refusal and deliberately the SAME null every other failure returns:
-        // telling the caller "that badge is real but has no account" would answer
-        // a question an anonymous endpoint must not answer.
+
+        // No account is the ORDINARY case, not a failure: an attendee holds a
+        // badge that opens gates long before anyone decides they also want the
+        // app. Signing in still needs an account, and the callers that need one
+        // say so themselves rather than being refused here.
         if (resolution.UserId is not { } holderUserId)
         {
-            return null;
+            return new BadgeHolder(
+                resolution.UserProfileId, resolution.DisplayName,
+                resolution.BadgeBatchId, Account: null);
         }
 
+        // An account exists but is not approved: refuse the whole holder. The
+        // attendee may pass a gate on the profile's own state, but the account is
+        // the thing being signed into here, and a disabled one is not a door.
         var user = await accounts.FindByIdAsync(holderUserId, cancellationToken);
-        return user is { AccountState: AccountState.Approved } ? user : null;
+        return user is { AccountState: AccountState.Approved }
+            ? new BadgeHolder(
+                resolution.UserProfileId, resolution.DisplayName,
+                resolution.BadgeBatchId, user)
+            : null;
     }
 
     private void EnsureNotAlreadyActivated(SimfUser user)
@@ -537,6 +885,34 @@ internal sealed class BadgeAuthService(
             UserId = userId,
             Purpose = AccountCodePurpose.BadgeActivationOtp,
             // M3 (security) — store the keyed hash; `value` (plaintext) is emailed.
+            Code = AccountCodeHasher.Hash(value),
+            CreatedAt = now,
+            ExpiresAt = now.Add(CodeLifetime),
+        }, cancellationToken);
+        return value;
+    }
+
+    /// <summary>The same, for an attendee with no account. The nominated address
+    /// is pinned on the row so the complete step reads it from here rather than
+    /// from the request.</summary>
+    private async Task<string> IssueProfileCodeAsync(
+        Guid userProfileId, string email, DateTime now, CancellationToken cancellationToken)
+    {
+        var previous = await accountCodeRepository.GetLatestUnconsumedForProfileAsync(
+            userProfileId, AccountCodePurpose.BadgeActivationOtp, cancellationToken);
+        if (previous is not null)
+        {
+            previous.ConsumedAt = now;
+            await accountCodeRepository.UpdateAsync(previous, cancellationToken);
+        }
+        var value = VerificationCodeGenerator.Generate();
+        await accountCodeRepository.AddAsync(new AccountCode
+        {
+            Id = Guid.NewGuid(),
+            UserProfileId = userProfileId,
+            PendingEmail = email,
+            Purpose = AccountCodePurpose.BadgeActivationOtp,
+            // Store the keyed hash; `value` (plaintext) is emailed.
             Code = AccountCodeHasher.Hash(value),
             CreatedAt = now,
             ExpiresAt = now.Add(CodeLifetime),

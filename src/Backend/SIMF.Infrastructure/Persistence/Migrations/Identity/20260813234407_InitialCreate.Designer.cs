@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     [DbContext(typeof(SimfIdentityDbContext))]
-    [Migration("20260813195629_InitialCreate")]
+    [Migration("20260813234407_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -214,17 +214,27 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("PendingEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<string>("Purpose")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserProfileId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("UserId", "Purpose");
+
+                    b.HasIndex("UserProfileId", "Purpose")
+                        .HasFilter("[UserProfileId] IS NOT NULL");
 
                     b.ToTable("AccountCodes");
                 });
@@ -735,8 +745,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.HasOne("SIMF.Domain.IdentityAccess.SimfUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.DeviceKey", b =>

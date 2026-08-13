@@ -20,6 +20,20 @@ public interface IAccountCodeRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The same, for a code issued to an attendee who holds no account yet.
+    ///
+    /// <para>A separate method rather than a nullable parameter on the one
+    /// above: both ids are <see cref="Guid"/>, so nothing but the parameter name
+    /// would stop one being passed where the other belongs, and that mistake
+    /// matches no row rather than failing - handing the caller "no code" for a
+    /// code that is sitting right there.</para>
+    /// </summary>
+    Task<AccountCode?> GetLatestUnconsumedForProfileAsync(
+        Guid userProfileId,
+        AccountCodePurpose purpose,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Counts the codes created for the user and purpose at or after the given
     /// time — used to cap how often a verification code may be re-issued.
     /// </summary>

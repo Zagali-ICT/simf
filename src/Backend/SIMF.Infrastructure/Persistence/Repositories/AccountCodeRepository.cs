@@ -25,6 +25,17 @@ internal sealed class AccountCodeRepository(SimfIdentityDbContext dbContext) : I
             .OrderByDescending(code => code.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
+    public Task<AccountCode?> GetLatestUnconsumedForProfileAsync(
+        Guid userProfileId,
+        AccountCodePurpose purpose,
+        CancellationToken cancellationToken = default) =>
+        dbContext.AccountCodes
+            .Where(code => code.UserProfileId == userProfileId
+                && code.Purpose == purpose
+                && code.ConsumedAt == null)
+            .OrderByDescending(code => code.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public Task<int> CountCreatedSinceAsync(
         Guid userId,
         AccountCodePurpose purpose,
