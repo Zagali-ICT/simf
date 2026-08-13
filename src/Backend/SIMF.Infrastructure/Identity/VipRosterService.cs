@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/VipRosterTests.cs
+﻿// Tests: SIMF.Api.Tests/VipRosterTests.cs
 using System.Text;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
@@ -68,7 +68,7 @@ internal sealed class VipRosterService(
                 // account id, so a guest without one has no route to it however
                 // the column reads. Answering true here would render a link the
                 // page has no id to build.
-                HasVipPhoto = p.VipPhotoRelativePath != null && p.UserId != null,
+                HasVipPhoto = p.VipPhotoFileId != null && p.UserId != null,
                 p.CreatedAt,
             })
             .ToListAsync(cancellationToken);

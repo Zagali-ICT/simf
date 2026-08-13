@@ -152,7 +152,7 @@ internal sealed class AdminApprovalReadService(
                 p.PassportNumber,
                 p.SaudiMobile,
                 p.InternationalMobile,
-                HasIdImage = p.IdImageRelativePath != null,
+                HasIdImage = p.IdImageFileId != null,
                 InterestIds = p.Interests.Select(interest => interest.Id).ToList(),
                 p.RejectionReason,
                 p.RejectionReasonArabic,
@@ -266,7 +266,7 @@ internal sealed class AdminApprovalReadService(
                 Organisation = p.Organisation,
                 p.PlateNumber,
                 p.ReferenceNumber,
-                HasIdImage = p.IdImageRelativePath != null,
+                HasIdImage = p.IdImageFileId != null,
                 Interests = p.Interests.Select(interest => new { interest.Id, interest.Name, interest.NameArabic }).ToList(),
             })
             .SingleOrDefaultAsync(cancellationToken);

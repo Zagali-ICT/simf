@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -168,7 +168,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = await db.Users.SingleAsync(u => u.Id == subjectId);
-        Assert.False(string.IsNullOrEmpty(user.AvatarRelativePath));
+        Assert.NotNull(user.AvatarFileId);
     }
 
     [Fact]
@@ -292,7 +292,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var verifyDb =
             verifyScope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var refreshed = await verifyDb.Users.SingleAsync(u => u.Id == subjectId);
-        Assert.False(string.IsNullOrEmpty(refreshed.AvatarRelativePath));
+        Assert.NotNull(refreshed.AvatarFileId);
     }
 
     [Fact]
@@ -327,7 +327,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     {
         // V-1 (D-429) — the VIP page captures a separate welcome photo via the
         // dedicated vip-photo endpoint. D-568 (Wave C S4): the bytes now land in
-        // the unified StoredFile store; VipPhotoRelativePath is repurposed as the
+        // the unified StoredFile store; VipPhotoFileId is the typed
         // bare-Guid pointer + "has VIP photo" presence sentinel.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
@@ -355,10 +355,10 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == subjectId);
         // The sentinel pointer is set, one active VipPhoto StoredFile exists for
         // the subject, and the pointer resolves to that file.
-        Assert.False(string.IsNullOrEmpty(profile.VipPhotoRelativePath));
+        Assert.NotNull(profile.VipPhotoFileId);
         var stored = await appDb.StoredFiles.SingleAsync(
             f => f.Service == FileService.VipPhoto && f.OwnerEntityId == subjectId && f.IsActive);
-        Assert.Equal(stored.Id.ToString(), profile.VipPhotoRelativePath);
+        Assert.Equal(stored.Id, profile.VipPhotoFileId);
     }
 
     [Fact]

@@ -4035,9 +4035,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<string>("IdImageRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<Guid?>("IdImageFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("InternationalMobile")
                         .HasMaxLength(256)
@@ -4163,15 +4162,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("VipPhotoRelativePath")
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
+                    b.Property<Guid?>("VipPhotoFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AdmissionState");
 
                     b.HasIndex("BadgeBatchId");
+
+                    b.HasIndex("IdImageFileId");
 
                     b.HasIndex("IqamaNumberHash")
                         .IsUnique()
@@ -4204,6 +4204,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("UserId")
                         .IsUnique()
                         .HasFilter("[UserId] IS NOT NULL");
+
+                    b.HasIndex("VipPhotoFileId");
 
                     b.ToTable("UserProfiles", (string)null);
                 });
@@ -6486,6 +6488,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("BadgeBatchId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("IdImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SIMF.Domain.Organisations.Organisation", "Organisation")
                         .WithMany()
                         .HasForeignKey("OrganisationId")
@@ -6499,6 +6506,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasOne("SIMF.Domain.Regions.Region", "Region")
                         .WithMany()
                         .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("VipPhotoFileId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("BadgeBatch");

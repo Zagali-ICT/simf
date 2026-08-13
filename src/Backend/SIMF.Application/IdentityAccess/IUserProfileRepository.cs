@@ -1,4 +1,4 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Profiles;
 
@@ -43,17 +43,6 @@ public interface IUserProfileRepository
 
     /// <summary>The bilingual rejection text, or null when none is set.</summary>
     Task<RejectionText?> GetRejectionTextAsync(
-        Guid userId, CancellationToken cancellationToken = default);
-
-    /// <summary>The relative path of the stored ID image, or null when the
-    /// profile has none.</summary>
-    Task<string?> GetIdImagePathAsync(
-        Guid userId, CancellationToken cancellationToken = default);
-
-    /// <summary>The relative path of the stored VVIP/VIP welcome
-    /// photo, or null when the profile has none. A one-column projection (no
-    /// tracking) for the per-image read path.</summary>
-    Task<string?> GetVipPhotoPathAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>The active <c>StoredFile</c>'s storage locator
@@ -172,7 +161,7 @@ public sealed record ProfileTypeRole(bool IsVisitor, MobileAppRole MobileAppRole
 /// with a default so the record stays append-only.</para></summary>
 public sealed record ProfileCompletenessFacts(
     string? Name, string? NameArabic, Gender Gender,
-    string? IdImageRelativePath, bool HasInterests,
+    Guid? IdImageFileId, bool HasInterests,
     bool IsVisitorProfileType = true);
 
 /// <summary>An approved Admin account — a notification recipient.</summary>
