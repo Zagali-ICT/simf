@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/archive/archive_screen.dart';
 import 'package:simf_app/features/archive/data/archive_models.dart';
+import 'package:simf_app/features/archive/data/archive_repository.dart';
 
 const _editions = <ArchiveEdition>[
   ArchiveEdition(

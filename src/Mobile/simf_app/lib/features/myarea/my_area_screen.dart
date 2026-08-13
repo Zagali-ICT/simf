@@ -10,9 +10,9 @@ import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart'
     show avatarBustProvider, referenceNumberProvider;
+import 'package:simf_app/features/myarea/data/liveness.dart' show CapturedSelfie;
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
-import 'package:simf_app/features/myarea/identity_verification_screen.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_dashboard_body.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_identity_card.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_rows.dart';

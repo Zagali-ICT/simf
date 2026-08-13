@@ -6,32 +6,18 @@ import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/banners/data/banner_models.dart';
 import 'package:simf_app/features/banners/data/banners_repository.dart';
+import 'package:simf_app/features/home/data/home_repository.dart';
 import 'package:simf_app/features/home/widgets/guest_home.dart';
 import 'package:simf_app/features/home/widgets/operational_homes.dart';
 import 'package:simf_app/features/home/widgets/visitor_home.dart';
-import 'package:simf_app/features/myarea/data/myarea_models.dart';
-import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
-import 'package:simf_app/features/news/news_screen.dart' show newsListProvider;
+import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 // Re-export the greeting helpers so `homeGreeting` / `homePostTime` stay
 // importable from this file (the home widget tests reference them here).
 export 'home_greeting.dart';
-
-/// Best-effort signed-in profile for the greeting (the real name + avatar live
-/// App-side on the dashboard, not in the Identity-issued auth token). Resolves
-/// to null while loading / on error (e.g. a not-yet-approved 403), in which
-/// case the greeting falls back to a name-less salute (never the email).
-final homeProfileProvider =
-    FutureProvider.autoDispose<MyAreaDashboard?>((ref) async {
-  try {
-    return await ref.watch(myAreaRepositoryProvider).getDashboard();
-  } on ApiFailure {
-    return null;
-  }
-});
 
 /// Page 013 — الرئيسية · Home (router / landing screen #13, `path=/`),
 /// rebuilt to the KSA frames: guest = 758:2910 (owner-picked), signed-in =

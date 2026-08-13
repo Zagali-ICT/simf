@@ -7,21 +7,11 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
-import 'package:simf_app/features/sponsors/data/sponsors_endpoints.dart';
+import 'package:simf_app/features/sponsors/data/sponsors_repository.dart';
 import 'package:simf_app/features/sponsors/widgets/sponsor_card.dart';
 import 'package:simf_app/features/sponsors/widgets/sponsor_grid.dart';
 import 'package:simf_app/features/sponsors/widgets/sponsor_logo.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-/// `GET /app/sponsors` → the tier-grouped sponsors (public, D-199).
-final sponsorGroupsProvider =
-    FutureProvider.autoDispose<List<SponsorTierGroup>>((ref) async {
-  final client = ref.watch(simfApiClientProvider);
-  return client.get<List<SponsorTierGroup>>(
-    SponsorsEndpoints.list,
-    decodeData: SponsorTierGroup.listFromData,
-  );
-});
 
 /// Page 023 — الرعاة · Sponsors (#23, `/sponsors`, Guest+), rebuilt to the
 /// KSA-Project Figma frame **922:2824 "Shepherds"** on the shared navy shell.

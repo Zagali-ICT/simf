@@ -12,18 +12,8 @@ import 'package:simf_app/features/exhibition/entity_detail_helpers.dart';
 import 'package:simf_app/features/exhibition/entity_detail_scaffold.dart';
 import 'package:simf_app/features/exhibition/entity_logo_image.dart';
 import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
-import 'package:simf_app/features/sponsors/data/sponsors_endpoints.dart';
+import 'package:simf_app/features/sponsors/data/sponsors_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-/// `GET /app/sponsors/{id}` → the full sponsor detail (Figma 1439:11826).
-final sponsorDetailProvider =
-    FutureProvider.autoDispose.family<SponsorDetail, String>((ref, id) async {
-  final client = ref.watch(simfApiClientProvider);
-  return client.get<SponsorDetail>(
-    SponsorsEndpoints.byId(id),
-    decodeData: SponsorDetail.fromData,
-  );
-});
 
 /// **Sponsor detail** — App "الراعي" (Figma 1439:11826, Guest+), opened by
 /// tapping a sponsor on the sponsors screen. The same shared

@@ -10,18 +10,12 @@ import 'package:simf_app/app/widgets/confirm_external_link.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
 import 'package:simf_app/core/utils/refresh.dart';
+import 'package:simf_app/features/booths/data/booths_repository.dart';
 import 'package:simf_app/features/exhibition/entity_detail_helpers.dart';
 import 'package:simf_app/features/exhibition/entity_detail_scaffold.dart';
 import 'package:simf_app/features/exhibition/entity_logo_image.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
-import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-/// `GET /app/booths/{id}` → the booth/exhibitor detail (Figma 1439:11881).
-final exhibitorDetailProvider =
-    FutureProvider.autoDispose.family<BoothDetail, String>((ref, id) async {
-  return ref.watch(venueMapRepositoryProvider).getBoothDetail(id);
-});
 
 /// **Exhibitor detail** — App "العارض" (Figma 1439:11881, Guest+), opened by
 /// tapping a booth in the exhibition list. The shared

@@ -31,7 +31,7 @@ import 'package:simf_app/features/account/widgets/plate_number_field.dart';
 import 'package:simf_app/features/account/widgets/profile_type_field.dart';
 import 'package:simf_app/features/account/widgets/sign_up_visitor_header_avatar.dart';
 import 'package:simf_app/features/account/widgets/terms_and_next_buttons.dart';
-import 'package:simf_app/features/myarea/identity_verification_screen.dart' show CapturedSelfie;
+import 'package:simf_app/features/myarea/data/liveness.dart' show CapturedSelfie;
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_completeness.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_form_state.dart';
 import 'package:simf_app/features/visitor_profile/data/visitor_profile_validators.dart';
