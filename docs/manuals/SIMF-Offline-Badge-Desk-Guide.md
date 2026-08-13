@@ -39,6 +39,14 @@ badge whose year is not the open edition is refused exactly as an unknown code
 is, and deliberately not with a distinct message: a scan must never tell the
 holder which half of the check failed.
 
+**Opening a new year re-issues every badge.** Closing a year does not delete its
+attendees - their records stay, labelled with the edition they belong to - but
+opening the next one clears their QR, and each returning attendee is issued a
+fresh badge for the new edition. This is the half that is easy to miss: refusing
+last year's badge at the gate is only correct if the holder has a route to a
+current one. Plan the re-issue as part of opening the year, not as something
+support handles per person at the door.
+
 A printed badge is **78 characters** (80 in the extreme case of a three-digit
 profile-type code). That is why `GateScans.QrIdAtScan` is `nvarchar(96)`.
 

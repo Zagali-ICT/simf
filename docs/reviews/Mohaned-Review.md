@@ -953,7 +953,9 @@ What disappears when the strings go, which is the payoff:
   `FileId is not null`. There are at least six, including the `HasAvatar` flag on
   three admin grids and the male-face registration gate.
 - Every "a legacy non-Guid path may still be on this row" fallback branch.
-- `nvarchar(256)` columns storing a 36-character Guid.
+- Wide `nvarchar` columns storing a 36-character Guid. The regenerated App
+  `InitialCreate` (`20260813195615`) declares these between `nvarchar(256)` and
+  `nvarchar(512)`, sized for paths that no longer exist.
 
 ## 2.5 The avatar is misplaced, not only misnamed
 
@@ -1023,6 +1025,41 @@ Two competing ways to set one image is the duplication the North Star rule exist
 to remove, and it is also how the two halves in 2.3 come to disagree in the first
 place. The legacy text field and its resx label keys go with this change.
 
+### The Excel importers accept a path from a spreadsheet cell
+
+This one is a **go or no-go item**, because it is a published import contract
+rather than an internal field, and a typed Guid cannot accept what it feeds in.
+
+| Importer | Reads the literal cell | Writes |
+|----------|------------------------|--------|
+| `ArchiveExcelEndpoints.cs:119` | `"CoverImageRelativePath"` | `ArchiveEdition.CoverImageRelativePath` |
+| `NewsExcelEndpoints.cs:137` | `"ImageRelativePath"` | `News.ImageRelativePath` |
+| `SponsorsExcelEndpoints.cs:96` | `"LogoRelativePath"` | `Sponsor.LogoRelativePath` |
+
+The comment at `ArchiveExcelEndpoints.cs:115-116` calls the value "cover path" in
+so many words. So the bulk-import path is the one place in the system where a
+human really is expected to type a **path** into a column that the rest of the
+code treats as a file pointer.
+
+Retyping the column to a Guid therefore invalidates the import template and every
+workbook previously exported from it. Options, for the owner:
+
+1. Drop the column from the import template and require the image to be uploaded
+   through the central store afterwards. Cleanest, and consistent with the rest of
+   this item. Costs bulk-import convenience.
+2. Keep a cell that accepts a **`StoredFile` id**, so the importer stays but the
+   value becomes a pointer. Requires whoever prepares the workbook to know ids.
+3. Have the importer resolve a path against the media library and store the id it
+   finds. Most convenient, most code, and it re-admits paths through a side door.
+
+Recommendation: option 1, with the template column removed rather than left in
+place and ignored, so a stale workbook fails loudly instead of silently dropping
+the image.
+
+`MediaPartnerEndpoints.cs:137` also carries `LogoRelativePath` on its update
+request, but that endpoint is `Tags("Admin")`, so it is a Control Panel contract
+and not part of the shipped mobile wire contract.
+
 ## 2.7 Files
 
 **This list is partial.** The exhaustive call-site inventory was still running
@@ -1039,6 +1076,7 @@ breadth, not accuracy.
 | `Application/IdentityAccess/UserProfileService.cs` | ID image, VIP photo, and the face-photo gate at `:229` | breaking |
 | `Identity/IdentitySeeder.cs` | Demo assets and the D-860 self-heal | none |
 | The four `Admin*Service.cs` writers | Sponsor, News, MediaPartner, Archive | none |
+| `Endpoints/Admin/*ExcelEndpoints.cs` (Archive, News, Sponsors) | Remove the path cell from the import template, per 2.6 | **breaking** (published import contract) |
 | Read and projection sites | `HasAvatar` on three admin grids, profile completeness, URL builders | breaking |
 | `src/Shared/SIMF.Contracts/` | Internal types only. **Public JSON field names must not change** | **breaking** |
 | `src/ControlPanel/` | Delete the four legacy text fields and their resx keys; the avatar and VIP photo screens | none |
@@ -1064,9 +1102,11 @@ Each increment must build and test on its own.
 
 Recorded openly rather than assumed:
 
-- `ArchivePastSpeaker.PhotoRelativePath`: no writer was found by the
-  property-assignment sweep, which does not cover object-initializer syntax. Its
-  writer must be found, or its absence confirmed, before it is retyped.
+- `Speaker.PhotoRelativePath`: no writer was found by either sweep, and the entity
+  documents itself as vestigial, but "no writer found" is not the same as "no
+  writer". Confirm before the column is dropped rather than retyped.
+  (`ArchivePastSpeaker.PhotoRelativePath` was open at first draft and is now
+  resolved: `AdminArchiveService.cs:554` writes it from admin input.)
 - `OnDelete` behaviour: whether `IFileService.DeleteAsync` performs a hard row
   delete or a soft `IsActive` flag decides between `Restrict`, `SetNull` and
   `NoAction`, and decides whether existing delete paths start throwing.
@@ -1102,6 +1142,11 @@ audit), and the `StoredFile` table's own columns.
 3. **`Speaker.PhotoRelativePath` is documented as vestigial.** Drop the column, or
    keep it because a public contract still emits it as a fallback? Recommendation:
    keep the contract field, drop the column, and have the contract emit null.
+4. **The Excel import template**, per 2.6: remove the path column outright
+   (recommended), accept a `StoredFile` id instead, or have the importer resolve a
+   path to an id. This is the only decision here that changes a contract an
+   administrator uses by hand, so it needs an explicit answer rather than a
+   default.
 
 ---
 
