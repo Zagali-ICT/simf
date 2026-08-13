@@ -105,13 +105,14 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
                 IsActive = true, CreatedAt = now,
             };
             app.Sessions.Add(session);
+            var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(app, userId);
             app.SeatReservations.Add(new SeatReservation
             {
                 Id = Guid.NewGuid(),
                 SessionId = session.Id,
                 RowLabel = null, SeatNumber = null,
                 Kind = SeatReservationKind.OpenSeating,
-                ReservedForUserId = userId,
+                ReservedForProfileId = attendeeProfileId,
                 CreatedByUserId = userId,
                 Status = BookingStatus.Pending,
                 ReleasedAt = null,
@@ -209,12 +210,13 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             };
             app.Sessions.Add(session);
             sessionId = session.Id;
+            var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(app, userId);
             app.SeatReservations.Add(new SeatReservation
             {
                 Id = Guid.NewGuid(),
                 SessionId = session.Id,
                 Kind = SeatReservationKind.UserBooking,
-                ReservedForUserId = userId,
+                ReservedForProfileId = attendeeProfileId,
                 CreatedByUserId = userId,
                 Status = BookingStatus.Approved,
                 ReleasedAt = null,
@@ -225,7 +227,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
                 Id = Guid.NewGuid(),
                 SessionId = session.Id,
                 HallId = hall.Id,
-                UserId = userId,
+                UserProfileId = attendeeProfileId,
                 Method = AttendanceMethod.QrScan,
                 Enter = now,
                 CreatedAt = now,
@@ -362,7 +364,10 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
         };
         app.Organisations.Add(organisation);
 
-        app.UserProfiles.Add(new UserProfile
+        // This attendee record is what the booking below is keyed by, so it is held
+        // rather than discarded: asking for it again before SaveChanges would find
+        // nothing on the store and add a second profile for the same account.
+        var profile = new UserProfile
         {
             Id = Guid.NewGuid(),
             UserId = userId,
@@ -379,16 +384,18 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             SaudiMobile = "+966500112233",
             InternationalMobile = "+447700900123",
             CreatedAt = now,
-        });
+        };
+        app.UserProfiles.Add(profile);
 
         // Held booking (counter 1 + a Session schedule item).
+        var attendeeProfileId = profile.Id;
         app.SeatReservations.Add(new SeatReservation
         {
             Id = Guid.NewGuid(),
             SessionId = session.Id,
             RowLabel = "A", SeatNumber = 1,
             Kind = SeatReservationKind.UserBooking,
-            ReservedForUserId = userId,
+            ReservedForProfileId = attendeeProfileId,
             CreatedByUserId = userId,
             Status = BookingStatus.Approved,
             ReleasedAt = null,

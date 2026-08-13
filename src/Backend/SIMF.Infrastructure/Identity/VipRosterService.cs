@@ -13,9 +13,10 @@ namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
 /// Builds the VVIP/VIP welcome roster (موج) and renders it as CSV
-/// or Excel. Cross-DB read: VVIP/VIP profiles come from
-/// <see cref="SimfAppDbContext"/>; the owners' email / display-name / state are
-/// resolved in one batched query against <see cref="SimfIdentityDbContext"/>.
+/// or Excel. The guests and their admission state come from
+/// <see cref="SimfAppDbContext"/>; only the email and the self-chosen display
+/// name need <see cref="SimfIdentityDbContext"/>, in one batched query over the
+/// subset who hold an account at all.
 /// </summary>
 internal sealed class VipRosterService(
     SimfIdentityDbContext dbContext,
@@ -24,6 +25,11 @@ internal sealed class VipRosterService(
 {
     // The audience-side tiers the roster covers. Matches the seeded names.
     private static readonly string[] TierNames = { "VVIP", "VIP" };
+
+    /// <summary>The two Identity-side fields the roster shows. Named rather than
+    /// anonymous because a guest may have no account, so the lookup result has to
+    /// be a declared nullable local rather than an inferred one.</summary>
+    private sealed record UserDirectoryEntry(Guid Id, string? Email, string? DisplayName);
 
     // Column order used by both the CSV and the Excel renderers + the page.
     private static readonly string[] Headers =
@@ -38,20 +44,13 @@ internal sealed class VipRosterService(
     {
         var profiles = await appDbContext.UserProfiles
             .AsNoTracking()
-            // KNOWN GAP: a VIP with no Identity account is not listed. The row
-            // this returns is a shared contract whose key is a non-nullable
-            // account id, and the Control Panel binds its grid key and its Edit
-            // action to that id, so there is no value to carry for an attendee
-            // who has none. Widening the contract to the profile id and
-            // re-keying the CP grid is the fix; until then a VVIP who never
-            // installed the app is invisible to the PR desk.
-            .Where(p => p.UserId != null
-                && p.ProfileType != null
+            .Where(p => p.ProfileType != null
                 && p.ProfileType.IsForVisitor
                 && TierNames.Contains(p.ProfileType.Name))
             .Select(p => new
             {
-                UserId = p.UserId!.Value,
+                ProfileId = p.Id,
+                p.UserId,
                 p.Name,
                 p.NameArabic,
                 p.Honorific,
@@ -64,7 +63,12 @@ internal sealed class VipRosterService(
                 p.SaudiMobile,
                 p.InternationalMobile,
                 p.ReferenceNumber,
-                HasVipPhoto = p.VipPhotoRelativePath != null,
+                p.AdmissionState,
+                // The welcome photo is stored against the ACCOUNT and fetched by
+                // account id, so a guest without one has no route to it however
+                // the column reads. Answering true here would render a link the
+                // page has no id to build.
+                HasVipPhoto = p.VipPhotoRelativePath != null && p.UserId != null,
                 p.CreatedAt,
             })
             .ToListAsync(cancellationToken);
@@ -74,12 +78,16 @@ internal sealed class VipRosterService(
             return Array.Empty<VipRosterRow>();
         }
 
-        var ids = profiles.Select(p => p.UserId).ToList();
-        var users = await dbContext.Users
-            .AsNoTracking()
-            .Where(u => ids.Contains(u.Id))
-            .Select(u => new { u.Id, u.Email, u.DisplayName, u.AccountState })
-            .ToDictionaryAsync(u => u.Id, cancellationToken);
+        // Only the guests who hold an account have anything to look up, and the
+        // roster no longer excludes the ones who do not.
+        var ids = profiles.Where(p => p.UserId != null).Select(p => p.UserId!.Value).ToList();
+        var users = ids.Count == 0
+            ? new Dictionary<Guid, UserDirectoryEntry>()
+            : await dbContext.Users
+                .AsNoTracking()
+                .Where(u => ids.Contains(u.Id))
+                .Select(u => new UserDirectoryEntry(u.Id, u.Email, u.DisplayName))
+                .ToDictionaryAsync(u => u.Id, cancellationToken);
 
         return profiles
             // VVIP before VIP, then alphabetical by English name.
@@ -87,10 +95,19 @@ internal sealed class VipRosterService(
             .ThenBy(p => p.Name)
             .Select(p =>
             {
-                users.TryGetValue(p.UserId, out var user);
+                UserDirectoryEntry? user = null;
+                if (p.UserId is { } accountId)
+                {
+                    users.TryGetValue(accountId, out user);
+                }
                 return new VipRosterRow(
+                    p.ProfileId,
                     p.UserId,
-                    user?.DisplayName ?? string.Empty,
+                    // The account's display name is the one the guest chose for
+                    // themselves; the profile name is what the desk registered
+                    // them as, and it is all there is for a guest who never
+                    // signed up. Same fallback order the gate resolver uses.
+                    user?.DisplayName ?? p.Name,
                     p.Name,
                     p.NameArabic,
                     p.Honorific,
@@ -103,7 +120,11 @@ internal sealed class VipRosterService(
                     user?.Email ?? string.Empty,
                     string.IsNullOrWhiteSpace(p.SaudiMobile) ? p.InternationalMobile : p.SaudiMobile,
                     p.ReferenceNumber,
-                    (user?.AccountState ?? AccountState.PendingApproval).ToString(),
+                    // Admission is the profile's own state. Reading it off the
+                    // account used to render an approved accountless guest as
+                    // "PendingApproval", telling the PR desk a VVIP who was
+                    // cleared to attend had not been.
+                    p.AdmissionState.ToString(),
                     p.HasVipPhoto,
                     p.CreatedAt);
             })

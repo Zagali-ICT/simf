@@ -377,6 +377,9 @@ public sealed class ArrivalGraceResolutionTests : IClassFixture<SimfApiFactory>
             Name = "Grace Visitor",
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
+            // Admission is decided on the PROFILE, so approving only the account
+            // above would leave every door refusing this badge.
+            AdmissionState = AccountState.Approved,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();

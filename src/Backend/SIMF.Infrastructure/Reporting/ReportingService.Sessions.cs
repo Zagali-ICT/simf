@@ -41,7 +41,7 @@ internal sealed partial class ReportingService
                     .ToList(),
                 appDbContext.HallAttendances
                     .Where(a => a.SessionId == s.Id)
-                    .Select(a => a.UserId)
+                    .Select(a => a.UserProfileId)
                     .Distinct()
                     .Count(),
                 appDbContext.SessionQuestions.Count(q => q.SessionId == s.Id),
@@ -83,7 +83,7 @@ internal sealed partial class ReportingService
                     .ToList(),
                 appDbContext.HallAttendances
                     .Where(a => a.SessionId == s.Id)
-                    .Select(a => a.UserId)
+                    .Select(a => a.UserProfileId)
                     .Distinct()
                     .Count(),
                 appDbContext.SessionQuestions.Count(q => q.SessionId == s.Id),

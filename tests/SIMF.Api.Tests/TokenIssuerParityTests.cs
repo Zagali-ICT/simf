@@ -144,8 +144,8 @@ public sealed class TokenIssuerParityTests : IClassFixture<SimfApiFactory>
             created.Succeeded,
             string.Join("; ", created.Errors.Select(error => error.Description)));
 
-        // D-157 — the badge QR lives on the App-side UserProfile, resolved by a
-        // second query against a bare Guid; there is no cross-database FK.
+        // The badge QR lives on the App-side UserProfile, resolved by a second
+        // query against a bare Guid; there is no cross-database FK.
         var qrId = NewQrId();
         appDb.UserProfiles.Add(new UserProfile
         {
@@ -154,6 +154,10 @@ public sealed class TokenIssuerParityTests : IClassFixture<SimfApiFactory>
             Name = "Issuer Parity Visitor",
             NameArabic = "زائر",
             QrId = qrId,
+            // Admission is the profile's own state, and badge sign-in reads it
+            // there rather than on the account — approving only the account
+            // leaves the badge refused, which is the point of the relocation.
+            AdmissionState = AccountState.Approved,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();

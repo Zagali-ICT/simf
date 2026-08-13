@@ -432,6 +432,7 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForOptionalAccountAsync(db, reservedForUserId);
         db.SeatReservations.Add(new SeatReservation
         {
             Id = Guid.NewGuid(),
@@ -441,7 +442,7 @@ public sealed class SessionLifecycleNoticeTests : IClassFixture<BulkBadgeEmailAp
             Kind = reservedForUserId is null
                 ? SeatReservationKind.AdminReservedRow
                 : SeatReservationKind.UserBooking,
-            ReservedForUserId = reservedForUserId,
+            ReservedForProfileId = attendeeProfileId,
             CreatedByUserId = reservedForUserId ?? Guid.NewGuid(),
             CreatedAt = SimfClock.Now,
             Status = BookingStatus.Approved,

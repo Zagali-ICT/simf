@@ -37,7 +37,7 @@ internal sealed partial class ReportingService
                 s.Start,
                 appDbContext.HallAttendances
                     .Where(a => a.SessionId == s.Id)
-                    .Select(a => a.UserId)
+                    .Select(a => a.UserProfileId)
                     .Distinct()
                     .Count(),
                 appDbContext.HallAttendances
@@ -50,7 +50,7 @@ internal sealed partial class ReportingService
 
         var distinctAttendees = await appDbContext.HallAttendances.AsNoTracking()
             .Where(a => sessionIds.Contains(a.SessionId))
-            .Select(a => a.UserId)
+            .Select(a => a.UserProfileId)
             .Distinct()
             .CountAsync(cancellationToken);
 
@@ -84,7 +84,7 @@ internal sealed partial class ReportingService
                 s.Start,
                 appDbContext.HallAttendances
                     .Where(a => a.SessionId == s.Id)
-                    .Select(a => a.UserId)
+                    .Select(a => a.UserProfileId)
                     .Distinct()
                     .Count(),
                 appDbContext.HallAttendances

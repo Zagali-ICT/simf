@@ -13,12 +13,12 @@ namespace SIMF.Infrastructure.Attendance;
 /// query is <c>AsNoTracking</c> and nothing is written, so there is no schema
 /// change and no migration. The live-now count rides the
 /// <c>(HallId, Leave)</c> index and the per-session counts ride
-/// <c>(SessionId, UserId)</c> (both on <c>HallAttendanceConfiguration</c>).
+/// <c>(SessionId, UserProfileId)</c> (both on <c>HallAttendanceConfiguration</c>).
 ///
-/// <para>All data is in the App database; <c>UserId</c> is counted as an opaque
-/// Guid and never resolved against the Identity database — there is no cross-DB
-/// join. "Distinct attendees" is computed as one row per distinct
-/// <c>(SessionId, UserId)</c> pair so the same person re-entering a hall
+/// <para>All data is in the App database; the attendee is counted as an opaque
+/// profile Guid and never resolved against the Identity database — there is no
+/// cross-DB join. "Distinct attendees" is computed as one row per distinct
+/// <c>(SessionId, UserProfileId)</c> pair so the same person re-entering a hall
 /// (a new row after a departure closed the prior one) counts once.</para>
 /// </summary>
 internal sealed class SessionAttendanceService(
@@ -30,7 +30,7 @@ internal sealed class SessionAttendanceService(
         // Live now = distinct people currently inside a hall (an OPEN row).
         var liveAttendeesNow = await appDbContext.HallAttendances.AsNoTracking()
             .Where(a => a.Leave == null)
-            .Select(a => a.UserId)
+            .Select(a => a.UserProfileId)
             .Distinct()
             .CountAsync(cancellationToken);
 
@@ -46,7 +46,7 @@ internal sealed class SessionAttendanceService(
         // count).
         var totalArrivals = await appDbContext.HallAttendances.AsNoTracking()
             .Where(a => appDbContext.Sessions.Any(s => s.Id == a.SessionId && s.IsActive))
-            .Select(a => new { a.SessionId, a.UserId })
+            .Select(a => new { a.SessionId, a.UserProfileId })
             .Distinct()
             .CountAsync(cancellationToken);
 
@@ -122,12 +122,12 @@ internal sealed class SessionAttendanceService(
         var ids = pageSessions.Select(session => session.Id).ToList();
 
         // Distinct attendees per session for the page: one DB row per distinct
-        // (session, attendee) pair (GROUP BY SessionId, UserId), then count per
-        // session in memory. Kept to the page's ids so it never scans the whole
+        // (session, attendee) pair (GROUP BY SessionId, UserProfileId), then count
+        // per session in memory. Kept to the page's ids so it never scans the whole
         // table. (COUNT(DISTINCT) is intentionally avoided for portable EF SQL.)
         var distinctPairs = await appDbContext.HallAttendances.AsNoTracking()
             .Where(a => ids.Contains(a.SessionId))
-            .GroupBy(a => new { a.SessionId, a.UserId })
+            .GroupBy(a => new { a.SessionId, a.UserProfileId })
             .Select(g => g.Key.SessionId)
             .ToListAsync(cancellationToken);
         var totalBySession = distinctPairs
@@ -164,25 +164,24 @@ internal sealed class SessionAttendanceService(
         // Everyone currently inside this session's hall — the open attendance rows.
         var present = await appDbContext.HallAttendances.AsNoTracking()
             .Where(a => a.SessionId == sessionId && a.Leave == null)
-            .Select(a => new { a.UserId, a.Enter, a.Method })
+            .Select(a => new { a.UserProfileId, a.Enter, a.Method })
             .ToListAsync(cancellationToken);
         if (present.Count == 0)
         {
             return Array.Empty<SessionPresentAttendee>();
         }
 
-        var userIds = present.Select(a => a.UserId).Distinct().ToList();
+        var profileIds = present.Select(a => a.UserProfileId).Distinct().ToList();
 
-        // Profile data — App DB only: resolved from UserProfile, never from
-        // the Identity database. Admin-typed users carry no profile → null fields.
-        // Matched by account id, so an attendee with no account is never one of
-        // these: the roster comes from the attendance rows, whose UserId is always
-        // an account, so nobody present is dropped by this filter.
+        // Profile data — App DB only: resolved from UserProfile, never from the
+        // Identity database. Matched by PROFILE id, which is what the attendance row
+        // carries, so a walk-in in the hall appears on this roster with their real
+        // name rather than as a blank line.
         var profiles = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => p.UserId != null && userIds.Contains(p.UserId.Value))
+            .Where(p => profileIds.Contains(p.Id))
             .Select(p => new
             {
-                UserId = p.UserId!.Value,
+                p.Id,
                 p.Name,
                 p.NameArabic,
                 p.JobTitle,
@@ -190,27 +189,31 @@ internal sealed class SessionAttendanceService(
                 ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
             })
             .ToListAsync(cancellationToken);
-        var profileByUser = profiles.ToDictionary(p => p.UserId);
+        var profileById = profiles.ToDictionary(p => p.Id);
 
         // Their still-held seat for this session (if any) — open-seating attendees
         // and admin blocks resolve to no row/seat.
         var seats = await appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.SessionId == sessionId && r.ReleasedAt == null
-                && r.ReservedForUserId != null && userIds.Contains(r.ReservedForUserId!.Value))
-            .Select(r => new { UserId = r.ReservedForUserId!.Value, r.RowLabel, r.SeatNumber })
+                && r.ReservedForProfileId != null
+                && profileIds.Contains(r.ReservedForProfileId!.Value))
+            .Select(r => new
+            {
+                ProfileId = r.ReservedForProfileId!.Value, r.RowLabel, r.SeatNumber,
+            })
             .ToListAsync(cancellationToken);
-        var seatByUser = seats
-            .GroupBy(s => s.UserId)
+        var seatByProfile = seats
+            .GroupBy(s => s.ProfileId)
             .ToDictionary(g => g.Key, g => g.First());
 
         return present
             .OrderBy(a => a.Enter)
             .Select(a =>
             {
-                var profile = profileByUser.GetValueOrDefault(a.UserId);
-                var seat = seatByUser.GetValueOrDefault(a.UserId);
+                var profile = profileById.GetValueOrDefault(a.UserProfileId);
+                var seat = seatByProfile.GetValueOrDefault(a.UserProfileId);
                 return new SessionPresentAttendee(
-                    a.UserId,
+                    a.UserProfileId,
                     profile?.Name ?? string.Empty,
                     profile?.NameArabic ?? string.Empty,
                     profile?.OrganisationName,

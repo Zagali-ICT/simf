@@ -133,8 +133,14 @@ public interface ISeatReservationService
     /// here. It never throws and it never blocks: the person has already been
     /// admitted through the door, so failing to record a seat must not undo
     /// that. Returns false when they already hold a reservation for the session
-    /// (the filtered unique index on (SessionId, ReservedForUserId) is the
+    /// (the filtered unique index on (SessionId, ReservedForProfileId) is the
     /// guard) or when the insert lost a race.</para>
+    ///
+    /// <para><paramref name="attendeeProfileId"/> is the App
+    /// <c>UserProfile.Id</c>, not an Identity account: the walk-in this exists for
+    /// typically has no account. <paramref name="recordedByUserId"/> is the
+    /// OPERATOR who scanned them in, and is what the row's creator column
+    /// records — an attendee cannot author it, having possibly no account.</para>
     ///
     /// <para>Creates an <c>OpenSeating</c> hold with a null row and seat rather
     /// than assigning a specific place. Picking a seat runs inside a SERIALIZABLE
@@ -144,5 +150,6 @@ public interface ISeatReservationService
     /// sweep cannot release someone who is physically present.</para>
     /// </summary>
     Task<bool> EnsureWalkInHoldAsync(
-        Guid sessionId, Guid attendeeUserId, CancellationToken cancellationToken = default);
+        Guid sessionId, Guid attendeeProfileId, Guid recordedByUserId,
+        CancellationToken cancellationToken = default);
 }

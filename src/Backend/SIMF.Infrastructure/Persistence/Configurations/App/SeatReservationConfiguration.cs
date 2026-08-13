@@ -5,14 +5,15 @@ using SIMF.Domain.SeatReservations;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>SeatReservation EF config.
-/// Real FK to Session with cascade so a deleted session drops its
-/// reservations; ReservedForUserId / CreatedByUserId are logical
-/// FKs to SimfUser on the Identity DB.
+/// Real FKs to Session and to the holder's UserProfile; the ACTOR columns
+/// (CreatedByUserId / ReviewedByUserId) stay logical FKs to SimfUser on the
+/// Identity DB, because an actor is a signed-in account while a holder is an
+/// attendee — and an attendee need not have an account.
 /// <para>Filtered unique indexes enforce business invariants:</para>
 /// <list type="number">
 /// <item>One active reservation per (Session, RowLabel, SeatNumber)
 /// — released rows are excluded so the seat is freed for re-use.</item>
-/// <item>One active reservation per (Session, ReservedForUserId)
+/// <item>One active reservation per (Session, ReservedForProfileId)
 /// — a visitor cannot hold two seats in the same session.</item>
 /// </list></summary>
 internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<SeatReservation>
@@ -45,6 +46,13 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
             .HasForeignKey(x => x.SessionId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Optional: an admin block holds no attendee, so the column stays null
+        // there and the constraint simply does not apply to those rows.
+        builder.HasOne(x => x.ReservedForProfile)
+            .WithMany()
+            .HasForeignKey(x => x.ReservedForProfileId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Active-seat uniqueness — a seat can be re-reserved after release.
         // Only seat-specific rows participate (RowLabel IS NOT NULL), so
         // multiple OpenSeating joins (null row/seat) don't collide on the NULLs.
@@ -53,12 +61,12 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
             .IsUnique();
 
         // One active seat per visitor per session.
-        builder.HasIndex(x => new { x.SessionId, x.ReservedForUserId })
-            .HasFilter("[ReleasedAt] IS NULL AND [ReservedForUserId] IS NOT NULL")
+        builder.HasIndex(x => new { x.SessionId, x.ReservedForProfileId })
+            .HasFilter("[ReleasedAt] IS NULL AND [ReservedForProfileId] IS NOT NULL")
             .IsUnique();
 
-        // Lookup support for grid + per-user "my seat" queries.
-        builder.HasIndex(x => new { x.ReservedForUserId, x.ReleasedAt });
+        // Lookup support for grid + per-attendee "my seat" queries.
+        builder.HasIndex(x => new { x.ReservedForProfileId, x.ReleasedAt });
         builder.HasIndex(x => new { x.SessionId, x.ReleasedAt });
 
         // The booking approval queue lists Pending, held bookings.

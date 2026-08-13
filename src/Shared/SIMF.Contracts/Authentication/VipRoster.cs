@@ -4,13 +4,21 @@ namespace SIMF.Contracts.Authentication;
 /// One VVIP/VIP visitor in the موج (Mawj) welcome roster. The
 /// projection the technical teams consume to compose the welcome messages:
 /// the identity + the موج extras (Mawj ID, honorific, preferred language) + the
-/// tier + the contact details + whether a welcome photo is on file (fetch it via
-/// <c>GET /admin/visitors/{UserId}/vip-photo</c>). A cross-DB read resolved on
-/// the server: the profile lives on SIMF_App, the email/state/display
-/// name on SIMF_Identity.
+/// tier + the contact details + whether a welcome photo is on file.
 /// </summary>
+/// <param name="ProfileId">The attendee record, and the row's key. Every VVIP
+/// on this roster has one — including the ones minted into a bulk order or
+/// registered at a walk-in desk, who are exactly the guests the PR desk most
+/// needs to see and who used to be missing from it entirely.</param>
+/// <param name="UserId">Their app account, or null when they never asked for
+/// one. It is not the identity of the guest, only of their sign-in, so it
+/// appears here for the two things that genuinely need an account: the welcome
+/// photo route (<c>GET /admin/visitors/{UserId}/vip-photo</c>) and the account
+/// edit form. Both are unavailable for an accountless guest, which is why
+/// <see cref="HasVipPhoto"/> is false whenever this is null.</param>
 public sealed record VipRosterRow(
-    Guid UserId,
+    Guid ProfileId,
+    Guid? UserId,
     string DisplayName,
     string EnglishName,
     string ArabicName,

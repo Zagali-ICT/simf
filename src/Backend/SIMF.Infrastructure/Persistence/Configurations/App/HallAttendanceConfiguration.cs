@@ -5,8 +5,11 @@ using SIMF.Domain.Programme;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>HallAttendance configuration. Real FKs
-/// to Session + Hall (Restrict — sessions/halls are soft-deleted, never hard-
-/// deleted under an attendance row). A <b>filtered unique index</b> enforces the
+/// to Session + Hall + UserProfile (Restrict — sessions, halls and attendees are
+/// soft-deleted, never hard-deleted under an attendance row). The attendee key is
+/// the PROFILE, which every attendee has; it was the Identity account id, and was
+/// therefore unrecordable for the accountless walk-in this door exists to admit.
+/// A <b>filtered unique index</b> enforces the
 /// "one open row per attendee per session" rule: a door
 /// scan and a geofence crossing for the same session can only ever update the
 /// single open row, never insert a second.</summary>
@@ -30,15 +33,20 @@ internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<Hal
             .HasForeignKey(a => a.HallId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(a => a.UserProfile)
+            .WithMany()
+            .HasForeignKey(a => a.UserProfileId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // At most one OPEN attendance row per attendee per session.
-        builder.HasIndex(a => new { a.SessionId, a.UserId })
+        builder.HasIndex(a => new { a.SessionId, a.UserProfileId })
             .IsUnique()
             .HasFilter("[Leave] IS NULL");
 
         // Live per-hall presence count rides this (open rows in a hall).
         builder.HasIndex(a => new { a.HallId, a.Leave });
 
-        // The per-attendee attendance-history lookup by user.
-        builder.HasIndex(a => a.UserId);
+        // The per-attendee attendance-history lookup.
+        builder.HasIndex(a => a.UserProfileId);
     }
 }

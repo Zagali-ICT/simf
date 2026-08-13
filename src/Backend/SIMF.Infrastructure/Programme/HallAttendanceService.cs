@@ -118,17 +118,37 @@ internal sealed class HallAttendanceService(
                 "لم تدخل القاعة بعد.");
         }
 
+        // The device reports as a signed-in ACCOUNT, but attendance is keyed by the
+        // attendee profile, so translate before writing. Doing it here rather than
+        // at the endpoint is what keeps a geofence crossing and a door scan for the
+        // same person landing on the SAME row: the door resolves the profile from
+        // the badge QR, and this resolves the same profile from the account.
+        var attendeeProfileId = await AttendeeProfileIdAsync(userId, cancellationToken);
+
         var (row, created) = await OpenOrCreateArrivalAsync(
-            userId, sessionId, session.HallId, AttendanceMethod.Geofence, cancellationToken);
+            attendeeProfileId, sessionId, session.HallId,
+            AttendanceMethod.Geofence, cancellationToken);
         if (created)
         {
-            await AuditArrivalAsync(userId, sessionId, session.HallId, AttendanceMethod.Geofence, cancellationToken);
+            await AuditArrivalAsync(userId, attendeeProfileId, sessionId, session.HallId,
+                AttendanceMethod.Geofence, byOperator: false, cancellationToken);
             logger.LogInformation(
-                "Hall arrival (geofence) recorded for {UserId} at session {SessionId}.",
-                userId, sessionId);
+                "Hall arrival (geofence) recorded for attendee {AttendeeProfileId} at session {SessionId}.",
+                attendeeProfileId, sessionId);
         }
         return ToStatus(row);
     }
+
+    /// <summary>The attendee profile behind a signed-in account. Attendance is
+    /// keyed by the profile, so an account carrying none — an admin-typed user —
+    /// has no attendee to record and is refused here rather than silently opening
+    /// a row that resolves to nobody.</summary>
+    private async Task<Guid> AttendeeProfileIdAsync(
+        Guid userId, CancellationToken cancellationToken) =>
+        await appDbContext.ProfileIdForAccountAsync(userId, cancellationToken)
+            ?? throw new ApiException(ErrorCodes.AttendeeProfileMissing, 403,
+                "This account has no attendee record.",
+                "لا يوجد سجل حاضر مرتبط بهذا الحساب.");
 
     public async Task<QrArrivalResult> RecordQrArrivalAsync(
         Guid operatorUserId, Guid sessionId, string qrId,
@@ -181,33 +201,25 @@ internal sealed class HallAttendanceService(
             session.ArrivalGraceMinutesOverride, session.HallArrivalGraceMinutes,
             GlobalArrivalGraceMinutes));
 
-        // KNOWN GAP — HallAttendance is keyed by ACCOUNT id, so an attendee
-        // with no account cannot yet be recorded at a hall door. That is
-        // exactly the walk-in this system is meant to admit, so this refusal is
-        // temporary and deliberately loud: the table must be re-keyed to the
-        // profile id, which is the row every attendee has. Refusing here is the
-        // safe half of the gap — the alternative silently records the arrival
-        // against the wrong person or crashes at the door.
-        if (resolved.UserId is not { } attendeeUserId)
-        {
-            throw new ApiException(ErrorCodes.AttendeeNotApproved, 409,
-                "This attendee has no app account, which hall-door attendance still requires.",
-                "هذا الحاضر ليس لديه حساب في التطبيق، وهو مطلوب حالياً لتسجيل حضور القاعة.");
-        }
-
+        // The badge resolves straight to the attendee PROFILE, which every
+        // attendee has. The walk-in and the bulk-minted badge this door exists to
+        // admit carry no account, so there is nothing left to refuse them for.
         // No geofence check — the operator is physically at the door. Merges
         // with any existing open row (e.g. a prior geofence arrival).
         var (row, created) = await OpenOrCreateArrivalAsync(
-            attendeeUserId, sessionId, session.HallId, AttendanceMethod.QrScan, cancellationToken);
+            resolved.UserProfileId, sessionId, session.HallId,
+            AttendanceMethod.QrScan, cancellationToken);
         if (created)
         {
-            await AuditArrivalAsync(attendeeUserId, sessionId, session.HallId, AttendanceMethod.QrScan, cancellationToken, operatorUserId);
+            await AuditArrivalAsync(operatorUserId, resolved.UserProfileId, sessionId, session.HallId,
+                AttendanceMethod.QrScan, byOperator: true, cancellationToken);
             logger.LogInformation(
-                "Hall arrival (QR door scan) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
-                attendeeUserId, sessionId, operatorUserId);
+                "Hall arrival (QR door scan) recorded for attendee {AttendeeProfileId} at session {SessionId} by operator {OperatorId}.",
+                resolved.UserProfileId, sessionId, operatorUserId);
         }
         return new QrArrivalResult(
-            attendeeUserId, resolved.DisplayName, resolved.DisplayNameArabic, ToStatus(row));
+            resolved.UserId ?? Guid.Empty, resolved.DisplayName, resolved.DisplayNameArabic,
+            ToStatus(row), resolved.UserProfileId);
     }
 
     public async Task<QrArrivalResult> RecordQrDepartureAsync(
@@ -243,26 +255,18 @@ internal sealed class HallAttendanceService(
         // they were not checked in / already left). The seat map's confirmed state
         // clears automatically once the row closes (SeatReservationService reads
         // open rows only).
-        // Same account-keyed gap as the arrival path above. A departure for
-        // someone who could never have been recorded arriving is a no-op, so
-        // this reports the "not checked in" shape rather than failing: an
-        // attendee must always be able to leave.
-        if (resolved.UserId is not { } attendeeUserId)
-        {
-            return new QrArrivalResult(
-                Guid.Empty, resolved.DisplayName, resolved.DisplayNameArabic, ToStatus(null));
-        }
-
-        var status = await RecordDepartureAsync(attendeeUserId, sessionId, cancellationToken);
+        var status = await CloseAttendeeRowAsync(
+            resolved.UserProfileId, sessionId, cancellationToken);
         logger.LogInformation(
-            "Hall departure (QR door scan) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
-            attendeeUserId, sessionId, operatorUserId);
+            "Hall departure (QR door scan) recorded for attendee {AttendeeProfileId} at session {SessionId} by operator {OperatorId}.",
+            resolved.UserProfileId, sessionId, operatorUserId);
         return new QrArrivalResult(
-            attendeeUserId, resolved.DisplayName, resolved.DisplayNameArabic, status);
+            resolved.UserId ?? Guid.Empty, resolved.DisplayName, resolved.DisplayNameArabic,
+            status, resolved.UserProfileId);
     }
 
     public async Task<HallEntryEligibility> CheckHallEntryEligibilityAsync(
-        Guid attendeeUserId, Guid hallId,
+        Guid attendeeProfileId, Guid hallId,
         CancellationToken cancellationToken = default)
     {
         // Ask about EVERY session this door is admitting for, not only
@@ -289,7 +293,7 @@ internal sealed class HallAttendanceService(
             .AsNoTracking()
             .AnyAsync(
                 a => admittingSessionIds.Contains(a.SessionId)
-                    && a.UserId == attendeeUserId
+                    && a.UserProfileId == attendeeProfileId
                     && a.Leave == null,
                 cancellationToken);
         if (alreadyInside)
@@ -305,7 +309,7 @@ internal sealed class HallAttendanceService(
             .AsNoTracking()
             .AnyAsync(
                 r => admittingSessionIds.Contains(r.SessionId)
-                    && r.ReservedForUserId == attendeeUserId
+                    && r.ReservedForProfileId == attendeeProfileId
                     && r.ReleasedAt == null,
                 cancellationToken);
 
@@ -397,7 +401,7 @@ internal sealed class HallAttendanceService(
     }
 
     public async Task<bool> RecordGateDoorScanAsync(
-        Guid attendeeUserId, Guid hallId, ScanDirection direction,
+        Guid attendeeProfileId, Guid hallId, ScanDirection direction,
         bool directionInferred, Guid operatorUserId,
         CancellationToken cancellationToken = default)
     {
@@ -420,8 +424,8 @@ internal sealed class HallAttendanceService(
             // the attendance was simply lost. Report it so the gate can raise an
             // advisory notice on the scan result (the entry itself stays allowed).
             logger.LogInformation(
-                "Hall-door gate scan for {UserId} in hall {HallId} matched no live session — no attendance recorded.",
-                attendeeUserId, hallId);
+                "Hall-door gate scan for attendee {AttendeeProfileId} in hall {HallId} matched no live session — no attendance recorded.",
+                attendeeProfileId, hallId);
             return false;
         }
 
@@ -437,13 +441,13 @@ internal sealed class HallAttendanceService(
             // the first turnstile pass after a geofence arrival must NOT close it —
             // that used to mark a still-present attendee as departed and under-count
             // live occupancy. Let it fall through to the merge (arrival) path instead.
-            var open = await OpenRowAsync(attendeeUserId, liveSessionId, cancellationToken);
+            var open = await OpenRowAsync(attendeeProfileId, liveSessionId, cancellationToken);
             if (open is not null && open.Method != AttendanceMethod.Geofence)
             {
                 // A non-null Leave is the proof a row was actually closed — the same
                 // honest signal the fixed Out branch below returns.
-                var inferredDeparture = await RecordDepartureAsync(
-                    attendeeUserId, liveSessionId, cancellationToken);
+                var inferredDeparture = await CloseAttendeeRowAsync(
+                    attendeeProfileId, liveSessionId, cancellationToken);
                 return inferredDeparture.Leave is not null;
             }
             // No open row (or a geofence arrival to merge with) → fall through to the
@@ -456,8 +460,8 @@ internal sealed class HallAttendanceService(
             // nothing, so no attendance was recorded and the operator has to be
             // told (they would otherwise read a plain "Allowed" as "counted"). A
             // non-null Leave is the proof a row was actually closed.
-            var departure = await RecordDepartureAsync(
-                attendeeUserId, liveSessionId, cancellationToken);
+            var departure = await CloseAttendeeRowAsync(
+                attendeeProfileId, liveSessionId, cancellationToken);
             return departure.Leave is not null;
         }
 
@@ -466,16 +470,16 @@ internal sealed class HallAttendanceService(
         // arrival records + warns rather than throwing (operator + geofence
         // arrivals keep the hard HALL_AT_CAPACITY 409).
         var (row, created) = await OpenOrCreateArrivalAsync(
-            attendeeUserId, liveSessionId, hallId, AttendanceMethod.QrScan,
+            attendeeProfileId, liveSessionId, hallId, AttendanceMethod.QrScan,
             cancellationToken, enforceCapacity: false);
         if (created)
         {
             await AuditArrivalAsync(
-                attendeeUserId, liveSessionId, hallId, AttendanceMethod.QrScan,
-                cancellationToken, operatorUserId);
+                operatorUserId, attendeeProfileId, liveSessionId, hallId,
+                AttendanceMethod.QrScan, byOperator: true, cancellationToken);
             logger.LogInformation(
-                "Hall arrival (hall-door gate) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
-                attendeeUserId, liveSessionId, operatorUserId);
+                "Hall arrival (hall-door gate) recorded for attendee {AttendeeProfileId} at session {SessionId} by operator {OperatorId}.",
+                attendeeProfileId, liveSessionId, operatorUserId);
 
             // A walk-in admitted with no booking still occupies a place,
             // so record an open-seating hold: without it the staff seating desk
@@ -488,14 +492,14 @@ internal sealed class HallAttendanceService(
             try
             {
                 await seats.EnsureWalkInHoldAsync(
-                    liveSessionId, attendeeUserId, cancellationToken);
+                    liveSessionId, attendeeProfileId, operatorUserId, cancellationToken);
             }
             catch (Exception ex)
             {
                 logger.LogWarning(
                     ex,
-                    "Walk-in seat hold failed for {UserId} at session {SessionId}; arrival stands.",
-                    attendeeUserId, liveSessionId);
+                    "Walk-in seat hold failed for attendee {AttendeeProfileId} at session {SessionId}; arrival stands.",
+                    attendeeProfileId, liveSessionId);
             }
         }
         // DEF-CHK-004 (A4) — a null row means the advisory insert was rejected by
@@ -522,10 +526,10 @@ internal sealed class HallAttendanceService(
     /// <c>Created</c> means either "merged into an existing row" (recorded) or
     /// "nothing landed" (not recorded).</para></summary>
     private async Task<(HallAttendance? Row, bool Created)> OpenOrCreateArrivalAsync(
-        Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method,
+        Guid attendeeProfileId, Guid sessionId, Guid hallId, AttendanceMethod method,
         CancellationToken cancellationToken, bool enforceCapacity = true)
     {
-        var open = await OpenRowAsync(userId, sessionId, cancellationToken);
+        var open = await OpenRowAsync(attendeeProfileId, sessionId, cancellationToken);
         if (open is not null)
         {
             return (open, false);
@@ -547,12 +551,12 @@ internal sealed class HallAttendanceService(
                     "Hall {HallId} / session {SessionId} exceeded capacity ({Present}/{Cap}) on a gate-door arrival — recorded (advisory).",
                     hallId, sessionId, advisory.Present, advisory.Cap);
             }
-            return await InsertArrivalAsync(userId, sessionId, hallId, method, cancellationToken);
+            return await InsertArrivalAsync(attendeeProfileId, sessionId, hallId, method, cancellationToken);
         }
 
         // Operator QR-door + geofence arrivals — hard cap.
         return await InsertArrivalWithinCapacityAsync(
-            userId, sessionId, hallId, method, cancellationToken);
+            attendeeProfileId, sessionId, hallId, method, cancellationToken);
     }
 
     /// <summary>Inserts a fresh open attendance row. Idempotent under a concurrent
@@ -567,10 +571,10 @@ internal sealed class HallAttendanceService(
     /// exception is logged there and then — it is the only place that still holds
     /// the reason the operator's advisory notice does not name.</para></summary>
     private async Task<(HallAttendance? Row, bool Created)> InsertArrivalAsync(
-        Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method,
+        Guid attendeeProfileId, Guid sessionId, Guid hallId, AttendanceMethod method,
         CancellationToken cancellationToken)
     {
-        var row = NewArrivalRow(userId, sessionId, hallId, method);
+        var row = NewArrivalRow(attendeeProfileId, sessionId, hallId, method);
         appDbContext.HallAttendances.Add(row);
         try
         {
@@ -579,12 +583,12 @@ internal sealed class HallAttendanceService(
         catch (DbUpdateException ex)
         {
             appDbContext.Entry(row).State = EntityState.Detached;
-            var existing = await OpenRowAsync(userId, sessionId, cancellationToken);
+            var existing = await OpenRowAsync(attendeeProfileId, sessionId, cancellationToken);
             if (existing is null)
             {
                 logger.LogWarning(ex,
-                    "Hall arrival insert was rejected for {UserId} at session {SessionId} and no open row could be re-read — no attendance recorded.",
-                    userId, sessionId);
+                    "Hall arrival insert was rejected for attendee {AttendeeProfileId} at session {SessionId} and no open row could be re-read — no attendance recorded.",
+                    attendeeProfileId, sessionId);
             }
             return (existing, false);
         }
@@ -604,7 +608,7 @@ internal sealed class HallAttendanceService(
     /// <c>SeatReservationService.InsertHoldWithinCapacityAsync</c>. Throws
     /// <see cref="ErrorCodes.HallAtCapacity"/> when full.</summary>
     private async Task<(HallAttendance Row, bool Created)> InsertArrivalWithinCapacityAsync(
-        Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method,
+        Guid attendeeProfileId, Guid sessionId, Guid hallId, AttendanceMethod method,
         CancellationToken cancellationToken)
     {
         HallAttendance? added = null;
@@ -632,7 +636,7 @@ internal sealed class HallAttendanceService(
                 return; // full — the transaction rolls back on dispose
             }
 
-            var row = NewArrivalRow(userId, sessionId, hallId, method);
+            var row = NewArrivalRow(attendeeProfileId, sessionId, hallId, method);
             appDbContext.HallAttendances.Add(row);
             added = row;
             try
@@ -658,7 +662,7 @@ internal sealed class HallAttendanceService(
             return (committed, true);
         }
         if (lostTheOpenRowRace
-            && await OpenRowAsync(userId, sessionId, cancellationToken) is { } existing)
+            && await OpenRowAsync(attendeeProfileId, sessionId, cancellationToken) is { } existing)
         {
             return (existing, false);
         }
@@ -679,7 +683,7 @@ internal sealed class HallAttendanceService(
         exception.InnerException is SqlException { Number: 2601 or 2627 };
 
     private HallAttendance NewArrivalRow(
-        Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method)
+        Guid attendeeProfileId, Guid sessionId, Guid hallId, AttendanceMethod method)
     {
         var now = timeProvider.SimfNow();
         return new HallAttendance
@@ -687,7 +691,7 @@ internal sealed class HallAttendanceService(
             Id = Guid.NewGuid(),
             SessionId = sessionId,
             HallId = hallId,
-            UserId = userId,
+            UserProfileId = attendeeProfileId,
             Method = method,
             Enter = now,
             CreatedAt = now,
@@ -740,21 +744,43 @@ internal sealed class HallAttendanceService(
         }
     }
 
+    /// <summary>Writes the arrival audit entry. The ACTOR is an account — the
+    /// operator who scanned, or the attendee's own account on a self-service
+    /// geofence claim — while the attendee is named by PROFILE id, because that
+    /// is what the attendance row is keyed by and the only id a walk-in
+    /// has.</summary>
     private Task AuditArrivalAsync(
-        Guid attendeeUserId, Guid sessionId, Guid hallId, AttendanceMethod method,
-        CancellationToken cancellationToken, Guid? operatorUserId = null) =>
+        Guid actorUserId, Guid attendeeProfileId, Guid sessionId, Guid hallId,
+        AttendanceMethod method, bool byOperator,
+        CancellationToken cancellationToken) =>
         auditLog.WriteSuccessAsync(
             AuditEvents.HallArrivalRecorded,
-            operatorUserId ?? attendeeUserId,
-            operatorUserId is { } op
-                ? $"sessionId={sessionId}; hallId={hallId}; method={method}; attendee={attendeeUserId}; operator={op}"
-                : $"sessionId={sessionId}; hallId={hallId}; method={method}",
+            actorUserId,
+            byOperator
+                ? $"sessionId={sessionId}; hallId={hallId}; method={method}; attendeeProfileId={attendeeProfileId}; operator={actorUserId}"
+                : $"sessionId={sessionId}; hallId={hallId}; method={method}; attendeeProfileId={attendeeProfileId}",
             cancellationToken);
 
     public async Task<HallAttendanceStatus> RecordDepartureAsync(
         Guid userId, Guid sessionId, CancellationToken cancellationToken = default)
     {
-        var open = await OpenRowAsync(userId, sessionId, cancellationToken);
+        // Self-service: the caller is a signed-in account, so translate to the
+        // attendee profile the row is keyed by.
+        var attendeeProfileId = await AttendeeProfileIdAsync(userId, cancellationToken);
+        return await CloseAttendeeRowAsync(attendeeProfileId, sessionId, cancellationToken);
+    }
+
+    /// <summary>Closes the attendee's open row for the session, whoever asked —
+    /// the attendee's own app, an operator's check-out scan, or a turnstile.
+    /// Idempotent: with no open row it reports the not-arrived shape rather than
+    /// failing, because an attendee must always be able to leave.
+    ///
+    /// <para>Keyed by PROFILE, so the accountless walk-in whose arrival the door
+    /// recorded can be checked out through the same path.</para></summary>
+    private async Task<HallAttendanceStatus> CloseAttendeeRowAsync(
+        Guid attendeeProfileId, Guid sessionId, CancellationToken cancellationToken)
+    {
+        var open = await OpenRowAsync(attendeeProfileId, sessionId, cancellationToken);
         if (open is null)
         {
             return new HallAttendanceStatus(false, null, null, null);
@@ -765,10 +791,15 @@ internal sealed class HallAttendanceService(
         open.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
+        // The audit actor is the departing attendee, which is an ACCOUNT id the
+        // audit trail can join back to a person. An attendee with no account
+        // leaves a null actor and is named by profile in the detail instead —
+        // never Guid.Empty, which already means "matches nobody" here.
+        var attendeeAccountId = await AttendeeAccountIdAsync(attendeeProfileId, cancellationToken);
         await auditLog.WriteSuccessAsync(
             AuditEvents.HallDepartureRecorded,
-            userId,
-            $"sessionId={sessionId}; hallId={open.HallId}",
+            attendeeAccountId,
+            $"sessionId={sessionId}; hallId={open.HallId}; attendeeProfileId={attendeeProfileId}",
             cancellationToken);
 
         // Leaving the hall closes the attendee's session
@@ -776,10 +807,29 @@ internal sealed class HallAttendanceService(
         // dispatcher's DeduplicateByRelatedEntity guard shares one prompt per
         // (session, user) with the clock-end worker, so a re-enter/re-leave or a
         // later clock-end scan never double-prompts.
-        await PromptSessionRatingOnDepartureAsync(userId, sessionId, cancellationToken);
+        //
+        // Only an account holder can be prompted: the notification is delivered
+        // to a device and a mailbox, which is exactly what an attendee without an
+        // account does not have. Their departure still stands.
+        if (attendeeAccountId is { } accountId)
+        {
+            await PromptSessionRatingOnDepartureAsync(accountId, sessionId, cancellationToken);
+        }
 
         return ToStatus(open);
     }
+
+    /// <summary>The Identity account behind an attendee profile, or null when
+    /// they hold none. Null is the ordinary case for a walk-in or a bulk-minted
+    /// badge, and is how the notification and audit edges skip an attendee they
+    /// have no way to address.</summary>
+    private Task<Guid?> AttendeeAccountIdAsync(
+        Guid attendeeProfileId, CancellationToken cancellationToken) =>
+        appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => profile.Id == attendeeProfileId)
+            .Select(profile => profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
 
     /// <summary>Fires the "please rate this session" prompt when an
     /// attendee's hall attendance closes on departure. Loads the session title for
@@ -832,10 +882,12 @@ internal sealed class HallAttendanceService(
     public async Task<HallAttendanceStatus> GetStatusAsync(
         Guid userId, Guid sessionId, CancellationToken cancellationToken = default)
     {
+        var attendeeProfileId = await AttendeeProfileIdAsync(userId, cancellationToken);
+
         // Prefer the open row; otherwise the most recent closed one.
         var row = await appDbContext.HallAttendances
             .AsNoTracking()
-            .Where(a => a.SessionId == sessionId && a.UserId == userId)
+            .Where(a => a.SessionId == sessionId && a.UserProfileId == attendeeProfileId)
             .OrderBy(a => a.Leave == null ? 0 : 1)
             .ThenByDescending(a => a.Enter)
             .FirstOrDefaultAsync(cancellationToken);
@@ -843,10 +895,11 @@ internal sealed class HallAttendanceService(
     }
 
     private Task<HallAttendance?> OpenRowAsync(
-        Guid userId, Guid sessionId, CancellationToken cancellationToken) =>
+        Guid attendeeProfileId, Guid sessionId, CancellationToken cancellationToken) =>
         appDbContext.HallAttendances
             .SingleOrDefaultAsync(
-                a => a.SessionId == sessionId && a.UserId == userId && a.Leave == null,
+                a => a.SessionId == sessionId
+                    && a.UserProfileId == attendeeProfileId && a.Leave == null,
                 cancellationToken);
 
     private static HallAttendanceStatus ToStatus(HallAttendance? row) =>

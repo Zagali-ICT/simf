@@ -248,6 +248,10 @@ public sealed class AdminGateCurrentlyInsideTests : IClassFixture<SimfApiFactory
             Name = displayName,
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
+            // The gate reads admission off the PROFILE, so a profile left at the
+            // default pending state is refused at the door and never appears
+            // inside — whatever the account says.
+            AdmissionState = AccountState.Approved,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();

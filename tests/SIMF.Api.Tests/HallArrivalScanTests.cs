@@ -41,7 +41,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
     {
         var operatorToken = await CreateAdministratorAndSignInAsync();
         var sessionId = await SeedSessionAsync(withGeofence: false);
-        var (qrId, userId, _, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+        var (qrId, userId, _, _, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
 
         var result = await ScanAsync(sessionId, qrId, operatorToken);
         Assert.Equal(userId, result.UserId);
@@ -54,7 +54,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
     {
         var operatorToken = await CreateAdministratorAndSignInAsync();
         var sessionId = await SeedSessionAsync(withGeofence: true);
-        var (qrId, userId, visitorToken, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+        var (qrId, _, visitorToken, _, profileId) = await CreateApprovedVisitorWithQrAsync(approved: true);
 
         // Attendee arrives via GPS first.
         var arrival = await PostAuthAsync($"/api/v1/app/sessions/{sessionId}/arrival",
@@ -68,7 +68,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var count = await db.HallAttendances
-            .CountAsync(a => a.SessionId == sessionId && a.UserId == userId);
+            .CountAsync(a => a.SessionId == sessionId && a.UserProfileId == profileId);
         Assert.Equal(1, count);
     }
 
@@ -88,7 +88,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
     {
         var operatorToken = await CreateAdministratorAndSignInAsync();
         var sessionId = await SeedSessionAsync(withGeofence: false);
-        var (qrId, _, _, _) = await CreateApprovedVisitorWithQrAsync(approved: false);
+        var (qrId, _, _, _, _) = await CreateApprovedVisitorWithQrAsync(approved: false);
 
         var response = await PostScanAsync(sessionId, qrId, operatorToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -98,7 +98,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
     public async Task A_non_operator_account_is_forbidden()
     {
         var sessionId = await SeedSessionAsync(withGeofence: false);
-        var (qrId, _, visitorToken, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+        var (qrId, _, visitorToken, _, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
 
         // An approved visitor lacks HallArrivals.Record.
         var response = await PostScanAsync(sessionId, qrId, visitorToken);
@@ -112,7 +112,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
     {
         var operatorToken = await CreateAdministratorAndSignInAsync();
         var sessionId = await SeedSessionAsync(withGeofence: false);
-        var (qrId, userId, _, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+        var (qrId, userId, _, _, profileId) = await CreateApprovedVisitorWithQrAsync(approved: true);
 
         // Check the attendee in first.
         var arrival = await ScanAsync(sessionId, qrId, operatorToken);
@@ -128,7 +128,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var open = await db.HallAttendances
-            .CountAsync(a => a.SessionId == sessionId && a.UserId == userId && a.Leave == null);
+            .CountAsync(a => a.SessionId == sessionId && a.UserProfileId == profileId && a.Leave == null);
         Assert.Equal(0, open);
     }
 
@@ -137,7 +137,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
     {
         var operatorToken = await CreateAdministratorAndSignInAsync();
         var sessionId = await SeedSessionAsync(withGeofence: false);
-        var (qrId, _, _, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+        var (qrId, _, _, _, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
 
         // No check-in first — the check-out is a 200 no-op (Arrived=false).
         var departure = await DepartAsync(sessionId, qrId, operatorToken);
@@ -159,7 +159,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
     public async Task A_non_operator_cannot_record_a_departure()
     {
         var sessionId = await SeedSessionAsync(withGeofence: false);
-        var (qrId, _, visitorToken, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+        var (qrId, _, visitorToken, _, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
 
         var response = await PostDepartAsync(sessionId, qrId, visitorToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -173,12 +173,12 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
         // DEF-CHK-002 (refutation) — the audit claimed the per-session rating is
         // unreachable because RatingFormService requires a HallAttendance row
         // "nothing in the product creates automatically". It does: the operator's
-        // hall-door QR scan writes one, keyed on the SAME Identity SimfUser.Id the
-        // rating gate reads from the `sub` claim. So the rating unlocks with no
+        // hall-door QR scan writes one, keyed on the SAME attendee profile the
+        // rating gate resolves the `sub` claim to. So the rating unlocks with no
         // geofence involved (the deferred D-211 self-service path).
         var operatorToken = await CreateAdministratorAndSignInAsync();
         var sessionId = await SeedSessionAsync(withGeofence: false);
-        var (qrId, _, visitorToken, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
+        var (qrId, _, visitorToken, _, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
 
         // Before any check-in the gate refuses the submission.
         var blocked = await PostAuthAsync(
@@ -257,13 +257,17 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
         return session.Id;
     }
 
-    private async Task<(string QrId, Guid UserId, string Token, string DisplayName)>
-        CreateApprovedVisitorWithQrAsync(bool approved)
+    /// <summary>An attendee with a badge. Returns the PROFILE id as well as the
+    /// account id, because attendance rows are keyed by the profile — the account
+    /// is only what they sign in to the app with.</summary>
+    private async Task<(string QrId, Guid UserId, string Token, string DisplayName,
+        Guid ProfileId)> CreateApprovedVisitorWithQrAsync(bool approved)
     {
         var email = $"scan-visitor-{Guid.NewGuid():N}@simf.test";
         var qrId = Guid.NewGuid().ToString("N")[..12].ToUpperInvariant();
         var displayName = "Scan Visitor";
         Guid userId;
+        Guid profileId;
         using (var scope = _factory.Services.CreateScope())
         {
             var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
@@ -278,7 +282,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
             userId = user.Id;
 
             var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            appDb.UserProfiles.Add(new SIMF.Domain.Profiles.UserProfile
+            var profile = new SIMF.Domain.Profiles.UserProfile
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
@@ -287,9 +291,16 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
                 Name = displayName,
                 NationalityId = 682,
                 PlaceOfBirth = "Riyadh",
+                // The door reads admission from the PROFILE, so approving only the
+                // account would leave every scan of this badge refused.
+                AdmissionState = approved
+                    ? AccountState.Approved
+                    : AccountState.PendingApproval,
                 CreatedAt = SimfClock.Now,
-            });
+            };
+            appDb.UserProfiles.Add(profile);
             await appDb.SaveChangesAsync();
+            profileId = profile.Id;
         }
 
         var token = string.Empty;
@@ -301,7 +312,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
             var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
             token = body.Data!.Tokens!.AccessToken;
         }
-        return (qrId, userId, token, displayName);
+        return (qrId, userId, token, displayName, profileId);
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

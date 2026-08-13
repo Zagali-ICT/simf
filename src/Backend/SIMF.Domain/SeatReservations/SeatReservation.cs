@@ -7,7 +7,7 @@ namespace SIMF.Domain.SeatReservations;
 /// One reserved seat in one <see cref="Session"/>, held either by a visitor or by
 /// an admin blocking the seat off.
 ///
-/// <para>A visitor hold carries the holder in <see cref="ReservedForUserId"/>. An
+/// <para>A visitor hold carries the holder in <see cref="ReservedForProfileId"/>. An
 /// admin block (<see cref="SeatReservationKind.AdminReservedRow"/>) has no holder,
 /// and blocking a whole row writes one row here per seat rather than a single
 /// range.</para>
@@ -37,10 +37,14 @@ public sealed class SeatReservation
 
     public SeatReservationKind Kind { get; set; }
 
-    /// <summary>The holder. A bare Guid rather than a navigation: the user lives in
-    /// the Identity database, so there is no foreign key across the two. Null on an
-    /// admin block, which is what tells a blocked seat from a taken one.</summary>
-    public Guid? ReservedForUserId { get; set; }
+    /// <summary>The holder, keyed by their <see cref="Profiles.UserProfile"/> —
+    /// the row every attendee has, whether or not they hold an account. It was the
+    /// Identity account id until the profile became the attendee record, which
+    /// meant a walk-in admitted at the door had nowhere to hold the seat they were
+    /// standing in. Null on an admin block, which is what tells a blocked seat from
+    /// a taken one, so the foreign key is optional.</summary>
+    public Guid? ReservedForProfileId { get; set; }
+    public Profiles.UserProfile? ReservedForProfile { get; set; }
 
     /// <summary>Who made the reservation, which is not always who holds it: the
     /// visitor on a self-booking, the admin who blocked the row otherwise.</summary>
@@ -87,7 +91,7 @@ public sealed class SeatReservation
     public DateTime? Expires { get; set; }
 
     // The occupant of a VVIP seat an admin has blocked. Such a seat has no
-    // registration behind it, so there is no ReservedForUserId to resolve a name
+    // registration behind it, so there is no ReservedForProfileId to resolve a name
     // from and this typed hint IS the occupant record, e.g. "Reserved for the
     // Minister". Meaningful only on an AdminReservedRow block, null everywhere else.
     // At most 256 chars each, and the Arabic twin is null when the admin typed one

@@ -1603,7 +1603,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Method = table.Column<int>(type: "int", nullable: false),
                     Enter = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Leave = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1625,6 +1625,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         principalTable: "Sessions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HallAttendances_UserProfiles_UserProfileId",
+                        column: x => x.UserProfileId,
+                        principalTable: "UserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1636,7 +1642,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     RowLabel = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: true),
                     SeatNumber = table.Column<int>(type: "int", nullable: true),
                     Kind = table.Column<int>(type: "int", nullable: false),
-                    ReservedForUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ReservedForProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ReleasedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1655,6 +1661,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_SeatReservations_Sessions_SessionId",
                         column: x => x.SessionId,
                         principalTable: "Sessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SeatReservations_UserProfiles_ReservedForProfileId",
+                        column: x => x.ReservedForProfileId,
+                        principalTable: "UserProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2279,7 +2291,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ExhibitorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ExhibitorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    VisitorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    VisitorProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Note = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -2295,6 +2307,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_ExhibitorVisitorScans_Exhibitors_ExhibitorId",
                         column: x => x.ExhibitorId,
                         principalTable: "Exhibitors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ExhibitorVisitorScans_UserProfiles_VisitorProfileId",
+                        column: x => x.VisitorProfileId,
+                        principalTable: "UserProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2902,16 +2920,21 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "IsActive", "NameArabic" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExhibitorVisitorScans_ExhibitorId_VisitorUserId",
+                name: "IX_ExhibitorVisitorScans_ExhibitorId_VisitorProfileId",
                 table: "ExhibitorVisitorScans",
-                columns: new[] { "ExhibitorId", "VisitorUserId" },
+                columns: new[] { "ExhibitorId", "VisitorProfileId" },
                 unique: true,
                 filter: "[IsActive] = 1 AND [ExhibitorId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExhibitorVisitorScans_ExhibitorUserId_VisitorUserId",
+                name: "IX_ExhibitorVisitorScans_ExhibitorUserId_VisitorProfileId",
                 table: "ExhibitorVisitorScans",
-                columns: new[] { "ExhibitorUserId", "VisitorUserId" });
+                columns: new[] { "ExhibitorUserId", "VisitorProfileId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExhibitorVisitorScans_VisitorProfileId",
+                table: "ExhibitorVisitorScans",
+                column: "VisitorProfileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FaqEntries_FaqGroupId_IsActive_DisplayOrder",
@@ -3005,16 +3028,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "HallId", "Leave" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_HallAttendances_SessionId_UserId",
+                name: "IX_HallAttendances_SessionId_UserProfileId",
                 table: "HallAttendances",
-                columns: new[] { "SessionId", "UserId" },
+                columns: new[] { "SessionId", "UserProfileId" },
                 unique: true,
                 filter: "[Leave] IS NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_HallAttendances_UserId",
+                name: "IX_HallAttendances_UserProfileId",
                 table: "HallAttendances",
-                column: "UserId");
+                column: "UserProfileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_HallAvailabilityWindows_HallId_IsActive_Start",
@@ -3299,9 +3322,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 filter: "[ReleasedAt] IS NULL AND [Expires] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SeatReservations_ReservedForUserId_ReleasedAt",
+                name: "IX_SeatReservations_ReservedForProfileId_ReleasedAt",
                 table: "SeatReservations",
-                columns: new[] { "ReservedForUserId", "ReleasedAt" });
+                columns: new[] { "ReservedForProfileId", "ReleasedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_SeatReservations_SessionId_ReleasedAt",
@@ -3309,11 +3332,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "SessionId", "ReleasedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_SeatReservations_SessionId_ReservedForUserId",
+                name: "IX_SeatReservations_SessionId_ReservedForProfileId",
                 table: "SeatReservations",
-                columns: new[] { "SessionId", "ReservedForUserId" },
+                columns: new[] { "SessionId", "ReservedForProfileId" },
                 unique: true,
-                filter: "[ReleasedAt] IS NULL AND [ReservedForUserId] IS NOT NULL");
+                filter: "[ReleasedAt] IS NULL AND [ReservedForProfileId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SeatReservations_SessionId_RowLabel_SeatNumber",

@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
+﻿// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
@@ -127,7 +127,7 @@ internal sealed class AdminApprovalReadService(
                 u.AccountState,
                 u.CreatedAt,
                 u.UpdatedAt,
-                u.AvatarRelativePath,
+                u.AvatarFileId,
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (user is null) { return null; }
@@ -193,8 +193,8 @@ internal sealed class AdminApprovalReadService(
             profile?.InternationalMobile,
             profile?.HasIdImage ?? false,
             // The avatar (profile photo) lives on SimfUser (Identity);
-            // AvatarRelativePath is its StoredFile presence sentinel.
-            !string.IsNullOrEmpty(user.AvatarRelativePath),
+            // AvatarFileId is its StoredFile presence sentinel.
+            user.AvatarFileId is not null,
             profile?.InterestIds ?? new List<Guid>(),
             profile?.RejectionReason,
             profile?.RejectionReasonArabic,
@@ -232,7 +232,7 @@ internal sealed class AdminApprovalReadService(
                 u.DisplayName,
                 u.UserType,
                 u.CreatedAt,
-                u.AvatarRelativePath,
+                u.AvatarFileId,
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (user is null) { return null; }
@@ -307,9 +307,9 @@ internal sealed class AdminApprovalReadService(
             profile?.ReferenceNumber,
             profile?.Interests.Select(i => new PendingProfileInterest(i.Name, i.NameArabic)).ToList(),
             // The avatar (profile photo) lives on SimfUser (Identity); its
-            // AvatarRelativePath is the StoredFile pointer/presence sentinel.
+            // AvatarFileId is the StoredFile pointer/presence sentinel.
             // Use IsNullOrEmpty to match every other presence reader.
-            HasAvatar: !string.IsNullOrEmpty(user.AvatarRelativePath));
+            HasAvatar: user.AvatarFileId is not null);
     }
 
     // Country lookup helper. Cross-context (Country lives in

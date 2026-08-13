@@ -286,15 +286,11 @@ internal sealed class GateOperatorService(
         // profile-type-allowed above always hold.
         if (snapshot.HallId is { } sessionHallId && direction == ScanDirection.CheckIn)
         {
-            // A booking is keyed by Identity account, so an attendee with no account
-            // cannot hold one and is unregistered by definition — the same answer the
-            // service would give, without inventing an id to ask it about. The
-            // walk-in relaxation below still applies to them, exactly as it does to
-            // any other unregistered holder.
-            var eligibility = resolution.UserId is { } attendeeUserId
-                ? await hallAttendance.CheckHallEntryEligibilityAsync(
-                    attendeeUserId, sessionHallId, cancellationToken)
-                : HallEntryEligibility.NotRegistered;
+            // Asked by PROFILE, which every attendee has. Bookings and attendance
+            // are both keyed by it, so an attendee with no account is now answered
+            // on their real registration instead of being assumed unregistered.
+            var eligibility = await hallAttendance.CheckHallEntryEligibilityAsync(
+                resolution.UserProfileId, sessionHallId, cancellationToken);
 
             if (eligibility == HallEntryEligibility.NotRegistered
                 && !walkInMode.CurrentValue.SessionWalkInActive(timeProvider.SimfNow()))
@@ -668,8 +664,8 @@ internal sealed class GateOperatorService(
         // committed, so a chain failure is logged and swallowed rather than failing
         // the operator's scan (mirrors HallAttendanceService's departure-hook
         // resilience). Perimeter gates (HallId null) are unchanged. The attendee is
-        // carried as resolution.UserId (Identity SimfUser.Id), NEVER
-        // resolution.UserProfileId — HallAttendance.UserId is the Identity id.
+        // carried as resolution.UserProfileId, which HallAttendance is keyed by, so a
+        // holder with no Identity account is recorded like any other.
         // FIX C — a Both-mode gate's direction is only an alternation guess, so the
         // chain derives the real action from attendance state (directionInferred);
         // a fixed In/Out gate stays authoritative.
@@ -682,36 +678,24 @@ internal sealed class GateOperatorService(
         string? notice = null;
         if (hallDoorHallId is { } hallId)
         {
-            // Hall attendance is keyed by the Identity account, so an attendee with
-            // no account has nowhere to be recorded. Skip the chain and raise the
-            // same advisory it raises whenever it records nothing; the scan itself is
-            // already allowed and committed, which this never changes.
-            if (resolution.UserId is not { } attendeeUserId)
+            try
             {
-                notice = NoticeMessageFor(
-                    GateScanNotice.AttendanceNotRecorded, context.AcceptLanguage);
-            }
-            else
-            {
-                try
+                var attendanceRecorded = await hallAttendance.RecordGateDoorScanAsync(
+                    resolution.UserProfileId, hallId, direction,
+                    hallDoorDirectionInferred, context.OperatorUserId, cancellationToken);
+                if (!attendanceRecorded)
                 {
-                    var attendanceRecorded = await hallAttendance.RecordGateDoorScanAsync(
-                        attendeeUserId, hallId, direction,
-                        hallDoorDirectionInferred, context.OperatorUserId, cancellationToken);
-                    if (!attendanceRecorded)
-                    {
-                        notice = NoticeMessageFor(
-                            GateScanNotice.AttendanceNotRecorded, context.AcceptLanguage);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex,
-                        "Hall-attendance chain failed for scan {ScanId} on gate {GateId} (hall {HallId}).",
-                        scan.Id, context.GateId, hallId);
                     notice = NoticeMessageFor(
-                        GateScanNotice.AttendanceChainFailed, context.AcceptLanguage);
+                        GateScanNotice.AttendanceNotRecorded, context.AcceptLanguage);
                 }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Hall-attendance chain failed for scan {ScanId} on gate {GateId} (hall {HallId}).",
+                    scan.Id, context.GateId, hallId);
+                notice = NoticeMessageFor(
+                    GateScanNotice.AttendanceChainFailed, context.AcceptLanguage);
             }
         }
 
