@@ -528,6 +528,32 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         Assert.Equal(unknownBody.Error!.Message, revokedBody.Error!.Message);
     }
 
+    [Fact]
+    public async Task Enrolling_notifies_the_owner_that_a_credential_was_bound()
+    {
+        // The cheapest detection control for the compromise scenario: a device
+        // key outlives a session revoke, so an enrolment the owner did not ask
+        // for has to surface somewhere they will see it. SendEmail is set on the
+        // request, and EmailNotificationChannel turns any in-app row carrying it
+        // into an email, so asserting the row is what proves the dispatch.
+        var (visitor, userId) = await CreateApprovedVisitorAsync();
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        await EnrolDeviceKeyAsync(visitor, ecdsa);
+
+        using var scope = _factory.Services.CreateScope();
+        var idDb = scope.ServiceProvider
+            .GetRequiredService<SimfIdentityDbContext>();
+        var notification = await idDb.Notifications.SingleOrDefaultAsync(
+            n => n.UserId == userId
+                && n.Kind == NotificationKind.DeviceKeyEnrolled);
+
+        Assert.NotNull(notification);
+        // The device name reaches the body, so "which device?" is answerable
+        // from the notification alone rather than only from the audit trail.
+        Assert.Contains("Lifecycle gate test", notification!.Body);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     /// <summary>Registers <paramref name="ecdsa"/>'s public half for the signed-in

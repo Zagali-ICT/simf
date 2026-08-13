@@ -48,6 +48,40 @@ class _BrokenSecureStorage implements SimfSecureStorage {
   Future<void> clearAuthValues() async => throw Exception('unavailable');
 }
 
+class _FakeDeviceInfo implements DeviceInfoSource {
+  _FakeDeviceInfo({
+    this.manufacturer = 'samsung',
+    this.model = 'SM-S911B',
+    this.iosModel = 'iPhone 15 Pro',
+    this.vendorId,
+  });
+
+  final String manufacturer;
+  final String model;
+  final String iosModel;
+  final String? vendorId;
+
+  @override
+  Future<String?> androidName() async => '$manufacturer $model';
+
+  @override
+  Future<String?> iosName() async => iosModel;
+
+  @override
+  Future<String?> iosVendorId() async => vendorId;
+}
+
+class _ThrowingDeviceInfo implements DeviceInfoSource {
+  @override
+  Future<String?> androidName() async => throw Exception('no platform');
+
+  @override
+  Future<String?> iosName() async => throw Exception('no platform');
+
+  @override
+  Future<String?> iosVendorId() async => throw Exception('no platform');
+}
+
 void main() {
   group('DeviceLabel', () {
     test('reuses a fingerprint already stored, so the suffix is stable', () async {
@@ -105,6 +139,78 @@ void main() {
 
       expect(label, isNotEmpty);
       expect(label.length, lessThanOrEqualTo(DeviceLabel.maxLength));
+    });
+
+    // The two branches that actually run in production. Before DevicePlatform
+    // was injectable these were reachable only from a physical device, so the
+    // suite proved the fallback and nothing else.
+    group('the real device branches', () {
+      test('Android names the device "{manufacturer} {model}"', () async {
+        final storage = _InMemSecureStorage()
+          ..values[StorageKeys.deviceFingerprint] = 'abcd1234';
+
+        final label = await DeviceLabel(
+          storage,
+          deviceInfo: _FakeDeviceInfo(),
+          platform: DevicePlatform.android,
+        ).resolve();
+
+        expect(label, 'samsung SM-S911B · abcd1234');
+      });
+
+      test('iOS names the device by its marketing model', () async {
+        final storage = _InMemSecureStorage()
+          ..values[StorageKeys.deviceFingerprint] = 'abcd1234';
+
+        final label = await DeviceLabel(
+          storage,
+          deviceInfo: _FakeDeviceInfo(),
+          platform: DevicePlatform.ios,
+        ).resolve();
+
+        expect(label, 'iPhone 15 Pro · abcd1234');
+      });
+
+      test('a manufacturer string carrying a separator cannot reach the label',
+          () async {
+        final storage = _InMemSecureStorage()
+          ..values[StorageKeys.deviceFingerprint] = 'abcd1234';
+
+        final label = await DeviceLabel(
+          storage,
+          deviceInfo: _FakeDeviceInfo(manufacturer: 'ACME; actor=admin'),
+          platform: DevicePlatform.android,
+        ).resolve();
+
+        expect(label.contains(';'), isFalse);
+        expect(label.contains('='), isFalse);
+        expect(label, startsWith('ACME actor'));
+      });
+
+      test('a very long device name is truncated to fit the 64-char column',
+          () async {
+        final storage = _InMemSecureStorage()
+          ..values[StorageKeys.deviceFingerprint] = 'abcd1234';
+
+        final label = await DeviceLabel(
+          storage,
+          deviceInfo: _FakeDeviceInfo(manufacturer: 'M' * 80),
+          platform: DevicePlatform.android,
+        ).resolve();
+
+        expect(label.length, lessThanOrEqualTo(DeviceLabel.maxLength));
+        expect(label, endsWith('abcd1234'));
+      });
+
+      test('a throwing plugin still yields a usable label', () async {
+        final label = await DeviceLabel(
+          _InMemSecureStorage(),
+          deviceInfo: _ThrowingDeviceInfo(),
+          platform: DevicePlatform.android,
+        ).resolve();
+
+        expect(label, startsWith(DeviceLabel.fallbackName));
+      });
     });
 
     test('falls back to the old constant for the name off-device', () async {
