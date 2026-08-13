@@ -493,7 +493,18 @@ internal sealed class BadgeAuthService(
         {
             return null;
         }
-        var user = await accounts.FindByIdAsync(resolution.UserId, cancellationToken);
+        // No account, nothing to sign in as. An approved attendee without one is
+        // perfectly normal — they hold a badge that opens gates — but signing in
+        // is the one thing a badge alone does not grant, so this is an ordinary
+        // refusal and deliberately the SAME null every other failure returns:
+        // telling the caller "that badge is real but has no account" would answer
+        // a question an anonymous endpoint must not answer.
+        if (resolution.UserId is not { } holderUserId)
+        {
+            return null;
+        }
+
+        var user = await accounts.FindByIdAsync(holderUserId, cancellationToken);
         return user is { AccountState: AccountState.Approved } ? user : null;
     }
 

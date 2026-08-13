@@ -175,11 +175,14 @@ internal sealed class SessionAttendanceService(
 
         // Profile data — App DB only: resolved from UserProfile, never from
         // the Identity database. Admin-typed users carry no profile → null fields.
+        // Matched by account id, so an attendee with no account is never one of
+        // these: the roster comes from the attendance rows, whose UserId is always
+        // an account, so nobody present is dropped by this filter.
         var profiles = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => userIds.Contains(p.UserId))
+            .Where(p => p.UserId != null && userIds.Contains(p.UserId.Value))
             .Select(p => new
             {
-                p.UserId,
+                UserId = p.UserId!.Value,
                 p.Name,
                 p.NameArabic,
                 p.JobTitle,

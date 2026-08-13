@@ -359,7 +359,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
                 profile => profile.UserId,
                 account => account.Id,
                 (profile, account) => new MintedBadge(
-                    profile.UserId,
+                    account.Id,
                     profile.QrId!,
                     profile.BadgeBatchId!.Value,
                     profile.IsDelegate,

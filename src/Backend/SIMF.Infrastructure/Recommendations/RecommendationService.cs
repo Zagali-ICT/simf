@@ -101,7 +101,7 @@ internal sealed class RecommendationService(
         // 3) Pull candidate profiles + interest sets + display fields.
         var candidates = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => approvedIds.Contains(p.UserId))
+            .Where(p => p.UserId != null && approvedIds.Contains(p.UserId.Value))
             .Where(p => p.ShowInMeetLikeYou)
             // Honour the per-type "Meet People" master switch too, so a
             // partner type an admin hid drops out of the recommender as well.
@@ -109,7 +109,7 @@ internal sealed class RecommendationService(
             .Select(p => new
             {
                 p.Id,
-                p.UserId,
+                UserId = p.UserId!.Value,
                 p.Name,
                 p.NameArabic,
                 p.JobTitle,

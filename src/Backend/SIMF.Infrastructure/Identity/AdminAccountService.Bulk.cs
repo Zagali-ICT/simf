@@ -1119,8 +1119,12 @@ internal sealed partial class AdminAccountService
         // deactivated as a separate unit of work (no distributed transaction).
         var memberIds = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(profile => profile.BadgeBatchId == batch.Id)
-            .Select(profile => profile.UserId)
+            // Only members that HAVE an account, because what follows deletes
+            // accounts. A batch member without one has nothing to delete here;
+            // revoking its badge is a profile-side concern.
+            .Where(profile => profile.BadgeBatchId == batch.Id
+                && profile.UserId != null)
+            .Select(profile => profile.UserId!.Value)
             .ToListAsync(cancellationToken);
 
         var revoked = 0;

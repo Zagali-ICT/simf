@@ -736,6 +736,17 @@ public static class PermissionCatalog
         public const string Edit = "Operations.Edit";
     }
 
+    /// <summary>The event edition: which year is open, and closing one into
+    /// history. <see cref="Close"/> is separate from <see cref="Open"/> because
+    /// closing is the destructive half — it ends registration against the current
+    /// year and invalidates every badge issued for it.</summary>
+    public static class Editions
+    {
+        public const string View = "Editions.View";
+        public const string Open = "Editions.Open";
+        public const string Close = "Editions.Close";
+    }
+
     /// <summary>System Configuration page.</summary>
     public static class Configuration
     {
@@ -1198,6 +1209,11 @@ public static class PermissionCatalog
 
         new(Operations.View, "Operations", "View", "View operations toggles", AdminOnly),
         new(Operations.Edit, "Operations", "Edit", "Change operations toggles", AdminOnly),
+
+        // The event edition (which year is open, and closing one into history).
+        new(Editions.View, "Editions", "View", "View the event edition", AdminOnly),
+        new(Editions.Open, "Editions", "Open", "Open a new event edition", AdminOnly),
+        new(Editions.Close, "Editions", "Close", "Close the current edition into history", AdminOnly),
 
         // System Configuration settings.
         new(Configuration.View, "Configuration", "View", "View system configuration", AdminOnly),

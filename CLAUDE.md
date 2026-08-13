@@ -283,6 +283,39 @@ lookup + `Session.CategoryId` (built as a team-seeded lookup per FDS-004 §5.4 �
 NOT a fixed enum; the table ships empty pending the client's category list,
 OI-2). The freeze must be re-instated before the production publish / handover.
 
+### D-881 profile / edition / badge programme freeze-lift (2026-08-13)
+
+Owner authorised a lift for the profile-owned-admission programme **and**
+confirmed there is no data worth preserving on either database, so both EF
+migration histories are **regenerated from scratch** rather than migrated
+forward. There is still exactly one `InitialCreate` per context, as D-110
+requires — it simply describes a different schema.
+
+This lift is **not additive**, which is why it needed its own decision rather
+than riding on D-219. Two existing columns invert their nullability, and no
+additive lift can express that. Covered on `SimfAppDbContext`:
+
+- `UserProfile.UserId` -> **nullable**, with a **filtered** unique index
+  (D-877). The filter is not optional: SQL Server treats NULLs as equal in a
+  unique index, so nullability alone admits exactly one userless profile.
+- A profile-owned admission state, replacing `SimfUser.AccountState` on every
+  admission path (D-877). A **relocation, not a copy** — D-157 still forbids a
+  second writable copy of one fact across the two databases.
+- `BadgeBatch` gains a bilingual name; `UserProfile.BadgeBatchId` becomes
+  **required** with a seeded default order (D-878).
+- `EventEdition` + `EditionId` columns for the yearly lifecycle (D-879).
+- `UserProfile.QrId` widens past `nvarchar(16)` to hold an encrypted badge
+  (D-880).
+
+`SimfIdentityDbContext` is also regenerated, the owner having already reset it.
+
+**Unchanged by this lift:** the **shipped mobile wire contract** stays
+append-only regardless of the schema being open — the app decodes JSON field
+names, and no amount of migration freedom makes renaming one safe. Existing
+enums stay frozen against rename/reorder; additive values remain allowed. The
+freeze must be **re-instated before the production publish / handover**, per
+D-219's standing requirement. See `docs/decisions/DECISIONS_LOG.md` D-877..D-881.
+
 ---
 
 ## Security: the anonymous surface (moved here 2026-08-12)

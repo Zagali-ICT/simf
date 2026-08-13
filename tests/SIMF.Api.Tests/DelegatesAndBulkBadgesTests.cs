@@ -426,7 +426,9 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
             var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var members = await appDb.UserProfiles.Where(p => p.ProfileTypeId == typeId).ToListAsync();
             batchId = members[0].BadgeBatchId!.Value;
-            memberIds = members.Select(m => m.UserId).ToList();
+            // Bulk-badge members still get an account today; filtering keeps the
+            // assertion honest if that changes rather than throwing on a null.
+            memberIds = members.Where(m => m.UserId != null).Select(m => m.UserId!.Value).ToList();
         }
 
         var response = await PostAuthAsync(
@@ -483,8 +485,8 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var userId = await appDb.UserProfiles
-            .Where(p => p.ProfileTypeId == typeId)
-            .Select(p => p.UserId)
+            .Where(p => p.ProfileTypeId == typeId && p.UserId != null)
+            .Select(p => p.UserId!.Value)
             .FirstAsync();
         var profiles = scope.ServiceProvider
             .GetRequiredService<SIMF.Application.IdentityAccess.IUserProfileService>();

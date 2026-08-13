@@ -744,10 +744,14 @@ internal sealed class DelegationMeetingRequestService(
         // dispatcher email carries the notice as before.
         var hasLink = !string.IsNullOrEmpty(confirmUrl);
 
+        // A delegation member who holds no account has neither an in-app inbox nor
+        // an Identity address, so there is nothing to dispatch to and nothing to
+        // email — they drop out here rather than resolve to a missing user.
         var memberIds = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => p.NationalityId == req.TargetCountryId && p.AllowsDelegationMeeting
+            .Where(p => p.UserId != null
+                && p.NationalityId == req.TargetCountryId && p.AllowsDelegationMeeting
                 && (excludeUserId == null || p.UserId != excludeUserId))
-            .Select(p => p.UserId)
+            .Select(p => p.UserId!.Value)
             .ToListAsync(cancellationToken);
         foreach (var userId in memberIds)
         {

@@ -1388,11 +1388,15 @@ internal sealed partial class AdminAccountService(
             .Select(p => p.Id)
             .ToListAsync(cancellationToken);
 
+        // This builds a set of ACCOUNT ids to scope an admin's reach, so a
+        // profile with no account contributes nothing to it — there is no
+        // account for the scope to include or exclude.
         var partnerUserIds = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => p.ProfileTypeId != null
+            .Where(p => p.UserId != null
+                && p.ProfileTypeId != null
                 && partnerProfileTypeIds.Contains(p.ProfileTypeId.Value))
-            .Select(p => p.UserId)
+            .Select(p => p.UserId!.Value)
             .ToListAsync(cancellationToken);
 
         if (!requireIsVisitor)

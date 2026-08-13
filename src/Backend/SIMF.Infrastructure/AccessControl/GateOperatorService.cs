@@ -286,8 +286,15 @@ internal sealed class GateOperatorService(
         // profile-type-allowed above always hold.
         if (snapshot.HallId is { } sessionHallId && direction == ScanDirection.CheckIn)
         {
-            var eligibility = await hallAttendance.CheckHallEntryEligibilityAsync(
-                resolution.UserId, sessionHallId, cancellationToken);
+            // A booking is keyed by Identity account, so an attendee with no account
+            // cannot hold one and is unregistered by definition — the same answer the
+            // service would give, without inventing an id to ask it about. The
+            // walk-in relaxation below still applies to them, exactly as it does to
+            // any other unregistered holder.
+            var eligibility = resolution.UserId is { } attendeeUserId
+                ? await hallAttendance.CheckHallEntryEligibilityAsync(
+                    attendeeUserId, sessionHallId, cancellationToken)
+                : HallEntryEligibility.NotRegistered;
 
             if (eligibility == HallEntryEligibility.NotRegistered
                 && !walkInMode.CurrentValue.SessionWalkInActive(timeProvider.SimfNow()))
@@ -675,24 +682,36 @@ internal sealed class GateOperatorService(
         string? notice = null;
         if (hallDoorHallId is { } hallId)
         {
-            try
+            // Hall attendance is keyed by the Identity account, so an attendee with
+            // no account has nowhere to be recorded. Skip the chain and raise the
+            // same advisory it raises whenever it records nothing; the scan itself is
+            // already allowed and committed, which this never changes.
+            if (resolution.UserId is not { } attendeeUserId)
             {
-                var attendanceRecorded = await hallAttendance.RecordGateDoorScanAsync(
-                    resolution.UserId, hallId, direction,
-                    hallDoorDirectionInferred, context.OperatorUserId, cancellationToken);
-                if (!attendanceRecorded)
-                {
-                    notice = NoticeMessageFor(
-                        GateScanNotice.AttendanceNotRecorded, context.AcceptLanguage);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex,
-                    "Hall-attendance chain failed for scan {ScanId} on gate {GateId} (hall {HallId}).",
-                    scan.Id, context.GateId, hallId);
                 notice = NoticeMessageFor(
-                    GateScanNotice.AttendanceChainFailed, context.AcceptLanguage);
+                    GateScanNotice.AttendanceNotRecorded, context.AcceptLanguage);
+            }
+            else
+            {
+                try
+                {
+                    var attendanceRecorded = await hallAttendance.RecordGateDoorScanAsync(
+                        attendeeUserId, hallId, direction,
+                        hallDoorDirectionInferred, context.OperatorUserId, cancellationToken);
+                    if (!attendanceRecorded)
+                    {
+                        notice = NoticeMessageFor(
+                            GateScanNotice.AttendanceNotRecorded, context.AcceptLanguage);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex,
+                        "Hall-attendance chain failed for scan {ScanId} on gate {GateId} (hall {HallId}).",
+                        scan.Id, context.GateId, hallId);
+                    notice = NoticeMessageFor(
+                        GateScanNotice.AttendanceChainFailed, context.AcceptLanguage);
+                }
             }
         }
 
@@ -929,14 +948,22 @@ internal sealed class GateOperatorService(
             .Where(profile => profileIds.Contains(profile.Id))
             .Select(profile => new { profile.Id, profile.UserId })
             .ToListAsync(cancellationToken);
-        var userIds = profileUsers.Select(pu => pu.UserId).Distinct().ToList();
+        // Only the accounts are looked up, but EVERY scanned profile stays in the map:
+        // an attendee with no account has no display name to fetch, and dropping them
+        // would erase their scans from the operator's daily report.
+        var userIds = profileUsers
+            .Where(pu => pu.UserId != null)
+            .Select(pu => pu.UserId!.Value)
+            .Distinct()
+            .ToList();
         var userDisplayNames = await identityDbContext.Users.AsNoTracking()
             .Where(user => userIds.Contains(user.Id))
             .Select(user => new { user.Id, user.DisplayName })
             .ToDictionaryAsync(user => user.Id, user => user.DisplayName ?? string.Empty, cancellationToken);
         return profileUsers.ToDictionary(
             pu => pu.Id,
-            pu => userDisplayNames.TryGetValue(pu.UserId, out var name) ? name : string.Empty);
+            pu => pu.UserId is { } userId && userDisplayNames.TryGetValue(userId, out var name)
+                ? name : string.Empty);
     }
 
     private static (string en, string ar) DenialMessages(DenialReasonCode reason) =>

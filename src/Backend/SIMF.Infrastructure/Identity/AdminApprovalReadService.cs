@@ -75,15 +75,22 @@ internal sealed class AdminApprovalReadService(
 
         // Pair the profile row with the owner so we can return the
         // badge-name + email the printable view renders.
+        // This response is read straight back by the desk that just registered
+        // someone, and its contract is keyed by account id, so it only answers
+        // for a registration that produced one. A desk registration that
+        // creates no account has nothing to look up here and reads as not
+        // found, exactly as an unknown id does.
+        if (row.UserId is not { } registeredUserId) { return null; }
+
         var user = await dbContext.Users
             .AsNoTracking()
-            .Where(u => u.Id == row.UserId)
+            .Where(u => u.Id == registeredUserId)
             .Select(u => new { u.Email, u.DisplayName })
             .SingleOrDefaultAsync(cancellationToken);
         if (user is null) { return null; }
 
         return new AdminWalkInRegistrationResponse(
-            row.UserId,
+            registeredUserId,
             user.Email ?? string.Empty,
             user.DisplayName,
             row.QrId ?? string.Empty,

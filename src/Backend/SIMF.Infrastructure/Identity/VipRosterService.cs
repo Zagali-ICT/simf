@@ -38,12 +38,20 @@ internal sealed class VipRosterService(
     {
         var profiles = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => p.ProfileType != null
+            // KNOWN GAP: a VIP with no Identity account is not listed. The row
+            // this returns is a shared contract whose key is a non-nullable
+            // account id, and the Control Panel binds its grid key and its Edit
+            // action to that id, so there is no value to carry for an attendee
+            // who has none. Widening the contract to the profile id and
+            // re-keying the CP grid is the fix; until then a VVIP who never
+            // installed the app is invisible to the PR desk.
+            .Where(p => p.UserId != null
+                && p.ProfileType != null
                 && p.ProfileType.IsForVisitor
                 && TierNames.Contains(p.ProfileType.Name))
             .Select(p => new
             {
-                p.UserId,
+                UserId = p.UserId!.Value,
                 p.Name,
                 p.NameArabic,
                 p.Honorific,
