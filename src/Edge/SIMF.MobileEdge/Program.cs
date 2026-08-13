@@ -18,7 +18,7 @@
 // withdrawing the API's public DNS record has to wait for that release to land.
 //
 // It deliberately does almost nothing: no reshaping, no aggregation, no
-// business logic. The shipped mobile wire contract is append-only (D-219), and
+// business logic. The shipped mobile wire contract is append-only, and
 // every field the app decodes has to survive this hop byte for byte.
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
