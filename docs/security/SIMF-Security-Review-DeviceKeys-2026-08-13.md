@@ -9,6 +9,7 @@
 | Method | Source review only |
 | Findings | 10 (2 High, 1 Medium-High, 4 Medium, 3 Low) |
 | Remediation plan | `docs/reviews/Mohaned-Review.md` Item 1 §13 |
+| Best practice and strategy | §7 of this document |
 | Companions | `SIMF-Security-Assessment-2026-06-20.md`, `SIMF-NCA-AppSec-Standard-GapAnalysis-2026-06-20.md`, `SIMF-Threat-Model-2026-06-21.md` |
 
 ---
@@ -373,9 +374,125 @@ end of `Mohaned-Review.md` §13. One item stays verify-first: S8 must not be bui
 until the Flutter error mapping is read, because collapsing the not-found and
 revoked codes could strand users with a dead local key.
 
-## 7. Change log
+## 7. Best practice and strategic recommendation
+
+**Sourcing note.** Where this section cites a SIMF file and line, or a platform
+API, that was verified. The standards named below (W3C WebAuthn, FIDO2, NIST
+SP 800-63B, OWASP MASVS-AUTH and MASVS-CRYPTO) are named as the relevant
+frameworks; their control text is **not** reproduced verbatim here, because it
+was not read in full during this review. Treat the framework names as pointers
+for a formal compliance mapping, not as quotations.
+
+### 7.1 The finding behind the findings
+
+`docs/SIMF-Implementation-Gap-Report.md:142` already describes this subsystem as
+the "device-key **passkey** ceremony". It is not a passkey ceremony. It is a
+carefully hand-built approximation of one, and the ten findings above are mostly
+the seams where a hand-built version differs from the standard.
+
+The sharpest consequence is not in the finding list, because it is a property of
+the design rather than a defect in it:
+
+> **The server has no evidence that a biometric ever happened.**
+
+`biometric_sign_in.dart:48-59` runs the OS prompt, and only then calls
+`signInWithDeviceKey`, which reads the key and signs
+(`auth_controller.dart:375-390`). Nothing about the prompt reaches the server.
+The server sees a valid ES256 signature and infers a biometric from it. An
+attacker holding the extracted private key produces exactly the same signature
+without any prompt, and the server cannot tell the two apart.
+
+Combined with S9 (the key is software-bound, so extraction is the realistic
+attack), this means **the biometric in "biometric sign-in" is a client-side user
+experience gate, not an authentication factor the server can verify**. The entity
+comment at `DeviceKey.cs:12-17` states the software-binding half of this
+honestly. The unverifiability half is the part worth naming explicitly, because
+it is what users and auditors will assume is true and it is not.
+
+WebAuthn solves precisely this with the User Verification flag, which is included
+in the signed authenticator data, so the server verifies cryptographically that
+the authenticator performed a user check.
+
+### 7.2 What SIMF already does that matches best practice
+
+Recorded so the recommendation is read as "finish this", not "replace this".
+
+| Practice | SIMF |
+|----------|------|
+| Do not invent cryptography | Followed. ES256 on P-256, SubjectPublicKeyInfo, IEEE-P1363 signatures. All standard, all what the platforms sign with natively |
+| Single-use, server-issued, short-lived challenge | Followed, 5 minutes, with an atomic consume that defeats concurrent replay |
+| Two factors to bind a new credential | Followed, and better than most. An emailed code plus an OS device-credential confirmation |
+| Never persist a secret in plaintext | Followed. Codes are keyed-hashed, compared in constant time |
+| Rate limit the authentication surface | Followed, per IP plus a per-account issue cap |
+| Algorithm agility | Followed. The `Algorithm` column and the 256-char key column exist so Ed25519 or ML-DSA can be added without a schema change |
+| Pin the anonymous surface with a test | Followed, and rare. `BusinessFlow13PermissionMatrixTests` breaks the build on a new anonymous endpoint |
+| One place mints sessions | Followed. `ITokenIssuer`, so claims and session caps cannot drift between entry points |
+
+### 7.3 Practices not yet met, beyond the numbered findings
+
+**Bind the key to the current biometric set.** Hardware binding alone is not
+enough. On Android, `KeyGenParameterSpec.Builder.setInvalidatedByBiometricEnrollment`
+invalidates the key when a new fingerprint or face is enrolled; on iOS the
+equivalent is the `kSecAccessControlBiometryCurrentSet` access-control flag.
+Without it, an attacker who has an unlocked phone for two minutes adds their own
+fingerprint and can then use the victim's credential indefinitely. This belongs
+in W9 and is currently not in it.
+
+**Re-authenticate before sensitive actions.** A possession factor is a
+reasonable way to resume a session. It is not a reasonable way to authorise a
+privileged or destructive operation without a fresh check. This is the general
+form of S3.
+
+**Make credential creation visible to the owner.** Enrolment currently produces
+an audit row and nothing the user ever sees. A notification on every enrolment is
+the cheapest possible detection control for the S2 attack scenario. Carried in
+W5.
+
+**Attribute failed attempts.** `AuditFailureAsync` writes a null actor and only
+the device-key id, so failed device-key sign-ins cannot be correlated to an
+account for monitoring. The id resolves to a user, so this is a small fix.
+
+**State the recovery path.** If the device is lost, recovery is the password
+path. That is correct and needs no change, but it should be written down, because
+"my Face ID stopped working" is a support question that will be asked.
+
+### 7.4 Recommendation
+
+Three horizons, matched to the programme's constraints (a hard event deadline and
+handover on 2027-01-25).
+
+**Now, before the production publish: wave A only.** S1, S2 and S4. They close
+three of the five NCA gaps, they touch two methods, and none of them needs a
+schema change. This is the highest ratio of compliance closed to risk taken in
+the whole report.
+
+**Before handover: S9, with the biometric-set binding from §7.3.** Move key
+generation into Android Keystore or StrongBox with `setUserAuthenticationRequired`
+and `setInvalidatedByBiometricEnrollment`, and into the iOS Secure Enclave with
+`kSecAccessControlBiometryCurrentSet`. The server contract does not change, as
+`DeviceKey.cs:12-17` already notes. This is what converts the biometric from a
+user experience gate into something an attacker cannot skip. It forces every
+enrolled user to re-enrol, which is why it is scheduled after the event.
+
+**V2: evaluate replacing the bespoke ceremony with platform passkeys.**
+WebAuthn subsumes S5, S8 and S9 outright and closes §7.1, because User
+Verification, signature counters for clone detection, hardware binding and
+credential lifecycle conventions all come with the standard rather than being
+hand-maintained. The honest counter-argument is that the current implementation
+works, is well built, and a migration invalidates every enrolled credential. So
+this is a V2 candidate for `docs/SIMF-V2-Plan.md`, not a live proposal.
+
+**What not to do:** do not keep incrementally hardening the bespoke ceremony
+past wave A and S9. Each additional hand-built control (clone detection, richer
+attestation, origin binding) is a re-implementation of something the standard
+already specifies and the platforms already ship. Wave A plus S9 is the point of
+diminishing returns; past it, the right move is the standard, not more custom
+code.
+
+## 8. Change log
 
 | Date | Change |
 |------|--------|
 | 2026-08-13 | First issue. 10 findings, no remediation implemented |
 | 2026-08-13 | Owner took every recommended remediation decision. Wave A approved to build. Still nothing implemented |
+| 2026-08-13 | Added §7, best practice and strategic recommendation |
