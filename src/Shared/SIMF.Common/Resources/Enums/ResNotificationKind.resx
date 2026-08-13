@@ -39,4 +39,5 @@
   <data name="AdminAnnouncement" xml:space="preserve"><value>Announcement from SIMF</value></data>
   <data name="ExhibitorLeadCaptured" xml:space="preserve"><value>Your details were shared with an exhibitor</value></data>
   <data name="SessionCancelled" xml:space="preserve"><value>Session cancelled</value></data>
+  <data name="DeviceKeyEnrolled" xml:space="preserve"><value>Biometric sign-in was enabled on a device</value></data>
 </root>

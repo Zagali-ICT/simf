@@ -11,11 +11,13 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Notifications;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.IdentityAccess;
@@ -38,6 +40,7 @@ internal sealed class DeviceKeyService(
     IEmailQueue emailQueue,
     IEmailTemplateResolver emailTemplates,
     IOptions<DeviceKeyOptions> deviceKeyOptions,
+    INotificationDispatcher notifications,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<DeviceKeyService> logger) : IDeviceKeyService
@@ -186,6 +189,24 @@ internal sealed class DeviceKeyService(
         logger.LogInformation(
             "Device key {DeviceKeyId} registered for user {UserId}",
             deviceKey.Id, callerUserId);
+
+        // Tell the owner. An enrolled key is a credential that outlives a session
+        // revoke, so somebody who never asked for one has to be able to see it
+        // appear. TryDispatchAsync swallows its own failures, so a notification
+        // outage can never undo an enrolment that is already committed.
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = callerUserId,
+            Kind = NotificationKind.DeviceKeyEnrolled,
+            Title = "Biometric sign-in was enabled",
+            TitleArabic = "تم تفعيل تسجيل الدخول ببصمة الوجه",
+            Body = $"Biometric sign-in was enabled on \"{AuditableLabel(label)}\". "
+                + "If you did not do this, turn it off in the app and contact the SIMF security team.",
+            BodyArabic = $"تم تفعيل تسجيل الدخول ببصمة الوجه على \"{AuditableLabel(label)}\". "
+                + "إذا لم تكن أنت من قام بذلك، فقم بإيقافه من التطبيق وتواصل مع فريق الأمن في SIMF.",
+            Severity = NotificationSeverity.Warning,
+            SendEmail = true,
+        }, logger, cancellationToken);
 
         return ToEntry(deviceKey);
     }
