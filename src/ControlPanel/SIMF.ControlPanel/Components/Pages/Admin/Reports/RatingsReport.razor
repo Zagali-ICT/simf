@@ -49,7 +49,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="RatingsReportRow" Key="scope"
                                     Header="@L["Admin.Reports.Col.Scope"]">
-                    <CellTemplate>@context.Scope</CellTemplate>
+                    <CellTemplate>@EnumLabel("RatingScope", context.Scope)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="RatingsReportRow" Key="stars"
                                     Header="@L["Admin.Reports.Col.Stars"]"

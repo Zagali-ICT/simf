@@ -59,7 +59,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="PartnersReportRow" Key="tier"
                                     Header="@L["Admin.Reports.Col.Tier"]">
-                    <CellTemplate>@context.Tier</CellTemplate>
+                    <CellTemplate>@EnumLabel("PartnerTier", context.Tier)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="PartnersReportRow" Key="email"
                                     Header="@L["Admin.Reports.Col.Email"]">
