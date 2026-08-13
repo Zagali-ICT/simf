@@ -260,13 +260,13 @@ free ids are:
 
 | Id | Scenario |
 |----|----------|
-| E2E-MBSU-019 | Enrol on a physical device, then read the row: `Label` holds the real device name and an 8-character suffix, not `SIMF mobile` |
-| E2E-MBSU-020 | Enrol on two different devices under one account: both rows are distinguishable by label |
-| E2E-MBSU-021 | Re-enrol on the same device after disabling: the fingerprint suffix is unchanged, proving it is stable per install |
+| E2E-MBSU-023 | Enrol on a physical device, then read the row: `Label` holds the real device name and an 8-character suffix, not `SIMF mobile` |
+| E2E-MBSU-024 | Enrol on two different devices under one account: both rows are distinguishable by label |
+| E2E-MBSU-025 | Re-enrol on the same device after disabling: the fingerprint suffix is unchanged, proving it is stable per install |
 
-**Renumbered.** 016 to 018 were reserved here first, but wave A shipped before
-the label work and took them (the password-change, lockout and revoke-on-change
-gates). The label scenarios move up to 019 to 021.
+**Renumbered twice.** 016 to 018 were reserved here first, then wave A shipped
+and took them, then waves B and C took 019 to 022. The label scenarios are now
+023 to 025. They move again if another wave lands before the label work does.
 
 ---
 
@@ -611,15 +611,17 @@ implemented.** Each wave needs its own approval, separately from the label work
 in §1 to §11, because these are pre-existing defects in shipped code rather than
 anything this plan introduces.
 
-> **Wave A is BUILT as of 2026-08-13.** W1, W2 and W4 are implemented, tested
-> and committed. Evidence is in §13.1. Waves B, C and D remain unstarted.
+> **Waves A, B and C (except W10) are BUILT as of 2026-08-13.** Nine of the ten
+> findings are closed in code. Evidence in §13.1 and §13.2. What remains is W10,
+> blocked on a Figma node, and W9, deferred by decision to after the event.
 
 | Wave | Items | Findings | Gate |
 |------|-------|----------|------|
 | **A** | W1, W2, W4 | S1, S2, S4 | **Done 2026-08-13** |
-| **B** | W3, W6, W7 | S3, S6, S7 | One backend changeset, after A |
-| **C** | W5, W8, W10 | S5, S8, S10 | Needs the "my devices" surface |
-| **D** | W9 | S9 | Its own piece of work, no server change |
+| **B** | W3, W6, W7 | S3, S6, S7 | **Done 2026-08-13** |
+| **C** | W5, W8 | S5, S8 | **Done 2026-08-13** |
+| **C** | W10 | S10 | **Blocked**: needs a Figma node for the "my devices" screen |
+| **D** | W9 | S9 | **Deferred by decision** to after the event: it forces every user to re-enrol |
 
 W4 is pulled into wave A because it edits the same guard block as W1, so
 splitting them would mean touching one method twice.
@@ -649,6 +651,48 @@ branch. So the change adds four passing tests and moves nothing else.
 **Decisions honoured as recorded:** W1 answers a typed 403 rather than an opaque
 401, W2 revokes on a voluntary change too, and W4 deliberately leaves
 `PendingApproval` and `Rejected` alone.
+
+---
+
+### 13.2 Waves B and C as built (2026-08-13)
+
+| Item | What landed |
+|------|-------------|
+| W3 (S3) | `RegisterAsync` refuses `UserType.Admin` with a typed 403 and audits it |
+| W6 (S6) | `;`, `=` and control characters rejected in the label at the boundary, plus `AuditableLabel` re-encoding at the audit sink so a future caller cannot reopen it by another route |
+| W7 (S7) | `PermissionCatalog.DeviceKeys.Revoke` added and seeded; the admin revoke moved off the legacy `AdministratorOnly` policy, which now appears **zero** times in the endpoints tree |
+| W5 (S5) | `DeviceKeyOptions.MaxActiveKeysPerUser` (default 5, mirrored in `appsettings.json`); overflow retires the oldest rather than refusing, so replacing a phone never strands a user |
+| W8 (S8) | Unknown and revoked keys answer identically at 401 on the challenge endpoint |
+
+**W8's verify-first condition was discharged, not waived.** The concern was that
+collapsing `DEVICE_KEY_NOT_FOUND` into the revoked response could strand a user
+whose client cleared its local key on that code. Reading the client settles it:
+`auth_repository_impl.issueDeviceKeyChallenge` wraps the call in the generic
+`_guard`, and **no** Dart file references `DEVICE_KEY_NOT_FOUND` at all. Nothing
+self-heals on either code, so nothing is lost.
+
+**Verification.** Isolated worktree at `50e13fc8`. Build 0 warnings 0 errors.
+`DeviceKey` filter 23/23. `Permission|BusinessFlow13` 43/43, which covers the
+moved gate and the anonymous-surface allow-list. Control Panel `Permission`
+filter 59/59. The wider `Password|DeviceKey|SignIn|TokenIssuer` filter produced a
+**byte-identical** failure set to the wave A baseline: the same 14 badge tests,
+none new.
+
+**Three test failures were real and were fixed, not suppressed.** The cap test
+originally asserted that a specific key died, which fails whenever the test clock
+stamps several enrolments on the same instant and leaves "oldest" ambiguous; it
+now asserts the contract that matters, that exactly 5 survive and the key just
+enrolled is one of them. The admin test signed in on the Control Panel audience
+and got no tokens back, so it now promotes a visitor after sign-in, which
+exercises the guard without dragging CP 2FA into a device-key test. And a
+pre-existing test asserting `DEVICE_KEY_REVOKED` was updated, since that
+distinction is exactly what W8 removes.
+
+**W5's enrolment notification was not built.** The cap is the security control
+and it shipped. The notification needs an additive `NotificationKind` value plus
+bilingual resx entries, which is a wider surface than the rest of this wave and
+is better done deliberately than at the end of a long session. It is the one
+piece of wave C, other than W10, still outstanding.
 
 ---
 

@@ -62,6 +62,10 @@
 | E2E-MBSU-016 | A device key cannot sign in while the account owes a password change (expired past PasswordMaxAgeDays, or admin-forced) | edge | P0 | authored ✓ (backend test) |
 | E2E-MBSU-017 | A device key cannot sign in while the account is locked out | edge | P0 | authored ✓ (backend test) |
 | E2E-MBSU-018 | Changing the password revokes every device key, so the biometric credential dies with the sessions | edge | P0 | authored ✓ (backend test) |
+| E2E-MBSU-019 | An administrator account is refused at enrolment (403 FORBIDDEN); a visitor is not | edge | P0 | authored ✓ (backend test) |
+| E2E-MBSU-020 | A label carrying `;`, `=` or a newline is rejected, so it cannot forge a field in the audit detail | edge | P0 | authored ✓ (backend theory, 3 cases) |
+| E2E-MBSU-021 | Enrolling past the 5-key cap retires an older key; the key just enrolled always survives | edge | P1 | authored ✓ (backend test) |
+| E2E-MBSU-022 | A revoked key and an id that never existed give byte-identical challenge responses | edge | P1 | authored ✓ (backend test) |
 | E2E-MBSU-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MBSU-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -283,6 +287,72 @@ attacker who had enrolled a key simply minted a fresh session after the victim
 did the one thing every security notice tells them to do.
 
 **Evidence:** `DeviceKeySignInTests.Changing_the_password_revokes_the_device_keys`.
+
+### E2E-MBSU-019 — Administrators cannot enrol
+
+```gherkin
+Scenario: A biometric credential is not offered to an admin account
+  Given an approved account whose UserType is Admin
+  When it posts POST /app/auth/device-keys
+  Then the response is 403 FORBIDDEN
+  And no device key is created
+  And the refusal is audited
+```
+
+**Why it matters:** the mint issues the caller's full role and permission set with
+`secondFactorCompleted` null, so an enrolled admin would hold an
+admin-permissioned bearer obtainable with one factor, against the enrolment-first
+rule that the Control Panel must never mint a session on the password alone.
+
+**Evidence:** `DeviceKeySignInTests.An_administrator_cannot_enrol_a_device_key`.
+
+### E2E-MBSU-020 — A label cannot forge an audit field
+
+```gherkin
+Scenario Outline: Separator and control characters are refused
+  Given a signed-in approved visitor
+  When it registers a device key labelled "<label>"
+  Then the response is 400 DEVICE_KEY_INVALID
+  And no device key is created
+
+  Examples:
+    | label               |
+    | Phone; actor=admin  |
+    | Phone=admin         |
+    | Phone\nactor=admin  |
+```
+
+**Why it matters:** the label is interpolated into an audit detail shaped
+`key=value; key=value`, which is the only record of who enrolled which
+credential.
+
+**Evidence:** `DeviceKeySignInTests.A_label_that_could_forge_an_audit_field_is_rejected`.
+
+### E2E-MBSU-021 — The active-key cap holds
+
+```gherkin
+Scenario: A sixth enrolment retires an older key
+  Given a visitor holding 5 active device keys and DeviceKey:MaxActiveKeysPerUser = 5
+  When the visitor enrols a sixth
+  Then exactly 5 of the 6 keys remain usable
+  And the key just enrolled is one of them
+```
+
+**Why it matters:** every key is a permanent alternative credential, and until the
+"my devices" screen exists nobody can see a set accumulating.
+
+**Evidence:** `DeviceKeySignInTests.Enrolling_past_the_cap_revokes_the_oldest_key`.
+
+### E2E-MBSU-022 — The challenge endpoint is not an oracle
+
+```gherkin
+Scenario: Revoked and never-existed are indistinguishable
+  Given a device key that has been revoked
+  When a challenge is requested for it, and for a random unknown id
+  Then both return 401 with the same error code and the same message
+```
+
+**Evidence:** `DeviceKeySignInTests.A_revoked_key_and_an_unknown_key_are_indistinguishable`.
 
 ### E2E-MBSU-015 — Sign-in Face-ID device-PIN fallback + explicit errors
 

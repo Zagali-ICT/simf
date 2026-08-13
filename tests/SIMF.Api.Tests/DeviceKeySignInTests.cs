@@ -261,9 +261,11 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         var challengeResponse = await _client.PostAsJsonAsync(
             $"/api/v1/app/auth/device-keys/{entry.Id}/challenge", new { });
         Assert.Equal(HttpStatusCode.Unauthorized, challengeResponse.StatusCode);
+        // Was DEVICE_KEY_REVOKED. The endpoint is anonymous, so revoked and
+        // unknown now answer identically rather than confirming the key existed.
         var body = (await challengeResponse.Content
             .ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.DeviceKeyRevoked, body.Error!.Code);
+        Assert.Equal(ErrorCodes.DeviceKeyNotFound, body.Error!.Code);
     }
 
     [Fact]
@@ -409,7 +411,121 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
             $"/api/v1/app/auth/device-keys/{entry.Id}/challenge", new { });
         Assert.Equal(HttpStatusCode.Unauthorized, challenge.StatusCode);
         var body = (await challenge.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.DeviceKeyRevoked, body.Error!.Code);
+        Assert.Equal(ErrorCodes.DeviceKeyNotFound, body.Error!.Code);
+    }
+
+    // -- Enrolment gates and bounds (S3, S5, S6, S8) ---------------------------
+
+    [Fact]
+    public async Task An_administrator_cannot_enrol_a_device_key()
+    {
+        // The mint issues the caller's full permission set with no second
+        // factor, so an enrolled admin would hold an admin bearer obtainable
+        // with one factor.
+        // Promoted after sign-in rather than signed in as an admin: the register
+        // endpoint reads the user fresh, so this exercises the guard without
+        // dragging the Control-Panel audience and its 2FA enrolment into a
+        // device-key test.
+        var (token, userId) = await CreateApprovedVisitorAsync();
+        await UpdateUserAsync(userId, user => user.UserType = UserType.Admin);
+        var admin = token;
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        var register = await PostAuthAsync(
+            "/api/v1/app/auth/device-keys",
+            new RegisterDeviceKeyRequest
+            {
+                PublicKey = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo()),
+                Algorithm = "ES256",
+                Label = "Admin phone",
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.Forbidden, register.StatusCode);
+        var body = (await register.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.Forbidden, body.Error!.Code);
+    }
+
+    [Theory]
+    [InlineData("Phone; actor=admin")]
+    [InlineData("Phone=admin")]
+    [InlineData("Phone\nactor=admin")]
+    public async Task A_label_that_could_forge_an_audit_field_is_rejected(string label)
+    {
+        var (visitor, _) = await CreateApprovedVisitorAsync();
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+
+        var register = await PostAuthAsync(
+            "/api/v1/app/auth/device-keys",
+            new RegisterDeviceKeyRequest
+            {
+                PublicKey = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo()),
+                Algorithm = "ES256",
+                Label = label,
+            },
+            visitor);
+
+        Assert.Equal(HttpStatusCode.BadRequest, register.StatusCode);
+        var body = (await register.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DeviceKeyInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Enrolling_past_the_cap_revokes_the_oldest_key()
+    {
+        // Five is the configured cap, so the sixth enrolment must retire the
+        // first rather than refuse: a user replacing a phone is never stuck.
+        var (visitor, _) = await CreateApprovedVisitorAsync();
+        var keys = new List<DeviceKeyEntry>();
+        for (var i = 0; i < 6; i++)
+        {
+            using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            keys.Add(await EnrolDeviceKeyAsync(visitor, ecdsa));
+        }
+
+        // Assert the contract, not the identity of the casualty. The test clock
+        // can stamp several enrolments on the same instant, which leaves "oldest"
+        // genuinely ambiguous, so pinning a specific key would be testing the tie
+        // break rather than the cap.
+        var usable = 0;
+        foreach (var key in keys)
+        {
+            var probe = await _client.PostAsJsonAsync(
+                $"/api/v1/app/auth/device-keys/{key.Id}/challenge", new { });
+            if (probe.StatusCode == HttpStatusCode.OK)
+            {
+                usable++;
+            }
+        }
+        Assert.Equal(5, usable);
+
+        // Whatever was retired, the key the user is holding right now survives.
+        var newest = await _client.PostAsJsonAsync(
+            $"/api/v1/app/auth/device-keys/{keys[5].Id}/challenge", new { });
+        Assert.Equal(HttpStatusCode.OK, newest.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_revoked_key_and_an_unknown_key_are_indistinguishable()
+    {
+        // The challenge endpoint is anonymous, so telling "never existed" apart
+        // from "existed and was revoked" handed out free information.
+        var (visitor, _) = await CreateApprovedVisitorAsync();
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var entry = await EnrolDeviceKeyAsync(visitor, ecdsa);
+        await DeleteAuthAsync($"/api/v1/app/auth/device-keys/{entry.Id}", visitor);
+
+        var revoked = await _client.PostAsJsonAsync(
+            $"/api/v1/app/auth/device-keys/{entry.Id}/challenge", new { });
+        var unknown = await _client.PostAsJsonAsync(
+            $"/api/v1/app/auth/device-keys/{Guid.NewGuid()}/challenge", new { });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, revoked.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, unknown.StatusCode);
+        var revokedBody = (await revoked.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        var unknownBody = (await unknown.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(unknownBody.Error!.Code, revokedBody.Error!.Code);
+        Assert.Equal(unknownBody.Error!.Message, revokedBody.Error!.Message);
     }
 
     // -- Helpers --------------------------------------------------------------

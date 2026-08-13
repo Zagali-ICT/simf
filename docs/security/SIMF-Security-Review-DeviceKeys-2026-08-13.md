@@ -365,10 +365,14 @@ describes the position **before** that fix, so read it together with this table.
 
 | Wave | Findings | Status | Rationale |
 |------|----------|--------|-----------|
-| A | S1, S2, S4 | **BUILT 2026-08-13** | The two High findings plus the lockout gap. Implemented, tested and committed. Evidence in `Mohaned-Review.md` §13.1 |
-| B | S3, S6, S7 | Decided, queued | Contained gaps and compliance items. One backend changeset |
-| C | S5, S8, S10 | Decided, queued | Needs the "my devices" surface to be observable and testable. S10 is blocked on a Figma node |
-| D | S9 | Decided, deferred | Hardware key binding. Forces every enrolled user to re-enrol, so it runs after the event |
+| A | S1, S2, S4 | **BUILT 2026-08-13** | The two High findings plus the lockout gap. Evidence in `Mohaned-Review.md` §13.1 |
+| B | S3, S6, S7 | **BUILT 2026-08-13** | Admin enrolment refused, audit-detail injection closed at both boundary and sink, admin revoke moved into the permission catalogue. Evidence in §13.2 |
+| C | S5, S8 | **BUILT 2026-08-13** | Active-key cap (default 5) and the challenge-endpoint oracle closed. The enrolment **notification** part of S5 is outstanding: it needs an additive `NotificationKind` plus bilingual resx |
+| C | S10 | **Blocked** | Needs a Figma node for the "my devices" screen, which `simf_app/CLAUDE.md` §13.5 forbids inventing |
+| D | S9 | **Deferred by decision** | Hardware key binding. Forces every enrolled user to re-enrol, so it runs after the event |
+
+**Nine of the ten findings are closed in code.** S10 is blocked on an asset and
+S9 on a scheduling decision, both recorded rather than forgotten.
 
 Decisions taken on the remediation itself, with reasoning, are tabulated at the
 end of `Mohaned-Review.md` §13. One item stays verify-first: S8 must not be built

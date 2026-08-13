@@ -221,6 +221,14 @@ public static class PermissionCatalog
         public const string Import = "SessionCategories.Import";
     }
 
+    /// <summary>Biometric device keys. Revoke is the only administrative action:
+    /// enrolment and self-revoke are the account owner's own, and there is no
+    /// admin list surface yet.</summary>
+    public static class DeviceKeys
+    {
+        public const string Revoke = "DeviceKeys.Revoke";
+    }
+
     public static class Themes
     {
         public const string View = "Themes.View";
@@ -925,6 +933,9 @@ public static class PermissionCatalog
         new(Regions.Create, "Regions", "Create", "Create regions", AdminOnly),
         new(Regions.Edit, "Regions", "Edit", "Edit regions", AdminOnly),
         new(Regions.Delete, "Regions", "Delete", "Delete regions", AdminOnly),
+
+        // Account security.
+        new(DeviceKeys.Revoke, "DeviceKeys", "Revoke", "Revoke a user's biometric device key", AdminOnly),
 
         // Programme
         new(Themes.View, "Themes", "View", "View themes", AdminOnly),
