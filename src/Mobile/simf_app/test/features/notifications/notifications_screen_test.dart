@@ -430,6 +430,27 @@ void main() {
       );
     });
 
+    testWidgets('DeviceKeyEnrolled → gold fingerprint, not the severity mark',
+        (tester) async {
+      // A biometric credential was bound to the account. It sits with the
+      // credential-info kinds rather than the green completions, because the
+      // row exists for the case where the owner did NOT do it. Seeing the
+      // warning fallback (priority_high) here would mean the kind is unmapped,
+      // which is how it first shipped.
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[_item(kind: 'DeviceKeyEnrolled')],
+        ),
+      );
+      expect(find.byIcon(Icons.fingerprint_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.priority_high_rounded), findsNothing);
+      expect(
+        iconColor(tester, Icons.fingerprint_rounded),
+        SimfTokens.accent,
+      );
+    });
+
     testWidgets('SessionReminder → green check', (tester) async {
       await _pump(
         tester,
