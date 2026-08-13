@@ -123,8 +123,7 @@ Desk staff clicks +Add
   → API: POST /api/v1/admin/visitors/register-onsite
   → AdminAccountService.RegisterOnSiteAsync:
       transaction:
-        create SimfUser (AccountState = Approved)
-        create UserProfile (every field)
+        create UserProfile (every field), AdmissionState = PendingApproval
         link interests
         QrIdMinter.MintAsync → Approved QR badge
         audit Admin.WalkInRegistered

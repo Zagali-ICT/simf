@@ -63,7 +63,7 @@ Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
   And an Administrator has signed in via /login + /login/totp (Get-Totp helper)
-  And at least one Visitor account is in AccountState=PendingApproval
+  And at least one Visitor profile is in AdmissionState=PendingApproval
   And the administrator has landed on /admin/visitors/pending
 
 Scenario: Review then approve a single pending visitor
@@ -98,7 +98,7 @@ Scenario: Review then approve a single pending visitor
 - Network: `GET /account/api/admin/visitors/{id}/profile-for-approval` → 200, then
   `POST /account/api/admin/visitors/{id}/approve` → 200, then
   `POST /account/api/admin/visitors/pending/list` → 200
-- Side effects: subject `AccountState=Approved`, `UserProfile.QrId` minted (non-null),
+- Side effects: subject `UserProfile.AdmissionState=Approved`, `UserProfile.QrId` minted (non-null),
   every refresh token for the subject revoked, `NotificationKind.AccountApproved`
   dispatched + email queued
 - Audit row: `Admin.VisitorApproved` (`AuditEvents.AdminVisitorApproved`) with the
@@ -170,7 +170,7 @@ Scenario: Reject a single pending visitor with a valid reason
 - Console errors: 0 expected
 - Network: `POST /account/api/admin/visitors/{id}/reject` → 200, then
   `POST /account/api/admin/visitors/pending/list` → 200
-- Side effects: subject `AccountState=Rejected`, `UserProfile.RejectionReason` +
+- Side effects: subject `UserProfile.AdmissionState=Rejected`, `UserProfile.RejectionReason` +
   `RejectionReasonArabic` set to the reason, refresh tokens revoked,
   `NotificationKind.AccountRejected` dispatched + email queued
 - Audit row: `Admin.VisitorRejected` (`AuditEvents.AdminVisitorRejected`) with the
@@ -267,7 +267,7 @@ Scenario: A signed-in user without Visitors.View is denied
 Scenario: Approving a row a sibling admin already actioned shows the 409 toast
   Given the administrator loaded the queue showing visitor.stale@example.com
   And another admin approved (or rejected) that same account in the meantime
-      (subject is no longer in AccountState=PendingApproval)
+      (subject is no longer in AdmissionState=PendingApproval)
   When the administrator opens the review modal and clicks "Confirm approval"
   Then POST /account/api/admin/visitors/{id}/approve returns HTTP 409
       with ApiResult.Error.Code = "AdminUserNotPending"
@@ -435,7 +435,7 @@ Scenario: A partner-side or inactive tier on approve returns a 400 error
   Then the API returns HTTP 400 with ApiResult.Error.Code = "ADMIN_PROFILE_TYPE_INVALID"
   And a red toast surfaces the bilingual MessageForCurrentCulture()
       (English / Arabic invalid-profile-type message)
-  And the visitor stays in AccountState=PendingApproval (no approval, no QR minted)
+  And the visitor stays in AdmissionState=PendingApproval (no approval, no QR minted)
   And the row remains on the queue
 ```
 
@@ -589,3 +589,9 @@ _Earlier:_ 2026-06-13 by Claude (D-385/386/387 — modal all-data display,
 approve-time profile-type picker + `ADMIN_PROFILE_TYPE_INVALID`, photo lightbox +
 download; added E2E-VPN-017..024).
 _Earlier:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+
+> **Where to assert admission.** Approval writes `UserProfile.AdmissionState`,
+> not the Identity account's `AccountState`. An attendee may hold no account at
+> all — a walk-in and a pre-generated badge both produce a profile without one —
+> so the row a gate reads is the profile. Asserting the account state passes for
+> an app registrant and silently misses every desk-registered attendee.
