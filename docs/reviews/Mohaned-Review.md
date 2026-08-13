@@ -886,7 +886,7 @@ Two things, in the owner's own words:
 2. The fix: *"no cross db reference, you can simply change instead of save path
    to saving Guid or real record."*
 
-## 2.2 Finding: not one of these columns holds a path, and every name says it does
+## 2.2 Finding: the nine columns are two unrelated families
 
 Nine columns are named `*RelativePath`. The name is a leftover from the era
 before D-568 unified the file store. What each one actually holds today:
@@ -900,25 +900,58 @@ before D-568 unified the file store. What each one actually holds today:
 | `News.ImageRelativePath` | App | as above | `AdminNewsService.cs:246` |
 | `MediaPartner.LogoRelativePath` | App | as above | `AdminMediaPartnerService.cs:197` |
 | `ArchiveEdition.CoverImageRelativePath` | App | as above | `AdminArchiveService.cs:235` |
-| `ArchivePastSpeaker.PhotoRelativePath` | App | as above, plus a spreadsheet cell | `AdminArchiveService.cs:554` (length-guarded to 256 from admin input) |
-| `Speaker.PhotoRelativePath` | App | no writer found | `Speaker.cs:88-91` documents it as vestigial, kept only as a contract fallback. See 2.9 |
+| `ArchivePastSpeaker.PhotoRelativePath` | App | an external image URL, **deliberately**. Excluded from this change, see 2.9 | `AdminArchiveService.cs:554-555`, error text "Past speaker photo path" |
+| `Speaker.PhotoRelativePath` | App | nothing. Vestigial, confirmed: no write site anywhere in the backend | `Speaker.cs:88-92`, "nothing writes it any more and the seed scripts leave it null" |
 
-So the centralised file store is **not** bypassed for the pointers that matter:
-the bytes go through `IFileService` and land in `StoredFiles`, encrypted at rest,
-with the malware scan, the magic-byte allow-list and the SHA-256 that pipeline
-performs. The owner's instinct was right about the **name**, and the name has
-been actively misleading every reader of the schema.
+**Correction to the first draft of this section.** It was written asserting that
+none of the nine holds a path. A full call-site sweep disproved that. Only
+**three** are repurposed Guid pointers. The other **six really do hold paths**,
+which makes the owner's original objection more accurate than the first draft
+allowed, not less. The nine are two unrelated families and any plan that treats
+them as one is wrong:
 
-Two doc comments are worse than the names, because they assert the false thing
-rather than merely implying it:
+| Family | Columns | What the value is | What an FK means here |
+|--------|---------|-------------------|-----------------------|
+| **A. Guid pointers** | `SimfUser.AvatarRelativePath`, `UserProfile.IdImageRelativePath`, `UserProfile.VipPhotoRelativePath` | A `StoredFile` id, written as `result.Id.ToString()` straight off `fileService.UploadAsync` and read back through a `Guid.TryParse` helper | A faithful **retype** of an invariant the code already maintains by hand |
+| **B. Real paths** | `Sponsor.LogoRelativePath`, `News.ImageRelativePath`, `MediaPartner.LogoRelativePath`, `ArchiveEdition.CoverImageRelativePath`, `ArchivePastSpeaker.PhotoRelativePath`, `Speaker.PhotoRelativePath` | Admin-authored free text. Validation is trim plus max length and nothing else. **No `Guid.Parse` exists anywhere in the repo for these** | Not a retype. An **authoring-flow migration** plus a wire change |
 
-- `UserProfile.cs:264-267` still describes "the relative path of the ID-image
-  file inside the unified store rooted at `FileStorage:RootPath`, under its
-  `IdDocument` folder". The column holds a Guid.
-- `Sponsor.cs:28-29` still says "path to the logo asset, resolved against the
-  static asset root".
+For family A the bytes are in the central store and the pipeline is honoured:
+`IFileService` performs the malware scan, the magic-byte allow-list, the SHA-256
+and the encryption at rest. For family B nothing of the kind happens, because the
+value is a string an administrator typed and the image is served from wherever
+that string points.
 
-`SimfUser.cs:51-57` is the honest one: it opens with "**Not a path.**"
+Two supporting facts, both verified, that decide the shape of the fix:
+
+- **The value in family B is rendered directly as an image source.** The Control
+  Panel does `<img src="@Initial.ImageRelativePath">` (`NewsViewDelete.razor:50`)
+  and the same for the archive cover (`ArchiveViewDelete.razor:55`); the Website
+  uses it as the photo fallback (`SiteContentEndpoints.cs:261-263`, which also
+  notes at `:47` that "the entity's `LogoRelativePath` is not publicly
+  servable"); the app passes it straight into a `photoUrl`
+  (`archive_past_speakers_row.dart:41`). So converting family B cannot just
+  retype a projection. The public field must keep emitting a servable string.
+- **Family B already has a working central-store link beside it, and the two are
+  structurally unrelated.** `SimfImageUpload` never sets the owning row's pointer,
+  on upload or on link: the chain ends in `AssetService.SetUploadAsync`
+  (`AssetService.cs:62`, `:91`), which writes a `StoredFile` keyed on
+  `(Service, OwnerEntityId)` and touches no owner row. The read side matches
+  (`AssetService.ResolveAsync:108-111`). The "one active asset per category and
+  owner" invariant lives in service code (`RetirePriorActiveAsync:84`), not in an
+  index. So the free-text column is not a stale copy of the modern link. It is a
+  second, independent way of setting the same picture.
+
+Two doc comments assert the false thing rather than merely implying it:
+
+- `UserProfile.cs:264-267` describes "the relative path of the ID-image file
+  inside the unified store rooted at `FileStorage:RootPath`". The column holds a
+  Guid.
+- `Sponsor.cs:28-29` says "path to the logo asset, resolved against the static
+  asset root". That one is at least still true of the value, if not of the
+  intended design.
+
+`SimfUser.cs:51-57` is the honest one: it opens with "**Not a path.**" That is
+the column the owner asked about, and for that column the first draft was right.
 
 ## 2.3 The real defect: the link is recorded twice and enforced nowhere
 
@@ -946,15 +979,34 @@ exception, and only because it began life as a filesystem path.
 
 ## 2.4 The fix, as directed by the owner
 
-No column stores a path. Nothing crosses the database boundary. The shape is
-decided by which database the owning row sits in.
+Nothing crosses the database boundary and no pointer stays a string. The sweep
+splits this into one change that is ready now and one that is separate product
+work.
+
+### Family A, ready now
 
 | Owning row | Link | Why |
 |------------|------|-----|
-| The 8 App-database owners (`UserProfile` x2, `Sponsor`, `News`, `MediaPartner`, `ArchiveEdition`, `ArchivePastSpeaker`, `Speaker`) | **Real record.** `Guid? XFileId` plus a `StoredFile` navigation, `HasForeignKey`, an index, and an explicit `OnDelete` | Both sides are in `SIMF_App`, so the database can enforce it. This is the "real record" the owner asked for |
-| `SimfUser.Avatar...` | **Bare Guid only.** `Guid?`, no navigation, no FK | It would cross into `SIMF_Identity`, which D-157 forbids permanently. Identical in shape to `UserProfile.UserId`, which is a bare Guid for the same reason and documents why |
+| `UserProfile.IdImageRelativePath`, `UserProfile.VipPhotoRelativePath` | **Real record.** `Guid? XFileId` plus a `StoredFile` navigation, `HasForeignKey`, an index, and an explicit `OnDelete` | Both sides are in `SIMF_App`, so the database can enforce it. This is the "real record" the owner asked for |
+| `SimfUser.AvatarRelativePath` | **Bare Guid only.** `Guid?`, no navigation, no FK | It would cross into `SIMF_Identity`, which D-157 forbids permanently. Identical in shape to `UserProfile.UserId`, which is a bare Guid for the same reason and documents why |
 
-What disappears when the strings go, which is the payoff:
+Family A is **wire-free**: none of the three appears on any public contract. They
+reach clients only as presence booleans and a derived avatar URL, so the entity
+change is invisible to every shipped surface.
+
+### Family B, separate work
+
+Converting the six path columns means replacing a Control Panel text box with an
+upload picker, changing the Excel import format on three endpoints, and migrating
+the existing values, all while the public field keeps emitting something a
+browser can load. That is product work behind an owner decision, not an integrity
+fix, and 2.6 and 2.9 record the two blockers it runs into.
+
+**Recommendation: execute family A now, and take family B as its own approved
+scope.** Family A is where the owner's "real record" is both possible and free;
+family B is where it is a feature.
+
+What disappears when the family A strings go, which is the payoff:
 
 - Every `Guid.TryParse` defensive parse of a pointer (`AccountService.ParseFileId`
   at `:243`, and the equivalent inside `IdentitySeeder.NeedsReseedAsync`).
@@ -1004,17 +1056,45 @@ Move the column and every administrator loses their photo.
 
 ### Options
 
-| Option | What it does | Cost |
-|--------|--------------|------|
-| A. Rename only | `SimfUser.AvatarFileId`, bare `Guid?`. Nothing moves | Cheapest. Leaves all three consequences above in place. Account-less attendees still cannot have a face photo |
-| B. Move wholesale to `UserProfile` | One column, real FK, cross-boundary read gone | **Breaks administrator avatars outright.** Rejected on that evidence |
-| C. Split by meaning **(recommended)** | `UserProfile.FaceFileId` (real FK, App DB) for the attendee's face photo, and `SimfUser.AvatarFileId` (bare Guid, Identity DB) for the Control Panel account photo | Two columns, but they were never one thing. The visitor path stops touching Identity for images at all, and the cross-database read at `UserProfileService.cs:229` is deleted rather than renamed |
+| Option | What it does | Verdict |
+|--------|--------------|---------|
+| **A. Rename and retype in place (recommended)** | `SimfUser.AvatarFileId`, a real `Guid?` rather than a `string`. Nothing moves | **Take this.** See below |
+| B. Move wholesale to `UserProfile` | One column, real FK, cross-boundary read gone | **Rejected on two independent breakages** |
+| C. Split by meaning | `UserProfile.FaceFileId` for the attendee face photo plus `SimfUser.AvatarFileId` for the Control Panel account photo | **Rejected.** Was recommended in the first draft, and withdrawn on the evidence below |
 
-**Recommendation: C.** The two photos have different owners, different
-populations, different lifecycles and different consumers. They were merged into
-one column by history, not by design. Option C is also the only one that makes a
-badge-only attendee capable of having a face photo, which is the case D-877 just
-made ordinary.
+**Why B fails, both reasons verified independently:**
+
+1. Administrators hold avatars and have no profile row.
+   `AdminAvatarEndpoints.cs:204-226` states "avatars live in the one central file
+   store for every user type, admins included"; an admin sets their own through
+   `Profile.razor.cs:278-284`; the Admins grid projects `HasAvatar` from the
+   column (`AdminAccountService.cs:1499-1501`). Yet "Admins never carry a profile
+   so we never stub for them" (`AdminAccountService.cs:996-1000`).
+2. **Upload ordering, which the first draft missed.** Avatar upload deliberately
+   does **not** seed a profile stub, and the male face-photo gate reads the
+   Identity column *before* any profile row exists
+   (`UserProfileService.cs:203-208`, gate at `:227-235`). Moving the pointer onto
+   `UserProfile` forces avatar upload to create profile rows, which breaks the
+   "no profile row" rollback guarantee (H16).
+
+**Why C fails too, and this is the correction to the first draft.** C looked like
+it dodged reason 1 by keeping an administrator column. It does not dodge reason 2:
+the visitor half still forces a profile row at avatar-upload time. And it puts one
+fact in two homes, which doubles every reader and writer of it. That is the same
+duplication this item exists to remove.
+
+**Recommendation: A**, and the plan should be honest about what A does not
+deliver. The foreign key here is **impossible, not deferred**: D-157 is permanent.
+What A does deliver is a real `Guid?` instead of a string, which removes the parse
+and the legacy-path tolerance at `AccountService.cs:243-244`. The residual risk is
+small in practice, because **the byte path never reads the pointer**:
+`AvatarFetchEndpoint.cs:25-32` resolves the image by
+`Service == Avatar && OwnerEntityId == userId`, newest active. The column is only
+a presence sentinel, a delete pointer and a cache-buster.
+
+The face photo for an account-less attendee (consequence 3 above) is a real gap
+that option A does not close. It is raised as its own question in 2.12 rather than
+solved by moving a column.
 
 ## 2.6 Second finding: two uncentralised routes still set these images
 
@@ -1071,58 +1151,118 @@ and not part of the shipped mobile wire contract.
 
 ## 2.7 Files
 
-**This list is partial.** The exhaustive call-site inventory was still running
-when this section was written, and the file table must be completed from it
-before the plan is executed. What is listed here is verified; what is missing is
-breadth, not accuracy.
+The call-site inventory has now run: seven parallel sweeps returned **346 sites**
+across persistence, write paths, read paths, contracts, the Control Panel, the
+consuming surfaces, and seeds/tests/docs. Their headline corrections are folded
+into 2.2, 2.5 and 2.9 above rather than repeated here.
+
+Rows marked **B** apply only if family B is approved as scope (question 1 in
+2.12). Everything else is family A and is the change recommended now.
 
 | Area | Change | Risk |
 |------|--------|------|
-| `src/Backend/SIMF.Domain/` (9 entities) | Replace each `string? *RelativePath` with `Guid? *FileId`; add the `StoredFile` navigation on the 8 App-side entities; correct the two false doc comments | **breaking** |
-| `src/Backend/SIMF.Infrastructure/Persistence/Configurations/` | `HasForeignKey`, `OnDelete`, index per owner; drop the `HasMaxLength(256)` | **breaking** |
+| `SimfUser.cs`, `UserProfile.cs` | Retype the three family A pointers to `Guid?`; add the `StoredFile` navigation on the two `UserProfile` ones only; correct the false doc comment at `UserProfile.cs:264-267` | **breaking** |
+| `Configurations/SimfUserConfiguration.cs`, `App/UserProfileConfiguration.cs` | `HasForeignKey`, `OnDelete`, index on the two App-side pointers; drop the `HasMaxLength` sized for paths | **breaking** |
 | `Persistence/Migrations/` (both contexts) | Fold into the regenerated `InitialCreate` per D-881, not a stacked migration | **breaking** |
-| `Identity/AccountService.cs` | Avatar upload and remove; delete `ParseFileId`; check the delete-then-repoint ordering against the new FK | breaking |
-| `Application/IdentityAccess/UserProfileService.cs` | ID image, VIP photo, and the face-photo gate at `:229` | breaking |
-| `Identity/IdentitySeeder.cs` | Demo assets and the D-860 self-heal | none |
-| The four `Admin*Service.cs` writers | Sponsor, News, MediaPartner, Archive | none |
-| `Endpoints/Admin/*ExcelEndpoints.cs` (Archive, News, Sponsors) | Remove the path cell from the import template, per 2.6 | **breaking** (published import contract) |
-| Read and projection sites | `HasAvatar` on three admin grids, profile completeness, URL builders | breaking |
-| `src/Shared/SIMF.Contracts/` | Internal types only. **Public JSON field names must not change** | **breaking** |
-| `src/ControlPanel/` | Delete the four legacy text fields and their resx keys; the avatar and VIP photo screens | none |
-| Seeders, SQL content seed | A literal path in a seed script would break a typed FK on first run. Go or no-go item | **breaking** |
+| `Identity/AccountService.cs` | Avatar upload and remove; delete `ParseFileId` and its legacy-path tolerance at `:243-244` | breaking |
+| `Application/IdentityAccess/UserProfileService.cs` | ID image, VIP photo, and the face-photo gate at `:229`. Preserve the H16 upload ordering described in 2.5 | breaking |
+| `Identity/IdentitySeeder.cs` | Demo assets at `:1525` and `:1538`, and the D-860 self-heal | none |
+| Read and projection sites | `HasAvatar` on three admin grids, profile completeness, the avatar URL builder. The **presence semantics must not change**, per 2.9 | breaking |
+| `src/Shared/SIMF.Contracts/` | Family A touches no public field. Presence booleans and the derived avatar URL keep their shapes | none |
+| `src/ControlPanel/` | The avatar and VIP photo screens | none |
 | `tests/` | Tests writing the fake sentinel `"storedfile:" + Guid` will not compile against a typed Guid | none |
-| `docs/` | LLD-001 `:399` and `:411` name the column; page docs; E2E catalogue files | none |
+| `docs/` | LLD-001 `:399` and `:411` name the column; the File Store Dev Guide; page docs; E2E catalogue files | none |
+| **B** `Sponsor.cs`, `News.cs`, `MediaPartner.cs`, `ArchiveEdition.cs`, `Speaker.cs` and their configurations | Family B retype. `ArchivePastSpeaker` is **excluded** per 2.9 blocker 2 | **breaking** |
+| **B** The four `Admin*Service.cs` writers | Sponsor, News, MediaPartner, Archive | breaking |
+| **B** `Endpoints/Admin/*ExcelEndpoints.cs` (Archive, News, Sponsors) | Remove the path cell from the import template, per 2.6 | **breaking** (published import contract) |
+| **B** `src/ControlPanel/` | Delete the four legacy text fields and their resx keys (`Strings.resx:2821`, `Strings.ar.resx:2811`) | none |
+| **B** `docs/migrations/2026/SIMF_App_MediaPartners.sql` | Seed `StoredFile` ExternalLink rows instead of the three `placehold.co` URLs. **Prerequisite**, per 2.9 blocker 1 | **breaking** |
+| **B** CP and Website render sites | `NewsViewDelete.razor:50`, `ArchiveViewDelete.razor:55`, `SiteContentEndpoints.cs:261-263` render the value as an `<img>` source and need a servable URL instead | **breaking** |
 
 ## 2.8 Sequencing
 
 Each increment must build and test on its own.
 
-1. Domain plus EF configuration plus the regenerated `InitialCreate`.
-2. Write paths, including the delete or repoint ordering, which a real FK
-   constrains in a way a string never did.
-3. Read paths, presence sentinels, URL builders.
-4. The avatar split (2.5 option C), if approved. This is the only increment that
-   moves data rather than retyping a column.
-5. Control Panel, including deleting the legacy text fields.
-6. Seeders and tests.
-7. Docs and E2E catalogue, same changeset, per D-246.
+**Family A, the recommended scope:**
 
-## 2.9 Still to verify before execution
+1. Domain plus EF configuration plus the regenerated `InitialCreate`. Two real
+   keys on `UserProfile`, one bare `Guid?` on `SimfUser`.
+2. Write paths. Deletion is soft everywhere (2.9), so the repoint-then-retire
+   ordering already in `AccountService.cs:144-159` stays valid; verify rather
+   than assume.
+3. Read paths, presence sentinels and the avatar URL builder, holding presence
+   semantics exactly, per 2.9.
+4. Seeders and tests.
+5. Docs and E2E catalogue, same changeset, per D-246.
 
-Recorded openly rather than assumed:
+**Family B, only if approved as its own scope:**
 
-- `Speaker.PhotoRelativePath`: no writer was found by either sweep, and the entity
-  documents itself as vestigial, but "no writer found" is not the same as "no
-  writer". Confirm before the column is dropped rather than retyped.
-  (`ArchivePastSpeaker.PhotoRelativePath` was open at first draft and is now
-  resolved: `AdminArchiveService.cs:554` writes it from admin input.)
-- `OnDelete` behaviour: whether `IFileService.DeleteAsync` performs a hard row
-  delete or a soft `IsActive` flag decides between `Restrict`, `SetNull` and
-  `NoAction`, and decides whether existing delete paths start throwing.
-- Whether the polymorphic `OwnerEntityType` / `OwnerEntityId` pair is consumed by
-  the owner-or-administrator download authorisation check. If it is, it cannot be
-  dropped even once a real FK exists, and the invariant between the two halves
-  needs a test instead.
+6. The `StoredFile` ExternalLink seed replacement (blocker 1). This comes first,
+   because the retype cannot land while the seed still inserts URLs.
+7. Migrate existing path values into the store, then retype. `ArchivePastSpeaker`
+   is excluded throughout (blocker 2).
+8. Control Panel: replace the four text fields with the upload picker already in
+   use beside them, and delete their resx keys.
+9. Excel import format, per the answer to question 4.
+10. The CP and Website render sites, which need a servable URL rather than the
+    raw column.
+
+## 2.9 Two hard blockers on family B, and the unknowns now closed
+
+### Blocker 1: a seed script inserts literal URLs into one of these columns
+
+`docs/migrations/2026/SIMF_App_MediaPartners.sql` lines 29 to 41 insert three
+rows whose `LogoRelativePath` is a full external URL,
+`N'https://placehold.co/260x130/...'`. A typed `uniqueidentifier` column rejects
+those inserts on the first run of `Run_All_App_Seeds.sql`.
+
+The remedy is already written down and was never done:
+`docs/manuals/SIMF-File-Store-Dev-Guide.md:150-152` names it as the Wave C P6/E2
+follow-up, "seed `StoredFile` **ExternalLink** rows for placeholder logos instead
+of raw `*RelativePath` URLs". It is filed there as optional demo polish. Under
+this change it stops being optional and becomes a **prerequisite**.
+
+Every other seed is safe: Sponsors and Archive pass explicit `NULL`, and News and
+Speakers only mention the column in comments.
+
+### Blocker 2: one of the nine is an external URL by owner decision
+
+`docs/manuals/SIMF-File-Store-Dev-Guide.md:108-109` states that
+`ArchivePastSpeaker.photoRelativePath` is intentionally an external-URL datum the
+app renders directly, and that it is **kept, not migrated**. The owner chose that
+explicitly, recorded in `docs/tests/e2e/mobile-archive-detail.md:22-24` as
+"URL-per-row", where an administrator pastes a reachable image URL.
+
+So this column must be **excluded** from the change, not converted. The first
+draft of 2.2 listed it for conversion. That was wrong and is corrected above.
+
+### Unknowns from the first draft, now closed
+
+- **Deletion is soft in every path.** `StoredFileService.DeleteAsync:361-395`
+  deactivates rather than deleting the row, so the `OnDelete` question is much
+  smaller than the first draft assumed and no existing delete path starts
+  throwing.
+- **`Speaker.PhotoRelativePath` really is vestigial.** No write site exists
+  anywhere in the backend. It is read-only legacy data.
+- **The app is almost entirely insulated.** Every image in the Flutter app is
+  fetched by **owner row id**, not from a pointer: anonymously through
+  `{base}/app/assets/{kind}/{id}/image` (`asset_urls.dart:43-44`, 19 call sites)
+  and the avatar through the authenticated
+  `/app/account/avatar/{userId}` (`profile_repository.dart:267`). The Website
+  mirrors this with its own by-owner-id proxy (`SiteContentEndpoints.cs:119`).
+  This materially shrinks the risk. Two constraints survive it: the frozen JSON
+  keys must keep being emitted, and the two fields used as **presence sentinels**
+  (`partner_directory_models.dart:62-79` and the avatar URL) must stay non-empty
+  exactly when an image exists, or partner-directory logos vanish and avatars stop
+  resolving.
+
+### Still open
+
+Whether the polymorphic `OwnerEntityType` / `OwnerEntityId` pair is consumed by
+the owner-or-administrator download authorisation check. If it is, it cannot be
+dropped even once a real key exists, and the invariant between the two halves
+needs a test instead. The adversarial verification pass on this was still running
+when this section was written.
 
 ## 2.10 Verification gate
 
@@ -1141,21 +1281,29 @@ audit), and the `StoredFile` table's own columns.
 
 ## 2.12 Open questions for the owner
 
-1. **Option C for the avatar?** It is the only option that lets a badge-only
-   attendee have a face photo, and the only one that deletes the cross-database
-   read instead of renaming it. Option B is rejected on evidence: it breaks
-   administrator avatars.
+1. **Approve family A alone as this scope?** Recommendation: yes. Family A is
+   three columns, wire-free, and the only place the owner's "real record" is both
+   possible and free right now. Family B is six columns, two blockers and a
+   change to how administrators author content, and it deserves its own approval
+   rather than riding in on this one.
 2. **Delete the four legacy Control Panel text fields outright**, or leave them
    read-only for one release? Recommendation: delete. They are the mechanism by
    which the two halves diverge.
-3. **`Speaker.PhotoRelativePath` is documented as vestigial.** Drop the column, or
-   keep it because a public contract still emits it as a fallback? Recommendation:
-   keep the contract field, drop the column, and have the contract emit null.
+3. **`Speaker.PhotoRelativePath` is confirmed vestigial**, with no writer anywhere.
+   Drop the column, or keep it because a public contract still emits it as a
+   fallback? Recommendation: keep the contract field, drop the column, and have
+   the contract emit null.
 4. **The Excel import template**, per 2.6: remove the path column outright
    (recommended), accept a `StoredFile` id instead, or have the importer resolve a
    path to an id. This is the only decision here that changes a contract an
    administrator uses by hand, so it needs an explicit answer rather than a
-   default.
+   default. Family B only.
+5. **Can an attendee with no account have a face photo?** Today the only column is
+   on `SimfUser`, so a walk-in or a bulk-badge holder has nowhere to hold one,
+   and D-877 made that row ordinary. Option A does not close that gap and no
+   column move can close it safely (2.5). If those attendees need a face on the
+   badge, it wants its own small design rather than being smuggled into this
+   change. Recommendation: answer this before the badge work, not during it.
 
 ---
 
@@ -1218,8 +1366,8 @@ This is the deeper issue behind the same observation, and it is a rule breach of
 the same family as item 2.
 
 `SimfUser.DisplayName` lives in `SIMF_Identity`. The person's real name lives on
-`UserProfile.Name` / `NameArabic` in `SIMF_App`. The first is kept in step with
-the second **by hand, from two different services**:
+`UserProfile.Name` / `NameArabic` in `SIMF_App`. The first is written from
+**three places, and kept in step with the second by hand from two of them**:
 
 | Site | What it does |
 |------|--------------|
