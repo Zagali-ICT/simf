@@ -342,6 +342,12 @@ sign-in paths.
 
 ## 12. Security review of the device-key subsystem
 
+> **Issued as a standalone report:**
+> [`docs/security/SIMF-Security-Review-DeviceKeys-2026-08-13.md`](../security/SIMF-Security-Review-DeviceKeys-2026-08-13.md).
+> That file is the canonical issue and carries the executive summary, the full
+> evidence and the compliance table. This section is the inline copy kept with
+> the plan; **§13 below is the remediation plan**, which the report points back to.
+
 Requested 2026-08-13. Scope: `DeviceKey.cs`, `DeviceKeyService.cs`,
 `DeviceKeyEndpoints.cs`, `DeviceKeyConfiguration.cs`, `DeviceKeys.cs` contracts,
 `TokenIssuer.cs`, the device-key portion of `auth_controller.dart`,
@@ -593,11 +599,631 @@ original label complaint.
 | D-246 docs plus tests plus E2E | **Fails** for the list endpoint (S10) |
 | D-110 Identity freeze | Respected by the recommended option |
 
-### Recommended sequencing
+---
 
-S1 and S2 are small, self-contained and independent of everything in this plan.
-S1 is one guard in one method. S2 is one repository call in one method. Both are
-worth doing before the production publish and neither needs a schema change.
-S3 through S5 are a second, larger piece of work that belongs with the "my
-devices" screen, since that screen is also what makes S5 observable. S6 rides
-along with this plan. S7 and S10 are Definition-of-Done cleanups.
+## 13. Remediation plan: every finding as a work item
+
+Each finding above becomes one numbered work item. **Nothing here is
+implemented.** Each wave needs its own approval, separately from the label work
+in §1 to §11, because these are pre-existing defects in shipped code rather than
+anything this plan introduces.
+
+| Wave | Items | Findings | Gate |
+|------|-------|----------|------|
+| **A** | W1, W2, W4 | S1, S2, S4 | Before the production publish |
+| **B** | W3, W6, W7 | S3, S6, S7 | One backend changeset, after A |
+| **C** | W5, W8, W10 | S5, S8, S10 | Needs the "my devices" surface |
+| **D** | W9 | S9 | Its own piece of work, no server change |
+
+W4 is pulled into wave A because it edits the same guard block as W1, so
+splitting them would mean touching one method twice.
+
+---
+
+### W1 (S1). Refuse a device-key sign-in when a password change is required
+
+| Field | Value |
+|-------|-------|
+| Files | `SIMF.Infrastructure/IdentityAccess/DeviceKeyService.cs` (**security**), `SIMF.Api.Tests/DeviceKeySignInTests.cs` (none) |
+| Size | One guard in one method |
+
+**Approach.** In `SignInWithDeviceKeyAsync`, immediately after the existing
+`accounts.FindByIdAsync` at line 326, refuse when `user.PasswordChangeRequired`
+is set. Audit the refusal with the existing `AuditFailureAsync` helper.
+
+**Decision needed: opaque 401 or typed response.** Returning `null` maps to the
+generic `DEVICE_KEY_SIGNATURE_INVALID` 401, which tells a legitimate user with an
+expired password nothing about what to do, and the app cannot route them to the
+change flow. **Recommended: a typed `AUTH_PASSWORD_CHANGE_REQUIRED` 403**,
+matching what the password path returns for the app audience. There is no
+account-existence oracle risk here, because reaching this line already required
+a valid signature from the private key.
+
+**Tests.** A user with `PasswordChangeRequired` and a valid key is refused; a
+normal user still succeeds; the refusal is audited.
+
+---
+
+### W2 (S2). Revoke device keys on every password change and reset
+
+| Field | Value |
+|-------|-------|
+| Files | `SIMF.Application/IdentityAccess/PasswordService.cs` (**security**), `SIMF.Application/IdentityAccess/Abstractions/IDeviceKeyService.cs` (none), `SIMF.Infrastructure/IdentityAccess/DeviceKeyService.cs` (none), tests (none) |
+| Size | One new method plus one call |
+
+**Approach.** Add `RevokeAllForUserAsync(Guid userId, ...)` to `IDeviceKeyService`
+and implement it as a single `ExecuteUpdateAsync` setting `RevokedAt` and
+clearing the challenge columns for every non-revoked key. Call it from
+`ClearChangeFlagAndEndSessionsAsync` beside the existing
+`refreshTokenRepository.RevokeAllForUserAsync`. Correct that method's XML doc,
+which currently claims it "ends every session".
+
+**Why the abstraction rather than a direct DbContext call.** `PasswordService`
+lives in Application and must not reach into Infrastructure persistence.
+`IDeviceKeyService` is already the Application-side abstraction, so this adds no
+new layer.
+
+**Decision needed: which paths revoke.** Options are reset and forced-change
+only, or every change including a voluntary one. **Recommended: every change.** A
+voluntary password change is frequently the user's own response to "I think
+someone has access to my account", and that is precisely the case S2 describes.
+
+**Follow-on.** Extend the existing `AccountPasswordChanged` notification body to
+say how many devices were signed out, so the action is visible rather than
+silent.
+
+**Tests.** Reset the password, then a previously valid device key is refused at
+`sign-in-with-device-key`. Same for the forced-change completion path and the
+authenticated change path.
+
+---
+
+### W3 (S3). Refuse device-key enrolment for administrator accounts
+
+| Field | Value |
+|-------|-------|
+| Files | `SIMF.Infrastructure/IdentityAccess/DeviceKeyService.cs` (**security**), tests (none) |
+| Size | One guard in `RegisterAsync` |
+
+**Approach.** Refuse enrolment in `RegisterAsync` before any key is persisted,
+with a typed 403.
+
+**Decision needed: block on what.** Blocking on `UserType.Admin` is simple and
+uses the enum whose documented job is deciding the sign-in surface
+(`SimfUser.cs:26`). Blocking on the resolved permission set is more precise but
+means resolving permissions on an enrolment call that does not otherwise need
+them. **Recommended: `UserType.Admin`**, because it is the existing surface
+decision and needs no new resolution.
+
+**Tests.** An admin account is refused at enrolment; a visitor account is not.
+
+---
+
+### W4 (S4). Honour lockout and the `Registered` state
+
+| Field | Value |
+|-------|-------|
+| Files | `SIMF.Infrastructure/IdentityAccess/DeviceKeyService.cs` (**security**), tests (none) |
+| Size | Two conditions in the guard block W1 creates |
+
+**Approach.** In the same guard block, call the existing
+`accounts.IsLockedOutAsync(user)` and refuse when locked, and refuse
+`AccountState.Registered` for parity with `CheckAccountState`. Leave
+`PendingApproval` and `Rejected` alone: `SimfUser.cs:21-23` documents that these
+deliberately do sign in and are contained by the `account_state` claim plus
+`RequireApprovedAccount`, so refusing them here would diverge from the password
+path rather than align with it.
+
+**Tests.** A locked-out account with a valid key is refused; the lockout expiring
+restores it.
+
+---
+
+### W5 (S5). Cap active keys per account and notify on enrolment
+
+| Field | Value |
+|-------|-------|
+| Files | `DeviceKeyService.cs` (**security**), `SIMF.Common/Options/DeviceKeyOptions.cs` (none), `SIMF.Api/appsettings.json` plus the environment override (none), `SIMF.Common/Enums/NotificationKind.cs` (none, additive value only), tests (none) |
+| Size | Medium |
+
+**Approach.** Add `MaxActiveKeysPerUser` to `DeviceKeyOptions`, default 5. In
+`RegisterAsync`, count the caller's non-revoked keys and revoke the oldest by
+`CreatedAt` when the new one would exceed the cap. Dispatch a notification on
+every enrolment so a silent one is visible to the account owner.
+
+**Freeze note.** The notification needs a new `NotificationKind` value. D-110
+permits **additive** enum values that shadow no existing name or integer, which is
+the same allowance used by D-111 and D-217, so this needs no freeze lift and no
+migration. Per global §18, the new options key is added to `appsettings.json`
+**and** the environment override together so the two cannot drift.
+
+**Tests.** The sixth enrolment revokes the first; the notification is dispatched;
+the cap is configurable.
+
+---
+
+### W6 (S6). Reject separator and control characters in the label
+
+| Field | Value |
+|-------|-------|
+| Files | `DeviceKeyService.cs` (**security**), tests (none) |
+| Size | One validation clause, plus one encode at the sink |
+
+**Approach.** Two layers, because they fail differently. Reject `;`, `=`, CR, LF
+and C0 control characters in `RegisterAsync` alongside the existing length check,
+returning `DEVICE_KEY_INVALID`. Separately, encode the label where the audit
+detail is composed at line 137, so the sink is safe regardless of what any future
+caller sends.
+
+**Relationship to the label work.** §4.5 of this plan strips the same set
+client-side. That is hygiene for the value this app sends and is **not** the
+control; W6 is the control, because any token holder can post any 64-character
+string straight to the endpoint today.
+
+**Tests.** A label containing `;` or a newline is rejected; the audit detail
+remains parseable.
+
+---
+
+### W7 (S7). Bring the admin revoke into the permission catalogue
+
+| Field | Value |
+|-------|-------|
+| Files | `SIMF.Common/PermissionCatalog.cs` (none), `SIMF.Api/Endpoints/Auth/DeviceKeyEndpoints.cs` (**breaking**), `SIMF.Api.Tests/PermissionEnforcementTests.cs` (none), `docs/SIMF-Permission-Catalogue.md` (none) |
+| Size | Small, but it changes an authorization gate |
+
+**Approach.** Follow the project CLAUDE.md five-step playbook: add the code to the
+right nested class in `PermissionCatalog`, add the `new(...)` entry to
+`PermissionCatalog.All` with `BaselineRoles = AdminOnly`, then swap
+`nameof(AuthorizationPolicies.AdministratorOnly)` for
+`PermissionCatalog.PolicyFor(...)` on `AdminRevokeDeviceKeyEndpoint`. The seeder
+is idempotent and the `Permission` and `RolePermission` tables pre-exist, so
+there is **no migration**.
+
+**Risk tagged breaking, and why it is contained.** This changes what an existing
+role may do. `Administrator` is the `"*"` wildcard, so a super-admin keeps access
+with no action. Any narrower role that somehow held this ability would lose it
+until the permission is granted.
+
+**Tests.** `PermissionEnforcementTests` already fails the build on an ungated
+admin endpoint; add the positive and negative cases for the new code.
+
+---
+
+### W8 (S8). Collapse the challenge-endpoint responses
+
+| Field | Value |
+|-------|-------|
+| Files | `DeviceKeyService.cs` (none), `DeviceKeyEndpoints.cs` (**breaking**), tests (none) |
+| Size | Small |
+
+**Approach.** Return one 401 for both not-found and revoked, matching how
+`sign-in-with-device-key` already collapses its failures.
+
+**Verify before changing.** The Flutter error mapping in
+`auth_repository_impl.dart` and `device_key_client.dart` may distinguish these two
+codes to decide whether to clear the local key. Read that path first: if the app
+clears its stored key on `DEVICE_KEY_NOT_FOUND`, collapsing the codes would strand
+a user with a dead key and no automatic recovery. That check decides whether W8
+is worth its cost at Low severity.
+
+---
+
+### W9 (S9). Hardware-bind the private key
+
+| Field | Value |
+|-------|-------|
+| Files | Flutter `device_key_client.dart` plus new platform channels (**breaking**), `DeviceKey.cs` doc comment (none) |
+| Size | Large |
+
+**Approach.** Generate and hold the key in the Android Keystore or StrongBox with
+`setUserAuthenticationRequired`, and in the iOS Secure Enclave, so the biometric
+gates the key material rather than the code path that reaches it. The server
+contract is unchanged: still a SubjectPublicKeyInfo in and an ES256 verify, as
+`DeviceKey.cs:12-17` already notes.
+
+**Rollout decision needed.** Existing software-held keys cannot be migrated into
+hardware. Every enrolled user must re-enrol, which means a forced revocation plus
+a prompt. That is a user-visible event and needs its own owner decision on timing.
+
+---
+
+### W10 (S10). Wire the list endpoint and complete its Definition of Done
+
+| Field | Value |
+|-------|-------|
+| Files | `auth_api.dart`, `auth_repository_impl.dart`, `auth_controller.dart` (none), a new "my devices" screen (none), `docs/pages/PAGE-INDEX.md`, the per-page doc, `docs/tests/e2e/` catalogue plus README totals (none) |
+| Size | Medium, screen-sized |
+
+**Approach.** Add the missing list call, then a screen showing label, created and
+last-used per row with a per-row revoke. This is what makes the label from §1 to
+§11 visible to a user, and what makes W5's cap observable.
+
+**Blocked on a decision.** The screen has no Figma node, and `simf_app/CLAUDE.md`
+§13.5 requires asking rather than inventing one. This is the same item as open
+question 4 in §11.
+
+---
+
+### Summary of decisions this remediation needs
+
+| # | Decision | Recommendation |
+|---|----------|----------------|
+| 1 | W1 returns an opaque 401 or a typed `AUTH_PASSWORD_CHANGE_REQUIRED` 403 | Typed 403 |
+| 2 | W2 revokes on every password change or only on reset and forced change | Every change |
+| 3 | W3 blocks on `UserType.Admin` or on the resolved permission set | `UserType.Admin` |
+| 4 | W5's cap value | 5 active keys |
+| 5 | W9's re-enrolment rollout timing | After the event, not before |
+| 6 | W10 needs a Figma node for the "my devices" screen | Owner to supply or approve a deviation |
+
+---
+
+# Item 2: file pointers become real foreign keys to the central file table
+
+| Field | Value |
+|-------|-------|
+| Status | **Waiting for owner approval.** No code written. |
+| Raised | 2026-08-13 |
+| Trigger | Owner observation: "`public string? AvatarRelativePath` ... we have centralized file management for all documents, so why on the first table do we find a path, and break the rule?" |
+| Scope | Persistence, the services that read and write these pointers, the Control Panel upload and profile screens, seeders, tests, docs. Public JSON field names are explicitly OUT of scope. |
+| Related | D-157 (data and identity separation, permanent), D-568 (one `StoredFile` table), D-877 to D-881 (profile-owned admission, both migration histories regenerated), D-219 (wire contract stays append-only), D-110 (freeze) |
+
+## 2.1 What was asked
+
+Two things, in the owner's own words:
+
+1. Why does a table carry a **file path** when the system has centralised file
+   management for every document.
+2. The fix: *"no cross db reference, you can simply change instead of save path
+   to saving Guid or real record."*
+
+## 2.2 Finding: not one of these columns holds a path, and every name says it does
+
+Nine columns are named `*RelativePath`. The name is a leftover from the era
+before D-568 unified the file store. What each one actually holds today:
+
+| Column | Database | What it really holds | Verified at |
+|--------|----------|----------------------|-------------|
+| `SimfUser.AvatarRelativePath` | **Identity** | `StoredFile` Guid, as text | `AccountService.cs:150` writes `result.Id.ToString()`; `ParseFileId` at `:243` is `Guid.TryParse` |
+| `UserProfile.VipPhotoRelativePath` | App | `StoredFile` Guid, as text | `UserProfileService.cs:842` |
+| `UserProfile.IdImageRelativePath` | App | `StoredFile` Guid, as text | `UserProfileService.cs:665`, `:743`, `IdentitySeeder.cs:1525` |
+| `Sponsor.LogoRelativePath` | App | whatever an admin typed into the legacy text box | `AdminSponsorService.cs:244` |
+| `News.ImageRelativePath` | App | as above | `AdminNewsService.cs:246` |
+| `MediaPartner.LogoRelativePath` | App | as above | `AdminMediaPartnerService.cs:197` |
+| `ArchiveEdition.CoverImageRelativePath` | App | as above | `AdminArchiveService.cs:235` |
+| `ArchivePastSpeaker.PhotoRelativePath` | App | as above, plus a spreadsheet cell | `AdminArchiveService.cs:554` (length-guarded to 256 from admin input) |
+| `Speaker.PhotoRelativePath` | App | no writer found | `Speaker.cs:88-91` documents it as vestigial, kept only as a contract fallback. See 2.9 |
+
+So the centralised file store is **not** bypassed for the pointers that matter:
+the bytes go through `IFileService` and land in `StoredFiles`, encrypted at rest,
+with the malware scan, the magic-byte allow-list and the SHA-256 that pipeline
+performs. The owner's instinct was right about the **name**, and the name has
+been actively misleading every reader of the schema.
+
+Two doc comments are worse than the names, because they assert the false thing
+rather than merely implying it:
+
+- `UserProfile.cs:264-267` still describes "the relative path of the ID-image
+  file inside the unified store rooted at `FileStorage:RootPath`, under its
+  `IdDocument` folder". The column holds a Guid.
+- `Sponsor.cs:28-29` still says "path to the logo asset, resolved against the
+  static asset root".
+
+`SimfUser.cs:51-57` is the honest one: it opens with "**Not a path.**"
+
+## 2.3 The real defect: the link is recorded twice and enforced nowhere
+
+This is the finding that justifies the change, rather than a rename.
+
+The relationship between an owning row and its file exists in **two independent
+places, in two different shapes, and the database enforces neither**:
+
+| Half | Where | Enforcement |
+|------|-------|-------------|
+| `OwnerEntityType` + `OwnerEntityId` | on `StoredFile` | none. `StoredFileConfiguration.cs:9-11` states the pair is "polymorphic bare Guids and carry NO FK" |
+| `*RelativePath` | on the owning row | none. It is an `nvarchar(256)` |
+
+Nothing prevents the two halves from disagreeing. Nothing prevents a pointer
+outliving the row it points at. The only reason a dangling pointer is survivable
+today is that `IdentitySeeder` was taught to **self-heal** one (D-860): it
+re-uploads when the pointer no longer resolves to content, because testing the
+pointer for emptiness alone left demo accounts permanently broken after a
+database restore. That repair exists precisely because there is no key.
+
+By contrast, `DeviceKey` lives entirely inside the Identity database and has "a
+real in-database FK" (item 1, section 12 compliance table). Single-database
+relationships in this codebase **do** use real keys. The file store is the
+exception, and only because it began life as a filesystem path.
+
+## 2.4 The fix, as directed by the owner
+
+No column stores a path. Nothing crosses the database boundary. The shape is
+decided by which database the owning row sits in.
+
+| Owning row | Link | Why |
+|------------|------|-----|
+| The 8 App-database owners (`UserProfile` x2, `Sponsor`, `News`, `MediaPartner`, `ArchiveEdition`, `ArchivePastSpeaker`, `Speaker`) | **Real record.** `Guid? XFileId` plus a `StoredFile` navigation, `HasForeignKey`, an index, and an explicit `OnDelete` | Both sides are in `SIMF_App`, so the database can enforce it. This is the "real record" the owner asked for |
+| `SimfUser.Avatar...` | **Bare Guid only.** `Guid?`, no navigation, no FK | It would cross into `SIMF_Identity`, which D-157 forbids permanently. Identical in shape to `UserProfile.UserId`, which is a bare Guid for the same reason and documents why |
+
+What disappears when the strings go, which is the payoff:
+
+- Every `Guid.TryParse` defensive parse of a pointer (`AccountService.ParseFileId`
+  at `:243`, and the equivalent inside `IdentitySeeder.NeedsReseedAsync`).
+- Every `string.IsNullOrEmpty(pointer)` presence sentinel becomes
+  `FileId is not null`. There are at least six, including the `HasAvatar` flag on
+  three admin grids and the male-face registration gate.
+- Every "a legacy non-Guid path may still be on this row" fallback branch.
+- `nvarchar(256)` columns storing a 36-character Guid.
+
+## 2.5 The avatar is misplaced, not only misnamed
+
+Raised by the owner as a follow-up: "why do we save the user avatar here while it
+already exists on the profile table?"
+
+**It does not exist on the profile table.** `UserProfile` carries two other
+images and no face photo:
+
+| Column | What it is |
+|--------|------------|
+| `UserProfile.VipPhotoRelativePath` | "a separate high-resolution VIP photo, **distinct from the account avatar**" (`UserProfile.cs:164-165`) |
+| `UserProfile.IdImageRelativePath` | the ID document |
+| *(none)* | the face photo, which lives on `SimfUser` in the **other** database |
+
+So this is not duplication. It is worse: one person's three images are split
+across two databases, and the one that is most clearly an **attendee** attribute
+sits on the **identity** row. Three consequences, all verified:
+
+1. **A profile rule reaches across the database boundary to enforce itself.** The
+   male-registrant face-photo gate is a profile rule, but must load the Identity
+   row to read it: `UserProfileService.cs:229`,
+   `&& string.IsNullOrEmpty(user.AvatarRelativePath)`. The comment at `:203`
+   calls it "the FACE photo" while pointing at `SimfUser`.
+2. **It can never have a real key**, purely because of where it sits.
+3. **An attendee with no account has nowhere to hold a face photo.** D-877 made
+   that the ordinary row: `UserProfile.cs:31-38` describes "a walk-in, or a badge
+   minted into a bulk order" as the normal `UserId == null` case. Those attendees
+   get badges. A badge wants a face.
+
+### The catch
+
+It cannot simply move. Administrators genuinely use that avatar
+(`CpShellLayout.razor`, `Account/Profile.razor`, `AdminProfilePhotoBlock.razor`),
+and `UserProfile.cs:9-10` states flatly: "Admin-typed users carry no profile."
+Move the column and every administrator loses their photo.
+
+### Options
+
+| Option | What it does | Cost |
+|--------|--------------|------|
+| A. Rename only | `SimfUser.AvatarFileId`, bare `Guid?`. Nothing moves | Cheapest. Leaves all three consequences above in place. Account-less attendees still cannot have a face photo |
+| B. Move wholesale to `UserProfile` | One column, real FK, cross-boundary read gone | **Breaks administrator avatars outright.** Rejected on that evidence |
+| C. Split by meaning **(recommended)** | `UserProfile.FaceFileId` (real FK, App DB) for the attendee's face photo, and `SimfUser.AvatarFileId` (bare Guid, Identity DB) for the Control Panel account photo | Two columns, but they were never one thing. The visitor path stops touching Identity for images at all, and the cross-database read at `UserProfileService.cs:229` is deleted rather than renamed |
+
+**Recommendation: C.** The two photos have different owners, different
+populations, different lifecycles and different consumers. They were merged into
+one column by history, not by design. Option C is also the only one that makes a
+badge-only attendee capable of having a face photo, which is the case D-877 just
+made ordinary.
+
+## 2.6 Second finding: two uncentralised routes still set these images
+
+### The Control Panel offers two ways to set the same image
+
+Four Add/Edit pages present a modern upload on the central store **and**, above
+it, a legacy free-text box bound to the `*RelativePath` column:
+
+| Page | Legacy text field | Modern upload |
+|------|-------------------|---------------|
+| `SponsorsAddEdit.razor` | `:73-76` | `:100`, `<SimfImageUpload Category="SponsorLogo">` |
+| `NewsAddEdit.razor` | `:66-69` | `:100`, `Category="NewsImage"` |
+| `MediaPartnerAddEdit.razor` | `:26` | `:48`, `Category="MediaPartnerLogo"` |
+| `ArchiveAddEdit.razor` | `:66-67` | `:124`, `Category="ArchiveCover"` |
+
+Two competing ways to set one image is the duplication the North Star rule exists
+to remove, and it is also how the two halves in 2.3 come to disagree in the first
+place. The legacy text field and its resx label keys go with this change.
+
+## 2.7 Files
+
+**This list is partial.** The exhaustive call-site inventory was still running
+when this section was written, and the file table must be completed from it
+before the plan is executed. What is listed here is verified; what is missing is
+breadth, not accuracy.
+
+| Area | Change | Risk |
+|------|--------|------|
+| `src/Backend/SIMF.Domain/` (9 entities) | Replace each `string? *RelativePath` with `Guid? *FileId`; add the `StoredFile` navigation on the 8 App-side entities; correct the two false doc comments | **breaking** |
+| `src/Backend/SIMF.Infrastructure/Persistence/Configurations/` | `HasForeignKey`, `OnDelete`, index per owner; drop the `HasMaxLength(256)` | **breaking** |
+| `Persistence/Migrations/` (both contexts) | Fold into the regenerated `InitialCreate` per D-881, not a stacked migration | **breaking** |
+| `Identity/AccountService.cs` | Avatar upload and remove; delete `ParseFileId`; check the delete-then-repoint ordering against the new FK | breaking |
+| `Application/IdentityAccess/UserProfileService.cs` | ID image, VIP photo, and the face-photo gate at `:229` | breaking |
+| `Identity/IdentitySeeder.cs` | Demo assets and the D-860 self-heal | none |
+| The four `Admin*Service.cs` writers | Sponsor, News, MediaPartner, Archive | none |
+| Read and projection sites | `HasAvatar` on three admin grids, profile completeness, URL builders | breaking |
+| `src/Shared/SIMF.Contracts/` | Internal types only. **Public JSON field names must not change** | **breaking** |
+| `src/ControlPanel/` | Delete the four legacy text fields and their resx keys; the avatar and VIP photo screens | none |
+| Seeders, SQL content seed | A literal path in a seed script would break a typed FK on first run. Go or no-go item | **breaking** |
+| `tests/` | Tests writing the fake sentinel `"storedfile:" + Guid` will not compile against a typed Guid | none |
+| `docs/` | LLD-001 `:399` and `:411` name the column; page docs; E2E catalogue files | none |
+
+## 2.8 Sequencing
+
+Each increment must build and test on its own.
+
+1. Domain plus EF configuration plus the regenerated `InitialCreate`.
+2. Write paths, including the delete or repoint ordering, which a real FK
+   constrains in a way a string never did.
+3. Read paths, presence sentinels, URL builders.
+4. The avatar split (2.5 option C), if approved. This is the only increment that
+   moves data rather than retyping a column.
+5. Control Panel, including deleting the legacy text fields.
+6. Seeders and tests.
+7. Docs and E2E catalogue, same changeset, per D-246.
+
+## 2.9 Still to verify before execution
+
+Recorded openly rather than assumed:
+
+- `ArchivePastSpeaker.PhotoRelativePath`: no writer was found by the
+  property-assignment sweep, which does not cover object-initializer syntax. Its
+  writer must be found, or its absence confirmed, before it is retyped.
+- `OnDelete` behaviour: whether `IFileService.DeleteAsync` performs a hard row
+  delete or a soft `IsActive` flag decides between `Restrict`, `SetNull` and
+  `NoAction`, and decides whether existing delete paths start throwing.
+- Whether the polymorphic `OwnerEntityType` / `OwnerEntityId` pair is consumed by
+  the owner-or-administrator download authorisation check. If it is, it cannot be
+  dropped even once a real FK exists, and the invariant between the two halves
+  needs a test instead.
+
+## 2.10 Verification gate
+
+Unit and integration green with real output; clean Release build; a **live**
+upload, replace and remove performed on the Control Panel profile screen and on
+one content page, with the row inspected afterwards to prove the FK holds and no
+orphan `StoredFile` is left; the app's profile screen rendered on a device to
+prove the images still resolve; review agents and `simplify`; docs in the same
+changeset.
+
+## 2.11 Not touching
+
+Public JSON field names on any endpoint the shipped Flutter application decodes,
+the D-157 separation itself, the file pipeline (scan, allow-list, encryption,
+audit), and the `StoredFile` table's own columns.
+
+## 2.12 Open questions for the owner
+
+1. **Option C for the avatar?** It is the only option that lets a badge-only
+   attendee have a face photo, and the only one that deletes the cross-database
+   read instead of renaming it. Option B is rejected on evidence: it breaks
+   administrator avatars.
+2. **Delete the four legacy Control Panel text fields outright**, or leave them
+   read-only for one release? Recommendation: delete. They are the mechanism by
+   which the two halves diverge.
+3. **`Speaker.PhotoRelativePath` is documented as vestigial.** Drop the column, or
+   keep it because a public contract still emits it as a fallback? Recommendation:
+   keep the contract field, drop the column, and have the contract emit null.
+
+---
+
+# Item 3: `DisplayName` duplicates the profile name, and the greeting rule is not built
+
+| Field | Value |
+|-------|-------|
+| Status | **Waiting for owner approval.** No code written. |
+| Raised | 2026-08-13 |
+| Trigger | Owner: the display name should be the **first name**, or the **full name** for a company, and it is shown in the app greeting top bar. Plus: check whether the real app actually does this. |
+| Scope | `SimfUser.DisplayName`, the two services that sync it, and the app home greeting. |
+| Related | D-157 rule 2 (no duplicated data across the two databases), D-219 (wire contract) |
+
+## 3.1 The rule as stated
+
+The display name shown in the application greeting top bar should be:
+
+- for a person: the **first name**
+- for a company: the **full name**
+
+## 3.2 Finding: the real application does NOT do this
+
+Verified in the Flutter source, not assumed.
+
+The greeting name is resolved in `home_screen.dart:161-172`:
+
+Its own doc comment says the greeting takes the App profile name when known,
+otherwise a name-less salute, and never the email, "the auth display name is the
+email for accounts created without a separate display name":
+
+```dart
+String _greetingName(String? profileName, String? authName) {
+  final profile = profileName?.trim() ?? '';
+  if (profile.isNotEmpty) {
+    return profile;
+  }
+  final auth = authName?.trim() ?? '';
+  return auth.contains('@') ? '' : auth;
+}
+```
+
+It is rendered whole by `GreetingHeader` (`greeting_header.dart:74-79`) as a
+single line with `maxLines: 1` and `TextOverflow.ellipsis`.
+
+Three things follow:
+
+1. **The app shows the FULL name, not the first name.** It takes
+   `UserProfile.Name` verbatim.
+2. **There is no person-versus-company distinction anywhere.** A search of the
+   whole `lib/` tree for `split(' ')`, `firstName` and `first_name` returns
+   **zero** matches. The rule is not implemented, partially or otherwise.
+3. A long name is not shortened, it is **ellipsised**, so today a long full name
+   is simply cut off mid-word in the top bar.
+
+**Answer to the owner's question: no, this is not done in the real app.**
+
+## 3.3 Finding: `DisplayName` is a hand-synced copy of the profile name
+
+This is the deeper issue behind the same observation, and it is a rule breach of
+the same family as item 2.
+
+`SimfUser.DisplayName` lives in `SIMF_Identity`. The person's real name lives on
+`UserProfile.Name` / `NameArabic` in `SIMF_App`. The first is kept in step with
+the second **by hand, from two different services**:
+
+| Site | What it does |
+|------|--------------|
+| `RegistrationService.cs:91` | Seeds `DisplayName = request.Email`. Until the profile is submitted, the display name **is the email address** |
+| `UserProfileService.cs:366-402` | Overwrites it with the profile's real name (English preferred, Arabic fallback), but **only while it still equals the email**, so an admin-customised name survives |
+| `BadgeAuthService.cs:331-338` | Same again for bulk badge accounts. Its comment states the reason plainly: "otherwise the app greets them by the placeholder forever" |
+
+Project CLAUDE.md, D-157 rule 2: "**No duplicated data.** Never persist a copy of
+Identity-owned data inside `SIMF_App` (or vice versa); resolve it on read. The
+**only** allowed copies are the existing immutable audit snapshots."
+
+`DisplayName` is not an audit snapshot. It is live, mutable, and copied in the
+"vice versa" direction. The app's own greeting helper is written to **work around
+it**: the comment "never the email" and the `auth.contains('@')` guard exist only
+because this copy can hold a placeholder.
+
+The blast radius is wider than the greeting. `DisplayName` is carried on many
+admin contracts (`Admin/Attendees.cs`, `Admin/Gates.cs`, `Admin/Invitations.cs`,
+`Admin/PendingProfileResponse.cs`, `Admin/SessionModerators.cs` among others), so
+this is a real piece of work, not a one-line deletion.
+
+## 3.4 What the fix has to decide
+
+1. **Where the greeting rule is computed.** Server-side, so the app, the Control
+   Panel and the badge all agree, or client-side in the app only.
+   Recommendation: server-side, exposed as its own field, because a display rule
+   duplicated per surface is how the surfaces drift apart.
+2. **What marks a "company".** Two candidates exist on the row and neither is
+   self-evidently the right one: `UserProfile.OrganisationId` (`:106`, nullable)
+   and `UserProfileType.IsForVisitor` (`:33`, which splits audience from partner
+   kinds such as Exhibitor and Sponsor). This needs the owner's answer, see 3.6.
+3. **Whether `DisplayName` survives at all.** Once the name is resolved from the
+   profile, the Identity copy has no remaining job except for administrators, who
+   have no profile row. That is the same split as item 2 section 2.5, and the two
+   should be decided together.
+4. **First name from what.** `UserProfile.Name` is documented as "full name in
+   English, exactly as printed in the passport". Taking the first whitespace
+   token is a guess about human names that is wrong often enough to matter for
+   Arabic naming conventions. A stored given-name field is the correct answer if
+   the greeting rule is to be dependable.
+
+## 3.5 Verification gate
+
+The app greeting rendered on a device for four cases: a person with a short name,
+a person with a long name, a company attendee, and an account whose profile is
+not yet submitted. Screenshots of each, in Arabic and English, since the top bar
+is RTL-first.
+
+## 3.6 Open questions for the owner
+
+1. **What marks a company attendee**: a non-null `OrganisationId`, or a profile
+   type with `IsForVisitor = false`? They are not the same set, and the answer
+   changes who gets a full name.
+2. **First name derived by splitting the passport name, or a new stored
+   given-name field?** Recommendation: a stored field. Splitting a passport name
+   on the first space is unreliable for Arabic names, and the greeting is the most
+   visible string in the application.
+3. **Should item 3 be executed together with item 2 section 2.5?** Both come down
+   to the same question: what still belongs on the Identity row once `UserProfile`
+   is the attendee record. Recommendation: yes, decide them together, execute them
+   as one programme.
