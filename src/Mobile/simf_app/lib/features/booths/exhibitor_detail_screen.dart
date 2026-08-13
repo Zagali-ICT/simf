@@ -12,8 +12,8 @@ import 'package:simf_app/core/net/asset_urls.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/booths/data/booths_repository.dart';
 import 'package:simf_app/features/exhibition/entity_detail_helpers.dart';
-import 'package:simf_app/features/exhibition/entity_detail_scaffold.dart';
-import 'package:simf_app/features/exhibition/entity_logo_image.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_detail_scaffold.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_logo_image.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

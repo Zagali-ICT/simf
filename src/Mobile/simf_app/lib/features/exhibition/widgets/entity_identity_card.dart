@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
-import 'package:simf_app/features/exhibition/entity_link_row.dart';
+import 'package:simf_app/features/exhibition/widgets/entity_link_row.dart';
 import 'package:simf_app/features/exhibition/widgets/location_line.dart';
 import 'package:simf_app/features/exhibition/widgets/tier_pill.dart';
 
