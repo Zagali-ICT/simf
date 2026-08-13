@@ -9,6 +9,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/account/biometric_step_up_screen.dart';
+import 'package:simf_app/features/account/device_label.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -45,6 +46,7 @@ class _FakeController extends AuthController {
   final String maskedEmail;
   bool sendCalled = false;
   String? enrolledWithCode;
+  String? enrolledWithLabel;
 
   @override
   AuthState build() => const AuthStateSignedOut();
@@ -61,10 +63,24 @@ class _FakeController extends AuthController {
     String? stepUpCode,
   }) async {
     enrolledWithCode = stepUpCode;
+    enrolledWithLabel = label;
     if (enrolFailure != null) {
       throw enrolFailure!;
     }
   }
+}
+
+/// The real [DeviceLabel] reads secure storage and the device-info plugin over
+/// platform channels, which never complete under the test binding and hang
+/// `pumpAndSettle`. The screen only needs a string, so the fake returns one and
+/// the assertions check it was actually passed through to enrolment.
+class _FakeDeviceLabel extends DeviceLabel {
+  _FakeDeviceLabel() : super(SimfSecureStorage());
+
+  static const String value = 'Test device · abcd1234';
+
+  @override
+  Future<String> resolve() async => value;
 }
 
 Future<void> _pump(
@@ -94,6 +110,7 @@ Future<void> _pump(
         biometricAuthProvider.overrideWithValue(
           biometric ?? _FakeBiometric(),
         ),
+        deviceLabelProvider.overrideWithValue(_FakeDeviceLabel()),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -137,6 +154,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(controller.enrolledWithCode, '123456');
+      // The resolved device label reaches enrolment, rather than the
+      // 'SIMF mobile' default every key used to be named.
+      expect(controller.enrolledWithLabel, _FakeDeviceLabel.value);
       // Popped back to HOME + the success toast on the root messenger.
       expect(find.text('HOME'), findsOneWidget);
       expect(find.text('Face ID sign-in enabled'), findsOneWidget);

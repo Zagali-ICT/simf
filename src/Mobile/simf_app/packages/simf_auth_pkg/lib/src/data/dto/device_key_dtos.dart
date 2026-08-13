@@ -54,17 +54,37 @@ class SendBiometricStepUpResponseDto {
 
 @immutable
 class DeviceKeyEntryDto {
-  const DeviceKeyEntryDto({required this.id, required this.label});
+  const DeviceKeyEntryDto({
+    required this.id,
+    required this.label,
+    this.createdAt,
+    this.lastUsedAt,
+    this.revokedAt,
+  });
 
+  /// The three timestamps are read additively: the register response has always
+  /// carried them and only `id` was consumed. They are what makes the My Devices
+  /// list worth showing, so nothing on the wire changed to add them.
   factory DeviceKeyEntryDto.fromJson(Map<String, dynamic> json) {
     return DeviceKeyEntryDto(
       id: json['id'] as String? ?? '',
       label: json['label'] as String? ?? '',
+      createdAt: _parseDate(json['createdAt']),
+      lastUsedAt: _parseDate(json['lastUsedAt']),
+      revokedAt: _parseDate(json['revokedAt']),
     );
   }
 
+  static DateTime? _parseDate(Object? value) =>
+      value is String ? DateTime.tryParse(value) : null;
+
   final String id;
   final String label;
+  final DateTime? createdAt;
+  final DateTime? lastUsedAt;
+  final DateTime? revokedAt;
+
+  bool get isActive => revokedAt == null;
 }
 
 @immutable
