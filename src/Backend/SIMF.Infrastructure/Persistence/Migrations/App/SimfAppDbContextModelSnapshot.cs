@@ -3996,6 +3996,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(16)")
                         .HasDefaultValue("normal");
 
+                    b.Property<string>("AdmissionState")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.Property<bool>("AllowsDelegationMeeting")
                         .HasColumnType("bit");
 
@@ -4141,13 +4146,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
+                    b.Property<DateTime?>("StateChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("StateChangedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("VipPhotoRelativePath")
@@ -4155,6 +4166,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(260)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AdmissionState");
 
                     b.HasIndex("BadgeBatchId");
 
@@ -4187,7 +4200,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("RegionId");
 
                     b.HasIndex("UserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("UserProfiles", (string)null);
                 });

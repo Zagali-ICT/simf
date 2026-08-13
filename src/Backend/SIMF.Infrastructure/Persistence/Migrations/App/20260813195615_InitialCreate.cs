@@ -336,6 +336,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     GeofenceCenterLat = table.Column<double>(type: "float", nullable: true),
                     GeofenceCenterLon = table.Column<double>(type: "float", nullable: true),
                     GeofenceRadiusMeters = table.Column<double>(type: "float", nullable: true),
+                    ArrivalGraceMinutes = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -346,6 +347,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Halls", x => x.Id);
+                    table.CheckConstraint("CK_Halls_ArrivalGrace", "[ArrivalGraceMinutes] IS NULL OR ([ArrivalGraceMinutes] >= 0 AND [ArrivalGraceMinutes] <= 240)");
                     table.CheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceRadiusMeters] > 0)");
                 });
 
@@ -585,6 +587,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     AllowsVipMeetingSlots = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     IsAppRegisterable = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     ShowInPartnerDirectory = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    Code = table.Column<short>(type: "smallint", nullable: false, defaultValue: (short)0),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1216,7 +1219,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     NameArabic = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Gender = table.Column<int>(type: "int", nullable: false),
@@ -1249,10 +1252,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     AllowsDelegationMeeting = table.Column<bool>(type: "bit", nullable: false),
                     AllowsSpeakerMeeting = table.Column<bool>(type: "bit", nullable: false),
                     ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    AdmissionState = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    StateChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    StateChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     QrId = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
                     RejectionReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     RejectionReasonArabic = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     IdImageRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    AccessibilityTextSize = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, defaultValue: "normal"),
+                    AccessibilityHighContrast = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    AccessibilityReduceMotion = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    AccessibilityScreenReaderAssist = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    AccessibilityCaptions = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    AccessibilityConfiguredAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1308,6 +1320,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     End = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CapacityOverride = table.Column<int>(type: "int", nullable: true),
                     SeatSelectionModeOverride = table.Column<int>(type: "int", nullable: true),
+                    ArrivalGraceMinutesOverride = table.Column<int>(type: "int", nullable: true),
                     ReminderSent = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RatingPromptSent = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
@@ -1322,6 +1335,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     LiveSignLanguageUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
                     LiveCaptions = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
                     LiveCaptionsArabic = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
+                    LiveNotice = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    LiveNoticeArabic = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1332,6 +1347,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Sessions", x => x.Id);
+                    table.CheckConstraint("CK_Sessions_ArrivalGrace", "[ArrivalGraceMinutesOverride] IS NULL OR ([ArrivalGraceMinutesOverride] >= 0 AND [ArrivalGraceMinutesOverride] <= 240)");
                     table.CheckConstraint("CK_Sessions_TimeWindow", "[End] > [Start]");
                     table.ForeignKey(
                         name: "FK_Sessions_Halls_HallId",
@@ -1496,7 +1512,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .Annotation("SqlServer:Identity", "1, 1"),
                     GateId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    QrIdAtScan = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    QrIdAtScan = table.Column<string>(type: "nvarchar(96)", maxLength: 96, nullable: false),
                     ScannedDisplayName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
                     ScannedProfileTypeName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
                     Direction = table.Column<int>(type: "int", nullable: false),
@@ -2378,7 +2394,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DelegationMeetingRequestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    ExpiresUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UsedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -3161,6 +3177,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "Status", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProfileTypes_Code",
+                table: "ProfileTypes",
+                column: "Code",
+                unique: true,
+                filter: "[IsActive] = 1 AND [Code] <> 0");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ProfileTypes_IsForVisitor_IsActive",
                 table: "ProfileTypes",
                 columns: new[] { "IsForVisitor", "IsActive" });
@@ -3537,6 +3560,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "InterestId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserProfiles_AdmissionState",
+                table: "UserProfiles",
+                column: "AdmissionState");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_BadgeBatchId",
                 table: "UserProfiles",
                 column: "BadgeBatchId");
@@ -3600,7 +3628,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_UserProfiles_UserId",
                 table: "UserProfiles",
                 column: "UserId",
-                unique: true);
+                unique: true,
+                filter: "[UserId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_VenueMapNodes_BoothId",
