@@ -355,20 +355,27 @@ closes three of them and is a day of work, not a redesign.
 Every finding is carried as a numbered work item, W1 to W10, in
 `docs/reviews/Mohaned-Review.md` Item 1 §13, with the files, per-file risk tags,
 approach, tests and Definition of Done for each. That plan is the executable
-half of this report. **No remediation has been implemented. Each wave needs owner
-approval before any code is written.**
+half of this report.
 
-Suggested order:
+**Status: approved 2026-08-13, nothing implemented.** The owner took every
+recommended decision on that date. No code has been written for any finding, and
+the waves are sequenced rather than parallel.
 
-| Wave | Items | Rationale |
-|------|-------|-----------|
-| W1 | S1, S2 | Both High, both small, both independent of everything else. Before the production publish |
-| W2 | S3, S4, S6, S7 | Contained gaps and compliance items. One backend changeset |
-| W3 | S5, S8, S10 | Needs the "my devices" surface to be observable and testable |
-| W4 | S9 | Hardware key binding. Its own piece of work, no server contract change |
+| Wave | Findings | Status | Rationale |
+|------|----------|--------|-----------|
+| A | S1, S2, S4 | **Approved to build** | The two High findings plus the lockout gap. All three edit the same two methods, so splitting them would mean touching each twice. Before the production publish |
+| B | S3, S6, S7 | Decided, queued | Contained gaps and compliance items. One backend changeset |
+| C | S5, S8, S10 | Decided, queued | Needs the "my devices" surface to be observable and testable. S10 is blocked on a Figma node |
+| D | S9 | Decided, deferred | Hardware key binding. Forces every enrolled user to re-enrol, so it runs after the event |
+
+Decisions taken on the remediation itself, with reasoning, are tabulated at the
+end of `Mohaned-Review.md` §13. One item stays verify-first: S8 must not be built
+until the Flutter error mapping is read, because collapsing the not-found and
+revoked codes could strand users with a dead local key.
 
 ## 7. Change log
 
 | Date | Change |
 |------|--------|
 | 2026-08-13 | First issue. 10 findings, no remediation implemented |
+| 2026-08-13 | Owner took every recommended remediation decision. Wave A approved to build. Still nothing implemented |

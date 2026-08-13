@@ -6,7 +6,7 @@ any item until that item is approved.**
 
 | # | Item | Raised | Status |
 |---|------|--------|--------|
-| 1 | Device-key label and device identity | 2026-08-13 | Waiting for owner approval |
+| 1 | Device-key label and device identity | 2026-08-13 | **Approved, not started** (+ security waves W1 to W10) |
 | 2 | File pointers become real foreign keys to the central file table | 2026-08-13 | Waiting for owner approval |
 | 3 | `DisplayName` duplicates the profile name, and the greeting rule is not built | 2026-08-13 | Waiting for owner approval |
 
@@ -16,7 +16,7 @@ any item until that item is approved.**
 
 | Field | Value |
 |-------|-------|
-| Status | **Waiting for owner approval.** No code written. |
+| Status | **Approved 2026-08-13, not started.** No code written. Decisions in §11 and §13 |
 | Raised | 2026-08-13 |
 | Trigger | Owner observation: "in app no any way to add label or modify" |
 | Scope | Flutter app enrolment path only. Backend unchanged in the recommended option. |
@@ -319,24 +319,23 @@ sign-in paths.
 
 ---
 
-## 11. Open questions for the owner
+## 11. Decisions taken
 
-1. **Approve the new `device_info_plus` dependency?** Global §14 requires a
-   confirmation before installing a package. Without it the plan degrades to
-   `dart:io`, which yields only "Android 14" or "iOS 17.4" and cannot tell two
-   Android phones apart. That would leave most of the original problem in place.
-2. **Option 1 or Option 2?** Recommended: Option 1, for the reasons in §3.
-   Option 2 needs an explicit D-110 Identity freeze lift.
-3. **Is the fingerprint ever meant to be a security control** (recognising the
-   same physical device across accounts), or only a way to tell rows apart? A
-   "yes" moves the recommendation to Option 2 and changes the PDPL position.
-4. **Should the "my devices" screen be scheduled now?** The label is invisible to
-   end users until `GET /app/auth/device-keys` is wired to a screen. It has no
-   Figma node, and `simf_app/CLAUDE.md` §13.5 requires asking rather than
-   inventing one. Recommended: keep it out of this change, schedule separately.
-5. **S1, S2 and S3 below are separate from this plan and need their own
-   approval.** They are pre-existing defects in shipped code, not regressions
-   introduced here. Recommended: fix S1 and S2 before the production publish.
+Owner directive of 2026-08-13, "do recommended": every open question below was
+answered with the recommendation it carried. Recorded here as decisions rather
+than deleted, so the reasoning survives with the answer.
+
+| # | Question | **Decision** | Consequence |
+|---|----------|--------------|-------------|
+| 1 | Approve the new `device_info_plus` dependency? | **Approved** | The plan builds as written. Without it the fallback was `dart:io`, which yields only "Android 14" and cannot tell two Android phones apart, leaving most of the original problem in place |
+| 2 | Option 1 (pack into `Label`) or Option 2 (new column)? | **Option 1** | No schema change, no migration, no D-110 Identity freeze lift, no backend file touched |
+| 3 | Is the fingerprint ever a security control? | **No. Display and audit only** | Confirms Option 1 and keeps the PDPL position simple. If this changes later, Option 2 becomes the right change and is argued for then |
+| 4 | Schedule the "my devices" screen now? | **No. Separate item** | Carried as W10 in §13. The label stays invisible to end users until then, and the audit trail is the payoff in the meantime |
+| 5 | Are the security findings part of this plan? | **No. Separate waves** | Carried as W1 to W10 in §13. Wave A (S1, S2, S4) is approved for the production publish |
+
+**Status of Item 1: approved, not started.** The remaining blocker is not a
+decision but an asset: W10 needs a Figma node, per `simf_app/CLAUDE.md` §13.5,
+and that is the one thing this plan cannot answer for itself.
 
 ---
 
@@ -845,16 +844,26 @@ question 4 in §11.
 
 ---
 
-### Summary of decisions this remediation needs
+### Decisions taken for the remediation
 
-| # | Decision | Recommendation |
-|---|----------|----------------|
-| 1 | W1 returns an opaque 401 or a typed `AUTH_PASSWORD_CHANGE_REQUIRED` 403 | Typed 403 |
-| 2 | W2 revokes on every password change or only on reset and forced change | Every change |
-| 3 | W3 blocks on `UserType.Admin` or on the resolved permission set | `UserType.Admin` |
-| 4 | W5's cap value | 5 active keys |
-| 5 | W9's re-enrolment rollout timing | After the event, not before |
-| 6 | W10 needs a Figma node for the "my devices" screen | Owner to supply or approve a deviation |
+Owner directive of 2026-08-13, "do recommended": each decision below was answered
+with its recommendation. Wave A is approved to build; waves B, C and D are
+decided but still sequenced behind it.
+
+| # | Decision | **Taken** | Why |
+|---|----------|-----------|-----|
+| 1 | W1 returns an opaque 401 or a typed `AUTH_PASSWORD_CHANGE_REQUIRED` 403 | **Typed 403** | The caller already proved possession of the private key to reach that line, so there is no account-existence oracle to protect. An opaque 401 would strand a legitimate user with an expired password and give the app nothing to route on |
+| 2 | W2 revokes on every password change or only on reset and forced change | **Every change** | A voluntary change is frequently the user's own response to a suspected compromise, which is exactly the case S2 describes |
+| 3 | W3 blocks on `UserType.Admin` or on the resolved permission set | **`UserType.Admin`** | It is the existing surface decision (`SimfUser.cs:26`) and needs no permission resolution on a call that does not otherwise need it |
+| 4 | W5's cap value | **5 active keys** | Comfortably above real usage (phone plus tablet plus a spare), low enough to bound the persistence surface |
+| 5 | W9's re-enrolment rollout timing | **After the event** | Every enrolled user must re-enrol, which is a user-visible forced revocation. Not something to run into an event deadline |
+| 6 | W10 needs a Figma node for the "my devices" screen | **Still open** | The only genuinely unanswerable item: it needs an asset, not a decision. `simf_app/CLAUDE.md` §13.5 forbids inventing one |
+
+**One verify-first item survives.** W8 is decided in principle but must not be
+built until the Flutter error mapping is read: if the app clears its stored key
+on `DEVICE_KEY_NOT_FOUND`, collapsing that code with the revoked one would strand
+users with a dead key and no automatic recovery. At Low severity, that check
+decides whether W8 is worth its cost at all.
 
 ---
 
