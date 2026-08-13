@@ -257,7 +257,7 @@ internal sealed class DeviceKeyService(
             Id = Guid.NewGuid(),
             UserId = callerUserId,
             Purpose = AccountCodePurpose.BiometricEnrolStepUp,
-            Code = AccountCodeHasher.Hash(plaintext),
+            CodeHash = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(StepUpLifetime),
         }, cancellationToken);
@@ -715,7 +715,7 @@ internal sealed class DeviceKeyService(
                 "انتهت صلاحية رمز التحقق. اطلب رمزاً جديداً.");
         }
 
-        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(suppliedCode.Trim())))
+        if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(suppliedCode.Trim())))
         {
             // Burn the code once the attempt budget is spent so the 10^6 code
             // space can't be ground down across repeated register calls — the

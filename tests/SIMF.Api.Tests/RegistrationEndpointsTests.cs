@@ -316,7 +316,7 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
             .First()
-            .Code);
+            .CodeHash);
     }
 
     /// <summary>A six-digit code guaranteed to differ from the account's active code.</summary>
