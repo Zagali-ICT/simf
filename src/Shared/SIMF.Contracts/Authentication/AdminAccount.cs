@@ -1,4 +1,4 @@
-using SIMF.Common;
+﻿using SIMF.Common;
 
 using SIMF.Common.Enums;
 
@@ -245,7 +245,7 @@ public sealed record AdminUserSummary(
     bool IsAdministrator,
     DateTime CreatedAt,
     // Whether the account has a profile photo (avatar) — the StoredFile presence
-    // sentinel SimfUser.AvatarRelativePath. Trailing-optional (append-only,
+    // sentinel SimfUser.AvatarFileId. Trailing-optional (append-only,
     // wire-safe); defaults false for contexts that don't resolve it (bulk export,
     // the optimistic post-save row — both reload from the server anyway).
     bool HasAvatar = false);
@@ -378,7 +378,7 @@ public sealed class AdminRejectRequest
 /// <summary>
 /// One row in the pending-approval list. A trimmed shape — the
 /// approver only needs to see the identity to decide. <c>HasAvatar</c> drives the
-/// grid profile-photo thumbnail (the <c>AvatarRelativePath</c> presence
+/// grid profile-photo thumbnail (the <c>AvatarFileId</c> presence
 /// sentinel).
 /// </summary>
 public sealed record AdminPendingUserSummary(

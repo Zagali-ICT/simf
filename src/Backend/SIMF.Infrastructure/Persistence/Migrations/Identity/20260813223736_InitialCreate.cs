@@ -80,7 +80,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastUsedTotpTimestep = table.Column<long>(type: "bigint", nullable: true),
-                    AvatarRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    AvatarFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     StateChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     StateChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     PasswordChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),

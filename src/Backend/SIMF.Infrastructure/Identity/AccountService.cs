@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/ProfileEndpointsTests.cs
+﻿// Tests: SIMF.Api.Tests/ProfileEndpointsTests.cs
 //        SIMF.Api.Tests/UserProfileTests.cs
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -21,11 +21,10 @@ namespace SIMF.Infrastructure.Identity;
 /// reading the profile, updating and removing the avatar.
 /// Avatar bytes now live in the unified <see cref="IFileService"/>
 /// store (App DB, <c>FileService.Avatar</c>, encrypted at rest). The Identity
-/// <c>SimfUser.AvatarRelativePath</c> column is repurposed as the bare-Guid pointer
+/// <c>SimfUser.AvatarFileId</c> column is the typed <see cref="Guid"/> pointer
 /// to that <c>StoredFile</c> (never a cross-DB FK) and doubles as the "has
 /// avatar" presence sentinel that <see cref="BuildAvatarUrl"/> and the profile-
-/// completeness / male-face gates already read; so those Identity-side reads stay
-/// byte-identical and no Identity migration is needed.
+/// completeness / male-face gates read.
 /// </summary>
 internal sealed class AccountService(
     IUserAccountRepository accounts,
@@ -141,13 +140,13 @@ internal sealed class AccountService(
         // owner = the user id). IFileService runs the full pipeline (malware scan,
         // magic-byte allow-list, canonical MIME, SHA-256, encrypt-at-rest, audit);
         // the avatar-specific 2 MB cap + MIME check above still apply first.
-        var priorFileId = ParseFileId(user.AvatarRelativePath);
+        var priorFileId = user.AvatarFileId;
         var result = await fileService.UploadAsync(
             new UploadFileCommand(
                 FileService.Avatar, user.Id, content, null, normalisedContentType, user.Id, FailClosed: false),
             cancellationToken);
 
-        user.AvatarRelativePath = result.Id.ToString();
+        user.AvatarFileId = result.Id;
         user.UpdatedAt = SimfClock.Now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
 
@@ -179,14 +178,11 @@ internal sealed class AccountService(
     {
         var user = await GetUserAsync(userId);
 
-        if (!string.IsNullOrEmpty(user.AvatarRelativePath))
+        if (user.AvatarFileId is { } fileId)
         {
             // Securely delete the StoredFile the pointer references.
-            if (ParseFileId(user.AvatarRelativePath) is { } fileId)
-            {
-                await fileService.DeleteAsync(fileId, user.Id, cancellationToken);
-            }
-            user.AvatarRelativePath = null;
+            await fileService.DeleteAsync(fileId, user.Id, cancellationToken);
+            user.AvatarFileId = null;
             user.UpdatedAt = SimfClock.Now;
             await accounts.UpdateAsync(user).EnsureSuccessAsync();
         }
@@ -233,15 +229,9 @@ internal sealed class AccountService(
     /// change moves the URL forward so the browser fetches the new bytes.
     /// </summary>
     private static string? BuildAvatarUrl(SimfUser user) =>
-        string.IsNullOrEmpty(user.AvatarRelativePath)
+        user.AvatarFileId is null
             ? null
             : $"/account/api/avatar/{user.Id:N}?v={user.UpdatedAt?.Ticks ?? 0}";
-
-    /// <summary>The avatar pointer (<c>AvatarRelativePath</c>) now
-    /// holds the StoredFile GUID. Returns it when parseable, else null (a legacy
-    /// non-Guid path, or unset).</summary>
-    private static Guid? ParseFileId(string? pointer) =>
-        Guid.TryParse(pointer, out var id) ? id : null;
 
     /// <summary>The primary-language default emitted for <c>users/me</c> until
     /// a per-user language preference is persisted.</summary>

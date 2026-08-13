@@ -29,8 +29,9 @@ internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>
         // the former standalone HasIndex(UserType) (a redundant left-prefix).
         builder.HasIndex(user => new { user.UserType, user.CreatedAt });
 
-        builder.Property(user => user.AvatarRelativePath)
-            .HasMaxLength(256);
+        // AvatarFileId is a uniqueidentifier and needs no length. It carries no
+        // foreign key on purpose: StoredFiles lives in the App database and
+        // SQL Server cannot constrain across one (D-157).
 
         // State-change metadata. The composite index supports
         // "recently rejected" / "recently approved" admin queries without
