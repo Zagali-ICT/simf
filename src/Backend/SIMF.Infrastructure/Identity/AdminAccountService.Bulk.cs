@@ -987,6 +987,13 @@ internal sealed partial class AdminAccountService
                     IsDelegate = request.IsDelegate,
                     // Back-reference to the persisted batch.
                     BadgeBatchId = badgeBatch.Id,
+                    // The badge is printed ready to use, and every gate reads
+                    // admission HERE rather than on the account. Leaving it at
+                    // the pending default would print a box of badges that scan
+                    // correctly and are refused at every door.
+                    AdmissionState = AccountState.Approved,
+                    StateChangedAt = now,
+                    StateChangedByUserId = actorUserId,
                     CreatedAt = now,
                 };
                 // Mint + save per badge so the QR-uniqueness check sees prior rows.
