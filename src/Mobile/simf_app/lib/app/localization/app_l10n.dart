@@ -1,17 +1,20 @@
 import 'package:flutter/widgets.dart';
 
-/// Hand-rolled localisation lookup for the WS3 skeleton.
+/// Hand-rolled localisation lookup — every user-facing string in the app.
 ///
-/// SIMF-MAA-001 §10 specifies `intl` + ARB files as the long-term path;
-/// the .arb files in `l10n/` are the source of truth for translations.
-/// To avoid coupling the skeleton's compile to the `flutter gen-l10n` step,
-/// the strings the skeleton actually needs are mirrored here. When the
-/// project moves to generated localisation, the call sites
-/// (`AppL10n.of(context).xxx`) stay; only the implementation switches.
+/// SIMF-MAA-001 §10 specifies `intl` + ARB files as the long-term path, and
+/// the `.arb` files in `l10n/` remain the source of truth for translations.
+/// The strings are mirrored here so the build does not depend on the
+/// `flutter gen-l10n` step. When the project moves to generated localisation,
+/// the call sites (`AppL10n.of(context).xxx`) stay; only the implementation
+/// switches.
 ///
-/// **Phase 3 will not add per-screen strings here**: the `mkp_*` screens
-/// reference Mockup.html's Arabic copy directly, so they don't add to the
-/// translation surface that needs to survive the designer swap.
+/// This header used to describe a "WS3 skeleton" holding only the strings that
+/// skeleton needed, and to promise per-screen strings would not be added here
+/// because the `mkp_*` screens carried their own copy. Both claims are now
+/// false: the `mkp_*` screens are gone, and this file carries roughly 1,000
+/// per-screen getters. Corrected 2026-08-13 — the file IS the app's string
+/// surface, and its size follows from that; it is not a defect to be split.
 class AppL10n {
   const AppL10n(this.locale);
 

@@ -8,9 +8,19 @@
 > overrides an approval gate, a freeze, or a security rule.
 
 The coding constitution for this repo. Claude Code reads this every session.
-Read it fully before editing. This is a mature codebase (~166 Dart files,
-~46.9k lines). Refine it; do not re-architect it. When in doubt, match the
-existing pattern in the file you're editing, and FLAG instead of guessing.
+Read it fully before editing. This is a mature codebase (587 Dart files,
+~65.2k lines, measured 2026-08-13). Refine it; do not re-architect it. When in
+doubt, match the existing pattern in the file you're editing, and FLAG instead
+of guessing.
+
+> **Date every count in this file, and re-measure before trusting one.** The
+> numbers below have all moved at least once, and a stale one reads as current:
+> this file claimed 166 files and 526 inline styles long after they were 587
+> and 117. Measured 2026-08-13: raw `Color(0x)` outside `tokens.dart` **0** ·
+> relative imports **0** · inline `TextStyle(` outside `app/theme/` **117** ·
+> `ListView(` sites **48** (most are static content pages and correct as
+> written) · `catch` sites **78** · `flutter analyze` **0 errors, 0 warnings,
+> 2132 infos** · `tool/conventions` **12**, all SIMF-C3.
 
 Stack: Flutter · Riverpod · go_router · `simf_data_pkg` (data) · `AppL10n`
 (ar/en, RTL-first) · `SimfTokens` (design tokens). Arabic is the primary
@@ -64,8 +74,9 @@ lib/
 │   ├── net/, env/, sharing/  # infra
 │   └── utils/
 └── features/<feature>/
-    ├── data/                 # models + repositories (already the convention)
+    ├── data/                 # models + repositories + this feature's providers
     ├── widgets/              # feature-local widgets (one widget per file)
+    ├── <helper>.dart         # feature-local pure helpers (see below)
     └── <name>_screen.dart    # screens live at the feature root (existing convention)
 ```
 Tests mirror this under `test/` (e.g. `test/features/auth/sign_in_screen_test.dart`).
@@ -80,6 +91,18 @@ Rules:
 - No file over ~400 lines. No `build()` over ~50 lines. These are guidelines —
   don't shred a cohesive file to hit a number, but the 500–2245 line screens in
   this repo all violate the intent and must be split.
+- **A feature-local pure helper lives at the feature root**, as a small
+  purpose-named file: `home_greeting.dart`, `youtube_url.dart`,
+  `speaker_initials.dart`, `entity_detail_helpers.dart`. It holds functions and
+  constants, never a widget and never a provider. The shape above previously
+  named only `data/`, `widgets/` and `<name>_screen.dart`, which left ten such
+  files looking like violations when they are the established pattern; this
+  records it rather than moving them (2026-08-13). A *widget* at the feature
+  root IS a violation and belongs in `widgets/`.
+- **A provider belongs in `data/`, never in a `*_screen.dart`.** A provider
+  declared in a screen forces any other feature that needs it to import a
+  screen. Put it beside the repository that feeds it. Private (`_`-prefixed)
+  providers used by one screen may stay in that screen.
 - Every feature you touch gets normalized to the shape above (create `widgets/`
   when extracting). Don't do a repo-wide move in one pass — only the feature
   you're working in.
@@ -106,13 +129,14 @@ Rules:
 
 ---
 
-## 3. Responsive & adaptive layout (currently missing — add it)
+## 3. Responsive & adaptive layout
 
 Must look correct on small phones, large phones, and tablets — **in portrait**
 (the app is portrait-locked; landscape/two-pane is out of scope unless the lock
 is lifted by owner decision).
 
-- **Breakpoints** in `core/responsive/breakpoints.dart`:
+- **Breakpoints** in `core/responsive/breakpoints.dart` (built, along with
+  `max_width_body.dart` and `grid_columns.dart`):
   `compact < 600 ≤ medium < 905 ≤ expanded < 1240 ≤ large`.
   Use these names; never hardcode `if (width > 600)` inline.
 - **Flexible width, not fixed (see §13.7).** Content blocks (cards/banners/tiles/
@@ -120,8 +144,8 @@ is lifted by owner decision).
   margin/padding, and drop `maxWidth:` content caps — but **KEEP intrinsic fixed
   sizes for icons/avatars/badges/QR/sweep/spacers**. The owner is on a tablet.
 - **Max-width anchor.** Content must NOT stretch edge-to-edge on wide screens.
-  Wrap page bodies in a `MaxWidthBody` (build it in `core/responsive/`) that
-  centers and caps content (e.g. `maxWidth: 560` for forms, `840` for reading
+  Wrap page bodies in `MaxWidthBody` (`core/responsive/max_width_body.dart`),
+  which centers and caps content (e.g. `maxWidth: 560` for forms, `840` for reading
   content).
 - **Scale with tokens**, not raw numbers. Use `SimfTokens` spacing; no
   `SizedBox(height: 17)`.
@@ -136,11 +160,13 @@ fixed widths / `left`/`right` to directional/adaptive equivalents.
 
 ---
 
-## 4. Lists & per-screen performance (currently missing — add it)
+## 4. Lists & per-screen performance
 
 - **Lazy by default.** Every scrolling list uses `ListView.builder` /
   `SliverList` / `GridView.builder`. Never `ListView(children: [...])` for
-  data-driven or long lists (30 non-builder lists exist — convert them).
+  data-driven or long lists. 48 `ListView(` sites exist (2026-08-13); most are
+  static content pages and are correct as written, so convert the data-driven
+  ones and leave the rest.
 - **Pull-to-refresh on every data screen (see §13.6).** Reuse the existing
   `SimfPullToRefresh` + `SimfPullableHost`.
 - **Pagination / load-more.** Lists backed by a paginated API load the next
@@ -170,13 +196,14 @@ the node list and the ASK-don't-guess rule).
 - All colors, text styles (family/size/weight/line-height/letter-spacing),
   spacing, and radii come from `SimfTokens` — the code mirror of Figma's
   variables/styles.
-- **Zero raw `Color(0x…)` in widgets** (~79 exist today — remove all; the count
-  excludes `tokens.dart`, which legitimately defines them). If a Figma color
+- **Zero raw `Color(0x…)` in widgets** — reached, and holding at 0 since
+  2026-07-28 (the count excludes `tokens.dart`, which legitimately defines them). If a Figma color
   isn't a token yet, add it to `tokens.dart` with the Figma variable name, then
   use the token. Base palette (from node 922-2824): BG `#192B41`, text
   `#FFFFFF`, gold `#C9A84C`, deep `#01132D`, paragraph `#C2B8A2`.
-- **Zero raw `TextStyle(fontSize:…)` in widgets** (~526 exist today — remove
-  all). Use a named token style (`SimfTokens.titleM`, `bodyR`, …). The font
+- **Zero raw `TextStyle(fontSize:…)` in widgets** (526 at the outset, **117**
+  on 2026-08-13 — 5 of them still carry a raw numeric size, the rest assemble
+  token atoms such as `fontSize: SimfTokens.textSm`; both forms must go). Use a named token style (`SimfTokens.titleM`, `bodyR`, …). The font
   family is set ONCE in the theme — never per-widget.
 
 ### 5.2 Per-screen Figma audit (run for each screen)
@@ -224,8 +251,8 @@ the node itself) is unknown, **STOP and ASK the owner** (§13.5).
 
 ## 8. Write it like a human, not an AI
 - Comment WHY, never WHAT. No comment that restates the next line.
-- No `try/catch` unless a failure is genuinely expected and handled (~113 exist
-  — don't add reflexive ones).
+- No `try/catch` unless a failure is genuinely expected and handled (78 `catch`
+  sites on 2026-08-13 — don't add reflexive ones).
 - No defensive null-checks for values that can't be null.
 - No speculative abstraction. Match the pragmatic data+presentation layering;
   do NOT add a `domain/` layer or interfaces "for cleanliness" unless asked.
