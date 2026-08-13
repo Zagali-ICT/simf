@@ -248,10 +248,18 @@ internal sealed class BadgeAuthService(
         }
         if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(request.Code)))
         {
-            code.AttemptCount++;
-            await accountCodeRepository.UpdateAsync(code, cancellationToken);
+            // Atomic increment, decided on the returned count. A read-modify-write
+            // here lets concurrent wrong tries each read 0 and write 1, so the cap
+            // never trips and a 6-digit code becomes brute-forceable — which for
+            // badge activation means control of someone else's badge account.
+            var attempts = await accountCodeRepository.IncrementAttemptCountAsync(
+                code.Id, cancellationToken);
+            if (attempts >= MaxAttempts)
+            {
+                await accountCodeRepository.TryConsumeAsync(code.Id, now, cancellationToken);
+            }
             await AuditFailureAsync(user, ErrorCodes.AuthResetCodeInvalid,
-                $"attempt {code.AttemptCount}", cancellationToken);
+                $"attempt {attempts}", cancellationToken);
             throw InvalidCode();
         }
 
@@ -306,9 +314,22 @@ internal sealed class BadgeAuthService(
         await FillPlaceholderProfileAsync(
             user.Id, request, nationalityId, interestIds, now, cancellationToken);
 
+        var consumed = false;
         await transactionRunner.ExecuteAsync(
             async token =>
             {
+                // Consume first: the conditional UPDATE is the gate that makes the
+                // code single-use. Two concurrent activations carrying one valid OTP
+                // both passed the unconsumed read above, and only the caller that
+                // flips ConsumedAt may attach an email and display name to the
+                // placeholder account — otherwise the second holder's details
+                // overwrite the first's. It runs inside the transaction, so a
+                // rejected password rolls the consumption back and a retry works.
+                consumed = await accountCodeRepository.TryConsumeAsync(code.Id, now, token);
+                if (!consumed)
+                {
+                    return;
+                }
                 var add = await accounts.AddPasswordAsync(user, request.NewPassword, token);
                 if (!add.Succeeded)
                 {
@@ -339,10 +360,15 @@ internal sealed class BadgeAuthService(
                 user.EmailConfirmed = true;
                 user.UpdatedAt = now;
                 await accounts.UpdateAsync(user, token).EnsureSuccessAsync();
-                code.ConsumedAt = now;
-                await accountCodeRepository.UpdateAsync(code, token);
             },
             cancellationToken);
+
+        if (!consumed)
+        {
+            await AuditFailureAsync(user, ErrorCodes.AuthResetCodeInvalid,
+                "already_consumed", cancellationToken);
+            throw InvalidCode();
+        }
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -527,8 +553,7 @@ internal sealed class BadgeAuthService(
             userId, AccountCodePurpose.BadgeActivationOtp, cancellationToken);
         if (previous is not null)
         {
-            previous.ConsumedAt = now;
-            await accountCodeRepository.UpdateAsync(previous, cancellationToken);
+            await accountCodeRepository.TryConsumeAsync(previous.Id, now, cancellationToken);
         }
         var value = VerificationCodeGenerator.Generate();
         await accountCodeRepository.AddAsync(new AccountCode

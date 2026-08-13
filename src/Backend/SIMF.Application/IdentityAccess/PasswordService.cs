@@ -155,27 +155,56 @@ public sealed class PasswordService(
 
         if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(request.Code)))
         {
-            code.AttemptCount++;
-            await accountCodeRepository.UpdateAsync(code, cancellationToken);
+            // Increment atomically and decide on the returned count. The cap check
+            // above read AttemptCount before this guess was compared, so a
+            // read-modify-write here lets concurrent wrong tries each read 0 and
+            // write 1, stretching the budget past MaxResetAttempts and putting the
+            // whole 10^6 space in reach. Burning the code once the budget is spent
+            // stops it being ground down across separate calls.
+            var attempts = await accountCodeRepository.IncrementAttemptCountAsync(
+                code.Id, cancellationToken);
+            if (attempts >= MaxResetAttempts)
+            {
+                await accountCodeRepository.TryConsumeAsync(code.Id, now, cancellationToken);
+            }
             await AuditAsync(AuditEvents.PasswordResetCodeIncorrect, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthResetCodeInvalid,
-                $"attempt {code.AttemptCount}", cancellationToken);
+                $"attempt {attempts}", cancellationToken);
             throw new ApiException(ErrorCodes.AuthResetCodeInvalid, 400,
                 "The reset code is not correct.",
                 "رمز إعادة التعيين غير صحيح.");
         }
 
-        // The code authorised this — set the password, consume the code, clear
-        // the forced-change flag and end every session, all in one transaction.
+        // The code authorised this — consume it, set the password, clear the
+        // forced-change flag and end every session, all in one transaction.
+        // Consuming FIRST is what makes the code single-use: the conditional
+        // UPDATE is the gate, because two concurrent submits of the same valid
+        // code both passed the unconsumed read above and only one may set a
+        // password. It is inside the transaction, so a policy-rejected password
+        // rolls the consumption back and leaves the code usable for a retry.
+        var consumed = false;
         await transactionRunner.ExecuteAsync(
             async token =>
             {
+                consumed = await accountCodeRepository.TryConsumeAsync(code.Id, now, token);
+                if (!consumed)
+                {
+                    return;
+                }
                 await SetPasswordAsync(user, request.NewPassword);
-                code.ConsumedAt = now;
-                await accountCodeRepository.UpdateAsync(code, token);
                 await ClearChangeFlagAndEndSessionsAsync(user, now, token);
             },
             cancellationToken);
+
+        if (!consumed)
+        {
+            await AuditAsync(AuditEvents.PasswordResetCodeIncorrect, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthResetCodeInvalid,
+                "already_consumed", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthResetCodeInvalid, 400,
+                "The reset code is not valid.",
+                "رمز إعادة التعيين غير صالح.");
+        }
 
         await AuditAsync(AuditEvents.PasswordResetCompleted, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
@@ -326,15 +355,30 @@ public sealed class PasswordService(
         // transaction. A policy-rejected new password throws inside the
         // transaction and rolls back, leaving the ticket valid for a retry
         // within its lifetime.
+        var ticketConsumed = false;
         await transactionRunner.ExecuteAsync(
             async token =>
             {
+                ticketConsumed = await secondFactorTokenRepository.TryConsumeAsync(
+                    ticket.Id, now, token);
+                if (!ticketConsumed)
+                {
+                    return;
+                }
                 await SetPasswordAsync(user, request.NewPassword);
-                ticket.ConsumedAt = now;
-                await secondFactorTokenRepository.UpdateAsync(ticket, token);
                 await ClearChangeFlagAndEndSessionsAsync(user, now, token);
             },
             cancellationToken);
+
+        if (!ticketConsumed)
+        {
+            await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthMfaTokenInvalid,
+                "already_consumed", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
+                "The sign-in session is no longer valid. Sign in again.",
+                "جلسة تسجيل الدخول لم تعد صالحة. سجّل الدخول مرة أخرى.");
+        }
 
         await AuditAsync(AuditEvents.PasswordChanged, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
@@ -483,8 +527,7 @@ public sealed class PasswordService(
             user.Id, AccountCodePurpose.PasswordReset, cancellationToken);
         if (previous is not null)
         {
-            previous.ConsumedAt = now;
-            await accountCodeRepository.UpdateAsync(previous, cancellationToken);
+            await accountCodeRepository.TryConsumeAsync(previous.Id, now, cancellationToken);
         }
 
         // M3 (security) — store only the keyed hash; the plaintext is emailed.
