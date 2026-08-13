@@ -260,9 +260,13 @@ free ids are:
 
 | Id | Scenario |
 |----|----------|
-| E2E-MBSU-016 | Enrol on a physical device, then read the row: `Label` holds the real device name and an 8-character suffix, not `SIMF mobile` |
-| E2E-MBSU-017 | Enrol on two different devices under one account: both rows are distinguishable by label |
-| E2E-MBSU-018 | Re-enrol on the same device after disabling: the fingerprint suffix is unchanged, proving it is stable per install |
+| E2E-MBSU-019 | Enrol on a physical device, then read the row: `Label` holds the real device name and an 8-character suffix, not `SIMF mobile` |
+| E2E-MBSU-020 | Enrol on two different devices under one account: both rows are distinguishable by label |
+| E2E-MBSU-021 | Re-enrol on the same device after disabling: the fingerprint suffix is unchanged, proving it is stable per install |
+
+**Renumbered.** 016 to 018 were reserved here first, but wave A shipped before
+the label work and took them (the password-change, lockout and revoke-on-change
+gates). The label scenarios move up to 019 to 021.
 
 ---
 
@@ -607,15 +611,44 @@ implemented.** Each wave needs its own approval, separately from the label work
 in §1 to §11, because these are pre-existing defects in shipped code rather than
 anything this plan introduces.
 
+> **Wave A is BUILT as of 2026-08-13.** W1, W2 and W4 are implemented, tested
+> and committed. Evidence is in §13.1. Waves B, C and D remain unstarted.
+
 | Wave | Items | Findings | Gate |
 |------|-------|----------|------|
-| **A** | W1, W2, W4 | S1, S2, S4 | Before the production publish |
+| **A** | W1, W2, W4 | S1, S2, S4 | **Done 2026-08-13** |
 | **B** | W3, W6, W7 | S3, S6, S7 | One backend changeset, after A |
 | **C** | W5, W8, W10 | S5, S8, S10 | Needs the "my devices" surface |
 | **D** | W9 | S9 | Its own piece of work, no server change |
 
 W4 is pulled into wave A because it edits the same guard block as W1, so
 splitting them would mean touching one method twice.
+
+---
+
+### 13.1 Wave A as built (2026-08-13)
+
+W1, W2 and W4 landed together, because W1 and W4 edit the same guard block.
+
+| What | Where |
+|------|-------|
+| The three gates | `DeviceKeyService.EnsureAccountMayMintAsync`, called from `SignInWithDeviceKeyAsync` after the user lookup |
+| Bulk revocation | `IDeviceKeyService.RevokeAllForUserAsync` plus its `ExecuteUpdateAsync` implementation |
+| Wired into the remedy | `PasswordService.ClearChangeFlagAndEndSessionsAsync`, beside the refresh-token revoke |
+| Tests | 4 added to `DeviceKeySignInTests`, including a negative control so a gate that refused everything could not pass |
+| E2E | `E2E-MBSU-016` to `018`, catalogue total re-derived 3068 to 3071 |
+
+**Verification.** Built and tested in an isolated worktree at `04eb5506`, because
+the shared checkout had an unrelated in-flight break in
+`SeatReservationService`. Build 0 warnings 0 errors. The device-key class ran
+12/12 green. The wider `Password|DeviceKey|SignIn|TokenIssuer` filter ran 101
+passed and 14 failed, and the same filter on the **unpatched** base produced a
+byte-identical set of 14 failures, all badge-related on this badge feature
+branch. So the change adds four passing tests and moves nothing else.
+
+**Decisions honoured as recorded:** W1 answers a typed 403 rather than an opaque
+401, W2 revokes on a voluntary change too, and W4 deliberately leaves
+`PendingApproval` and `Rejected` alone.
 
 ---
 

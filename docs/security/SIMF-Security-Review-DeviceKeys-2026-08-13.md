@@ -358,13 +358,14 @@ Every finding is carried as a numbered work item, W1 to W10, in
 approach, tests and Definition of Done for each. That plan is the executable
 half of this report.
 
-**Status: approved 2026-08-13, nothing implemented.** The owner took every
-recommended decision on that date. No code has been written for any finding, and
-the waves are sequenced rather than parallel.
+**Status: wave A built 2026-08-13. Waves B, C and D unstarted.** The owner took
+every recommended decision on that date, and wave A was implemented against them
+the same day. S1, S2 and S4 are closed in code; the compliance table in §5 still
+describes the position **before** that fix, so read it together with this table.
 
 | Wave | Findings | Status | Rationale |
 |------|----------|--------|-----------|
-| A | S1, S2, S4 | **Approved to build** | The two High findings plus the lockout gap. All three edit the same two methods, so splitting them would mean touching each twice. Before the production publish |
+| A | S1, S2, S4 | **BUILT 2026-08-13** | The two High findings plus the lockout gap. Implemented, tested and committed. Evidence in `Mohaned-Review.md` §13.1 |
 | B | S3, S6, S7 | Decided, queued | Contained gaps and compliance items. One backend changeset |
 | C | S5, S8, S10 | Decided, queued | Needs the "my devices" surface to be observable and testable. S10 is blocked on a Figma node |
 | D | S9 | Decided, deferred | Hardware key binding. Forces every enrolled user to re-enrol, so it runs after the event |

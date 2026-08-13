@@ -20,7 +20,8 @@ namespace SIMF.Application.IdentityAccess;
 /// <summary>
 /// Implements password recovery — forgot-password, reset-password (with the
 /// emailed code) and change-password (SIMF-API-001 section 12.7, SIMF-FDS-001).
-/// A completed reset or change ends every session for the account, atomically.
+/// A completed reset or change ends every session for the account, atomically,
+/// and revokes the account's biometric device keys with them.
 /// </summary>
 public sealed class PasswordService(
     IUserAccountRepository accounts,
@@ -28,6 +29,7 @@ public sealed class PasswordService(
     IRefreshTokenRepository refreshTokenRepository,
     ISecondFactorTokenRepository secondFactorTokenRepository,
     IPasswordHistoryRepository passwordHistory,
+    IDeviceKeyService deviceKeys,
     ITransactionRunner transactionRunner,
     IEmailQueue emailQueue,
     IEmailTemplateResolver emailTemplates,
@@ -414,9 +416,9 @@ public sealed class PasswordService(
             "تم استخدام كلمة المرور هذه مؤخراً. اختر كلمة مرور لم تستخدمها من قبل.");
 
     /// <summary>
-    /// Clears the forced-change flag and ends every session — a new password
+    /// Clears the forced-change flag and ends every way back in — a new password
     /// must invalidate the old ones (the security stamp moved when the password
-    /// was set; the refresh tokens are revoked here).
+    /// was set; the refresh tokens and the device keys are revoked here).
     /// </summary>
     private async Task ClearChangeFlagAndEndSessionsAsync(
         SimfUser user,
@@ -431,6 +433,15 @@ public sealed class PasswordService(
         user.PasswordChangedAt = now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
         await refreshTokenRepository.RevokeAllForUserAsync(user.Id, now, cancellationToken);
+
+        // Revoking the refresh tokens alone used to leave the biometric device
+        // keys alive, and sign-in-with-device-key is anonymous, so an attacker who
+        // had enrolled one simply minted a fresh session after the victim did the
+        // one thing every security notice tells them to do. The remedy has to
+        // remove every credential, not just the sessions. Deliberately applied to
+        // a VOLUNTARY change too: that is frequently the user's own response to
+        // suspecting someone else has their account.
+        await deviceKeys.RevokeAllForUserAsync(user.Id, cancellationToken);
     }
 
     /// <summary>

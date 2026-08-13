@@ -332,6 +332,8 @@ internal sealed class DeviceKeyService(
             return null;
         }
 
+        await EnsureAccountMayMintAsync(user, request.DeviceKeyId, cancellationToken);
+
         return await MintTokensAsync(user, cancellationToken);
     }
 
@@ -376,7 +378,108 @@ internal sealed class DeviceKeyService(
         }, cancellationToken);
     }
 
+    public async Task<int> RevokeAllForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        // One set-based UPDATE rather than load-then-save: this runs inside the
+        // password-change transaction, where the fewer round trips the better,
+        // and nothing here needs the rows afterwards beyond the count. Clearing
+        // the challenge columns matters as much as stamping RevokedAt, because a
+        // challenge already in flight would otherwise stay signable.
+        var revokedAt = timeProvider.SimfNow();
+        var revoked = await identityDbContext.DeviceKeys
+            .Where(k => k.UserId == userId && k.RevokedAt == null)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(k => k.RevokedAt, (DateTime?)revokedAt)
+                    .SetProperty(k => k.CurrentChallenge, (string?)null)
+                    .SetProperty(k => k.ChallengeExpiresAt, (DateTime?)null),
+                cancellationToken);
+
+        if (revoked == 0)
+        {
+            return 0;
+        }
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.DeviceKeyRevoked,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = userId,
+            SubjectUserId = userId,
+            Detail = $"bulk=password-change; revoked={revoked}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Revoked {Count} device key(s) for user {UserId} after a password change",
+            revoked, userId);
+
+        return revoked;
+    }
+
     // -- helpers --------------------------------------------------------------
+
+    /// <summary>
+    /// The account-lifecycle gates the password path enforces, applied to this
+    /// entry point too. Before this, a device key was a way into the same account
+    /// that honoured fewer rules than the password: a user whose password aged
+    /// past <c>IdentityLifecycle:PasswordMaxAgeDays</c>, or whom an administrator
+    /// had forced to change, kept signing in with Face ID indefinitely, which made
+    /// the NCA maximum-password-age control unenforceable for anyone who had
+    /// enabled biometrics. <c>SignInService</c> carries the same three gates at
+    /// every other token-mint path; this one had been missed.
+    ///
+    /// <para><b>Why these throw instead of returning null.</b> The opaque 401 the
+    /// caller maps a null onto exists so a failed SIGNATURE leaks nothing about
+    /// whether the key or the account exists. By the time execution reaches here
+    /// the signature has already verified, so there is no account-existence
+    /// oracle left to protect, and a legitimate user needs to be told that it is
+    /// their password, not their face, that is the problem.</para>
+    ///
+    /// <para><b>Why PendingApproval and Rejected are deliberately absent.</b>
+    /// <c>SimfUser.AccountState</c> records that those two do sign in and are
+    /// contained by the <c>account_state</c> claim plus the
+    /// <c>RequireApprovedAccount</c> policy. Refusing them here would diverge
+    /// from the password path rather than align with it.</para>
+    ///
+    /// <para>The challenge has already been consumed by the time this runs, so a
+    /// refusal costs the caller their challenge. That is deliberate and matches
+    /// the disabled-account check above it: a refused attempt should not leave a
+    /// live challenge to retry against.</para>
+    /// </summary>
+    private async Task EnsureAccountMayMintAsync(
+        SimfUser user, Guid deviceKeyId, CancellationToken cancellationToken)
+    {
+        if (user.AccountState == AccountState.Registered)
+        {
+            await AuditFailureAsync(deviceKeyId,
+                ErrorCodes.AuthEmailNotVerified, "email_not_verified",
+                cancellationToken);
+            throw new ApiException(ErrorCodes.AuthEmailNotVerified, 403,
+                "Verify your email address before signing in.",
+                "يرجى التحقق من بريدك الإلكتروني قبل تسجيل الدخول.");
+        }
+
+        if (user.PasswordChangeRequired)
+        {
+            await AuditFailureAsync(deviceKeyId,
+                ErrorCodes.AuthPasswordChangeRequired, "password_change_required",
+                cancellationToken);
+            throw new ApiException(ErrorCodes.AuthPasswordChangeRequired, 403,
+                "You must change your password before signing in. Use the password-reset flow to set a new one.",
+                "يجب تغيير كلمة المرور قبل تسجيل الدخول. استخدم تدفّق إعادة تعيين كلمة المرور لتعيين كلمة جديدة.");
+        }
+
+        if (await accounts.IsLockedOutAsync(user))
+        {
+            await AuditFailureAsync(deviceKeyId,
+                ErrorCodes.AuthAccountLocked, "locked_out", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthAccountLocked, 423,
+                "The account is locked after too many attempts. Try again later.",
+                "تم قفل الحساب بعد محاولات كثيرة. حاول مرة أخرى لاحقًا.");
+        }
+    }
 
     /// <summary>Verify an ES256 signature over the challenge bytes.
     /// The signature is the IEEE-P1363 raw (r || s, 64 bytes) format

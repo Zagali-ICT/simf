@@ -59,6 +59,9 @@
 | E2E-MBSU-013 | Cancel the device-credential sheet → NOT enrolled, inline "confirmation cancelled" message, retry works | edge | P0 | authored ✓ (screen test — cancelled outcome) |
 | E2E-MBSU-014 | No device screen lock → blocked with the "set a device screen lock" message; no code consumed | edge | P0 | authored ✓ (screen test — noDeviceCredential outcome) |
 | E2E-MBSU-015 | Sign-in Face-ID offers a device-PIN fallback and surfaces explicit lockout/unavailable errors (no silent password fallback) | edge | P1 | source-verified (sign_in_screen `_biometricSignIn`; `confirmDeviceIdentity` `biometricOnly:false`) |
+| E2E-MBSU-016 | A device key cannot sign in while the account owes a password change (expired past PasswordMaxAgeDays, or admin-forced) | edge | P0 | authored ✓ (backend test) |
+| E2E-MBSU-017 | A device key cannot sign in while the account is locked out | edge | P0 | authored ✓ (backend test) |
+| E2E-MBSU-018 | Changing the password revokes every device key, so the biometric credential dies with the sessions | edge | P0 | authored ✓ (backend test) |
 | E2E-MBSU-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MBSU-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -230,6 +233,56 @@ Scenario: A device with no screen lock can't secure Face-ID sign-in
 
 **Evidence:** `biometric_step_up_screen_test` — "no device screen lock shows the
 set-a-lock message (D-738)" (`LocalAuthOutcome.noDeviceCredential`).
+
+### E2E-MBSU-016 — A password change owed blocks the biometric path
+
+```gherkin
+Scenario: Face ID cannot outlive the maximum password age
+  Given a visitor with an enrolled device key
+  And the account holds PasswordChangeRequired (admin-forced, or the password
+    aged past IdentityLifecycle:PasswordMaxAgeDays)
+  When the client takes a challenge, signs it, and posts sign-in-with-device-key
+  Then the response is 403 AUTH_PASSWORD_CHANGE_REQUIRED
+  And no tokens are issued
+  And the refusal is audited
+```
+
+**Why it matters:** the password path refuses this at every other token-mint
+surface. Before this gate the device key was the one way around it, which made
+the NCA maximum-password-age control unenforceable for any biometric user.
+
+**Evidence:** `DeviceKeySignInTests.Sign_in_is_refused_when_a_password_change_is_required`,
+plus `Sign_in_still_succeeds_when_no_password_change_is_pending` as the negative
+control.
+
+### E2E-MBSU-017 — Lockout blocks the biometric path
+
+```gherkin
+Scenario: A locked account stays locked on every door
+  Given a visitor with an enrolled device key
+  And the account is locked out
+  When the client takes a challenge, signs it, and posts sign-in-with-device-key
+  Then the response is 423 AUTH_ACCOUNT_LOCKED
+  And no tokens are issued
+```
+
+**Evidence:** `DeviceKeySignInTests.Sign_in_is_refused_while_the_account_is_locked_out`.
+
+### E2E-MBSU-018 — A password change revokes the device keys
+
+```gherkin
+Scenario: The remedy removes every credential, not just the sessions
+  Given a visitor with an enrolled device key
+  When the user changes their password at POST /app/auth/change-password
+  Then every device key on the account is revoked
+  And a later challenge request for that key returns 401 DEVICE_KEY_REVOKED
+```
+
+**Why it matters:** sign-in-with-device-key is anonymous, so before this an
+attacker who had enrolled a key simply minted a fresh session after the victim
+did the one thing every security notice tells them to do.
+
+**Evidence:** `DeviceKeySignInTests.Changing_the_password_revokes_the_device_keys`.
 
 ### E2E-MBSU-015 — Sign-in Face-ID device-PIN fallback + explicit errors
 
