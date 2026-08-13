@@ -6,7 +6,7 @@ any item until that item is approved.**
 
 | # | Item | Raised | Status |
 |---|------|--------|--------|
-| 1 | Device-key label and device identity | 2026-08-13 | **Approved, not started** (+ security waves W1 to W10) |
+| 1 | Device-key label and device identity | 2026-08-13 | **DONE 2026-08-14** (label + My Devices + S1 to S8, S10; S9 deferred) |
 | 2 | File pointers become real foreign keys to the central file table | 2026-08-13 | Waiting for owner approval |
 | 3 | `DisplayName` duplicates the profile name, and the greeting rule is not built | 2026-08-13 | Waiting for owner approval |
 
@@ -16,7 +16,7 @@ any item until that item is approved.**
 
 | Field | Value |
 |-------|-------|
-| Status | **Approved 2026-08-13, not started.** No code written. Decisions in §11 and §13 |
+| Status | **BUILT 2026-08-14.** Label + My Devices shipped (D-884); all ten security findings closed except W9, deferred by decision. |
 | Raised | 2026-08-13 |
 | Trigger | Owner observation: "in app no any way to add label or modify" |
 | Scope | Flutter app enrolment path only. Backend unchanged in the recommended option. |
@@ -611,16 +611,16 @@ implemented.** Each wave needs its own approval, separately from the label work
 in §1 to §11, because these are pre-existing defects in shipped code rather than
 anything this plan introduces.
 
-> **Waves A, B and C (except W10) are BUILT as of 2026-08-13.** Nine of the ten
-> findings are closed in code. Evidence in §13.1 and §13.2. What remains is W10,
-> blocked on a Figma node, and W9, deferred by decision to after the event.
+> **Waves A, B and C are BUILT. Nine of the ten findings are closed in code.**
+> Evidence in §13.1, §13.2 and §13.3. Only W9 remains, deferred by owner decision
+> to after the event because it forces every enrolled user to re-enrol.
 
 | Wave | Items | Findings | Gate |
 |------|-------|----------|------|
 | **A** | W1, W2, W4 | S1, S2, S4 | **Done 2026-08-13** |
 | **B** | W3, W6, W7 | S3, S6, S7 | **Done 2026-08-13** |
 | **C** | W5, W8 | S5, S8 | **Done 2026-08-13** |
-| **C** | W10 | S10 | **Blocked**: needs a Figma node for the "my devices" screen |
+| **C** | W10 | S10 | **Done 2026-08-14**: owner authorised the house style in place of a Figma node |
 | **D** | W9 | S9 | **Deferred by decision** to after the event: it forces every user to re-enrol |
 
 W4 is pulled into wave A because it edits the same guard block as W1, so
@@ -688,7 +688,9 @@ exercises the guard without dragging CP 2FA into a device-key test. And a
 pre-existing test asserting `DEVICE_KEY_REVOKED` was updated, since that
 distinction is exactly what W8 removes.
 
-**W5's enrolment notification was not built.** The cap is the security control
+**W5's enrolment notification is now built** (D-883, `NotificationKind.DeviceKeyEnrolled = 61`). The paragraph below is kept for the record of why it was split out.
+
+**Originally deferred:** The cap is the security control
 and it shipped. The notification needs an additive `NotificationKind` value plus
 bilingual resx entries, which is a wider surface than the rest of this wave and
 is better done deliberately than at the end of a long session. It is the one
