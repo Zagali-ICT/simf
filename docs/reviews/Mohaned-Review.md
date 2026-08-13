@@ -921,6 +921,33 @@ and the encryption at rest. For family B nothing of the kind happens, because th
 value is a string an administrator typed and the image is served from wherever
 that string points.
 
+### The nine-column framing is itself incomplete
+
+Searching for `*RelativePath` finds the columns that were *named* after paths. It
+misses every pointer that was named after something else. The adversarial pass
+found four more, so **family A is seven pointers across five entities, not three**:
+
+| Pointer | Current type | Written at | Under this change |
+|---------|--------------|------------|-------------------|
+| `SimfUser.AvatarRelativePath` | `string` | `AccountService.cs:150` | Retype to `Guid?`. **No FK**, D-157 |
+| `UserProfile.IdImageRelativePath` | `string` | `UserProfileService.cs:665`, `:743` | Retype plus real FK |
+| `UserProfile.VipPhotoRelativePath` | `string` | `UserProfileService.cs:842` | Retype plus real FK |
+| `Session.RecordingStoredFileName` | `string` | `AdminSessionService.cs:830` | Retype plus real FK |
+| `SpeakerPresentation.StoredFileName` | `string` | `AdminSpeakerPresentationService.cs:114` | Retype plus real FK |
+| `MediaItem.ImageFileId` | **already `Guid?`** | `AdminMediaService.cs:246` | Add the FK only. Cheapest of the seven |
+| `MediaItem.ThumbnailFileId` | **already `Guid?`** | dormant, no write site | Add the FK, or drop it |
+
+The first five all write `result.Id.ToString()`. `AdminSessionService.cs:822-823`
+says so in as many words: `RecordingStoredFileName` "is repurposed as the
+bare-Guid pointer plus has-recording sentinel", which is the identical trick
+played on the avatar, under a different name.
+
+`MediaItem` is the one that matters most for the shape of the fix, because it is
+the **precedent**: `MediaItem.cs:24-27` already declares "A bare Guid resolved on
+read, **not a foreign key**." Somebody reached the typed-Guid halfway house
+deliberately and stopped there. This change finishes that thought and applies it
+everywhere.
+
 Two supporting facts, both verified, that decide the shape of the fix:
 
 - **The value in family B is rendered directly as an image source.** The Control
@@ -977,6 +1004,18 @@ real in-database FK" (item 1, section 12 compliance table). Single-database
 relationships in this codebase **do** use real keys. The file store is the
 exception, and only because it began life as a filesystem path.
 
+An adversarial pass tried to refute this and could not. There is **no** real EF
+navigation or foreign key to `StoredFile` anywhere in the solution, established
+three independent ways: no `StoredFile`-typed navigation property exists in
+`src/`; no `HasOne<StoredFile>()` appears in any configuration or in either model
+snapshot; and grepping both regenerated migration histories for `FK_.*StoredFile`
+returns zero constraints. The `StoredFiles` table carries a primary key and four
+indexes and nothing else.
+
+What the pass did find is the **third shape** described in 2.2: `MediaItem`'s
+typed `Guid?` with no key behind it. So the codebase already contains someone's
+half-step toward this change, taken deliberately and documented as such.
+
 ## 2.4 The fix, as directed by the owner
 
 Nothing crosses the database boundary and no pointer stays a string. The sweep
@@ -987,12 +1026,18 @@ work.
 
 | Owning row | Link | Why |
 |------------|------|-----|
-| `UserProfile.IdImageRelativePath`, `UserProfile.VipPhotoRelativePath` | **Real record.** `Guid? XFileId` plus a `StoredFile` navigation, `HasForeignKey`, an index, and an explicit `OnDelete` | Both sides are in `SIMF_App`, so the database can enforce it. This is the "real record" the owner asked for |
+| The six App-database pointers listed in 2.2 (`UserProfile` x2, `Session`, `SpeakerPresentation`, `MediaItem` x2) | **Real record.** `Guid? XFileId` plus a `StoredFile` navigation, `HasForeignKey`, an index, and an explicit `OnDelete` | Both sides are in `SIMF_App`, so the database can enforce it. This is the "real record" the owner asked for |
 | `SimfUser.AvatarRelativePath` | **Bare Guid only.** `Guid?`, no navigation, no FK | It would cross into `SIMF_Identity`, which D-157 forbids permanently. Identical in shape to `UserProfile.UserId`, which is a bare Guid for the same reason and documents why |
 
-Family A is **wire-free**: none of the three appears on any public contract. They
-reach clients only as presence booleans and a derived avatar URL, so the entity
-change is invisible to every shipped surface.
+The three original family A pointers are **wire-free**: none appears on any public
+contract, and they reach clients only as presence booleans and a derived avatar
+URL, so the entity change is invisible to every shipped surface.
+
+The four found later (2.2) are believed to be the same, because the File Store
+Dev Guide records the preserved wire keys as derived values (`avatarUrl`,
+`imageUrl` and `thumbnailUrl`, `hasPhotoAsset`, and presentation `fileName`,
+`contentType`, `sizeBytes`). That has **not** been re-verified field by field and
+must be before those four are retyped.
 
 ### Family B, separate work
 
@@ -1084,7 +1129,12 @@ fact in two homes, which doubles every reader and writer of it. That is the same
 duplication this item exists to remove.
 
 **Recommendation: A**, and the plan should be honest about what A does not
-deliver. The foreign key here is **impossible, not deferred**: D-157 is permanent.
+deliver. The foreign key here is **impossible, not deferred**, and for two
+reasons rather than one. The policy reason is that D-157 is permanent. The
+technical reason is in D-157's own text (`DECISIONS_LOG.md:789`): none of these
+links "can be DB-enforced under physical separation because SQL Server has no
+cross-database FK constraint syntax". Even lifting the rule would not produce a
+key here.
 What A does deliver is a real `Guid?` instead of a string, which removes the parse
 and the legacy-path tolerance at `AccountService.cs:243-244`. The residual risk is
 small in practice, because **the byte path never reads the pointer**:
@@ -1112,7 +1162,30 @@ it, a legacy free-text box bound to the `*RelativePath` column:
 
 Two competing ways to set one image is the duplication the North Star rule exists
 to remove, and it is also how the two halves in 2.3 come to disagree in the first
-place. The legacy text field and its resx label keys go with this change.
+place.
+
+**But the text field cannot simply be deleted, and the first draft was wrong to
+say it could.** On all four pages the upload control is wrapped in
+`@if (IsEdit && Initial is not null)`, because bytes cannot be attached until the
+row exists. So on the **create** form the legacy text box is currently the *only*
+way to set an image. Delete it without addressing create and the create form
+silently loses the ability to set a picture at all.
+
+Two things follow for family B:
+
+- The fix is create-then-attach: save the row, then offer the upload, which is
+  what the upload control's own edit-only guard already assumes.
+- The target pattern already exists in the codebase. `SpeakersAddEdit.razor:28`
+  carries `SimfImageUpload` and **no** path text field anywhere on the form, even
+  though `Speaker.PhotoRelativePath` still exists on the entity. That page is what
+  the other four should look like.
+
+Two more places carry the same duplication and are easy to miss:
+`NewsViewDelete.razor` and `ArchiveViewDelete.razor` each render the
+asset-pipeline thumbnail **and** a second `<img src="@Initial.*RelativePath">`.
+And `NewsAddEdit.razor:6-7` still carries a header comment claiming the image is
+"a plain relative-path string (no upload widget here)", which line 100 of the same
+file contradicts.
 
 ### The Excel importers accept a path from a spreadsheet cell
 
@@ -1161,8 +1234,9 @@ Rows marked **B** apply only if family B is approved as scope (question 1 in
 
 | Area | Change | Risk |
 |------|--------|------|
-| `SimfUser.cs`, `UserProfile.cs` | Retype the three family A pointers to `Guid?`; add the `StoredFile` navigation on the two `UserProfile` ones only; correct the false doc comment at `UserProfile.cs:264-267` | **breaking** |
-| `Configurations/SimfUserConfiguration.cs`, `App/UserProfileConfiguration.cs` | `HasForeignKey`, `OnDelete`, index on the two App-side pointers; drop the `HasMaxLength` sized for paths | **breaking** |
+| `SimfUser.cs`, `UserProfile.cs`, `Session.cs`, `SpeakerPresentation.cs`, `MediaItem.cs` | Retype the five string pointers to `Guid?`; add the `StoredFile` navigation on the six App-side ones; correct the false doc comments at `UserProfile.cs:264-267` and `:164-165` | **breaking** |
+| `SimfUserConfiguration.cs`, `App/UserProfileConfiguration.cs`, `App/SessionConfiguration.cs`, `App/SpeakerPresentationConfiguration.cs`, `App/MediaItemConfiguration.cs` | `HasForeignKey`, `OnDelete`, index on the six App-side pointers; drop the `HasMaxLength` sized for paths | **breaking** |
+| `App/StoredFileConfiguration.cs` | Correct the class doc, which states the owner pair carries no FK; keep `IX_StoredFiles_OwnerEntityType_OwnerEntityId`, per 2.9 | none |
 | `Persistence/Migrations/` (both contexts) | Fold into the regenerated `InitialCreate` per D-881, not a stacked migration | **breaking** |
 | `Identity/AccountService.cs` | Avatar upload and remove; delete `ParseFileId` and its legacy-path tolerance at `:243-244` | breaking |
 | `Application/IdentityAccess/UserProfileService.cs` | ID image, VIP photo, and the face-photo gate at `:229`. Preserve the H16 upload ordering described in 2.5 | breaking |
@@ -1256,13 +1330,26 @@ draft of 2.2 listed it for conversion. That was wrong and is corrected above.
   exactly when an image exists, or partner-directory logos vanish and avatars stop
   resolving.
 
-### Still open
+### Now answered: the polymorphic pair stays
 
-Whether the polymorphic `OwnerEntityType` / `OwnerEntityId` pair is consumed by
-the owner-or-administrator download authorisation check. If it is, it cannot be
-dropped even once a real key exists, and the invariant between the two halves
-needs a test instead. The adversarial verification pass on this was still running
-when this section was written.
+The first draft left open whether `OwnerEntityType` / `OwnerEntityId` could be
+dropped once a real key existed. It cannot. The pair is load-bearing in three
+places: the download authorisation check, the owner-upsert, and
+`AssetService.ResolveAsync`, which is how every asset-pipeline image is found in
+the first place. Its filtered index
+(`IX_StoredFiles_OwnerEntityType_OwnerEntityId`) must survive the change.
+
+So the honest position is that this change **does not collapse the two halves into
+one**. It makes the owning row's half a real key and leaves the polymorphic half
+where it is, because that half is queried by `Service` as well as by owner, and a
+bare foreign key carries no `Service`. The two-sources-of-truth risk in 2.3 is
+therefore **reduced, not eliminated**, and the invariant between them wants a test
+rather than a comment. That is a smaller claim than the first draft implied and it
+is the one the evidence supports.
+
+The `StoredFileConfiguration` class doc, which currently states the owner pair
+"carry NO FK", goes stale the moment the first key lands and must be corrected in
+the same changeset.
 
 ## 2.10 Verification gate
 
@@ -1286,9 +1373,10 @@ audit), and the `StoredFile` table's own columns.
    possible and free right now. Family B is six columns, two blockers and a
    change to how administrators author content, and it deserves its own approval
    rather than riding in on this one.
-2. **Delete the four legacy Control Panel text fields outright**, or leave them
-   read-only for one release? Recommendation: delete. They are the mechanism by
-   which the two halves diverge.
+2. **Delete the four legacy Control Panel text fields outright?** Recommendation:
+   yes, but only together with the create-then-attach flow in 2.6. Deleting them
+   alone removes the only way to set an image on the create form. `SpeakersAddEdit`
+   already shows the finished shape.
 3. **`Speaker.PhotoRelativePath` is confirmed vestigial**, with no writer anywhere.
    Drop the column, or keep it because a public contract still emits it as a
    fallback? Recommendation: keep the contract field, drop the column, and have
