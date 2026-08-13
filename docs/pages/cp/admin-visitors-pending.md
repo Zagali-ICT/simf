@@ -100,8 +100,8 @@ UC-VIS-PENDING-LIST, UC-VIS-PENDING-VIEW, UC-VIS-APPROVE-WITH-REVIEW
 
 | Scenario | ID |
 |----------|----|
-| Approve flow with View first → row vanishes + AccountState=Approved + QR minted | E2E-VPN-001 |
-| Reject with 50-char reason → AccountState=Rejected + reason audited | E2E-VPN-002 |
+| Approve flow with View first → row vanishes + the PROFILE's AdmissionState=Approved + QR minted | E2E-VPN-001 |
+| Reject with 50-char reason → the PROFILE's AdmissionState=Rejected + reason audited | E2E-VPN-002 |
 | Reject with 5-char reason → Submit disabled | E2E-VPN-003 |
 | View shows ID image inline when HasIdImage | E2E-VPN-004 |
 | Stale row (already approved by sibling admin) → 404 toast | E2E-VPN-005 |
@@ -147,3 +147,15 @@ _Earlier:_ 2026-05-28 by Claude (D-133 slice 3).
 Row approve still opens the D-128 profile-review modal. **Bulk** approve now
 confirms the selected count before posting — the guard lives in the shared
 `PendingApprovalPageBase`, so all three pending queues behave the same.
+
+## Where admission is recorded
+
+Approval writes `UserProfile.AdmissionState`, not the Identity account's state.
+An attendee need not hold an account at all — a walk-in registration and a
+pre-generated badge both produce a profile without one — so the fact a gate reads
+has to live on the row every attendee has. The account's own state governs
+sign-in and nothing else, and the two are deliberately not mirrored: there is no
+transaction spanning the two databases, so a second writable copy would drift and
+one of them would be deciding admission while the other looked authoritative.
+
+When asserting an approval outcome, read the profile.
