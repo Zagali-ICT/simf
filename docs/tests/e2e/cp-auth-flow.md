@@ -47,10 +47,10 @@ Feature: Administrator sign-in
   Scenario: Super-admin signs in (password + TOTP)
     Given an administrator opens /login
     When they fill Email="superadmin@simrsnf.com"
-    And they fill Password="[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"
+    And they fill Password="[REDACTED - supply via SIMF_API_SuperAdmin__TempPassword]"
     And they click "Sign in"
     Then they land on /login/totp
-    When they generate a TOTP via Get-Totp '[REDACTED - supply via SIMF_SuperAdmin__TotpSecret]'
+    When they generate a TOTP via Get-Totp '[REDACTED - supply via SIMF_API_SuperAdmin__TotpSecret]'
     And they fill that 6-digit code
     And they click "Verify"
     Then they land on /

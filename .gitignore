@@ -133,6 +133,14 @@ myComment.txt
 # survives this ignore rule.
 HANDOFF-CONTINUE-HERE.md
 
+# Editor/manual backups, including the timestamped form (CLAUDE.md.bak-20260812).
+# A backup of a tracked file is a second copy of it that git does not diff, so it
+# drifts silently — and for the governing rules files that everything else in this
+# repo defers to, a stale second copy is worse than none. The tracked file plus its
+# history already is the backup. Kept on disk, never committed.
+*.bak
+*.bak-*
+
 # Test run artefacts. A .trx captures the whole test console log; two of
 # these were tracked at 707 MB and 564 MB, so every clone paid 1.2 GB for
 # stale output. Nothing reads them.

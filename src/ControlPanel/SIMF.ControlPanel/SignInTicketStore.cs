@@ -24,7 +24,7 @@ public sealed class SignInTicketStore(IMemoryCache cache)
     /// <summary>Stashes a completed sign-in and returns its one-time reference.</summary>
     public string Stash(AuthTokens tokens, AccountStateInfo? accountState = null)
     {
-        var reference = Guid.NewGuid().ToString("N");
+        string reference = Guid.NewGuid().ToString("N");
         cache.Set(CacheKey(reference), new SignInTicketPayload(tokens, accountState), Lifetime);
         return reference;
     }
@@ -32,7 +32,7 @@ public sealed class SignInTicketStore(IMemoryCache cache)
     /// <summary>Redeems a reference once; returns <c>null</c> if unknown or already used.</summary>
     public SignInTicketPayload? Redeem(string reference)
     {
-        var key = CacheKey(reference);
+        string key = CacheKey(reference);
         if (cache.TryGetValue(key, out SignInTicketPayload? payload))
         {
             cache.Remove(key);
@@ -41,10 +41,11 @@ public sealed class SignInTicketStore(IMemoryCache cache)
         return null;
     }
 
-    private static string CacheKey(string reference) => $"simf:signin-ticket:{reference}";
+    private static string CacheKey(string reference)
+    {
+        return $"simf:signin-ticket:{reference}";
+    }
 }
 
 /// <summary>The payload stashed under one sign-in ticket.</summary>
-public sealed record SignInTicketPayload(
-    AuthTokens Tokens,
-    AccountStateInfo? AccountState);
+public sealed record SignInTicketPayload(AuthTokens Tokens, AccountStateInfo? AccountState);

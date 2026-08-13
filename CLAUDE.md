@@ -282,3 +282,25 @@ connections, D-225 session speaker/host role, D-226 dynamic `SessionCategory`
 lookup + `Session.CategoryId` (built as a team-seeded lookup per FDS-004 §5.4 —
 NOT a fixed enum; the table ships empty pending the client's category list,
 OI-2). The freeze must be re-instated before the production publish / handover.
+
+---
+
+## Security: the anonymous surface (moved here 2026-08-12)
+
+This lived in the global ~/.claude/CLAUDE.md, where it loaded in every project and
+told non-SIMF sessions about a SIMF test file. It is SIMF-specific and belongs here.
+
+## 4) Security Rules (Required)
+
+- **No AllowAnonymous outside the authentication surface.** The test is not a fixed list of endpoint names — it is: **can this endpoint's caller possibly hold a bearer token yet?** If yes, gate it. If no, it belongs to the authentication surface and must carry its **own** credential instead (an emailed code, a reset token, a refresh token, a badge/activation code, a device-key challenge signature).
+
+   This rule previously read "except SignIn / SignUp / ForgotPassword". That wording was wrong in practice and was corrected on 2026-07-29 after SIMF's BF-13 permission matrix was executed: the real anonymous surface there is **17 endpoints**, and every one of the extra 14 is legitimate — email verification, the second factor (OTP + TOTP + recovery code), password reset / forced change, token refresh, badge onboarding, and device-key sign-in. Each runs **before** a bearer token exists, so requiring one would break sign-up, 2FA and password reset outright. Enforcing the literal three-name list would have meant breaking authentication to satisfy a rule.
+
+   **Pin the surface with a test, not a comment.** Enumerate the mapped anonymous endpoints and assert the set equals a reviewed allow-list with a per-entry justification (see `tests/SIMF.Api.Tests/BusinessFlow13PermissionMatrixTests.cs`), so a **new** unauthenticated entry point fails the build and has to be argued for. A prose rule cannot detect the 18th; a test can.
+
+- Authentication is not enough; enforce authorization consistently (permissions per manifest / rules).
+
+
+
+---
+

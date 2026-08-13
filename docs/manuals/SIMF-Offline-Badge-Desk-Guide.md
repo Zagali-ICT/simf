@@ -37,12 +37,12 @@ sequence). That is why `GateScans.QrIdAtScan` is `nvarchar(96)`.
 ### 1. Arm the capability on the API
 
 ```
-SIMF_WalkInMode__Enabled            = true
-SIMF_WalkInMode__OfflineUpload      = true
-SIMF_WalkInMode__AcceptOfflineBadges= true
-SIMF_WalkInMode__AutoApprove        = true
-SIMF_WalkInMode__BadgeKey           = <base64 AES-256 key>
-SIMF_WalkInMode__BadgeKeyVersion    = 1
+SIMF_API_WalkInMode__Enabled            = true
+SIMF_API_WalkInMode__OfflineUpload      = true
+SIMF_API_WalkInMode__AcceptOfflineBadges= true
+SIMF_API_WalkInMode__AutoApprove        = true
+SIMF_API_WalkInMode__BadgeKey           = <base64 AES-256 key>
+SIMF_API_WalkInMode__BadgeKeyVersion    = 1
 ```
 
 `AutoApprove` matters here: without it every uploaded badge lands in the pending
