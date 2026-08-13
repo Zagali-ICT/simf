@@ -611,6 +611,9 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             Name = "Test Visitor",
             NationalityId = 682, // ISO 3166-1 numeric — SA
             PlaceOfBirth = "Riyadh",
+            // The gate reads admission here, not on the account, so this has to
+            // carry the same answer the caller asked for.
+            AdmissionState = approved ? AccountState.Approved : AccountState.PendingApproval,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();

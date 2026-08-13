@@ -312,6 +312,9 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
                 NationalityId = 682,   // ISO 3166-1 numeric — SA
                 PlaceOfBirth = "Riyadh",
                 CreatedAt = SimfClock.Now,
+                // A badge exists only for an admitted attendee, and admission is
+                // read on the profile rather than the account.
+                AdmissionState = AccountState.Approved,
             });
             await appDb.SaveChangesAsync();
         }

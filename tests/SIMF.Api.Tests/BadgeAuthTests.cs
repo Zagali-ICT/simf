@@ -286,6 +286,9 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
             NameArabic = "حامل الشارة",
             QrId = qrId,
             CreatedAt = SimfClock.Now,
+            // A badge exists only for an admitted attendee, and admission is
+            // read on the profile rather than the account.
+            AdmissionState = AccountState.Approved,
         });
         await appDb.SaveChangesAsync();
         return (user.Id, qrId);
