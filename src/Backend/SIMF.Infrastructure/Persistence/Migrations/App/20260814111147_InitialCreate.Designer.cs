@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260814110033_InitialCreate")]
+    [Migration("20260814111147_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -5042,10 +5042,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("PhoneSecondary")
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("PhotoRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("Qualifications")
                         .HasMaxLength(1024)

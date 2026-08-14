@@ -170,7 +170,6 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
             }
             var speaker = await db.Speakers.SingleAsync(s => s.Id == speakerId);
             speaker.CountryId = 682;
-            speaker.PhotoRelativePath = "speakers/amal.webp";
             await db.SaveChangesAsync();
         }
 
@@ -182,13 +181,16 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(682, listSpeaker.CountryId);
         Assert.False(string.IsNullOrEmpty(listSpeaker.CountryNameEn));
         Assert.False(string.IsNullOrEmpty(listSpeaker.CountryNameAr));
-        Assert.Equal("speakers/amal.webp", listSpeaker.PhotoRelativePath);
+        // The column is gone: the photo is a StoredFile and every client builds
+        // the URL from the speaker id. The wire key survives (append-only) and is
+        // now always null, which is what this pins.
+        Assert.Null(listSpeaker.PhotoRelativePath);
 
         var detail = await _client.GetAsync($"/api/v1/app/programme/sessions/{created.Id}");
         var detailSpeaker = Assert.Single(
             (await detail.Content.ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!.Speakers);
         Assert.Equal(682, detailSpeaker.CountryId);
-        Assert.Equal("speakers/amal.webp", detailSpeaker.PhotoRelativePath);
+        Assert.Null(detailSpeaker.PhotoRelativePath);
     }
 
     [Fact]

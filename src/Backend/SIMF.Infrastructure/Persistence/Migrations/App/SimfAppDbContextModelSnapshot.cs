@@ -5040,10 +5040,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<string>("PhotoRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
                     b.Property<string>("Qualifications")
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");

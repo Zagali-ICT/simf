@@ -133,7 +133,6 @@ internal sealed class ProgrammeSessionService(
                         link.Role,
                         // §7: country (flag) + photo shown with the speaker.
                         link.Speaker!.CountryId,
-                        link.Speaker!.PhotoRelativePath,
                     })
                     .ToList(),
             })
@@ -177,7 +176,7 @@ internal sealed class ProgrammeSessionService(
                             speaker.CountryId,
                             countryEn,
                             countryAr,
-                            speaker.PhotoRelativePath,
+                            null, // photo comes from the StoredFile store
                             TitleArabic: speaker.RankArabic);
                     })
                     .ToList();
@@ -366,7 +365,6 @@ internal sealed class ProgrammeSessionService(
                         link.DisplayOrder,
                         link.Role,
                         link.Speaker!.CountryId,
-                        link.Speaker!.PhotoRelativePath,
                     })
                     .ToList(),
                 // Website Session-detail "أبرز المخرجات" bullets,
@@ -447,7 +445,7 @@ internal sealed class ProgrammeSessionService(
                     speaker.CountryId,
                     countryEn,
                     countryAr,
-                    speaker.PhotoRelativePath,
+                    null, // photo comes from the StoredFile store
                     speakersWithPhoto.Contains(speaker.Id),
                     TitleArabic: speaker.RankArabic);
             })
