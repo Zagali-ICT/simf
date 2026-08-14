@@ -18,6 +18,11 @@
 # called four times here rather than being taught to loop, so that a by-hand
 # redeploy of a single package stays the same command it has always been, and so
 # a failure names the package in the run summary instead of inside a log.
+#
+# Each call goes through the call operator with the path QUOTED (`& "..."`).
+# A self-hosted agent's work directory is wherever the agent was installed, so
+# `$(Build.SourcesDirectory)` can contain a space, and an unquoted path would
+# split on it and try to run a command named after the first word.
 # =============================================================================
 parameters:
 # The deploy root is VERSIONED (see deploy/README.md). Bump it here when the
@@ -45,7 +50,7 @@ steps:
   artifact: drop
 
 - powershell: |
-    $(Build.SourcesDirectory)/deploy/pipeline-deploy-one.ps1 `
+    & "$(Build.SourcesDirectory)\deploy\pipeline-deploy-one.ps1" `
       -Package  "api" `
       -ZipName  "SIMF.Api.zip" `
       -SiteName "SIMF.API" `
@@ -55,7 +60,7 @@ steps:
   displayName: 'Deploy the API'
 
 - powershell: |
-    $(Build.SourcesDirectory)/deploy/pipeline-deploy-one.ps1 `
+    & "$(Build.SourcesDirectory)\deploy\pipeline-deploy-one.ps1" `
       -Package  "cp" `
       -ZipName  "SIMF.ControlPanel.zip" `
       -SiteName "SIMF.CP" `
@@ -65,7 +70,7 @@ steps:
   displayName: 'Deploy the Control Panel'
 
 - powershell: |
-    $(Build.SourcesDirectory)/deploy/pipeline-deploy-one.ps1 `
+    & "$(Build.SourcesDirectory)\deploy\pipeline-deploy-one.ps1" `
       -Package  "web" `
       -ZipName  "SIMF.Web.zip" `
       -SiteName "SIMF.WEB" `
@@ -75,7 +80,7 @@ steps:
   displayName: 'Deploy the Website'
 
 - powershell: |
-    $(Build.SourcesDirectory)/deploy/pipeline-deploy-one.ps1 `
+    & "$(Build.SourcesDirectory)\deploy\pipeline-deploy-one.ps1" `
       -Package  "edge" `
       -ZipName  "SIMF.MobileEdge.zip" `
       -SiteName "SIMF.EDGE" `

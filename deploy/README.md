@@ -197,7 +197,37 @@ These are **placeholders** — set them to the real SIMF server values:
    in Pipelines → Environments**; they hold no resources and no history worth
    keeping. `PipelineTestGateTests.The_pipeline_deploys_only_to_the_two_real_environments`
    now fails the build if a third name appears.
-3. **IIS site names + physical paths** — the `-ApiSiteName/-ApiPath`,
+
+   **The names must match the portal exactly**, including case and the hyphen in
+   `Pre-production`. If the registered names differ, change the two
+   `environment:` blocks in `azure-pipelines.yml` **and** the `expected` array in
+   that test together — the test pins the YAML to a reviewed list, and it cannot
+   see the portal.
+
+3. **Each server registered as a VM resource** inside its environment. Both jobs
+   declare `resourceType: virtualMachine`, so the steps run **on that machine**
+   rather than on the build agent:
+
+   ```yaml
+   environment:
+     name: Production
+     resourceType: virtualMachine
+   ```
+
+   This is not decoration. A bare `environment: Production` is also legal — as
+   an abstract shell that only records deployment history — and then the steps
+   run on the `pool` agent, which would have `iis-deploy.ps1` stop, mirror and
+   restart IIS sites **on the build box** and report success. Register the VM
+   with the script from **Pipelines → Environments → the environment → Add
+   resource → Virtual machines**.
+
+   A run reporting **no matching resources** means the machine is not registered.
+   Register it; do not fall back to the bare form, which turns a loud failure
+   into a deploy onto the wrong machine. Azure's documentation warns that
+   `resourceType` is case-sensitive while its own examples disagree on the
+   casing, so if the VM *is* registered and still does not match, try
+   `VirtualMachine`.
+4. **IIS site names + physical paths** — the `-ApiSiteName/-ApiPath`,
    `-CpSiteName/-CpPath`, `-WebSiteName/-WebPath` and `-EdgeSiteName/-EdgePath`
    arguments in the `Deploy to IIS` step. The IIS sites + app pools must already
    exist on the server (this script deploys files; it does not create sites) —
