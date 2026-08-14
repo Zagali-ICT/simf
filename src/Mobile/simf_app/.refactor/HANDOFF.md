@@ -87,14 +87,19 @@ compositions replaced with the shared widget, one widget moved to its own file.
 
 All in `.refactor/`, all refuse rather than guess, all reusable:
 
-* `wrap_comments2.py` — re-flows comment blocks **per paragraph**, wrapping a
-  list item with a hanging indent. Supersedes `wrap_comments.py`, which
-  measured with Python `len` (the analyzer counts **UTF-16 code units**, so an
-  emoji flag undercounts by 2) and refused a whole block if any line was a list
-  item.
-* `wrap_ignore_reasons.py` — re-flows the prose around an `// ignore:` while
-  copying the directive through byte for byte. Needed because wrapping a
-  directive silently stops it suppressing anything.
+* `wrap_comments.py` — re-flows comment blocks **per unit**: a blank line, a
+  list item (hanging indent, so the continuation reads as markdown), an
+  `// ignore:` directive (copied byte for byte, because wrapping one silently
+  stops it suppressing anything) or a run of prose. Measures in **UTF-16 code
+  units**, which is how the analyzer counts — a regional-indicator flag costs 4
+  where Python's `len` sees 2.
+
+  This is the merge of three scripts, and the merge is the lesson: they had
+  drifted into three greedy wrappers with different width accounting, and the
+  UTF-16 fix landed in only one of them. `wrap_ignore_reasons.py` existed only
+  because the original refused directive blocks — and, being a separate copy,
+  never got the fix, so it could not see the blocks it was written for. **If
+  you need a fourth comment behaviour, add a unit kind here; do not fork.**
 * `split_long_strings.py` — splits a literal into two adjacent literals, which
   Dart concatenates at compile time. Never inside a word, an escape or an
   interpolation.
@@ -102,21 +107,168 @@ All in `.refactor/`, all refuse rather than guess, all reusable:
   into a `///` doc comment above it, the one comment shape that cannot be
   re-flowed in place because its indent belongs to the code.
 
+### Audit rows RE-MEASURED against the current tree (2026-08-14)
+
+The 2026-08-02 rows are stale in both directions — line numbers are all wrong
+after the reformat, and several categories closed on their own. Measured, not
+assumed:
+
+| Category | Audit said | Actually now |
+|---|---|---|
+| RAW-STRING | 2 | **0** (`unnecessary_raw_strings` reads 0) |
+| MISSING-CONST | 5 | **0** (`prefer_const_*` read 0) |
+| DEAD-COMMENT-CODE | 14 | **0** — all 5 greppable hits are prose continuations (`// import of the shell keeps resolving.`), not commented-out code |
+| NARRATION-COMMENT | 9 | **0** — the 3 hits are prose and a release number (`// Build #13 —`) |
+| INLINE-TEXTSTYLE (raw size) | 5 | **0** (done, see the tokens commit) |
+| RTL-DIRECTIONAL | 7 | **4**, all declined with cause — each pairs with an explicitly physical `Alignment.centerLeft`, so it is a Figma question (D-901) |
+| `Image.network` unsized | 20 | **11 real** call sites; the other 9 were doc comments the audit counted as hits. Deferred to a device (D-901) |
+| NON-LAZY-LIST | 11-12 | ~43 `ListView(` sites, most correctly static content pages; the data-driven ones still need per-site judgement |
+
+**Do not act on a 2026-08-02 row without re-measuring it first.** Two of the
+three categories I checked were already closed, and one (`Image.network`) was
+nearly half phantom.
+
 ### Next, in order
 
-1. The read-audit rows: ~73 DUPLICATION, 42 DOC-HEADER, 45 NAMING, then the
-   tail (DEAD-COMMENT-CODE, NON-LAZY-LIST, NARRATION-COMMENT, RTL-DIRECTIONAL,
-   REFLEXIVE-CATCH, RAW-STRING, FIXED-WIDTH). **Re-measure before acting** —
-   the rows are from 2026-08-02 and every line number in them is now wrong
-   after the reformat; several categories are already closed by the analyzer
-   work. **ONE-WIDGET-PER-FILE is closed**: the three heterogeneous files are
-   split (16 widgets, 16 files, originals removed) and the other 17 findings
-   are cohesive groups that CLAUDE.md section 1 now explicitly permits.
-2. Decision 5 (all 71 screen headers to the section 9 template), decision 6
-   (tokens single-use audit).
-3. Decision 7 — the 35 `AsyncValue` conversions. A **behaviour change**, so its
-   own phase with its own verification, not part of the per-file loop.
-4. ~~Decision 8 (`packages/`)~~ and ~~Phase E~~ — **both done**.
+1. **Decision 7 — the `AsyncValue` conversions. 22 of 24 DONE; the last 2 are
+   device-blocked.**
+
+   Only `sign_up_visitor_screen` and `register_visitor_screen` still hand-roll
+   `bool _loading` — the same two screens D-666 blocks from being split, for the
+   same reason: their face-capture path needs on-device verification that a
+   green golden demonstrably does not provide. Convert them in the session that
+   has a device attached, alongside the split.
+
+   **Re-measured at the start: 24 screens, not the plan's 35.** Grep
+   `^\s*bool _loading` across `lib` — 11 of the plan's set were converted or
+   deleted in earlier waves. Do not work from the number.
+
+   **22 of 24 converted**, every one with its existing tests passing
+   **unchanged** — which is the signal that says the state machine is faithful,
+   not merely green. Five shapes emerged, and picking the right one is the whole
+   job:
+
+   | Shape | When | Examples |
+   |---|---|---|
+   | **Fold to null** | a server outcome genuinely means "nothing to show" | `terms` (404 + empty body), `news_article` / `speaker_profile` (404 = gone) |
+   | **No fold** | "empty" is already an empty list | `my_contacts`, `booths`, `sessions` |
+   | **Stay an error, branch in `error`** | the outcome is a failure with its own copy | `my_visitors` (403 = "not linked to a booth yet") |
+   | **Gate inside the provider** | the screen must not call the endpoint at all | `my_area` (Approved-only, L-5) |
+   | **`AsyncNotifier`** | build and refresh must behave DIFFERENTLY, or the data is EDITED | `badge`, `session_moderate` |
+
+   **The `AsyncNotifier` case is the one to recognise early.** `badge`'s first
+   attempt used the gate-in-provider shape and its own test caught the
+   regression: gating the refresh on the cached auth state left a pending user
+   able to pull forever without ever leaving the state, because the dashboard's
+   403 is HOW approval is discovered. `build()` must skip the call and
+   `recheck()` must make it — a `FutureProvider` has only one path.
+   `session_moderate` needs one for the other reason: five optimistic edits with
+   rollback, which cannot be expressed by mutating a `FutureProvider`.
+
+   **Side effects on load** (`notifications`' mark-all, `venue_map`'s camera
+   focus, `gate_scan`'s backlog flush) all use the same shape: await the
+   provider's FIRST future in `initState`. `ref.listen` would re-fire them on
+   every pull-to-refresh.
+
+   Orthogonally, the screen either becomes a `ConsumerWidget` (`terms`,
+   `news_article`, `my_contacts`, `my_visitors`) or stays stateful because it
+   owns real UI state — a search box, a sort toggle, a tab index (`speakers`,
+   `booths`, `sessions`, `speaker_profile`, `my_area`).
+
+   **Two findings worth carrying into the last two screens:**
+
+   * **The plan's "wave 2 is just submit spinners" is wrong.** All five had a
+     REAL data load with the submit flag beside it. The load converts; the flag
+     stays. Expect the same of the two blocked screens.
+   * **`session_detail` did NOT need its goldens re-locked**, though the plan
+     said it would. Its render goes through a shared states widget taking
+     `loading`/`notFound`/`failed` BOOLEANS, so feeding those from the
+     `AsyncValue` leaves the tree untouched. The render only moves if you ALSO
+     swap the host for `SimfRefreshableMessage`, which is a separate change this
+     phase never needed. Check for that pattern before assuming a re-lock.
+
+   **Editing tool note, learned twice.** Range-based Python replacements
+   silently swallowed a `build` method (`live_broadcast`), two closing braces
+   (`rate`) and a whole `_toggleInterest` (`sign_up_interests`) — every one
+   caught by the analyzer, but each cost a revert or a recovery from git. On a
+   screen whose branching lives inside `build` rather than a flat `_body`, use
+   targeted `Edit` calls instead.
+
+   **`terms_screen` is the template** (commit `0a6bf182`). What made it work,
+   in order:
+   1. A `FutureProvider.autoDispose` that folds the screen's EXTRA states into
+      the data type. Terms had `_empty` beside `_loading`/`_error`; returning
+      `ContentBlock?` and mapping both "nothing to show" cases (a 404, and a
+      present-but-empty body) to null collapsed three server outcomes onto the
+      three branches `when` already has.
+   2. The screen usually stops needing to be stateful at all — terms went
+      `ConsumerStatefulWidget` -> `ConsumerWidget`.
+   3. `onRetry` = `ref.invalidate(provider)`; the PULL keeps
+      `refreshAsync(ref, provider.future)`, whose future the RefreshIndicator
+      awaits.
+   4. Existing tests should pass **UNCHANGED** — that is the signal the state
+      machine is faithful. Terms' 5 did.
+   5. The data-state golden must hold **WITHOUT** `--update`. A data golden
+      that moves is a conversion bug, not a re-lock.
+
+   **Expect to find bugs.** The conversion forces you to look at the error
+   branch, and terms was rendering `ApiFailure.message` raw — English exception
+   text to Arabic users. The sweep that followed found two more
+   (`my_area` avatar upload, `seat_picker` seat move); `gate_scan` and
+   `register_visitor` looked like sites and are not. Check the RENDER before
+   fixing: `register_visitor`'s `_loadError` is never displayed.
+
+   **The 19 left**, wave 1 (genuine data loads) first, per the plan:
+
+   | Wave 1 — data loads | Wave 2 — submit spinners (the weaker case) |
+   |---|---|
+   | `ai_summary/session_summary` | `account/sign_up_interests` |
+   | `badge` * | `account/sign_up_visitor` **(device-blocked)** |
+   | `exhibitor/my_visitors` | `contacts/share_my_contact` |
+   | `gates/gate_scan` | `feedback/rate` |
+   | `live/live_broadcast` | `myarea/my_mobile` |
+   | `moderation/session_moderate` | `registration/registration_status` |
+   | `myarea/my_area` | `staff/register_visitor` **(device-blocked)** |
+   | `notifications` | |
+   | `sessions/session_detail` * | |
+   | `sessions/sessions` | |
+   | `speakers/speaker_profile` | |
+   | `venuemap/venue_map` | |
+
+   \* carries extra care: `badge`'s four pull-to-refresh tests assert per-branch
+   behaviour, and `session_detail` is the screen the plan flags where swapping
+   to `SimfRefreshableMessage` **moves the render** (a bare `ListView`
+   top-aligns the state; the shared host centres it in a viewport-tall box), so
+   its goldens are re-locked in the same changeset with the diff inspected.
+
+   Two more things to know:
+   * `test/repo/pull_to_refresh_coverage_test.dart` keys on widget NAMES. A
+     shared async-body widget that owns the refresh will need that regex
+     extended, deliberately, in the same changeset.
+   * The 21 screens whose `Perf:` line reads "builds every child up front" are
+     a DIFFERENT population from these — list laziness is its own pass.
+2. The surviving read-audit rows: DOC-HEADER (largely absorbed by Decision 5),
+   NAMING, and the genuinely data-driven NON-LAZY-LIST subset.
+   **ONE-WIDGET-PER-FILE is closed**: the three heterogeneous files are split
+   (16 widgets, 16 files, originals removed) and the other 17 findings are
+   cohesive groups that CLAUDE.md section 1 now explicitly permits.
+3. ~~Decision 5~~ (71 headers), ~~Decision 6~~ (token audit),
+   ~~Decision 8~~ (`packages/`), ~~Phase E~~ — **all done**.
+
+### Tools left behind, all in `.refactor/`
+
+Each refuses rather than guesses, and each exists because a simpler approach
+guessed wrong once — the docstrings say which.
+
+| Script | Does |
+|---|---|
+| `wrap_comments.py` | re-flows comment blocks per UNIT (prose / list item / `// ignore:` copied byte for byte); measures in UTF-16 code units. **The merge of three earlier wrappers** — do not fork a fourth, add a unit kind |
+| `split_long_strings.py` | splits a literal into two adjacent literals, which Dart concatenates at compile time |
+| `lift_trailing_comments.py` | moves a trailing `// note` off a declaration into a `///` above — the one shape no wrapper can touch |
+| `collapse_refresh_pairs.py` | hand-nested `SimfPullToRefresh`+`SimfPullableHost` -> `SimfRefreshableMessage` |
+| `screen_header_fields.py` | derives the section 9 `Route:`/`Data:`/`Perf:` fields from the code |
+| `token_audit.py` | counts real `SimfTokens` use — **both** the qualified and the bare-inside-tokens.dart form |
+| `drop_dead_tokens.py` | deletes a verified-unused token and its doc block |
 
 ### BLOCKED
 
@@ -130,6 +282,28 @@ those two files — and the pipeline cannot move to `--check --strict` or delete
 
 Also still owner-gated, unchanged: the `getMySeat` deletion and the
 `more_screen` adjudication (deletion needs owner confirmation, global rule 7).
+
+**Two more went to the device list on 2026-08-14 (D-901), both because no test
+can catch getting them wrong:**
+
+* Sizing the 11 real `Image.network` call sites. Widget tests have no HTTP, so
+  those images render their `errorBuilder` and a golden stays green whatever
+  the decode resolution — a visual-only failure mode behind a green golden,
+  which is the D-666 class exactly.
+* The 4 `EdgeInsets.only(left:)` sites. Each pairs with an explicitly physical
+  `Alignment.centerLeft` on the same back button, so converting the padding
+  alone leaves the two disagreeing. Whether the back chevron belongs on the
+  physical left in Arabic is a Figma question — section 13.5 says ask, never
+  guess — and the Arabic goldens currently agree with what ships.
+
+### Branch state (2026-08-14)
+
+`origin/main` has **already merged this branch** (PR 334), so every code commit
+listed above is in main. `origin/main` is then ~105 commits ahead with other
+work, and this branch carries one commit main lacks (the D-246 docs). Someone
+else's `600d22dd merge: bring main into refactor/app-clean-code-3, and re-close
+the analyzer ratchet` is on main — read it before merging main in here, because
+it means the ratchet has been re-closed once already after a merge.
 
 ---
 

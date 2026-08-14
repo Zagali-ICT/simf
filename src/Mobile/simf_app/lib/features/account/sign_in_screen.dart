@@ -46,6 +46,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// instead of local `_build*` copies; the decorative sweep is the shared
 /// [SimfAuthSweep]; the back button was removed (it only dead-ended to
 /// onboarding — owner).
+///
+/// Route: `RouteNames.signIn`.
+/// Data: [authControllerProvider], [biometricAvailableProvider],
+///       [localeControllerProvider], [simfPrefsStorageProvider].
+/// Perf: no list — a single-screen layout.
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 

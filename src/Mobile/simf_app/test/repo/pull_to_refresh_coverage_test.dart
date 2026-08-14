@@ -30,8 +30,16 @@ import 'package:flutter_test/flutter_test.dart';
 /// The working directory for `flutter test` is the package root
 /// (`src/Mobile/simf_app`), so every path below is relative to that.
 
-/// Screens that fetch but must NOT pull to refresh. The reason is the point:
-/// keep it accurate, and mirror any change into CLAUDE.md section 13.6.
+/// Screens that fetch but must NOT pull to refresh. **This list is the
+/// baseline** — CLAUDE.md section 13.6 explains the categories and points
+/// here; it does not carry a second copy to keep in step. The two could not be
+/// kept identical anyway: the doc names `guest` and `forum_guide` as having no
+/// pull, but neither fetches, so listing them here would fail the
+/// stale-exemption test below. The doc answers "which screens have no pull, and
+/// why"; this answers "which FETCHING screens are excused", which is a smaller
+/// question.
+///
+/// The reason string is the point of each entry — keep it accurate.
 const Map<String, String> _exempt = <String, String>{
   // Submit-driven auth forms — nothing is loaded, so there is nothing to
   // re-load.
@@ -75,9 +83,21 @@ const Map<String, String> _exempt = <String, String>{
 /// `_load()` hook.
 final RegExp _fetches = RegExp(r'ref\.watch\(|ref\.read\(|Future<void> _load');
 
-/// Any of the shared refresh affordances, or a raw RefreshIndicator.
+/// Any of the shared refresh affordances, a raw RefreshIndicator, or an
+/// `onRefresh:` handed to a child that owns one.
+///
+/// That last alternative is load-bearing, not slack. Dropping it as
+/// "redundant" — every refresh widget takes `onRefresh:` anyway — turned five
+/// screens red that genuinely do refresh: `home`, `my_seat`, `seat_picker`,
+/// `session_detail` and `staff_seating` all delegate to a child widget
+/// (`VisitorHome`, `SeatMapAsyncView`) that owns the `SimfPullToRefresh`, so
+/// the screen file itself contains only the forwarded callback.
+///
+/// It is matched WITH its colon, so a `Future<void> onRefresh()` declaration
+/// alone does not count as coverage — the callback has to be passed to
+/// something.
 final RegExp _refreshes = RegExp(
-  'SimfPullToRefresh|SimfRefreshableMessage|RefreshIndicator|onRefresh',
+  'SimfPullToRefresh|SimfRefreshableMessage|RefreshIndicator|onRefresh:',
 );
 
 /// Every `*_screen.dart` under `lib/`, keyed the way [_exempt] is.
@@ -145,19 +165,25 @@ void main() {
       );
     });
 
-    test('the badge screen refreshes — the 2026-08-14 regression', () {
-      // Named rather than left to the sweep above: this is the one that got
-      // through a grep audit, and the pending branch is the one that mattered.
-      final source = File('lib/features/badge/badge_screen.dart')
-          .readAsStringSync();
-      expect(_refreshes.hasMatch(source), isTrue);
-      expect(
-        'SimfRefreshableMessage'.allMatches(source).length,
-        greaterThanOrEqualTo(3),
-        reason: 'The pending, not-approved and load-error branches each need '
-            'their own refresh host — a pending account discovers approval by '
-            'pulling on one of them.',
-      );
-    });
+    // The badge regression itself is pinned BEHAVIOURALLY, in
+    // `test/features/badge/badge_screen_test.dart`: four tests that pump the
+    // screen and assert the dashboard is actually re-fetched on a pull, one
+    // per branch, including the pending account discovering approval.
+    //
+    // A third test lived here that counted `SimfRefreshableMessage` in the
+    // source text and required at least three. It was deleted rather than
+    // kept, for two reasons worth recording so it is not re-added:
+    //
+    //   * it asserted nothing the branch tests do not assert better - counting
+    //     a type name proves the token is typed three times, not that the
+    //     pending branch is one of the three, which is what its `reason:`
+    //     claimed;
+    //   * it pinned an implementation shape, so the Decision 7 `AsyncValue`
+    //     conversion would have reddened it legitimately but confusingly, and
+    //     the cheapest response then is to delete the assertion rather than
+    //     re-argue it. Better to not have written it.
+    //
+    // What this file is for is the SWEEP - catching the next screen that
+    // forgets - not re-proving one screen the widget tests already cover.
   });
 }

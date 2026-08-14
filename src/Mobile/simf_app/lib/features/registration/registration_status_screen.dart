@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/registration/widgets/registration_primary_button.dart';
 import 'package:simf_app/features/registration/widgets/registration_secondary_button.dart';
 import 'package:simf_app/features/registration/widgets/registration_sign_out_link.dart';
@@ -27,6 +28,24 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// centred title header, a vertically-centred hero (a state-coloured ring
 /// around the state icon, a white headline, a beige message), the gold primary
 /// button, and a "تسجيل الخروج" link beneath it.
+///
+/// Route: `RouteNames.registrationStatus`.
+/// Data: [authControllerProvider], [registrationStatusProvider].
+/// Perf: no list — a single-screen layout.
+/// The account's registration status, re-read from the server.
+///
+/// `GET /app/users/me` via [AuthController.refreshCurrentUser] — the same call
+/// the explicit "Re-check" button makes, which is the whole point of this
+/// gate screen. A session-expired failure flips auth to signed-out and the
+/// router's gate (route 11) redirects to sign-in; every other failure lands on
+/// the error branch.
+final registrationStatusProvider =
+    FutureProvider.autoDispose<RegistrationStatus>((ref) async {
+  final user =
+      await ref.watch(authControllerProvider.notifier).refreshCurrentUser();
+  return user.registrationStatus;
+});
+
 class RegistrationStatusScreen extends ConsumerStatefulWidget {
   const RegistrationStatusScreen({super.key});
 
@@ -37,43 +56,8 @@ class RegistrationStatusScreen extends ConsumerStatefulWidget {
 
 class _RegistrationStatusScreenState
     extends ConsumerState<RegistrationStatusScreen> {
-  bool _loading = true;
-  bool _error = false;
-  RegistrationStatus? _status;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-    });
-    try {
-      final user =
-          await ref.read(authControllerProvider.notifier).refreshCurrentUser();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _status = user.registrationStatus;
-        _loading = false;
-      });
-    } on AuthFailure {
-      if (!mounted) {
-        return;
-      }
-      // A session-expired failure flips AuthState to SignedOut and the router's
-      // auth gate redirects to sign-in; other failures show the Error state.
-      setState(() {
-        _error = true;
-        _loading = false;
-      });
-    }
-  }
+  Future<void> _refresh() =>
+      refreshAsync(ref, registrationStatusProvider.future);
 
   Future<void> _signOut() async {
     await ref.read(authControllerProvider.notifier).signOut();
@@ -114,15 +98,13 @@ class _RegistrationStatusScreenState
   }
 
   Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: SimfTokens.accent),
-      );
-    }
-    if (_error || _status == null) {
-      return _buildError(l10n);
-    }
-    return _buildStatusView(l10n, _status!);
+    return ref.watch(registrationStatusProvider).when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: SimfTokens.accent),
+          ),
+          error: (_, __) => _buildError(l10n),
+          data: (status) => _buildStatusView(l10n, status),
+        );
   }
 
   Widget _buildStatusView(AppL10n l10n, RegistrationStatus status) {
@@ -139,7 +121,7 @@ class _RegistrationStatusScreenState
         headline = l10n.regPendingHeadline;
         message = l10n.regPendingMessage;
         primaryLabel = l10n.reCheckButton;
-        onPrimary = () => unawaited(_load());
+        onPrimary = () => ref.invalidate(registrationStatusProvider);
       case RegistrationStatus.approved:
         color =
             SimfTokens.statusAccepted; // #22C55E — the frame's approval green
@@ -229,7 +211,7 @@ class _RegistrationStatusScreenState
             const SizedBox(height: SimfTokens.space4),
             RegistrationPrimaryButton(
               label: l10n.retryLabel,
-              onTap: () => unawaited(_load()),
+              onTap: () => unawaited(_refresh()),
             ),
             const SizedBox(height: SimfTokens.space3),
             RegistrationSignOutLink(

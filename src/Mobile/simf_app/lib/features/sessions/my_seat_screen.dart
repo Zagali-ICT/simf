@@ -33,6 +33,10 @@ import 'package:simf_app/features/sessions/widgets/seat_map_view.dart';
 /// seat picker (109) as the destination chooser, which confirms the old→new
 /// pair and calls the atomic `POST …/seats/move`. On a successful move the
 /// picker pops `true` and this screen re-reads the grid.
+///
+/// Route: `RouteNames.mySeat`.
+/// Data: [seatMapProvider], [seatShareProvider].
+/// Perf: no list — a single-screen layout.
 class MySeatScreen extends ConsumerWidget {
   const MySeatScreen({required this.sessionId, super.key});
 

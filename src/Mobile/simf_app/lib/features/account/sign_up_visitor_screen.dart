@@ -63,6 +63,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Clean-code pass — D-546 (2026-06-30). Decomposed to the per-page DoD
 /// (golden `sign_up_visitor_168-2972.png`); see
 /// `docs/pages/mobile/sign-up-visitor/README.md`.
+///
+/// Route: `RouteNames.signUpVisitor`.
+/// Data: [avatarBustProvider], [profileRepositoryProvider], [regionsProvider].
+/// Perf: no list — a single-screen layout.
 class SignUpVisitorScreen extends ConsumerStatefulWidget {
   const SignUpVisitorScreen({super.key});
 

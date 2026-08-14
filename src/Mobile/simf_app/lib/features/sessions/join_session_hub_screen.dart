@@ -13,6 +13,10 @@ import 'package:simf_app/features/sessions/widgets/hub_list.dart';
 /// session page, per the owner's "both" choice): it lists the programme
 /// sessions; tapping one opens its detail page, where the **Select my seat /
 /// Join** CTA lives. Reuses `GET /app/programme/sessions` — no new API.
+///
+/// Route: `RouteNames.joinSessionHub`.
+/// Data: [programmeSessionsProvider].
+/// Perf: no list — a single-screen layout.
 class JoinSessionHubScreen extends ConsumerWidget {
   const JoinSessionHubScreen({super.key});
 

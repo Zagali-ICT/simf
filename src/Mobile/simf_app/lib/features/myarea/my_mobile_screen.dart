@@ -31,6 +31,27 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// profile's nationality picks the field — a Saudi national edits `saudiMobile`
 /// (05XXXXXXXX / +9665XXXXXXXX), everyone else `internationalMobile` (E.164).
 /// The number itself always renders LTR.
+///
+/// Route: `RouteNames.myMobile`.
+/// Data: [myMobileProfileProvider]; the save also invalidates the shared
+///       [myProfileProvider].
+/// Perf: no list — a single-screen layout.
+/// The signed-in user's profile, for the stored mobile number.
+/// This screen's OWN profile read — deliberately not the shared
+/// `myProfileProvider` from `profile_repository.dart`.
+///
+/// The shared cache swallows an `ApiFailure` into null, which is right for the
+/// selectors that read it (Badge, My Area, the speaker profile) and wrong here:
+/// this screen shows the SERVER'S reason on a failed load, and null cannot
+/// carry one. Main's own version of this screen read the repository directly
+/// for the same reason.
+///
+/// The save still invalidates the SHARED cache as well, so the rest of the app
+/// does not serve the pre-save row.
+final myMobileProfileProvider = FutureProvider.autoDispose<UserProfileResponse>(
+  (ref) => ref.watch(profileRepositoryProvider).getMyProfile(),
+);
+
 class MyMobileScreen extends ConsumerStatefulWidget {
   const MyMobileScreen({super.key});
 
@@ -44,17 +65,14 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
 
   /// The loaded profile — re-sent in full on save so a mobile-only change
   /// nulls no other field (the upsert is the only write path).
-  UserProfileResponse? _profile;
 
-  bool _loading = true;
-  String? _loadError;
   bool _saving = false;
   String? _saveError;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_load());
+    unawaited(_seedFromProfile());
   }
 
   @override
@@ -63,41 +81,32 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
     super.dispose();
   }
 
+  /// Seeds the field from the stored number, ONCE.
+  ///
+  /// Awaits the provider's first future rather than listening: this screen is
+  /// one the user then edits, so re-seeding on any later emission would discard
+  /// what they had typed. (It is exempt from the pull-to-refresh rule for the
+  /// same reason — CLAUDE.md 13.6.)
+  Future<void> _seedFromProfile() async {
+    final UserProfileResponse profile;
+    try {
+      profile = await ref.read(myMobileProfileProvider.future);
+    } on Object {
+      return; // The error branch renders the server's reason.
+    }
+    if (mounted) {
+      _mobile.text = _storedMobile(profile);
+    }
+  }
+
   /// The stored number for this profile — the Saudi field for a Saudi national,
   /// the international field otherwise.
   String _storedMobile(UserProfileResponse profile) =>
       (profile.isSaudi ? profile.saudiMobile : profile.internationalMobile) ??
           '';
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _loadError = null;
-    });
-    try {
-      final profile = await ref.read(profileRepositoryProvider).getMyProfile();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _profile = profile;
-        _mobile.text = _storedMobile(profile);
-        _loading = false;
-      });
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      final l10n = AppL10n.of(context);
-      setState(() {
-        _loadError = failure.localizedMessage(l10n);
-        _loading = false;
-      });
-    }
-  }
-
   Future<void> _save() async {
-    final profile = _profile;
+    final profile = ref.read(myMobileProfileProvider).valueOrNull;
     if (profile == null || _formKey.currentState?.validate() != true) {
       return;
     }
@@ -114,7 +123,11 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
           );
       // The shared profile read is cached (not autoDispose), so a save that
       // does not invalidate it leaves every selector on the pre-save row.
-      ref.invalidate(myProfileProvider);
+      ref
+        ..invalidate(myMobileProfileProvider)
+        // Main's rule: anything that WRITES the profile must invalidate the
+        // shared cache, or every selector over it serves the pre-save row.
+        ..invalidate(myProfileProvider);
       if (!mounted) {
         return;
       }
@@ -168,15 +181,16 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
   }
 
   Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: SimfTokens.accent),
-      );
-    }
-    final profile = _profile;
-    if (_loadError != null || profile == null) {
-      return _buildLoadError(l10n);
-    }
+    return ref.watch(myMobileProfileProvider).when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: SimfTokens.accent),
+          ),
+          error: (error, _) => _buildLoadError(l10n, error),
+          data: (profile) => _form(l10n, profile),
+        );
+  }
+
+  Widget _form(AppL10n l10n, UserProfileResponse profile) {
     final stored = _storedMobile(profile);
     return Column(
       children: <Widget>[
@@ -261,7 +275,7 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
     );
   }
 
-  Widget _buildLoadError(AppL10n l10n) {
+  Widget _buildLoadError(AppL10n l10n, Object error) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space6),
@@ -269,13 +283,15 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              _loadError ?? l10n.profileLoadError,
+              error is ApiFailure
+                  ? error.localizedMessage(l10n)
+                  : l10n.profileLoadError,
               textAlign: TextAlign.center,
               style: const TextStyle(color: SimfTokens.txtSecondary),
             ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(
-              onPressed: () => unawaited(_load()),
+              onPressed: () => ref.invalidate(myMobileProfileProvider),
               child: Text(l10n.retryLabel),
             ),
           ],

@@ -1,4 +1,3 @@
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,6 +39,29 @@ enum _SummaryTab { keyPoints, recommendations, speakers }
 /// The summary is **Committee-generated** in the Control Panel (D-237/D-472) —
 /// this screen is a read-only consumer, so the gold button reveals the
 /// already-published text rather than triggering generation.
+///
+/// Route: `RouteNames.aiSummary`.
+/// Data: [programmeSessionsProvider], [sessionSummaryProvider],
+///       [sessionSummaryRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
+/// One session's AI summary, or **null when none is published yet** (a 404).
+///
+/// The fold-to-null shape: an unpublished summary is not a failure, and the
+/// screen shows the tabs with their empty note for it. Any other failure
+/// propagates to the retry surface.
+final sessionSummaryProvider =
+    FutureProvider.autoDispose.family<SessionSummary?, String>((ref, id) async {
+  try {
+    return await ref.watch(sessionSummaryRepositoryProvider).getSummary(id);
+  } on ApiFailure catch (failure) {
+    if (failure.httpStatus == 404) {
+      return null;
+    }
+    rethrow;
+  }
+});
+
 class AiSummaryScreen extends ConsumerStatefulWidget {
   const AiSummaryScreen({this.sessionId, super.key});
 
@@ -52,53 +74,25 @@ class AiSummaryScreen extends ConsumerStatefulWidget {
 class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
   String? _selectedId;
   SessionListItem? _selectedSession;
-  bool _loading = false;
-  bool _error = false;
-  SessionSummary? _summary;
   _SummaryTab _tab = _SummaryTab.keyPoints;
   bool _summaryExpanded = true;
 
-  @override
-  void initState() {
-    super.initState();
-    final id = widget.sessionId?.trim();
-    if (id != null && id.isNotEmpty) {
-      _selectedId = id;
-      unawaited(_load());
-    }
+  /// The summary request for the current selection.
+  ///
+  /// Nothing selected yet is DATA-null, not loading: the tabs render their
+  /// empty note rather than a spinner, which is what the hand-rolled
+  /// `_loading = false` initial value used to say.
+  AsyncValue<SessionSummary?> get _summaryAsync {
+    final id = _selectedId;
+    return id == null
+        ? const AsyncValue<SessionSummary?>.data(null)
+        : ref.watch(sessionSummaryProvider(id));
   }
 
-  Future<void> _load() async {
-    final id = _selectedId;
-    if (id == null) {
-      return;
-    }
-    setState(() {
-      _loading = true;
-      _error = false;
-    });
-    try {
-      final summary =
-          await ref.read(sessionSummaryRepositoryProvider).getSummary(id);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _summary = summary;
-        _loading = false;
-      });
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      // A 404 = no published summary yet → _summary stays null and the tabs +
-      // paragraph show the empty note; any other failure → error + retry.
-      setState(() {
-        _loading = false;
-        _error = failure.httpStatus != 404;
-      });
-    }
-  }
+  /// The loaded summary, or null while none is selected, still loading, or
+  /// none is published. A getter over the provider, so the three call sites
+  /// that read it did not have to change.
+  SessionSummary? get _summary => _summaryAsync.valueOrNull;
 
   /// Resolve the selected session (the passed id or the first) + its metadata,
   /// firing the summary load once. Runs after the programme list resolves.
@@ -111,11 +105,12 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
         return;
       }
       if (_selectedId == null) {
+        // No load to fire: `_summaryAsync` watches the id, so setting it IS
+        // the request.
         setState(() {
           _selectedSession = sessions.first;
           _selectedId = sessions.first.id;
         });
-        unawaited(_load());
       } else if (_selectedSession == null) {
         final match = sessions.where((s) => s.id == _selectedId);
         setState(() {
@@ -260,7 +255,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
 
   /// The active tab's content — bullets, the empty note, a loader, or retry.
   Widget _tabBody(AppL10n l10n, bool isArabic) {
-    if (_loading) {
+    if (_summaryAsync.isLoading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: SimfTokens.space4),
         child: Center(
@@ -268,11 +263,11 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
         ),
       );
     }
-    if (_error) {
+    if (_summaryAsync.hasError) {
       return SimfErrorState(
         message: l10n.aiSummaryError,
         retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+        onRetry: () => ref.invalidate(sessionSummaryProvider(_selectedId!)),
       );
     }
     final summary = _summary;

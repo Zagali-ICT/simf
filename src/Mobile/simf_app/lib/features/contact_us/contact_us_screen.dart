@@ -21,6 +21,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// The form posts to the new public `POST /app/contact-inquiry`; the info panel
 /// and social links read the app-lifetime [orgProfileProvider] (same data the
 /// About screen uses), so only the fields the admin actually set are shown.
+///
+/// Route: `RouteNames.contactUs`.
+/// Data: [contactUsRepositoryProvider], [orgProfileProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class ContactUsScreen extends ConsumerStatefulWidget {
   const ContactUsScreen({super.key});
 

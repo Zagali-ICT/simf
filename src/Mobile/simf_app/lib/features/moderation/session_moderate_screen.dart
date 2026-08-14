@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/moderation/data/moderation_models.dart';
 import 'package:simf_app/features/moderation/data/moderation_repository.dart';
 import 'package:simf_app/features/moderation/widgets/moderator_filter_bar.dart';
@@ -14,7 +15,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Moderator (محاور) per-session Q&A desk — Figma 1461:12227 (D-405 / D-509).
 ///
-/// Lists the question queue for [sessionId] with the five filter chips (الكل /
+/// Lists the question queue for `sessionId` with the five filter chips (الكل /
 /// جديد / الأسئلة المقبولة / تمت الإجابة / مرفوض) and the three per-question
 /// actions: **مرفوض** (reject → `hide`, the moderator's tool for an invalid /
 /// not-in-hall question — owner directive), **يتم الإجابة** (push on stage),
@@ -32,6 +33,55 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Authority is the per-session `SessionModerator` grant (or Administrator),
 /// **not** the mobile `AppRole.moderator` — a moderator without the grant gets
 /// a 403, shown as the "not a moderator for this session" state.
+///
+/// Route: `RouteNames.sessionModerate`.
+/// Data: [moderationRepositoryProvider], [moderatorQueuesProvider].
+/// Perf: lazy — builds children on demand (ListView.builder).
+/// The moderator's two server-owned buckets: the working desk (Approved +
+/// Answered) and the rejected (Hidden) rows.
+@immutable
+class ModeratorQueues {
+  const ModeratorQueues({required this.desk, required this.rejected});
+
+  const ModeratorQueues.empty()
+      : desk = const <ModeratorQuestion>[],
+        rejected = const <ModeratorQuestion>[];
+
+  final List<ModeratorQuestion> desk;
+  final List<ModeratorQuestion> rejected;
+}
+
+/// An `AsyncNotifier`, not a `FutureProvider`, because this desk is EDITED.
+///
+/// Every action is optimistic with rollback — approve, reject, restore,
+/// answered and reorder all swap the rows first and undo the swap if the write
+/// fails. A `FutureProvider` cannot be written to, and re-fetching after each
+/// action would defeat the point of the optimism. [apply] is the seam: it
+/// publishes a new value without a request, which is exactly what `setState`
+/// used to do on the two lists.
+class ModeratorQueuesNotifier
+    extends AutoDisposeFamilyAsyncNotifier<ModeratorQueues, String> {
+  @override
+  Future<ModeratorQueues> build(String sessionId) async {
+    final repo = ref.watch(moderationRepositoryProvider);
+    final desk = await repo.getQueue(sessionId);
+    final rejected = await repo.getQueue(
+      sessionId,
+      status: ModeratorQuestionStatus.hidden,
+    );
+    return ModeratorQueues(desk: desk, rejected: rejected);
+  }
+
+  /// Publishes an optimistic edit (or a rollback) without a fetch.
+  void apply(ModeratorQueues next) =>
+      state = AsyncValue<ModeratorQueues>.data(next);
+}
+
+final moderatorQueuesProvider = AsyncNotifierProvider.autoDispose
+    .family<ModeratorQueuesNotifier, ModeratorQueues, String>(
+  ModeratorQueuesNotifier.new,
+);
+
 class SessionModerateScreen extends ConsumerStatefulWidget {
   const SessionModerateScreen({required this.sessionId, super.key});
 
@@ -43,54 +93,31 @@ class SessionModerateScreen extends ConsumerStatefulWidget {
 }
 
 class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
-  bool _loading = true;
-  bool _error = false;
-  bool _forbidden = false;
-  // The working desk (Approved + Answered) and the rejected (Hidden) bucket —
-  // both server-owned, both refetched on every reload.
-  List<ModeratorQuestion> _desk = const <ModeratorQuestion>[];
-  List<ModeratorQuestion> _rejected = const <ModeratorQuestion>[];
   ModeratorQueueFilter _filter = ModeratorQueueFilter.all;
 
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
+  /// The current buckets, or empty while loading / on failure — where no
+  /// action is reachable anyway.
+  ModeratorQueues get _queues =>
+      ref.read(moderatorQueuesProvider(widget.sessionId)).valueOrNull ??
+      const ModeratorQueues.empty();
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-      _forbidden = false;
-    });
-    try {
-      final repo = ref.read(moderationRepositoryProvider);
-      final desk = await repo.getQueue(widget.sessionId);
-      final rejected = await repo.getQueue(
-        widget.sessionId,
-        status: ModeratorQuestionStatus.hidden,
-      );
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _desk = desk;
-        _rejected = rejected;
-        _loading = false;
-      });
-    } on ApiFailure catch (e) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        // 403 = not granted as a moderator for this session (D-405).
-        _forbidden = e.httpStatus == 403;
-        _error = e.httpStatus != 403;
-        _loading = false;
-      });
-    }
-  }
+  List<ModeratorQuestion> get _desk => _queues.desk;
+  List<ModeratorQuestion> get _rejected => _queues.rejected;
+
+  /// The optimistic swap the actions used to make with `setState`.
+  void _apply({
+    List<ModeratorQuestion>? desk,
+    List<ModeratorQuestion>? rejected,
+  }) =>
+      ref.read(moderatorQueuesProvider(widget.sessionId).notifier).apply(
+            ModeratorQueues(
+              desk: desk ?? _desk,
+              rejected: rejected ?? _rejected,
+            ),
+          );
+
+  Future<void> _refresh() =>
+      refreshAsync(ref, moderatorQueuesProvider(widget.sessionId).future);
 
   /// يتم الإجابة — push the question on stage. The server only pushes an
   /// APPROVED question, so a rejected / answered row is returned to Approved
@@ -115,13 +142,13 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
   Future<void> _reject(ModeratorQuestion q) async {
     final deskBefore = _desk;
     final rejectedBefore = _rejected;
-    setState(() {
-      _desk = _without(_desk, q.id);
-      _rejected = <ModeratorQuestion>[
+    _apply(
+      desk: _without(_desk, q.id),
+      rejected: <ModeratorQuestion>[
         ..._without(_rejected, q.id),
         q.withStatus(ModeratorQuestionStatus.hidden),
-      ];
-    });
+      ],
+    );
     final ok = await _act(
       () => ref.read(moderationRepositoryProvider).setHidden(
             widget.sessionId,
@@ -130,10 +157,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
           ),
     );
     if (!ok && mounted) {
-      setState(() {
-        _desk = deskBefore;
-        _rejected = rejectedBefore;
-      });
+      _apply(desk: deskBefore, rejected: rejectedBefore);
     }
   }
 
@@ -143,13 +167,13 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
   Future<bool> _restore(ModeratorQuestion q) async {
     final deskBefore = _desk;
     final rejectedBefore = _rejected;
-    setState(() {
-      _rejected = _without(_rejected, q.id);
-      _desk = <ModeratorQuestion>[
+    _apply(
+      rejected: _without(_rejected, q.id),
+      desk: <ModeratorQuestion>[
         ..._without(_desk, q.id),
         q.withStatus(ModeratorQuestionStatus.approved),
-      ];
-    });
+      ],
+    );
     final ok = await _act(
       () => ref.read(moderationRepositoryProvider).setHidden(
             widget.sessionId,
@@ -158,10 +182,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
           ),
     );
     if (!ok && mounted) {
-      setState(() {
-        _desk = deskBefore;
-        _rejected = rejectedBefore;
-      });
+      _apply(desk: deskBefore, rejected: rejectedBefore);
     }
     return ok;
   }
@@ -182,16 +203,16 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
   /// Writes the answered mark with an optimistic row swap + rollback.
   Future<bool> _setAnswered(ModeratorQuestion q, bool isAnswered) async {
     final deskBefore = _desk;
-    setState(() {
-      _desk = _replace(
+    _apply(
+      desk: _replace(
         _desk,
         q.withStatus(
           isAnswered
               ? ModeratorQuestionStatus.answered
               : ModeratorQuestionStatus.approved,
         ),
-      );
-    });
+      ),
+    );
     final ok = await _act(
       () => ref.read(moderationRepositoryProvider).setAnswered(
             widget.sessionId,
@@ -200,7 +221,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
           ),
     );
     if (!ok && mounted) {
-      setState(() => _desk = deskBefore);
+      _apply(desk: deskBefore);
     }
     return ok;
   }
@@ -252,7 +273,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
     }
 
     final before = _desk;
-    setState(() => _desk = next);
+    _apply(desk: next);
     try {
       await ref.read(moderationRepositoryProvider).reorder(
             widget.sessionId,
@@ -262,7 +283,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
       if (!mounted) {
         return;
       }
-      setState(() => _desk = before);
+      _apply(desk: before);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppL10n.of(context).moderatorReorderFailed)),
       );
@@ -296,7 +317,9 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
     final l10n = AppL10n.of(context);
     try {
       await action();
-      await _load();
+      // The optimistic swap covers the window until this lands; the server
+      // stays the source of truth for the final order and statuses.
+      await _refresh();
       return true;
     } on ApiFailure {
       if (mounted) {
@@ -330,33 +353,40 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
   }
 
   Widget _body(AppL10n l10n) {
-    if (_loading) {
-      return const Center(
+    return ref.watch(moderatorQueuesProvider(widget.sessionId)).when(
+      loading: () => const Center(
         child: CircularProgressIndicator(color: SimfTokens.accent),
-      );
-    }
-    // The 403 branch too: a moderator assigned to the session after this
-    // screen opened would otherwise be stuck on it with no way to re-check.
-    if (_forbidden) {
-      return SimfRefreshableMessage(
-        onRefresh: _load,
-        child: SimfEmptyState(
-          icon: Icons.lock_outline,
-          message: l10n.moderatorForbidden,
-        ),
-      );
-    }
-    if (_error) {
-      return SimfRefreshableMessage(
-        onRefresh: _load,
-        child: SimfErrorState(
-          message: l10n.moderatorError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => unawaited(_load()),
-        ),
-      );
-    }
-    final rows = filterModeratorQueue(_desk, _filter, rejected: _rejected);
+      ),
+      error: (error, _) {
+        // The 403 branch too: a moderator assigned to the session after this
+        // screen opened would otherwise be stuck on it with no way to re-check
+        // (D-405), which is why BOTH failures stay refreshable.
+        final forbidden = error is ApiFailure && error.httpStatus == 403;
+        return SimfRefreshableMessage(
+          onRefresh: _refresh,
+          child: forbidden
+              ? SimfEmptyState(
+                  icon: Icons.lock_outline,
+                  message: l10n.moderatorForbidden,
+                )
+              : SimfErrorState(
+                  message: l10n.moderatorError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () =>
+                      ref.invalidate(moderatorQueuesProvider(widget.sessionId)),
+                ),
+        );
+      },
+      data: (queues) => _buildDesk(l10n, queues),
+    );
+  }
+
+  Widget _buildDesk(AppL10n l10n, ModeratorQueues queues) {
+    final rows = filterModeratorQueue(
+      queues.desk,
+      _filter,
+      rejected: queues.rejected,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -373,7 +403,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
                   message: l10n.moderatorEmpty,
                 )
               : SimfPullToRefresh(
-                  onRefresh: _load,
+                  onRefresh: _refresh,
                   // FR-MOD-003 — the queue the moderator reads on stage is
                   // now orderable from the desk itself (the reorder endpoint
                   // had no interface at all). Handles are built per card, so

@@ -44,10 +44,15 @@ class _FakeNotificationsRepository implements NotificationsRepository {
   _FakeNotificationsRepository({
     this.items = const <NotificationItem>[],
     this.fail = false,
+    this.failMarkAll = false,
   });
 
   List<NotificationItem> items;
   bool fail;
+
+  /// Lets a test reach a genuinely UNREAD row: the inbox marks everything read
+  /// on open (#13), so without a failing mark-all there is nothing left to tap.
+  bool failMarkAll;
   int listCalls = 0;
   int markAllCalls = 0;
   final List<String> readIds = <String>[];
@@ -74,6 +79,9 @@ class _FakeNotificationsRepository implements NotificationsRepository {
   @override
   Future<bool> markAllRead() async {
     markAllCalls++;
+    if (failMarkAll) {
+      throw const ApiFailure(code: ApiErrorCodes.clientNetwork, message: 'x');
+    }
     return true;
   }
 }
@@ -192,6 +200,31 @@ void main() {
       await _pump(tester, repo: repo);
       expect(repo.markAllCalls, 0);
       expect(find.text('Mark all read'), findsNothing);
+    });
+
+    testWidgets('tapping an unread item flips it read WITHOUT re-fetching',
+        (tester) async {
+      // The inbox marks everything read on open (#13), so a failing mark-all is
+      // how a genuinely unread row survives to be tapped. The point is the
+      // second assertion: the row flips from the screen's own read overlay and
+      // the list is NOT re-fetched to get there — a reload per tap is exactly
+      // what that overlay exists to avoid.
+      final repo = _FakeNotificationsRepository(
+        items: <NotificationItem>[_item(id: 'fresh', title: 'Fresh one')],
+        failMarkAll: true,
+      );
+      await _pump(tester, repo: repo);
+      final listCallsAfterOpen = repo.listCalls;
+
+      await tester.tap(find.text('Fresh one'));
+      await tester.pumpAndSettle();
+
+      expect(repo.readIds, contains('fresh'));
+      expect(
+        repo.listCalls,
+        listCallsAfterOpen,
+        reason: 'marking one item read must not re-fetch the whole list',
+      );
     });
 
     testWidgets(

@@ -100,6 +100,7 @@ Future<void> _pump(
   WidgetTester tester, {
   required VenueMapRepository repo,
   Locale locale = const Locale('en'),
+  String? targetBoothId,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -118,7 +119,7 @@ Future<void> _pump(
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const VenueMapScreen(),
+        home: VenueMapScreen(targetBoothId: targetBoothId),
       ),
     ),
   );
@@ -278,6 +279,40 @@ void main() {
         Directionality.of(tester.element(find.text('القاعة أ'))),
         TextDirection.ltr,
       );
+    });
+
+    testWidgets('#9 — a pushed targetBoothId selects that booth on open',
+        (tester) async {
+      // The map is pushed with a booth id from the booth list's "أرشدني" CTA.
+      // The selection is what opens the info card, and it must happen once the
+      // nodes have loaded — the screen cannot know which node to centre on
+      // before then.
+      await _pump(
+        tester,
+        repo: _FakeVenueMapRepository(
+          nodes: const <VenueMapNode>[_boothNode, _farNode],
+          booths: const <BoothSummary>[_booth],
+        ),
+        targetBoothId: 'b1',
+      );
+
+      // The info card for that booth is open without the user tapping. The
+      // unselected case below finds NONE, so any match is the card.
+      expect(find.text('SAMI'), findsWidgets);
+    });
+
+    testWidgets('an unknown targetBoothId selects nothing, and does not throw',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeVenueMapRepository(
+          nodes: const <VenueMapNode>[_boothNode, _farNode],
+          booths: const <BoothSummary>[_booth],
+        ),
+        targetBoothId: 'does-not-exist',
+      );
+
+      expect(find.text('SAMI'), findsNothing);
     });
   });
 }

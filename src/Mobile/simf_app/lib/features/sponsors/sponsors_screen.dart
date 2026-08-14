@@ -26,6 +26,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// is the real `SponsorLogo` asset (D-357) served anonymously at
 /// `{base}/app/assets/SponsorLogo/{id}/image`, with the acronym initials as the
 /// fallback. The loading / error / empty / RTL states are preserved.
+///
+/// Route: `RouteNames.sponsors`.
+/// Data: [simfDataConfigProvider], [sponsorGroupsProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class SponsorsScreen extends ConsumerWidget {
   const SponsorsScreen({super.key});
 

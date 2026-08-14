@@ -29,6 +29,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Collects the emailed OTP + a new password, calls `POST /app/auth/reset-
 /// password`, then returns to sign-in with the email pre-filled. The email is
 /// carried in from the forgot screen.
+///
+/// Route: `RouteNames.resetPassword`.
+/// Data: [authControllerProvider], [authRepositoryProvider],
+///       [simfPrefsStorageProvider].
+/// Perf: no list — a single-screen layout.
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({required this.email, super.key});
 

@@ -41,6 +41,13 @@ final _moreProfileProvider =
 /// static version line. Unbuilt entries (Forum guide / FAQ / presentations /
 /// Contact us) route to the ComingSoon placeholder; اكتشف السعودية opens
 /// VisitSaudi; the اللغة row shows the current language and toggles it (D-464).
+///
+/// Route: `RouteNames.more`.
+/// Data: [_moreProfileProvider], [authControllerProvider],
+///       [installedAppVersionProvider], [localeControllerProvider],
+///       [myAreaRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
 
