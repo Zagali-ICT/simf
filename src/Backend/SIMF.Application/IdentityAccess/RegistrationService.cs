@@ -7,6 +7,7 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Security;
 using SIMF.Application.Notifications;
 using SIMF.Application.Operations.Abstractions;
 using SIMF.Common;
@@ -563,7 +564,5 @@ public sealed class RegistrationService(
 
     /// <summary>Compares the codes in constant time, so no timing side channel leaks.</summary>
     private static bool CodesMatch(string stored, string supplied) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored),
-            Encoding.UTF8.GetBytes(supplied));
+        ConstantTime.Matches(stored, supplied);
 }

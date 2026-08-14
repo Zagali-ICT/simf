@@ -10,6 +10,7 @@ using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Security;
 using SIMF.Common;
 using SIMF.Common.Badges;
 using SIMF.Common.Enums;
@@ -612,9 +613,7 @@ internal sealed class BadgeAuthService(
             "رمز التحقق غير صالح.");
 
     private static bool CodesMatch(string stored, string supplied) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored),
-            Encoding.UTF8.GetBytes(supplied ?? string.Empty));
+        ConstantTime.Matches(stored, supplied);
 
     private Task<EmailMessage> BuildActivationEmailAsync(
         string email, string code, CancellationToken cancellationToken) =>

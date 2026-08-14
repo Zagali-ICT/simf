@@ -11,6 +11,7 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Security;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -763,9 +764,7 @@ internal sealed class DeviceKeyService(
     /// <summary>Compares the stored + supplied code hashes in constant time,
     /// so no timing side channel leaks.</summary>
     private static bool CodesMatch(string stored, string supplied) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored),
-            Encoding.UTF8.GetBytes(supplied));
+        ConstantTime.Matches(stored, supplied);
 
     private static DeviceKeyEntry ToEntry(DeviceKey deviceKey) =>
         new(deviceKey.Id, deviceKey.UserId, deviceKey.Algorithm,

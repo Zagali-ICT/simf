@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Security;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Common.Options;
@@ -322,8 +323,7 @@ public sealed class SignInService(
             && totp.TimeStep <= lastStep;
         if (!totp.IsValid || isReplay)
         {
-            await secondFactorTokenRepository.IncrementAttemptCountAsync(
-                ticket.Id, cancellationToken);
+            await CountFailedTicketAttemptAsync(ticket.Id, cancellationToken);
             await AuditAsync(AuditEvents.SignInSecondFactorFailed, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthTotpInvalid,
                 cancellationToken: cancellationToken);
@@ -382,8 +382,7 @@ public sealed class SignInService(
             // NOT also drive the account-level lockout counter, or a user mistyping
             // their emergency fallback would lock themselves out of the very fallback
             // they depend on.
-            await secondFactorTokenRepository.IncrementAttemptCountAsync(
-                ticket.Id, cancellationToken);
+            await CountFailedTicketAttemptAsync(ticket.Id, cancellationToken);
             await AuditAsync(AuditEvents.TotpRecoveryCodeFailed, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthRecoveryCodeInvalid,
                 cancellationToken: cancellationToken);
@@ -448,8 +447,7 @@ public sealed class SignInService(
         }
         catch (ApiException)
         {
-            await secondFactorTokenRepository.IncrementAttemptCountAsync(
-                ticket.Id, cancellationToken);
+            await CountFailedTicketAttemptAsync(ticket.Id, cancellationToken);
             throw;
         }
 
@@ -505,8 +503,7 @@ public sealed class SignInService(
 
         if (!CodesMatch(code.CodeHash, AccountCodeHasher.Hash(request.Code)))
         {
-            await secondFactorTokenRepository.IncrementAttemptCountAsync(
-                ticket.Id, cancellationToken);
+            await CountFailedTicketAttemptAsync(ticket.Id, cancellationToken);
             await AuditAsync(AuditEvents.SignInSecondFactorFailed, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthOtpInvalid,
                 cancellationToken: cancellationToken);
@@ -917,9 +914,27 @@ public sealed class SignInService(
             },
             cancellationToken);
 
+    /// <summary>Counts one wrong second-factor attempt against the ticket and burns
+    /// the ticket once its budget is spent.
+    ///
+    /// <para>The decision is taken on the count the atomic increment returns, not on
+    /// the <c>AttemptCount</c> read when the ticket was fetched: that value predates
+    /// this guess, so a simultaneous burst would all pass the fetch-time cap check
+    /// and keep spending guesses. Burning the ticket is what actually bounds the
+    /// budget, because the cap check alone is a check-then-act.</para></summary>
+    private async Task CountFailedTicketAttemptAsync(
+        Guid ticketId, CancellationToken cancellationToken)
+    {
+        var attempts = await secondFactorTokenRepository.IncrementAttemptCountAsync(
+            ticketId, cancellationToken);
+        if (attempts >= MaxSecondFactorAttempts)
+        {
+            await secondFactorTokenRepository.TryConsumeAsync(
+                ticketId, timeProvider.SimfNow(), cancellationToken);
+        }
+    }
+
     /// <summary>Compares the codes in constant time, so no timing side channel leaks.</summary>
     private static bool CodesMatch(string stored, string supplied) =>
-        CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(stored),
-            Encoding.UTF8.GetBytes(supplied));
+        ConstantTime.Matches(stored, supplied);
 }
