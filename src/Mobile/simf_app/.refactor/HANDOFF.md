@@ -61,7 +61,7 @@ compositions replaced with the shared widget, one widget moved to its own file.
 
 ### Three defects found and fixed while executing
 
-### Two defects found and fixed while executing
+### Defects found and fixed while executing
 
 * **`tool/conventions` passed vacuously in any git worktree.** Its root walk-up
   tested `Directory('.git').existsSync()`, and in a worktree `.git` is a FILE.
