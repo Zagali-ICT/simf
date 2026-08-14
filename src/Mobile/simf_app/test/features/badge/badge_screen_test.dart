@@ -441,4 +441,72 @@ void main() {
       expect(maskedBadgeId(''), '');
     });
   });
+
+  // Owner rule: every data page pulls to refresh (CLAUDE.md section 13.6).
+  // The badge shipped with no refresh hook on ANY branch.
+  group('BadgeScreen pull-to-refresh', () {
+    testWidgets('pulling the issued badge re-fetches the dashboard',
+        (tester) async {
+      final repo = _FakeMyAreaRepository(dashboard: _dashboard(qrId: 'ABC123'));
+      await _pump(tester, repo: repo);
+      expect(repo.dashboardCalls, 1);
+
+      await tester.fling(find.byType(QrImageView), const Offset(0, 320), 1000);
+      await tester.pumpAndSettle();
+
+      expect(repo.dashboardCalls, 2);
+    });
+
+    testWidgets(
+        'a pending account pulls to discover approval, without restarting',
+        (tester) async {
+      // initState deliberately does NOT call the Approved-only dashboard while
+      // unapproved (it would 403), so before this the ONLY way out of the
+      // pending state was to restart the app.
+      final repo = _FakeMyAreaRepository(dashboard: _dashboard(qrId: 'ABC123'));
+      await _pump(
+        tester,
+        repo: repo,
+        controller: _AuthController(RegistrationStatus.pending),
+      );
+      expect(repo.dashboardCalls, 0);
+      expect(find.byType(QrImageView), findsNothing);
+
+      await tester.fling(
+        find.byType(SingleChildScrollView),
+        const Offset(0, 320),
+        1000,
+      );
+      await tester.pumpAndSettle();
+
+      expect(repo.dashboardCalls, 1);
+      expect(find.byType(QrImageView), findsOneWidget);
+    });
+
+    testWidgets('the load-error surface is refreshable', (tester) async {
+      final repo = _FakeMyAreaRepository(fail: true);
+      await _pump(tester, repo: repo);
+      expect(repo.dashboardCalls, 1);
+
+      await tester.fling(
+        find.byType(SingleChildScrollView),
+        const Offset(0, 320),
+        1000,
+      );
+      await tester.pumpAndSettle();
+
+      expect(repo.dashboardCalls, 2);
+    });
+
+    testWidgets('the signed-out guest prompt is NOT a refresh surface',
+        (tester) async {
+      // Nothing to re-fetch without an account, and the CTA is the way forward
+      // here - a pull would only fire a 401.
+      final repo = _FakeMyAreaRepository(dashboard: _dashboard(qrId: 'ABC123'));
+      await _pump(tester, repo: repo, controller: _SignedOutAuthController());
+
+      expect(find.byType(RefreshIndicator), findsNothing);
+      expect(repo.dashboardCalls, 0);
+    });
+  });
 }

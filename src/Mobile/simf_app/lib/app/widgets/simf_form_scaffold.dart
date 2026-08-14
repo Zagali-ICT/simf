@@ -98,7 +98,7 @@ class SimfFormScaffold extends ConsumerWidget {
           child: Text(
             l10n.signInForumTitle,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: SimfTokens.text24,
               fontWeight: FontWeight.w500,
               color: SimfTokens.surface,
             ),

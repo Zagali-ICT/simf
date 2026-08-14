@@ -12,6 +12,14 @@ const Color otpCodeBoxBorder = SimfTokens.navyDisabledBorder;
 /// [SimfTokens.mutedBlue] under the screen-local name its callers already use.
 const Color otpMutedBlue = SimfTokens.mutedBlue;
 
+/// The capture field beneath the boxes must take no space and show nothing:
+/// the digits the user types are drawn by the boxes above it, and the field
+/// exists only so the platform keyboard, autofill and `tester.enterText` all
+/// keep working. Deliberately NOT a `SimfTokens` type-scale entry — this is
+/// "as close to invisible as a font size gets", not a design size, and a token
+/// would claim it was one.
+const double _invisibleCaptureFontSize = 1;
+
 /// Six segmented code boxes rendered over one invisible capture field — the
 /// KSA-Project OTP entry (Figma 505:987). Tapping anywhere on the row focuses
 /// the field natively (so `tester.enterText` keeps working); the box at the
@@ -51,8 +59,10 @@ class OtpCodeBoxes extends StatelessWidget {
               autocorrect: false,
               showCursor: false,
               enableInteractiveSelection: false,
-              style:
-                  const TextStyle(color: SimfTokens.transparent, fontSize: 1),
+              style: const TextStyle(
+                color: SimfTokens.transparent,
+                fontSize: _invisibleCaptureFontSize,
+              ),
               inputFormatters: <TextInputFormatter>[
                 FilteringTextInputFormatter.digitsOnly,
               ],

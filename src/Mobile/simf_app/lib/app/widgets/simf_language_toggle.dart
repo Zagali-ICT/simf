@@ -44,11 +44,7 @@ class SimfLanguageToggle extends StatelessWidget {
     );
     final text = Text(
       label,
-      style: const TextStyle(
-        color: SimfTokens.surface,
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-      ),
+      style: SimfTokens.labelWhiteSemibold10,
     );
     return Semantics(
       button: true,
