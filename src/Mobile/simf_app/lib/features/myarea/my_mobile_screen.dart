@@ -33,8 +33,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// The number itself always renders LTR.
 ///
 /// Route: `RouteNames.myMobile`.
-/// Data: [myMobileProfileProvider]; the save also invalidates the shared
-///       [myProfileProvider].
+/// Data: [myMobileProfileProvider], [profileRepositoryProvider].
 /// Perf: no list — a single-screen layout.
 /// The signed-in user's profile, for the stored mobile number.
 /// This screen's OWN profile read — deliberately not the shared
