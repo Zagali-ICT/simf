@@ -85,12 +85,26 @@ Build, Test & Publish ──▶ Deploy to IIS
 
 ### Choosing which environments a run deploys to
 
-Two tick boxes in the **Run pipeline** dialog, both **on** by default:
+| Parameter | Label | Default |
+|-----------|-------|---------|
+| `deployPreProduction` | Deploy to Pre-production (NO agent yet — deploys to PRODUCTION) | **`false`** |
+| `deployProduction` | Deploy to Production | `true` |
 
-| Parameter | Label | Effect when unticked |
-|-----------|-------|----------------------|
-| `deployPreProduction` | Deploy to Pre-production | The pre-production job is omitted |
-| `deployProduction` | Deploy to Production | The production job is omitted |
+> ### ⚠️ There is only one agent, and it is on production (D-894)
+>
+> The `Default` pool holds a single agent — `server` on `WIN-MAP9VAMAU4Q`, the
+> **production** box (`SIMF APP 01`). Both deployment jobs draw from that pool,
+> and neither environment has a VM resource to bind it elsewhere (D-893), so
+> **both jobs run on production**.
+>
+> `DeployPreProduction` therefore rehearses nothing. It deploys the same four
+> packages to the live production server a second time, stopping and restarting
+> every site again. Left on, every run took production down twice — which is why
+> it now defaults to **off**.
+>
+> **To get a real pre-production deploy, install an Azure Pipelines agent on the
+> pre-production server.** Until then, ticking that box deploys to production
+> whatever its label says.
 
 And three that are **off** by default:
 
