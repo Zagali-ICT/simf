@@ -236,5 +236,35 @@ void main() {
       ]);
       expect(find.text('Could not load the sponsors.'), findsOneWidget);
     });
+
+    // The error and empty states had NO coverage - not a golden, not a widget
+    // test - which is how they came to be the last two hand-nested copies of
+    // SimfRefreshableMessage. These pin both the surface and the pull-to-retry
+    // wrapper, so the shared widget cannot be swapped back out unnoticed.
+    testWidgets('a failed read shows the error state with a retry', (tester) async {
+      await _pump(tester, <Override>[
+        sponsorGroupsProvider.overrideWith((ref) async {
+          throw Exception('wire down');
+        }),
+      ]);
+
+      expect(find.text('Could not load the sponsors.'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Retry'), findsOneWidget);
+      // The state stays pull-to-retryable, which is the whole point of the
+      // wrapper: a viewport-tall scrollable under a RefreshIndicator.
+      expect(find.byType(RefreshIndicator), findsOneWidget);
+    });
+
+    testWidgets('no sponsors shows the empty state, still refreshable',
+        (tester) async {
+      await _pump(tester, <Override>[
+        sponsorGroupsProvider.overrideWith(
+          (ref) async => const <SponsorTierGroup>[],
+        ),
+      ]);
+
+      expect(find.text('No sponsors'), findsOneWidget);
+      expect(find.byType(RefreshIndicator), findsOneWidget);
+    });
   });
 }

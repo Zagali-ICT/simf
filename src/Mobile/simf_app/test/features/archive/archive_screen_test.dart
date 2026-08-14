@@ -250,6 +250,9 @@ void main() {
         ],
       );
       expect(find.text('No past editions'), findsOneWidget);
+      // Still pull-to-retryable: the shared wrapper hosts the short state in a
+      // viewport-tall scrollable under a RefreshIndicator.
+      expect(find.byType(RefreshIndicator), findsOneWidget);
     });
 
     testWidgets('error shows the error state', (tester) async {
@@ -261,6 +264,8 @@ void main() {
         ],
       );
       expect(find.text('Could not load the archive.'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Retry'), findsOneWidget);
+      expect(find.byType(RefreshIndicator), findsOneWidget);
     });
   });
 
