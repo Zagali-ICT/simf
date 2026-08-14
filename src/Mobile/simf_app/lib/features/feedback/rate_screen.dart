@@ -207,128 +207,136 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     // D-713 (item 8) — the "watched at" context header on a per-session rating.
     final watchedSession = form.localizedTargetName(isArabic: isArabic);
     if (watchedSession != null) {
-      children.add(
-        RateNavyNoteChip(
-          icon: Icons.event_available_outlined,
-          text: l10n.rateWatchedAt(
-            watchedSession,
-            _watchedWhen(isArabic, form.targetStart),
+      children
+        ..add(
+          RateNavyNoteChip(
+            icon: Icons.event_available_outlined,
+            text: l10n.rateWatchedAt(
+              watchedSession,
+              _watchedWhen(isArabic, form.targetStart),
+            ),
           ),
-        ),
-      );
-      children.add(const SizedBox(height: SimfTokens.space5));
+        )
+        ..add(const SizedBox(height: SimfTokens.space5));
     }
 
     if (form.hasOverallStars) {
-      children.add(
-        Column(
-          children: <Widget>[
-            Text(
-              l10n.rateKicker,
-              textAlign: TextAlign.center,
-              style: SimfTokens.bodyBeigeMd,
-            ),
-            const SizedBox(height: SimfTokens.space6),
-            Text(
-              l10n.rateLead,
-              textAlign: TextAlign.center,
-              style: SimfTokens.labelWhiteBoldTitleTall,
-            ),
-            const SizedBox(height: SimfTokens.space6),
-            StarRow(
-              value: _overall,
-              size: SimfTokens.rateScreenSize,
-              gap: SimfTokens.space3,
-              onChanged: (v) => setState(() => _overall = v),
-            ),
-            const SizedBox(height: SimfTokens.space5),
-            if (_overall < 1)
-              const SizedBox(height: SimfTokens.space5)
-            else
+      children
+        ..add(
+          Column(
+            children: <Widget>[
               Text(
-                l10n.rateScoreSummary(_overall),
+                l10n.rateKicker,
                 textAlign: TextAlign.center,
                 style: SimfTokens.bodyBeigeMd,
               ),
-          ],
-        ),
-      );
-      children.add(const SizedBox(height: SimfTokens.space5));
+              const SizedBox(height: SimfTokens.space6),
+              Text(
+                l10n.rateLead,
+                textAlign: TextAlign.center,
+                style: SimfTokens.labelWhiteBoldTitleTall,
+              ),
+              const SizedBox(height: SimfTokens.space6),
+              StarRow(
+                value: _overall,
+                size: SimfTokens.rateScreenSize,
+                gap: SimfTokens.space3,
+                onChanged: (v) => setState(() => _overall = v),
+              ),
+              const SizedBox(height: SimfTokens.space5),
+              if (_overall < 1)
+                const SizedBox(height: SimfTokens.space5)
+              else
+                Text(
+                  l10n.rateScoreSummary(_overall),
+                  textAlign: TextAlign.center,
+                  style: SimfTokens.bodyBeigeMd,
+                ),
+            ],
+          ),
+        )
+        ..add(const SizedBox(height: SimfTokens.space5));
     }
 
     // Grouped questions — a section per group.
     for (final group in form.groups) {
-      children.add(
-          SimfSectionHeader(title: group.localizedName(isArabic: isArabic)),);
-      children.add(const SizedBox(height: SimfTokens.space3));
+      children
+        ..add(
+            SimfSectionHeader(title: group.localizedName(isArabic: isArabic)),)
+        ..add(const SizedBox(height: SimfTokens.space3));
       for (final q in group.questions) {
-        children.add(_questionRow(isArabic, q));
-        children.add(const SizedBox(height: SimfTokens.space4));
+        children
+          ..add(_questionRow(isArabic, q))
+          ..add(const SizedBox(height: SimfTokens.space4));
       }
       children.add(const SizedBox(height: SimfTokens.space3));
     }
 
     // Flat (ungrouped) questions — under the generic "Rate the elements" title.
     if (form.ungroupedQuestions.isNotEmpty) {
-      children.add(SimfSectionHeader(title: l10n.rateElementsTitle));
-      children.add(const SizedBox(height: SimfTokens.space3));
+      children
+        ..add(SimfSectionHeader(title: l10n.rateElementsTitle))
+        ..add(const SizedBox(height: SimfTokens.space3));
       for (final q in form.ungroupedQuestions) {
-        children.add(_questionRow(isArabic, q));
-        children.add(const SizedBox(height: SimfTokens.space4));
+        children
+          ..add(_questionRow(isArabic, q))
+          ..add(const SizedBox(height: SimfTokens.space4));
       }
     }
 
     if (form.allowComment) {
       final commentLabel = form.localizedCommentLabel(isArabic: isArabic) ??
           l10n.rateCommentLabel;
-      children.add(const SizedBox(height: SimfTokens.space5));
-      children.add(SimfSectionHeader(title: commentLabel));
-      children.add(const SizedBox(height: SimfTokens.space2));
-      children.add(
-        TextField(
-          controller: _comment,
-          maxLength: FieldLimits.feedbackComment,
-          maxLines: 4,
-          minLines: 4,
-          style: SimfTokens.bodyWhiteMd,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: SimfTokens.navyDeep,
-            hintText: l10n.rateCommentHint,
-            hintStyle: SimfTokens.labelBeigeSm,
-            counterText: '',
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: SimfTokens.space3,
-              vertical: SimfTokens.space3,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(SimfTokens.radius),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(SimfTokens.radius),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(SimfTokens.radius),
-              borderSide: const BorderSide(color: SimfTokens.accent),
+      children
+        ..add(const SizedBox(height: SimfTokens.space5))
+        ..add(SimfSectionHeader(title: commentLabel))
+        ..add(const SizedBox(height: SimfTokens.space2))
+        ..add(
+          TextField(
+            controller: _comment,
+            maxLength: FieldLimits.feedbackComment,
+            maxLines: 4,
+            minLines: 4,
+            style: SimfTokens.bodyWhiteMd,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: SimfTokens.navyDeep,
+              hintText: l10n.rateCommentHint,
+              hintStyle: SimfTokens.labelBeigeSm,
+              counterText: '',
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: SimfTokens.space3,
+                vertical: SimfTokens.space3,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(SimfTokens.radius),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(SimfTokens.radius),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(SimfTokens.radius),
+                borderSide: const BorderSide(color: SimfTokens.accent),
+              ),
             ),
           ),
-        ),
-      );
+        );
     }
 
     children.add(const SizedBox(height: SimfTokens.space5));
     // Owner 2026-07-19 — when the visitor did not attend what this rates, keep
     // the form visible but leave submit disabled (the server also 403s).
     if (!form.isEligible) {
-      children.add(
-        RateNavyNoteChip(
-          icon: Icons.info_outline,
-          text: l10n.rateAttendRequired,
-        ),
-      );
-      children.add(const SizedBox(height: SimfTokens.space3));
+      children
+        ..add(
+          RateNavyNoteChip(
+            icon: Icons.info_outline,
+            text: l10n.rateAttendRequired,
+          ),
+        )
+        ..add(const SizedBox(height: SimfTokens.space3));
     }
     children.add(
       RateGoldButton(

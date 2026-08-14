@@ -174,7 +174,7 @@ final referenceNumberProvider =
 /// call — a guest can never be VIP — and (b) is **not** autoDispose, so the
 /// flag is cached across speaker-profile opens (fetched once, NOT re-fetched on
 /// every open); browsing many speakers therefore can't drain the auth budget
-/// for co-located attendees behind one venue IP. It [watch]es the auth
+/// for co-located attendees behind one venue IP. It `watch`es the auth
 /// controller, so it re-fetches on any auth transition (sign-in/out, token
 /// refresh/reload, or the D-563 stamp-roll + token revoke that follows an admin
 /// account-type change) — the cache tracks the live tier and never goes stale.

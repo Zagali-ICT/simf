@@ -43,10 +43,11 @@ void main() {
 
   group('notification', () {
     test('fires on a real change', () {
-      state.nationalityCode = 'SA';
-      state.gender = AppGender.male;
-      state.docType = VisitorDocType.passport;
-      state.triedSubmit = true;
+      state
+        ..nationalityCode = 'SA'
+        ..gender = AppGender.male
+        ..docType = VisitorDocType.passport
+        ..triedSubmit = true;
       expect(notifications, 4);
     });
 
@@ -54,11 +55,12 @@ void main() {
     // from pickers that re-emit the current value. Without this guard, opening
     // a picker and choosing the same entry would rebuild the form.
     test('does NOT fire when the value is unchanged', () {
-      state.nationalityCode = 'SA';
-      state.nationalityCode = 'SA';
-      state.gender = AppGender.unspecified;
-      state.docType = VisitorDocType.iqama;
-      state.triedSubmit = false;
+      state
+        ..nationalityCode = 'SA'
+        ..nationalityCode = 'SA'
+        ..gender = AppGender.unspecified
+        ..docType = VisitorDocType.iqama
+        ..triedSubmit = false;
       expect(notifications, 1);
     });
 
@@ -82,6 +84,9 @@ void main() {
         ..docType = VisitorDocType.passport
         ..triedSubmit = true;
 
+      // Cascading this onto the arrange block above would merge arrange and
+      // act into one statement, which is the opposite of what the test says.
+      // ignore: cascade_invocations
       state.resetForNextEntry();
 
       expect(state.nationalityCode, isNull);
@@ -95,12 +100,13 @@ void main() {
     // The walk-in desk registers visitor after visitor; re-fetching the country
     // list between each would be wasteful, so the lookups deliberately survive.
     test('KEEPS the loaded lookups', () {
-      state.setLookups(
-        countries: const <CountryItem>[
-          CountryItem(code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية'),
-        ],
-      );
-      state.resetForNextEntry();
+      state
+        ..setLookups(
+          countries: const <CountryItem>[
+            CountryItem(code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية'),
+          ],
+        )
+        ..resetForNextEntry();
       expect(state.countries, hasLength(1));
     });
   });

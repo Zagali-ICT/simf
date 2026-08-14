@@ -12,7 +12,7 @@ import 'package:simf_app/core/session/session_guard.dart' show SessionGuard;
 ///
 /// The guard reads [lastActivity] on its periodic tick; nothing rebuilds when
 /// it is marked, so this is a plain object behind a [Provider], not a Notifier.
-/// A [now] hook keeps it deterministic in tests.
+/// A `now` hook keeps it deterministic in tests.
 ///
 /// Known limitation (accepted, low): the app-wide signal is a pointer-down
 /// [Listener], so a user who ONLY types on the soft keyboard for longer than

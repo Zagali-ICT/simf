@@ -89,8 +89,9 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
     if (widget.active && !_controller.isAnimating) {
       _controller.repeat(reverse: true);
     } else if (!widget.active && _controller.isAnimating) {
-      _controller.stop();
-      _controller.value = 0;
+      _controller
+        ..stop()
+        ..value = 0;
     }
   }
 
@@ -179,7 +180,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
   }
 
   /// The glowing gold scan line — swept vertically across the window by the
-  /// controller when [active], otherwise pinned at the design position.
+  /// controller when `active`, otherwise pinned at the design position.
   Widget _buildScanLine(double windowHeight) {
     // Sweep between a top and bottom margin, keeping the line clear of the
     // corner brackets.

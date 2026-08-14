@@ -677,7 +677,7 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
 ///
 /// The redirect logic implements the auth gate (SIMF-MAA-001 §8): a request for
 /// a protected route while signed out gets redirected to sign-in. The router
-/// refreshes on every auth-state change ([refreshListenable]) so the gate
+/// refreshes on every auth-state change (`refreshListenable`) so the gate
 /// re-runs when the cold-start restore resolves or the session ends.
 GoRouter buildRouter(Ref ref) {
   final authRefresh = _AuthRefreshNotifier(ref);

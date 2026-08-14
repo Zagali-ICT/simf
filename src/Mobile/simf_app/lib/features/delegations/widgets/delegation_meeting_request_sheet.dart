@@ -452,7 +452,7 @@ class _DelegationMeetingRequestSheetState
       );
 
   /// The bilateral delegation picker — a searchable list of invited delegations
-  /// (flag + country name + member count). Shown only when [country] is null.
+  /// (flag + country name + member count). Shown only when `country` is null.
   Widget _delegationPicker(AppL10n l10n, bool isArabic) {
     if (!_delegationsLoaded) {
       return const Align(

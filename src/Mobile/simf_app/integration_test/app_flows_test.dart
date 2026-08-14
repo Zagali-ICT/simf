@@ -217,6 +217,9 @@ void main() {
     final router = container.read(routerProvider);
 
     // My Contacts renders + shows the empty state (fake repo returns []).
+    // `router` is used again below, so folding this into its declaration
+    // would hide the later uses.
+    // ignore: cascade_invocations
     router.goNamed(RouteNames.myContacts);
     await tester.pumpAndSettle();
     expect(find.byType(MyContactsScreen), findsOneWidget);
@@ -234,6 +237,9 @@ void main() {
     final container = await _boot(tester, _signedInApprovedVisitor());
 
     final router = container.read(routerProvider);
+    // `router` is used again below, so folding this into its declaration
+    // would hide the later uses.
+    // ignore: cascade_invocations
     router.goNamed(RouteNames.accessibility);
     await tester.pumpAndSettle();
     expect(find.byType(AccessibilityScreen), findsOneWidget);

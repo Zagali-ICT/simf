@@ -19,7 +19,7 @@ import 'golden_fonts.dart';
 /// أشخاص مثلك). Regenerate: flutter test --update-goldens
 /// test/golden/meet_people_golden_test.dart
 ///
-/// Parity expected: one [SimfIdentityCell] row per entry — the logo/initials
+/// Parity expected: one `SimfIdentityCell` row per entry — the logo/initials
 /// tile at the inline-start, the name (with an optional country flag) over the
 /// bilingual subtitle, and a gold caret at the inline-end for the tappable
 /// kinds (speaker / sponsor / booth); the opted-in person row has no caret.

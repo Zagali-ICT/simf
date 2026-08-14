@@ -135,7 +135,7 @@ class UpsertUserProfileRequest {
 /// to the interests screen (Page 007‑01), which adds the interests and fires
 /// the single `POST /app/account/user-profile` save (D-332). [request] is built
 /// with an empty `interestIds`; the interests screen replaces it via
-/// [copyWith].
+/// `copyWith`.
 @immutable
 class SignUpProfileDraft {
   const SignUpProfileDraft({

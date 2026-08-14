@@ -102,13 +102,17 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         );
       }
     } else {
-      aboutCards.add(
-        AboutTextCard(
-            title: l10n.aboutMissionTitle, body: l10n.aboutHeroHeading,),
-      );
-      aboutCards.add(const SizedBox(height: SimfTokens.space4));
       aboutCards
-          .add(AboutTextCard(title: l10n.aboutVisionTitle, body: visionBody));
+        ..add(
+          AboutTextCard(
+            title: l10n.aboutMissionTitle,
+            body: l10n.aboutHeroHeading,
+          ),
+        )
+        ..add(const SizedBox(height: SimfTokens.space4))
+        ..add(
+          AboutTextCard(title: l10n.aboutVisionTitle, body: visionBody),
+        );
     }
 
     // The "details" list — driven by the profile's details when present.

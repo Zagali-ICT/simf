@@ -57,7 +57,7 @@ Future<void> shareBinaryContent({
 
 /// Returns a sensible [Rect] from [context] for anchoring the iPad / Mac
 /// Catalyst share-sheet popover. Returns null when [context] has no render
-/// object, in which case the caller may omit [sharePositionOrigin] (the share
+/// object, in which case the caller may omit `sharePositionOrigin` (the share
 /// sheet still works on iPhone + Android where a popover is not used).
 ///
 /// The returned rect sits at the bottom-centre of the widget so the popover

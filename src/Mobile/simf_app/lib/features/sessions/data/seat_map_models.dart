@@ -245,7 +245,7 @@ class SeatCell {
   }
 
   /// D-572 — the booking's approval state (append-only wire key `status`),
-  /// used by the "my seat" card to switch its hint. Defaults to [pending] so an
+  /// used by the "my seat" card to switch its hint. Defaults to `pending` so an
   /// older server that omits the field reads as awaiting approval.
   final BookingStatus status;
 

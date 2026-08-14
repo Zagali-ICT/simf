@@ -21,7 +21,7 @@ import 'golden_fonts.dart';
 /// **168:2972** (إنشاء ملف شخصي · Page 007). Regenerate: flutter test
 /// --update-goldens test/golden/sign_up_visitor_golden_test.dart
 ///
-/// Frame parity: the shared navy [SimfFormScaffold] (back chevron + globe
+/// Frame parity: the shared navy `SimfFormScaffold` (back chevron + globe
 /// toggle, logo + forum name) over the beige form card (the MaxWidthBody-capped
 /// Material). Card head = title (24/w600) + avatar badge; the complete-profile
 /// notice; the beige visitor/other tabs; then the login-style bordered fields,

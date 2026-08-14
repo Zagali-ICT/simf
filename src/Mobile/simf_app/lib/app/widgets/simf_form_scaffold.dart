@@ -31,7 +31,7 @@ class SimfFormScaffold extends ConsumerWidget {
     super.key,
   });
 
-  /// The content below the header (wrap form bodies in a [SimfFormCard]).
+  /// The content below the header (wrap form bodies in a `SimfFormCard`).
   final Widget child;
 
   /// Back-chevron action (pop or a fallback route).

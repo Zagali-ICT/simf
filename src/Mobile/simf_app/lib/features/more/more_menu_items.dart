@@ -25,7 +25,7 @@ class MoreMenuEntry {
   /// target page stays reachable elsewhere (e.g. media partners from the public
   /// News/Gallery coverage tabs), but a guest / not-yet-approved account does
   /// not see it in the menu (D-666). Route-role-gated entries (rate, contacts)
-  /// don't need this flag — [routeAllowsRole] already hides them from a guest.
+  /// don't need this flag — `routeAllowsRole` already hides them from a guest.
   final bool approvedOnly;
 
   /// When true the entry is shown only to a **signed-in** account — an

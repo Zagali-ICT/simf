@@ -105,8 +105,9 @@ class _SessionSummaryListScreenState
   ) {
     // Re-run the build (and so the filter + hearts) when the per-user sets
     // resolve or change, keeping the جلساتي / المفضلة tabs live.
-    ref.watch(sessionFavouritesProvider);
-    ref.watch(mySessionsProvider);
+    ref
+      ..watch(sessionFavouritesProvider)
+      ..watch(mySessionsProvider);
 
     final isArabic = l10n.isArabic;
     final filtered = _filter(items);
