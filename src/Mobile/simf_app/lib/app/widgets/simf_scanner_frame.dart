@@ -144,7 +144,8 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
             child: _buildWindow(windowHeight),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(SimfTokens.space4, SimfTokens.space5, SimfTokens.space4, SimfTokens.space1),
+            padding: const EdgeInsets.fromLTRB(SimfTokens.space4,
+                SimfTokens.space5, SimfTokens.space4, SimfTokens.space1,),
             child: _buildStatusRow(),
           ),
         ],
@@ -162,10 +163,22 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
           children: <Widget>[
             ColoredBox(color: SimfTokens.black, child: widget.camera),
             const ColoredBox(color: SimfTokens.scrimBlack35), // black @ 35%
-            const Positioned(top: 16, left: 16, child: ScannerBracket(top: true, left: true)),
-            const Positioned(top: 16, right: 16, child: ScannerBracket(top: true, left: false)),
-            const Positioned(bottom: 16, left: 16, child: ScannerBracket(top: false, left: true)),
-            const Positioned(bottom: 16, right: 16, child: ScannerBracket(top: false, left: false)),
+            const Positioned(
+                top: 16,
+                left: 16,
+                child: ScannerBracket(top: true, left: true),),
+            const Positioned(
+                top: 16,
+                right: 16,
+                child: ScannerBracket(top: true, left: false),),
+            const Positioned(
+                bottom: 16,
+                left: 16,
+                child: ScannerBracket(top: false, left: true),),
+            const Positioned(
+                bottom: 16,
+                right: 16,
+                child: ScannerBracket(top: false, left: false),),
             const Center(
               child: Icon(
                 Icons.qr_code_scanner,
@@ -220,7 +233,9 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
             child: Text(
               widget.statusLabel,
               textDirection: TextDirection.rtl,
-              style: const TextStyle(color: SimfTokens.mutedBlue, fontSize: SimfTokens.simfScannerFrameFontSize),
+              style: const TextStyle(
+                  color: SimfTokens.mutedBlue,
+                  fontSize: SimfTokens.simfScannerFrameFontSize,),
             ),
           ),
           const SizedBox(height: SimfTokens.space2),

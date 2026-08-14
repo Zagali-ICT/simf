@@ -191,7 +191,8 @@ void main() {
     );
   });
 
-  testWidgets('A35 a 400 shows the server reason, not the blanket delegation copy',
+  testWidgets(
+      'A35 a 400 shows the server reason, not the blanket delegation copy',
       (tester) async {
     await _pumpAndSubmit(
       tester,
@@ -274,7 +275,8 @@ void main() {
     expect(repository.submitCalls, 0);
   });
 
-  testWidgets('G3 — with real slots the picked slot is submitted', (tester) async {
+  testWidgets('G3 — with real slots the picked slot is submitted',
+      (tester) async {
     final repository =
         _FakeDelegationsRepository(_dummyClient(), slots: _oneDaySlots);
     await _pump(tester, repository);

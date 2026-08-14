@@ -67,7 +67,8 @@ Future<_FakeDelegationsRepository> _pump(
   String requestId = 'req-1',
   ApiFailure? failure,
 }) async {
-  final repository = _FakeDelegationsRepository(_dummyClient(), failure: failure);
+  final repository =
+      _FakeDelegationsRepository(_dummyClient(), failure: failure);
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
@@ -148,7 +149,8 @@ void main() {
     await tester.tap(find.byKey(declineKey));
     await tester.pumpAndSettle();
 
-    expect(find.text('This meeting is not awaiting confirmation'), findsOneWidget);
+    expect(
+        find.text('This meeting is not awaiting confirmation'), findsOneWidget,);
     expect(find.text('Meeting declined'), findsNothing);
   });
 }

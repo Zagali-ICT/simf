@@ -24,7 +24,8 @@ class CountryFlagTile extends StatelessWidget {
       child: Text(
         flag,
         textDirection: TextDirection.ltr,
-        style: const TextStyle(fontSize: SimfTokens.countryFlagTileFontSize, height: 1),
+        style: const TextStyle(
+            fontSize: SimfTokens.countryFlagTileFontSize, height: 1,),
       ),
     );
   }

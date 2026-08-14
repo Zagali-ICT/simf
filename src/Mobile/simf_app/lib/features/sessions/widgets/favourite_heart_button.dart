@@ -65,7 +65,8 @@ class FavouriteHeartButton extends ConsumerWidget {
   Widget _glyph(bool isFavourite) {
     final icon = isFavourite ? filledIcon : outlineIcon;
     if (icon != null) {
-      return Icon(icon, size: SimfTokens.favouriteHeartButtonSize, color: SimfTokens.surface);
+      return Icon(icon,
+          size: SimfTokens.favouriteHeartButtonSize, color: SimfTokens.surface,);
     }
     return SimfSvgIcon(
       isFavourite ? filledAsset : outlineAsset,

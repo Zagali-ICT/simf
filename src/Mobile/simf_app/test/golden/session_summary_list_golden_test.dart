@@ -170,8 +170,8 @@ void main() {
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
           programmeSessionsProvider.overrideWith((ref) async => _sessions),
-          mySessionsProvider
-              .overrideWith((ref) async => const MyAreaSessions(<MyAreaSessionItem>[])),
+          mySessionsProvider.overrideWith(
+              (ref) async => const MyAreaSessions(<MyAreaSessionItem>[]),),
           sessionFavouritesProvider
               .overrideWith(() => _FakeFavourites(<String>{'s1'})),
         ],

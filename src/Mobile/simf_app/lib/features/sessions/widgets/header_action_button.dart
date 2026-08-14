@@ -6,7 +6,12 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// (ملخص الجلسة) carries the 0.5px gold hairline + gold text; the plain variant
 /// (رابط الجلسة) the 0.2px beige hairline + white text.
 class HeaderActionButton extends StatelessWidget {
-  const HeaderActionButton({required this.label, required this.accented, required this.enabled, required this.onTap, super.key,
+  const HeaderActionButton({
+    required this.label,
+    required this.accented,
+    required this.enabled,
+    required this.onTap,
+    super.key,
   });
 
   final String label;

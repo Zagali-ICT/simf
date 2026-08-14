@@ -27,7 +27,9 @@ ModeratorQuestion _q(
 /// A fake that behaves like the real backend: the moderation writes change the
 /// PERSISTED status, so a reload of the screen re-reads the same buckets.
 class _FakeRepo implements ModerationRepository {
-  _FakeRepo({List<ModeratorQuestion> queue = const <ModeratorQuestion>[], this.status = 0})
+  _FakeRepo(
+      {List<ModeratorQuestion> queue = const <ModeratorQuestion>[],
+      this.status = 0,})
       : _rows = <ModeratorQuestion>[...queue];
 
   final List<ModeratorQuestion> _rows;
@@ -56,7 +58,8 @@ class _FakeRepo implements ModerationRepository {
   }
 
   @override
-  Future<void> reorder(String sessionId, List<String> orderedQuestionIds) async {
+  Future<void> reorder(
+      String sessionId, List<String> orderedQuestionIds,) async {
     _failIfAsked();
     lastReorder = orderedQuestionIds;
     // Behave like the backend: the persisted Order becomes the supplied order,
@@ -283,7 +286,8 @@ void main() {
     // DEF-MOD-001 — the answered mark is a REAL backend call and survives a
     // full reload of the screen (the old build kept it in a local Set that died
     // on screen exit, so a co-moderator or a restart lost it).
-    testWidgets('DEF-MOD-001: answered calls the endpoint and the mark survives '
+    testWidgets(
+        'DEF-MOD-001: answered calls the endpoint and the mark survives '
         'a reload of the screen', (tester) async {
       final repo = _FakeRepo(queue: <ModeratorQuestion>[_q('a')]);
       await _pump(tester, repo);
@@ -309,7 +313,8 @@ void main() {
 
     // DEF-MOD-002 — a rejected question is fetched back from the server
     // (?status=Hidden), so a mis-click is recoverable after leaving the screen.
-    testWidgets('DEF-MOD-002: a rejected question survives a reload and can be '
+    testWidgets(
+        'DEF-MOD-002: a rejected question survives a reload and can be '
         'restored', (tester) async {
       final repo = _FakeRepo(
         queue: <ModeratorQuestion>[
@@ -360,7 +365,8 @@ void main() {
     // FR-MOD-003 — `PUT …/questions/reorder` shipped gated but with NO
     // interface, so the moderator could not order the queue they read on stage.
     // The desk now carries a drag handle per desk row.
-    testWidgets('FR-MOD-003: a desk row carries a drag handle and a rejected '
+    testWidgets(
+        'FR-MOD-003: a desk row carries a drag handle and a rejected '
         'row does not', (tester) async {
       await _pump(
         tester,

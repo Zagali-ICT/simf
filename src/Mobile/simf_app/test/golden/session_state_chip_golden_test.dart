@@ -56,7 +56,8 @@ void main() {
                 spacing: SimfTokens.space2,
                 runSpacing: SimfTokens.space2,
                 children: <Widget>[
-                  SessionStateChip(kind: SessionChipKind.live, label: 'مباشر الآن'),
+                  SessionStateChip(
+                      kind: SessionChipKind.live, label: 'مباشر الآن',),
                   SessionStateChip(
                     kind: SessionChipKind.summaryReady,
                     label: 'الملخص متاح',

@@ -178,7 +178,8 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       // settings load / on error, matching the server, which also suppresses
       // the notification when the type is off.
       final sessionRatingEnabled =
-          ref.read(siteSettingsProvider).valueOrNull?.sessionRatingEnabled ?? true;
+          ref.read(siteSettingsProvider).valueOrNull?.sessionRatingEnabled ??
+              true;
       _rateTracker = isApprovedAttendee &&
               session.liveStreamUrl != null &&
               sessionRatingEnabled
@@ -230,10 +231,14 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   }
 
   void _askQuestion() {
-    unawaited(context.pushNamed(
+    unawaited(
+      context.pushNamed(
         RouteNames.sendQuestion,
-        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId!.trim()},
-      ),);
+        queryParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId!.trim(),
+        },
+      ),
+    );
   }
 
   /// D-495 — a synthetic live session for the forum's main (global) live
@@ -330,5 +335,4 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
             setState(() => _showSignLanguage = value),
         onAskQuestion: _askQuestion,
       );
-
 }

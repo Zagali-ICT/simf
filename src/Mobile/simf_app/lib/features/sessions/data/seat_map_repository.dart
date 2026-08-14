@@ -95,7 +95,8 @@ class SeatMapRepository {
     );
   }
 
-  static MyReservation _decodeReservation(Object? data) => MyReservation.fromJson(
+  static MyReservation _decodeReservation(Object? data) =>
+      MyReservation.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
       );
 }

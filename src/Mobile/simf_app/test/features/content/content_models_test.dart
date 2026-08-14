@@ -26,13 +26,17 @@ void main() {
 
       const arOnly =
           ContentBlock(key: 'terms', content: '', contentArabic: 'AR');
-      expect(arOnly.localizedBody(isArabic: false),
-          'AR',); // EN empty → fall back to AR
+      expect(
+        arOnly.localizedBody(isArabic: false),
+        'AR',
+      ); // EN empty → fall back to AR
 
       const enOnly =
           ContentBlock(key: 'terms', content: 'EN', contentArabic: '');
-      expect(enOnly.localizedBody(isArabic: true),
-          'EN',); // AR empty → fall back to EN
+      expect(
+        enOnly.localizedBody(isArabic: true),
+        'EN',
+      ); // AR empty → fall back to EN
     });
 
     test('hasBody is false when both bodies are blank', () {
@@ -66,7 +70,8 @@ void main() {
     });
 
     test('drops blank and whitespace-only lines', () {
-      final block = blockWith(<String>['first', '', '   ', 'second'].join('\n'));
+      final block =
+          blockWith(<String>['first', '', '   ', 'second'].join('\n'));
       expect(block.bullets(isArabic: false), <String>['first', 'second']);
     });
 

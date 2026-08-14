@@ -58,8 +58,8 @@ Future<void> _pump(
     routes: <RouteBase>[
       GoRoute(
         path: '/badge-password',
-        builder: (c, s) =>
-            BadgePasswordScreen(qrId: 'QR1', displayName: name, maskedEmail: masked),
+        builder: (c, s) => BadgePasswordScreen(
+            qrId: 'QR1', displayName: name, maskedEmail: masked,),
       ),
       GoRoute(
         name: RouteNames.verifyOtp,
@@ -103,7 +103,8 @@ void main() {
       expect(find.text('Welcome, Khalid'), findsOneWidget);
       expect(find.textContaining('k***@example.com'), findsOneWidget);
       expect(find.byType(TextFormField), findsOneWidget);
-      expect(find.widgetWithText(TextButton, 'Forgot password?'), findsOneWidget);
+      expect(
+          find.widgetWithText(TextButton, 'Forgot password?'), findsOneWidget,);
     });
 
     testWidgets('renders in Arabic', (tester) async {

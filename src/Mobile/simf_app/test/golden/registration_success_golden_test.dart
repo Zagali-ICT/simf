@@ -65,7 +65,8 @@ void main() {
         overrides: <Override>[
           siteSettingsProvider.overrideWith(
             (ref) => const SiteSettings(
-              registrationMessageAr: 'تهانينا، مرحباً بكم في الملتقى السعودي الرابع',
+              registrationMessageAr:
+                  'تهانينا، مرحباً بكم في الملتقى السعودي الرابع',
               registrationMessageEn: 'Welcome to the Fourth Saudi Forum!',
               social: SiteSocialLinks(),
             ),

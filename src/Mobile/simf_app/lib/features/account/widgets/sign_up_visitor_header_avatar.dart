@@ -34,7 +34,10 @@ class SignUpVisitorHeaderAvatar extends StatelessWidget {
       );
     }
     return ClipOval(
-      child: Image.memory(data, width: SimfTokens.space10, height: SimfTokens.space10, fit: BoxFit.cover),
+      child: Image.memory(data,
+          width: SimfTokens.space10,
+          height: SimfTokens.space10,
+          fit: BoxFit.cover,),
     );
   }
 }

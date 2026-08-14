@@ -43,13 +43,22 @@ class _FakePrefs implements SimfPrefsStorage {
   };
 
   @override
-  String? getString(String key) => _s[key] is String ? _s[key]! as String : null;
+  String? getString(String key) =>
+      _s[key] is String ? _s[key]! as String : null;
   @override
-  Future<bool> setString(String key, String value) async { _s[key] = value; return true; }
+  Future<bool> setString(String key, String value) async {
+    _s[key] = value;
+    return true;
+  }
+
   @override
   bool? getBool(String key) => _s[key] is bool ? _s[key]! as bool : null;
   @override
-  Future<bool> setBool(String key, bool value) async { _s[key] = value; return true; }
+  Future<bool> setBool(String key, bool value) async {
+    _s[key] = value;
+    return true;
+  }
+
   @override
   double? getDouble(String key) => null;
   @override
@@ -59,7 +68,10 @@ class _FakePrefs implements SimfPrefsStorage {
   @override
   Future<bool> setInt(String key, int value) async => true;
   @override
-  Future<bool> remove(String key) async { _s.remove(key); return true; }
+  Future<bool> remove(String key) async {
+    _s.remove(key);
+    return true;
+  }
 }
 
 /// A fake auth controller fixed to a given state. `hasEnrolledDeviceKey` is
@@ -81,14 +93,20 @@ class _FakeContactsRepo implements ContactsRepository {
   Future<String> rotateShareToken() async => 'SHARETOKEN99';
   @override
   Future<VisitorCard> resolve(String token) async => const VisitorCard(
-        userId: 'u2', name: 'Bob Sailor', nameArabic: 'بوب',
-        available: true, jobTitle: 'Chief Officer',
+        userId: 'u2',
+        name: 'Bob Sailor',
+        nameArabic: 'بوب',
+        available: true,
+        jobTitle: 'Chief Officer',
       );
   @override
   Future<SavedContactRow> save(String token, String? note) async =>
       const SavedContactRow(
-        id: 's1', subjectUserId: 'u2', name: 'Bob Sailor',
-        nameArabic: 'بوب', subjectAvailable: true,
+        id: 's1',
+        subjectUserId: 'u2',
+        name: 'Bob Sailor',
+        nameArabic: 'بوب',
+        subjectAvailable: true,
       );
   @override
   Future<List<SavedContactRow>> listSaved() async => const <SavedContactRow>[];
@@ -166,7 +184,8 @@ Future<ProviderContainer> _boot(WidgetTester tester, AuthState auth) async {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('navy-always: the app pins themeMode to dark so a light-mode '
+  testWidgets(
+      'navy-always: the app pins themeMode to dark so a light-mode '
       'device still renders the navy theme (D-331)', (tester) async {
     await _boot(tester, const AuthStateSignedOut());
 
@@ -183,7 +202,8 @@ void main() {
     expect(Theme.of(ctx).brightness, Brightness.dark);
   });
 
-  testWidgets('guest entry: splash -> sign-in -> browse-as-guest -> guest '
+  testWidgets(
+      'guest entry: splash -> sign-in -> browse-as-guest -> guest '
       'landing -> Home (no auth)', (tester) async {
     await _boot(tester, const AuthStateSignedOut());
 
@@ -207,7 +227,8 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
-  testWidgets('signed-in visitor: boots to Home and reaches the FDS-014 '
+  testWidgets(
+      'signed-in visitor: boots to Home and reaches the FDS-014 '
       'contact screens via the real router', (tester) async {
     final container = await _boot(tester, _signedInApprovedVisitor());
 
@@ -232,7 +253,8 @@ void main() {
     expect(find.byType(QrImageView), findsOneWidget);
   });
 
-  testWidgets('accessibility: changing text size + high-contrast rebuilds the '
+  testWidgets(
+      'accessibility: changing text size + high-contrast rebuilds the '
       'app without crashing (D-327)', (tester) async {
     final container = await _boot(tester, _signedInApprovedVisitor());
 
@@ -253,7 +275,8 @@ void main() {
     expect(find.byType(AccessibilityScreen), findsOneWidget);
   });
 
-  testWidgets('D-694 — a pending sign-up account reaches the face-capture '
+  testWidgets(
+      'D-694 — a pending sign-up account reaches the face-capture '
       '(identity verification) screen, NOT Home', (tester) async {
     // The regression: the sign-up "capture face photo" button pushes route 103
     // (identityVerification). Since D-666 a pending account presents as an
@@ -273,7 +296,8 @@ void main() {
     expect(find.byType(HomeScreen), findsNothing);
   });
 
-  testWidgets('D-694 is targeted: a pending account is STILL sent home from an '
+  testWidgets(
+      'D-694 is targeted: a pending account is STILL sent home from an '
       'attendee-only route (/meet)', (tester) async {
     // Proves the fix opened exactly route 103, not the whole attendee tier —
     // the D-666 pending gate still holds everywhere else.

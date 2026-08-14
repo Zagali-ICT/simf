@@ -229,9 +229,11 @@ UserProfileResponse _completeProfile({
   bool hasIdImage = true, // ID document — mandatory for everyone
   bool hasAvatar = true, // face photo — mandatory for men, optional for women
   String? plateNumber,
-  String? jobTitle = 'Engineer', // D-723 — required; pass null for the empty case
+  String? jobTitle =
+      'Engineer', // D-723 — required; pass null for the empty case
   String? jobTitleArabic, // optional Arabic job title
-  String? saudiMobile = '0512345678', // D-723 — required; pass null for empty case
+  String? saudiMobile =
+      '0512345678', // D-723 — required; pass null for empty case
   String placeOfBirth = 'Riyadh',
 }) =>
     UserProfileResponse(
@@ -293,7 +295,8 @@ void main() {
       expect(repo.lastProfileTypesIsVisitor, isFalse);
     });
 
-    testWidgets('a first-time empty form blocks Next with required errors '
+    testWidgets(
+        'a first-time empty form blocks Next with required errors '
         'and shows the D-373 defaults (SA + national-ID branch)',
         (tester) async {
       final repo = _FakeProfileRepository();
@@ -316,7 +319,8 @@ void main() {
       expect(find.text('Date of birth is required'), findsOneWidget);
     });
 
-    testWidgets('valid data → Next saves the profile then navigates to interests '
+    testWidgets(
+        'valid data → Next saves the profile then navigates to interests '
         '(D-684 profile-first save)', (tester) async {
       final repo = _FakeProfileRepository(profile: _completeProfile());
       await _pump(tester, repo);
@@ -329,7 +333,8 @@ void main() {
       expect(find.text('INTERESTS'), findsOneWidget);
     });
 
-    testWidgets('a server error on the profile save surfaces HERE, not on '
+    testWidgets(
+        'a server error on the profile save surfaces HERE, not on '
         'interests (D-684)', (tester) async {
       final repo = _FakeProfileRepository(
         profile: _completeProfile(),
@@ -346,7 +351,8 @@ void main() {
       expect(find.text('INTERESTS'), findsNothing);
     });
 
-    testWidgets('prefills the plate dropdowns from a stored code and carries it '
+    testWidgets(
+        'prefills the plate dropdowns from a stored code and carries it '
         'to the draft (D-459)', (tester) async {
       final repo = _FakeProfileRepository(
         profile: _completeProfile(plateNumber: 'ABJ1234'),
@@ -362,7 +368,8 @@ void main() {
       expect(capturedDraft!.request.plateNumber, 'ABJ1234');
     });
 
-    testWidgets('a digits-first stored plate keeps its order on prefill — it is '
+    testWidgets(
+        'a digits-first stored plate keeps its order on prefill — it is '
         'not silently reordered to letters-first (D-471)', (tester) async {
       // A plate is valid in either order; the canonical code preserves it. A
       // stored "1234ABJ" (digits-first) must round-trip unchanged, not become
@@ -379,7 +386,8 @@ void main() {
       expect(capturedDraft!.request.plateNumber, '1234ABJ');
     });
 
-    testWidgets('a Saudi profile shows the birth-location region dropdown with '
+    testWidgets(
+        'a Saudi profile shows the birth-location region dropdown with '
         'the stored region selected (D-469)', (tester) async {
       // _completeProfile is Saudi with placeOfBirth "Riyadh" (a region name),
       // so the region dropdown is prefilled (matched from the stored name).
@@ -389,7 +397,8 @@ void main() {
       expect(find.text('Riyadh'), findsWidgets);
     });
 
-    testWidgets('a region stored in Arabic still selects under an English UI — '
+    testWidgets(
+        'a region stored in Arabic still selects under an English UI — '
         'the dropdown is code-keyed (D-469)', (tester) async {
       // A visitor registered under an Arabic session stored "منطقة الرياض"; the
       // English-locale render must still resolve it to the Riyadh option.
@@ -404,10 +413,12 @@ void main() {
       expect(find.text('Select region'), findsNothing);
     });
 
-    testWidgets('the birth-region field opens the shared searchable sheet and '
+    testWidgets(
+        'the birth-region field opens the shared searchable sheet and '
         'picks a region (D-470)', (tester) async {
       // Saudi profile with no stored region → the picker shows the placeholder.
-      final repo = _FakeProfileRepository(profile: _completeProfile(placeOfBirth: ''));
+      final repo =
+          _FakeProfileRepository(profile: _completeProfile(placeOfBirth: ''));
       await _pump(tester, repo);
 
       const picker = ValueKey<String>('birthRegionPicker');
@@ -416,7 +427,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Same searchable sheet as the country picker (type-to-filter).
-      final search = find.byKey(const ValueKey<String>('birthRegionSearchField'));
+      final search =
+          find.byKey(const ValueKey<String>('birthRegionSearchField'));
       expect(search, findsOneWidget);
       await tester.enterText(search, 'Eastern');
       await tester.pumpAndSettle();
@@ -427,7 +439,8 @@ void main() {
       expect(find.text('Eastern Province'), findsOneWidget);
     });
 
-    testWidgets('an empty job title blocks Next with the required error (D-723)',
+    testWidgets(
+        'an empty job title blocks Next with the required error (D-723)',
         (tester) async {
       final repo =
           _FakeProfileRepository(profile: _completeProfile(jobTitle: null));
@@ -440,7 +453,8 @@ void main() {
       expect(find.text('Job title is required'), findsOneWidget);
     });
 
-    testWidgets('carries the optional Arabic job title into the saved request '
+    testWidgets(
+        'carries the optional Arabic job title into the saved request '
         '(backlog #37)', (tester) async {
       final repo = _FakeProfileRepository(
         profile: _completeProfile(jobTitleArabic: 'مهندس بحري'),
@@ -470,7 +484,8 @@ void main() {
       expect(find.text('Place of birth is required'), findsOneWidget);
     });
 
-    testWidgets('an empty mobile number blocks Next with the required error '
+    testWidgets(
+        'an empty mobile number blocks Next with the required error '
         '(D-723)', (tester) async {
       final repo =
           _FakeProfileRepository(profile: _completeProfile(saudiMobile: null));
@@ -537,7 +552,8 @@ void main() {
       expect(find.text('Eastern Province'), findsOneWidget);
     });
 
-    testWidgets('a plate-letter field opens the shared searchable sheet (D-470)',
+    testWidgets(
+        'a plate-letter field opens the shared searchable sheet (D-470)',
         (tester) async {
       await _pump(tester, _FakeProfileRepository());
 
@@ -553,7 +569,8 @@ void main() {
       );
     });
 
-    testWidgets('a profile missing only the organisation blocks Next (B3 — D-221)',
+    testWidgets(
+        'a profile missing only the organisation blocks Next (B3 — D-221)',
         (tester) async {
       // Every field valid except the organisation → the required-organisation
       // gate keeps the desk on this screen with an inline error.
@@ -701,8 +718,7 @@ void main() {
       expect(capturedDraft!.request.profileTypeId, equals('n1'));
     });
 
-    testWidgets(
-        'Other tab shows the picker and requires a pick (C5 — D-371)',
+    testWidgets('Other tab shows the picker and requires a pick (C5 — D-371)',
         (tester) async {
       final repo = _FakeProfileRepository(profile: _completeProfile());
       await _pump(tester, repo);
@@ -859,7 +875,8 @@ void main() {
         placeOfBirth: 'Riyadh',
         isSaudi: true,
         gender: AppGender.female,
-        hasIdImage: true, // ID present (required for all); face optional for women
+        hasIdImage:
+            true, // ID present (required for all); face optional for women
         hasAvatar: false,
         nationalId: '1000000008',
         saudiMobile: '0512345678', // D-723 — mobile is now required

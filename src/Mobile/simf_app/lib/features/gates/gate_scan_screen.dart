@@ -449,9 +449,11 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
           ),
           child: Row(
             children: <Widget>[
-              const Icon(Icons.sync,
-                  color: SimfTokens.accent,
-                  size: SimfTokens.gateScanScreenSizeSm,),
+              const Icon(
+                Icons.sync,
+                color: SimfTokens.accent,
+                size: SimfTokens.gateScanScreenSizeSm,
+              ),
               const SizedBox(width: SimfTokens.space2),
               Expanded(
                 child: Text(

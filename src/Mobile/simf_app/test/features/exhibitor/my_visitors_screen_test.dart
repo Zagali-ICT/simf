@@ -19,7 +19,9 @@ import 'package:simf_app/features/exhibitor/widgets/captured_visitor_sheet.dart'
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 class _FakeExhibitorRepo implements ExhibitorRepository {
-  _FakeExhibitorRepo({List<ExhibitorVisitor> visitors = const <ExhibitorVisitor>[], this.status})
+  _FakeExhibitorRepo(
+      {List<ExhibitorVisitor> visitors = const <ExhibitorVisitor>[],
+      this.status,})
       : visitors = <ExhibitorVisitor>[...visitors];
 
   final List<ExhibitorVisitor> visitors;
@@ -37,7 +39,9 @@ class _FakeExhibitorRepo implements ExhibitorRepository {
   Future<List<ExhibitorVisitor>> listMyVisitors() async {
     if (status != null) {
       throw ApiFailure(
-        code: ApiErrorCodes.clientNetwork, message: 'x', httpStatus: status,
+        code: ApiErrorCodes.clientNetwork,
+        message: 'x',
+        httpStatus: status,
       );
     }
     return visitors;
@@ -97,7 +101,8 @@ Future<void> _pump(WidgetTester tester, _FakeExhibitorRepo repo) async {
 ExhibitorVisitor _visitor(String name) => ExhibitorVisitor(
       id: 'v-$name',
       scannedAt: DateTime.utc(2026),
-      card: VisitorCard(userId: 'u-$name', name: name, nameArabic: name, available: true),
+      card: VisitorCard(
+          userId: 'u-$name', name: name, nameArabic: name, available: true,),
     );
 
 void main() {

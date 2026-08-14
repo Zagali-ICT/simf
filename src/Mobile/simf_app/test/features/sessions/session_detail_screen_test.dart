@@ -323,7 +323,8 @@ class _FakeSeatRepo implements SeatMapRepository {
 
 class _FakeCalendar implements SessionCalendar {
   @override
-  Future<bool> addSession(SessionDetail detail, {required bool isArabic}) async =>
+  Future<bool> addSession(SessionDetail detail,
+          {required bool isArabic,}) async =>
       true;
 }
 
@@ -372,8 +373,8 @@ Future<void> _pump(
       GoRoute(
         path: '/speakers/:speakerId',
         name: RouteNames.speakerProfile,
-        builder: (_, state) =>
-            Scaffold(body: Text('SPEAKER ${state.pathParameters['speakerId']}')),
+        builder: (_, state) => Scaffold(
+            body: Text('SPEAKER ${state.pathParameters['speakerId']}'),),
       ),
       GoRoute(
         path: '/sessions/:sessionId/my-seat',
@@ -416,8 +417,7 @@ Future<void> _pump(
         sessionDetailRepositoryProvider.overrideWithValue(repo),
         seatMapRepositoryProvider
             .overrideWithValue(seatRepo ?? _FakeSeatRepo(map: seatMap)),
-        sessionCalendarProvider
-            .overrideWithValue(calendar ?? _FakeCalendar()),
+        sessionCalendarProvider.overrideWithValue(calendar ?? _FakeCalendar()),
         authControllerProvider.overrideWith(() => controller),
         myModeratedSessionsProvider.overrideWith(
           (ref) async => <ModeratedSession>[
@@ -540,7 +540,8 @@ Future<GoRouter> _pumpRatePrompt(
 
 void main() {
   group('SessionDetailScreen (Page 017)', () {
-    testWidgets('renders the KSA detail (header card, summary button, '
+    testWidgets(
+        'renders the KSA detail (header card, summary button, '
         'description, speaker, ask-host, CTAs)', (tester) async {
       await _pump(
         tester,
@@ -577,7 +578,8 @@ void main() {
       expect(find.widgetWithText(OutlinedButton, 'Reminder'), findsOneWidget);
     });
 
-    testWidgets('the session link opens the live screen while the session is '
+    testWidgets(
+        'the session link opens the live screen while the session is '
         'live + streaming (owner 2026-07-14 gate)', (tester) async {
       final live = _detail(
         liveStreamUrl: 'https://youtu.be/abcdefghijk',
@@ -596,7 +598,8 @@ void main() {
       expect(find.text('LIVE'), findsOneWidget);
     });
 
-    testWidgets('the summary button opens the AI session summary once the '
+    testWidgets(
+        'the summary button opens the AI session summary once the '
         'session has ended (owner 2026-07-14 gate)', (tester) async {
       await _pump(
         tester,
@@ -609,7 +612,8 @@ void main() {
       expect(find.text('AI-SUMMARY'), findsOneWidget);
     });
 
-    testWidgets('#3 — a joined user can ask: the ask card opens '
+    testWidgets(
+        '#3 — a joined user can ask: the ask card opens '
         'send-question', (tester) async {
       await _pump(
         tester,
@@ -624,7 +628,8 @@ void main() {
       expect(find.text('SEND-Q'), findsOneWidget);
     });
 
-    testWidgets('#7 — an approved user can ask a FUTURE session without a '
+    testWidgets(
+        '#7 — an approved user can ask a FUTURE session without a '
         'booking (no join gate): the ask card is enabled and opens send-question',
         (tester) async {
       await _pump(
@@ -642,7 +647,8 @@ void main() {
       expect(find.text('SEND-Q'), findsOneWidget);
     });
 
-    testWidgets('S-4 — an in-window in-person session (no live URL) SHOWS the '
+    testWidgets(
+        'S-4 — an in-window in-person session (no live URL) SHOWS the '
         'ask card with the neutral live label on the detail', (tester) async {
       final ongoing = _detail(
         start: saudiNow().subtract(const Duration(hours: 1)),
@@ -661,7 +667,8 @@ void main() {
       expect(find.text('Ask a question before it starts'), findsNothing);
     });
 
-    testWidgets('S-4 — an in-window BROADCAST session (live URL) HIDES the ask '
+    testWidgets(
+        'S-4 — an in-window BROADCAST session (live URL) HIDES the ask '
         'card on the detail (asking moves to the live-broadcast screen)',
         (tester) async {
       final broadcasting = _detail(
@@ -682,7 +689,8 @@ void main() {
       expect(find.text('Ask a question before it starts'), findsNothing);
     });
 
-    testWidgets('#7 — a PAST (ended) session HIDES the ask card (the after-view '
+    testWidgets(
+        '#7 — a PAST (ended) session HIDES the ask card (the after-view '
         'is a recording, not a live broadcast)', (tester) async {
       // After End `_showAsk` returns false regardless of the viewer, so a
       // guest proves it.
@@ -712,7 +720,8 @@ void main() {
       expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
     });
 
-    testWidgets('a held reservation shows the booking card (seat + pending '
+    testWidgets(
+        'a held reservation shows the booking card (seat + pending '
         '+ cancel) with the CTAs', (tester) async {
       await _pump(
         tester,
@@ -742,7 +751,8 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('D-572 — an APPROVED booking shows the show-badge hint, not the '
+    testWidgets(
+        'D-572 — an APPROVED booking shows the show-badge hint, not the '
         'pending line', (tester) async {
       await _pump(
         tester,
@@ -756,7 +766,8 @@ void main() {
       expect(find.text('Pending approval'), findsNothing);
     });
 
-    testWidgets('#1 — Cancel booking confirms then releases the seat and shows '
+    testWidgets(
+        '#1 — Cancel booking confirms then releases the seat and shows '
         'the success toast', (tester) async {
       final seatRepo = _FakeSeatRepo(map: _seatMap(myCell: _mySeatCell));
       await _pump(
@@ -805,7 +816,8 @@ void main() {
       expect(find.text('Booking cancelled'), findsNothing);
     });
 
-    testWidgets('#1 fix — a cancel failure surfaces the backend reason '
+    testWidgets(
+        '#1 fix — a cancel failure surfaces the backend reason '
         '(not the generic toast)', (tester) async {
       // The exact failure the owner saw: cancel "looks broken" because the
       // real 409 reason was swallowed behind a generic toast.
@@ -839,7 +851,8 @@ void main() {
       expect(find.text("Couldn't cancel the booking"), findsNothing);
     });
 
-    testWidgets('#1 fix — a reason-less cancel failure falls back to the '
+    testWidgets(
+        '#1 fix — a reason-less cancel failure falls back to the '
         'generic toast', (tester) async {
       final seatRepo = _FakeSeatRepo(
         map: _seatMap(myCell: _mySeatCell),
@@ -864,7 +877,8 @@ void main() {
       expect(find.text("Couldn't cancel the booking"), findsOneWidget);
     });
 
-    testWidgets('PAR-D2/D-extra — RTL: the gold CTA and the speaker photo lead '
+    testWidgets(
+        'PAR-D2/D-extra — RTL: the gold CTA and the speaker photo lead '
         'at the inline start (right); the seat chevron trails (left)',
         (tester) async {
       await _pump(
@@ -917,7 +931,8 @@ void main() {
       expect(find.text('Join the session'), findsNothing);
     });
 
-    testWidgets('#18 — an approved account whose seat map FAILS to load sees the '
+    testWidgets(
+        '#18 — an approved account whose seat map FAILS to load sees the '
         'error + retry (not a silently-missing Join button); retry re-fetches',
         (tester) async {
       // No seatMap → _FakeSeatRepo(map: null) throws a 403, so _safeSeatMap
@@ -946,7 +961,8 @@ void main() {
       expect(repo.detailCalls, greaterThan(before));
     });
 
-    testWidgets('#18 — a signed-in PENDING account (effectiveAppRole = guest) '
+    testWidgets(
+        '#18 — a signed-in PENDING account (effectiveAppRole = guest) '
         'whose seat map 403s sees NO retry (the null map is legitimate, not an '
         'error)', (tester) async {
       await _pump(
@@ -966,7 +982,8 @@ void main() {
     // DEF-MOD-003 / DEF-MOD-004 — the ask + join/seat affordances open
     // attendee-only routes, so offering them to a Moderator produced an enabled
     // control that silently bounced them Home. They must not render at all.
-    testWidgets('DEF-MOD-003/004: a MODERATOR is offered neither the ask card '
+    testWidgets(
+        'DEF-MOD-003/004: a MODERATOR is offered neither the ask card '
         'nor the join CTA (both routes are attendee-only)', (tester) async {
       final seatRepo = _FakeSeatRepo(map: _seatMap());
       await _pump(
@@ -996,7 +1013,8 @@ void main() {
     // render for any moderator on every session in the programme, so a missing
     // grant was only discoverable as a 403 after the tap. The action now needs
     // a confirmed grant for THIS session.
-    testWidgets('FR-MOD-001: a moderator with no grant for this session is not '
+    testWidgets(
+        'FR-MOD-001: a moderator with no grant for this session is not '
         'offered the Q&A desk', (tester) async {
       await _pump(
         tester,
@@ -1011,7 +1029,8 @@ void main() {
       expect(find.byIcon(Icons.forum_outlined), findsNothing);
     });
 
-    testWidgets('FR-MOD-001: a moderator who moderates nothing is not offered '
+    testWidgets(
+        'FR-MOD-001: a moderator who moderates nothing is not offered '
         'the Q&A desk', (tester) async {
       await _pump(
         tester,
@@ -1028,7 +1047,8 @@ void main() {
     // DEF-MOD-008 — the router gates on effectiveAppRole (D-666), so an
     // UNAPPROVED moderator presents as a guest. Showing them the desk entry
     // guaranteed a bounce back to Home the moment they tapped it.
-    testWidgets('DEF-MOD-008: an UNAPPROVED moderator is not shown the Q&A desk '
+    testWidgets(
+        'DEF-MOD-008: an UNAPPROVED moderator is not shown the Q&A desk '
         'action (the router would bounce them)', (tester) async {
       await _pump(
         tester,
@@ -1041,7 +1061,8 @@ void main() {
       expect(find.byIcon(Icons.forum_outlined), findsNothing);
     });
 
-    testWidgets('signed-in, assigned-seat, no reservation → the Select-my-seat '
+    testWidgets(
+        'signed-in, assigned-seat, no reservation → the Select-my-seat '
         'CTA opens the seat picker', (tester) async {
       await _pump(
         tester,
@@ -1060,7 +1081,8 @@ void main() {
       expect(find.text('PICKER'), findsOneWidget);
     });
 
-    testWidgets('D-750 — signed-in, open-seating, no reservation → the CTA reads '
+    testWidgets(
+        'D-750 — signed-in, open-seating, no reservation → the CTA reads '
         '"register to attend", Join confirms then shows the success alert',
         (tester) async {
       final seatRepoHolder = _FakeSeatRepo(
@@ -1170,7 +1192,8 @@ void main() {
 
       await tester.tap(find.widgetWithText(OutlinedButton, 'Reminder'));
       await tester.pumpAndSettle();
-      final reminderToast = find.text('Reminders arrive with notifications setup.');
+      final reminderToast =
+          find.text('Reminders arrive with notifications setup.');
       expect(reminderToast, findsOneWidget);
     });
 
@@ -1201,7 +1224,8 @@ void main() {
   // or the attendance-gated rate notification. This guards the removed
   // after-view auto-prompt from regressing back in.
   group('no rate prompt from the session detail', () {
-    testWidgets('an approved attendee leaving an ENDED session is NOT prompted '
+    testWidgets(
+        'an approved attendee leaving an ENDED session is NOT prompted '
         'to rate (rate comes from watching / attendance, not from viewing)',
         (tester) async {
       final router = await _pumpRatePrompt(

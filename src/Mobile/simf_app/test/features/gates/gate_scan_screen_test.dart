@@ -102,7 +102,8 @@ class _FakeGates implements GatesRepository {
     }
     return result ??
         GateScanResult.fromJson(
-            const <String, dynamic>{'outcome': 0, 'direction': 0},);
+          const <String, dynamic>{'outcome': 0, 'direction': 0},
+        );
   }
 
   @override
@@ -129,7 +130,8 @@ class _FakeGates implements GatesRepository {
     }
     return result ??
         GateScanResult.fromJson(
-            const <String, dynamic>{'outcome': 0, 'direction': 0},);
+          const <String, dynamic>{'outcome': 0, 'direction': 0},
+        );
   }
 
   @override
@@ -182,8 +184,10 @@ Future<void> _pump(WidgetTester tester, _FakeGates repo) async {
 
 /// Walks the new setup → scanner flow (D-509): pick the movement direction,
 /// then open the scanner. Defaults to Entry (دخول).
-Future<void> _openScanner(WidgetTester tester,
-    {String direction = 'Entry',}) async {
+Future<void> _openScanner(
+  WidgetTester tester, {
+  String direction = 'Entry',
+}) async {
   await tester.tap(find.text(direction));
   await tester.pumpAndSettle();
   await tester.tap(find.widgetWithText(FilledButton, 'Scan code'));

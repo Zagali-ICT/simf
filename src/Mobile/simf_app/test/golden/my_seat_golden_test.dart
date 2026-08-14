@@ -34,18 +34,54 @@ SessionSeatMap _map() => const SessionSeatMap(
       seatsPerRow: 12, // legacy fallback = max(counts)
       seatCounts: <int>[10, 12, 11, 6, 8, 4, 9, 6],
       reservedCells: <SeatCell>[
-        SeatCell(rowLabel: 'A', seatNumber: 1, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'A', seatNumber: 5, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'A', seatNumber: 9, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'B', seatNumber: 2, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'B', seatNumber: 6, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'C', seatNumber: 3, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'C', seatNumber: 11, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'D', seatNumber: 4, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'E', seatNumber: 7, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'F', seatNumber: 1, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'G', seatNumber: 8, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'H', seatNumber: 5, kind: SeatReservationKind.userBooking),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 5,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 9,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'B',
+            seatNumber: 2,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'B',
+            seatNumber: 6,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'C',
+            seatNumber: 3,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'C',
+            seatNumber: 11,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'D',
+            seatNumber: 4,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'E',
+            seatNumber: 7,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'F',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'G',
+            seatNumber: 8,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'H',
+            seatNumber: 5,
+            kind: SeatReservationKind.userBooking,),
       ],
       myCell: SeatCell(
         rowLabel: 'B',

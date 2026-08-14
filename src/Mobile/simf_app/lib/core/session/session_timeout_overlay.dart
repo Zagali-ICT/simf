@@ -40,7 +40,8 @@ class SessionTimeoutOverlay extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(SimfTokens.space4),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: SimfTokens.sessionTimeoutOverlayMaxWidth),
+                  constraints: const BoxConstraints(
+                      maxWidth: SimfTokens.sessionTimeoutOverlayMaxWidth,),
                   child: Material(
                     color: SimfTokens.navyDeep,
                     borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
@@ -72,7 +73,8 @@ class SessionTimeoutOverlay extends StatelessWidget {
                                   onPressed: onSignOut,
                                   style: TextButton.styleFrom(
                                     foregroundColor: SimfTokens.beigeBorder,
-                                    minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
+                                    minimumSize: const Size.fromHeight(
+                                        SimfTokens.buttonHeight,),
                                   ),
                                   child: Text(l10n.signOutLink),
                                 ),
@@ -82,7 +84,8 @@ class SessionTimeoutOverlay extends StatelessWidget {
                                 child: FilledButton(
                                   onPressed: onStaySignedIn,
                                   style: FilledButton.styleFrom(
-                                    minimumSize: const Size.fromHeight(SimfTokens.buttonHeight),
+                                    minimumSize: const Size.fromHeight(
+                                        SimfTokens.buttonHeight,),
                                   ),
                                   child: Text(l10n.sessionStaySignedIn),
                                 ),

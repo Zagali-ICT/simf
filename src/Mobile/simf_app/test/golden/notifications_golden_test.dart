@@ -96,12 +96,12 @@ final _items = <NotificationItem>[
 /// Keeps the populated unread frame for the parity shot — see the file note.
 class _FakeNotificationsRepo implements NotificationsRepository {
   @override
-  Future<List<NotificationItem>> getNotifications({int skip = 0, int top = 50}) async =>
+  Future<List<NotificationItem>> getNotifications(
+          {int skip = 0, int top = 50,}) async =>
       _items;
 
   @override
-  Future<int> getUnreadCount() async =>
-      _items.where((n) => !n.isRead).length;
+  Future<int> getUnreadCount() async => _items.where((n) => !n.isRead).length;
 
   @override
   Future<bool> markRead(String id) async => true;

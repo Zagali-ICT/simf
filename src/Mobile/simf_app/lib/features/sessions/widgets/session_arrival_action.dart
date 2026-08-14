@@ -121,7 +121,9 @@ class SessionArrivalAction extends ConsumerWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Icon(icon, size: SimfTokens.sessionArrivalActionSize, color: SimfTokens.accent),
+            Icon(icon,
+                size: SimfTokens.sessionArrivalActionSize,
+                color: SimfTokens.accent,),
             const SizedBox(width: SimfTokens.space3),
             Expanded(child: child),
           ],

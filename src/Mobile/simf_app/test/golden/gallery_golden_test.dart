@@ -28,7 +28,8 @@ import 'golden_fonts.dart';
 /// placeholder — no network) → the PNG is stable run-to-run.
 
 const _items = <MediaItem>[
-  MediaItem(id: 'm1', kind: MediaKind.image, title: 'الافتتاح', album: 'اليوم ١'),
+  MediaItem(
+      id: 'm1', kind: MediaKind.image, title: 'الافتتاح', album: 'اليوم ١',),
   MediaItem(id: 'm2', kind: MediaKind.video, title: 'الكلمة الرئيسية'),
 ];
 

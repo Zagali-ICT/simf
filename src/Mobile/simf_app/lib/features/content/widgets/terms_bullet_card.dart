@@ -16,7 +16,8 @@ class TermsBulletCard extends StatelessWidget {
       decoration: BoxDecoration(
         // The frame's hairline (505:1639 — 0.2px); kept ≥0.2 so it still
         // rasterises on every phone density.
-        border: Border.all(color: SimfTokens.accent, width: SimfTokens.termsBulletCardWidth),
+        border: Border.all(
+            color: SimfTokens.accent, width: SimfTokens.termsBulletCardWidth,),
         borderRadius: BorderRadius.circular(SimfTokens.radius),
       ),
       child: Row(

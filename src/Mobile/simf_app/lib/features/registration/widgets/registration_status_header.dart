@@ -46,7 +46,9 @@ class RegistrationStatusHeader extends StatelessWidget {
                 style: SimfTokens.labelWhiteSemiboldTitle,
               ),
             ),
-            const SizedBox(width: SimfTokens.registrationStatusHeaderWidth), // balances the back button; keeps title centred
+            const SizedBox(
+                width: SimfTokens
+                    .registrationStatusHeaderWidth,), // balances the back button; keeps title centred
           ],
         ),
       ),

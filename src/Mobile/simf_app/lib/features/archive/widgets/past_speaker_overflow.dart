@@ -5,7 +5,8 @@ import 'package:simf_app/app/theme/tokens.dart';
 /// beige-bordered rounded-rect (r8) with a big gold "+N" over the white "آخرون"
 /// label.
 class PastSpeakerOverflow extends StatelessWidget {
-  const PastSpeakerOverflow({required this.count, required this.label, super.key});
+  const PastSpeakerOverflow(
+      {required this.count, required this.label, super.key,});
 
   final int count;
   final String label;

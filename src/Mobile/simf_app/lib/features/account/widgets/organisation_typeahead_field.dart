@@ -79,8 +79,9 @@ class OrganisationTypeaheadField extends StatelessWidget {
         style: simfInputStyle,
         decoration: simfFieldDecoration(
           hintText: l10n.organisationSearchHint,
-          prefixIcon:
-              const Icon(Icons.search, color: SimfTokens.greyText, size: SimfTokens.organisationTypeaheadFieldSize),
+          prefixIcon: const Icon(Icons.search,
+              color: SimfTokens.greyText,
+              size: SimfTokens.organisationTypeaheadFieldSize,),
           errorText: showError ? l10n.organisationRequired : null,
         ),
         onChanged: onSearchChanged,
@@ -96,11 +97,13 @@ class OrganisationTypeaheadField extends StatelessWidget {
                   width: SimfTokens.organisationTypeaheadFieldWidthMd,
                   height: SimfTokens.organisationTypeaheadFieldHeight,
                   child: CircularProgressIndicator(
-                    strokeWidth: SimfTokens.organisationTypeaheadFieldStrokeWidth,
+                    strokeWidth:
+                        SimfTokens.organisationTypeaheadFieldStrokeWidth,
                     color: SimfTokens.accent,
                   ),
                 ),
-                const SizedBox(width: SimfTokens.organisationTypeaheadFieldWidthSm),
+                const SizedBox(
+                    width: SimfTokens.organisationTypeaheadFieldWidthSm,),
                 Text(l10n.loadingLabel, style: SimfTokens.bodyGrey),
               ],
             ),

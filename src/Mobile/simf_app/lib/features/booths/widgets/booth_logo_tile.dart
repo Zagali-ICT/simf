@@ -22,7 +22,11 @@ import 'package:simf_app/core/net/asset_urls.dart';
 /// logo. The inset is square now and the mark is painted at the box's real
 /// [_markSize], so nothing is cropped.
 class BoothLogoTile extends StatelessWidget {
-  const BoothLogoTile({required this.boothId, required this.baseUrl, required this.fallback, super.key,
+  const BoothLogoTile({
+    required this.boothId,
+    required this.baseUrl,
+    required this.fallback,
+    super.key,
   });
 
   final String boothId;

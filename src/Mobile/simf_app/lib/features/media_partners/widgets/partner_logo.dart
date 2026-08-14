@@ -31,7 +31,8 @@ class PartnerLogo extends StatelessWidget {
               child: SizedBox(
                 width: SimfTokens.partnerCardWidth,
                 height: SimfTokens.partnerCardHeight,
-                child: CircularProgressIndicator(strokeWidth: SimfTokens.partnerCardStrokeWidth),
+                child: CircularProgressIndicator(
+                    strokeWidth: SimfTokens.partnerCardStrokeWidth,),
               ),
             ),
           ),

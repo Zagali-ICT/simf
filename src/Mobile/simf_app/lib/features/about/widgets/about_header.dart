@@ -29,7 +29,8 @@ class AboutHeader extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Icon(Icons.anchor, color: SimfTokens.accent, size: SimfTokens.aboutHeaderSize),
+            const Icon(Icons.anchor,
+                color: SimfTokens.accent, size: SimfTokens.aboutHeaderSize,),
             const SizedBox(width: SimfTokens.space2),
             Flexible(
               child: Text(

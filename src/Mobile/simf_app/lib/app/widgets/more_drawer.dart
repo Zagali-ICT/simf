@@ -90,7 +90,8 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.registrationStatusButton,
                       onTap: () {
                         Navigator.of(context).pop();
-                        unawaited(context.pushNamed(RouteNames.registrationStatus));
+                        unawaited(
+                            context.pushNamed(RouteNames.registrationStatus),);
                       },
                     ),
                   // Staff gate operations (D-406 / D-509) — Staff role only.
@@ -109,7 +110,8 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.staffRegisterVisitorEntry,
                       onTap: () {
                         Navigator.of(context).pop();
-                        unawaited(context.pushNamed(RouteNames.staffRegisterVisitor));
+                        unawaited(
+                            context.pushNamed(RouteNames.staffRegisterVisitor),);
                       },
                     ),
                   // Exhibitor lead capture (D-426 / D-519) — Exhibitor role

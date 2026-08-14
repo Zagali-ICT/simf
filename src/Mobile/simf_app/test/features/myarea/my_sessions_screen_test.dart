@@ -33,7 +33,8 @@ MyAreaSessionItem _session({
       titleArabic: title,
       // upcoming → far future (always "upcoming"); else far past (always
       // ended).
-      start: upcoming ? DateTime.utc(2099, 1, 1, 6) : DateTime.utc(2020, 1, 1, 6),
+      start:
+          upcoming ? DateTime.utc(2099, 1, 1, 6) : DateTime.utc(2020, 1, 1, 6),
       end: upcoming ? DateTime.utc(2099, 1, 1, 7) : DateTime.utc(2020, 1, 1, 7),
       status: status,
       attended: attended,

@@ -83,7 +83,8 @@ Future<void> _pump(WidgetTester tester, BoothDetail detail) async {
 
 void main() {
   group('ExhibitorDetailScreen logo', () {
-    testWidgets('wires the exhibitor OWN ExhibitorLogo route as the primary logo',
+    testWidgets(
+        'wires the exhibitor OWN ExhibitorLogo route as the primary logo',
         (tester) async {
       await _pump(tester, _withOwnLogo);
       // The exhibitor's own logo (owner = the exhibitor) is the primary source.

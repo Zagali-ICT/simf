@@ -91,7 +91,8 @@ final _days = <ProgrammeDay>[
         code: 'S-02',
         titleAr: 'الاستراتيجيات الدفاعية الحديثة',
         titleEn: 'Modern Defence Strategies',
-        descAr: 'استعراض أحدث المنظومات الدفاعية والشراكات الاستراتيجية في المنطقة.',
+        descAr:
+            'استعراض أحدث المنظومات الدفاعية والشراكات الاستراتيجية في المنطقة.',
         start: DateTime.utc(2026, 6, 20, 7, 30),
         type: SessionType.session,
       ),

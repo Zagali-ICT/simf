@@ -102,13 +102,15 @@ void main() {
       // QrId.Normalise upper-cases on the server, and an operator may type a
       // damaged code in lower case. Base32 was chosen over base64 precisely so
       // this cannot corrupt the payload.
-      const encoded = '1514B39C8841QMMTQCSS7A85NJ8T678WZYZR4E4SE4XRC67CY1GH81VCDWAAG';
+      const encoded =
+          '1514B39C8841QMMTQCSS7A85NJ8T678WZYZR4E4SE4XRC67CY1GH81VCDWAAG';
       final badge = OfflineBadge.decode(encoded.toLowerCase(), key);
       expect(badge?.sequence, 3000042);
     });
 
     test('reads a badge stamped with the previous key version', () {
-      const encoded = '0DDZYS5R9HVKXNQP7KQHR7FDRMPNAZ1ZG2E976DKNF5GGR57Y1AHB3F73NF2G';
+      const encoded =
+          '0DDZYS5R9HVKXNQP7KQHR7FDRMPNAZ1ZG2E976DKNF5GGR57Y1AHB3F73NF2G';
       expect(OfflineBadge.readKeyVersion(encoded), 0);
       expect(OfflineBadge.decode(encoded, key)?.sequence, 3000043);
     });

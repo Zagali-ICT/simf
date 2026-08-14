@@ -322,7 +322,8 @@ class _StaffRegisterVisitorScreenState
         // The registration itself is finished — drop the busy state before the
         // modal so its controls are live (and the CTA is not left spinning).
         setState(() => _submitting = false);
-        await _resolveFailedUploads(l10n, messenger, repo, result.userId, failed);
+        await _resolveFailedUploads(
+            l10n, messenger, repo, result.userId, failed,);
         return;
       }
       messenger
@@ -1028,7 +1029,9 @@ class _StaffRegisterVisitorScreenState
           child: SimfPickerField(
             fieldKey: 'staffNationalityPicker',
             displayText: hasValue
-                ? (l10n.isArabic ? selected.first.nameArabic : selected.first.name)
+                ? (l10n.isArabic
+                    ? selected.first.nameArabic
+                    : selected.first.name)
                 : l10n.nationalityLabel,
             isPlaceholder: !hasValue,
             onTap: () => unawaited(_pickNationality(l10n)),
@@ -1102,7 +1105,8 @@ class _StaffRegisterVisitorScreenState
             options: <String>[l10n.iqamaSegment, l10n.passportSegment],
             selectedIndex: _docType == VisitorDocType.iqama ? 0 : 1,
             onChanged: (index) => setState(() {
-              _docType = index == 0 ? VisitorDocType.iqama : VisitorDocType.passport;
+              _docType =
+                  index == 0 ? VisitorDocType.iqama : VisitorDocType.passport;
               _documentNumber.clear();
             }),
           ),

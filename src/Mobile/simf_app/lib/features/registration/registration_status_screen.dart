@@ -141,7 +141,8 @@ class _RegistrationStatusScreenState
         primaryLabel = l10n.reCheckButton;
         onPrimary = () => unawaited(_load());
       case RegistrationStatus.approved:
-        color = SimfTokens.statusAccepted; // #22C55E — the frame's approval green
+        color =
+            SimfTokens.statusAccepted; // #22C55E — the frame's approval green
         icon = Icons.check_rounded;
         headline = l10n.regApprovedHeadline;
         message = l10n.regApprovedMessage;
@@ -169,7 +170,8 @@ class _RegistrationStatusScreenState
           ),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: SimfTokens.registrationStatusScreenMaxWidth),
+              constraints: const BoxConstraints(
+                  maxWidth: SimfTokens.registrationStatusScreenMaxWidth,),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

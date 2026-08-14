@@ -147,7 +147,8 @@ void main() {
         ),
       );
 
-      expect(find.text('4th Edition\n8-10 March 2027 · Jeddah'), findsOneWidget);
+      expect(
+          find.text('4th Edition\n8-10 March 2027 · Jeddah'), findsOneWidget,);
       // The hardcoded 2026 date must NOT survive a re-configured edition.
       expect(
         find.textContaining('23–25 Nov 2026'),

@@ -53,7 +53,8 @@ class _StaticToken implements AuthTokenSource {
 
 ProfileRepository _repository(_CapturingAdapter adapter) {
   final dio = Dio(
-    BaseOptions(baseUrl: 'https://api.test/api/v1', validateStatus: (_) => true),
+    BaseOptions(
+        baseUrl: 'https://api.test/api/v1', validateStatus: (_) => true,),
   )..httpClientAdapter = adapter;
   final client = SimfApiClient.build(
     config: const SimfDataConfig(
@@ -74,14 +75,16 @@ void main() {
   group('ProfileRepository uploads', () {
     test('uploadAvatar posts the face photo to /app/account/avatar', () async {
       final adapter = _CapturingAdapter();
-      final ok = await _repository(adapter).uploadAvatar(bytes: bytes, filename: 'face.jpg');
+      final ok = await _repository(adapter)
+          .uploadAvatar(bytes: bytes, filename: 'face.jpg');
       expect(ok, isTrue);
       expect(adapter.paths.single, '/app/account/avatar');
     });
 
     test('uploadIdImage posts the document to the id-image endpoint', () async {
       final adapter = _CapturingAdapter();
-      final ok = await _repository(adapter).uploadIdImage(bytes: bytes, filename: 'id.png');
+      final ok = await _repository(adapter)
+          .uploadIdImage(bytes: bytes, filename: 'id.png');
       expect(ok, isTrue);
       expect(adapter.paths.single, '/app/account/user-profile/id-image');
     });

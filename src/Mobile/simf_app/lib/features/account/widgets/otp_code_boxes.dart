@@ -19,7 +19,12 @@ const Color otpMutedBlue = SimfTokens.mutedBlue;
 /// node and rebuilds on [onChanged].
 class OtpCodeBoxes extends StatelessWidget {
   const OtpCodeBoxes({
-    required this.controller, required this.focusNode, required this.enabled, required this.onChanged, required this.onSubmitted, super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.enabled,
+    required this.onChanged,
+    required this.onSubmitted,
+    super.key,
   });
 
   final TextEditingController controller;
@@ -46,7 +51,8 @@ class OtpCodeBoxes extends StatelessWidget {
               autocorrect: false,
               showCursor: false,
               enableInteractiveSelection: false,
-              style: const TextStyle(color: SimfTokens.transparent, fontSize: 1),
+              style:
+                  const TextStyle(color: SimfTokens.transparent, fontSize: 1),
               inputFormatters: <TextInputFormatter>[
                 FilteringTextInputFormatter.digitsOnly,
               ],
@@ -77,7 +83,8 @@ class OtpCodeBoxes extends StatelessWidget {
                       height: SimfTokens.otpCodeBoxesHeightSm,
                       decoration: BoxDecoration(
                         color: SimfTokens.navy,
-                        borderRadius: BorderRadius.circular(SimfTokens.radius14),
+                        borderRadius:
+                            BorderRadius.circular(SimfTokens.radius14),
                         border: Border.all(
                           width: SimfTokens.otpCodeBoxesWidthMd,
                           color: focusNode.hasFocus && i == activeIndex
@@ -117,10 +124,12 @@ class OtpMark extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: SimfTokens.navyDeep,
-        border: Border.all(color: SimfTokens.accent, width: SimfTokens.otpCodeBoxesWidthSm),
+        border: Border.all(
+            color: SimfTokens.accent, width: SimfTokens.otpCodeBoxesWidthSm,),
       ),
       alignment: Alignment.center,
-      child: Icon(icon, color: SimfTokens.accent, size: SimfTokens.otpCodeBoxesSize),
+      child: Icon(icon,
+          color: SimfTokens.accent, size: SimfTokens.otpCodeBoxesSize,),
     );
   }
 }

@@ -176,7 +176,8 @@ void main() {
       );
     });
 
-    testWidgets('an unparseable server version → the generic offer, not garbage',
+    testWidgets(
+        'an unparseable server version → the generic offer, not garbage',
         (tester) async {
       // The forced decision is driven by min=2.0.0; latest="soon" is
       // unparseable and must NOT be rendered as a version (D-736 review fix).
@@ -186,7 +187,8 @@ void main() {
           android: PlatformVersionPolicy(
             minVersion: '2.0.0',
             latestVersion: 'soon',
-            storeUrl: 'https://play.google.com/store/apps/details?id=sa.simf.app',
+            storeUrl:
+                'https://play.google.com/store/apps/details?id=sa.simf.app',
           ),
           ios: PlatformVersionPolicy(),
         ),

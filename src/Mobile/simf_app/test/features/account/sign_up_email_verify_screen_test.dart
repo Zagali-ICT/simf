@@ -143,7 +143,8 @@ bool _resendEnabled(WidgetTester tester) {
 
 void main() {
   group('SignUpEmailVerifyScreen (Page 006)', () {
-    testWidgets('Verify is disabled until 6 digits, then verifies and routes '
+    testWidgets(
+        'Verify is disabled until 6 digits, then verifies and routes '
         'to sign-in', (tester) async {
       final controller = _FakeController();
       final prefs = _FakePrefs();
@@ -186,7 +187,8 @@ void main() {
       await tester.pump(); // start the async verify
       await tester.pump(); // settle the error setState
 
-      expect(find.text('The verification code is not correct.'), findsOneWidget);
+      expect(
+          find.text('The verification code is not correct.'), findsOneWidget,);
       expect(find.text('SIGN-IN'), findsNothing);
       expect(_verifyEnabled(tester), isFalse); // field was cleared
 
@@ -194,7 +196,8 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('the resend cooldown shows on entry and blocks resend until it '
+    testWidgets(
+        'the resend cooldown shows on entry and blocks resend until it '
         'elapses (D-695)', (tester) async {
       final controller = _FakeController();
       await _pump(tester, controller);

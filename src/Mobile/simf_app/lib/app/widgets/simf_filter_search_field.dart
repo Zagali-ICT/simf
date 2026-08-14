@@ -42,7 +42,9 @@ class SimfFilterSearchField extends StatelessWidget {
         children: <Widget>[
           const Padding(
             padding: EdgeInsetsDirectional.only(start: SimfTokens.space3),
-            child: Icon(Icons.search, color: SimfTokens.beigeBorder, size: SimfTokens.simfFilterSearchFieldSize),
+            child: Icon(Icons.search,
+                color: SimfTokens.beigeBorder,
+                size: SimfTokens.simfFilterSearchFieldSize,),
           ),
           Expanded(
             // The placeholder is a separate node that disappears once the user

@@ -92,7 +92,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 
   String _passwordRequirementMessage(
-      PasswordRequirement req, AppL10n l10n,) {
+    PasswordRequirement req,
+    AppL10n l10n,
+  ) {
     switch (req) {
       case PasswordRequirement.length:
         return l10n.passwordLength;
@@ -223,9 +225,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 ],
                 // No dedicated "6-digit code" key; reuse requiredField for the
                 // empty + wrong-length case (reported to owner).
-                validator: (value) => isBlank(value) || value!.trim().length != 6
-                    ? l10n.requiredField
-                    : null,
+                validator: (value) =>
+                    isBlank(value) || value!.trim().length != 6
+                        ? l10n.requiredField
+                        : null,
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: SimfTokens.space4),

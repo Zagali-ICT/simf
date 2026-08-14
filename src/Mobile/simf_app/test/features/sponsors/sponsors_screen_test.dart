@@ -242,7 +242,8 @@ void main() {
     // test - which is how they came to be the last two hand-nested copies of
     // SimfRefreshableMessage. These pin both the surface and the pull-to-retry
     // wrapper, so the shared widget cannot be swapped back out unnoticed.
-    testWidgets('a failed read shows the error state with a retry', (tester) async {
+    testWidgets('a failed read shows the error state with a retry',
+        (tester) async {
       await _pump(tester, <Override>[
         sponsorGroupsProvider.overrideWith((ref) async {
           throw Exception('wire down');

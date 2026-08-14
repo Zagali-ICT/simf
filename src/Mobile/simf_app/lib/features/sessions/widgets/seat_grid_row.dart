@@ -12,7 +12,19 @@ import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 /// and SeatBox renders it. Splitting them would mean making the enum
 /// public to no other reader.
 class SeatGridRow extends StatelessWidget {
-  const SeatGridRow({required this.rowLabel, required this.seatCount, required this.tier, required this.eligible, required this.inspectMode, required this.seatSize, required this.rowLabelWidth, required this.reserved, required this.map, required this.l10n, required this.availableBorderColor, super.key,
+  const SeatGridRow({
+    required this.rowLabel,
+    required this.seatCount,
+    required this.tier,
+    required this.eligible,
+    required this.inspectMode,
+    required this.seatSize,
+    required this.rowLabelWidth,
+    required this.reserved,
+    required this.map,
+    required this.l10n,
+    required this.availableBorderColor,
+    super.key,
     this.selectedRowLabel,
     this.selectedSeatNumber,
     this.onSeatTap,
@@ -156,7 +168,13 @@ Color tierBandColor(SeatTier tier) => switch (tier) {
 enum SeatStatus { mine, selected, reserved, confirmed, available, ineligible }
 
 class SeatBox extends StatelessWidget {
-  const SeatBox({required this.status, required this.size, required this.seatNumber, required this.availableBorderColor, required this.semanticsLabel, super.key,
+  const SeatBox({
+    required this.status,
+    required this.size,
+    required this.seatNumber,
+    required this.availableBorderColor,
+    required this.semanticsLabel,
+    super.key,
     this.onTap,
   });
 

@@ -57,7 +57,8 @@ class SimfIdentityCell extends StatelessWidget {
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Row(
           children: <Widget>[
-            IdentityLogoOrInitials(imageUrl: imageUrl, initials: _initialsFrom(title)),
+            IdentityLogoOrInitials(
+                imageUrl: imageUrl, initials: _initialsFrom(title),),
             const SizedBox(width: SimfTokens.space4),
             Expanded(
               child: Column(

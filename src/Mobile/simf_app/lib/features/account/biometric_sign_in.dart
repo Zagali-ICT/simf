@@ -76,7 +76,8 @@ Future<void> runBiometricSignIn({
   // establishes the session before its trailing profile reload, so a
   // non-AuthFailure thrown there must not skip the navigation home - the
   // biometric path mirrors the password path (D-441).
-  if (context.mounted && ref.read(authControllerProvider) is AuthStateSignedIn) {
+  if (context.mounted &&
+      ref.read(authControllerProvider) is AuthStateSignedIn) {
     if (unexpectedError != null) {
       // The localized generic message, NOT '$unexpectedError' - a raw Dart
       // toString is untranslated and leaks internal type detail to the user.

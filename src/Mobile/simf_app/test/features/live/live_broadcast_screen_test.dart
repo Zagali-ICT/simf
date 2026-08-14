@@ -48,7 +48,8 @@ LiveSession _liveSession({
     );
 
 class _FakeLiveRepo implements LiveRepository {
-  _FakeLiveRepo({this.session, this.status, this.upcoming = const <UpcomingSession>[]});
+  _FakeLiveRepo(
+      {this.session, this.status, this.upcoming = const <UpcomingSession>[],});
 
   final LiveSession? session;
   final int? status;
@@ -218,7 +219,8 @@ Future<GoRouter> _pump(
 
 void main() {
   group('LiveBroadcastScreen (Page 025)', () {
-    testWidgets('a signed-out guest sees the need-login gate, not the stream '
+    testWidgets(
+        'a signed-out guest sees the need-login gate, not the stream '
         '(owner, D-577)', (tester) async {
       final repo = _FakeLiveRepo(
         session: _liveSession(
@@ -248,7 +250,8 @@ void main() {
       expect(repo.calls, 0);
     });
 
-    testWidgets('an empty sessionId is treated as no selection', (tester) async {
+    testWidgets('an empty sessionId is treated as no selection',
+        (tester) async {
       final repo = _FakeLiveRepo(session: _liveSession());
       await _pump(tester, repo: repo, sessionId: '   ');
 
@@ -259,7 +262,8 @@ void main() {
       expect(repo.calls, 0);
     });
 
-    testWidgets('D-495 — no sessionId but a profile live link plays the global '
+    testWidgets(
+        'D-495 — no sessionId but a profile live link plays the global '
         'main live (forum name, no ask-question)', (tester) async {
       final repo = _FakeLiveRepo(session: _liveSession());
       await _pump(
@@ -340,7 +344,8 @@ void main() {
 
     // FR-702 (owner 2026-07-31) — the notice is a NOTIFICATION, not a
     // restriction: it is shown with the stream, never instead of it.
-    testWidgets('FR-702 — a session notice renders as the informational banner '
+    testWidgets(
+        'FR-702 — a session notice renders as the informational banner '
         'and the player still mounts', (tester) async {
       await _pump(
         tester,
@@ -365,7 +370,8 @@ void main() {
       expect(find.byType(LivePlayerSurface), findsOneWidget);
     });
 
-    testWidgets('FR-702 — the banner renders the Arabic notice under the ar '
+    testWidgets(
+        'FR-702 — the banner renders the Arabic notice under the ar '
         'locale', (tester) async {
       await _pump(
         tester,
@@ -407,7 +413,8 @@ void main() {
 
     // A15 — the caption strip renders a STATIC admin-typed string, so it must
     // not carry AI branding or promise live translation of the spoken audio.
-    testWidgets('A15 — the caption strip has no AI chip and no '
+    testWidgets(
+        'A15 — the caption strip has no AI chip and no '
         'live-translation promise', (tester) async {
       await _pump(
         tester,
@@ -421,7 +428,8 @@ void main() {
       );
 
       expect(find.text('AI'), findsNothing);
-      expect(find.textContaining('Live captions of the spoken word'), findsNothing);
+      expect(find.textContaining('Live captions of the spoken word'),
+          findsNothing,);
       // The honest placeholder names who wrote the caption instead.
       expect(
         find.textContaining('written by the organiser'),
@@ -547,7 +555,8 @@ void main() {
       expect(repo.calls, greaterThanOrEqualTo(2));
     });
 
-    testWidgets('renders the hall name + speakers line + upcoming sessions '
+    testWidgets(
+        'renders the hall name + speakers line + upcoming sessions '
         '(D-433)', (tester) async {
       await _pump(
         tester,
@@ -585,7 +594,8 @@ void main() {
       expect(find.text('11:00'), findsOneWidget);
     });
 
-    testWidgets('P5 — a session with caption text shows it in the caption strip '
+    testWidgets(
+        'P5 — a session with caption text shows it in the caption strip '
         '(white)', (tester) async {
       await _pump(
         tester,
@@ -615,7 +625,8 @@ void main() {
       expect(tester.widget<Text>(caption).style!.color, SimfTokens.surface);
     });
 
-    testWidgets('P5 — a live session with no caption shows the placeholder hint',
+    testWidgets(
+        'P5 — a live session with no caption shows the placeholder hint',
         (tester) async {
       await _pump(
         tester,
@@ -668,7 +679,8 @@ void main() {
       expect(find.text('الافتتاح'), findsOneWidget);
     });
 
-    testWidgets('D-712 — leaving a watched live session opens the rate screen '
+    testWidgets(
+        'D-712 — leaving a watched live session opens the rate screen '
         'once (shared dedup with the after-view prompt)', (tester) async {
       final router = await _pump(
         tester,
@@ -700,7 +712,8 @@ void main() {
       expect(find.text('GONE'), findsOneWidget);
     });
 
-    testWidgets('D-712 — a non-live session (no stream) does not prompt on leave',
+    testWidgets(
+        'D-712 — a non-live session (no stream) does not prompt on leave',
         (tester) async {
       final router = await _pump(
         tester,
@@ -733,7 +746,8 @@ void main() {
       expect(find.text('RATE s1 Session'), findsNothing);
     });
 
-    testWidgets('2026-07-22 — the after-watch prompt is suppressed when the CP '
+    testWidgets(
+        '2026-07-22 — the after-watch prompt is suppressed when the CP '
         'disables session rating (siteSettings.sessionRatingEnabled=false)',
         (tester) async {
       tester.view.physicalSize = const Size(1200, 2600);
@@ -810,7 +824,8 @@ void main() {
       expect(find.text('GONE'), findsOneWidget);
     });
 
-    testWidgets('S-3 — a URL set but the session has NOT started (future) hides '
+    testWidgets(
+        'S-3 — a URL set but the session has NOT started (future) hides '
         'the LIVE badge and the Ask button', (tester) async {
       final now = saudiNow();
       await _pump(
@@ -832,7 +847,8 @@ void main() {
       expect(find.text('Now broadcasting'), findsNothing);
     });
 
-    testWidgets('S-3 — an in-window session (start<now<end) with a URL shows the '
+    testWidgets(
+        'S-3 — an in-window session (start<now<end) with a URL shows the '
         'LIVE badge, the Ask button and the now-broadcasting header',
         (tester) async {
       final now = saudiNow();
@@ -856,8 +872,10 @@ void main() {
       expect(find.text('Now broadcasting'), findsOneWidget);
     });
 
-    testWidgets('S-3 — an ENDED session (end<now) with the URL still set hides '
-        'the LIVE badge + Ask and does NOT say now-broadcasting', (tester) async {
+    testWidgets(
+        'S-3 — an ENDED session (end<now) with the URL still set hides '
+        'the LIVE badge + Ask and does NOT say now-broadcasting',
+        (tester) async {
       final now = saudiNow();
       await _pump(
         tester,
@@ -880,7 +898,8 @@ void main() {
       expect(find.text('Session'), findsOneWidget);
     });
 
-    testWidgets('S-3 — the global main-live (no window) still reads live: the '
+    testWidgets(
+        'S-3 — the global main-live (no window) still reads live: the '
         'LIVE badge shows', (tester) async {
       await _pump(
         tester,

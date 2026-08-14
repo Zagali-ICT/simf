@@ -27,7 +27,8 @@ void main() {
       expect(routePathRequiresAuth('/sessions/:sessionId/my-seat'), isTrue);
     });
 
-    test('D-750 — the agenda + session detail are public again (reverses D-576)',
+    test(
+        'D-750 — the agenda + session detail are public again (reverses D-576)',
         () {
       expect(routePathRequiresAuth('/sessions'), isFalse);
       expect(routePathRequiresAuth('/sessions/:sessionId'), isFalse);
@@ -169,7 +170,8 @@ void main() {
       );
     });
 
-    test('D-750 — a signed-out guest hitting /sessions or a session detail is '
+    test(
+        'D-750 — a signed-out guest hitting /sessions or a session detail is '
         'NOT redirected (public again, reverses D-576)', () {
       for (final p in <String>['/sessions', '/sessions/:sessionId']) {
         expect(
@@ -185,7 +187,8 @@ void main() {
       }
     });
 
-    test('D-577 — a signed-out guest hitting /live is NOT redirected (the gate '
+    test(
+        'D-577 — a signed-out guest hitting /live is NOT redirected (the gate '
         'is in-screen on the live screen)', () {
       expect(
         redirectDecision(
@@ -278,7 +281,8 @@ void main() {
       expect(find.text('SIGN-IN'), findsNothing);
     });
 
-    testWidgets('D-750 — the /sessions tab does NOT bounce a signed-out guest '
+    testWidgets(
+        'D-750 — the /sessions tab does NOT bounce a signed-out guest '
         '(public again, reverses D-576)', (tester) async {
       final auth = _AuthFlag();
       final router = await pumpShell(tester, auth);
@@ -417,7 +421,8 @@ void main() {
     });
   });
 
-  group('D-666 — a not-yet-approved account is gated as an effective guest', () {
+  group('D-666 — a not-yet-approved account is gated as an effective guest',
+      () {
     // buildRouter passes CurrentUser.effectiveAppRole, which is guest for a
     // pending / rejected account — so the redirect treats it exactly like a
     // guest even though its token may carry a Visitor role.
@@ -430,7 +435,12 @@ void main() {
         );
 
     test('is redirected home off the attendee / approved routes', () {
-      for (final p in <String>['/meet', '/rate', '/contacts', '/contacts/share']) {
+      for (final p in <String>[
+        '/meet',
+        '/rate',
+        '/contacts',
+        '/contacts/share',
+      ]) {
         expect(hitGuest(p), '/', reason: p);
       }
     });

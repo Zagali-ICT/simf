@@ -56,7 +56,8 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
       ),
-      builder: (_) => DelegationMeetingRequestSheet(country: country, l10n: l10n),
+      builder: (_) =>
+          DelegationMeetingRequestSheet(country: country, l10n: l10n),
     );
   }
 

@@ -16,18 +16,30 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 class _FakeAuthRepo implements AuthRepository {
   _FakeAuthRepo(this._resolve);
 
-  final ({bool found, bool hasPassword, String? displayName, bool needsEmail, String? maskedEmail})
-      _resolve;
+  final ({
+    bool found,
+    bool hasPassword,
+    String? displayName,
+    bool needsEmail,
+    String? maskedEmail
+  }) _resolve;
 
   int startCalls = 0;
   int completeCalls = 0;
 
   @override
-  Future<({bool found, bool hasPassword, String? displayName, bool needsEmail, String? maskedEmail})>
-      resolveBadge({required String qrId}) async => _resolve;
+  Future<
+      ({
+        bool found,
+        bool hasPassword,
+        String? displayName,
+        bool needsEmail,
+        String? maskedEmail
+      })> resolveBadge({required String qrId}) async => _resolve;
 
   @override
-  Future<({String maskedEmail, int codeExpiresInSeconds})> badgeActivationStart({
+  Future<({String maskedEmail, int codeExpiresInSeconds})>
+      badgeActivationStart({
     required String qrId,
     String? email,
   }) async {
@@ -88,7 +100,9 @@ Widget _activationHost({
   );
 }
 
-Widget _host({required Widget Function(GoRouterState) home, required AuthRepository repo}) {
+Widget _host(
+    {required Widget Function(GoRouterState) home,
+    required AuthRepository repo,}) {
   final router = GoRouter(
     initialLocation: '/badge',
     routes: <RouteBase>[
@@ -133,15 +147,23 @@ Widget _host({required Widget Function(GoRouterState) home, required AuthReposit
 }
 
 void main() {
-  testWidgets('manual-entry resolve of a has-password badge routes to the '
+  testWidgets(
+      'manual-entry resolve of a has-password badge routes to the '
       'password step with the resolved name (D-738)', (tester) async {
-    await tester.pumpWidget(_host(
-      home: (_) => const BadgeSignInScreen(enableCamera: false),
-      repo: _FakeAuthRepo((
-        found: true, hasPassword: true, displayName: 'Khalid',
-        needsEmail: false, maskedEmail: null,
-      ),),
-    ),);
+    await tester.pumpWidget(
+      _host(
+        home: (_) => const BadgeSignInScreen(enableCamera: false),
+        repo: _FakeAuthRepo(
+          (
+            found: true,
+            hasPassword: true,
+            displayName: 'Khalid',
+            needsEmail: false,
+            maskedEmail: null,
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, 'ABCDEFGH2345');
@@ -156,13 +178,20 @@ void main() {
 
   testWidgets('manual-entry resolve of a passwordless badge opens activation',
       (tester) async {
-    await tester.pumpWidget(_host(
-      home: (_) => const BadgeSignInScreen(enableCamera: false),
-      repo: _FakeAuthRepo((
-        found: true, hasPassword: false, displayName: 'Khalid',
-        needsEmail: true, maskedEmail: null,
-      ),),
-    ),);
+    await tester.pumpWidget(
+      _host(
+        home: (_) => const BadgeSignInScreen(enableCamera: false),
+        repo: _FakeAuthRepo(
+          (
+            found: true,
+            hasPassword: false,
+            displayName: 'Khalid',
+            needsEmail: true,
+            maskedEmail: null,
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, 'ABCDEFGH2345');
@@ -176,13 +205,20 @@ void main() {
   });
 
   testWidgets('unknown badge shows the not-recognised message', (tester) async {
-    await tester.pumpWidget(_host(
-      home: (_) => const BadgeSignInScreen(enableCamera: false),
-      repo: _FakeAuthRepo((
-        found: false, hasPassword: false, displayName: null,
-        needsEmail: false, maskedEmail: null,
-      ),),
-    ),);
+    await tester.pumpWidget(
+      _host(
+        home: (_) => const BadgeSignInScreen(enableCamera: false),
+        repo: _FakeAuthRepo(
+          (
+            found: false,
+            hasPassword: false,
+            displayName: null,
+            needsEmail: false,
+            maskedEmail: null,
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, 'ZZZZZZZZZZZZ');
@@ -195,10 +231,15 @@ void main() {
 
   testWidgets('activation email step: a malformed email blocks the start call',
       (tester) async {
-    final repo = _FakeAuthRepo((
-      found: true, hasPassword: false, displayName: 'Khalid',
-      needsEmail: true, maskedEmail: null,
-    ),);
+    final repo = _FakeAuthRepo(
+      (
+        found: true,
+        hasPassword: false,
+        displayName: 'Khalid',
+        needsEmail: true,
+        maskedEmail: null,
+      ),
+    );
     await tester.pumpWidget(_activationHost(repo: repo, needsEmail: true));
     await tester.pumpAndSettle();
 
@@ -216,10 +257,15 @@ void main() {
 
   testWidgets('activation email step: a valid email passes and sends the code',
       (tester) async {
-    final repo = _FakeAuthRepo((
-      found: true, hasPassword: false, displayName: 'Khalid',
-      needsEmail: true, maskedEmail: null,
-    ),);
+    final repo = _FakeAuthRepo(
+      (
+        found: true,
+        hasPassword: false,
+        displayName: 'Khalid',
+        needsEmail: true,
+        maskedEmail: null,
+      ),
+    );
     await tester.pumpWidget(_activationHost(repo: repo, needsEmail: true));
     await tester.pumpAndSettle();
 
@@ -237,10 +283,15 @@ void main() {
 
   testWidgets('activation code step: a weak password blocks the complete call',
       (tester) async {
-    final repo = _FakeAuthRepo((
-      found: true, hasPassword: false, displayName: 'Khalid',
-      needsEmail: false, maskedEmail: 'k***@example.com',
-    ),);
+    final repo = _FakeAuthRepo(
+      (
+        found: true,
+        hasPassword: false,
+        displayName: 'Khalid',
+        needsEmail: false,
+        maskedEmail: 'k***@example.com',
+      ),
+    );
     // needsEmail:false auto-starts on open, landing on the code step.
     await tester.pumpWidget(_activationHost(repo: repo, needsEmail: false));
     await tester.pumpAndSettle();
@@ -265,10 +316,15 @@ void main() {
 
   testWidgets('activation code step: a mismatched confirm blocks complete',
       (tester) async {
-    final repo = _FakeAuthRepo((
-      found: true, hasPassword: false, displayName: 'Khalid',
-      needsEmail: false, maskedEmail: 'k***@example.com',
-    ),);
+    final repo = _FakeAuthRepo(
+      (
+        found: true,
+        hasPassword: false,
+        displayName: 'Khalid',
+        needsEmail: false,
+        maskedEmail: 'k***@example.com',
+      ),
+    );
     await tester.pumpWidget(_activationHost(repo: repo, needsEmail: false));
     await tester.pumpAndSettle();
 
@@ -288,10 +344,15 @@ void main() {
 
   testWidgets('activation code step: valid input passes and completes',
       (tester) async {
-    final repo = _FakeAuthRepo((
-      found: true, hasPassword: false, displayName: 'Khalid',
-      needsEmail: false, maskedEmail: 'k***@example.com',
-    ),);
+    final repo = _FakeAuthRepo(
+      (
+        found: true,
+        hasPassword: false,
+        displayName: 'Khalid',
+        needsEmail: false,
+        maskedEmail: 'k***@example.com',
+      ),
+    );
     await tester.pumpWidget(_activationHost(repo: repo, needsEmail: false));
     await tester.pumpAndSettle();
 

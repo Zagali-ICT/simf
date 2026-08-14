@@ -221,7 +221,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 const SizedBox(width: SimfTokens.forgotPasswordScreenWidth),
                 Flexible(
                   child: TextButton(
-                    onPressed: _busy ? null : () => context.goNamed(RouteNames.signIn),
+                    onPressed:
+                        _busy ? null : () => context.goNamed(RouteNames.signIn),
                     style: authLinkButtonStyle(SimfTokens.accent),
                     child: Text(
                       l10n.signInTitle,

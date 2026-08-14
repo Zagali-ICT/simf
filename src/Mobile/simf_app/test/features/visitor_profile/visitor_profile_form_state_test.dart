@@ -103,7 +103,8 @@ void main() {
       state
         ..setLookups(
           countries: const <CountryItem>[
-            CountryItem(code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية'),
+            CountryItem(
+                code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية',),
           ],
         )
         ..resetForNextEntry();

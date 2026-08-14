@@ -75,7 +75,8 @@ class ContactsRepository {
   }
 
   /// `GET /app/contacts/{id}/vcard` → raw vCard 3.0 text for a saved contact.
-  Future<String> getVcard(String id) => _client.getText(ContactsEndpoints.vcard(id));
+  Future<String> getVcard(String id) =>
+      _client.getText(ContactsEndpoints.vcard(id));
 }
 
 final contactsRepositoryProvider = Provider<ContactsRepository>((ref) {

@@ -118,6 +118,8 @@ class LiveCaptureView extends StatelessWidget {
       );
 
   // CameraPreview needs a finite size inside the FittedBox/BoxFit.cover.
-  Widget _sized(Widget child) =>
-      SizedBox(width: SimfTokens.identityCaptureViewWidthLg, height: SimfTokens.identityCaptureViewHeightMd, child: child);
+  Widget _sized(Widget child) => SizedBox(
+      width: SimfTokens.identityCaptureViewWidthLg,
+      height: SimfTokens.identityCaptureViewHeightMd,
+      child: child,);
 }

@@ -54,7 +54,8 @@ class _FakeAuth extends AuthController {
       return false; // D-737: tryRefresh never signs the user out on failure.
     }
     // A rotated token far in the future so no later tick acts again.
-    state = AuthStateSignedIn(_session(expiry.add(const Duration(minutes: 30))));
+    state =
+        AuthStateSignedIn(_session(expiry.add(const Duration(minutes: 30))));
     return true;
   }
 
@@ -124,7 +125,8 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('D-737: keep-alive fails while active → warn, do NOT silently '
+  testWidgets(
+      'D-737: keep-alive fails while active → warn, do NOT silently '
       'sign out', (tester) async {
     final auth = _FakeAuth(_t0.add(const Duration(seconds: 30)))
       ..refreshSucceeds = false; // the refresh cannot extend the session
@@ -210,9 +212,11 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('active + token has comfortable life left → the guard does '
+  testWidgets(
+      'active + token has comfortable life left → the guard does '
       'nothing', (tester) async {
-    final auth = _FakeAuth(_t0.add(const Duration(minutes: 5))); // far from expiry
+    final auth =
+        _FakeAuth(_t0.add(const Duration(minutes: 5))); // far from expiry
     final activity = SessionActivity(now: clock);
     await tester.pumpWidget(host(auth, activity));
     await tester.pump(); // settle the MaterialApp first frame
@@ -235,7 +239,8 @@ void main() {
     // isolates the idle path (the "extend session?" overlay) the owner asked
     // about.
     final auth = _FakeAuth(_t0.add(const Duration(hours: 1)));
-    final activity = SessionActivity(now: clock); // lastActivity = t0 (the t=0 mark)
+    final activity =
+        SessionActivity(now: clock); // lastActivity = t0 (the t=0 mark)
     await tester.pumpWidget(host(auth, activity));
     await tester.pump(); // settle the MaterialApp first frame
 
@@ -251,9 +256,14 @@ void main() {
       if (elapsedSeconds % 60 == 0) {
         activity.markActive(); // the live player's 60-second heartbeat
       }
-      await tester.pump(const Duration(seconds: 1)); // one guard tick at this moment
-      expect(find.byType(SessionTimeoutOverlay), findsNothing,
-          reason: 'the extend-session overlay appeared at ${elapsedSeconds}s of watching',);
+      await tester
+          .pump(const Duration(seconds: 1)); // one guard tick at this moment
+      expect(
+        find.byType(SessionTimeoutOverlay),
+        findsNothing,
+        reason:
+            'the extend-session overlay appeared at ${elapsedSeconds}s of watching',
+      );
     }
 
     // Never interrupted, never signed out across the whole watch.

@@ -22,7 +22,8 @@ import 'golden_fonts.dart';
 void main() {
   setUpAll(loadGoldenFonts);
 
-  testWidgets('Badge sign-in @375x812 — Figma 758:4735 (Arabic)', (tester) async {
+  testWidgets('Badge sign-in @375x812 — Figma 758:4735 (Arabic)',
+      (tester) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);

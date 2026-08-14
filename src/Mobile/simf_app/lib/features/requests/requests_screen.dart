@@ -39,7 +39,8 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// "طلب جديد" (owner 2026-07-08) opens the meeting-request sheet (Figma

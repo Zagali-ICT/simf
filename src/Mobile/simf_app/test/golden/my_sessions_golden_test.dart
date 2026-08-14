@@ -141,7 +141,8 @@ void main() {
       ProviderScope(
         overrides: <Override>[
           simfDataConfigProvider.overrideWithValue(_config),
-          mySessionsProvider.overrideWith((ref) async => MyAreaSessions(_items)),
+          mySessionsProvider
+              .overrideWith((ref) async => MyAreaSessions(_items)),
           sessionFavouritesProvider
               .overrideWith(() => _FakeFavourites(<String>{'ms1', 'ms3'})),
         ],

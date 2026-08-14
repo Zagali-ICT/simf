@@ -68,9 +68,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   @override
   void initState() {
     super.initState();
-    final last = ref
-        .read(simfPrefsStorageProvider)
-        .getString(StorageKeys.lastEmail);
+    final last =
+        ref.read(simfPrefsStorageProvider).getString(StorageKeys.lastEmail);
     if (last != null && last.isNotEmpty) {
       _email.text = last;
     }
@@ -100,9 +99,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       _error = null;
     });
     try {
-      await ref
-          .read(authControllerProvider.notifier)
-          .signIn(email: email, password: password, rememberSession: _rememberMe);
+      await ref.read(authControllerProvider.notifier).signIn(
+          email: email, password: password, rememberSession: _rememberMe,);
       // The password was accepted (a direct session or a 2FA challenge) — save
       // the final submitted credentials to the OS autofill store so it keeps
       // THIS email, not the heuristic first-typed guess it grabbed. Mirror

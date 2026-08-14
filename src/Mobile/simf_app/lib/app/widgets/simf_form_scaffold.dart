@@ -123,13 +123,13 @@ class SimfFormScaffold extends ConsumerWidget {
           topBar,
           Center(
             child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 56),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 56),
               // Form content cap (CLAUDE.md §13.7): 560 fills the tablet width
               // the owner runs on; at phone width the body is narrower than
               // this anyway, so the phone goldens are unaffected.
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: SimfTokens.simfFormScaffoldMaxWidth),
+                constraints: const BoxConstraints(
+                    maxWidth: SimfTokens.simfFormScaffoldMaxWidth,),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
