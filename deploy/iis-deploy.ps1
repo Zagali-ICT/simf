@@ -40,6 +40,28 @@ param (
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# Elevation is checked HERE, before anything else, because the failure without
+# it is unreadable: Import-Module below dies with "Process should have elevated
+# status to access IIS configuration data", naming the module rather than the
+# cause, after the deploy has already extracted an artifact and looks underway.
+#
+# The Azure Pipelines agent installs as a service under a NON-admin account by
+# default, so a pipeline deploy hits this on a machine where the same script has
+# always worked by hand in an elevated console. Fix it on the agent, not here:
+# services.msc -> the agent service -> Log On -> an account in the local
+# Administrators group -> restart the service.
+$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$isElevated = (New-Object Security.Principal.WindowsPrincipal($identity)).IsInRole(
+    [Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isElevated) {
+    throw ("iis-deploy.ps1 needs elevation to read IIS configuration, and is " +
+           "running as '$($identity.Name)' without it. Stopping app pools, " +
+           "mirroring site folders and restarting sites all require it. If this " +
+           "is a pipeline agent, set its Windows service to log on as an " +
+           "account in the local Administrators group and restart the service; " +
+           "if it is a console, re-open it as Administrator.")
+}
+
 Import-Module WebAdministration
 
 function Ensure-Directory([string]$Path) {
