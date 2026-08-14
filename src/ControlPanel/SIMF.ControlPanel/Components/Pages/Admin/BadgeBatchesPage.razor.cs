@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -34,6 +35,13 @@ public partial class BadgeBatchesPage
         _query = next;
         await LoadAsync();
     }
+
+    /// <summary>The order's name in the reading language, falling back to the
+    /// other so a row is never blank while one side is still untranslated.</summary>
+    private static string OrderName(AdminBadgeBatchSummary row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? (string.IsNullOrWhiteSpace(row.NameArabic) ? row.Name : row.NameArabic)
+            : (string.IsNullOrWhiteSpace(row.Name) ? row.NameArabic : row.Name);
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);

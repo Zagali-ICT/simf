@@ -43,6 +43,13 @@
                       SelectRowLabel="@L["Grid.SelectRow"]"
                       SummaryFormatter="@FormatSummary">
             <Columns>
+                @* Who the order is for, first: an order identified only by its
+                   counts is unrecognisable once two of them are the same size,
+                   which is the whole reason it carries a name. *@
+                <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="name"
+                                    Header="@L["Admin.BadgeBatches.Col.Name"]">
+                    <CellTemplate>@OrderName(context)</CellTemplate>
+                </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="summary"
                                     Header="@L["Admin.BadgeBatches.Col.Summary"]">
                     <CellTemplate>@context.CountsSummary</CellTemplate>

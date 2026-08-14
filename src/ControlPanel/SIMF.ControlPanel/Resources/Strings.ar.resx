@@ -3733,6 +3733,7 @@
   <data name="Admin.BadgeBatches.Loading" xml:space="preserve"><value>جارٍ تحميل الدفعات…</value></data>
   <data name="Admin.BadgeBatches.LoadFailed" xml:space="preserve"><value>تعذّر تحميل دفعات الشارات.</value></data>
   <data name="Admin.BadgeBatches.None" xml:space="preserve"><value>لا توجد دفعات شارات بعد — أنشئ مجموعة من مكتب الوفود أو الزوار.</value></data>
+  <data name="Admin.BadgeBatches.Col.Name" xml:space="preserve"><value>الطلب</value></data>
   <data name="Admin.BadgeBatches.Col.Summary" xml:space="preserve"><value>المحتوى</value></data>
   <data name="Admin.BadgeBatches.Col.Total" xml:space="preserve"><value>الإجمالي</value></data>
   <data name="Admin.BadgeBatches.Col.Delegate" xml:space="preserve"><value>وفد</value></data>

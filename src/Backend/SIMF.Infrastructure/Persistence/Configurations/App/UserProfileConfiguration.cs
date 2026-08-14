@@ -42,7 +42,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // reordering the enum can never re-interpret stored rows. Matches how the
         // Identity side persists the same enum.
         // The DB default is FAIL-CLOSED and exists only so a raw-SQL content
-        // seed (D-718) cannot fail on a column it does not know about. Every
+        // seed cannot fail on a column it does not know about. Every
         // tracked write sets this explicitly; a row that reaches the table
         // without one is not admitted anywhere until somebody approves it.
         builder.Property(profile => profile.AdmissionState)
@@ -192,9 +192,9 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
 
         // Zero, not the open year, and deliberately: the stamping interceptor
         // fills this for every tracked write, and the default exists only so a
-        // RAW SQL content seed (D-718) cannot fail on a column it does not know
-        // about. Zero is the "predates the edition column" value the gate
-        // already admits, so such a row behaves exactly as a pre-existing one.
+        // RAW SQL content seed cannot fail on a column it does not know about.
+        // Zero is the "predates the edition column" value the gate already
+        // admits, so such a row behaves exactly as a pre-existing one.
         builder.Property(profile => profile.EditionYear).HasDefaultValue(0);
 
         // The order this attendee arrived on. REQUIRED: everyone belongs to one,

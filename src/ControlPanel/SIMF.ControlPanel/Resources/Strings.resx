@@ -3743,6 +3743,7 @@
   <data name="Admin.BadgeBatches.Loading" xml:space="preserve"><value>Loading batches…</value></data>
   <data name="Admin.BadgeBatches.LoadFailed" xml:space="preserve"><value>Could not load the badge batches.</value></data>
   <data name="Admin.BadgeBatches.None" xml:space="preserve"><value>No badge batches yet — generate a set from the Delegates or Visitors desk.</value></data>
+  <data name="Admin.BadgeBatches.Col.Name" xml:space="preserve"><value>Order</value></data>
   <data name="Admin.BadgeBatches.Col.Summary" xml:space="preserve"><value>Contents</value></data>
   <data name="Admin.BadgeBatches.Col.Total" xml:space="preserve"><value>Total</value></data>
   <data name="Admin.BadgeBatches.Col.Delegate" xml:space="preserve"><value>Delegation</value></data>
