@@ -73,9 +73,15 @@ Build, Test & Publish ──▶ Deploy to IIS
   site + app pool, releases file locks, `robocopy /MIR`s the files, and
   restarts. Per-server order: **API**, then **CP**, then **Web**, then **Edge**
   last.
-- The two jobs carry **no `dependsOn` between them**, so pre-production and
-  production deploy **at the same time** off one build. Production does not wait
-  on a pre-production rehearsal.
+- **Production waits for pre-production.** They originally had no `dependsOn` and
+  were meant to deploy simultaneously, but a self-hosted organisation typically
+  has **one parallel job slot**: the second job took an agent, initialised, then
+  sat waiting for a slot that only freed when the first finished. A run that
+  appears to hang after *Initialize job* with no step output is that (D-892).
+  Sequencing costs nothing that was really being had, and pre-production now
+  genuinely rehearses first. The `dependsOn` is conditional — on a
+  production-only run `DeployPreProduction` is never emitted, and naming a
+  missing job fails the pipeline at compile time.
 
 ### Choosing which environments a run deploys to
 

@@ -825,10 +825,24 @@ stages:
 # THE TWO ENVIRONMENTS MUST BE CREATED BY HAND, with their servers registered as
 # VM resources. See deploy/README.md; this file cannot do it.
 #
-# THE TWO JOBS RUN IN PARALLEL. There is deliberately no `dependsOn` between
-# them: pre-production and production deploy at the same time, off the same
-# build, rather than production waiting on a pre-production rehearsal. The
-# per-package ordering that does matter (API first, mobile edge last) is kept
+# PRODUCTION WAITS FOR PRE-PRODUCTION. The two jobs originally had no
+# `dependsOn` between them, so they deployed simultaneously off one build - which
+# is what the owner asked for and what the estate could not deliver: a
+# self-hosted Azure DevOps organisation typically has ONE parallel job slot, so
+# the second job took an agent, initialised, and then sat waiting for a slot that
+# only freed when the first finished. A run that appears to hang after "Initialize
+# job" with no step output is that, not a deploy problem.
+#
+# Sequencing them costs nothing that was really being had: they never ran at the
+# same time, one of them just looked stuck while it waited. Pre-production also
+# now genuinely rehearses before production, which is the order most people
+# assume from the names.
+#
+# The `dependsOn` is itself conditional. On a production-only run
+# `DeployPreProduction` does not exist, and a `dependsOn` naming a job that was
+# never emitted fails the whole pipeline at compile time.
+#
+# The per-package ordering that matters (API first, mobile edge last) is kept
 # WITHIN each job by deploy/deploy-all-packages.yml.
 #
 # Which of the two a run touches is chosen at queue time by the `parameters` at
@@ -893,6 +907,10 @@ stages:
     - ${{ if eq(parameters.deployProduction, true) }}:
       - deployment: DeployProduction
         displayName: 'Production server (SIMF APP 01 / SIM-RNSF)'
+        # Only when pre-production is part of THIS run - naming a job that was
+        # never emitted is a compile-time failure, not a skipped dependency.
+        ${{ if eq(parameters.deployPreProduction, true) }}:
+          dependsOn: DeployPreProduction
         # THIS is production. See the naming warning above.
         environment:
           name: 'SIM-RNSF'
