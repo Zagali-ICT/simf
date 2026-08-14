@@ -152,9 +152,12 @@ there are **no uploaded files** and every StoredFile-backed asset serve returns
 **404** until the event content is re-entered and files re-uploaded through the CP.
 This is expected (data is disposable), **not** a store bug — the store correctly
 404s missing files and 200s real ones. (Diagnosed 2026-07-07 against the live API;
-see the decision log.) Optional demo polish: seed `StoredFile` **ExternalLink**
-rows for placeholder logos instead of raw `*RelativePath` URLs (the Wave C P6/E2
-follow-up).
+see the decision log.) The Wave C P6/E2 follow-up this section used to list as
+optional polish — seed `StoredFile` **ExternalLink** rows for the placeholder
+logos instead of raw `*RelativePath` URLs — is **done** (2026-08-14). It stopped
+being optional once the pointer columns started becoming typed keys: a
+`uniqueidentifier` cannot hold a URL, so the media-partner seed would have failed
+on its first run.
 
 ---
 
