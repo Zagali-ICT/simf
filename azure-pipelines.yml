@@ -837,24 +837,30 @@ stages:
 # at all - a skipped job still writes to the environment's history and would
 # read as a deployment that happened.
 #
-# EACH JOB NAMES `resourceType`, NOT THE ENVIRONMENT ALONE. A bare
-# `environment: Production` is also legal - as "an abstract shell to record
-# deployment history" - and then the steps run on the POOL agent declared at the
-# top of this file. That would have iis-deploy.ps1 stop, mirror and restart IIS
-# sites ON THE BUILD BOX and report success, which is the exact shape of failure
-# this pipeline pins tests against: a provisioning problem wearing a green tick.
-# Naming the resource type removes the ambiguity - "Any steps that you define in
-# a deployment job with a virtual machine resource runs against that virtual
-# machine and not against the agent in the pool" (Azure Pipelines, Deployment
-# jobs). Each environment holds ONE server, so the type alone selects it and no
-# resource name has to be repeated here.
+# THE ENVIRONMENTS ARE NAMED BARE, WITH NO `resourceType`. READ THIS BEFORE
+# "FIXING" IT, because the obvious improvement is the thing that broke deploys
+# on 2026-08-14 (D-891).
 #
-# If a run reports NO MATCHING RESOURCES, that server is not registered as a VM
-# resource in its environment. Register it - do NOT drop back to the bare form,
-# which converts a loud failure into a deploy onto the wrong machine. Azure's
-# own documentation disagrees with itself on the casing of this value while
-# warning that it is case-sensitive, so `VirtualMachine` is the first thing to
-# try if the resource IS registered and still does not match.
+# Neither environment has a VM resource registered, so each is what the Azure
+# docs call "an abstract shell to record deployment history" and the steps run
+# on the POOL agent declared at the top of this file. The `Default` pool has an
+# agent on BOTH SIMF servers, so a deployment job lands on whichever is free.
+#
+# THAT IS A REAL HAZARD AND IT IS NOT FIXED: `DeployProduction` can run on the
+# pre-production machine and vice versa, because nothing here binds a job to a
+# server. It has always been this way; collapsing four jobs to two did not
+# introduce it.
+#
+# Adding `resourceType: virtualMachine` IS the correct fix - "Any steps that you
+# define in a deployment job with a virtual machine resource runs against that
+# virtual machine and not against the agent in the pool" (Azure Pipelines,
+# Deployment jobs). But it requires each server to be REGISTERED as a VM
+# resource in its environment first. Add it before that is done and every deploy
+# fails with "could not be found", which is exactly what happened.
+#
+# So the order is: register both servers as VM resources (deploy/README.md),
+# confirm they appear on each environment's Resources tab, and only then restore
+# the two `resourceType: virtualMachine` lines. Not before.
 - ${{ if or(eq(parameters.deployPreProduction, true), eq(parameters.deployProduction, true)) }}:
   - stage: Deploy
     displayName: 'Deploy to IIS'
@@ -864,9 +870,7 @@ stages:
     - ${{ if eq(parameters.deployPreProduction, true) }}:
       - deployment: DeployPreProduction
         displayName: 'Pre-production server'
-        environment:
-          name: 'Pre-production'
-          resourceType: virtualMachine
+        environment: 'Pre-production'
         strategy:
           runOnce:
             deploy:
@@ -876,9 +880,7 @@ stages:
     - ${{ if eq(parameters.deployProduction, true) }}:
       - deployment: DeployProduction
         displayName: 'Production server (SIMF APP 01)'
-        environment:
-          name: 'Production'
-          resourceType: virtualMachine
+        environment: 'Production'
         strategy:
           runOnce:
             deploy:
