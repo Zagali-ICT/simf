@@ -87,11 +87,11 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
         return;
       }
       final next = (_index + 1) % widget.banners.length;
-      _controller.animateToPage(
-        next,
-        duration: MotionDurations.carouselSlide,
-        curve: Curves.easeInOut,
-      );
+      unawaited(_controller.animateToPage(
+          next,
+          duration: MotionDurations.carouselSlide,
+          curve: Curves.easeInOut,
+        ));
     });
   }
 

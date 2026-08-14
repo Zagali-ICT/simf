@@ -78,7 +78,7 @@ class MoreDrawer extends ConsumerWidget {
                         title: entry.title,
                         onTap: () {
                           Navigator.of(context).pop();
-                          context.pushNamed(entry.routeName);
+                          unawaited(context.pushNamed(entry.routeName));
                         },
                       ),
                   // The one action a signed-in-but-unapproved account gets that
@@ -90,7 +90,7 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.registrationStatusButton,
                       onTap: () {
                         Navigator.of(context).pop();
-                        context.pushNamed(RouteNames.registrationStatus);
+                        unawaited(context.pushNamed(RouteNames.registrationStatus));
                       },
                     ),
                   // Staff gate operations (D-406 / D-509) — Staff role only.
@@ -100,7 +100,7 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.gateScannerEntry,
                       onTap: () {
                         Navigator.of(context).pop();
-                        context.pushNamed(RouteNames.gateScanner);
+                        unawaited(context.pushNamed(RouteNames.gateScanner));
                       },
                     ),
                   if (routeAllowsRole(RouteNames.staffRegisterVisitor, role))
@@ -109,7 +109,7 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.staffRegisterVisitorEntry,
                       onTap: () {
                         Navigator.of(context).pop();
-                        context.pushNamed(RouteNames.staffRegisterVisitor);
+                        unawaited(context.pushNamed(RouteNames.staffRegisterVisitor));
                       },
                     ),
                   // Exhibitor lead capture (D-426 / D-519) — Exhibitor role
@@ -121,7 +121,7 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.scanVisitorTitle,
                       onTap: () {
                         Navigator.of(context).pop();
-                        context.pushNamed(RouteNames.scanVisitor);
+                        unawaited(context.pushNamed(RouteNames.scanVisitor));
                       },
                     ),
                   if (routeAllowsRole(RouteNames.myVisitors, role))
@@ -130,7 +130,7 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.myVisitorsTitle,
                       onTap: () {
                         Navigator.of(context).pop();
-                        context.pushNamed(RouteNames.myVisitors);
+                        unawaited(context.pushNamed(RouteNames.myVisitors));
                       },
                     ),
                   const Divider(color: SimfTokens.beigeBorder, height: 1),
@@ -164,7 +164,7 @@ class MoreDrawer extends ConsumerWidget {
                     title: l10n.contactUsTitle,
                     onTap: () {
                       Navigator.of(context).pop();
-                      context.pushNamed(RouteNames.contactUs);
+                      unawaited(context.pushNamed(RouteNames.contactUs));
                     },
                   ),
                   DrawerTile(
@@ -172,7 +172,7 @@ class MoreDrawer extends ConsumerWidget {
                     title: l10n.aboutAppTitle,
                     onTap: () {
                       Navigator.of(context).pop();
-                      context.pushNamed(RouteNames.aboutApp);
+                      unawaited(context.pushNamed(RouteNames.aboutApp));
                     },
                   ),
                   if (signedIn)

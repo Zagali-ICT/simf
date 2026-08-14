@@ -230,10 +230,10 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   }
 
   void _askQuestion() {
-    context.pushNamed(
-      RouteNames.sendQuestion,
-      queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId!.trim()},
-    );
+    unawaited(context.pushNamed(
+        RouteNames.sendQuestion,
+        queryParameters: <String, String>{RouteParams.sessionId: widget.sessionId!.trim()},
+      ));
   }
 
   /// D-495 — a synthetic live session for the forum's main (global) live

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -155,7 +156,7 @@ void main() {
       expect(find.byType(MyAreaScreen), findsOneWidget);
 
       // Open More on top, then tap its profile card (the "My Area" tap).
-      router.pushNamed(RouteNames.more);
+      unawaited(router.pushNamed(RouteNames.more));
       await tester.pumpAndSettle();
       expect(find.byType(MoreScreen), findsOneWidget);
 

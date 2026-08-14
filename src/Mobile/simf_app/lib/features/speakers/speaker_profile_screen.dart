@@ -91,27 +91,27 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     final auth = ref.read(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
       // Login-only (E2) — send a guest to sign in (Page_020 L-5).
-      context.pushNamed(RouteNames.signIn);
+      unawaited(context.pushNamed(RouteNames.signIn));
       return;
     }
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      // Figma 1776:4958 — a light "طلب مقابلة" sheet with its own gold drag
-      // handle (so the default grey handle is off) and rounded top corners.
-      backgroundColor: SimfTokens.cardBeige,
-      showDragHandle: false,
-      shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
-      ),
-      builder: (_) => MeetingRequestSheet(
-        speakerId: speaker.id,
-        defaultName: auth.session.user.displayName,
-        baseUrl: ref.read(simfDataConfigProvider).baseUrl,
-        l10n: l10n,
-      ),
-    );
+    unawaited(showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        // Figma 1776:4958 — a light "طلب مقابلة" sheet with its own gold drag
+        // handle (so the default grey handle is off) and rounded top corners.
+        backgroundColor: SimfTokens.cardBeige,
+        showDragHandle: false,
+        shape: const RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
+        ),
+        builder: (_) => MeetingRequestSheet(
+          speakerId: speaker.id,
+          defaultName: auth.session.user.displayName,
+          baseUrl: ref.read(simfDataConfigProvider).baseUrl,
+          l10n: l10n,
+        ),
+      ));
   }
 
   Future<void> _copyLink(String url, AppL10n l10n) async {

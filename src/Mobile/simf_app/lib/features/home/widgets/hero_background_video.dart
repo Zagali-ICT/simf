@@ -81,7 +81,7 @@ class _HeroBackgroundVideoState extends State<HeroBackgroundVideo> {
 
   @override
   void dispose() {
-    _video?.dispose();
+    unawaited(_video?.dispose());
     super.dispose();
   }
 

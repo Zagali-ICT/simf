@@ -59,11 +59,11 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
         return;
       }
       final next = (_index + 1) % widget.items.length;
-      _controller.animateToPage(
-        next,
-        duration: MotionDurations.carouselSlide,
-        curve: Curves.easeInOut,
-      );
+      unawaited(_controller.animateToPage(
+          next,
+          duration: MotionDurations.carouselSlide,
+          curve: Curves.easeInOut,
+        ));
     });
   }
 

@@ -78,19 +78,19 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
   // Wave 3 — tapping a booth opens the full exhibitor detail screen (Figma
   // 1439:11881), replacing the earlier description bottom sheet.
   void _openBooth(BoothSummary booth) {
-    context.pushNamed(
-      RouteNames.exhibitorDetail,
-      pathParameters: <String, String>{RouteParams.boothId: booth.id},
-    );
+    unawaited(context.pushNamed(
+        RouteNames.exhibitorDetail,
+        pathParameters: <String, String>{RouteParams.boothId: booth.id},
+      ));
   }
 
   // #9 — the booth's "أرشدني" CTA opens the venue map focused on this booth
   // (a pushed map instance that selects + centres the booth's node).
   void _openBoothMap(BoothSummary booth) {
-    context.pushNamed(
-      RouteNames.boothMap,
-      pathParameters: <String, String>{RouteParams.boothId: booth.id},
-    );
+    unawaited(context.pushNamed(
+        RouteNames.boothMap,
+        pathParameters: <String, String>{RouteParams.boothId: booth.id},
+      ));
   }
 
   // The booths whose name / exhibitor / sector / code matches the query

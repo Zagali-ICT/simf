@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,11 +44,11 @@ class _ScreenAnnouncerState extends ConsumerState<ScreenAnnouncer> {
         return;
       }
       final l10n = AppL10n.of(context);
-      SemanticsService.sendAnnouncement(
-        View.of(context),
-        l10n.accessibilityScreenAnnouncement(title),
-        Directionality.of(context),
-      );
+      unawaited(SemanticsService.sendAnnouncement(
+          View.of(context),
+          l10n.accessibilityScreenAnnouncement(title),
+          Directionality.of(context),
+        ));
     });
   }
 

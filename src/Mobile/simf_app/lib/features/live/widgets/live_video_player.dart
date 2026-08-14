@@ -96,9 +96,9 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
   }
 
   void _retry() {
-    _youtube?.close();
+    unawaited(_youtube?.close());
     _youtube = null;
-    _video?.dispose();
+    unawaited(_video?.dispose());
     _video = null;
     setState(() {
       _error = false;
@@ -173,8 +173,8 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
   @override
   void dispose() {
     _keepAlive?.cancel();
-    _youtube?.close();
-    _video?.dispose();
+    unawaited(_youtube?.close());
+    unawaited(_video?.dispose());
     // Re-assert the portrait lock in case we're torn down mid-fullscreen.
     unawaited(
       SystemChrome.setPreferredOrientations(

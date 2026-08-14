@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,15 +65,15 @@ class AccessibilityScreen extends ConsumerWidget {
             hint: l10n.accessibilityScreenReaderSubtitle,
             value: settings.screenReaderAssist,
             onChanged: (v) {
-              controller.setScreenReaderAssist(v);
+              unawaited(controller.setScreenReaderAssist(v));
               // Immediate confirmation through the same channel the assist
               // uses.
               if (v) {
-                SemanticsService.sendAnnouncement(
-                  View.of(context),
-                  l10n.accessibilityScreenReaderTitle,
-                  Directionality.of(context),
-                );
+                unawaited(SemanticsService.sendAnnouncement(
+                    View.of(context),
+                    l10n.accessibilityScreenReaderTitle,
+                    Directionality.of(context),
+                  ));
               }
             },
           ),

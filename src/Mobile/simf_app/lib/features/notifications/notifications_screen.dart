@@ -181,27 +181,27 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (clickUrl != null && clickUrl.isNotEmpty) {
       final uri = Uri.tryParse(clickUrl);
       if (uri != null && _allowedClickPaths.contains(uri.path)) {
-        context.push(clickUrl);
+        unawaited(context.push(clickUrl));
         return;
       }
     }
     // Fallback for pre-migration rows (no/again-null clickUrl).
     if (item.kind == 'SessionRatingRequest' &&
         (item.relatedEntityId ?? '').isNotEmpty) {
-      context.pushNamed(
-        RouteNames.rate,
-        queryParameters: <String, String>{
-          'code': 'Session',
-          'targetId': item.relatedEntityId!,
-        },
-      );
+      unawaited(context.pushNamed(
+          RouteNames.rate,
+          queryParameters: <String, String>{
+            'code': 'Session',
+            'targetId': item.relatedEntityId!,
+          },
+        ));
       return;
     }
     // "بطاقتك الذكية جاهزة" (AccountApproved) and BookingConfirmed both land on
     // the badge/QR screen (758-1469) so a tap opens the user's entry QR even
     // when the row predates the clickUrl column.
     if (item.kind == 'BookingConfirmed' || item.kind == 'AccountApproved') {
-      context.pushNamed(RouteNames.badge);
+      unawaited(context.pushNamed(RouteNames.badge));
     }
   }
 

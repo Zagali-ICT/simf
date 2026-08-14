@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1210,7 +1211,7 @@ void main() {
         prefs: FakePrefs(),
       );
 
-      router.push('/sessions/s1');
+      unawaited(router.push('/sessions/s1'));
       await tester.pumpAndSettle();
       expect(find.text('Session detail'), findsOneWidget);
 

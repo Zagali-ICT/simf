@@ -605,7 +605,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         faceImageBytes: _faceImageBytes,
         faceImageName: _faceImageName,
       );
-      context.pushNamed(RouteNames.signUpInterests, extra: draft);
+      unawaited(context.pushNamed(RouteNames.signUpInterests, extra: draft));
     } on ApiFailure catch (failure) {
       if (!mounted) return;
       setState(() => _saveError = failure.localizedMessage(l10n));

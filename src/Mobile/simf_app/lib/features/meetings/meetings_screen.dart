@@ -45,7 +45,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
     final auth = ref.read(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
       if (mounted) {
-        context.pushNamed(RouteNames.signIn);
+        unawaited(context.pushNamed(RouteNames.signIn));
       }
       return;
     }
@@ -66,7 +66,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
     final auth = ref.read(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
       if (mounted) {
-        context.pushNamed(RouteNames.signIn);
+        unawaited(context.pushNamed(RouteNames.signIn));
       }
       return;
     }

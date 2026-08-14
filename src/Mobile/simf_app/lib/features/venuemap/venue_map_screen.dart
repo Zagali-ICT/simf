@@ -208,16 +208,16 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   void _openDetails(VenueMapNode node, BoothSummary? summary) {
     final l10n = AppL10n.of(context);
     final detail = _safeDetail(summary?.id);
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => VenueMapBoothSheet(
-        l10n: l10n,
-        node: node,
-        summary: summary,
-        detail: detail,
-      ),
-    );
+    unawaited(showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (_) => VenueMapBoothSheet(
+          l10n: l10n,
+          node: node,
+          summary: summary,
+          detail: detail,
+        ),
+      ));
   }
 
   @override

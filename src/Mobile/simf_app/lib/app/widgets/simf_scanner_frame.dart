@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -79,7 +80,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
       duration: MotionDurations.scannerSweep,
     );
     if (widget.active) {
-      _controller.repeat(reverse: true);
+      unawaited(_controller.repeat(reverse: true));
     }
   }
 
@@ -87,7 +88,7 @@ class _SimfScannerFrameState extends State<SimfScannerFrame>
   void didUpdateWidget(SimfScannerFrame oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.active && !_controller.isAnimating) {
-      _controller.repeat(reverse: true);
+      unawaited(_controller.repeat(reverse: true));
     } else if (!widget.active && _controller.isAnimating) {
       _controller
         ..stop()

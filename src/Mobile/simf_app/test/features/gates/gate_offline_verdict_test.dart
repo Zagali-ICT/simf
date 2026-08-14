@@ -5,6 +5,7 @@
 // checkable from the badge itself plus cached rules. It must ABSTAIN on
 // anything that needs live data — a hall booking, an account that was disabled
 // this morning — so the server decides when the queued scan uploads.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -67,7 +68,7 @@ void main() {
     final prefs = FakePrefs();
     final cache = GateOfflineConfigCache(prefs);
     if (cached != null) {
-      cache.write(cached);
+      unawaited(cache.write(cached));
     }
     return GatesRepository(_UnusedClient(), GateScanQueue(prefs), cache);
   }
@@ -191,9 +192,13 @@ void main() {
   });
 
   group('GateOfflineConfigCache', () {
-    test('round-trips through prefs', () {
+    test('round-trips through prefs', () async {
       final prefs = FakePrefs();
-      final cache = GateOfflineConfigCache(prefs)..write(config());
+      final cache = GateOfflineConfigCache(prefs);
+      // Awaited on purpose. FakePrefs.setString is `async` with no `await`, so
+      // its body runs synchronously and a dropped future happened to work; the
+      // real prefs storage crosses a platform channel and would not.
+      await cache.write(config());
 
       final read = cache.read();
       expect(read, isNotNull);
