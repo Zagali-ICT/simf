@@ -35,6 +35,14 @@ class ContentBlock {
     return content.trim().isNotEmpty ? content : contentArabic;
   }
 
+  /// The body as one bullet per non-empty line, which is how the Terms screen
+  /// renders it (Figma list items). Lifted out of that screen's build path,
+  /// where it re-split and re-trimmed the whole body on every rebuild.
+  List<String> bullets({required bool isArabic}) => <String>[
+        for (final line in localizedBody(isArabic: isArabic).split('\n'))
+          if (line.trim().isNotEmpty) line.trim(),
+      ];
+
   bool get hasBody =>
       content.trim().isNotEmpty || contentArabic.trim().isNotEmpty;
 }

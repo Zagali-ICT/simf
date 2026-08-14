@@ -50,4 +50,47 @@ void main() {
       expect(block.lastUpdatedAt, isNull);
     });
   });
+
+  group('ContentBlock.bullets', () {
+    // The Terms screen renders one bullet card per non-empty body line. That
+    // split used to happen inside its build path, so nothing tested it.
+    ContentBlock blockWith(String en) =>
+        ContentBlock(key: 'terms', content: en, contentArabic: '');
+
+    test('one bullet per non-empty line', () {
+      final block = blockWith(<String>['first', 'second', 'third'].join('\n'));
+      expect(
+        block.bullets(isArabic: false),
+        <String>['first', 'second', 'third'],
+      );
+    });
+
+    test('drops blank and whitespace-only lines', () {
+      final block = blockWith(<String>['first', '', '   ', 'second'].join('\n'));
+      expect(block.bullets(isArabic: false), <String>['first', 'second']);
+    });
+
+    test('trims each bullet', () {
+      final block = blockWith(<String>['  padded  ', ' tabbed '].join('\n'));
+      expect(block.bullets(isArabic: false), <String>['padded', 'tabbed']);
+    });
+
+    test('an empty body yields no bullets, so the screen stays empty', () {
+      expect(blockWith('').bullets(isArabic: false), isEmpty);
+      expect(
+        blockWith(<String>['  ', ''].join('\n')).bullets(isArabic: false),
+        isEmpty,
+      );
+    });
+
+    test('follows the active language', () {
+      final block = ContentBlock(
+        key: 'terms',
+        content: <String>['en one', 'en two'].join('\n'),
+        contentArabic: 'عربي',
+      );
+      expect(block.bullets(isArabic: true), <String>['عربي']);
+      expect(block.bullets(isArabic: false), <String>['en one', 'en two']);
+    });
+  });
 }

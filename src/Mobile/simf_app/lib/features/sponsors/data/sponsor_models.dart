@@ -173,3 +173,11 @@ class SponsorTierGroup {
           .map((e) => SponsorTierGroup.fromJson(e.cast<String, dynamic>()))
           .toList(growable: false);
 }
+
+/// The tiers worth rendering — those that actually carry a sponsor. Lifted out
+/// of `SponsorsScreen.build`, which re-derived it on every rebuild.
+List<SponsorTierGroup> visibleTiers(List<SponsorTierGroup> groups) =>
+    <SponsorTierGroup>[
+      for (final group in groups)
+        if (group.sponsors.isNotEmpty) group,
+    ];
