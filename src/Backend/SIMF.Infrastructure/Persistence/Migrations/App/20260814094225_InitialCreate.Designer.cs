@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260813224536_InitialCreate")]
+    [Migration("20260814094225_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -3352,6 +3352,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ImageFileId");
+
+                    b.HasIndex("ThumbnailFileId");
+
                     b.HasIndex("IsActive", "Album", "DisplayOrder");
 
                     b.HasIndex("IsActive", "Kind", "DisplayOrder");
@@ -6460,6 +6464,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsRequired();
 
                     b.Navigation("Type");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Media.MediaItem", b =>
+                {
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("ImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SIMF.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("ThumbnailFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("SIMF.Domain.Organization.OrganizationAboutItem", b =>

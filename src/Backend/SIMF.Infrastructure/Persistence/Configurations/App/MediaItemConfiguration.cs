@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Domain.Files;
 using SIMF.Domain.Media;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -39,5 +40,29 @@ internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaIte
 
         // The active gallery read path filtered by media kind.
         builder.HasIndex(item => new { item.IsActive, item.Kind, item.DisplayOrder });
+
+        // Real foreign keys into the one file store. Both columns were already
+        // typed Guids, so this adds the constraint the entity's own doc comment
+        // said it did not have.
+        //
+        // No navigation property, matching UserProfile's file keys: nothing walks
+        // from a media item to its file, because the bytes are always fetched
+        // through IFileService by id.
+        //
+        // Restrict, not Cascade: deleting a file must never delete the gallery
+        // item that shows it. It should never fire, because StoredFileService
+        // deactivates rows rather than removing them, which is precisely what
+        // makes the key worth having.
+        builder.HasIndex(item => item.ImageFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(item => item.ImageFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(item => item.ThumbnailFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(item => item.ThumbnailFileId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

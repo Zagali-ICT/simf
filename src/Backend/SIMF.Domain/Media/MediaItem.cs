@@ -22,8 +22,9 @@ public class MediaItem : BaseAuditEntity
     public string? TitleArabic { get; set; }
 
     /// <summary>The uploaded image's row in the file store, and the source of
-    /// truth for whether this item has an image. A bare Guid resolved on read,
-    /// not a foreign key. Null when the item is an externally hosted video
+    /// truth for whether this item has an image. A real foreign key into
+    /// <c>StoredFiles</c>: both sides live in the App database, so the database
+    /// keeps it honest. Null when the item is an externally hosted video
     /// addressed by <see cref="Url"/>.</summary>
     public Guid? ImageFileId { get; set; }
 
@@ -32,8 +33,13 @@ public class MediaItem : BaseAuditEntity
     public string? Url { get; set; }
 
     /// <summary>A poster image for video tiles, held in the file store the same
-    /// way. Null when the tile renders from <see cref="ImageFileId"/>
-    /// directly.</summary>
+    /// way and carrying the same foreign key. Null when the tile renders from
+    /// <see cref="ImageFileId"/> directly.
+    ///
+    /// <para>Nothing writes this column today, so it is null on every row. It is
+    /// kept because the <c>thumbnailUrl</c> it feeds is decoded by the shipped
+    /// app and is the first branch of the gallery tile, and that wire key is
+    /// append-only.</para></summary>
     public Guid? ThumbnailFileId { get; set; }
 
     public string? Album { get; set; }
