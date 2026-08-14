@@ -38,7 +38,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///
 /// Route: `RouteNames.speakerProfile`.
 /// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
-///       [simfDataConfigProvider].
+///       [simfDataConfigProvider], [speakersRepositoryProvider].
 /// Perf: ListView builds every child up front — correct for a short static
 ///       page, a defect on a data feed.
 class SpeakerProfileScreen extends ConsumerStatefulWidget {

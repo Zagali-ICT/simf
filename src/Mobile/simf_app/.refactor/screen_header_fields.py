@@ -31,7 +31,12 @@ import re
 import sys
 
 CLASS = re.compile(r'^class (\w*Screen) extends ')
-PROVIDER = re.compile(r'ref\.(?:watch|read)\((\w+Provider)')
+# `\s*` around the dot and after the paren, because a long read is routinely
+# broken across lines - `final b = await ref\n    .read(contentRepositoryProvider)`.
+# Requiring them adjacent silently reported "Data: none" on 12 screens that do
+# read a provider, which is documentation that lies rather than documentation
+# that is missing.
+PROVIDER = re.compile(r'ref\s*\.\s*(?:watch|read)\(\s*(\w+Provider)', re.S)
 LAZY = ('ListView.builder', 'ListView.separated', 'SliverList',
         'SliverChildBuilderDelegate', 'GridView.builder', 'PageView.builder')
 EAGER = ('ListView(', 'GridView.count(', 'GridView.extent(')

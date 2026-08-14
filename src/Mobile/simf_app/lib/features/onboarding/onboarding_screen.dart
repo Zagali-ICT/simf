@@ -28,7 +28,7 @@ import 'package:video_player/video_player.dart';
 /// (Page_002_API.md).
 ///
 /// Route: `RouteNames.onboarding`.
-/// Data: [localeControllerProvider].
+/// Data: [localeControllerProvider], [simfPrefsStorageProvider].
 /// Perf: lazy — builds children on demand (PageView.builder).
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});

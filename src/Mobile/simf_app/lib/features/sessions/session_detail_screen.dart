@@ -69,8 +69,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///
 /// Route: `RouteNames.sessionDetail`.
 /// Data: [authControllerProvider], [myModeratedSessionsProvider],
-///       [seatMapRepositoryProvider], [sessionDetailRepositoryProvider],
-///       [simfDataConfigProvider].
+///       [seatMapRepositoryProvider], [sessionCalendarProvider],
+///       [sessionDetailRepositoryProvider], [simfDataConfigProvider].
 /// Perf: no list — a single-screen layout.
 class SessionDetailScreen extends ConsumerStatefulWidget {
   const SessionDetailScreen({required this.sessionId, super.key});

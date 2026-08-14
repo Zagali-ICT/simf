@@ -58,8 +58,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// its own controller lifecycle, so swapping the active URL just rebuilds it.
 ///
 /// Route: `RouteNames.liveBroadcast`.
-/// Data: [authControllerProvider], [orgProfileProvider],
-///       [sessionRatePromptTrackerProvider], [siteSettingsProvider].
+/// Data: [authControllerProvider], [liveRepositoryProvider],
+///       [orgProfileProvider], [sessionRatePromptTrackerProvider],
+///       [siteSettingsProvider].
 /// Perf: no list — a single-screen layout.
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
   const LiveBroadcastScreen({this.sessionId, this.liveUrl, super.key});

@@ -24,8 +24,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// delegation), each carrying its status (pending / accepted / rejected /
 /// cancelled), above the two "request meeting" buttons and the "السجل" link to
 /// the full requests history (R9, D-767; was accepted+upcoming only, D-745).
-/// Data: [myMeetingRequestsProvider] (a filtered view of [myRequestsProvider] —
-/// `GET /app/my-requests`), gated by [currentUserMeetingAccessProvider]. Figma:
+/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
+///       [myMeetingRequestsProvider], [simfDataConfigProvider].
 /// 1408:9726 (اللقاءات الثنائية). Perf: non-lazy ListView over the (small)
 /// meetings subset; pull-to-refresh. Contract: reads the D-219-frozen
 /// my-requests feed; VIP enforced server-side (the meeting-request endpoint

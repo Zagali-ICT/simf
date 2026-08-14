@@ -27,7 +27,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// with retry (L-6). Guest+.
 ///
 /// Route: `RouteNames.terms`.
-/// Data: none — renders what it is given.
+/// Data: [contentRepositoryProvider].
 /// Perf: no list — a single-screen layout.
 class TermsScreen extends ConsumerStatefulWidget {
   const TermsScreen({super.key, this.requireConsent = false});

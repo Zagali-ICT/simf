@@ -37,7 +37,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Behaviour + render unchanged — the 505:837 golden locks it.
 ///
 /// Route: `RouteNames.emailOtp`.
-/// Data: [authControllerProvider].
+/// Data: [authControllerProvider], [simfPrefsStorageProvider].
 /// Perf: no list — a single-screen layout.
 class SignUpEmailVerifyScreen extends ConsumerStatefulWidget {
   const SignUpEmailVerifyScreen({required this.email, super.key});

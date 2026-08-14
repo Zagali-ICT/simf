@@ -20,7 +20,7 @@ import 'package:simf_app/features/registration/widgets/registration_success_head
 /// the no-data fallback so the page stays offline-safe.
 ///
 /// Route: `RouteNames.registrationSuccess`.
-/// Data: none — renders what it is given.
+/// Data: [siteSettingsProvider].
 /// Perf: no list — a single-screen layout.
 class RegistrationSuccessScreen extends ConsumerWidget {
   const RegistrationSuccessScreen({super.key, this.referenceNumber});

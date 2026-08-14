@@ -31,7 +31,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// carried in from the forgot screen.
 ///
 /// Route: `RouteNames.resetPassword`.
-/// Data: [authControllerProvider], [authRepositoryProvider].
+/// Data: [authControllerProvider], [authRepositoryProvider],
+///       [simfPrefsStorageProvider].
 /// Perf: no list — a single-screen layout.
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({required this.email, super.key});

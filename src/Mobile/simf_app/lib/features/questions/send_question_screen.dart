@@ -52,7 +52,7 @@ enum QuestionRecipient {
 /// toast; any other failure to a generic error toast.
 ///
 /// Route: `RouteNames.sendQuestion`.
-/// Data: [questionsRepositoryProvider].
+/// Data: [questionsRepositoryProvider], [sessionDetailRepositoryProvider].
 /// Perf: ListView builds every child up front — correct for a short static
 ///       page, a defect on a data feed.
 class SendQuestionScreen extends ConsumerStatefulWidget {

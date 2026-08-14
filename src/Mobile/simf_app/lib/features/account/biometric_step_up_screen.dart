@@ -33,7 +33,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// [MaxWidthBody].
 ///
 /// Route: `RouteNames.biometricStepUp`.
-/// Data: [authControllerProvider].
+/// Data: [authControllerProvider], [biometricAuthProvider].
 /// Perf: no list — a single-screen layout.
 class BiometricStepUpScreen extends ConsumerStatefulWidget {
   const BiometricStepUpScreen({super.key});
