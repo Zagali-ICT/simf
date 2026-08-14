@@ -92,6 +92,32 @@ public partial class BadgeBatchesPage
     private static string OrderName(AdminBadgeBatchSummary row) =>
         InReadingLanguage(row.Name, row.NameArabic);
 
+    /// <summary>The order's contents in the reading language. The stored
+    /// CountsSummary is a single ENGLISH string, so rendering it left an otherwise
+    /// Arabic page showing "Normal × 4 + VIP × 3"; the server now derives the same
+    /// breakdown carrying both names.</summary>
+    private string Contents(AdminBadgeBatchSummary row)
+    {
+        // Not a badge order, so it carries no breakdown and its stored summary is
+        // English prose. Echoing that prose left one English cell in an otherwise
+        // Arabic table - the same defect, on the one row that cannot be fixed by
+        // deriving tiers.
+        if (row.IsDirectRegistration)
+        {
+            return L["Admin.BadgeBatches.DirectRegistration"];
+        }
+
+        // The stored string remains the fallback for an order whose members are
+        // gone, so a row is never blank.
+        return row.Tiers is { Count: > 0 } tiers
+            ? string.Join(
+                " + ",
+                tiers.Select(tier =>
+                    $"{InReadingLanguage(tier.Name, tier.NameArabic)} × "
+                    + tier.Count.ToString(CultureInfo.InvariantCulture)))
+            : row.CountsSummary;
+    }
+
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
 

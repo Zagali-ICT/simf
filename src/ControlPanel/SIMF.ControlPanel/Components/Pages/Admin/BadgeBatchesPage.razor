@@ -27,7 +27,7 @@
                       OnQueryChanged="OnQueryChangedAsync"
                       Multiselect="false"
                       RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => r.CountsSummary)"
+                      RowLabel="@(r => Contents(r))"
                       Caption="@L["Admin.BadgeBatches.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       PrevLabel="@L["Grid.Prev"]"
@@ -52,7 +52,7 @@
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="summary"
                                     Header="@L["Admin.BadgeBatches.Col.Summary"]">
-                    <CellTemplate>@context.CountsSummary</CellTemplate>
+                    <CellTemplate>@Contents(context)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminBadgeBatchSummary" Key="total"
                                     Header="@L["Admin.BadgeBatches.Col.Total"]">
@@ -144,7 +144,7 @@
             <div class="simf-form__fields">
                 <dl class="simf-dl">
                     <dt>@L["Admin.BadgeBatches.Col.Summary"]</dt>
-                    <dd>@_reEmailTarget.CountsSummary</dd>
+                    <dd>@Contents(_reEmailTarget)</dd>
                     <dt>@L["Admin.BadgeBatches.Col.Total"]</dt>
                     <dd>@_reEmailTarget.TotalCount</dd>
                 </dl>
@@ -183,7 +183,7 @@
                     <dt>@L["Admin.BadgeBatches.Col.Name"]</dt>
                     <dd>@OrderName(_topUpTarget)</dd>
                     <dt>@L["Admin.BadgeBatches.Col.Summary"]</dt>
-                    <dd>@_topUpTarget.CountsSummary</dd>
+                    <dd>@Contents(_topUpTarget)</dd>
                     <dt>@L["Admin.BadgeBatches.Col.Total"]</dt>
                     <dd>@_topUpTarget.TotalCount</dd>
                 </dl>
@@ -243,7 +243,7 @@
                OnClose="@(() => _revokeTarget = null)"
                CloseLabel="@L["Grid.Close"]">
         <ChildContent>
-            <p>@string.Format(L["Admin.BadgeBatches.Revoke.Body"], _revokeTarget.TotalCount, _revokeTarget.CountsSummary)</p>
+            <p>@string.Format(L["Admin.BadgeBatches.Revoke.Body"], _revokeTarget.TotalCount, Contents(_revokeTarget))</p>
         </ChildContent>
         <Footer>
             <SimfButton Type="button" Variant="secondary" Disabled="_busy"

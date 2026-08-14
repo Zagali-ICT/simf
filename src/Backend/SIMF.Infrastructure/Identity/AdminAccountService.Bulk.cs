@@ -1173,7 +1173,65 @@ internal sealed partial class AdminAccountService
                 batch.RecipientEmail, batch.CreatedAt, batch.IsActive,
                 batch.Name, batch.NameArabic))
             .ToListAsync(cancellationToken);
-        return GridPage<AdminBadgeBatchSummary>.Of(rows, total, skip, top);
+
+        // CountsSummary is ONE English string, so an Arabic reader was shown English
+        // tier names in an otherwise Arabic page. The breakdown is derived here with
+        // both names instead, and the caller renders the one it reads. Counted from
+        // the member rows rather than parsed back out of the stored string, which is
+        // also what makes it right after a top-up.
+        //
+        // One grouped query for the whole page, not one per row.
+        //
+        // The direct-registration order is excluded on purpose. It is not a badge
+        // order - it is where everyone who registered themselves is filed, which is
+        // why a top-up against it is refused - so its CountsSummary is prose rather
+        // than a breakdown. Deriving tiers for it replaced that prose with every
+        // profile type present, nine entries and growing with each registrant, in a
+        // column sized for "Normal x 4 + VIP x 3".
+        var batchIds = rows
+            .Select(row => row.Id)
+            .Where(id => id != BadgeBatch.DirectRegistrationId)
+            .ToList();
+        var tiers = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => batchIds.Contains(profile.BadgeBatchId))
+            .GroupBy(profile => new
+            {
+                profile.BadgeBatchId,
+                Name = profile.ProfileType!.Name,
+                NameArabic = profile.ProfileType!.NameArabic,
+            })
+            .Select(g => new
+            {
+                g.Key.BadgeBatchId,
+                g.Key.Name,
+                g.Key.NameArabic,
+                Count = g.Count(),
+            })
+            .ToListAsync(cancellationToken);
+
+        var byBatch = tiers
+            .GroupBy(tier => tier.BadgeBatchId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<AdminBadgeBatchTier>)g
+                    .OrderByDescending(tier => tier.Count)
+                    .ThenBy(tier => tier.Name, StringComparer.Ordinal)
+                    .Select(tier => new AdminBadgeBatchTier(
+                        tier.Name ?? string.Empty, tier.NameArabic ?? string.Empty, tier.Count))
+                    .ToList());
+
+        // An order whose members are all gone keeps its stored summary rather than
+        // rendering as blank - the caller falls back when the list is empty.
+        var withTiers = rows
+            .Select(row => row with
+            {
+                Tiers = byBatch.TryGetValue(row.Id, out var t) ? t : null,
+                IsDirectRegistration = row.Id == BadgeBatch.DirectRegistrationId,
+            })
+            .ToList();
+
+        return GridPage<AdminBadgeBatchSummary>.Of(withTiers, total, skip, top);
     }
 
     public async Task<AdminReEmailBadgeBatchResponse> ReEmailBadgeBatchAsync(

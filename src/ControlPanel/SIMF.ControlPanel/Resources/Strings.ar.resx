@@ -3778,6 +3778,7 @@
   <data name="Admin.BadgeBatches.Revoke.Confirm" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.BadgeBatches.Revoke.Done" xml:space="preserve"><value>تم إلغاء {0} حساب.</value></data>
   <data name="Admin.BadgeBatches.TopUp" xml:space="preserve"><value>إضافة شارات</value></data>
+  <data name="Admin.BadgeBatches.DirectRegistration" xml:space="preserve"><value>تسجيلات ذاتية</value></data>
   <data name="Admin.BadgeBatches.TopUp.Title" xml:space="preserve"><value>إضافة شارات إلى هذا الطلب</value></data>
   <data name="Admin.BadgeBatches.TopUp.Count" xml:space="preserve"><value>عدد الشارات المضافة</value></data>
   <data name="Admin.BadgeBatches.TopUp.Confirm" xml:space="preserve"><value>إضافة وإصدار</value></data>
