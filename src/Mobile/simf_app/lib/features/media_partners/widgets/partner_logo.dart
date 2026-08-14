@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_logo_image.dart';
+import 'package:simf_app/core/utils/initials.dart';
 import 'package:simf_app/features/media_partners/widgets/initials_tile.dart';
 
 class PartnerLogo extends StatelessWidget {
@@ -11,17 +11,8 @@ class PartnerLogo extends StatelessWidget {
   final String name;
 
   static const double _size = 48;
-  static final RegExp _whitespace = RegExp(r'\s+');
 
-  String get _initials {
-    final words = name.trim().split(_whitespace);
-    final letters = words
-        .where((w) => w.isNotEmpty)
-        .take(2)
-        .map((w) => w.characters.first)
-        .join();
-    return letters.isEmpty ? '—' : letters.toUpperCase();
-  }
+  String get _initials => initialsFromWords(name);
 
   @override
   Widget build(BuildContext context) {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_logo_image.dart';
 import 'package:simf_app/core/net/asset_urls.dart';
+import 'package:simf_app/core/utils/initials.dart';
 import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
 
 /// The sponsor's real logo (D-357 `SponsorLogo` asset, served anonymously at
@@ -82,12 +82,5 @@ class SponsorLogo extends StatelessWidget {
 /// the localized name — the same interim logo-as-initials treatment the badge
 /// strip uses elsewhere.
 String sponsorBadgeText(Sponsor sponsor, {required bool isArabic}) {
-  final name = sponsor.localizedName(isArabic: isArabic);
-  final words = name.trim().split(RegExp(r'\s+'));
-  final letters = words
-      .where((w) => w.isNotEmpty)
-      .take(2)
-      .map((w) => w.characters.first)
-      .join();
-  return letters.isEmpty ? '—' : letters.toUpperCase();
+  return initialsFromWords(sponsor.localizedName(isArabic: isArabic));
 }

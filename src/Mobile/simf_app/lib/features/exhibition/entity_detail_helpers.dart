@@ -3,6 +3,7 @@
 /// copies that lived in each screen.
 library;
 
+import 'package:simf_app/core/utils/initials.dart';
 import 'package:simf_app/features/exhibition/widgets/entity_detail_scaffold.dart'
     show EntityDetailScaffold;
 
@@ -23,13 +24,7 @@ String? entityLocationLine(
 }
 
 /// The first two letters of a name, upper-cased, for the logo fallback.
-String entityInitials(String name) {
-  final trimmed = name.trim();
-  if (trimmed.isEmpty) {
-    return '';
-  }
-  return trimmed.substring(0, trimmed.length >= 2 ? 2 : 1).toUpperCase();
-}
+String entityInitials(String name) => initialsFromStart(name);
 
 /// Parses a website into an http(s) [Uri] (prepending https:// when the scheme
 /// is missing); null when blank / unparseable.
