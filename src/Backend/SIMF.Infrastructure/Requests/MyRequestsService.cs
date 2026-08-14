@@ -57,12 +57,21 @@ internal sealed class MyRequestsService(
             .ToListAsync(cancellationToken);
 
         // Session-attendance = the user's own LIVE seat bookings (AdminReservedRow
-        // rows carry a null ReservedForUserId, so this filter naturally excludes
+        // rows carry a null ReservedForProfileId, so this filter naturally excludes
         // them). Released/cancelled rows stay in the table for audit but are
         // excluded here — mirroring every other SeatReservation read — so a
-        // cancel-then-rebook never shows the same session twice.
+        // cancel-then-rebook never shows the same session twice. The caller is a
+        // signed-in account; a booking is held by their attendee profile.
+        //
+        // The non-null test is load-bearing, not defensive noise: an account with
+        // no profile yields a null id, and `ReservedForProfileId == null` is
+        // exactly how an ADMIN BLOCK is stored — so without it such a caller would
+        // be shown every blocked seat in the venue as their own booking.
+        var profileId = await appDbContext.ProfileIdForAccountAsync(userId, cancellationToken);
         var bookings = await appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.ReservedForUserId == userId && r.ReleasedAt == null)
+            .Where(r => profileId != null
+                && r.ReservedForProfileId == profileId
+                && r.ReleasedAt == null)
             .Join(appDbContext.Sessions, r => r.SessionId, s => s.Id, (r, s) => new { r, s })
             .Join(appDbContext.Halls, x => x.s.HallId, h => h.Id, (x, h) => new
             {

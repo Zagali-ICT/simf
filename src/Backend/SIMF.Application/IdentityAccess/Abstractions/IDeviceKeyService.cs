@@ -46,4 +46,19 @@ public interface IDeviceKeyService
         Guid deviceKeyId,
         bool actorIsAdministrator,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Revokes every active device key the user holds, and returns how many were
+    /// revoked so the caller can tell the owner what just happened. Idempotent:
+    /// already-revoked keys are left alone and counted as zero.
+    ///
+    /// <para>This exists so a password change or reset can end the biometric
+    /// credentials along with the refresh tokens. Without it, revoking every
+    /// session still left a device key that mints a brand-new one through the
+    /// anonymous sign-in endpoint, so the standard advice given to a compromised
+    /// user did not actually evict the attacker.</para>
+    /// </summary>
+    Task<int> RevokeAllForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }

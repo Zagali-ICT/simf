@@ -10,6 +10,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Notifications;
+using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Notifications;
@@ -361,6 +362,12 @@ internal sealed class NotificationBroadcastService(
     // writes) is never dirtied by a read. Returned as an IQueryable so the caller
     // chooses ToList (fan-out) or Count (estimate) — a Count runs in SQL and never
     // materialises the id list.
+    //
+    // A recipient is an ACCOUNT — it owns the devices and the mailbox — while a
+    // booking is held by an attendee PROFILE, so the two reservation branches join
+    // through UserProfile to reach one. That join is same-database (both tables are
+    // on the App DB), and it is what drops the attendees with no account: a walk-in
+    // holds a real seat and has nowhere for a push to land.
     private IQueryable<Guid> BuildRecipientQuery(
         BroadcastTargetMode mode, Guid? sessionId, BroadcastAudienceScope? scope)
     {
@@ -368,16 +375,14 @@ internal sealed class NotificationBroadcastService(
         {
             if (sessionId is not { } sid)
             {
-                return appDbContext.SeatReservations
+                return appDbContext.UserProfiles
                     .Where(_ => false)
-                    .Select(reservation => reservation.ReservedForUserId!.Value);
+                    .Select(profile => profile.UserId!.Value);
             }
-            return appDbContext.SeatReservations.AsNoTracking()
+            return RecipientsHoldingSeats(appDbContext.SeatReservations.AsNoTracking()
                 .Where(reservation => reservation.SessionId == sid
                     && reservation.ReleasedAt == null
-                    && reservation.ReservedForUserId != null)
-                .Select(reservation => reservation.ReservedForUserId!.Value)
-                .Distinct();
+                    && reservation.ReservedForProfileId != null));
         }
 
         return scope switch
@@ -391,11 +396,10 @@ internal sealed class NotificationBroadcastService(
                 .Where(user => user.UserType != UserType.Admin)
                 .Select(user => user.Id),
 
-            BroadcastAudienceScope.EventAttendees => appDbContext.SeatReservations.AsNoTracking()
-                .Where(reservation => reservation.ReleasedAt == null
-                    && reservation.ReservedForUserId != null)
-                .Select(reservation => reservation.ReservedForUserId!.Value)
-                .Distinct(),
+            BroadcastAudienceScope.EventAttendees => RecipientsHoldingSeats(
+                appDbContext.SeatReservations.AsNoTracking()
+                    .Where(reservation => reservation.ReleasedAt == null
+                        && reservation.ReservedForProfileId != null)),
 
             // A new BroadcastAudienceScope with no arm must fail loudly, not send to
             // zero recipients and report success.
@@ -403,6 +407,22 @@ internal sealed class NotificationBroadcastService(
                 nameof(scope), scope, "Unhandled broadcast audience scope."),
         };
     }
+
+    /// <summary>The distinct ACCOUNT ids behind a set of seat reservations, for the
+    /// two branches that address "whoever holds a seat". Kept as one expression so
+    /// the per-session and whole-event branches can never disagree about who counts
+    /// as reachable; still an <see cref="IQueryable{T}"/>, so the estimate path
+    /// counts in SQL rather than materialising the ids.</summary>
+    private IQueryable<Guid> RecipientsHoldingSeats(
+        IQueryable<SeatReservation> reservations) =>
+        reservations
+            .Join(appDbContext.UserProfiles.AsNoTracking(),
+                reservation => reservation.ReservedForProfileId!.Value,
+                profile => profile.Id,
+                (reservation, profile) => profile.UserId)
+            .Where(userId => userId != null)
+            .Select(userId => userId!.Value)
+            .Distinct();
 
     private Task<List<Guid>> ResolveRecipientIdsAsync(
         BroadcastTargetMode mode, Guid? sessionId, BroadcastAudienceScope? scope,

@@ -1,0 +1,99 @@
+# =============================================================================
+# SIMF - deploy ALL FOUR packages to THIS server.
+#
+# Both deployment jobs in azure-pipelines.yml run these same steps. The estate is
+# TWO servers, one per Azure DevOps Environment (D-886): `Pre-production` and
+# `Production`. Each server hosts all four SIMF sites, so the two jobs differ
+# only in which machine the environment binds them to - not in what they do.
+# The steps therefore live here once instead of being written out twice, because
+# two copies of a deploy sequence drift, and the copy that drifts is the one
+# discovered in production.
+#
+# ORDER IS EXPLICIT, NOT INCIDENTAL. The API goes first because everything else
+# calls it; the Control Panel and the Website follow; the mobile edge goes LAST
+# because it is the public front door and should only start accepting traffic
+# once the API behind it is already answering.
+#
+# `pipeline-deploy-one.ps1` still deploys exactly ONE package per call. It is
+# called four times here rather than being taught to loop, so that a by-hand
+# redeploy of a single package stays the same command it has always been, and so
+# a failure names the package in the run summary instead of inside a log.
+#
+# Each call goes through the call operator with the path QUOTED (`& "..."`).
+# A self-hosted agent's work directory is wherever the agent was installed, so
+# `$(Pipeline.Workspace)` can contain a space, and an unquoted path would split
+# on it and try to run a command named after the first word.
+# =============================================================================
+parameters:
+# The deploy root is VERSIONED (see deploy/README.md). A steps template cannot
+# declare `variables:`, so a parameter with a default is the only way to name
+# this constant once instead of inlining it four times below.
+#
+# IT IS NOT INDEPENDENTLY SETTABLE IN PRACTICE, and an earlier version of this
+# comment wrongly claimed it let pre-production diverge from production. It does
+# not: `ops.ps1` pins the same `D:\System\v1.0.1\*` defaults and is what creates
+# the IIS sites, so a root changed only here would mirror files into a folder no
+# site points at. Bump BOTH, together, or the deploy silently lands nowhere.
+- name: sitePathRoot
+  type: string
+  default: 'D:\System\v1.0.1'
+
+steps:
+# The deploy scripts arrive IN THE ARTIFACT, staged by the Build stage's
+# 'Stage the deploy scripts into the artifact' step.
+#
+# There is deliberately NO `checkout: self` here. A deployment job does not
+# clone the repository - "A deployment job doesn't automatically clone the
+# source repo" (Azure Pipelines, Deployment jobs) - and the obvious fix, adding
+# the checkout, drags the entire repo and its history onto each production
+# server every run to obtain two PowerShell files. Shipping those two files with
+# the packages they deploy costs about 12 KB on an artifact that is already
+# being downloaded here.
+#
+# `pipeline-deploy-one.ps1` locates `iis-deploy.ps1` through `$PSScriptRoot`, so
+# the two staying side by side in drop\deploy is what makes this work.
+#
+# `deploy` auto-injects an artifact download, but naming it keeps the pipeline
+# readable and pins WHICH artifact lands in $(Pipeline.Workspace).
+- download: current
+  artifact: drop
+
+- powershell: |
+    & "$(Pipeline.Workspace)\drop\deploy\pipeline-deploy-one.ps1" `
+      -Package  "api" `
+      -ZipName  "SIMF.Api.zip" `
+      -SiteName "SIMF.API" `
+      -SitePath "${{ parameters.sitePathRoot }}\api" `
+      -Drop     "$(Pipeline.Workspace)\drop" `
+      -Root     "$(Pipeline.Workspace)\drop_root"
+  displayName: 'Deploy the API'
+
+- powershell: |
+    & "$(Pipeline.Workspace)\drop\deploy\pipeline-deploy-one.ps1" `
+      -Package  "cp" `
+      -ZipName  "SIMF.ControlPanel.zip" `
+      -SiteName "SIMF.CP" `
+      -SitePath "${{ parameters.sitePathRoot }}\cp" `
+      -Drop     "$(Pipeline.Workspace)\drop" `
+      -Root     "$(Pipeline.Workspace)\drop_root"
+  displayName: 'Deploy the Control Panel'
+
+- powershell: |
+    & "$(Pipeline.Workspace)\drop\deploy\pipeline-deploy-one.ps1" `
+      -Package  "web" `
+      -ZipName  "SIMF.Web.zip" `
+      -SiteName "SIMF.WEB" `
+      -SitePath "${{ parameters.sitePathRoot }}\web" `
+      -Drop     "$(Pipeline.Workspace)\drop" `
+      -Root     "$(Pipeline.Workspace)\drop_root"
+  displayName: 'Deploy the Website'
+
+- powershell: |
+    & "$(Pipeline.Workspace)\drop\deploy\pipeline-deploy-one.ps1" `
+      -Package  "edge" `
+      -ZipName  "SIMF.MobileEdge.zip" `
+      -SiteName "SIMF.EDGE" `
+      -SitePath "${{ parameters.sitePathRoot }}\edge" `
+      -Drop     "$(Pipeline.Workspace)\drop" `
+      -Root     "$(Pipeline.Workspace)\drop_root"
+  displayName: 'Deploy the mobile edge'

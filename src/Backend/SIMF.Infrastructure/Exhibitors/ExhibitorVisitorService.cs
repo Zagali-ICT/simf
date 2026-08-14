@@ -103,11 +103,15 @@ internal sealed class ExhibitorVisitorService(
         // ACTIVE badge holder (see IsCapturableSubject). A deactivated account
         // returns the same 404 as an unknown code — the caller never learns
         // whether the code exists.
+        // Resolved to the subject's PROFILE id, which every attendee has. It used
+        // to select their Identity account, so a walk-in or bulk-minted badge —
+        // which has none — answered the same 404 as an unknown code, and no amount
+        // of re-scanning would have captured them.
         var visitorId = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(IsCapturableSubject)
             .Where(p => p.QrId == normalised)
-            .Select(p => (Guid?)p.UserId)
+            .Select(p => (Guid?)p.Id)
             .FirstOrDefaultAsync(cancellationToken);
         if (visitorId is null)
         {
@@ -115,7 +119,7 @@ internal sealed class ExhibitorVisitorService(
                 "No visitor badge matches this code.",
                 "لا توجد بطاقة زائر مطابقة لهذا الرمز.");
         }
-        if (visitorId.Value == exhibitorUserId)
+        if (visitorId.Value == exhibitor.OfficerProfileId)
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
                 "You cannot scan your own badge.",
@@ -146,7 +150,7 @@ internal sealed class ExhibitorVisitorService(
         // twice. The whole matched set is loaded and resolved deliberately
         // instead; the unordered "first" is never the deciding factor.
         var matches = await appDbContext.ExhibitorVisitorScans
-            .Where(s => s.VisitorUserId == visitorId.Value
+            .Where(s => s.VisitorProfileId == visitorId.Value
                 && s.IsActive
                 && (s.ExhibitorId == exhibitor.Id
                     || (s.ExhibitorId == null && s.ExhibitorUserId == exhibitorUserId)))
@@ -155,7 +159,7 @@ internal sealed class ExhibitorVisitorService(
         // The BOOTH-scoped row wins. It is the row the booth's officers share and
         // the one the filtered unique index protects — and that index is what
         // makes the choice unambiguous: at most ONE active row can carry this
-        // (ExhibitorId, VisitorUserId), so there is never a second booth row to
+        // (ExhibitorId, VisitorProfileId), so there is never a second booth row to
         // arbitrate between. With no booth row the newest legacy row is adopted
         // into the booth instead (the hand-over), which is index-safe
         // precisely because no active booth row exists for this pair.
@@ -188,7 +192,7 @@ internal sealed class ExhibitorVisitorService(
                 superseded.Deactivate();
                 superseded.UpdatedAt = now;
                 logger.LogInformation(
-                    "Converged legacy exhibitor capture {CaptureId} of visitor {VisitorUserId} "
+                    "Converged legacy exhibitor capture {CaptureId} of visitor {VisitorProfileId} "
                     + "into the booth's capture {WinningCaptureId} for exhibitor {ExhibitorId}.",
                     superseded.Id, visitorId.Value, existing.Id, exhibitor.Id);
             }
@@ -200,7 +204,7 @@ internal sealed class ExhibitorVisitorService(
                 Id = Guid.NewGuid(),
                 ExhibitorUserId = exhibitorUserId,
                 ExhibitorId = exhibitor.Id,
-                VisitorUserId = visitorId.Value,
+                VisitorProfileId = visitorId.Value,
                 Note = trimmed,
                 IsActive = true,
                 CreatedAt = now,
@@ -236,7 +240,7 @@ internal sealed class ExhibitorVisitorService(
             .AsNoTracking()
             .Where(CapturedByBooth(exhibitorUserId, exhibitor.Id))
             .OrderByDescending(s => s.CreatedAt)
-            .Select(s => new { s.Id, s.VisitorUserId, s.Note, s.CreatedAt })
+            .Select(s => new { s.Id, s.VisitorProfileId, s.Note, s.CreatedAt })
             .ToListAsync(cancellationToken);
         if (rows.Count == 0)
         {
@@ -251,17 +255,17 @@ internal sealed class ExhibitorVisitorService(
         // PII is projected for it (this also covers a subject whose profile row has
         // gone). The rule itself widened to "any active badge holder", so a
         // media / sponsor / staff capture now legitimately stays in the list.
-        var subjectIds = rows.Select(r => r.VisitorUserId).Distinct().ToList();
+        var subjectIds = rows.Select(r => r.VisitorProfileId).Distinct().ToList();
         var eligibleSubjectIds = (await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(IsCapturableSubject)
-            .Where(p => subjectIds.Contains(p.UserId))
-            .Select(p => p.UserId)
+            .Where(p => subjectIds.Contains(p.Id))
+            .Select(p => p.Id)
             .ToListAsync(cancellationToken))
             .ToHashSet();
 
         var visible = rows
-            .Where(r => eligibleSubjectIds.Contains(r.VisitorUserId))
+            .Where(r => eligibleSubjectIds.Contains(r.VisitorProfileId))
             .ToList();
         if (visible.Count == 0)
         {
@@ -269,11 +273,11 @@ internal sealed class ExhibitorVisitorService(
         }
 
         var cards = await ResolveCardsAsync(
-            visible.Select(r => r.VisitorUserId).Distinct().ToList(), cancellationToken);
+            visible.Select(r => r.VisitorProfileId).Distinct().ToList(), cancellationToken);
 
         return visible
             .Select(r => new ExhibitorVisitorRow(
-                r.Id, r.CreatedAt, r.Note, cards[r.VisitorUserId]))
+                r.Id, r.CreatedAt, r.Note, cards[r.VisitorProfileId]))
             .ToList();
     }
 
@@ -314,7 +318,7 @@ internal sealed class ExhibitorVisitorService(
             .AsNoTracking()
             .Where(CapturedByBooth(exhibitorUserId, exhibitor.Id))
             .Where(s => s.Id == captureId)
-            .Select(s => (Guid?)s.VisitorUserId)
+            .Select(s => (Guid?)s.VisitorProfileId)
             .FirstOrDefaultAsync(cancellationToken);
         if (subjectId is null)
         {
@@ -327,7 +331,7 @@ internal sealed class ExhibitorVisitorService(
         var eligible = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(IsCapturableSubject)
-            .AnyAsync(p => p.UserId == subjectId.Value, cancellationToken);
+            .AnyAsync(p => p.Id == subjectId.Value, cancellationToken);
         if (!eligible)
         {
             throw CaptureNotFound();
@@ -441,7 +445,7 @@ internal sealed class ExhibitorVisitorService(
                 && p.IsActive
                 && p.ProfileType != null
                 && p.ProfileType.MobileAppRole == MobileAppRole.Exhibitor)
-            .Select(p => new { p.Name, p.NameArabic })
+            .Select(p => new { p.Id, p.Name, p.NameArabic })
             .FirstOrDefaultAsync(cancellationToken);
         if (officer is null)
         {
@@ -478,7 +482,8 @@ internal sealed class ExhibitorVisitorService(
             string.IsNullOrWhiteSpace(booth.Name) ? officer.Name : booth.Name,
             string.IsNullOrWhiteSpace(booth.NameArabic)
                 ? officer.NameArabic
-                : booth.NameArabic);
+                : booth.NameArabic,
+            officer.Id);
     }
 
     /// <summary>One 403 for both halves of the exhibitor test (the role and a
@@ -496,20 +501,34 @@ internal sealed class ExhibitorVisitorService(
     /// refreshes the note) stays silent. Best-effort like the other request /
     /// booking flows — a dispatch failure never undoes the committed capture.
     /// Notifications live on the Identity DB, dispatched through its own unit of
-    /// work, so this is not a cross-database transaction.</summary>
-    private Task NotifyVisitorCapturedAsync(
-        Guid visitorUserId, ExhibitorIdentity exhibitor,
+    /// work, so this is not a cross-database transaction.
+    ///
+    /// <para>A notification is delivered to an ACCOUNT, so a lead who holds none —
+    /// a walk-in or a bulk-minted badge — cannot be told. Their capture still
+    /// stands; there is simply no device or mailbox to reach.</para></summary>
+    private async Task NotifyVisitorCapturedAsync(
+        Guid visitorProfileId, ExhibitorIdentity exhibitor,
         CancellationToken cancellationToken)
     {
+        var visitorUserId = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.Id == visitorProfileId)
+            .Select(p => p.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (visitorUserId is not { } recipientId)
+        {
+            return;
+        }
+
         var name = string.IsNullOrWhiteSpace(exhibitor.Name)
             ? "An exhibitor"
             : exhibitor.Name.Trim();
         var nameArabic = string.IsNullOrWhiteSpace(exhibitor.NameArabic)
             ? "أحد العارضين"
             : exhibitor.NameArabic.Trim();
-        return notifications.TryDispatchAsync(new NotificationRequest
+        await notifications.TryDispatchAsync(new NotificationRequest
         {
-            UserId = visitorUserId,
+            UserId = recipientId,
             Kind = NotificationKind.ExhibitorLeadCaptured,
             Title = "Your details were shared with an exhibitor",
             TitleArabic = "تمت مشاركة بياناتك مع أحد العارضين",
@@ -525,28 +544,38 @@ internal sealed class ExhibitorVisitorService(
     /// <summary>The EXHIBITOR the scanning officer represents — its id (the booth
     /// every capture is tagged to and every list is scoped by) and its
     /// bilingual display name, carried from the authorisation query into the
-    /// subject notification so the visitor is told WHO their card went
-    /// to.</summary>
-    private sealed record ExhibitorIdentity(Guid Id, string Name, string NameArabic);
+    /// subject notification so the visitor is told WHO their card went to.
+    /// <para><see cref="OfficerProfileId"/> is the SCANNING officer's own attendee
+    /// record, carried so the self-scan check compares like with like: captures are
+    /// keyed by profile, so comparing the subject against the officer's account id
+    /// would never match and would let an officer capture themselves.</para></summary>
+    private sealed record ExhibitorIdentity(
+        Guid Id, string Name, string NameArabic, Guid OfficerProfileId);
 
     /// <summary>Batch-resolves visitor cards from profiles + org / country lookups
     /// (App DB) and a single email round-trip (Identity DB). A subject with no
     /// profile resolves to an unavailable card. Mirrors the contact-share card
-    /// projection — kept local to avoid coupling the two services.</summary>
+    /// projection — kept local to avoid coupling the two services.
+    ///
+    /// <para>Keyed by PROFILE id, which is what a capture row carries. The email is
+    /// the one field that still needs an account, so a lead with none simply has no
+    /// email on their card; every other field resolves as usual rather than the
+    /// whole lead dropping out of the list.</para></summary>
     private async Task<Dictionary<Guid, VisitorCard>> ResolveCardsAsync(
-        IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken)
+        IReadOnlyCollection<Guid> profileIds, CancellationToken cancellationToken)
     {
         var result = new Dictionary<Guid, VisitorCard>();
-        if (userIds.Count == 0)
+        if (profileIds.Count == 0)
         {
             return result;
         }
 
         var profiles = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(p => userIds.Contains(p.UserId))
+            .Where(p => profileIds.Contains(p.Id))
             .Select(p => new
             {
+                p.Id,
                 p.UserId,
                 p.Name,
                 p.NameArabic,
@@ -581,16 +610,26 @@ internal sealed class ExhibitorVisitorService(
                 .ToListAsync(cancellationToken))
                 .ToDictionary(c => c.Id, c => (En: c.Name, Ar: c.NameArabic));
 
-        var emails = await userDirectory.GetEmailsAsync(userIds, cancellationToken);
+        // Only the subjects that HAVE an account can have an email, so ask about
+        // those alone; a walk-in contributes no id to this round-trip.
+        var accountIds = profiles
+            .Where(p => p.UserId is not null)
+            .Select(p => p.UserId!.Value)
+            .Distinct()
+            .ToList();
+        var emails = accountIds.Count == 0
+            ? new Dictionary<Guid, string?>()
+            : await userDirectory.GetEmailsAsync(accountIds, cancellationToken);
 
-        foreach (var userId in userIds.Distinct())
+        foreach (var profileId in profileIds.Distinct())
         {
-            var profile = profiles.FirstOrDefault(p => p.UserId == userId);
+            var profile = profiles.FirstOrDefault(p => p.Id == profileId);
             if (profile is null)
             {
-                result[userId] = new VisitorCard(
-                    userId, string.Empty, string.Empty, null, null, null,
-                    null, null, null, null, null, null, null, Available: false);
+                result[profileId] = new VisitorCard(
+                    Guid.Empty, string.Empty, string.Empty, null, null, null,
+                    null, null, null, null, null, null, null, Available: false,
+                    UserProfileId: profileId);
                 continue;
             }
 
@@ -609,13 +648,22 @@ internal sealed class ExhibitorVisitorService(
                 countryAr = country.Ar;
             }
 
-            emails.TryGetValue(userId, out var email);
+            string? email = null;
+            if (profile.UserId is { } accountId)
+            {
+                emails.TryGetValue(accountId, out email);
+            }
 
-            result[userId] = new VisitorCard(
-                userId, profile.Name, profile.NameArabic, profile.JobTitle,
+            result[profileId] = new VisitorCard(
+                // The SHIPPED UserId field. Empty when the lead holds no account —
+                // a walk-in or a bulk-minted badge — which is exactly why the
+                // appended UserProfileId below is the one to identify them by.
+                profile.UserId ?? Guid.Empty,
+                profile.Name, profile.NameArabic, profile.JobTitle,
                 profile.JobTitleArabic,
                 orgEn, orgAr, email, profile.SaudiMobile, profile.InternationalMobile,
-                countryId, countryEn, countryAr, Available: true);
+                countryId, countryEn, countryAr, Available: true,
+                UserProfileId: profileId);
         }
 
         return result;

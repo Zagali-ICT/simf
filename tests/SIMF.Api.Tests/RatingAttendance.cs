@@ -59,7 +59,8 @@ internal static class RatingAttendance
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var hallId = await db.Sessions.Where(s => s.Id == sessionId)
             .Select(s => s.HallId).SingleAsync();
-        db.HallAttendances.Add(NewAttendance(userId, sessionId, hallId));
+        var profileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
+        db.HallAttendances.Add(NewAttendance(profileId, sessionId, hallId));
         await db.SaveChangesAsync();
     }
 
@@ -75,35 +76,7 @@ internal static class RatingAttendance
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var now = SimfClock.Now;
 
-        var profileId = await db.UserProfiles
-            .Where(p => p.UserId == userId).Select(p => (Guid?)p.Id)
-            .SingleOrDefaultAsync();
-        if (profileId is null)
-        {
-            var profileType = new UserProfileType
-            {
-                Id = Guid.NewGuid(),
-                Name = "Visitor " + Guid.NewGuid().ToString("N")[..8],
-                NameArabic = "زائر",
-                PageColor = "#0EA5E9",
-                IsForVisitor = true,
-                MobileAppRole = MobileAppRole.None,
-                IsActive = true,
-                CreatedAt = now,
-            };
-            db.ProfileTypes.Add(profileType);
-            var profile = new UserProfile
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                ProfileTypeId = profileType.Id,
-                Name = "Attendee", NameArabic = "حاضر",
-                NationalityId = 682,
-                CreatedAt = now,
-            };
-            db.UserProfiles.Add(profile);
-            profileId = profile.Id;
-        }
+        var profileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
 
         var gate = new Gate
         {
@@ -165,16 +138,18 @@ internal static class RatingAttendance
             IsActive = true, CreatedAt = SimfClock.Now,
         };
         db.Sessions.Add(session);
-        db.HallAttendances.Add(NewAttendance(userId, session.Id, hall.Id));
+        var profileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
+        db.HallAttendances.Add(NewAttendance(profileId, session.Id, hall.Id));
         await db.SaveChangesAsync();
     }
 
-    private static HallAttendance NewAttendance(Guid userId, Guid sessionId, Guid hallId) => new()
+    private static HallAttendance NewAttendance(
+        Guid attendeeProfileId, Guid sessionId, Guid hallId) => new()
     {
         Id = Guid.NewGuid(),
         SessionId = sessionId,
         HallId = hallId,
-        UserId = userId,
+        UserProfileId = attendeeProfileId,
         Method = AttendanceMethod.QrScan,
         Enter = SimfClock.Now,
         CreatedAt = SimfClock.Now,

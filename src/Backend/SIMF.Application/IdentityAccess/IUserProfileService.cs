@@ -1,4 +1,4 @@
-using SIMF.Contracts.UserProfile;
+﻿using SIMF.Contracts.UserProfile;
 
 namespace SIMF.Application.IdentityAccess;
 
@@ -63,7 +63,7 @@ public interface IUserProfileService
 
     /// <summary>Admin-side upload of the VVIP/VIP welcome photo
     /// (صورة واضحة) for a subject. Stored in the dedicated VIP-photo store and
-    /// written to <c>UserProfile.VipPhotoRelativePath</c> — distinct from both
+    /// written to <c>UserProfile.VipPhotoFileId</c> — distinct from both
     /// the account avatar and the ID image. The caller enforces the role/policy
     /// check + the size/MIME/magic-byte gate at the endpoint; this method only
     /// enforces the UserType match (Visitor) so an Admin row can never receive

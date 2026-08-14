@@ -1,4 +1,4 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Media;
@@ -10,8 +10,9 @@ namespace SIMF.Domain.Media;
 /// <para>Binary bytes live outside this row, as they do for avatars and identity
 /// documents. An uploaded image is addressed by <see cref="ImageFileId"/> in the
 /// unified file store and streamed by the media endpoint; it is never a blob
-/// column. An externally hosted video is referenced by <see cref="Url"/>
-/// instead.</para>
+/// column. An externally hosted video is referenced by
+/// <see cref="VideoFileId"/> instead, which is a file-store row too — an
+/// external link rather than bytes.</para>
 /// </summary>
 public class MediaItem : BaseAuditEntity
 {
@@ -22,18 +23,25 @@ public class MediaItem : BaseAuditEntity
     public string? TitleArabic { get; set; }
 
     /// <summary>The uploaded image's row in the file store, and the source of
-    /// truth for whether this item has an image. A bare Guid resolved on read,
-    /// not a foreign key. Null when the item is an externally hosted video
-    /// addressed by <see cref="Url"/>.</summary>
+    /// truth for whether this item has an image. A real foreign key into
+    /// <c>StoredFiles</c>: both sides live in the App database, so the database
+    /// keeps it honest. Null when the item is an externally hosted video
+    /// addressed by <see cref="VideoFileId"/>.</summary>
     public Guid? ImageFileId { get; set; }
 
-    /// <summary>Absolute URL of an externally hosted asset, typically the video.
-    /// Null when the asset is an uploaded image.</summary>
-    public string? Url { get; set; }
+    /// <summary>The item's video, as a row in <c>StoredFiles</c> - an external
+    /// link, the gallery hosting only its images. Null when the item is an
+    /// uploaded image.</summary>
+    public Guid? VideoFileId { get; set; }
 
     /// <summary>A poster image for video tiles, held in the file store the same
-    /// way. Null when the tile renders from <see cref="ImageFileId"/>
-    /// directly.</summary>
+    /// way and carrying the same foreign key. Null when the tile renders from
+    /// <see cref="ImageFileId"/> directly.
+    ///
+    /// <para>Nothing writes this column today, so it is null on every row. It is
+    /// kept because the <c>thumbnailUrl</c> it feeds is decoded by the shipped
+    /// app and is the first branch of the gallery tile, and that wire key is
+    /// append-only.</para></summary>
     public Guid? ThumbnailFileId { get; set; }
 
     public string? Album { get; set; }

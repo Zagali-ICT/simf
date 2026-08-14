@@ -28,9 +28,14 @@ public sealed class HallAttendance
     public Guid HallId { get; set; }
     public Hall? Hall { get; set; }
 
-    /// <summary>A bare Guid: the attendee lives in the Identity database, so
-    /// there is no foreign key across the two.</summary>
-    public Guid UserId { get; set; }
+    /// <summary>The attendee, keyed by their <see cref="Profiles.UserProfile"/> —
+    /// the row every attendee has. It was the Identity account id until the
+    /// profile became the attendee record, which meant a walk-in or a bulk-minted
+    /// badge (neither of which carries an account) could not be recorded at a hall
+    /// door at all. A real foreign key, because the profile lives in this same
+    /// database.</summary>
+    public Guid UserProfileId { get; set; }
+    public Profiles.UserProfile? UserProfile { get; set; }
 
     public AttendanceMethod Method { get; set; }
 

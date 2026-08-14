@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminMediaTests.cs
+﻿// Tests: SIMF.Api.Tests/AdminMediaTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -24,6 +24,7 @@ namespace SIMF.Infrastructure.Media;
 /// </summary>
 internal sealed class AdminMediaService(
     SimfAppDbContext dbContext,
+    IFeedLinkService feedLinks,
     IFileService fileService,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -101,7 +102,10 @@ internal sealed class AdminMediaService(
                 item.Album,
                 item.AlbumArabic,
                 item.ImageFileId != null,
-                item.Url,
+                dbContext.StoredFiles
+                    .Where(f => f.Id == item.VideoFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
                 item.DisplayOrder,
                 item.IsActive,
                 item.CreatedAt))
@@ -117,7 +121,7 @@ internal sealed class AdminMediaService(
         var item = await dbContext.MediaItems
             .AsNoTracking()
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
-        return item is null ? null : ToDetail(item);
+        return item is null ? null : ToDetail(item, await feedLinks.ResolveAsync(item.VideoFileId, cancellationToken));
     }
 
     public async Task<AdminMediaDetail> CreateAsync(
@@ -137,7 +141,8 @@ internal sealed class AdminMediaService(
             TitleArabic = NullIfBlank(request.TitleArabic),
             Album = NullIfBlank(request.Album),
             AlbumArabic = NullIfBlank(request.AlbumArabic),
-            Url = NullIfBlank(request.Url),
+            // The video link is attached after the save: a file row needs an
+            // owner id, and the item has none until it exists.
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
             CreatedAt = now,
@@ -155,7 +160,7 @@ internal sealed class AdminMediaService(
             "Admin {ActorId} created MediaItem {Id} ({Kind})",
             actorUserId, item.Id, item.Kind);
 
-        return ToDetail(item);
+        return ToDetail(item, await feedLinks.ResolveAsync(item.VideoFileId, cancellationToken));
     }
 
     public async Task<AdminMediaDetail> UpdateAsync(
@@ -179,7 +184,9 @@ internal sealed class AdminMediaService(
         item.TitleArabic = NullIfBlank(request.TitleArabic);
         item.Album = NullIfBlank(request.Album);
         item.AlbumArabic = NullIfBlank(request.AlbumArabic);
-        item.Url = NullIfBlank(request.Url);
+        item.VideoFileId = await feedLinks.SetAsync(
+            FileService.MediaGalleryVideo, item.Id,
+            request.Url, actorUserId, cancellationToken);
         item.DisplayOrder = request.DisplayOrder;
         item.IsActive = request.IsActive;
         item.UpdatedAt = timeProvider.SimfNow();
@@ -191,7 +198,7 @@ internal sealed class AdminMediaService(
             $"id={item.Id}; active={item.IsActive}",
             cancellationToken);
 
-        return ToDetail(item);
+        return ToDetail(item, await feedLinks.ResolveAsync(item.VideoFileId, cancellationToken));
     }
 
     public async Task DeactivateAsync(
@@ -258,7 +265,7 @@ internal sealed class AdminMediaService(
             $"id={item.Id}; fileId={result.Id}",
             cancellationToken);
 
-        return ToDetail(item);
+        return ToDetail(item, await feedLinks.ResolveAsync(item.VideoFileId, cancellationToken));
     }
 
     private static void Validate(
@@ -311,7 +318,9 @@ internal sealed class AdminMediaService(
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static AdminMediaDetail ToDetail(MediaItem item) =>
+    // videoUrl is resolved by the caller: the video is a file-store row now, and
+    // this mapper is static.
+    private static AdminMediaDetail ToDetail(MediaItem item, string? videoUrl) =>
         new(item.Id,
             item.Kind,
             item.Title,
@@ -320,7 +329,7 @@ internal sealed class AdminMediaService(
             item.AlbumArabic,
             item.ImageFileId != null,
             item.ThumbnailFileId != null,
-            item.Url,
+            videoUrl,
             item.DisplayOrder,
             item.IsActive,
             item.CreatedAt,

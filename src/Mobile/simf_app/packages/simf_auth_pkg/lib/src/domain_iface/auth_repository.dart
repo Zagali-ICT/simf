@@ -1,3 +1,4 @@
+import 'package:simf_auth_pkg/src/data/dto/device_key_dtos.dart';
 import 'package:simf_auth_pkg/src/domain/current_user.dart';
 import 'package:simf_auth_pkg/src/domain/session.dart';
 
@@ -140,6 +141,9 @@ abstract class AuthRepository {
   /// Revoke one of the caller's own device keys (turning Face-ID sign-in off).
   /// Requires a signed-in approved caller.
   Future<void> revokeDeviceKey(String deviceKeyId);
+
+  /// The caller's own device keys, newest first, for the My Devices screen.
+  Future<List<DeviceKeyEntryDto>> listDeviceKeys();
 }
 
 /// A successful sign-in either yields a [Session] outright, or an email-OTP

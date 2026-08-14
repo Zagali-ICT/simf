@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_vip_photo_sets_path)
+﻿// Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_vip_photo_sets_path)
 using FastEndpoints;
 using SIMF.Api.RequestContext;
 using SIMF.Application.IdentityAccess;
@@ -12,7 +12,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// Admin upload + read of a visitor's VVIP/VIP welcome photo
 /// (صورة واضحة) for the موج (Mawj) integration. The photo is distinct from the
 /// account avatar and the ID image: it lives in its own store and is written to
-/// <c>UserProfile.VipPhotoRelativePath</c>. Captured on the dedicated VIP
+/// <c>UserProfile.VipPhotoFileId</c>. Captured on the dedicated VIP
 /// registration page; surfaced + downloaded on the VIP roster export page. Same
 /// 2 MB + MIME + magic-byte gate as the avatar upload (no human-face gate — a VIP
 /// portrait may be a formal headshot or an official emblem). Permission-gated like

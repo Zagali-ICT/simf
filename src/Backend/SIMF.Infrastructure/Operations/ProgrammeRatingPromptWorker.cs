@@ -371,9 +371,12 @@ internal sealed class ProgrammeRatingPromptWorker(
             return [];
         }
 
+        // A walk-in checks in on a badge alone, so a checked-in attendee need not
+        // have an account. There is no user to address a rating prompt to, so those
+        // rows drop out here rather than being counted as silent recipients.
         return await db.UserProfiles
-            .Where(p => profileIds.Contains(p.Id))
-            .Select(p => p.UserId)
+            .Where(p => profileIds.Contains(p.Id) && p.UserId != null)
+            .Select(p => p.UserId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
     }

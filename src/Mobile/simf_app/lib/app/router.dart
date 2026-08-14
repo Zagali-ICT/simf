@@ -14,6 +14,7 @@ import 'package:simf_app/features/account/biometric_step_up_screen.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/email_otp_verify_screen.dart';
 import 'package:simf_app/features/account/forgot_password_screen.dart';
+import 'package:simf_app/features/account/my_devices_screen.dart';
 import 'package:simf_app/features/account/reset_password_screen.dart';
 import 'package:simf_app/features/account/sign_in_screen.dart';
 import 'package:simf_app/features/account/sign_up_email_verify_screen.dart';
@@ -604,6 +605,16 @@ const List<_Route> _auxRoutes = <_Route>[
       path: '/auth/biometric-step-up',
       labelAr: 'تأكيد بصمة الوجه',
       labelEn: 'Confirm Face ID',),
+  // #7b — the owner's enrolled-device list, added on main. Wrapped to match
+  // this branch's 80-column rule rather than carried over as the single long
+  // line it arrived as; the whole point of the branch is that the analyzer
+  // reaches zero.
+  _Route(
+      number: 0,
+      name: RouteNames.myDevices,
+      path: '/account/my-devices',
+      labelAr: 'أجهزتي',
+      labelEn: 'My devices',),
 ];
 
 /// Screen numbers that need a signed-in user of **any** role (including a
@@ -664,9 +675,10 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   // it must be reachable by a pending sign-up account (D-694).
   108: _attendee, // Requests feed (D-500, approved-only)
   116: _attendee, // Bilateral meetings (D-745) — role gate keeps guest/staff/
-  // moderator out; VIP-only is enforced in-screen + server-side, not here.
-  // Meeting confirm (Bi-Meeting) — the other-party confirm screen; eligibility
-  // (target-delegation member) is enforced server-side.
+  // moderator out; per-user meeting eligibility (D-760) is enforced in-screen +
+  // server-side, not here.
+  // Meeting confirm (Bi-Meeting) — the other-party confirm screen;
+  // eligibility (target-delegation member) is enforced server-side.
   117: _attendee,
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
@@ -997,6 +1009,9 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.biometricStepUp) {
     return const BiometricStepUpScreen();
+  }
+  if (r.name == RouteNames.myDevices) {
+    return const MyDevicesScreen();
   }
   // Part B (D-430) — badge-QR sign-in / activation.
   if (r.name == RouteNames.badgeSignIn) {

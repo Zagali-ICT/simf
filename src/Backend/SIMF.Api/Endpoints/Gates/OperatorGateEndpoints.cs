@@ -58,6 +58,51 @@ public sealed class GateOfflineConfigEndpoint(IGateOperatorService service)
     }
 }
 
+/// <summary>Query for <c>GET /app/gates/offline-roster</c>.</summary>
+public sealed class GateOfflineRosterRequest
+{
+    /// <summary>The device's last successful sync. Omit for a full pull; supply
+    /// the previous response's <c>IssuedAt</c> for a delta, which is what keeps
+    /// a gate console usable on a venue's network.</summary>
+    public DateTime? Since { get; set; }
+}
+
+/// <summary>
+/// <c>GET /app/gates/offline-roster</c>. The people this operator's doors are
+/// expecting, so a device with no network can decide entry instead of
+/// abstaining — and an abstention at a hall door is a queue.
+///
+/// <para>Its own endpoint rather than a field on the offline config, for the
+/// same reason the config is separate from the assignment list: it carries
+/// attendee names and movements, so it should be visible in the access log as
+/// its own call and be revocable on its own.</para>
+///
+/// <para>Every verdict a device reaches with it stays ADVISORY. The scan is
+/// still queued and the server re-decides it against live data — the roster
+/// makes the offline answer better, not authoritative.</para>
+/// </summary>
+public sealed class GateOfflineRosterEndpoint(IGateOperatorService service)
+    : Endpoint<GateOfflineRosterRequest, ApiResult<GateOfflineRoster>>
+{
+    public override void Configure()
+    {
+        Get("/app/gates/offline-roster");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
+                 PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Operate));
+        Options(rb => rb.RequireRateLimiting(RateLimitOptions.OperationalPolicy));
+        Tags("Gates");
+        Summary(summary => summary.Summary =
+            "The reserved attendees this operator's hall doors are expecting.");
+    }
+
+    public override async Task HandleAsync(GateOfflineRosterRequest req, CancellationToken ct)
+    {
+        var operatorId = User.ActorId();
+        await Send.OkAsync(ApiResult<GateOfflineRoster>.Ok(
+            await service.GetOfflineRosterAsync(operatorId, req.Since, ct)), ct);
+    }
+}
+
 public sealed class PostScanRequest
 {
     public Guid GateId { get; set; }

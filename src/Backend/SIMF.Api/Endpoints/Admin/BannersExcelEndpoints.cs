@@ -37,7 +37,6 @@ public sealed class ExportBannersEndpoint(IAdminCmsService service, IGridExcelEx
         // already reads these four columns).
         new("Body", row => row.Body),
         new("BodyArabic", row => row.BodyArabic),
-        new("ImageUrl", row => row.ImageUrl),
         new("LinkUrl", row => row.LinkUrl),
     ];
 
@@ -126,7 +125,6 @@ public sealed class ImportBannersEndpoint(IAdminCmsService service, IGridExcelIm
             TitleArabic = titleArabic,
             Body = body,
             BodyArabic = bodyArabic,
-            ImageUrl = NullIfBlank(row.Cells.GetValueOrDefault("ImageUrl", string.Empty)),
             LinkUrl = NullIfBlank(row.Cells.GetValueOrDefault("LinkUrl", string.Empty)),
             Start = start,
             End = end,

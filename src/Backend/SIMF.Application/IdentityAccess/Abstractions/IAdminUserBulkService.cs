@@ -141,6 +141,18 @@ public interface IAdminUserBulkService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Add more badges to an order that already exists. The badges are minted
+    /// immediately, exactly as they are on the first order, so the stored total
+    /// never promises badges that do not exist. Throws 404 for an unknown order,
+    /// 409 for a revoked one or for the direct-registration order, and 400 for an
+    /// invalid profile type.
+    /// </summary>
+    Task<AdminTopUpBadgeBatchResponse> TopUpBadgeBatchAsync(
+        Guid actorUserId,
+        AdminTopUpBadgeBatchRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Re-render the batch's QR pack and email it to the
     /// supplied organiser address (a fresh copy; the badges are unchanged). Throws
     /// 404 for an unknown batch, 400 for an invalid email or an empty batch.

@@ -30,7 +30,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
         var now = SimfClock.Now;
 
         var (hall, session) = SeedSession(db, start: now.AddHours(-3), end: now.AddHours(-1));
-        var row = SeedOpenAttendance(db, session, hall);
+        var row = await SeedOpenAttendanceAsync(db, session, hall);
         await db.SaveChangesAsync();
 
         var closed = await HallAttendanceCloseoutWorker.CloseEndedSessionsAsync(db, now, default);
@@ -49,7 +49,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
         var now = SimfClock.Now;
 
         var (hall, session) = SeedSession(db, start: now.AddMinutes(-15), end: now.AddMinutes(45));
-        var row = SeedOpenAttendance(db, session, hall);
+        var row = await SeedOpenAttendanceAsync(db, session, hall);
         await db.SaveChangesAsync();
 
         var closed = await HallAttendanceCloseoutWorker.CloseEndedSessionsAsync(db, now, default);
@@ -67,7 +67,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
         var now = SimfClock.Now;
 
         var (hall, session) = SeedSession(db, start: now.AddHours(-3), end: now.AddHours(-1));
-        var row = SeedOpenAttendance(db, session, hall);
+        var row = await SeedOpenAttendanceAsync(db, session, hall);
         row.Leave = now.AddHours(-1); // already departed
         await db.SaveChangesAsync();
 
@@ -99,7 +99,10 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
         return (hall, session);
     }
 
-    private static HallAttendance SeedOpenAttendance(
+    /// <summary>The attendee is a real profile with NO account — the walk-in this
+    /// worker most often closes out. An invented Guid no longer works: the row now
+    /// carries a real foreign key to the attendee record.</summary>
+    private static async Task<HallAttendance> SeedOpenAttendanceAsync(
         SimfAppDbContext db, Session session, Hall hall)
     {
         var row = new HallAttendance
@@ -107,7 +110,7 @@ public sealed class HallAttendanceCloseoutWorkerTests : IClassFixture<SimfApiFac
             Id = Guid.NewGuid(),
             SessionId = session.Id,
             HallId = hall.Id,
-            UserId = Guid.NewGuid(),
+            UserProfileId = await TestAttendeeProfiles.CreateAccountlessAsync(db),
             Method = AttendanceMethod.QrScan,
             Enter = session.Start,
             CreatedAt = SimfClock.Now,

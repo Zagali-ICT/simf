@@ -66,7 +66,7 @@ public partial class SessionDetail
         PickOrNull(s.CountryNameEn, s.CountryNameAr);
 
     private static string SpeakerPhotoUrl(PublicSessionSpeaker s) =>
-        SpeakerPhoto.Url(s.Id, s.HasPhotoAsset, s.PhotoRelativePath);
+        SpeakerPhoto.Url(s.Id, s.HasPhotoAsset);
 
     // Theme-card helpers.
     private static string ThemeName(PublicSessionTheme t) => Pick(t.Name, t.NameArabic);

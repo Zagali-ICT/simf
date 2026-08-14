@@ -28,13 +28,12 @@ public static class LocalizedText
 }
 
 // The same-origin speaker-photo URL the public pages render: the StoredFile
-// SpeakerPhoto asset proxy when the speaker has one, else the legacy relative
-// path, else empty (the card shows its gradient backdrop). Shared by the
-// Speakers list and the Session-detail speakers grid.
+// SpeakerPhoto asset proxy when the speaker has one, else empty (the card shows
+// its gradient backdrop). Shared by the Speakers list and the Session-detail
+// speakers grid. The legacy relative-path fallback went with the column: a
+// speaker photo lives in one place now.
 public static class SpeakerPhoto
 {
-    public static string Url(Guid speakerId, bool hasPhotoAsset, string? photoRelativePath) =>
-        hasPhotoAsset ? $"/content/assets/SpeakerPhoto/{speakerId}/image"
-        : !string.IsNullOrWhiteSpace(photoRelativePath) ? photoRelativePath!
-        : string.Empty;
+    public static string Url(Guid speakerId, bool hasPhotoAsset) =>
+        hasPhotoAsset ? $"/content/assets/SpeakerPhoto/{speakerId}/image" : string.Empty;
 }

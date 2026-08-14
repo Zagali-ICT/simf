@@ -23,15 +23,25 @@ API host and restarting the app pool, or by editing `appsettings.Production.json
 restart).
 
 ```
-SIMF_WalkInMode__Enabled          = true    # master; everything else is inert without it
-SIMF_WalkInMode__ExpiresAtUtc     = 2026-11-05T20:00:00Z
-SIMF_WalkInMode__QuickRegister    = true
-SIMF_WalkInMode__AutoApprove      = true
-SIMF_WalkInMode__SessionWalkIn    = true
+SIMF_API_WalkInMode__Enabled          = true    # master; everything else is inert without it
+SIMF_API_WalkInMode__ExpiresAt        = 2026-11-05T20:00:00
+SIMF_API_WalkInMode__QuickRegister    = true
+SIMF_API_WalkInMode__AutoApprove      = true
+SIMF_API_WalkInMode__SessionWalkIn    = true
 ```
 
-**Disarm:** set `Enabled` to `false` (or let `ExpiresAtUtc` pass). Every rule
+**Disarm:** set `Enabled` to `false` (or let `ExpiresAt` pass). Every rule
 returns to its normal behaviour immediately.
+
+The key is `ExpiresAt`, **not** `ExpiresAtUtc`, and the value is **Saudi
+wall-clock with no `Z`** — this block named a `...Utc` key for a long time and
+the difference is not cosmetic in either half. A key that does not exist binds
+to nothing, so an operator who armed the mode from this block got no expiry at
+all: `AutoApprove` skips the approval queue, and it would have stayed on until
+somebody noticed and set `Enabled=false` by hand. The value is compared against
+`timeProvider.SimfNow()`, which is the instant re-expressed at +03:00
+(`SimfClock`), so a `Z`-suffixed time is read as local and disarms three hours
+late.
 
 ---
 

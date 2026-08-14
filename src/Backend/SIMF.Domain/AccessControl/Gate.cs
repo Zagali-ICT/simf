@@ -37,11 +37,9 @@ public class Gate : BaseAuditEntity
     /// <summary>Empty allows every profile type through. Non-empty filters
     /// against the active types, and deactivating every entry denies all scans
     /// rather than silently reverting to allowing everyone.</summary>
-    public ICollection<GateProfileTypeAllow> AllowedProfileTypes { get; set; }
-        = [];
+    public ICollection<GateProfileTypeAllow> AllowedProfileTypes { get; set; } = [];
 
     /// <summary>The engine checks active assignments only; inactive rows are
     /// kept for the audit trail.</summary>
-    public ICollection<GateAssignment> Assignments { get; set; }
-        = [];
+    public ICollection<GateAssignment> Assignments { get; set; } = [];
 }

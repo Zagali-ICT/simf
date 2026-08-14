@@ -120,8 +120,8 @@ assumed:
 | DEAD-COMMENT-CODE | 14 | **0** — all 5 greppable hits are prose continuations (`// import of the shell keeps resolving.`), not commented-out code |
 | NARRATION-COMMENT | 9 | **0** — the 3 hits are prose and a release number (`// Build #13 —`) |
 | INLINE-TEXTSTYLE (raw size) | 5 | **0** (done, see the tokens commit) |
-| RTL-DIRECTIONAL | 7 | **4**, all declined with cause — each pairs with an explicitly physical `Alignment.centerLeft`, so it is a Figma question (D-886) |
-| `Image.network` unsized | 20 | **11 real** call sites; the other 9 were doc comments the audit counted as hits. Deferred to a device (D-886) |
+| RTL-DIRECTIONAL | 7 | **4**, all declined with cause — each pairs with an explicitly physical `Alignment.centerLeft`, so it is a Figma question (D-901) |
+| `Image.network` unsized | 20 | **11 real** call sites; the other 9 were doc comments the audit counted as hits. Deferred to a device (D-901) |
 | NON-LAZY-LIST | 11-12 | ~43 `ListView(` sites, most correctly static content pages; the data-driven ones still need per-site judgement |
 
 **Do not act on a 2026-08-02 row without re-measuring it first.** Two of the
@@ -283,7 +283,7 @@ those two files — and the pipeline cannot move to `--check --strict` or delete
 Also still owner-gated, unchanged: the `getMySeat` deletion and the
 `more_screen` adjudication (deletion needs owner confirmation, global rule 7).
 
-**Two more went to the device list on 2026-08-14 (D-886), both because no test
+**Two more went to the device list on 2026-08-14 (D-901), both because no test
 can catch getting them wrong:**
 
 * Sizing the 11 real `Image.network` call sites. Widget tests have no HTTP, so

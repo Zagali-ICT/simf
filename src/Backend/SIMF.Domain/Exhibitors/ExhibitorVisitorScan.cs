@@ -4,8 +4,10 @@ namespace SIMF.Domain.Exhibitors;
 
 /// <summary>
 /// A visitor captured as a lead by scanning their entry-badge QR at a booth.
-/// Both user references are bare Guids: the users live in the Identity database,
-/// so there is no navigation, no foreign key and no cross-database join.
+/// The two parties are keyed differently on purpose: the SUBJECT is an attendee,
+/// so it is a real foreign key to their profile in this database, while the
+/// CAPTURER is whoever was signed in to scan, so it stays a bare Guid to the
+/// Identity database with no navigation and no cross-database join.
 ///
 /// <para>None of the visitor's own details are copied here. The full card is
 /// resolved on read from their profile, so a lead list never goes stale against
@@ -31,8 +33,13 @@ public sealed class ExhibitorVisitorScan : BaseAuditEntity
     public Guid? ExhibitorId { get; set; }
     public Exhibitor? Exhibitor { get; set; }
 
-    /// <summary>The captured visitor.</summary>
-    public Guid VisitorUserId { get; set; }
+    /// <summary>The captured visitor, keyed by their
+    /// <see cref="Profiles.UserProfile"/> — the row every attendee has. It was the
+    /// Identity account id until the profile became the attendee record, which meant
+    /// a booth scanning a walk-in's badge was told no visitor matched the code. A
+    /// real foreign key, because the profile lives in this same database.</summary>
+    public Guid VisitorProfileId { get; set; }
+    public Profiles.UserProfile? VisitorProfile { get; set; }
 
     /// <summary>A free-text note the exhibitor attached.</summary>
     public string? Note { get; set; }

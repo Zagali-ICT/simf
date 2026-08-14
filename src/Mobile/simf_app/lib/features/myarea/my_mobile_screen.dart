@@ -33,10 +33,22 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// The number itself always renders LTR.
 ///
 /// Route: `RouteNames.myMobile`.
-/// Data: [myProfileProvider], [profileRepositoryProvider].
+/// Data: [myMobileProfileProvider]; the save also invalidates the shared
+///       [myProfileProvider].
 /// Perf: no list — a single-screen layout.
 /// The signed-in user's profile, for the stored mobile number.
-final myProfileProvider = FutureProvider.autoDispose<UserProfileResponse>(
+/// This screen's OWN profile read — deliberately not the shared
+/// `myProfileProvider` from `profile_repository.dart`.
+///
+/// The shared cache swallows an `ApiFailure` into null, which is right for the
+/// selectors that read it (Badge, My Area, the speaker profile) and wrong here:
+/// this screen shows the SERVER'S reason on a failed load, and null cannot
+/// carry one. Main's own version of this screen read the repository directly
+/// for the same reason.
+///
+/// The save still invalidates the SHARED cache as well, so the rest of the app
+/// does not serve the pre-save row.
+final myMobileProfileProvider = FutureProvider.autoDispose<UserProfileResponse>(
   (ref) => ref.watch(profileRepositoryProvider).getMyProfile(),
 );
 
@@ -78,9 +90,9 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
   Future<void> _seedFromProfile() async {
     final UserProfileResponse profile;
     try {
-      profile = await ref.read(myProfileProvider.future);
+      profile = await ref.read(myMobileProfileProvider.future);
     } on Object {
-      return; // The error branch renders.
+      return; // The error branch renders the server's reason.
     }
     if (mounted) {
       _mobile.text = _storedMobile(profile);
@@ -94,7 +106,7 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
           '';
 
   Future<void> _save() async {
-    final profile = ref.read(myProfileProvider).valueOrNull;
+    final profile = ref.read(myMobileProfileProvider).valueOrNull;
     if (profile == null || _formKey.currentState?.validate() != true) {
       return;
     }
@@ -109,6 +121,13 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
       await ref.read(profileRepositoryProvider).upsertMyProfile(
             profile.toUpsertRequest(mobile: normalizePhone(_mobile.text)),
           );
+      // The shared profile read is cached (not autoDispose), so a save that
+      // does not invalidate it leaves every selector on the pre-save row.
+      ref
+        ..invalidate(myMobileProfileProvider)
+        // Main's rule: anything that WRITES the profile must invalidate the
+        // shared cache, or every selector over it serves the pre-save row.
+        ..invalidate(myProfileProvider);
       if (!mounted) {
         return;
       }
@@ -162,7 +181,7 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
   }
 
   Widget _buildBody(AppL10n l10n) {
-    return ref.watch(myProfileProvider).when(
+    return ref.watch(myMobileProfileProvider).when(
           loading: () => const Center(
             child: CircularProgressIndicator(color: SimfTokens.accent),
           ),
@@ -272,7 +291,7 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
             ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(
-              onPressed: () => ref.invalidate(myProfileProvider),
+              onPressed: () => ref.invalidate(myMobileProfileProvider),
               child: Text(l10n.retryLabel),
             ),
           ],

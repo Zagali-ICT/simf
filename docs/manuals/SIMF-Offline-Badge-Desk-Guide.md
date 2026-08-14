@@ -21,14 +21,48 @@ or saturated.
 | Needs the network | Only to upload, once a shift |
 | Holds any password | **No.** See "Uploading" below |
 
-The badge carries an **encrypted** QR: the profile-type code and the desk
-sequence, two plain numbers, AES-256-GCM encrypted under the event badge key. A
-scanner with the same key verifies it with no network. The server decrypts it
+The badge carries an **encrypted** QR: the attendee's profile id, the edition
+year and the profile-type code, AES-256-GCM encrypted under the event badge key.
+A scanner with the same key verifies it with no network. The server decrypts it
 independently on every scan, so the audit trail records exactly what was
 presented at the gate.
 
-A printed badge is about **61 characters** (67 in the extreme case of a 10-digit
-sequence). That is why `GateScans.QrIdAtScan` is `nvarchar(96)`.
+The three fields are packed as **raw bytes**, not as text: a 16-byte profile id,
+a 2-byte year and a 2-byte type code. That is a size decision, not a taste one.
+The same profile id written as 32 hexadecimal characters would push the printed
+code past 96 characters on its own, and anything longer than 96 is refused at the
+gate as "not recognised" *before* it is ever decrypted — which at a desk with a
+queue is undiagnosable.
+
+The **edition year** is what stops last year's badge opening this year's gate. A
+badge whose year is not the open edition is refused exactly as an unknown code
+is, and deliberately not with a distinct message: a scan must never tell the
+holder which half of the check failed.
+
+**Opening a new year re-issues every badge.** Closing a year does not delete its
+attendees - their records stay, labelled with the edition they belong to - but
+opening the next one clears their QR, and each returning attendee is issued a
+fresh badge for the new edition. This is the half that is easy to miss: refusing
+last year's badge at the gate is only correct if the holder has a route to a
+current one. Plan the re-issue as part of opening the year, not as something
+support handles per person at the door.
+
+A printed badge is **exactly 78 characters**, always: the payload is
+fixed-width, so there is no typical case and no extreme one. That is why
+`GateScans.QrIdAtScan` is `nvarchar(96)`.
+
+There is also an `EditionYear` in each desk's `appsettings.json`, and it must
+match the year open on the API. A desk stamping any other year prints badges
+every gate refuses.
+
+> **This payload replaced an older one, so `BadgeKeyVersion` MUST be bumped
+> before the first desk prints.** The old format was a profile-type code and a
+> desk sequence. A scanner running an older build decrypts a new-format badge
+> successfully and only then fails to read the fields — and it reports that as a
+> *forged badge* rather than abstaining, offline, where no server can overrule
+> it. Bumping the version makes that scanner see a key version it does not hold,
+> which it already treats as "cannot judge, queue it". Roll out in the order in
+> the checklist below: API first, then every scanner confirmed, then the desks.
 
 ---
 
@@ -37,12 +71,12 @@ sequence). That is why `GateScans.QrIdAtScan` is `nvarchar(96)`.
 ### 1. Arm the capability on the API
 
 ```
-SIMF_WalkInMode__Enabled            = true
-SIMF_WalkInMode__OfflineUpload      = true
-SIMF_WalkInMode__AcceptOfflineBadges= true
-SIMF_WalkInMode__AutoApprove        = true
-SIMF_WalkInMode__BadgeKey           = <base64 AES-256 key>
-SIMF_WalkInMode__BadgeKeyVersion    = 1
+SIMF_API_WalkInMode__Enabled            = true
+SIMF_API_WalkInMode__OfflineUpload      = true
+SIMF_API_WalkInMode__AcceptOfflineBadges= true
+SIMF_API_WalkInMode__AutoApprove        = true
+SIMF_API_WalkInMode__BadgeKey           = <base64 AES-256 key>
+SIMF_API_WalkInMode__BadgeKeyVersion    = 1
 ```
 
 `AutoApprove` matters here: without it every uploaded badge lands in the pending
@@ -67,6 +101,7 @@ Edit `appsettings.json` beside `SIMF.BadgeDesk.exe`:
 {
   "DeskNumber": 3,
   "DeskLabel": "Desk 3 — north entrance",
+  "EditionYear": 2026,
   "BadgeKey": "<the same base64 key>",
   "BadgeKeyVersion": 1,
   "ApiBaseUrl": "https://api.simf.example",
@@ -169,9 +204,9 @@ reads 0.**
 4. Press **F5** to upload again.
 
 **The badge number never changes**, so the paper in the visitor's hand keeps
-working: the QR encodes only the badge type and the sequence, and a correction
-touches neither. Issuing a new number would put two badge ids on one person and
-break the reconciliation.
+working: the QR encodes the profile id, the edition year and the badge type, and
+a correction touches none of the three. Issuing a new number would put two badge
+ids on one person and break the reconciliation.
 
 **Reprint only if you corrected the NAME.** The name is printed on the badge as
 well as encoded in the QR, so a corrected name makes the paper wrong even though
@@ -253,6 +288,18 @@ pull if a device goes missing, alongside rotating `BadgeKeyVersion`.
 ## Pre-event checklist
 
 - [ ] Badge key generated and identical on the API and every desk
+- [ ] **`BadgeKeyVersion` bumped, and rolled out in this order: API first, then
+      every scanner confirmed updated, then the desks.** The order is not
+      housekeeping. A scanner running an older build decrypts a new-format badge
+      successfully and only then fails to read the fields, and it reports that as
+      a *forged badge* rather than abstaining — so an un-updated handset would
+      tell an operator that a genuine visitor's badge is fake, offline, where no
+      server can overrule it. Bumping the version instead makes the old scanner
+      see a key version it does not hold, which it already treats as "cannot
+      judge, queue it". Confirm the fleet before any desk prints.
+- [ ] The **open edition year** set on the API, and checked against the year the
+      desks will print. A desk stamping a year that is not the open edition
+      prints badges every gate refuses.
 - [ ] `DeskNumber` unique per desk, and each desk opened once to prove it starts
 - [ ] `WalkInMode` armed on the API, including `AutoApprove`
 - [ ] `Gate.HallId` set on each hall-door gate (otherwise no session attendance is recorded)

@@ -1,4 +1,4 @@
-// P4.1a — D-237 (Completion Programme §6.4.1, Mockup screen 34): the public read
+﻿// P4.1a — D-237 (Completion Programme §6.4.1, Mockup screen 34): the public read
 // of a session's AI summary / محضر. Covers the published-only gate, the
 // both-languages projection, the GeneratedByAi flag (AiModel present/absent),
 // and the soft-deleted-session and missing-summary 404s. The read is anonymous
@@ -11,6 +11,7 @@ using SIMF.Contracts.Programme;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
+using SIMF.Common.Enums;
 
 namespace SIMF.Api.Tests;
 
@@ -175,7 +176,9 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = NewSession(active: true);
-        session.LiveStreamUrl = liveStreamUrl;
+        session.LiveStreamFileId = FeedLinkSeed.Add(
+            db, FileService.SessionLiveStream, session.Id,
+            liveStreamUrl, FileOwnerEntityType.Session);
         db.Halls.Add(NewHallFor(session));
         db.Sessions.Add(session);
         var now = SimfClock.Now;
@@ -188,7 +191,9 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
             Speakers = "SPK-en", SpeakersArabic = "SPK-ar",
             FullText = "FULL-en", FullTextArabic = "FULL-ar",
             AiModel = "echo",
-            SummaryVideoUrl = summaryVideoUrl,
+            SummaryVideoFileId = FeedLinkSeed.Add(
+                db, FileService.SessionSummaryVideo, session.Id,
+                summaryVideoUrl, FileOwnerEntityType.Session),
             IsActive = true,
             ReviewSubmittedAt = now,
             ApprovedAt = now,

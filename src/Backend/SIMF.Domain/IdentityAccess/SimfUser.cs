@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using SIMF.Common.Enums;
 
 namespace SIMF.Domain.IdentityAccess;
@@ -15,6 +15,19 @@ namespace SIMF.Domain.IdentityAccess;
 /// </summary>
 public class SimfUser : IdentityUser<Guid>
 {
+    /// <summary>The person's <b>full</b> name, and it exists to serve exactly one
+    /// thing: the greeting. The app's welcome header and the Control Panel's
+    /// signed-in-user label read it; nothing else should.
+    ///
+    /// <para>Everywhere else reads the full name from <c>UserProfile</c>, which is
+    /// the attendee record. Any shortening — the visitor greeting takes
+    /// the first two words — is a presentation rule applied at render time, never
+    /// stored here.</para>
+    ///
+    /// <para>It is not always a real name yet: sign-up seeds it with the email
+    /// address and bulk badge generation seeds "{ProfileType} #{n}", each replaced
+    /// once the holder supplies one. Callers that must not show a placeholder
+    /// check for those shapes rather than trusting the column.</para></summary>
     public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>Registered, the default, is the state before the email is
@@ -48,14 +61,20 @@ public class SimfUser : IdentityUser<Guid>
     /// 5.2).</summary>
     public long? LastUsedTotpTimestep { get; set; }
 
-    /// <summary><b>Not a path.</b> It holds the id of the avatar's
-    /// <c>StoredFile</c> row in the App database, as a bare Guid string,
-    /// because a foreign key cannot cross the two databases. The bytes moved to
-    /// the unified file store but the name and the column stayed, so the
-    /// Identity-side readers that only test it for emptiness (the avatar URL
-    /// builder, the profile-completeness and face-photo gates) kept working
-    /// without a migration. Null means no avatar.</summary>
-    public string? AvatarRelativePath { get; set; }
+    /// <summary>The avatar's <c>StoredFile</c> row in the App database, as a
+    /// bare Guid and deliberately not a foreign key: SQL Server has no
+    /// cross-database FK syntax, and the permanent Identity/App database split
+    /// forbids the reference anyway, so the
+    /// service layer owns the link exactly as it does for
+    /// <c>UserProfile.UserId</c>. Null means no avatar.
+    ///
+    /// <para>This was <c>AvatarRelativePath</c>, a string, until the column was
+    /// found still advertising a path it had not held since the file store was
+    /// unified. Nothing reads it to fetch bytes: the avatar endpoint resolves
+    /// them by owner instead (<c>Service == Avatar &amp;&amp; OwnerEntityId ==
+    /// userId</c>). It is a presence sentinel, the pointer the delete path
+    /// retires, and the cache-buster input.</para></summary>
+    public Guid? AvatarFileId { get; set; }
 
     /// <summary>When <see cref="AccountState"/> last changed. Written on every
     /// transition through approve, reject, disable and unblock, and back-filled

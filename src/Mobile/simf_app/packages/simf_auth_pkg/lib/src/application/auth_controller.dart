@@ -6,6 +6,7 @@ import 'package:simf_auth_pkg/src/application/auth_providers.dart';
 import 'package:simf_auth_pkg/src/data/auth_api.dart';
 import 'package:simf_auth_pkg/src/data/auth_repository_impl.dart';
 import 'package:simf_auth_pkg/src/data/device_key_client.dart';
+import 'package:simf_auth_pkg/src/data/dto/device_key_dtos.dart';
 import 'package:simf_auth_pkg/src/domain/app_role.dart';
 import 'package:simf_auth_pkg/src/domain/auth_failure.dart';
 import 'package:simf_auth_pkg/src/domain/current_user.dart';
@@ -363,11 +364,31 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   /// returns the masked address the code was sent to (for the confirm screen).
   Future<String> sendBiometricStepUp() => _repository.sendBiometricStepUp();
 
+  /// Every device key on the account, for the My Devices screen.
+  Future<List<DeviceKeyEntryDto>> listDeviceKeys() =>
+      _repository.listDeviceKeys();
+
+  /// Revokes one key by id. When it is THIS device's key, the local id and
+  /// private half are cleared too, so the screen cannot leave the app believing
+  /// biometrics still work after the credential behind them is gone.
+  Future<void> revokeDeviceKey(String deviceKeyId) async {
+    await _repository.revokeDeviceKey(deviceKeyId);
+    final local = await _secureStorage.read(StorageKeys.deviceKeyId);
+    if (local == deviceKeyId) {
+      await _clearLocalDeviceKey();
+    }
+  }
+
   /// Whether a device key is enrolled on this device — the sign-in screen only
   /// offers the biometric button when this is true.
-  Future<bool> hasEnrolledDeviceKey() async {
+  Future<bool> hasEnrolledDeviceKey() async =>
+      await enrolledDeviceKeyId() != null;
+
+  /// This device's own device-key id, or null when none is enrolled. The My
+  /// Devices screen uses it to mark which row is the phone in the user's hand.
+  Future<String?> enrolledDeviceKeyId() async {
     final id = await _secureStorage.read(StorageKeys.deviceKeyId);
-    return id != null && id.isNotEmpty;
+    return (id != null && id.isNotEmpty) ? id : null;
   }
 
   /// Biometric re-open (Page_003 L-2): challenge → sign →
@@ -417,8 +438,14 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
         // unusable without the private key we are about to delete).
       }
     }
-    // Clear both local keys independently, so a failure on one delete does not
-    // skip the other (either left behind would keep the biometric path alive).
+    await _clearLocalDeviceKey();
+  }
+
+  /// Clears the local id and private half. Both deletes are independent, so a
+  /// failure on one does not skip the other: either left behind would keep the
+  /// biometric path alive. Shared by [disableDeviceKey] and by
+  /// [revokeDeviceKey] when the revoked key is this device's own.
+  Future<void> _clearLocalDeviceKey() async {
     try {
       await _secureStorage.delete(StorageKeys.deviceKeyId);
     } on Object catch (_) {

@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/PublicMediaTests.cs
+﻿// Tests: SIMF.Api.Tests/PublicMediaTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Media.Abstractions;
@@ -62,7 +62,10 @@ internal sealed class PublicMediaService(
                 item.AlbumArabic,
                 HasImage = item.ImageFileId != null,
                 HasThumbnail = item.ThumbnailFileId != null,
-                item.Url,
+                VideoUrl = dbContext.StoredFiles
+                    .Where(f => f.Id == item.VideoFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
                 item.DisplayOrder,
             })
             .ToListAsync(cancellationToken);
@@ -77,7 +80,7 @@ internal sealed class PublicMediaService(
                 row.AlbumArabic,
                 row.HasImage ? $"/media/{row.Id}/image" : null,
                 row.HasThumbnail ? $"/media/{row.Id}/thumbnail" : null,
-                row.Url,
+                row.VideoUrl,
                 row.DisplayOrder))
             .ToList();
 

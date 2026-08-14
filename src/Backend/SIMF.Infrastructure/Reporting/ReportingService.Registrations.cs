@@ -103,10 +103,11 @@ internal sealed partial class ReportingService
         }
 
         var pairs = await appDbContext.UserProfiles.AsNoTracking()
-            .Where(p => userIds.Contains(p.UserId)
+            .Where(p => p.UserId != null
+                && userIds.Contains(p.UserId.Value)
                 && p.ProfileType != null
                 && p.ProfileType.Name != string.Empty)
-            .Select(p => new { p.UserId, Name = p.ProfileType!.Name })
+            .Select(p => new { UserId = p.UserId!.Value, Name = p.ProfileType!.Name })
             .ToListAsync(cancellationToken);
 
         // A user could in principle carry more than one profile row; take the

@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/PublicPresentationsTests.cs
+﻿// Tests: SIMF.Api.Tests/PublicPresentationsTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Programme.Abstractions;
@@ -16,7 +16,7 @@ namespace SIMF.Infrastructure.Programme;
 /// id + file metadata ride along so the <c>/{id}/file</c> download route still
 /// resolves; otherwise the item id falls back to the session id and the file fields
 /// are empty (the app decodes them but the card ignores them). The bytes come
-/// from the unified <c>StoredFile</c> store via <c>StoredFileName</c>.
+/// from the unified <c>StoredFile</c> store via <c>StoredFileId</c>.
 /// Speaker + Session + Presentation are real FKs on <see cref="SimfAppDbContext"/>.</summary>
 internal sealed class PublicSpeakerPresentationService(
     SimfAppDbContext db,
@@ -72,7 +72,7 @@ internal sealed class PublicSpeakerPresentationService(
     {
         var row = await db.SpeakerPresentations.AsNoTracking()
             .Where(p => p.Id == presentationId && p.IsActive && p.Session!.IsActive)
-            .Select(p => new { p.StoredFileName, p.ContentType, p.FileName })
+            .Select(p => new { p.StoredFileId, p.ContentType, p.FileName })
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null)
         {
@@ -80,7 +80,7 @@ internal sealed class PublicSpeakerPresentationService(
         }
 
         var bytes = await PresentationFileReader.ReadBytesAsync(
-            db, fileStorage, row.StoredFileName, cancellationToken);
+            db, fileStorage, row.StoredFileId, cancellationToken);
         return bytes is null ? null : (bytes, row.ContentType, row.FileName);
     }
 
@@ -92,7 +92,7 @@ internal sealed class PublicSpeakerPresentationService(
         var row = await db.SpeakerPresentations.AsNoTracking()
             .Where(p => p.Id == presentationId && p.SessionId == sessionId
                 && p.IsActive && p.Session!.IsActive)
-            .Select(p => new { p.StoredFileName, p.ContentType, p.FileName })
+            .Select(p => new { p.StoredFileId, p.ContentType, p.FileName })
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null)
         {
@@ -100,7 +100,7 @@ internal sealed class PublicSpeakerPresentationService(
         }
 
         var bytes = await PresentationFileReader.ReadBytesAsync(
-            db, fileStorage, row.StoredFileName, cancellationToken);
+            db, fileStorage, row.StoredFileId, cancellationToken);
         return bytes is null ? null : (bytes, row.ContentType, row.FileName);
     }
 }

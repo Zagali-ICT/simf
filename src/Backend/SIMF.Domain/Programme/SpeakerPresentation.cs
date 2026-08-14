@@ -4,9 +4,9 @@ namespace SIMF.Domain.Programme;
 
 /// <summary>
 /// One presentation file a <see cref="Speaker"/> presents in a
-/// <see cref="Session"/>. The bytes live outside the row, behind the
-/// presentation storage abstraction, as they do for media images and avatars;
-/// this row keeps the metadata and the storage key.
+/// <see cref="Session"/>. The bytes live in the unified file store, as they do
+/// for media images and avatars; this row keeps the metadata and points at the
+/// <c>StoredFile</c> that holds them.
 /// </summary>
 public sealed class SpeakerPresentation : BaseAuditEntity
 {
@@ -23,9 +23,13 @@ public sealed class SpeakerPresentation : BaseAuditEntity
     /// title.</summary>
     public string FileName { get; set; } = string.Empty;
 
-    /// <summary>The key the storage layer returned, being a file name under the
-    /// configured root.</summary>
-    public string StoredFileName { get; set; } = string.Empty;
+    /// <summary>The <c>StoredFile</c> holding the bytes. A real foreign key, and
+    /// required: a presentation row without a file has nothing to present.
+    ///
+    /// <para>This was <c>StoredFileName</c>, a string, and its comment still
+    /// described "a file name under the configured root" long after the value
+    /// had become a <c>StoredFile</c> id written as text.</para></summary>
+    public Guid StoredFileId { get; set; }
 
     public string ContentType { get; set; } = string.Empty;
 

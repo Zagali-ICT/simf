@@ -50,7 +50,7 @@ public sealed record SessionAttendanceRow(
 /// how they were recorded present (QR door scan / geofence).
 /// </summary>
 public sealed record SessionPresentAttendee(
-    Guid UserId,
+    Guid UserProfileId,
     string Name,
     string NameArabic,
     string? OrganisationName,

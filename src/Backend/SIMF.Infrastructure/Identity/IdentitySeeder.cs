@@ -296,15 +296,21 @@ public sealed class IdentitySeeder(
             "VIP", "كبار الشخصيات", "#0E7490", // deep teal
             isVisitor: true, MobileAppRole.None, cancellationToken);
 
-        // The VVIP + VIP audience tiers may book VIP
-        // speaker-meeting slots. AllowsVipMeetingSlots defaults false for every
-        // other type; flip these two after seeding (idempotent — runs each boot).
-        // This is the source of truth the meeting-request service now reads,
-        // replacing its former "profile-type Name contains 'VIP'" substring test.
+        // Mark the VVIP + VIP audience tiers as the VIP tier. Despite its name
+        // the flag no longer has anything to do with meetings: it decides who may
+        // self-reserve a VIP-tier SEAT (SeatReservationService.IsVipVisitorAsync)
+        // and it is what the app receives as UserProfileResponse.IsVip. Speaker
+        // meetings moved to the per-user UserProfile.AllowsSpeakerMeeting flag.
+        // It defaults false for every other type; flip these two after seeding
+        // (idempotent — runs each boot). This flag, rather than the former
+        // "profile-type Name contains 'VIP'" substring test, is the source of
+        // truth, so a future type whose name merely embeds those letters is not
+        // wrongly treated as VIP. It is seeder-owned: no admin API or Control
+        // Panel path writes it.
         await appDbContext.ProfileTypes
             .Where(profileType => profileType.Name == "VVIP" || profileType.Name == "VIP")
             .ExecuteUpdateAsync(
-                setters => setters.SetProperty(profileType => profileType.AllowsVipMeetingSlots, true),
+                setters => setters.SetProperty(profileType => profileType.IsVipTier, true),
                 cancellationToken);
 
         // Seed one demo user account per user type / profile type
@@ -473,11 +479,14 @@ public sealed class IdentitySeeder(
     /// <see cref="PermissionCatalog"/>. The catalogue seed is add-only, so an
     /// already-seeded database keeps orphan <c>Permission</c> rows (and any custom
     /// <c>RolePermission</c> grants) until they are removed here. Bookings.Approve /
-    /// Bookings.Reject went with the booking approval step.</summary>
+    /// Bookings.Reject went with the booking approval step; Editions.Close was
+    /// seeded but never gated anything, and a year is only ever closed by opening
+    /// the next one.</summary>
     private static readonly string[] RetiredPermissionCodes =
     [
         "Bookings.Approve",
         "Bookings.Reject",
+        "Editions.Close",
     ];
 
     /// <summary>Idempotent cleanup of retired permissions: delete any
@@ -830,6 +839,11 @@ public sealed class IdentitySeeder(
                 NationalityId = SaudiArabiaCountryId,
                 IsSaudi = true,
                 NationalId = demo.NationalId,
+                // A demo account is seeded ready to use, so its profile is
+                // admitted outright — the QR minted just below only works for an
+                // approved attendee, and a demo that cannot pass a gate would be
+                // useless for exactly the walkthroughs it exists to support.
+                AdmissionState = AccountState.Approved,
                 CreatedAt = now,
             };
             // Approved accounts carry a QR badge.
@@ -1479,8 +1493,8 @@ public sealed class IdentitySeeder(
     /// <para>The bytes go through the ordinary <see cref="IFileService"/> pipeline —
     /// the ID document and the avatar are encrypted-at-rest services, so they can
     /// NOT be pre-placed on disk like the public speaker photos. The
-    /// pointers written back (<c>UserProfile.IdImageRelativePath</c> /
-    /// <c>SimfUser.AvatarRelativePath</c>) are the bare StoredFile ids, exactly as
+    /// pointers written back (<c>UserProfile.IdImageFileId</c> /
+    /// <c>SimfUser.AvatarFileId</c>) are the bare StoredFile ids, exactly as
     /// the upload endpoints write them.</para>
     ///
     /// <para>Idempotent and self-healing: an account is re-seeded only when its
@@ -1510,27 +1524,27 @@ public sealed class IdentitySeeder(
                 continue;
             }
 
-            if (await NeedsReseedAsync(profile.IdImageRelativePath, cancellationToken))
+            if (await NeedsReseedAsync(profile.IdImageFileId, cancellationToken))
             {
                 var idDocument = await fileService.UploadAsync(
                     new UploadFileCommand(
                         FileService.IdDocument, user.Id, DemoIdDocumentPng,
                         "demo-id-document.png", "image/png", user.Id, FailClosed: false),
                     cancellationToken);
-                profile.IdImageRelativePath = idDocument.Id.ToString();
+                profile.IdImageFileId = idDocument.Id;
                 profile.UpdatedAt = timeProvider.SimfNow();
                 await appDbContext.SaveChangesAsync(cancellationToken);
                 seeded++;
             }
 
-            if (await NeedsReseedAsync(user.AvatarRelativePath, cancellationToken))
+            if (await NeedsReseedAsync(user.AvatarFileId, cancellationToken))
             {
                 var avatar = await fileService.UploadAsync(
                     new UploadFileCommand(
                         FileService.Avatar, user.Id, DemoAvatarPng,
                         "demo-avatar.png", "image/png", user.Id, FailClosed: false),
                     cancellationToken);
-                user.AvatarRelativePath = avatar.Id.ToString();
+                user.AvatarFileId = avatar.Id;
                 await accounts.UpdateAsync(user).EnsureSuccessAsync();
                 seeded++;
             }
@@ -1549,5 +1563,14 @@ public sealed class IdentitySeeder(
         if (string.IsNullOrEmpty(pointer)) { return true; }
         if (!Guid.TryParse(pointer, out var fileId)) { return true; }
         return !await fileService.ContentExistsAsync(fileId, cancellationToken);
+    }
+
+    /// <summary>The same test for a pointer that is already a real
+    /// <see cref="Guid"/>. There is no "not an id at all" case to consider here,
+    /// which is the whole point of having retyped the column.</summary>
+    private async Task<bool> NeedsReseedAsync(Guid? fileId, CancellationToken cancellationToken)
+    {
+        if (fileId is not { } id) { return true; }
+        return !await fileService.ContentExistsAsync(id, cancellationToken);
     }
 }

@@ -117,10 +117,16 @@ internal sealed class SessionQuestionService(
         // `request.IsAtVenue` self-assert was hardcoded `true` by the app and gated
         // nothing; it is no longer trusted).
         var isLive = now >= session.Start;
+        // Attendance is keyed by the attendee PROFILE, so the signed-in account is
+        // translated before the presence check; no profile means no arrival to find.
+        var submitterProfileId = isLive && session.HasGeofence
+            ? await appDbContext.ProfileIdForAccountAsync(submittedByUserId, cancellationToken)
+            : null;
         var atVenue = !isLive
             || !session.HasGeofence
             || await appDbContext.HallAttendances.AnyAsync(
-                a => a.SessionId == sessionId && a.UserId == submittedByUserId, cancellationToken);
+                a => a.SessionId == sessionId && a.UserProfileId == submitterProfileId,
+                cancellationToken);
         if (!atVenue)
         {
             await auditLog.WriteFailureAsync(

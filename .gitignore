@@ -1,16 +1,24 @@
 # SIMF — .gitignore
 
 # ── Production secrets — NEVER commit real values (SIMF-OPS-001 §6) ──
-# deploy/set-env.template.ps1 is the tracked template: every Secret entry is
-# empty and a test enforces it. deploy/set-env.ps1 is the FILLED overlay an
-# operator creates on the server — real connection strings, SMTP password and
-# keys — and must stay untracked. Never delete that rule to "share" the script.
-# deploy/set-env-api.ps1 is the pre-2026-08-06 filled overlay, still ignored so
-# an existing server's copy cannot be committed by accident.
+# deploy/set-env-{api,cp,web,edge}.template.ps1 are the tracked templates, one
+# per deployment package: every Secret entry is empty and a test enforces it.
+# The matching deploy/set-env-{api,cp,web,edge}.ps1 are the FILLED overlays an
+# operator creates on each server — real connection strings, SMTP password and
+# keys — and must stay untracked. Never delete these rules to "share" a script.
+#
+# The templates survive the wildcard below because it matches only the filled
+# form: set-env-api.ps1 is ignored, set-env-api.template.ps1 is not.
+#
+# deploy/set-env.ps1 is the pre-split single overlay (2026-08-06 to 2026-08-12),
+# still ignored so an existing server's copy cannot be committed by accident.
 set-env-prod.ps1
 set-env-*.local.ps1
 deploy/set-env.ps1
 deploy/set-env-api.ps1
+deploy/set-env-cp.ps1
+deploy/set-env-web.ps1
+deploy/set-env-edge.ps1
 
 # ── Runtime file store — personal data, NEVER commit ───────────────
 # App_Data/files is the filesystem storage root (FilesystemFileStorageProvider),
@@ -138,6 +146,14 @@ myComment.txt
 # Requires `git rm --cached HANDOFF-CONTINUE-HERE.md` once, or the tracked copy
 # survives this ignore rule.
 HANDOFF-CONTINUE-HERE.md
+
+# Editor/manual backups, including the timestamped form (CLAUDE.md.bak-20260812).
+# A backup of a tracked file is a second copy of it that git does not diff, so it
+# drifts silently — and for the governing rules files that everything else in this
+# repo defers to, a stale second copy is worse than none. The tracked file plus its
+# history already is the backup. Kept on disk, never committed.
+*.bak
+*.bak-*
 
 # Test run artefacts. A .trx captures the whole test console log; two of
 # these were tracked at 707 MB and 564 MB, so every clone paid 1.2 GB for

@@ -18,6 +18,22 @@ public interface IGateOperatorService
     Task<GateOfflineConfig> GetOfflineConfigAsync(
         Guid operatorUserId, CancellationToken cancellationToken = default);
 
+    /// <summary>The people this operator's doors are expecting, so a device can
+    /// decide entry with no network rather than abstaining — and an abstention
+    /// at a hall door is a queue.
+    ///
+    /// <para>Scoped by seat reservation and by the operator's OWN gates. The
+    /// scoping is not a nicety: <c>Gates.Operate</c> is held by every Staff and
+    /// Moderator account, not only the provisioned tablets, and a roster is
+    /// attendee names and movements — more sensitive than the badge key, which
+    /// is already scoped exactly this way.</para>
+    ///
+    /// <para><paramref name="since"/> makes it a delta. A full roster on every
+    /// gate-console load would not survive a venue's network.</para></summary>
+    Task<GateOfflineRoster> GetOfflineRosterAsync(
+        Guid operatorUserId, DateTime? since,
+        CancellationToken cancellationToken = default);
+
     Task<GateScanResult> RecordScanAsync(
         GateScanContext context, CancellationToken cancellationToken = default);
 

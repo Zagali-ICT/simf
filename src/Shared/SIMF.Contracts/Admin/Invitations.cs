@@ -63,9 +63,14 @@ public class AdminUpdateInvitationRequest
 
 /// <summary>One row in the admin VIP list. ProfileType.Name is
 /// the discriminator (VVIP / VIP / Gold).</summary>
+/// <param name="UserProfileId">The guest, and the row's key.</param>
+/// <param name="UserId">Their app account, or null when they never asked for
+/// one — an invited guest minted into a bulk order, or registered at a desk.
+/// The per-row Edit action opens the ACCOUNT form, so it is only offered where
+/// this has a value; the list itself shows every guest either way.</param>
 public sealed record AdminVipSummary(
     Guid UserProfileId,
-    Guid UserId,
+    Guid? UserId,
     string EnglishName,
     string ArabicName,
     string? JobTitle,

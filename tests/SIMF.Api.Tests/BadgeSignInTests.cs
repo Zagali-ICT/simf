@@ -264,6 +264,9 @@ public sealed class BadgeSignInTests : IClassFixture<SimfApiFactory>
             Name = "Badge Holder",
             NameArabic = "حامل الشارة",
             QrId = qrId,
+            // Badge sign-in reads admission on the PROFILE, so approving the
+            // account alone leaves the badge refused.
+            AdmissionState = AccountState.Approved,
             CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();

@@ -626,7 +626,7 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var hall = await SeedHallAsync(capacity: 50);
         var created = await CreateSimpleSessionAsync(token, hall.Id);
-        // An admin row-block has no attendee (ReservedForUserId null) — it does
+        // An admin row-block has no attendee (ReservedForProfileId null) — it does
         // not block deletion.
         await SeedReservationAsync(created.Id, reservedForUserId: null, "B", 1, BookingStatus.Approved);
 
@@ -1321,7 +1321,8 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
             Kind = reservedForUserId is null
                 ? SeatReservationKind.AdminReservedRow
                 : SeatReservationKind.UserBooking,
-            ReservedForUserId = reservedForUserId,
+            ReservedForProfileId =
+                await TestAttendeeProfiles.EnsureForOptionalAccountAsync(db, reservedForUserId),
             CreatedByUserId = reservedForUserId ?? Guid.NewGuid(),
             CreatedAt = SimfClock.Now,
             Status = status,

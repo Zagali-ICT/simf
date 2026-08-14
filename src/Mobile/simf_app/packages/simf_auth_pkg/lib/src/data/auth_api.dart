@@ -192,6 +192,25 @@ class AuthApi {
     );
   }
 
+  /// The caller's own device keys — backend `GET /app/auth/device-keys`.
+  /// Requires a signed-in approved caller. Feeds the My Devices screen.
+  Future<List<DeviceKeyEntryDto>> listDeviceKeys() {
+    return _client.get<List<DeviceKeyEntryDto>>(
+      '/app/auth/device-keys',
+      decodeData: (data) {
+        if (data is! List) {
+          throw const FormatException(
+            'device-key list response was not an array.',
+          );
+        }
+        return data
+            .whereType<Map<String, dynamic>>()
+            .map(DeviceKeyEntryDto.fromJson)
+            .toList();
+      },
+    );
+  }
+
   /// Revoke (delete) one of the caller's own device keys — backend
   /// `DELETE /app/auth/device-keys/{id}`. Used when the user turns Face-ID
   /// sign-in off. Requires a signed-in approved caller.

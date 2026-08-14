@@ -136,10 +136,13 @@ internal sealed class AdminSessionModeratorService(
         // (profile type carries MobileAppRole.Moderator) intersected with the
         // Identity-side approval fact. Two queries against two databases, joined
         // in memory — never a cross-database JOIN.
+        // A moderator signs in to run the desk, so an attendee with no account is
+        // not a candidate however eligible the profile type makes them.
         var eligibleRows = await EligibleProfiles()
+            .Where(p => p.UserId != null)
             .Select(p => new
             {
-                p.UserId,
+                UserId = p.UserId!.Value,
                 ProfileTypeName = p.ProfileType!.Name,
                 ProfileTypeNameArabic = p.ProfileType.NameArabic,
             })

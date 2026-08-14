@@ -1,4 +1,4 @@
-// Session:TimeoutHours ops override (env SIMF_Session__TimeoutHours) — unit
+// Session:TimeoutHours ops override (env SIMF_API_Session__TimeoutHours) — unit
 // tests for JwtOptions.ResolveAccessTokenMinutes, which lengthens the access
 // token beyond the NCA-default 5 min, clamped to the 24h absolute cap (D-443).
 using SIMF.Common.Options;

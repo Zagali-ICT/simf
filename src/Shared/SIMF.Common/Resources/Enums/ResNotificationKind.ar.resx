@@ -39,4 +39,5 @@
   <data name="AdminAnnouncement" xml:space="preserve"><value>إعلان من SIMF</value></data>
   <data name="ExhibitorLeadCaptured" xml:space="preserve"><value>تمت مشاركة بياناتك مع أحد العارضين</value></data>
   <data name="SessionCancelled" xml:space="preserve"><value>تم إلغاء الجلسة</value></data>
+  <data name="DeviceKeyEnrolled" xml:space="preserve"><value>تم تفعيل تسجيل الدخول ببصمة الوجه على أحد الأجهزة</value></data>
 </root>

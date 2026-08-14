@@ -85,11 +85,6 @@ public class Speaker : BaseAuditEntity
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
 
-    /// <summary>Vestigial: nothing writes it any more and the seed scripts leave it
-    /// null. The photo comes from the speaker's active SpeakerPhoto asset in the
-    /// StoredFile store; this path survives on the public contracts only as a
-    /// fallback for rows that predate that store.</summary>
-    public string? PhotoRelativePath { get; set; }
 
     /// <summary>Ascending sort position for the speakers list, ties broken by name.
     /// Indexed with IsActive, the pair those queries filter and order on.</summary>

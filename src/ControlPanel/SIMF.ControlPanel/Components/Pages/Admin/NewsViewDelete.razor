@@ -38,18 +38,13 @@
         <dd>@Initial.Body</dd>
         <dt>@L["Admin.News.Field.BodyAr"]</dt>
         <dd>@Initial.BodyArabic</dd>
-        <dt>@L["Admin.News.Field.ImageRelativePath"]</dt>
+        @* Resolved by row id from the one file store, like every other asset
+           preview, rather than rendering a string an admin typed. *@
+        <dt>@L["Admin.Asset.Heading"]</dt>
         <dd>
-            @if (string.IsNullOrWhiteSpace(Initial.ImageRelativePath))
-            {
-                <text>—</text>
-            }
-            else
-            {
-                <span>@Initial.ImageRelativePath</span>
-                <img class="simf-detail-image" src="@Initial.ImageRelativePath"
-                     alt="@Initial.Title" loading="lazy" />
-            }
+            <SimfImageThumb Class="simf-img-thumb--lg"
+                            Src="@CpAssetUrls.AdminImage(nameof(AssetCategory.NewsImage), Initial.Id)"
+                            Alt="@Initial.Title" />
         </dd>
         <dt>@L["Admin.News.Col.PublishedAt"]</dt>
         <dd>@Initial.PublishedAt.ToString("dd-MM-yyyy")</dd>

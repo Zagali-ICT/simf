@@ -32,7 +32,6 @@ public partial class ArchiveAddEdit
             _model.Attendees = Initial.Attendees;
             _model.Sessions = Initial.Sessions;
             _model.Speakers = Initial.Speakers;
-            _model.CoverImageRelativePath = Initial.CoverImageRelativePath;
             _model.LocationEn = Initial.LocationEn;
             _model.LocationAr = Initial.LocationAr;
             _model.DateLabelEn = Initial.DateLabelEn;
@@ -137,7 +136,6 @@ public partial class ArchiveAddEdit
         Attendees = _model.Attendees,
         Sessions = _model.Sessions,
         Speakers = _model.Speakers,
-        CoverImageRelativePath = _model.CoverImageRelativePath,
         LocationEn = _model.LocationEn,
         LocationAr = _model.LocationAr,
         DateLabelEn = _model.DateLabelEn,
@@ -157,7 +155,6 @@ public partial class ArchiveAddEdit
         Attendees = _model.Attendees,
         Sessions = _model.Sessions,
         Speakers = _model.Speakers,
-        CoverImageRelativePath = _model.CoverImageRelativePath,
         LocationEn = _model.LocationEn,
         LocationAr = _model.LocationAr,
         DateLabelEn = _model.DateLabelEn,
@@ -173,7 +170,9 @@ public partial class ArchiveAddEdit
     // summary, so project the saved row back to a summary for OnSuccess.
     private static AdminArchiveEditionSummary ToSummary(AdminArchiveEditionDetail d) =>
         new(d.Id, d.Year, d.TitleEn, d.TitleAr, d.SummaryEn, d.SummaryAr,
-            d.Attendees, d.Sessions, d.Speakers, d.CoverImageRelativePath,
+            d.Attendees, d.Sessions, d.Speakers,
+            // The cover is a StoredFile; the wire field survives carrying null.
+            null,
             d.IsActive, d.CreatedAt,
             // HasCover — optimistic false; OnSavedAsync reloads the grid, which
             // recomputes it from the ArchiveCover asset presence.
@@ -222,7 +221,6 @@ public partial class ArchiveAddEdit
         public int Attendees { get; set; }
         public int Sessions { get; set; }
         public int Speakers { get; set; }
-        public string? CoverImageRelativePath { get; set; }
         // Place + date label.
         public string? LocationEn { get; set; }
         public string? LocationAr { get; set; }

@@ -80,15 +80,15 @@ never in a tracked file.
 
 | Account | Surface | Password comes from |
 |---|---|---|
-| `superadmin@simrsnf.com` | Control Panel only | `SIMF_SuperAdmin__TempPassword` |
-| Demo/visitor accounts | App + Website | `SIMF_Seed__DemoPassword` |
+| `superadmin@simrsnf.com` | Control Panel only | `SIMF_API_SuperAdmin__TempPassword` |
+| Demo/visitor accounts | App + Website | `SIMF_API_Seed__DemoPassword` |
 | Everyone else | — | created in the CP, or self sign-up |
 
 > **Production starts from an EMPTY database (owner decision, 2026-08-07).**
 > The old databases are dropped and recreated, so the super-admin migration
 > that D-868/D-869 described does not apply: with nothing pre-existing there is
 > no second `Administrator` row to reconcile. The seeder creates exactly one
-> super-admin from `SIMF_SuperAdmin__*` on first boot.
+> super-admin from `SIMF_API_SuperAdmin__*` on first boot.
 >
 > The duplicate-detection in `IdentitySeeder` stays regardless — it guards any
 > FUTURE change to `SuperAdmin:Email` against a database that already has one,
@@ -97,9 +97,9 @@ never in a tracked file.
 Setting or rotating the super-admin:
 
 ```powershell
-[Environment]::SetEnvironmentVariable('SIMF_SuperAdmin__Email',        'superadmin@simrsnf.com','Machine')
-[Environment]::SetEnvironmentVariable('SIMF_SuperAdmin__TempPassword', '<new-strong-password>',    'Machine')
-[Environment]::SetEnvironmentVariable('SIMF_SuperAdmin__PasswordChangeRequired','false',            'Machine')
+[Environment]::SetEnvironmentVariable('SIMF_API_SuperAdmin__Email',        'superadmin@simrsnf.com','Machine')
+[Environment]::SetEnvironmentVariable('SIMF_API_SuperAdmin__TempPassword', '<new-strong-password>',    'Machine')
+[Environment]::SetEnvironmentVariable('SIMF_API_SuperAdmin__PasswordChangeRequired','false',            'Machine')
 # then restart the API app pool
 ```
 
@@ -110,8 +110,8 @@ set, so this is also the account-recovery path.
 > The prefix must be `SIMF_`; an unprefixed `SuperAdmin__…` is ignored.
 
 The API **refuses to start** in Production unless these are set:
-`SIMF_Jwt__SigningKey`, `SIMF_Storage__UserIdDocumentEncryptionKey`,
-`SIMF_FileStorage__EncryptionKey`, `SIMF_Ai__PromptHash__Secret`.
+`SIMF_API_Jwt__SigningKey`, `SIMF_API_Storage__UserIdDocumentEncryptionKey`,
+`SIMF_API_FileStorage__EncryptionKey`, `SIMF_API_Ai__PromptHash__Secret`.
 
 ## 5. First sign-in to the Control Panel
 
@@ -122,17 +122,17 @@ The API **refuses to start** in Production unless these are set:
   QR plus a manual key, you pair an authenticator, enter the code, and it then
   shows **10 recovery codes once**. Save them.
 
-Both are normal. Setting `SIMF_SuperAdmin__TotpSecret` makes 2FA active from
+Both are normal. Setting `SIMF_API_SuperAdmin__TotpSecret` makes 2FA active from
 creation; leaving it unset gives you the enrolment flow above.
 
 Lost the authenticator? Use a recovery code, or reset the account through
-`SIMF_SuperAdmin__*` + an app-pool restart.
+`SIMF_API_SuperAdmin__*` + an app-pool restart.
 
 ## 6. If something breaks right after deploy
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Sign-in succeeds, then every page bounces to `/login` within seconds; the CP console shows 401s on `/account/api/*` | The API rejected the token it had just minted (D-848). Fixed in code; before that fix it happened on any host not at UTC+03:00 | Deploy a build containing D-848. Check the host with `tzutil /g` — no env var fixes this, and raising `SIMF_Session__TimeoutHours` does nothing because a rejected token is rejected however long it was minted to live |
+| Sign-in succeeds, then every page bounces to `/login` within seconds; the CP console shows 401s on `/account/api/*` | The API rejected the token it had just minted (D-848). Fixed in code; before that fix it happened on any host not at UTC+03:00 | Deploy a build containing D-848. Check the host with `tzutil /g` — no env var fixes this, and raising `SIMF_API_Session__TimeoutHours` does nothing because a rejected token is rejected however long it was minted to live |
 | Arabic garbled, or `Msg 2628 … would be truncated` while seeding | `sqlcmd` read the file as ANSI | Use `Run-AppSeeds.ps1`; keep the UTF-8 BOM on the seeds |
 | `sqlcmd: 'C': Unknown Option` | server has pre-17 `sqlcmd` | Already handled — the runner probes for `-C` |
 | Photos 404 but rows exist | photo bytes never copied | Step 3's `robocopy` |

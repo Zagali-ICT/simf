@@ -116,10 +116,10 @@ class RouteNames {
   // (D-745).
   static const String requests = 'requests';
 
-  // D-745 (owner 2026-07-11) — the VIP bilateral-meetings page (اللقاءات
-  // الثنائية, Figma 1408:9726), split from the requests-history feed above.
-  // Reached from the Home VIP-only tile; the full history stays on [requests]
-  // in My-Area.
+  // D-745 (owner 2026-07-11) — the bilateral-meetings page (اللقاءات الثنائية,
+  // Figma 1408:9726), split from the requests-history feed above. Reached from
+  // the Home tile, shown only to accounts carrying per-user meeting eligibility
+  // (D-760); the full history stays on [requests] in My-Area.
   static const String meetings = 'meetings';
 
   // Bi-Meeting rework — the other-party confirm screen, reached by tapping a
@@ -131,7 +131,7 @@ class RouteNames {
 
   // (B18: bilateralMeetings + savedMeetings removed with routes 204 / 206 —
   //  ComingSoon sentinels with no screen and no caller left. The Home
-  //  "اللقاءات الثنائية" tile opens the real VIP [meetings] page (D-745); the
+  //  "اللقاءات الثنائية" tile opens the real [meetings] page (D-745); the
   //  My-Area saved-meetings stat went with the D-609 screen deletion, which had
   //  already removed savedSessions the same way.)
 
@@ -186,6 +186,13 @@ class RouteNames {
   // post-sign-in enrol nudge); a signed-in approved caller. Backend
   // POST /app/auth/device-keys/step-up + the gated register.
   static const String biometricStepUp = 'biometricStepUp';
+
+  /// S10 — the enrolled biometric device keys on the account, with a per-row
+  /// revoke. Pushed from the Face-ID toggle's row in the profile / side menu.
+  /// Backend GET /app/auth/device-keys + DELETE /app/auth/device-keys/{id}.
+  /// Built to the house style, not to a Figma node: none exists, and the owner
+  /// asked for the existing style rather than a new design (2026-08-14).
+  static const String myDevices = 'myDevices';
 }
 
 /// The go_router path / query parameter KEYS (the names inside a route's `:param`

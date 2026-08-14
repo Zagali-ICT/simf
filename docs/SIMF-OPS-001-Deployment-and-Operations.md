@@ -120,9 +120,9 @@ Configuration follows SIMF-SES-001 section 4.4.
   they stay tracked under their own names.
 - Every value in the API template is annotated with what breaks when it is
   missing. Three of them are **Production boot gates** — the API refuses to
-  start without `SIMF_FileStorage__EncryptionKey` (the centralized file-store
-  KEK, D-568), `SIMF_Storage__UserIdDocumentEncryptionKey` (the PII column key,
-  NCA A2-10) or `SIMF_Ai__PromptHash__Secret` (the AI audit HMAC secret). A
+  start without `SIMF_API_FileStorage__EncryptionKey` (the centralized file-store
+  KEK, D-568), `SIMF_API_Storage__UserIdDocumentEncryptionKey` (the PII column key,
+  NCA A2-10) or `SIMF_API_Ai__PromptHash__Secret` (the AI audit HMAC secret). A
   fourth, `SIMF_Storage__AvatarBase`, is validated with `ValidateOnStart`, so
   the host fails to build without it.
 - First-time provisioning uses the runbook `deploy/configure-prod-env.ps1`
@@ -135,13 +135,13 @@ Configuration follows SIMF-SES-001 section 4.4.
   restarts the IIS app pools and health-checks the API. It is safe to re-run,
   and `-VerifyOnly` audits without changing anything.
 - Variables use the ASP.NET Core double-underscore convention with a `SIMF_`
-  prefix (`SIMF_ConnectionStrings__SimfAppDb`). Each host registers
+  prefix (`SIMF_API_ConnectionStrings__SimfAppDb`). Each host registers
   `builder.Configuration.AddEnvironmentVariables("SIMF_")`, which strips the
   prefix at bind time so the value lands on `ConnectionStrings:SimfAppDb`
   (D-355). The prefix keeps SIMF's variables from colliding with other apps' on
   a shared host.
 
-### 6.0 Meeting confirmation links (`SIMF_MeetingLinks__PublicWebBaseUrl`) — REQUIRED
+### 6.0 Meeting confirmation links (`SIMF_API_MeetingLinks__PublicWebBaseUrl`) — REQUIRED
 
 The speaker double-opt-in flow (D-717) emails the speaker an Approve / Decline link
 that lands on the public Website page `{PublicWebBaseUrl}/meeting/confirm?token=…`.
@@ -150,8 +150,8 @@ environment with the Machine-scope variable:
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `SIMF_MeetingLinks__PublicWebBaseUrl` | the public Website origin, e.g. `https://web.simrsnf.com` | no trailing slash needed; trimmed when the link is built |
-| `SIMF_MeetingLinks__TokenTtlHours` | `72` (default) | link lifetime, §15.7 |
+| `SIMF_API_MeetingLinks__PublicWebBaseUrl` | the public Website origin, e.g. `https://web.simrsnf.com` | no trailing slash needed; trimmed when the link is built |
+| `SIMF_API_MeetingLinks__TokenTtlHours` | `72` (default) | link lifetime, §15.7 |
 
 `appsettings.json` ships the key **empty**; `appsettings.Development.json` defaults it
 to the Website's local origin (`http://localhost:5115`). **It must be set explicitly in
@@ -173,23 +173,23 @@ the echo stub (`[echo:...] ` + the prompt) instead of a real answer. To turn the
 whole stack on, set these Machine-scope environment variables (`SIMF_` prefix,
 `__` = section nesting) and restart the API:
 
-1. `SIMF_Ai__DefaultProvider = Anthropic` (or `Gemini` / `OpenAi`). Because every
+1. `SIMF_API_Ai__DefaultProvider = Anthropic` (or `Gemini` / `OpenAi`). Because every
    seeded prompt is on `Provider = Echo`, this one setting redirects **all** of
    them to the chosen provider (D-484); a prompt pinned to a concrete provider in
    the CP is honoured as-is.
-2. `SIMF_Ai__Anthropic__ApiKey = <key>` (and/or `SIMF_Ai__Gemini__ApiKey`,
-   `SIMF_Ai__OpenAi__ApiKey`). A missing key returns `AI_PROVIDER_NOT_CONFIGURED`
+2. `SIMF_API_Ai__Anthropic__ApiKey = <key>` (and/or `SIMF_API_Ai__Gemini__ApiKey`,
+   `SIMF_API_Ai__OpenAi__ApiKey`). A missing key returns `AI_PROVIDER_NOT_CONFIGURED`
    (503) for that provider, not a real answer. Keys are never committed.
 3. Model: the seeded sentinel `Model = "echo"` is treated as "use the provider's
    configured `DefaultModel`" whenever the effective provider is real, so **no
    per-prompt model edit is needed**. To pin a specific model, either set the
    prompt's Model in the CP (`/admin/ai/prompts`) or set
-   `SIMF_Ai__<Provider>__DefaultModel`.
+   `SIMF_API_Ai__<Provider>__DefaultModel`.
 4. Keep prompts active (the seeder sets `IsActive = true`; a disabled prompt
    returns `AI_FEATURE_DISABLED`, 503).
-5. `SIMF_Ai__PromptHash__Secret = <32-byte base64>` is a Production **boot gate**
+5. `SIMF_API_Ai__PromptHash__Secret = <32-byte base64>` is a Production **boot gate**
    (the audit HMAC key) - the API refuses to start without it.
-6. Optional: `SIMF_SessionQuestions__AiFilterEnabled = true` swaps the offline
+6. Optional: `SIMF_API_SessionQuestions__AiFilterEnabled = true` swaps the offline
    `StubQuestionAiFilter` for the real `AiQuestionFilter` on the Q&A submit path
    (advisory only - it never blocks a question).
 

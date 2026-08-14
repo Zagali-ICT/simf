@@ -834,23 +834,23 @@ are unchanged; the value is supplied per-developer, out of the repo:
 
 | Configuration key | Environment variable | Needed for |
 |-------------------|----------------------|------------|
-| `Email:Host` | `SIMF_Email__Host` | outbound email (OTP, notifications) |
-| `Email:User` | `SIMF_Email__User` | outbound email |
-| `Email:Password` | `SIMF_Email__Password` | outbound email |
-| `Seed:DemoPassword` | `SIMF_Seed__DemoPassword` | the demo account seed (empty = seed skipped) |
-| `Jwt:SigningKey` | `SIMF_Jwt__SigningKey` | issuing access tokens |
-| `SuperAdmin:TempPassword` | `SIMF_SuperAdmin__TempPassword` | the first super-admin seed |
-| `SuperAdmin:TotpSecret` | `SIMF_SuperAdmin__TotpSecret` | super-admin TOTP second factor |
-| `Storage:UserIdDocumentEncryptionKey` | `SIMF_Storage__UserIdDocumentEncryptionKey` | visitor ID-document encryption |
-| `FileStorage:EncryptionKey` | `SIMF_FileStorage__EncryptionKey` | the central file store |
-| `Ai:<Provider>:ApiKey` | `SIMF_Ai__<Provider>__ApiKey` | the AI provider (`Gemini`/`Anthropic`/`OpenAi`) |
-| `Swagger:Password` | `SIMF_Swagger__Password` | the Swagger basic-auth gate |
-| `ConnectionStrings:SimfIdentityDb` | `SIMF_ConnectionStrings__SimfIdentityDb` | SQL login when not using `Trusted_Connection` |
-| `ConnectionStrings:SimfAppDb` | `SIMF_ConnectionStrings__SimfAppDb` | SQL login when not using `Trusted_Connection` |
+| `Email:Host` | `SIMF_API_Email__Host` | outbound email (OTP, notifications) |
+| `Email:User` | `SIMF_API_Email__User` | outbound email |
+| `Email:Password` | `SIMF_API_Email__Password` | outbound email |
+| `Seed:DemoPassword` | `SIMF_API_Seed__DemoPassword` | the demo account seed (empty = seed skipped) |
+| `Jwt:SigningKey` | `SIMF_API_Jwt__SigningKey` | issuing access tokens |
+| `SuperAdmin:TempPassword` | `SIMF_API_SuperAdmin__TempPassword` | the first super-admin seed |
+| `SuperAdmin:TotpSecret` | `SIMF_API_SuperAdmin__TotpSecret` | super-admin TOTP second factor |
+| `Storage:UserIdDocumentEncryptionKey` | `SIMF_API_Storage__UserIdDocumentEncryptionKey` | visitor ID-document encryption |
+| `FileStorage:EncryptionKey` | `SIMF_API_FileStorage__EncryptionKey` | the central file store |
+| `Ai:<Provider>:ApiKey` | `SIMF_API_Ai__<Provider>__ApiKey` | the AI provider (`Gemini`/`Anthropic`/`OpenAi`) |
+| `Swagger:Password` | `SIMF_API_Swagger__Password` | the Swagger basic-auth gate |
+| `ConnectionStrings:SimfIdentityDb` | `SIMF_API_ConnectionStrings__SimfIdentityDb` | SQL login when not using `Trusted_Connection` |
+| `ConnectionStrings:SimfAppDb` | `SIMF_API_ConnectionStrings__SimfAppDb` | SQL login when not using `Trusted_Connection` |
 
 Naming is `SIMF_` + the ASP.NET Core double-underscore section separator — every
 app calls `AddEnvironmentVariables("SIMF_")`, which strips the prefix, so
-`SIMF_Email__Password` binds to `Email:Password` (same convention as
+`SIMF_API_Email__Password` binds to `Email:Password` (same convention as
 `deploy/set-env-*.ps1`).
 
 A local developer needs **none** of these to run the API, the Control Panel and
@@ -865,15 +865,15 @@ provider), but `appsettings.Development.json` overrides it to `"Anthropic"`, and
 `AiProviderRouting` redirects every `Echo`-default prompt to that provider. With
 `Ai:Anthropic:ApiKey` empty, `AnthropicAiProvider.CallAsync` throws
 **503 `AI_PROVIDER_NOT_CONFIGURED`**. If your task touches AI, either set
-`SIMF_Ai__Anthropic__ApiKey` or set `SIMF_Ai__DefaultProvider=Echo` to get the
+`SIMF_API_Ai__Anthropic__ApiKey` or set `SIMF_API_Ai__DefaultProvider=Echo` to get the
 offline provider back. Set only the ones your task needs, per session:
 
 ```powershell
 # Current PowerShell session only — nothing lands in the repo.
-$env:SIMF_Email__Host     = "<smtp host>"
-$env:SIMF_Email__User     = "<smtp user>"
-$env:SIMF_Email__Password = "<smtp password>"
-$env:SIMF_Seed__DemoPassword = "<demo password>"
+$env:SIMF_API_Email__Host     = "<smtp host>"
+$env:SIMF_API_Email__User     = "<smtp user>"
+$env:SIMF_API_Email__Password = "<smtp password>"
+$env:SIMF_API_Seed__DemoPassword = "<demo password>"
 dotnet run --project src/Backend/SIMF.Api
 ```
 
@@ -896,8 +896,8 @@ connection string grows an inline password.
 | API health | http://localhost:5175/health |
 | CP sign-in | http://localhost:5158/login |
 | Default super-admin | `superadmin@simrsnf.com` (`SuperAdmin:Email`) |
-| Super-admin password | not committed, set `SIMF_SuperAdmin__TempPassword` (section 20.3) |
-| TOTP secret (dev) | not committed, set `SIMF_SuperAdmin__TotpSecret` (section 20.3) |
+| Super-admin password | not committed, set `SIMF_API_SuperAdmin__TempPassword` (section 20.3) |
+| TOTP secret (dev) | not committed, set `SIMF_API_SuperAdmin__TotpSecret` (section 20.3) |
 
 ### 20.5 Database reset (development)
 

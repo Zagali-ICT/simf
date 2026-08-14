@@ -246,17 +246,45 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
     }
     final enabled = ref.watch(biometricEnabledProvider).valueOrNull ?? false;
     final l10n = AppL10n.of(context);
-    return SwitchListTile(
-      secondary: const Icon(Icons.fingerprint, color: SimfTokens.accent),
-      title: Text(
-        l10n.biometricEnableToggle,
-        style: const TextStyle(color: SimfTokens.surface),
-      ),
-      value: enabled,
-      activeThumbColor: SimfTokens.accent,
-      // Ignore taps while a toggle is in flight, so a double-tap can't register
-      // (or revoke) two device keys and desync the local/server state.
-      onChanged: _busy ? null : (turnOn) => unawaited(_toggle(l10n, turnOn)),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        SwitchListTile(
+          secondary: const Icon(Icons.fingerprint, color: SimfTokens.accent),
+          title: Text(
+            l10n.biometricEnableToggle,
+            style: const TextStyle(color: SimfTokens.surface),
+          ),
+          value: enabled,
+          activeThumbColor: SimfTokens.accent,
+          // Ignore taps while a toggle is in flight, so a double-tap can't
+          // register (or revoke) two device keys and desync local/server state.
+          onChanged:
+              _busy ? null : (turnOn) => unawaited(_toggle(l10n, turnOn)),
+        ),
+        // S10 — the way into My Devices. Shown whenever biometrics are
+        // available rather than only when this device is enrolled, because the
+        // account may hold keys from OTHER devices that this one cannot see,
+        // and those are exactly the ones worth checking on.
+        ListTile(
+          leading: const Icon(Icons.devices_other, color: SimfTokens.accent),
+          title: Text(
+            l10n.myDevicesManage,
+            style: const TextStyle(color: SimfTokens.surface),
+          ),
+          trailing: const Icon(
+            Icons.chevron_right,
+            color: SimfTokens.beigeBorder,
+          ),
+          onTap: () => unawaited(
+            context.pushNamed(RouteNames.myDevices).then((_) {
+              if (mounted) {
+                ref.invalidate(biometricEnabledProvider);
+              }
+            }),
+          ),
+        ),
+      ],
     );
   }
 

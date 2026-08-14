@@ -116,8 +116,8 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdministratorAndSignInAsync();
         var (sessionId, hallId) = await SeedSessionWithLayoutAsync();
         var userId = Guid.NewGuid();
-        await SeedProfileAsync(userId, "Faisal Al-Harbi", "فيصل الحربي", "Captain");
-        await SeedOpenAttendanceAsync(sessionId, hallId, userId);
+        var profileId = await SeedProfileAsync(userId, "Faisal Al-Harbi", "فيصل الحربي", "Captain");
+        await SeedOpenAttendanceAsync(sessionId, hallId, profileId);
         await SeedSeatAsync(sessionId, userId, "A", 3);
 
         var response = await GetAuthAsync($"/api/v1/admin/sessions/{sessionId}/present", admin);
@@ -125,7 +125,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         var present = (await response.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionPresentAttendee>>>())!.Data!;
         var attendee = Assert.Single(present);
-        Assert.Equal(userId, attendee.UserId);
+        Assert.Equal(profileId, attendee.UserProfileId);
         Assert.Equal("Faisal Al-Harbi", attendee.Name);
         Assert.Equal("فيصل الحربي", attendee.NameArabic);
         Assert.Equal("Captain", attendee.JobTitle);
@@ -140,16 +140,16 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         var (sessionId, hallId) = await SeedSessionWithLayoutAsync();
         var here = Guid.NewGuid();
         var gone = Guid.NewGuid();
-        await SeedProfileAsync(here, "Present One", "الحاضر", null);
-        await SeedProfileAsync(gone, "Gone Two", "المغادر", null);
-        await SeedOpenAttendanceAsync(sessionId, hallId, here);
-        await SeedClosedAttendanceAsync(sessionId, hallId, gone);
+        var hereProfileId = await SeedProfileAsync(here, "Present One", "الحاضر", null);
+        var goneProfileId = await SeedProfileAsync(gone, "Gone Two", "المغادر", null);
+        await SeedOpenAttendanceAsync(sessionId, hallId, hereProfileId);
+        await SeedClosedAttendanceAsync(sessionId, hallId, goneProfileId);
 
         var response = await GetAuthAsync($"/api/v1/admin/sessions/{sessionId}/present", admin);
         var list = (await response.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionPresentAttendee>>>())!.Data!;
         Assert.Single(list);
-        Assert.Equal(here, list[0].UserId);
+        Assert.Equal(hereProfileId, list[0].UserProfileId);
     }
 
     [Fact]
@@ -168,8 +168,9 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         var admin = await CreateAdministratorAndSignInAsync();
         var (sessionId, hallId) = await SeedSessionWithLayoutAsync();
         var userId = Guid.NewGuid();
-        await SeedSeatAsync(sessionId, userId, "A", 1);            // reserved
-        await SeedOpenAttendanceAsync(sessionId, hallId, userId);  // checked in → confirmed
+        var profileId = await SeedProfileAsync(userId, "Seated One", "الجالس", null);
+        await SeedSeatAsync(sessionId, userId, "A", 1);               // reserved
+        await SeedOpenAttendanceAsync(sessionId, hallId, profileId);  // checked in → confirmed
 
         var response = await GetAuthAsync($"/api/v1/admin/sessions/{sessionId}/seat-map", admin);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -227,22 +228,27 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         };
         db.Sessions.Add(session);
 
+        // Each attendee is a real accountless profile — a walk-in. An invented
+        // Guid no longer works: the attendance row carries a real foreign key to
+        // the attendee record, which is the point of the key.
         for (var i = 0; i < openCount; i++)
         {
-            var userId = Guid.NewGuid();
+            var attendeeProfileId = await TestAttendeeProfiles.CreateAccountlessAsync(db);
             if (reentrant && i == 0)
             {
                 // An earlier visit that already closed, then a fresh open row.
-                db.HallAttendances.Add(NewAttendance(session.Id, hall.Id, userId,
+                db.HallAttendances.Add(NewAttendance(session.Id, hall.Id, attendeeProfileId,
                     now.AddMinutes(-12), now.AddMinutes(-8)));
             }
-            db.HallAttendances.Add(NewAttendance(session.Id, hall.Id, userId,
+            db.HallAttendances.Add(NewAttendance(session.Id, hall.Id, attendeeProfileId,
                 now.AddMinutes(-5), leave: null));
         }
 
         for (var i = 0; i < closedOnlyCount; i++)
         {
-            db.HallAttendances.Add(NewAttendance(session.Id, hall.Id, Guid.NewGuid(),
+            db.HallAttendances.Add(NewAttendance(
+                session.Id, hall.Id,
+                await TestAttendeeProfiles.CreateAccountlessAsync(db),
                 now.AddMinutes(-10), now.AddMinutes(-2)));
         }
 
@@ -251,14 +257,14 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
     }
 
     private static HallAttendance NewAttendance(
-        Guid sessionId, Guid hallId, Guid userId,
+        Guid sessionId, Guid hallId, Guid attendeeProfileId,
         DateTime enter, DateTime? leave) =>
         new()
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
             HallId = hallId,
-            UserId = userId,
+            UserProfileId = attendeeProfileId,
             Method = AttendanceMethod.Geofence,
             Enter = enter,
             Leave = leave,
@@ -301,11 +307,14 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         return (session.Id, hall.Id);
     }
 
-    private async Task SeedProfileAsync(Guid userId, string name, string nameArabic, string? jobTitle)
+    /// <summary>Returns the PROFILE id, which is what the attendance row and the
+    /// roster are keyed by — the account id is only what the person signs in with.</summary>
+    private async Task<Guid> SeedProfileAsync(
+        Guid userId, string name, string nameArabic, string? jobTitle)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        db.UserProfiles.Add(new UserProfile
+        var profile = new UserProfile
         {
             Id = Guid.NewGuid(),
             UserId = userId,
@@ -315,24 +324,28 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
             CreatedAt = SimfClock.Now,
-        });
+        };
+        db.UserProfiles.Add(profile);
         await db.SaveChangesAsync();
+        return profile.Id;
     }
 
-    private async Task SeedOpenAttendanceAsync(Guid sessionId, Guid hallId, Guid userId)
+    private async Task SeedOpenAttendanceAsync(
+        Guid sessionId, Guid hallId, Guid attendeeProfileId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        db.HallAttendances.Add(NewAttendance(sessionId, hallId, userId,
+        db.HallAttendances.Add(NewAttendance(sessionId, hallId, attendeeProfileId,
             SimfClock.Now.AddMinutes(-3), leave: null));
         await db.SaveChangesAsync();
     }
 
-    private async Task SeedClosedAttendanceAsync(Guid sessionId, Guid hallId, Guid userId)
+    private async Task SeedClosedAttendanceAsync(
+        Guid sessionId, Guid hallId, Guid attendeeProfileId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        db.HallAttendances.Add(NewAttendance(sessionId, hallId, userId,
+        db.HallAttendances.Add(NewAttendance(sessionId, hallId, attendeeProfileId,
             SimfClock.Now.AddMinutes(-10), SimfClock.Now.AddMinutes(-2)));
         await db.SaveChangesAsync();
     }
@@ -341,6 +354,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var attendeeProfileId = await TestAttendeeProfiles.EnsureForAccountAsync(db, userId);
         db.SeatReservations.Add(new SeatReservation
         {
             Id = Guid.NewGuid(),
@@ -348,7 +362,7 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
             RowLabel = row,
             SeatNumber = seat,
             Kind = SeatReservationKind.UserBooking,
-            ReservedForUserId = userId,
+            ReservedForProfileId = attendeeProfileId,
             CreatedByUserId = userId,
             CreatedAt = SimfClock.Now,
             Status = BookingStatus.Approved,

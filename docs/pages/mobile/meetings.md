@@ -5,12 +5,12 @@
 | **Route** | `/meetings` (route name `meetings`, `RouteNames.meetings` → `MeetingsScreen`, route #116) — Figma node `1408:9726` |
 | **Layout** | SIMF app shell (`SimfPageShell`), back chevron + centred title |
 | **Surface** | Mobile App (Flutter) |
-| **Audience** | **VIP** approved attendee only |
-| **Auth** | **Approved + VIP.** The Home tile is hidden for non-VIP; the route is role-gated to attendees; the page enforces VIP in-screen; and the backing meeting-request endpoint is VIP-only server-side (403). |
-| **Pattern** | D-745 split (owner 2026-07-11): the Home "اللقاءات الثنائية" tile now opens this VIP meetings page — a **filtered view** of the same `GET /app/my-requests` feed (approved + upcoming meetings only). The full requests log stays on the history page ([`requests.md`](requests.md), retitled **طلباتي**). |
+| **Audience** | Approved attendee carrying a per-user meeting-eligibility flag (D-760) |
+| **Auth** | **Approved + eligible.** Eligibility is the per-user `allowsSpeakerMeeting` / `allowsDelegationMeeting` pair, admin-assigned on the profile row and independent of the VVIP/VIP tier (D-760, superseding the D-729 VIP-only rule). The Home tile is hidden without it; the route is role-gated to attendees; the page enforces eligibility in-screen; and the backing meeting-request endpoints enforce it server-side (403). |
+| **Pattern** | D-745 split (owner 2026-07-11): the Home "اللقاءات الثنائية" tile now opens this meetings page — a **filtered view** of the same `GET /app/my-requests` feed (approved + upcoming meetings only). The full requests log stays on the history page ([`requests.md`](requests.md), retitled **طلباتي**). |
 | **Status** | 🟢 Screen built (D-745, Figma `1408:9726`) |
-| **Implements use case(s)** | See my confirmed, upcoming bilateral meetings; start a new meeting request (VIP); jump to my full requests history. |
-| **Backend endpoints** | `GET /api/v1/app/my-requests` (feed — filtered client-side to accepted + upcoming meeting kinds; D-745 added append-only `speakerId` + `countryId` for the card photo + flag) · `POST /api/v1/app/speakers/{id}/meeting-requests` (create, VIP-only, via the sheet) · `GET /api/v1/app/speakers` + `…/{id}/available-slots` (the picker). |
+| **Implements use case(s)** | See my confirmed, upcoming bilateral meetings; start a new meeting request when eligible; jump to my full requests history. |
+| **Backend endpoints** | `GET /api/v1/app/my-requests` (feed — filtered client-side to accepted + upcoming meeting kinds; D-745 added append-only `speakerId` + `countryId` for the card photo + flag) · `POST /api/v1/app/speakers/{id}/meeting-requests` (create, gated on `allowsSpeakerMeeting`, via the sheet) · `GET /api/v1/app/speakers` + `…/{id}/available-slots` (the picker). |
 | **Source file** | Flutter `features/meetings/` (screen + `MeetingCard` + `MeetingActionRow` + `upcomingMeetingsProvider`); the create sheet is the shared `features/speakers/widgets/meeting_request_sheet.dart`. Backend `MyRequestsService` + `AppRequestItem` contract. |
 | **Tests** | [`docs/tests/e2e/mobile-meetings.md`](../../tests/e2e/mobile-meetings.md) (`E2E-MOBMEET-001..011`); widget `test/features/meetings/meetings_screen_test.dart`; golden `test/golden/meetings_golden_test.dart` (`meetings_1408-9726.png`). |
 | **Last reviewed** | 2026-07-11 |
@@ -19,7 +19,7 @@
 
 ## 1. Purpose
 
-The bilateral-meetings page is the **VIP** attendee's at-a-glance view of their
+The bilateral-meetings page is the eligible attendee's at-a-glance view of their
 **confirmed, upcoming** bilateral meetings — speaker meetings and delegation
 meetings that the team has **accepted** and whose slot has not yet passed. It is
 deliberately **not** the requests log: pending, rejected, cancelled and past
@@ -33,16 +33,21 @@ profile keeps *my requests (history)*.
 
 ## 2. Audience + permissions
 
-- **Who can reach it:** an approved **VIP** attendee, from the Home
-  "اللقاءات الثنائية" tile. The tile is **hidden for non-VIP** accounts.
+- **Who can reach it:** an approved attendee holding at least one per-user
+  meeting-eligibility flag (`allowsSpeakerMeeting` or `allowsDelegationMeeting`,
+  i.e. `MeetingAccess.any`), from the Home "اللقاءات الثنائية" tile. The tile is
+  **hidden** without one. Eligibility is admin-assigned per user and does **not**
+  follow the VVIP/VIP tier (D-760, superseding D-729).
 - **Route gate:** role-gated to attendees (Visitor / Exhibitor) — guest / staff /
-  moderator are redirected home. VIP is **not** an `AppRole`, so it is enforced
-  in-screen (and server-side), not by the router role table.
-- **In-screen gate:** a non-VIP who still reaches `/meetings` sees the VIP-only
-  state ("حجز فترة اجتماع متاح لضيوف كبار الشخصيات فقط"), never the list or the
-  create button.
-- **Server gate:** `POST …/meeting-requests` returns **403** for a non-VIP; the
-  sheet surfaces the VIP-only message.
+  moderator are redirected home. Meeting eligibility is **not** an `AppRole`, so
+  it is enforced in-screen (and server-side), not by the router role table.
+- **In-screen gate:** an ineligible account that still reaches `/meetings` sees
+  the no-access state (`meetingAccessRequired` — "اللقاءات الثنائية متاحة
+  للحسابات المصرَّح لها فقط" / "Bilateral meetings are available to authorised
+  accounts only"), never the list or the create buttons.
+- **Server gate:** `POST …/meeting-requests` returns **403** for an ineligible
+  account; the sheet surfaces `meetingNotEnabled` ("طلب مقابلة المتحدّث غير
+  مُفعَّل لحسابك. تواصل مع فريق الملتقى لتفعيله.").
 
 ## 3. Screenshots
 
@@ -50,7 +55,7 @@ profile keeps *my requests (history)*.
 |-------|------|----------|
 | Default (with cards) | `test/golden/goldens/meetings_1408-9726.png` | ✅ golden (Arabic, 375×760) |
 | Empty state | `docs/screenshots/meetings-empty.png` | _pending on-device capture_ |
-| VIP-only state | `docs/screenshots/meetings-vip-only.png` | _pending_ |
+| No-access state | `docs/screenshots/meetings-no-access.png` | _pending_ |
 
 > Figma reference frame: `1408:9726`.
 
@@ -91,7 +96,8 @@ speaker already selected stays visible even when it does not match the query, so
 the picker never hides the target the request is submitted to.
 Selecting a speaker loads their **real availability** day-cards + time-slots
 (D-709); with a subject and a picked slot the request is sent
-(`POST …/meeting-requests`). Booking a slot is VIP-only server-side.
+(`POST …/meeting-requests`). Sending a request is gated server-side on the
+per-user `allowsSpeakerMeeting` flag.
 
 **G3 (D-812, owner 2026-07-30) — a slot is now mandatory.** When the chosen target
 has **no free slot** — no active future availability window, or every slot already
@@ -105,10 +111,10 @@ never presented as the target having no availability.
 ## 6. Data flow
 
 ```
-Home "اللقاءات الثنائية" tile (VIP only) → /meetings
-  → MeetingsScreen watches currentUserIsVipProvider
-      → non-VIP: VIP-only state
-      → VIP: upcomingMeetingsProvider = myRequestsProvider filtered to
+Home "اللقاءات الثنائية" tile (eligible accounts only) → /meetings
+  → MeetingsScreen watches currentUserMeetingAccessProvider (D-760)
+      → MeetingAccess.any == false: not-eligible state
+      → eligible: upcomingMeetingsProvider = myRequestsProvider filtered to
              (status == Accepted) && meeting-kind && (no slot | slot in future)
   → GET /app/my-requests (approved-only) → filter client-side → MeetingCards
 طلب جديد → MeetingRequestSheet → POST …/meeting-requests → invalidate feed
@@ -121,15 +127,15 @@ D-745 append-only additions for the card photo + flag (wire contract preserved).
 
 ## 7. States (loading / error / empty / gate)
 
-- **Loading:** a spinner while the VIP check / feed is in flight.
+- **Loading:** a spinner while the eligibility check / feed is in flight.
 - **Error:** the shared error surface ("تعذّر تحميل طلباتك") with retry + pull-to-refresh.
 - **Empty:** "لا توجد مقابلات بعد." below the action row (which stays available).
-- **VIP-only:** the premium-gate message for a non-VIP viewer.
+- **No access:** the `meetingAccessRequired` message for an ineligible viewer.
 
 ## 8. i18n + RTL
 
 All strings localized (AR/EN): title (اللقاءات الثنائية / Bilateral meetings), the
-طلب جديد/السجل row, the card kind headlines, the empty state, the VIP-only message.
+طلب جديد/السجل row, the card kind headlines, the empty state, the no-access message.
 Under Arabic the header, the buttons, and the cards (headline right, flag badge
 inline-end, speaker photo inline-start) mirror right-to-left; the golden locks it.
 
@@ -150,16 +156,17 @@ inline-end, speaker photo inline-start) mirror right-to-left; the golden locks i
 See [`docs/tests/e2e/mobile-meetings.md`](../../tests/e2e/mobile-meetings.md)
 (`E2E-MOBMEET-001..011`): the golden list, the create flow, the rich picker, the
 السجل → history nav, the approved+upcoming filter, card → speaker profile, empty
-state, both VIP gates (tile hidden + in-screen), server-500, and RTL.
+state, both eligibility gates (tile hidden + in-screen), server-500, and RTL.
 
 ## 11. Related docs
 
 - Requests history (sibling): [`docs/pages/mobile/requests.md`](requests.md).
 - Speaker profile (the other create entry): [`docs/pages/mobile/speaker-profile/`](speaker-profile/README.md).
 - Decisions log: **D-745** (this split + the additive `speakerId`/`countryId`
-  wire fields + the VIP tile gate). Related: D-500 (the requests feed), D-590
-  (the rank subtitle), D-709 (real availability slots), D-729 (VIP-only create),
-  D-740 (speaker identity cells).
+  wire fields + the tile gate). Related: D-500 (the requests feed), D-590
+  (the rank subtitle), D-709 (real availability slots), **D-760** (the per-user
+  eligibility flags, superseding D-729's VIP-only create), D-740 (speaker
+  identity cells).
 
 ## 12. Changelog
 

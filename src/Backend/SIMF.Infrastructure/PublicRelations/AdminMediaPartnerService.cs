@@ -77,7 +77,7 @@ internal sealed class AdminMediaPartnerService(
         var page = await rows.Skip(skip).Take(top)
             .Select(partner => new AdminMediaPartnerSummary(
                 partner.Id, partner.Name, partner.NameArabic,
-                partner.LogoRelativePath, partner.Url, partner.DisplayOrder,
+                null, partner.Url, partner.DisplayOrder,
                 partner.IsActive, partner.CreatedAt))
             .ToListAsync(cancellationToken);
 
@@ -102,8 +102,8 @@ internal sealed class AdminMediaPartnerService(
 
     public async Task<AdminMediaPartnerDetail> CreateAsync(Guid actorUserId, AdminCreateMediaPartnerRequest request, CancellationToken cancellationToken = default)
     {
-        var (name, nameArabic, logoRelativePath, url, displayOrder) = Validate(
-            request.Name, request.NameArabic, request.LogoRelativePath,
+        var (name, nameArabic, url, displayOrder) = Validate(
+            request.Name, request.NameArabic,
             request.Url, request.DisplayOrder);
         ValidateContactFields(
             request.Email, request.PhonePrimary, request.PhoneSecondary,
@@ -126,7 +126,6 @@ internal sealed class AdminMediaPartnerService(
         {
             Name = name,
             NameArabic = nameArabic,
-            LogoRelativePath = logoRelativePath,
             Url = url,
             DisplayOrder = displayOrder,
             Email = NullIfBlank(request.Email),
@@ -170,8 +169,8 @@ internal sealed class AdminMediaPartnerService(
                 "The media partner was not found.",
                 "لم يتم العثور على الشريك الإعلامي.");
 
-        var (name, nameArabic, logoRelativePath, url, displayOrder) = Validate(
-            request.Name, request.NameArabic, request.LogoRelativePath,
+        var (name, nameArabic, url, displayOrder) = Validate(
+            request.Name, request.NameArabic,
             request.Url, request.DisplayOrder);
         ValidateContactFields(
             request.Email, request.PhonePrimary, request.PhoneSecondary,
@@ -194,7 +193,6 @@ internal sealed class AdminMediaPartnerService(
 
         partner.Name = name;
         partner.NameArabic = nameArabic;
-        partner.LogoRelativePath = logoRelativePath;
         partner.Url = url;
         partner.DisplayOrder = displayOrder;
         partner.Email = NullIfBlank(request.Email);
@@ -245,8 +243,8 @@ internal sealed class AdminMediaPartnerService(
             cancellationToken);
     }
 
-    private static (string name, string nameArabic, string? logoRelativePath, string? url, int displayOrder) Validate(
-        string nameRaw, string nameArabicRaw, string? logoRelativePathRaw, string? urlRaw, int displayOrderRaw)
+    private static (string name, string nameArabic, string? url, int displayOrder) Validate(
+        string nameRaw, string nameArabicRaw, string? urlRaw, int displayOrderRaw)
     {
         var name = (nameRaw ?? string.Empty).Trim();
         if (name.Length is < 1 or > 256)
@@ -262,14 +260,6 @@ internal sealed class AdminMediaPartnerService(
                 "Media partner Arabic name must be between 1 and 256 characters.",
                 "يجب أن يتراوح الاسم العربي للشريك الإعلامي بين 1 و 256 حرفاً.");
         }
-        var logoRelativePath = string.IsNullOrWhiteSpace(logoRelativePathRaw)
-            ? null : logoRelativePathRaw.Trim();
-        if (logoRelativePath is { Length: > 512 })
-        {
-            throw new ApiException(ErrorCodes.ValidationFailed, 400,
-                "Logo path must be 512 characters or fewer.",
-                "يجب أن يكون مسار الشعار 512 حرفاً أو أقل.");
-        }
         var url = string.IsNullOrWhiteSpace(urlRaw) ? null : urlRaw.Trim();
         if (url is { Length: > 512 })
         {
@@ -283,7 +273,7 @@ internal sealed class AdminMediaPartnerService(
                 "Display order must be zero or a positive integer.",
                 "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.");
         }
-        return (name, nameArabic, logoRelativePath, url, displayOrderRaw);
+        return (name, nameArabic, url, displayOrderRaw);
     }
 
     // Validates the identity-card fields inlined from the removed shared
@@ -377,7 +367,7 @@ internal sealed class AdminMediaPartnerService(
     private static AdminMediaPartnerDetail ToDetail(
         MediaPartner partner, string? countryNameEn, string? countryNameAr) =>
         new(partner.Id, partner.Name, partner.NameArabic,
-            partner.LogoRelativePath, partner.Url, partner.DisplayOrder,
+            null, partner.Url, partner.DisplayOrder,
             partner.IsActive, partner.CreatedAt, partner.UpdatedAt,
             partner.Email, partner.PhonePrimary, partner.PhoneSecondary,
             partner.FacebookUrl, partner.XUrl, partner.LinkedInUrl,

@@ -38,7 +38,7 @@ public sealed record SessionSeatMap(
     // caller may not book. An older app ignores the key and renders as before.
     IReadOnlyList<SeatTier>? SeatTiers = null,
     // Appended: whether the CALLER is a VIP-tier visitor (their
-    // ProfileType.AllowsVipMeetingSlots — the same flag the app reads as isVip).
+    // ProfileType.IsVipTier — the same flag the app reads as isVip).
     // The app uses it to grey out VIP rows for a non-VIP visitor; the server
     // re-checks it on every reserve, so this is a UX hint, never the gate.
     bool CallerIsVip = false);
@@ -84,10 +84,11 @@ public sealed record SessionSeatCell(
 /// status and resolves the open <c>HallAttendance</c> row, so the four seat
 /// states (available · unavailable · reserved · confirmed) are all decidable from
 /// this row.</para>
-/// <para>Cross-DB safe: <see cref="HolderUserId"/> is a bare logical
-/// user id and the bilingual holder name comes from the App-side
-/// <c>UserProfile</c> in a second query — no cross-database join and nothing
-/// duplicated.</para></summary>
+/// <para>Single-database: <see cref="HolderProfileId"/> names the attendee
+/// record the reservation is keyed by, and the bilingual holder name comes from
+/// that same <c>UserProfile</c> in a second query — no cross-database join and
+/// nothing duplicated. An admin surface only, so the field was renamed with the
+/// column rather than left describing an account it no longer holds.</para></summary>
 public sealed record SeatPlanCell(
     Guid ReservationId,
     // Null for an OpenSeating join (general admission — no specific seat).
@@ -98,9 +99,9 @@ public sealed record SeatPlanCell(
     // True when the holder has an OPEN HallAttendance row for this session — the
     // "confirmed" seat state, as opposed to a merely held "reserved" one.
     bool CheckedIn,
-    // The holder's user id (logical FK to the Identity DB). Null for an admin
-    // row-block / VVIP protocol seat, which has no registration.
-    Guid? HolderUserId,
+    // The holder's attendee record. Null for an admin row-block / VVIP protocol
+    // seat, which has no occupant at all.
+    Guid? HolderProfileId,
     // The holder's bilingual display name, resolved from the App-side UserProfile.
     // Empty for an admin block / VVIP seat — read the guest hint instead.
     string HolderName,
@@ -232,8 +233,8 @@ public sealed record MySeatReservation(
 /// MONITOR: an ACTIVE (confirmed, still-held) visitor reservation. There is no
 /// approval step (bookings auto-confirm), so this is a read-only monitor, not an
 /// approval queue. Carries the session + seat + attendee. <see cref="AttendeeName"/>
-/// is resolved from the Identity DB in a separate round-trip — there is no
-/// cross-DB JOIN.</summary>
+/// is resolved from the attendee's own <c>UserProfile</c> in a separate
+/// round-trip — one database, no JOIN.</summary>
 public sealed record ActiveBookingRow(
     Guid ReservationId,
     Guid SessionId,
@@ -244,7 +245,7 @@ public sealed record ActiveBookingRow(
     string? RowLabel,
     int? SeatNumber,
     SeatReservationKind Kind,
-    Guid? AttendeeUserId,
+    Guid? AttendeeProfileId,
     string AttendeeName,
     DateTime CreatedAt);
 
@@ -279,11 +280,15 @@ public sealed record StaffSeatOccupant(
     Guid? ReservationId,
     SeatReservationKind Kind,
     BookingStatus Status,
-    // The occupant's user id (logical FK to the Identity DB); null for an admin
-    // block / VVIP protocol seat, which has no registration.
+    // The occupant's ACCOUNT id (logical FK to the Identity DB). Null for an admin
+    // block / VVIP protocol seat, which has no registration — and null too for a
+    // walk-in or bulk-minted badge, who is a real occupant with no account. A
+    // SHIPPED field the staff tablet decodes, so it keeps its name and meaning;
+    // read UserProfileId to identify the occupant. It is also what the avatar route
+    // keys on, which is why HasPhoto is false wherever this is null.
     Guid? UserId,
-    // The occupant's display name, resolved from the Identity DB in a separate
-    // round-trip. Empty for a VVIP protocol seat — read GuestHint instead.
+    // The occupant's display name, resolved from the App-side UserProfile. Empty
+    // for a VVIP protocol seat — read GuestHint instead.
     string DisplayName,
     string DisplayNameArabic,
     // The admin-typed VVIP guest hint (bilingual) — the occupant record for a seat
@@ -298,4 +303,9 @@ public sealed record StaffSeatOccupant(
     // The guest's badge QR id, echoed so the desk can confirm the scan.
     string? QrId,
     // True when the holder has already checked in at the hall gate.
-    bool CheckedIn);
+    bool CheckedIn,
+    // Appended (append-only wire): the occupant's attendee record, which every
+    // occupant has and which the reservation is actually keyed by. Null only when
+    // the seat has no occupant at all (free seat / admin block). An older tablet
+    // ignores the key.
+    Guid? UserProfileId = null);

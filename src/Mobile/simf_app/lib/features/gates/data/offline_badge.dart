@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:pointycastle/api.dart';
@@ -7,30 +6,38 @@ import 'package:pointycastle/block/modes/gcm.dart';
 
 /// D-820 — decodes the encrypted badge a desk printed with no network.
 ///
-/// The Dart twin of `SIMF.Common.Badges.EventBadgeCodec` + `OfflineBadgeId`.
-/// **Both sides must agree byte for byte**: the plaintext is the ASCII string
-/// `"{profileTypeCode},{sequence}"`, AES-256-GCM encrypted with a 12-byte nonce
-/// and a full 16-byte tag, and the wire form is one Crockford base32
-/// key-version character followed by base32 of `nonce || ciphertext || tag`.
+/// The Dart twin of `SIMF.Common.Badges.EventBadgeCodec`. **Both sides must
+/// agree byte for byte**: the plaintext is 20 RAW BYTES — a 16-byte profile id,
+/// a 2-byte edition year and a 2-byte profile-type code, all big-endian —
+/// AES-256-GCM encrypted with a 12-byte nonce and a full 16-byte tag, and the
+/// wire form is one Crockford base32 key-version character followed by
+/// base32 of `nonce || ciphertext || tag`.
+///
+/// Those three fields are the three questions a door has to answer with no
+/// network: who is this, is the badge from the open year, and is this tier
+/// admitted at THIS gate.
 ///
 /// Decode-only on purpose. A scanner never mints a badge, and shipping an
 /// encoder into the app would put a badge factory on every operator's phone.
 class OfflineBadge {
-  const OfflineBadge({required this.profileTypeCode, required this.sequence});
+  const OfflineBadge({
+    required this.profileId,
+    required this.editionYear,
+    required this.profileTypeCode,
+  });
 
-  /// The badge type, as the small number the server calls `ProfileType.Code`.
-  /// This is what makes the allowed-at-this-gate decision possible with no
-  /// database.
+  /// WHO — the attendee record, which every attendee has with or without an app
+  /// account. Lower-case hyphenated form, matching what the server stores.
+  final String profileId;
+
+  /// WHEN — the edition the badge was issued for, so this device can refuse
+  /// last year's badge without asking anyone.
+  final int editionYear;
+
+  /// WHAT — the badge type, as the small number the server calls
+  /// `ProfileType.Code`. This is what makes the allowed-at-this-gate decision
+  /// possible with no database.
   final int profileTypeCode;
-
-  /// The desk's sequence — the badge's identity.
-  final int sequence;
-
-  /// The 12-character QR id this sequence maps to on the server, so an
-  /// operator can read out something the Control Panel can find.
-  String get qrId => sequence >= _minSequence && sequence <= _maxSequence
-      ? 'W${sequence.toString().padLeft(11, '0')}'
-      : '';
 
   static const int _nonceBytes = 12;
 
@@ -40,6 +47,9 @@ class OfflineBadge {
 
   static const int _keyBytes = 32;
 
+  /// A 16-byte profile id, a 2-byte edition year and a 2-byte type code.
+  static const int _plaintextBytes = 20;
+
   /// Upper bound on an accepted scan, so a hostile or garbled input cannot push
   /// work into the decoder. A real badge is about 61 characters.
   static const int maxEncodedLength = 128;
@@ -47,12 +57,6 @@ class OfflineBadge {
   /// Length of an ordinary server-minted QR serial. A scanner cannot judge one
   /// offline — it has no roster — so callers abstain rather than decode.
   static const int mintedQrIdLength = 12;
-
-  static const int _minSequence = 1;
-
-  /// One below 10^10 — the cap that keeps a leading zero in the padded id, so
-  /// an offline id can never collide with a server-minted one.
-  static const int _maxSequence = 9999999999;
 
   /// Reads the key version without decrypting, so a caller can pick between the
   /// current and the previous key during a rotation window.
@@ -108,24 +112,36 @@ class OfflineBadge {
     return _parsePayload(plaintext);
   }
 
+  /// The plaintext is 20 RAW BYTES — a 16-byte profile id, a 2-byte edition
+  /// year and a 2-byte profile-type code, all big-endian. There is no text
+  /// decode any more: every byte is legitimately arbitrary, so the old
+  /// ASCII check would have rejected most genuine badges.
   static OfflineBadge? _parsePayload(Uint8List plaintext) {
-    final String text;
-    try {
-      text = ascii.decode(plaintext);
-    } on FormatException {
+    if (plaintext.length != _plaintextBytes) {
+      // A decrypt that succeeded but yielded another width is something else
+      // encrypted under the same key, not a badge this system authored.
       return null;
     }
 
-    final comma = text.indexOf(',');
-    if (comma <= 0 || comma == text.length - 1) {
-      return null;
-    }
-    final code = int.tryParse(text.substring(0, comma));
-    final sequence = int.tryParse(text.substring(comma + 1));
-    if (code == null || sequence == null || code < 0 || sequence < 0) {
-      return null;
-    }
-    return OfflineBadge(profileTypeCode: code, sequence: sequence);
+    final data = ByteData.sublistView(plaintext);
+    return OfflineBadge(
+      profileId: _formatGuid(plaintext.sublist(0, 16)),
+      editionYear: data.getUint16(16),
+      profileTypeCode: data.getUint16(18),
+    );
+  }
+
+  /// The canonical 8-4-4-4-12 form, read straight off the wire bytes. The
+  /// server writes the id big-endian for exactly this reason: .NET's own Guid
+  /// layout is mixed-endian, and following it here would decode every badge to
+  /// a different attendee.
+  static String _formatGuid(List<int> bytes) {
+    final hex = bytes
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-'
+        '${hex.substring(20)}';
   }
 }
 

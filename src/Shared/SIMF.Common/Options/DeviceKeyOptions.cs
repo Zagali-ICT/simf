@@ -16,4 +16,13 @@ public sealed class DeviceKeyOptions
     /// <summary>Require a valid emailed-OTP step-up code on device-key
     /// registration. Defaults to <c>true</c> (secure by default).</summary>
     public bool RequireStepUpForEnrol { get; set; } = true;
+
+    /// <summary>
+    /// How many device keys one account may hold at once. Enrolling past the cap
+    /// revokes the oldest rather than refusing, so a user who replaces a phone is
+    /// never stuck. Five covers a phone, a tablet and a spare while keeping the
+    /// persistence surface bounded: every key is a permanent alternative
+    /// credential. Zero or less disables the cap.
+    /// </summary>
+    public int MaxActiveKeysPerUser { get; set; } = 5;
 }

@@ -155,10 +155,13 @@ internal sealed class AdminAttendeeService(
         var userIds = pageUsers.Select(u => u.Id).ToList();
         var profilesByUserId = await appDbContext.UserProfiles
             .AsNoTracking()
-            .Where(profile => userIds.Contains(profile.UserId))
+            // Keyed by account id because the page is a list of accounts; a
+            // profile without one is not in `userIds` and cannot match.
+            .Where(profile => profile.UserId != null
+                && userIds.Contains(profile.UserId.Value))
             .Select(profile => new
             {
-                profile.UserId,
+                UserId = profile.UserId!.Value,
                 profile.ProfileTypeId,
                 profile.QrId,
             })

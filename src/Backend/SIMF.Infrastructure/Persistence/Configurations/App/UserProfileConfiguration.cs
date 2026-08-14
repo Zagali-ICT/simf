@@ -1,6 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Organisations;
+using SIMF.Domain.Files;
 using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -25,7 +26,35 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // enforced at the service layer, not by SQL. Unique so the
         // second upsert by the same user updates instead of inserting
         // a sibling row.
-        builder.HasIndex(profile => profile.UserId).IsUnique();
+        //
+        // FILTERED, and that is load-bearing rather than tidiness. An attendee
+        // need not have an account at all, so this column is nullable and most
+        // rows at a walk-in desk will be null. SQL Server treats NULLs as EQUAL
+        // in a unique index, so an unfiltered one would admit exactly ONE such
+        // row system-wide and reject the second with a duplicate-key error —
+        // green in every test that creates one profile, failing at the venue on
+        // the second registration. Same filtered-unique shape as QrId and
+        // ReferenceNumber below, for the same reason.
+        builder.HasIndex(profile => profile.UserId)
+            .IsUnique()
+            .HasFilter("[UserId] IS NOT NULL");
+
+        // Admission state, stored as the enum NAME rather than its ordinal, so
+        // reordering the enum can never re-interpret stored rows. Matches how the
+        // Identity side persists the same enum.
+        // The DB default is FAIL-CLOSED and exists only so a raw-SQL content
+        // seed cannot fail on a column it does not know about. Every
+        // tracked write sets this explicitly; a row that reaches the table
+        // without one is not admitted anywhere until somebody approves it.
+        builder.Property(profile => profile.AdmissionState)
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .HasDefaultValue(SIMF.Common.Enums.AccountState.PendingApproval)
+            .IsRequired();
+
+        // The admission queue reads "everyone awaiting a decision" on every load
+        // of the pending pages, and the gate reads state per scan.
+        builder.HasIndex(profile => profile.AdmissionState);
 
         // Reasonable name caps (they were 256), tightened to 50 and
         // aligned across client + server + EF.
@@ -83,7 +112,31 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.HasIndex(profile => profile.ReferenceNumber)
             .IsUnique()
             .HasFilter("[ReferenceNumber] IS NOT NULL");
-        builder.Property(profile => profile.IdImageRelativePath).HasMaxLength(256);
+        // The ID document and the VIP photo are real foreign keys into the one
+        // file store. Configured without a navigation property on purpose: no
+        // code path walks from a profile to its file (bytes are always fetched
+        // through IFileService by id), and a navigation on an encrypted,
+        // sensitive document is an invitation to Include() it into ordinary
+        // profile reads. This is the deliberate difference from the
+        // Organisation and Region keys below, which do carry navigations
+        // because callers genuinely traverse them.
+        //
+        // Restrict, not Cascade: deleting a file must never silently delete the
+        // registrant. In practice the constraint should never fire, because
+        // StoredFileService deactivates rows rather than removing them, which
+        // is exactly why the key is worth having: it turns "should never" into
+        // "cannot".
+        builder.HasIndex(profile => profile.IdImageFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(profile => profile.IdImageFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(profile => profile.VipPhotoFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(profile => profile.VipPhotoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
         // VVIP/VIP extras (موج welcome-message integration). Nullable,
         // only set for VVIP/VIP. Lengths match the FluentValidation + UI.
         builder.Property(profile => profile.MawjId).HasMaxLength(64);
@@ -91,7 +144,6 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // Arabic twin, same length as Honorific.
         builder.Property(profile => profile.HonorificArabic).HasMaxLength(64);
         builder.Property(profile => profile.PreferredLanguage).HasMaxLength(16);
-        builder.Property(profile => profile.VipPhotoRelativePath).HasMaxLength(260);
 
         // QrId on UserProfile. 12-char Crockford base32, unique
         // (only minted for Approved rows so most rows are null —
@@ -162,14 +214,33 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .HasForeignKey(profile => profile.RegionId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // The bulk-badge batch this placeholder profile was
-        // minted by. Intra-App-DB FK (nullable + Restrict, same shape as the
-        // Organisation / Region FKs) so a batch cannot be hard-deleted while any
-        // badge references it — batches are soft-deleted (revoke → IsActive=false).
+        // Zero, not the open year, and deliberately: the stamping interceptor
+        // fills this for every tracked write, and the default exists only so a
+        // RAW SQL content seed cannot fail on a column it does not know about.
+        // Zero is the "predates the edition column" value the gate already
+        // admits, so such a row behaves exactly as a pre-existing one.
+        builder.Property(profile => profile.EditionYear).HasDefaultValue(0);
+
+        // The order this attendee arrived on. REQUIRED: everyone belongs to one,
+        // and whoever arrived without a bulk order behind them belongs to the
+        // seeded direct-registration order, so "which order did this attendee
+        // come from" always has an answer. It used to be nullable and set only by
+        // the bulk mint, which left it unanswerable for everyone who registered
+        // themselves.
+        //
+        // Intra-App-DB FK with Restrict, the same shape as the Organisation and
+        // Region FKs, so an order cannot be hard-deleted while anyone references
+        // it — orders are soft-deleted (revoke → IsActive=false).
+        // Same reasoning as the two above: a raw-SQL seed that predates the
+        // column lands in the direct-registration order rather than failing.
+        builder.Property(profile => profile.BadgeBatchId)
+            .HasDefaultValue(SIMF.Domain.Badges.BadgeBatch.DirectRegistrationId);
+
         builder.HasIndex(profile => profile.BadgeBatchId);
         builder.HasOne(profile => profile.BadgeBatch)
             .WithMany()
             .HasForeignKey(profile => profile.BadgeBatchId)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
         // M-to-M with Interests. Composite-PK join table

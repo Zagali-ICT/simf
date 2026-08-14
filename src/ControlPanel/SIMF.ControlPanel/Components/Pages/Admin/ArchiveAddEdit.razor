@@ -63,8 +63,6 @@
                    @onchange="OnSpeakersChanged"
                    disabled="@_busy" />
         </label>
-        <SimfTextField Label="@L["Admin.Archive.Field.CoverImageRelativePath"]"
-                       @bind-Value="_model.CoverImageRelativePath" Disabled="_busy" />
         @* Place + date label for the edition detail.
            MaxLength mirrors EF HasMaxLength + FluentValidation (256/128). *@
         <SimfTextField Label="@L["Admin.Archive.Field.LocationEn"]"
@@ -122,6 +120,17 @@
             <div class="simf-field">
                 <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
                 <SimfImageUpload Category="ArchiveCover" OwnerId="@Initial.Id" Alt="@_model.TitleEn" />
+            </div>
+        }
+        else
+        {
+            @* Create mode: the row must exist before bytes can be attached, so
+               show the slot and say so rather than nothing at all. Matches
+               SpeakersAddEdit. *@
+            <div class="simf-photo-empty">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageThumb Class="simf-img-thumb--lg" Alt="@_model.TitleEn" />
+                <span class="simf-field__helper">@L["Admin.Asset.SaveFirst"]</span>
             </div>
         }
     </div>

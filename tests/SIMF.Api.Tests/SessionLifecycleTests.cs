@@ -1,4 +1,4 @@
-// P3.2a — D-231 (Completion Programme §5.2, broadcast Option A): the
+﻿// P3.2a — D-231 (Completion Programme §5.2, broadcast Option A): the
 // session broadcast lifecycle (Scheduled → Held → Recorded → Published)
 // driven by the Scientific Committee via Sessions.Publish. Mirrors
 // AdminSessionsTests' setup; asserts the legal transitions, the illegal
@@ -7,6 +7,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Files.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -227,16 +229,54 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
     }
 
-    // S-7 — stamp a recording pointer directly so the Recorded/Published guard is
-    // satisfied without streaming a real file (this suite only asserts the
-    // lifecycle transitions, not the bytes).
+    // S-7 — satisfy the Recorded/Published guard without streaming a real video
+    // (this suite asserts the lifecycle transitions, not the bytes).
+    //
+    // A fabricated Guid used to be enough here. RecordingFileId is now a real
+    // foreign key into StoredFiles, so the file has to exist: the fixture creates
+    // one through the ordinary service and points the session at it.
     private async Task StampRecordingAsync(Guid sessionId)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var files = scope.ServiceProvider.GetRequiredService<IFileService>();
+
+        // CreateStreamedAsync, not UploadAsync: it is the path the real upload
+        // endpoint takes for recordings, and it takes the extension explicitly
+        // rather than sniffing magic bytes out of a payload.
+        using var content = new MemoryStream("FAKE-MP4-RECORDING-BYTES"u8.ToArray());
+        var stored = await files.CreateStreamedAsync(
+            FileService.SessionRecording, sessionId, content, "lifecycle.mp4",
+            "video/mp4", ".mp4", Guid.Empty, CancellationToken.None);
+
         var session = await db.Sessions.FindAsync(sessionId);
-        session!.RecordingStoredFileName = Guid.NewGuid().ToString();
+        session!.RecordingFileId = stored.Id;
         await db.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task A_recording_pointer_to_a_file_that_does_not_exist_is_refused()
+    {
+        // The guarantee the foreign key buys, pinned rather than assumed. Until it
+        // existed this suite's own fixture stamped an arbitrary Guid, and the
+        // database accepted a session pointing at a recording nobody had uploaded.
+        var hall = await SeedHallAsync(capacity: 10);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.Sessions.Add(new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "FK guard", TitleArabic = "حارس المفتاح",
+            HallId = hall.Id,
+            Start = SimfClock.Now.AddMinutes(-15),
+            End = SimfClock.Now.AddMinutes(45),
+            RecordingFileId = Guid.NewGuid(), // no StoredFile row behind it
+            IsActive = true, CreatedAt = SimfClock.Now,
+        });
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
     }
 
     private async Task<Hall> SeedHallAsync(int capacity)

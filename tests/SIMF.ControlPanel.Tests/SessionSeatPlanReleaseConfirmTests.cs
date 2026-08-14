@@ -29,7 +29,7 @@ public sealed class SessionSeatPlanReleaseConfirmTests : CpComponentTestBase
     // One attendee holding A2 — the seat an admin would click to release.
     private static readonly SeatPlanCell HeldSeat = new(
         Guid.NewGuid(), "A", 2, SeatReservationKind.UserBooking,
-        BookingStatus.Approved, CheckedIn: false, HolderUserId: Guid.NewGuid(),
+        BookingStatus.Approved, CheckedIn: false, HolderProfileId: Guid.NewGuid(),
         HolderName: "Faisal Al-Harbi", HolderNameArabic: "فيصل الحربي",
         GuestHint: null, GuestHintArabic: null);
 

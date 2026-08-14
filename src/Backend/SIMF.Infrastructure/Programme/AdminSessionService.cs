@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminSessionsTests.cs,
+﻿// Tests: SIMF.Api.Tests/AdminSessionsTests.cs,
 //        SIMF.Api.Tests/GridDateSortKeyTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs
@@ -30,6 +30,7 @@ namespace SIMF.Infrastructure.Programme;
 /// </summary>
 internal sealed class AdminSessionService(
     SimfAppDbContext dbContext,
+    IFeedLinkService feedLinks,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     IFileService fileService,
@@ -133,8 +134,16 @@ internal sealed class AdminSessionService(
                 // Carried so the grid Excel export round-trips them.
                 session.Description,
                 session.DescriptionArabic,
-                session.LiveStreamUrl,
-                session.LiveSignLanguageUrl,
+                // The feeds are file-store rows; the wire keeps carrying the URL
+                // itself because both clients classify a feed by reading it.
+                dbContext.StoredFiles
+                    .Where(f => f.Id == session.LiveStreamFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
+                dbContext.StoredFiles
+                    .Where(f => f.Id == session.LiveSignLanguageFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
                 session.SeatSelectionModeOverride,
@@ -177,7 +186,7 @@ internal sealed class AdminSessionService(
         // with a real number, that changing the hall or the window will destroy
         // it. One grouped round-trip; no extra endpoint and no extra permission.
         var (reservations, adminBlocks) = await CountActiveHoldingAsync(id, cancellationToken);
-        return ToDetail(session) with
+        return (await ToDetailAsync(session, cancellationToken)) with
         {
             ActiveReservationCount = reservations,
             ActiveAdminBlockCount = adminBlocks,
@@ -195,7 +204,7 @@ internal sealed class AdminSessionService(
             .AsNoTracking()
             .Where(reservation =>
                 reservation.SessionId == sessionId && reservation.ReleasedAt == null)
-            .GroupBy(reservation => reservation.ReservedForUserId == null)
+            .GroupBy(reservation => reservation.ReservedForProfileId == null)
             .Select(group => new { IsAdminBlock = group.Key, Count = group.Count() })
             .ToListAsync(cancellationToken);
         return (
@@ -281,9 +290,8 @@ internal sealed class AdminSessionService(
             Start = request.Start,
             End = request.End,
             CapacityOverride = request.CapacityOverride,
-            // Live broadcast stream URLs (manual stub provider).
-            LiveStreamUrl = NullIfBlank(request.LiveStreamUrl),
-            LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl),
+            // The live feeds are set after the row exists, below: a file needs an
+            // owner id, and the session has none until it is saved.
             // AI live-caption text (manual stub provider, bilingual).
             LiveCaptions = NullIfBlank(request.LiveCaptions),
             LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic),
@@ -330,6 +338,16 @@ internal sealed class AdminSessionService(
             });
         }
         dbContext.Sessions.Add(session);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        // After the save, because a file row needs a real owner id and the session
+        // has none until it exists. A blank URL leaves the pointer null.
+        session.LiveStreamFileId = await feedLinks.SetAsync(
+            FileService.SessionLiveStream, session.Id,
+            request.LiveStreamUrl, actorUserId, cancellationToken);
+        session.LiveSignLanguageFileId = await feedLinks.SetAsync(
+            FileService.SessionSignLanguage, session.Id,
+            request.LiveSignLanguageUrl, actorUserId, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteSuccessAsync(
@@ -417,7 +435,7 @@ internal sealed class AdminSessionService(
                 .CountAsync(reservation =>
                     reservation.SessionId == id
                     && reservation.ReleasedAt == null
-                    && reservation.ReservedForUserId != null,
+                    && reservation.ReservedForProfileId != null,
                     cancellationToken);
             if (heldVisitorBookings > 0)
             {
@@ -515,9 +533,14 @@ internal sealed class AdminSessionService(
             session.RatingPromptSent = null;
         }
         session.CapacityOverride = request.CapacityOverride;
-        // Live broadcast stream URLs (manual stub provider).
-        session.LiveStreamUrl = NullIfBlank(request.LiveStreamUrl);
-        session.LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl);
+        // The live feeds become file-store rows, which validates each URL against
+        // the same rule the players apply instead of storing whatever was typed.
+        session.LiveStreamFileId = await feedLinks.SetAsync(
+            FileService.SessionLiveStream, session.Id,
+            request.LiveStreamUrl, actorUserId, cancellationToken);
+        session.LiveSignLanguageFileId = await feedLinks.SetAsync(
+            FileService.SessionSignLanguage, session.Id,
+            request.LiveSignLanguageUrl, actorUserId, cancellationToken);
         // AI live-caption text (manual stub provider, bilingual).
         session.LiveCaptions = NullIfBlank(request.LiveCaptions);
         session.LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic);
@@ -564,7 +587,7 @@ internal sealed class AdminSessionService(
         // Record WHAT was destroyed as its own audit row, and hand the counts back on
         // the response so the Control Panel can say so.
         var releasedForVisitors = releasedReservations
-            .Count(reservation => reservation.ReservedForUserId is not null);
+            .Count(reservation => reservation.ReservedForProfileId is not null);
         var releasedAdminBlocks = releasedReservations.Count - releasedForVisitors;
         if (releasedReservations.Count > 0)
         {
@@ -625,7 +648,7 @@ internal sealed class AdminSessionService(
             .CountAsync(reservation =>
                 reservation.SessionId == id
                 && reservation.ReleasedAt == null
-                && reservation.ReservedForUserId != null,
+                && reservation.ReservedForProfileId != null,
                 cancellationToken);
         if (activeBookings > 0)
         {
@@ -676,8 +699,12 @@ internal sealed class AdminSessionService(
     /// <summary>Everyone who must be told a session was cancelled: the holders of
     /// an active seat reservation, plus everyone who favourited it. Both audiences lose
     /// the session card from their app agenda the moment the row is hidden, and neither
-    /// was told anything before. Distinct user ids, both queries on the App DB only
-    /// (a favourite / reservation carries a bare Guid to the Identity DB).</summary>
+    /// was told anything before. Distinct ACCOUNT ids, because that is what a notice is
+    /// delivered to; both queries stay on the App DB.
+    ///
+    /// <para>A booking is held by an attendee PROFILE, so the booked half joins
+    /// through UserProfile to reach an account. A holder with no account drops out:
+    /// the notice would have nowhere to go.</para></summary>
     private async Task<List<Guid>> ResolveCancellationAudienceAsync(
         Guid sessionId, CancellationToken cancellationToken)
     {
@@ -686,8 +713,13 @@ internal sealed class AdminSessionService(
             .Where(reservation =>
                 reservation.SessionId == sessionId
                 && reservation.ReleasedAt == null
-                && reservation.ReservedForUserId != null)
-            .Select(reservation => reservation.ReservedForUserId!.Value)
+                && reservation.ReservedForProfileId != null)
+            .Join(dbContext.UserProfiles.AsNoTracking(),
+                reservation => reservation.ReservedForProfileId!.Value,
+                profile => profile.Id,
+                (reservation, profile) => profile.UserId)
+            .Where(userId => userId != null)
+            .Select(userId => userId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
 
@@ -764,7 +796,7 @@ internal sealed class AdminSessionService(
         var from = session.Status;
         if (from == status)
         {
-            return ToDetail(session); // idempotent — nothing changed
+            return await ToDetailAsync(session, cancellationToken); // idempotent — nothing changed
         }
 
         if (!AllowedTransitions.Contains((from, status)))
@@ -802,7 +834,7 @@ internal sealed class AdminSessionService(
             "Admin {ActorId} moved Session {Code} ({Id}) {From} -> {To}",
             actorUserId, session.Code, session.Id, from, status);
 
-        return ToDetail(session);
+        return await ToDetailAsync(session, cancellationToken);
     }
 
     public async Task<AdminSessionDetail> UploadRecordingAsync(
@@ -819,15 +851,15 @@ internal sealed class AdminSessionService(
         // Stream the bytes into the unified StoredFile store (Internal
         // tier, plaintext + seekable for Range streaming, owner = the session). The
         // store never buffers the whole video and computes the SHA-256 on the fly;
-        // RecordingStoredFileName is repurposed as the bare-Guid pointer + "has
-        // recording" sentinel. The malware scan is skipped (size-capped policy).
-        var priorPointer = session.RecordingStoredFileName;
+        // RecordingFileId is the key + the "has recording" sentinel. The malware
+        // scan is skipped (size-capped policy).
+        var priorFileId = session.RecordingFileId;
         var result = await fileService.CreateStreamedAsync(
             FileService.SessionRecording, session.Id, content, fileName, contentType,
             System.IO.Path.GetExtension(fileName), actorUserId, cancellationToken);
 
         var now = timeProvider.SimfNow();
-        session.RecordingStoredFileName = result.Id.ToString();
+        session.RecordingFileId = result.Id;
         session.RecordingFileName = fileName;
         session.RecordingContentType = contentType;
         session.RecordingSizeBytes = result.SizeBytes;
@@ -838,7 +870,7 @@ internal sealed class AdminSessionService(
 
         // Retire the prior recording (best-effort — the new one is the committed
         // source of truth; SessionRecording is DeletableDefault:true).
-        await RetireRecordingAsync(priorPointer, result.Id, actorUserId, cancellationToken);
+        await RetireRecordingAsync(priorFileId, result.Id, actorUserId, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.SessionRecordingUploaded,
@@ -850,7 +882,7 @@ internal sealed class AdminSessionService(
             "Admin {ActorId} uploaded recording for Session {Code} ({Id}), {Bytes} bytes",
             actorUserId, session.Code, session.Id, sizeBytes);
 
-        return ToDetail(session);
+        return await ToDetailAsync(session, cancellationToken);
     }
 
     public async Task<AdminSessionDetail> DeleteRecordingAsync(
@@ -860,13 +892,13 @@ internal sealed class AdminSessionService(
     {
         var session = await LoadFullAsync(id, cancellationToken);
 
-        if (session.RecordingStoredFileName is null)
+        if (session.RecordingFileId is null)
         {
-            return ToDetail(session); // idempotent — nothing to delete
+            return await ToDetailAsync(session, cancellationToken); // idempotent — nothing to delete
         }
 
-        var storedFileName = session.RecordingStoredFileName;
-        session.RecordingStoredFileName = null;
+        var priorFileId = session.RecordingFileId;
+        session.RecordingFileId = null;
         session.RecordingFileName = null;
         session.RecordingContentType = null;
         session.RecordingSizeBytes = null;
@@ -877,7 +909,7 @@ internal sealed class AdminSessionService(
         // fails the app already sees "no recording" and only an orphan file
         // is left behind (harmless), never a row pointing at a missing file.
         await dbContext.SaveChangesAsync(cancellationToken);
-        await RetireRecordingAsync(storedFileName, null, actorUserId, cancellationToken);
+        await RetireRecordingAsync(priorFileId, null, actorUserId, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.SessionRecordingDeleted,
@@ -885,17 +917,17 @@ internal sealed class AdminSessionService(
             $"id={session.Id}; code={session.Code}",
             cancellationToken);
 
-        return ToDetail(session);
+        return await ToDetailAsync(session, cancellationToken);
     }
 
     /// <summary>Best-effort retirement of a recording's <c>StoredFile</c>
     /// (soft-delete + byte-unlink). The row is already updated (source of truth), so a
     /// delete failure must not fail the operation — worst case leaves one orphan blob.
-    /// No-op when the pointer is absent/unparseable or is the just-uploaded file.</summary>
+    /// No-op when there was no prior file, or it is the just-uploaded one.</summary>
     private async Task RetireRecordingAsync(
-        string? priorPointer, Guid? newFileId, Guid actorUserId, CancellationToken cancellationToken)
+        Guid? priorFileId, Guid? newFileId, Guid actorUserId, CancellationToken cancellationToken)
     {
-        if (!Guid.TryParse(priorPointer, out var old) || old == newFileId) { return; }
+        if (priorFileId is not { } old || old == newFileId) { return; }
         try
         {
             await fileService.DeleteAsync(old, actorUserId, cancellationToken);
@@ -968,7 +1000,7 @@ internal sealed class AdminSessionService(
                 "لا يمكن تعيين الجلسة كمنعقدة قبل أن تبدأ.");
         }
         if (target is SessionStatus.Recorded or SessionStatus.Published
-            && session.RecordingStoredFileName is null)
+            && session.RecordingFileId is null)
         {
             throw new ApiException(
                 ErrorCodes.SessionStatusGuardFailed, 400,
@@ -1294,15 +1326,27 @@ internal sealed class AdminSessionService(
     private async Task TryNotifyBookingReleasedAsync(
         SeatReservation reservation, Session session, CancellationToken cancellationToken)
     {
-        if (reservation.ReservedForUserId is not { } userId)
+        if (reservation.ReservedForProfileId is not { } holderProfileId)
         {
             return; // an admin row-block has no attendee to notify
+        }
+
+        // The notice goes to an ACCOUNT. A walk-in holds a seat and no account, so
+        // there is nobody to tell; the release itself already stands.
+        var userId = await dbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => profile.Id == holderProfileId)
+            .Select(profile => profile.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (userId is not { } recipientId)
+        {
+            return;
         }
         try
         {
             await notifications.DispatchAsync(new NotificationRequest
             {
-                UserId = userId,
+                UserId = recipientId,
                 Kind = NotificationKind.BookingRejected,
                 Title = "Seat reservation released",
                 TitleArabic = "تم إلغاء حجز المقعد",
@@ -1329,7 +1373,8 @@ internal sealed class AdminSessionService(
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private AdminSessionDetail ToDetail(Session session)
+    private async Task<AdminSessionDetail> ToDetailAsync(
+        Session session, CancellationToken cancellationToken)
     {
         var hallSeats = session.Hall?.Capacity ?? 0;
         var effective = session.CapacityOverride ?? hallSeats;
@@ -1379,12 +1424,12 @@ internal sealed class AdminSessionService(
             session.CategoryId,
             session.Status,
             session.PublishedAt,
-            session.RecordingStoredFileName is not null,
+            session.RecordingFileId is not null,
             session.RecordingFileName,
             session.RecordingSizeBytes,
             session.RecordingUploadedAt,
-            session.LiveStreamUrl,
-            session.LiveSignLanguageUrl,
+            await feedLinks.ResolveAsync(session.LiveStreamFileId, cancellationToken),
+            await feedLinks.ResolveAsync(session.LiveSignLanguageFileId, cancellationToken),
             // AI live-caption text.
             session.LiveCaptions,
             session.LiveCaptionsArabic,

@@ -11,7 +11,7 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart'
-    show avatarBustProvider, referenceNumberProvider;
+    show avatarBustProvider, myProfileProvider, referenceNumberProvider;
 import 'package:simf_app/features/myarea/data/liveness.dart'
     show CapturedSelfie;
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
@@ -86,7 +86,15 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     return auth is AuthStateSignedIn ? auth.session.user : null;
   }
 
-  Future<void> _refresh() => refreshAsync(ref, myAreaDashboardProvider.future);
+  /// The pull-to-refresh entry point. Drops the cached profile read as well as
+  /// re-running the dashboard, so the identity card's reference number
+  /// refreshes with the rest of the card instead of being the one stale line on
+  /// it — `myProfileProvider` is a SHARED cache, and a pull that does not
+  /// invalidate it leaves every selector on the pre-pull row.
+  Future<void> _refresh() async {
+    ref.invalidate(myProfileProvider);
+    await refreshAsync(ref, myAreaDashboardProvider.future);
+  }
 
   /// Runs the guided face-capture / liveness flow (D-404) and uploads the
   /// returned selfie. On success the avatar bust token is bumped so every

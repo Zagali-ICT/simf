@@ -76,6 +76,13 @@ class NotificationCategoryIcon extends StatelessWidget {
         return (SimfTokens.accent, Icons.how_to_reg_rounded);
       case 'AccountTwoFactorReset':
         return (SimfTokens.accent, Icons.shield_rounded);
+      // A biometric credential was bound to the account. Grouped with the
+      // credential-info kinds rather than the green "completions", because the
+      // row exists for the case where the owner did NOT do it: an enrolled
+      // device key outlives a session revoke, so this is the notice that has to
+      // read as something to check, not something to celebrate.
+      case 'DeviceKeyEnrolled':
+        return (SimfTokens.accent, Icons.fingerprint_rounded);
       case 'CredentialEmailVerificationSent':
       case 'CredentialEmailVerificationResent':
         return (SimfTokens.accent, Icons.mark_email_unread_rounded);

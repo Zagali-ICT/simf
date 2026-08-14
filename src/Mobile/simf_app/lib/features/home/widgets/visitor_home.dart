@@ -196,12 +196,13 @@ class VisitorHome extends StatelessWidget {
               onTap: () => context.pushNamed(RouteNames.sendQuestion),
             ),
             const SizedBox(height: SimfTokens.space6),
-            // News tiles (758:1228, h80): right→left اللقاءات الثنائية ·
-            // الأرشيف. D-745 — "اللقاءات الثنائية" now opens the VIP-only
-            // bilateral-meetings page ([RouteNames.meetings], Figma 1408:9726)
-            // and is hidden for non-VIP; the requests history moved to My-Area.
-            // When hidden, الأرشيف fills the row on its own (SimfTileRow
-            // expands each child).
+            // News tiles (758:1228, h80): right→left
+            // اللقاءات الثنائية · الأرشيف.
+            // D-745 — "اللقاءات الثنائية" now opens the bilateral-meetings
+            // page ([RouteNames.meetings], Figma 1408:9726) and is hidden for
+            // accounts without per-user meeting eligibility (D-760); the
+            // requests history moved to My-Area. When hidden, الأرشيف fills
+            // the row on its own (SimfTileRow expands each child).
             SimfTileRow(
               children: <Widget>[
                 if (canRequestMeetings)

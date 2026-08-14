@@ -88,17 +88,22 @@ public class SimfApiFactory : WebApplicationFactory<Program>
             "Trusted_Connection=True;TrustServerCertificate=True");
         // The super-admin seed settings, pinned so the suite is hermetic.
         //
-        // Each is set TWICE, unprefixed and `SIMF_`-prefixed, because Program.cs
-        // adds `AddEnvironmentVariables("SIMF_")` AFTER the host's default
-        // unprefixed provider — so for any key that has a `SIMF_` form on the
-        // machine, that form wins and an unprefixed pin here is silently ignored.
-        // A developer box is documented to export
-        // `SIMF_SuperAdmin__PasswordChangeRequired=false` (so the seeded CP login
-        // is not forced to rotate), which overrode the `SuperAdminOptions` default
-        // of true and failed `IdentitySeederTests.SeedAsync_creates_the_super_admin`
-        // — a test whose result depended on whose machine ran it. Pinning both
-        // forms closes that for every one of these settings, not just the one that
-        // happened to be set here.
+        // Each is set TWICE, unprefixed and `SIMF_API_`-prefixed, because
+        // Program.cs adds `AddEnvironmentVariables("SIMF_API_")` AFTER the host's
+        // default unprefixed provider — so for any key that has a prefixed form
+        // on the machine, that form wins and an unprefixed pin here is silently
+        // ignored. A developer box is documented to export
+        // `SIMF_API_SuperAdmin__PasswordChangeRequired=false` (so the seeded CP
+        // login is not forced to rotate), which overrode the `SuperAdminOptions`
+        // default of true and failed
+        // `IdentitySeederTests.SeedAsync_creates_the_super_admin` — a test whose
+        // result depended on whose machine ran it. Pinning both forms closes that
+        // for every one of these settings, not just the one that happened to be
+        // set here.
+        //
+        // The prefix moved from `SIMF_` to `SIMF_API_` on 2026-08-12, when each
+        // application took its own namespace. Pinning the old form here would now
+        // do nothing at all, and the host-order bug above would silently return.
         foreach (var (key, value) in new[]
         {
             ("SuperAdmin__Email", "superadmin@simf.test"),
@@ -108,7 +113,7 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         })
         {
             Environment.SetEnvironmentVariable(key, value);
-            Environment.SetEnvironmentVariable("SIMF_" + key, value);
+            Environment.SetEnvironmentVariable("SIMF_API_" + key, value);
         }
         Environment.SetEnvironmentVariable("RateLimit__PermitLimit", "100000");
         // H7 — D-062: the new per-email partition (auth-email policy)

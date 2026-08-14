@@ -29,7 +29,6 @@ public sealed class ExportMediaPartnersEndpoint(IAdminMediaPartnerService servic
     [
         new("Name", row => row.Name),
         new("NameArabic", row => row.NameArabic),
-        new("LogoRelativePath", row => row.LogoRelativePath),
         new("Url", row => row.Url),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
@@ -82,7 +81,6 @@ public sealed class ImportMediaPartnersEndpoint(IAdminMediaPartnerService servic
         await service.CreateAsync(actorId, new AdminCreateMediaPartnerRequest(
             Name: name,
             NameArabic: nameArabic,
-            LogoRelativePath: NullIfBlank(row.Cells.GetValueOrDefault("LogoRelativePath", string.Empty)),
             Url: NullIfBlank(row.Cells.GetValueOrDefault("Url", string.Empty)),
             DisplayOrder: int.TryParse(
                 row.Cells.GetValueOrDefault("DisplayOrder", string.Empty), out var order) ? order : 0),

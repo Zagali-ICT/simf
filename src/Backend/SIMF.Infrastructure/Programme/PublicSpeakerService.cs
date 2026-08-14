@@ -47,7 +47,6 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 // (was a separate dictionary-stitch round-trip).
                 CountryNameEn = speaker.Country != null ? speaker.Country.Name : null,
                 CountryNameAr = speaker.Country != null ? speaker.Country.NameArabic : null,
-                speaker.PhotoRelativePath,
                 speaker.DisplayOrder,
             })
             .ToListAsync(cancellationToken);
@@ -71,7 +70,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             .Select(row => new PublicSpeakerSummary(
                 row.Id, row.Name, row.NameArabic, row.Rank, row.RankArabic,
                 row.CountryId, row.CountryNameEn, row.CountryNameAr,
-                row.PhotoRelativePath, row.DisplayOrder,
+                null, row.DisplayOrder,
                 withPhotoAsset.Contains(row.Id)))
             .ToList();
 
@@ -109,7 +108,6 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 row.LinkedInUrl,
                 row.XUrl,
                 row.WebsiteUrl,
-                row.PhotoRelativePath,
                 row.DisplayOrder,
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -166,7 +164,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             publishSocial ? speaker.LinkedInUrl : null,
             publishSocial ? speaker.XUrl : null,
             publishSocial ? speaker.WebsiteUrl : null,
-            speaker.PhotoRelativePath,
+            null,
             speaker.DisplayOrder,
             sessions);
     }

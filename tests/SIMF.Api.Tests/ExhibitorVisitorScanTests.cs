@@ -596,9 +596,11 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var visitorProfileId =
+            await TestAttendeeProfiles.EnsureForAccountAsync(appDb, visitorUserId);
         return await appDb.ExhibitorVisitorScans
             .AsNoTracking()
-            .Where(scan => scan.VisitorUserId == visitorUserId && scan.IsActive)
+            .Where(scan => scan.VisitorProfileId == visitorProfileId && scan.IsActive)
             .ToListAsync();
     }
 
@@ -678,6 +680,9 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
             PlaceOfBirth = string.Empty,
             IsActive = true,
             CreatedAt = SimfClock.Now,
+            // A badge exists only for an admitted attendee, and admission is
+            // read on the profile rather than the account.
+            AdmissionState = AccountState.Approved,
         });
         await appDb.SaveChangesAsync();
     }
@@ -688,11 +693,13 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var visitorProfileId =
+            await TestAttendeeProfiles.EnsureForAccountAsync(appDb, visitorUserId);
         appDb.ExhibitorVisitorScans.Add(new ExhibitorVisitorScan
         {
             Id = Guid.NewGuid(),
             ExhibitorUserId = exhibitorUserId,
-            VisitorUserId = visitorUserId,
+            VisitorProfileId = visitorProfileId,
             Note = "captured under the old rule",
             IsActive = true,
             CreatedAt = SimfClock.Now,

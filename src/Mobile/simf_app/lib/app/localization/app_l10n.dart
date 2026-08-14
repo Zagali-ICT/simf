@@ -609,6 +609,36 @@ class AppL10n {
         'Use your face or fingerprint to sign in next time — no password needed.',
       );
   String get biometricPromptEnable => _t('تفعيل', 'Enable');
+
+  // My Devices (S10) — every enrolled biometric credential on the account, with
+  // a per-row revoke. A device key outlives a session revoke, so the owner needs
+  // somewhere to see one they did not enrol.
+  String get myDevicesTitle => _t('أجهزتي', 'My devices');
+  String get myDevicesManage =>
+      _t('إدارة الأجهزة المسجّلة', 'Manage enrolled devices');
+  String get myDevicesEmpty => _t(
+        'لا توجد أجهزة مسجّلة للدخول ببصمة الوجه.',
+        'No devices are enrolled for biometric sign-in.',
+      );
+  String get myDevicesThisDevice => _t('هذا الجهاز', 'This device');
+  String get myDevicesUnnamed => _t('جهاز غير مسمّى', 'Unnamed device');
+  String get myDevicesAdded => _t('أُضيف في', 'Added');
+  String get myDevicesLastUsed => _t('آخر استخدام', 'Last used');
+  String get myDevicesNeverUsed => _t('لم يُستخدم بعد', 'Never used');
+  String get myDevicesRevoked => _t('ملغى', 'Revoked');
+  String get myDevicesRevokeTitle =>
+      _t('إلغاء هذا الجهاز؟', 'Remove this device?');
+  String get myDevicesRevokeBody => _t(
+        'لن يتمكن هذا الجهاز من الدخول ببصمة الوجه بعد الآن.',
+        'This device will no longer be able to sign in with biometrics.',
+      );
+  String get myDevicesRevokeThisDeviceBody => _t(
+        'هذا هو جهازك الحالي. سيتم إيقاف الدخول ببصمة الوجه عليه، وستحتاج إلى كلمة المرور في المرة القادمة.',
+        'This is the device you are using. Biometric sign-in will be turned off here and you will need your password next time.',
+      );
+  String get myDevicesRevokeConfirm => _t('إلغاء الجهاز', 'Remove device');
+  String get myDevicesRevokedToast =>
+      _t('تم إلغاء الجهاز', 'Device removed');
   String get biometricEnabledToast =>
       _t('تم تفعيل الدخول بالبصمة', 'Face ID sign-in enabled');
   String get biometricDisabledToast =>

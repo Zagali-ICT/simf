@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Domain.Files;
 using SIMF.Domain.Archive;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -21,7 +22,13 @@ internal sealed class ArchiveEditionConfiguration
         builder.Property(edition => edition.TitleAr).HasMaxLength(200).IsRequired();
         builder.Property(edition => edition.SummaryEn).HasMaxLength(1024);
         builder.Property(edition => edition.SummaryAr).HasMaxLength(1024);
-        builder.Property(edition => edition.CoverImageRelativePath).HasMaxLength(512);
+        // The cover image, in the one file store. Restrict: deleting a file must never
+        // delete the row that shows it.
+        builder.HasIndex(edition => edition.CoverImageFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(edition => edition.CoverImageFileId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // §9 (screen 24-01) — place + date label for the edition detail.
         builder.Property(edition => edition.LocationEn).HasMaxLength(256);

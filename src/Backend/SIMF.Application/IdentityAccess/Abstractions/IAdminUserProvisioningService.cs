@@ -134,11 +134,12 @@ public interface IAdminUserProvisioningService
     /// On-site walk-in registration for a Visitor or Other (drives the
     /// `kind` parameter). Single transaction:
     /// <list type="bullet">
-    ///   <item>Creates the SimfUser with <c>AccountState = Approved</c>
-    ///     (no pending queue — staff already verified the person in
-    ///     hand).</item>
     ///   <item>Creates the UserProfile with every form field, links the
-    ///     picked Interests, sets the ProfileTypeId, mints the QR id.</item>
+    ///     picked Interests and sets the ProfileTypeId. It lands
+    ///     <c>AdmissionState = PendingApproval</c> and mints NO QR id: the
+    ///     badge is the access key and is granted on approval, not at the
+    ///     desk. Arming walk-in mode's auto-approve is what collapses those
+    ///     two steps into one, and it is off by default.</item>
     ///   <item>Audits the registration (<c>Admin.WalkInRegistered</c>).</item>
     /// </list>
     /// Email is optional; when missing the implementation synthesizes
@@ -167,7 +168,12 @@ public interface IAdminUserProvisioningService
         AdminWalkInRegistrationRequest request,
         CancellationToken cancellationToken = default,
         bool? expectedIsVisitor = null,
-        string? presetQrId = null);
+        string? presetQrId = null,
+        // The attendee id an offline desk minted for the badge it printed. The
+        // desk is disconnected, so it generates one and encrypts it into the
+        // paper; the server has to create the record under that id or the badge
+        // already in someone's hand resolves to nobody. Empty means "mint one".
+        Guid presetProfileId = default);
 
     // -- Per-family avatar scope guard ----------------------------------------
 

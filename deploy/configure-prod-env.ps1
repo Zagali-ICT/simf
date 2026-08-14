@@ -11,18 +11,23 @@
 #   3. VERIFY - report, per key, its NAME and whether it is set. Never a value.
 #   4. RESTART the IIS app pools and health-check the API.
 #
-# Run as Administrator on the SIMF server:
+# Run as Administrator on the SIMF server, naming which server it is:
 #
-#     .\deploy\configure-prod-env.ps1
-#     .\deploy\configure-prod-env.ps1 -VerifyOnly          # audit, change nothing
-#     .\deploy\configure-prod-env.ps1 -SkipPrompts         # keys + verify only
+#     .\deploy\configure-prod-env.ps1 -Target Api
+#     .\deploy\configure-prod-env.ps1 -Target Cp -VerifyOnly    # audit, change nothing
+#     .\deploy\configure-prod-env.ps1 -Target Api -SkipPrompts  # keys + verify only
+#
+# Each application reads its OWN environment prefix (SIMF_API_, SIMF_CP_,
+# SIMF_WEB_, SIMF_EDGE_), so the concrete variable name depends on the server.
+# The inventory below therefore stores the UN-prefixed key and composes the name
+# for whichever packages are in scope.
 #
 # ############################################################################
 # # THE ONE DANGEROUS OPERATION: ROTATING AN ENCRYPTION KEY                  #
 # #                                                                          #
-# # SIMF_FileStorage__EncryptionKey is the KEK for the centralized file      #
-# # store (D-568). SIMF_Storage__UserIdDocumentEncryptionKey encrypts the    #
-# # UserProfile PII columns at rest (NCA A2-10). Replacing EITHER makes      #
+# # SIMF_API_FileStorage__EncryptionKey is the KEK for the centralized file  #
+# # store (D-568). SIMF_API_Storage__UserIdDocumentEncryptionKey encrypts    #
+# # the UserProfile PII columns at rest (NCA A2-10). Replacing EITHER makes  #
 # # everything already encrypted under the old key PERMANENTLY UNREADABLE -  #
 # # every stored file, every national ID / Iqama / passport / mobile.        #
 # #                                                                          #
@@ -35,15 +40,29 @@
 # straight to the Machine environment and the local variable is cleared.
 #
 # Companion files:
-#   deploy\set-env.template.ps1      - the full variable list for API + CP + Web
-#   deploy\clear-env.ps1             - remove the Machine-scope SIMF_* variables
-#   deploy\ops.ps1                   - install / start / stop the IIS sites
+#   deploy\set-env-api.template.ps1   - the API server's variables
+#   deploy\set-env-cp.template.ps1    - the Control Panel server's variables
+#   deploy\set-env-web.template.ps1   - the Website server's variables
+#   deploy\set-env-edge.template.ps1  - the mobile edge server's variables
+#   deploy\clear-env.ps1              - remove the Machine-scope SIMF_* variables
+#   deploy\ops.ps1                    - install / start / stop the IIS sites
 # =============================================================================
 
 #Requires -RunAsAdministrator
 
 [CmdletBinding()]
 param(
+    # Which server this is. Each package now deploys to its own box, so running
+    # the whole runbook everywhere would prompt an operator on the Website host
+    # for a database connection string it will never use - and, worse, write it
+    # into that host's environment. Naming the package asks only for what this
+    # server actually reads.
+    #
+    # 'All' keeps the pre-split behaviour for a single box that still runs
+    # everything, which is the estate this deployment is moving away from.
+    [ValidateSet('All', 'Api', 'Cp', 'Web', 'Edge')]
+    [string]$Target = 'All',
+
     # Report what is set and what is missing, then exit. Changes nothing.
     [switch]$VerifyOnly,
 
@@ -60,8 +79,11 @@ param(
     # "localhost". There is deliberately no option to skip validation.
     [string]$HealthUrl = "https://api.simrsnf.com/health",
 
-    # IIS app pools to recycle so w3wp picks up the new Machine variables.
-    [string[]]$AppPools = @("SIMF.API", "SIMF.CP", "SIMF.WEB")
+    # IIS app pools to recycle so w3wp picks up the new Machine variables. Left
+    # empty, it recycles the pool(s) matching -Target, because on a per-server
+    # estate the other pools do not exist on this box and naming them only
+    # produces warnings. Pass an explicit list to override.
+    [string[]]$AppPools = @()
 )
 
 $ErrorActionPreference = "Stop"
@@ -119,25 +141,29 @@ function New-Base64AesKey {
 # already-encrypted data, so the skip-if-present rule is absolute.
 $generatedKeys = @(
     [pscustomobject]@{
-        Name         = "SIMF_FileStorage__EncryptionKey"
+        Key         = "FileStorage__EncryptionKey"
+        Packages     = @('Api')
         Purpose      = "KEK for the centralized file store (D-568)"
         Catastrophic = $true
         Consequence  = "every file already in the store becomes undecryptable"
     }
     [pscustomobject]@{
-        Name         = "SIMF_Storage__UserIdDocumentEncryptionKey"
+        Key         = "Storage__UserIdDocumentEncryptionKey"
+        Packages     = @('Api')
         Purpose      = "AES-256-GCM key for the UserProfile PII columns (NCA A2-10)"
         Catastrophic = $true
         Consequence  = "every stored national ID / Iqama / passport / mobile becomes undecryptable"
     }
     [pscustomobject]@{
-        Name         = "SIMF_Ai__PromptHash__Secret"
+        Key         = "Ai__PromptHash__Secret"
+        Packages     = @('Api')
         Purpose      = "HMAC secret for the AI prompt-hash audit trail"
         Catastrophic = $false
         Consequence  = "historical AI audit hashes stop correlating with new ones"
     }
     [pscustomobject]@{
-        Name         = "SIMF_Jwt__SigningKey"
+        Key         = "Jwt__SigningKey"
+        Packages     = @('Api')
         Purpose      = "symmetric signing key for access / refresh tokens"
         Catastrophic = $false
         Consequence  = "every issued token is invalidated and all users are signed out"
@@ -146,14 +172,14 @@ $generatedKeys = @(
 
 # Cannot be generated - prompted for (secret) or typed (non-secret).
 $promptedValues = @(
-    [pscustomobject]@{ Name = "SIMF_ConnectionStrings__SimfIdentityDb"; Secret = $true;  Prompt = "SIMF_Identity connection string" }
-    [pscustomobject]@{ Name = "SIMF_ConnectionStrings__SimfAppDb";      Secret = $true;  Prompt = "SIMF_App connection string" }
-    [pscustomobject]@{ Name = "SIMF_Email__Host";                       Secret = $false; Prompt = "SMTP host" }
-    [pscustomobject]@{ Name = "SIMF_Email__User";                       Secret = $true;  Prompt = "SMTP user" }
-    [pscustomobject]@{ Name = "SIMF_Email__Password";                   Secret = $true;  Prompt = "SMTP password" }
-    [pscustomobject]@{ Name = "SIMF_SuperAdmin__TempPassword";          Secret = $true;  Prompt = "bootstrap super-admin password (must NOT be the committed default)" }
-    [pscustomobject]@{ Name = "SIMF_SuperAdmin__TotpSecret";            Secret = $true;  Prompt = "bootstrap super-admin TOTP seed (base32)" }
-    [pscustomobject]@{ Name = "SIMF_MeetingLinks__PublicWebBaseUrl";    Secret = $false; Prompt = "public Website origin, e.g. https://simf.example.sa" }
+    [pscustomobject]@{ Key = "ConnectionStrings__SimfIdentityDb"; Packages = @('Api'); Secret = $true;  Prompt = "SIMF_Identity connection string" }
+    [pscustomobject]@{ Key = "ConnectionStrings__SimfAppDb"; Packages = @('Api');      Secret = $true;  Prompt = "SIMF_App connection string" }
+    [pscustomobject]@{ Key = "Email__Host"; Packages = @('Api');                       Secret = $false; Prompt = "SMTP host" }
+    [pscustomobject]@{ Key = "Email__User"; Packages = @('Api');                       Secret = $true;  Prompt = "SMTP user" }
+    [pscustomobject]@{ Key = "Email__Password"; Packages = @('Api');                   Secret = $true;  Prompt = "SMTP password" }
+    [pscustomobject]@{ Key = "SuperAdmin__TempPassword"; Packages = @('Api');          Secret = $true;  Prompt = "bootstrap super-admin password (must NOT be the committed default)" }
+    [pscustomobject]@{ Key = "SuperAdmin__TotpSecret"; Packages = @('Api');            Secret = $true;  Prompt = "bootstrap super-admin TOTP seed (base32)" }
+    [pscustomobject]@{ Key = "MeetingLinks__PublicWebBaseUrl"; Packages = @('Api');    Secret = $false; Prompt = "public Website origin, e.g. https://simf.example.sa" }
     # Storage:AvatarBase and Storage:UserIdDocumentBase were prompted for here
     # until 2026-08-06. They named the roots of bespoke per-asset filesystem
     # stores that D-568 replaced with the unified StoredFile store, and by then
@@ -163,27 +189,81 @@ $promptedValues = @(
     # ID document, media image and speaker photo lands under it. Left unset it
     # silently falls back to %ProgramData%\SIMF\files, which is a real location
     # an operator never chose and may not be backing up.
-    [pscustomobject]@{ Name = "SIMF_FileStorage__RootPath";             Secret = $false; Prompt = "file-store root for ALL uploads, e.g. C:\SIMF\Storage\files" }
-    [pscustomobject]@{ Name = "SIMF_Storage__LogDirectory";             Secret = $false; Prompt = "log directory, e.g. C:\SIMF\Storage\logs" }
+    [pscustomobject]@{ Key = "FileStorage__RootPath"; Packages = @('Api');             Secret = $false; Prompt = "file-store root for ALL uploads, e.g. C:\SIMF\Storage\files" }
+    [pscustomobject]@{ Key = "Storage__LogDirectory"; Packages = @('Api', 'Cp', 'Web', 'Edge');             Secret = $false; Prompt = "log directory, e.g. C:\SIMF\Storage\logs" }
     # The Control Panel and Website refuse to start without this outside
     # Development: it is the shared Data Protection key ring behind the auth
     # cookie and every antiforgery token, and a per-node ring breaks the moment a
     # second instance exists. A UNC path once the tiers are separated.
-    [pscustomobject]@{ Name = "SIMF_DataProtection__KeyRingPath";       Secret = $false; Prompt = "shared key-ring directory, e.g. C:\SIMF\Storage\keyring" }
+    [pscustomobject]@{ Key = "DataProtection__KeyRingPath"; Packages = @('Cp', 'Web');       Secret = $false; Prompt = "shared key-ring directory, e.g. C:\SIMF\Storage\keyring" }
     # The mobile edge refuses to start without both of these. The destination is
-    # the API's PRIVATE address: pointing it at the public name sends the edge
-    # back through the load balancer to itself.
-    [pscustomobject]@{ Name = "SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address"; Secret = $false; Prompt = "API PRIVATE address for the mobile edge, e.g. https://api-int.simrsnf.local/" }
-    [pscustomobject]@{ Name = "SIMF_ReverseProxy__KnownProxies__0";     Secret = $false; Prompt = "address of the WAF / load balancer in front" }
+    # the API's address inside the estate; never edge.simrsnf.com, which is the
+    # edge itself and would send it back through the load balancer to itself.
+    [pscustomobject]@{ Key = "ReverseProxy__Clusters__api__Destinations__primary__Address"; Packages = @('Edge'); Secret = $false; Prompt = "API address for the mobile edge to forward to, e.g. https://api.simrsnf.com/" }
+    [pscustomobject]@{ Key = "ReverseProxy__KnownProxies__0"; Packages = @('Api', 'Edge');     Secret = $false; Prompt = "address of the WAF / load balancer in front" }
 )
 
-# Reported by the verify pass but never set here (see set-env.template.ps1).
+# Reported by the verify pass but never set here (see the per-package templates).
+# Carries Packages for the same reason the others do: without it a run scoped to
+# the Website would report SIMF_WEB_Cors__WebAppOrigins__0 as MISSING, a variable
+# that host has no reason to hold.
 $alsoVerified = @(
-    "ASPNETCORE_ENVIRONMENT"
-    "SIMF_Ai__DefaultProvider"
-    "SIMF_ReverseProxy__KnownProxies__0"
-    "SIMF_Cors__WebAppOrigins__0"
+    [pscustomobject]@{ Key = 'ASPNETCORE_ENVIRONMENT';        Packages = @('Api', 'Cp', 'Web', 'Edge') }
+    [pscustomobject]@{ Key = 'Ai__DefaultProvider';           Packages = @('Api') }
+    [pscustomobject]@{ Key = 'ReverseProxy__KnownProxies__0'; Packages = @('Api', 'Edge') }
+    [pscustomobject]@{ Key = 'Cors__WebAppOrigins__0';        Packages = @('Api') }
 )
+
+# -----------------------------------------------------------------------------
+# Scope to this server
+# -----------------------------------------------------------------------------
+# Each package deploys to its own box. Without this, running the runbook on the
+# Website host would prompt for a database connection string that host never
+# reads, and then write it into that host's Machine environment - spreading a
+# credential to a server with no reason to hold one.
+# Each application reads its OWN prefix, so one logical setting can have more
+# than one concrete variable name: Storage__LogDirectory exists as
+# SIMF_API_Storage__LogDirectory on the API box and SIMF_CP_Storage__LogDirectory
+# on the Control Panel box, and on a single box that still runs both it is two
+# variables holding two independently-chosen paths. That is the whole point of
+# the per-application namespace, so the inventory above stores the UN-prefixed
+# key and the concrete names are composed here.
+$prefixFor = @{ Api = 'SIMF_API_'; Cp = 'SIMF_CP_'; Web = 'SIMF_WEB_'; Edge = 'SIMF_EDGE_' }
+
+function Expand-ForTarget($entries, [string]$scope) {
+    $expanded = @()
+    foreach ($entry in $entries) {
+        foreach ($package in $entry.Packages) {
+            if ($scope -ne 'All' -and $package -ne $scope) { continue }
+            $copy = $entry.PSObject.Copy()
+            $copy | Add-Member -NotePropertyName Name `
+                -NotePropertyValue ($prefixFor[$package] + $entry.Key) -Force
+            $copy | Add-Member -NotePropertyName Package -NotePropertyValue $package -Force
+            $expanded += $copy
+        }
+    }
+    return @($expanded)
+}
+
+$generatedKeys  = Expand-ForTarget $generatedKeys  $Target
+$promptedValues = Expand-ForTarget $promptedValues $Target
+
+# ASPNETCORE_ENVIRONMENT is host-level and never prefixed; everything else is
+# composed per package exactly like the entries above.
+$alsoVerified = @(Expand-ForTarget $alsoVerified $Target |
+    ForEach-Object {
+        if ($_.Key -eq 'ASPNETCORE_ENVIRONMENT') { 'ASPNETCORE_ENVIRONMENT' } else { $_.Name }
+    } | Select-Object -Unique)
+
+Write-Host ("Scoped to {0}: {1} generated key(s), {2} prompted value(s)." `
+    -f $Target, $generatedKeys.Count, $promptedValues.Count) -ForegroundColor DarkGray
+
+# Which pools to recycle, when the caller did not name them. One entry per
+# package, so a per-server run touches only the pool that exists on that box.
+if ($AppPools.Count -eq 0) {
+    $poolFor = @{ Api = "SIMF.API"; Cp = "SIMF.CP"; Web = "SIMF.WEB"; Edge = "SIMF.EDGE" }
+    $AppPools = if ($Target -eq 'All') { @($poolFor.Values) } else { @($poolFor[$Target]) }
+}
 
 Write-Host "=== SIMF production environment runbook (Machine scope) ===" -ForegroundColor Cyan
 if ($VerifyOnly) {
@@ -288,7 +368,7 @@ if ($missing -eq 0) {
     Write-Host "All tracked variables are set." -ForegroundColor Green
 }
 else {
-    Write-Warning "$missing variable(s) still missing - see deploy\set-env.template.ps1 for what each one does."
+    Write-Warning "$missing variable(s) still missing - see deploy\set-env-{api|cp|web|edge}.template.ps1 for what each one does."
 }
 
 if ($VerifyOnly) {
@@ -372,7 +452,7 @@ foreach ($attempt in 1..10) {
 
 if (-not $ok) {
     Write-Warning "The API did not report healthy. Check the API log under {Storage:LogDirectory}\SIMF.Api\."
-    Write-Warning "A boot gate refuses to start Production without SIMF_FileStorage__EncryptionKey, SIMF_Storage__UserIdDocumentEncryptionKey or SIMF_Ai__PromptHash__Secret."
+    Write-Warning "A boot gate refuses to start Production without SIMF_API_FileStorage__EncryptionKey, SIMF_API_Storage__UserIdDocumentEncryptionKey or SIMF_API_Ai__PromptHash__Secret."
     Write-Warning "If the failure is a TLS/trust error, the API certificate does not validate. FIX THE CERTIFICATE - there is deliberately no option to skip validation."
 }
 
