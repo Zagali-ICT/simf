@@ -142,7 +142,12 @@ self-signed-TLS handling), never a bare `Image.network` (D-422).
 `StoredFile` rows live in `SIMF_App`. Deploying the squashed `main` **drops both
 databases** (the documented DEPLOY-CRITICAL step) → recreate from baselines +
 seeders. **Seeders restore only reference/demo data**, and seeded speaker/sponsor
-images are **placeholder external URLs**, not stored files. So after a fresh deploy
+images are mostly absent: only the media-partner seed writes URLs (three
+`placehold.co` links), while the sponsor, speaker, news and archive seeds pass
+`NULL` and expect an upload through the CP. The speaker-photo seed is the one
+that does it properly, inserting real `StoredFiles` rows whose bytes ship with it.
+
+So after a fresh deploy
 there are **no uploaded files** and every StoredFile-backed asset serve returns
 **404** until the event content is re-entered and files re-uploaded through the CP.
 This is expected (data is disposable), **not** a store bug — the store correctly

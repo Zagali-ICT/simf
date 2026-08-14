@@ -396,7 +396,7 @@ Configurations are applied via `ApplyConfigurationsFromAssembly` from
 
 | Entity | Table | Key columns / notes |
 |--------|-------|---------------------|
-| `SimfUser` | AspNetUsers | `Id` (Guid); `DisplayName`, `AccountState`, `UserType`, `PasswordChangeRequired`, `SecurityStamp`, `PasswordChangedAtUtc`, `LastSuccessfulSignInAtUtc`, `AvatarRelativePath` |
+| `SimfUser` | AspNetUsers | `Id` (Guid); `DisplayName`, `AccountState`, `UserType`, `PasswordChangeRequired`, `SecurityStamp`, `PasswordChangedAtUtc`, `LastSuccessfulSignInAtUtc`, `AvatarFileId` (logical reference to `StoredFiles` in the App DB; no FK, D-157) |
 | `SimfRole` | AspNetRoles | `Id`; `IsBaseline` |
 | `Permission` | Permissions | `Code`, `Page`, `Action`, `DisplayName` |
 | `RolePermission` | RolePermissions | composite (`RoleId`,`PermissionId`) |
