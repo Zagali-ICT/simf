@@ -28,7 +28,7 @@ Auth-setup uses the `Get-Totp` helper — never a literal secret.
 | E2E-BBT-012 | Top-up mints immediately and moves both denormalised fields | happy | P0 | automated |
 | E2E-BBT-013 | A revoked order cannot be topped up | negative | P1 | automated |
 | E2E-BBT-014 | The direct-registration order cannot be topped up | negative | P0 | automated |
-| E2E-BBT-015 | Top-up is gated on `Visitors.BulkGenerate`, not `ManageBatches` | auth | P0 | automated |
+| E2E-BBT-015 | Top-up is gated on `Visitors.BulkGenerate`, not `ManageBatches` | auth | P0 | automated (CP half); API 403 _to author_ |
 | E2E-BBT-016 | The top-up dialog shows what the order already holds | function | P1 | automated |
 | E2E-BBT-017 | Top-up refuses no tier / a bad count before posting anything | validation | P1 | automated |
 | E2E-BBT-018 | A refused top-up keeps the dialog open with the reason in it | negative | P1 | automated |

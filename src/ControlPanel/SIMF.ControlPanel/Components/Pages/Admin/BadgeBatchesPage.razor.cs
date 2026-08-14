@@ -37,6 +37,11 @@ public partial class BadgeBatchesPage
     private AdminProfileTypeSummary? _topUpType;
     private string _topUpCount = string.Empty;
     private string? _topUpError;
+    private string? _profileTypesError;
+
+    /// <summary>True when there is no tier to pick, so the dialog says why
+    /// instead of refusing every press of its own confirm button.</summary>
+    private bool NoTiersToPick => _profileTypes.Count == 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -55,7 +60,15 @@ public partial class BadgeBatchesPage
         if (envelope is { Success: true, Data: not null })
         {
             _profileTypes = envelope.Data.Where(p => p.IsActive && p.IsVisitor).ToList();
+            return;
         }
+
+        // Kept rather than swallowed. This lookup is gated on ProfileTypes.View,
+        // which is NOT the permission that renders the top-up button, so a role
+        // holding one without the other would otherwise open a dialog whose
+        // picker is empty and whose only response is "choose a profile type".
+        _profileTypesError = envelope?.Error?.MessageForCurrentCulture()
+            ?? L["Admin.BadgeBatches.LoadFailed"];
     }
 
     private static string TypeLabel(AdminProfileTypeSummary profileType) =>

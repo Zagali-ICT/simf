@@ -215,6 +215,48 @@ public sealed class BadgeBatchesPageTests : CpComponentTestBase
     }
 
     [Fact]
+    public void A_failed_tier_lookup_says_so_instead_of_offering_an_empty_picker()
+    {
+        // The tier lookup is gated on ProfileTypes.View, a different code from
+        // the Visitors.BulkGenerate that renders the button, so it can be refused
+        // for someone who may legitimately open this dialog. Without this, the
+        // picker is empty and the only response to "Add and mint" is "choose a
+        // profile type" — with nothing to choose.
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.ViewBatches),
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.BulkGenerate));
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        JSInterop.Setup<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
+                "simfAccount.getJson",
+                inv => ((string)inv.Arguments[0]!).Contains("profile-types"))
+            .SetResult(ApiResult<IReadOnlyList<AdminProfileTypeSummary>>.Fail(
+                new ApiError
+                {
+                    Code = "FORBIDDEN",
+                    Message = "You do not hold ProfileTypes.View.",
+                    MessageArabic = "لا تملك صلاحية عرض أنواع الملفات.",
+                }));
+        JSInterop.Setup<ApiResult<GridPage<AdminBadgeBatchSummary>>>(
+                "simfAccount.postJson",
+                inv => ((string)inv.Arguments[0]!).Contains("badge-batches/list"))
+            .SetResult(ApiResult<GridPage<AdminBadgeBatchSummary>>.Ok(
+                GridPage<AdminBadgeBatchSummary>.Of(
+                    new List<AdminBadgeBatchSummary>
+                    {
+                        new(ActiveId, "VIP × 3", 3, false, null, SimfClock.Now, true, "Order", "طلب"),
+                    },
+                    total: 1, skip: 0, top: 20)));
+
+        var cut = RenderComponent<BadgeBatchesPage>();
+        OpenTheTopUpDialog(cut);
+
+        Assert.Contains("You do not hold ProfileTypes.View.", cut.Markup);
+        // And the confirm button cannot be pressed into a dead end.
+        var confirm = cut.FindAll(".simf-modal__footer button").Last();
+        Assert.True(confirm.HasAttribute("disabled"));
+    }
+
+    [Fact]
     public void Without_BulkGenerate_the_top_up_action_is_not_rendered()
     {
         // ManageBatches alone must not reach it: re-emailing or revoking an order

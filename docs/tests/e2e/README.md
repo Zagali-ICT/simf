@@ -381,9 +381,11 @@ route** in both languages, because that work touches the profile row nearly ever
 Control Panel page reads. Driven through the Chrome DevTools MCP against locally
 running hosts, on a database built from scratch by the programme's migrations.
 
-- **Control Panel** — 91 routes × EN + AR = 182 page drives. 90 render; the 91st,
-  `/admin/companies`, correctly serves the CP's own "Page not found" inside the
-  signed-in shell, which is what this index already records as **retired**.
+- **Control Panel** — 91 routes in English and 90 in Arabic, 181 page drives. 90
+  routes render; the 91st, `/admin/companies`, correctly serves the CP's own
+  "Page not found" inside the signed-in shell, which is what this index already
+  records as **retired**. That retired route is the one excluded from the Arabic
+  pass — its 404 shell is not worth a second language run.
 - **Website** — 18 routes × EN + AR = 36 page drives, including `/sessions/{id}`
   with a real session id and `/meeting/confirm` with no token (its invalid-link
   state, which is the expected render).
@@ -391,7 +393,7 @@ running hosts, on a database built from scratch by the programme's migrations.
   horizontal overflow), zero broken images, zero sub-requests returning >= 400,
   zero console errors, a live Blazor circuit, and — on the Arabic pass —
   `dir="rtl"` plus zero untranslated resource keys leaking through as literals.
-- **Result: 218 page drives, zero failures**, and one defect found (below).
+- **Result: 217 page drives, zero failures**, and one defect found (below).
 
 **What this pass proves, and what it does not.** It proves every route renders,
 in both directions, without errors or broken assets — a genuine regression gate

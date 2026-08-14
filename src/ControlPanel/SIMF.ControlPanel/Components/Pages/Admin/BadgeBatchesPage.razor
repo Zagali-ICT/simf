@@ -191,28 +191,46 @@
                 {
                     <SimfAlert Variant="error">@_topUpError</SimfAlert>
                 }
-                <SimfSelect TValue="AdminProfileTypeSummary"
-                            Label="@L["Admin.Delegates.Bulk.ProfileType"]"
-                            Placeholder="@L["Admin.Delegates.Bulk.ProfileType.Placeholder"]"
-                            Items="_profileTypes"
-                            ValueFor="@(pt => pt.Id.ToString())"
-                            LabelFor="@(pt => TypeLabel(pt))"
-                            Value="_topUpType"
-                            ValueChanged="@(pt => _topUpType = pt)"
-                            Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.BadgeBatches.TopUp.Count"]"
-                               Numeric="true" MaxLength="4"
-                               Value="@_topUpCount"
-                               ValueChanged="@(v => _topUpCount = v)"
-                               ValueExpression="@(() => _topUpCount)"
-                               Disabled="_busy" />
+
+                @* The tier lookup is gated on ProfileTypes.View, which is not the
+                   permission that renders this button, so it can legitimately
+                   come back empty or refused. Say so, rather than leaving an
+                   empty picker whose only answer is "choose a profile type". *@
+                @if (_profileTypesError is not null)
+                {
+                    <SimfAlert Variant="error">@_profileTypesError</SimfAlert>
+                }
+                else if (NoTiersToPick)
+                {
+                    <SimfEmptyState Title="@L["Admin.Delegates.Bulk.NoTypes"]" />
+                }
+                else
+                {
+                    <SimfSelect TValue="AdminProfileTypeSummary"
+                                Label="@L["Admin.Delegates.Bulk.ProfileType"]"
+                                Placeholder="@L["Admin.Delegates.Bulk.ProfileType.Placeholder"]"
+                                Items="_profileTypes"
+                                ValueFor="@(pt => pt.Id.ToString())"
+                                LabelFor="@(pt => TypeLabel(pt))"
+                                Value="_topUpType"
+                                ValueChanged="@(pt => _topUpType = pt)"
+                                Disabled="_busy" />
+                    <SimfTextField Label="@L["Admin.BadgeBatches.TopUp.Count"]"
+                                   Numeric="true" MaxLength="4"
+                                   Value="@_topUpCount"
+                                   ValueChanged="@(v => _topUpCount = v)"
+                                   ValueExpression="@(() => _topUpCount)"
+                                   Disabled="_busy" />
+                }
             </div>
         </ChildContent>
         <Footer>
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="CloseTopUp">
                 @L["Admin.BadgeBatches.Cancel"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="TopUpAsync" Loading="_busy" LoadingLabel="@L["Grid.Working"]">
+            <SimfButton Type="button" OnClick="TopUpAsync" Loading="_busy"
+                        Disabled="@(NoTiersToPick || _profileTypesError is not null)"
+                        LoadingLabel="@L["Grid.Working"]">
                 @L["Admin.BadgeBatches.TopUp.Confirm"]
             </SimfButton>
         </Footer>

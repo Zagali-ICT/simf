@@ -132,6 +132,194 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         Assert.All(badges, b => Assert.False(string.IsNullOrEmpty(b.QrId)));
     }
 
+    // -- Top-up ---------------------------------------------------------------
+    // TopUpBadgeBatchAsync and MergeCountsSummary had NO coverage: the Control
+    // Panel test stubs the HTTP layer, so it passed whether or not the two 409
+    // guards below existed. MergeCountsSummary in particular parses its own
+    // " × "-delimited prose back into counts, which is not code to leave unpinned.
+
+    [Fact]
+    public async Task Top_up_mints_more_badges_and_folds_a_repeated_tier_into_the_summary()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var normal = await NamedVisitorProfileTypeAsync("TopUpNormal");
+        var vip = await NamedVisitorProfileTypeAsync("TopUpVip");
+
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Name = "Ministry of Interior Team",
+                NameArabic = "فريق وزارة الداخلية",
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = normal.Id, Count = 4 },
+                },
+            },
+            admin);
+        var batchId = await BatchIdForTypeAsync(normal.Id);
+
+        // A tier the order does not hold yet is APPENDED.
+        var appended = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/top-up",
+            new AdminTopUpBadgeBatchRequest
+            {
+                BatchId = batchId,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = vip.Id, Count = 3 },
+                },
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.OK, appended.StatusCode);
+        var appendedBody = (await appended.Content
+            .ReadFromJsonAsync<ApiResult<AdminTopUpBadgeBatchResponse>>())!;
+        Assert.Equal(3, appendedBody.Data!.Added);
+        Assert.Equal(7, appendedBody.Data.TotalCount);
+
+        // A tier it ALREADY holds is folded into that entry rather than appended
+        // as a second one, or the breakdown grows a new term per top-up.
+        var folded = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/top-up",
+            new AdminTopUpBadgeBatchRequest
+            {
+                BatchId = batchId,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = normal.Id, Count = 2 },
+                },
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.OK, folded.StatusCode);
+        var foldedBody = (await folded.Content
+            .ReadFromJsonAsync<ApiResult<AdminTopUpBadgeBatchResponse>>())!;
+        Assert.Equal(2, foldedBody.Data!.Added);
+        Assert.Equal(9, foldedBody.Data.TotalCount);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var batch = await appDb.BadgeBatches.SingleAsync(b => b.Id == batchId);
+
+        // TotalCount and CountsSummary are denormalised from the member rows, so
+        // both must move together; updating one alone leaves the orders list
+        // quietly disagreeing with itself.
+        Assert.Equal(9, batch.TotalCount);
+        Assert.Equal($"{normal.Name} × 6 + {vip.Name} × 3", batch.CountsSummary);
+
+        var members = await appDb.UserProfiles
+            .Where(p => p.BadgeBatchId == batchId)
+            .ToListAsync();
+        Assert.Equal(9, members.Count);
+        // Minted immediately, so the order's total always equals badges that exist.
+        Assert.All(members, m => Assert.False(string.IsNullOrEmpty(m.QrId)));
+    }
+
+    [Fact]
+    public async Task Top_up_of_a_revoked_order_is_refused()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var profileType = await NamedVisitorProfileTypeAsync("TopUpRevoked");
+
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Name = "Revoked order",
+                NameArabic = "طلب ملغى",
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = profileType.Id, Count = 2 },
+                },
+            },
+            admin);
+        var batchId = await BatchIdForTypeAsync(profileType.Id);
+
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/revoke",
+            new AdminRevokeBadgeBatchRequest { BatchId = batchId },
+            admin);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/top-up",
+            new AdminTopUpBadgeBatchRequest
+            {
+                BatchId = batchId,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = profileType.Id, Count = 1 },
+                },
+            },
+            admin);
+
+        // Revoking disabled every attendee in the order, so minting more into it
+        // would hand out badges the door is already refusing.
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(
+            2,
+            await appDb.UserProfiles.CountAsync(p => p.BadgeBatchId == batchId));
+    }
+
+    [Fact]
+    public async Task Top_up_of_the_direct_registration_order_is_refused()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var profileType = await NamedVisitorProfileTypeAsync("TopUpDirect");
+        var before = await DirectRegistrationMemberCountAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/top-up",
+            new AdminTopUpBadgeBatchRequest
+            {
+                BatchId = BadgeBatch.DirectRegistrationId,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = profileType.Id, Count = 1 },
+                },
+            },
+            admin);
+
+        // Everyone who registered themselves is filed against this order. It is
+        // not something badges are ordered against, and minting into it would
+        // invent attendees nobody asked for.
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(before, await DirectRegistrationMemberCountAsync());
+    }
+
+    private async Task<int> DirectRegistrationMemberCountAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await appDb.UserProfiles
+            .CountAsync(p => p.BadgeBatchId == BadgeBatch.DirectRegistrationId);
+    }
+
+    /// <summary>A fresh visitor profile type with a KNOWN name, because the name
+    /// is what CountsSummary renders and the fold assertion reads back.</summary>
+    private async Task<(Guid Id, string Name)> NamedVisitorProfileTypeAsync(string prefix)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var name = $"{prefix}{Guid.NewGuid():N}"[..20];
+        var fresh = new UserProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            NameArabic = "نوع اختباري",
+            PageColor = "#3B82F6",
+            IsForVisitor = true,
+            IsActive = true,
+            CreatedAt = SimfClock.Now,
+        };
+        appDb.ProfileTypes.Add(fresh);
+        await appDb.SaveChangesAsync();
+        return (fresh.Id, name);
+    }
+
     [Fact]
     public async Task Bulk_generate_rejects_an_empty_request_400()
     {
