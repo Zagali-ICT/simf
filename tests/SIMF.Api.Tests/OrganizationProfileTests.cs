@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -86,7 +86,12 @@ public sealed class OrganizationProfileTests : IClassFixture<SimfApiFactory>
                 TitleArabic = "الملتقى البحري السعودي الدولي",
                 CurrentYear = 2026,
                 Status = "Open",
-                LiveStreamUrl = "https://youtube.com/watch?v=simf2026",
+                // A real 11-character YouTube id: the feed is stored as a file
+                // now, and the store holds it to the same rule the players do.
+                // The old value's id was nine characters, which no player could
+                // have resolved - it only ever passed because the previous check
+                // asked for nothing more than an absolute https URL.
+                LiveStreamUrl = "https://youtube.com/watch?v=rmW5sJTp-Zo",
                 BackgroundVideoUrl = "https://youtu.be/rmW5sJTp-Zo",
                 Facebook = "https://facebook.com/simf",
                 AboutItems =
@@ -121,7 +126,7 @@ public sealed class OrganizationProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, put.StatusCode);
         var saved = (await put.Content
             .ReadFromJsonAsync<ApiResult<OrganizationProfileResponse>>())!.Data!;
-        Assert.Equal("https://youtube.com/watch?v=simf2026", saved.LiveStreamUrl);
+        Assert.Equal("https://youtube.com/watch?v=rmW5sJTp-Zo", saved.LiveStreamUrl);
         Assert.Equal("https://youtu.be/rmW5sJTp-Zo", saved.BackgroundVideoUrl);
         Assert.Equal("https://facebook.com/simf", saved.Social.Facebook);
         Assert.Single(saved.AboutItems);

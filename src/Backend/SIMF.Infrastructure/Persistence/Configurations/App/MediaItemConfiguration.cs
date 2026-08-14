@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Files;
 using SIMF.Domain.Media;
@@ -27,7 +27,6 @@ internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaIte
         builder.Property(item => item.Title).HasMaxLength(200);
         builder.Property(item => item.TitleArabic).HasMaxLength(200);
 
-        builder.Property(item => item.Url).HasMaxLength(2048);
 
         builder.Property(item => item.Album).HasMaxLength(200);
         builder.Property(item => item.AlbumArabic).HasMaxLength(200);
@@ -63,6 +62,12 @@ internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaIte
         builder.HasOne<StoredFile>()
             .WithMany()
             .HasForeignKey(item => item.ThumbnailFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(item => item.VideoFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(item => item.VideoFileId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/OrganizationHeroVideoTests.cs
+﻿// Tests: SIMF.Api.Tests/OrganizationHeroVideoTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -46,9 +46,13 @@ internal sealed class OrganizationHeroVideoService(
         // NEWEST so two concurrent replaces converge on one survivor (never zero).
         await RetireActiveAsync(keepNewest: true, actorUserId, cancellationToken);
 
+        // The pointer, not a URL. CreateStreamedAsync already set it through the
+        // store's own pointer sync; this assignment is what makes the profile row
+        // consistent in the same unit of work, and what covers the case where the
+        // profile row did not exist yet.
         var now = timeProvider.SimfNow();
         var profile = await LoadOrCreateProfileAsync(cancellationToken);
-        profile.BackgroundVideoUrl = servedUrl;
+        profile.BackgroundVideoFileId = result.Id;
         profile.UpdatedAt = now;
         profile.UpdatedBy = actorUserId;
         await db.SaveChangesAsync(cancellationToken);
@@ -74,12 +78,14 @@ internal sealed class OrganizationHeroVideoService(
         var profile = await db.OrganizationProfile
             .SingleOrDefaultAsync(p => p.Id == OrganizationProfile.SingletonId, cancellationToken);
 
-        // Clear the URL only when it still points at OUR served route — never wipe a
-        // separately-pasted external / YouTube link the admin set by hand.
-        if (profile is not null
-            && string.Equals(profile.BackgroundVideoUrl, servedUrl, StringComparison.OrdinalIgnoreCase))
+        // Retiring the files above already cleared the pointer through the store,
+        // and only if it still named one of them - so a separately pasted external
+        // link the admin set by hand survives untouched. The full-string comparison
+        // against a recomputed served URL that used to answer this question is gone
+        // with the column it compared: it silently stopped matching whenever the
+        // configured base URL changed, and then quietly skipped the clear.
+        if (profile is not null)
         {
-            profile.BackgroundVideoUrl = null;
             profile.UpdatedAt = now;
             profile.UpdatedBy = actorUserId;
             await db.SaveChangesAsync(cancellationToken);

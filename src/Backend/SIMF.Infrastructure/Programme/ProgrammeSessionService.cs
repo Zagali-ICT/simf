@@ -319,8 +319,16 @@ internal sealed class ProgrammeSessionService(
                 session.Status,
                 session.PublishedAt,
                 HasRecordingFile = session.RecordingFileId != null,
-                session.LiveStreamUrl,
-                session.LiveSignLanguageUrl,
+                // The feeds are file-store rows; the wire keeps carrying the URL
+                // itself, both clients classifying a feed by reading the string.
+                LiveStreamUrl = dbContext.StoredFiles
+                    .Where(f => f.Id == session.LiveStreamFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
+                LiveSignLanguageUrl = dbContext.StoredFiles
+                    .Where(f => f.Id == session.LiveSignLanguageFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
                 // The informational live notice shown WITH the feed. Read
@@ -677,8 +685,14 @@ internal sealed class ProgrammeSessionService(
                 // YouTube/HLS feed that doubles as the recording; no schema change)
                 // and the team's OPTIONAL short summary cut. Each is null when
                 // unset, and the app hides that player.
-                summary.Session!.LiveStreamUrl,
-                summary.SummaryVideoUrl))
+                dbContext.StoredFiles
+                    .Where(f => f.Id == summary.Session!.LiveStreamFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
+                dbContext.StoredFiles
+                    .Where(f => f.Id == summary.SummaryVideoFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault()))
             .SingleOrDefaultAsync(cancellationToken);
     }
 

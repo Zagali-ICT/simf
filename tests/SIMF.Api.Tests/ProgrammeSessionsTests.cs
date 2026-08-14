@@ -1,4 +1,4 @@
-// D-199 (gap doc G3, Mockup pages 16-17) — public Programme/Sessions reads.
+﻿// D-199 (gap doc G3, Mockup pages 16-17) — public Programme/Sessions reads.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -209,8 +209,14 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var session = await db.Sessions.SingleAsync(s => s.Id == created.Id);
-            session.LiveStreamUrl = "https://live.example/stream.m3u8";
-            session.LiveSignLanguageUrl = "https://live.example/sign.m3u8";
+            // The feeds are file-store rows; a fabricated pointer would be
+            // refused by the foreign key.
+            session.LiveStreamFileId = FeedLinkSeed.Add(
+                db, FileService.SessionLiveStream, session.Id,
+                "https://live.example/stream.m3u8", FileOwnerEntityType.Session);
+            session.LiveSignLanguageFileId = FeedLinkSeed.Add(
+                db, FileService.SessionSignLanguage, session.Id,
+                "https://live.example/sign.m3u8", FileOwnerEntityType.Session);
             // P5 — D-439: the AI live-caption text is surfaced on the same wire.
             session.LiveCaptions = "Caption text appears here.";
             session.LiveCaptionsArabic = "يظهر نص الترجمة هنا.";

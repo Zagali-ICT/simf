@@ -93,14 +93,22 @@ public class Session : BaseAuditEntity
     /// Identity database, so there is no foreign key across the two.</summary>
     public Guid? RecordingUploadedByUserId { get; set; }
 
-    /// <summary>Non-null means this session has a live broadcast and the app shows
-    /// the live player. A YouTube watch/live URL, with a direct HLS or MP4 URL
-    /// accepted as a fallback; both are checked by LiveStreamUrlPolicy.</summary>
-    public string? LiveStreamUrl { get; set; }
+    /// <summary>The session's live broadcast feed, as a row in
+    /// <c>StoredFiles</c>: non-null means the app shows the live player.
+    ///
+    /// <para>SIMF does not host the broadcast, so the row is an external link
+    /// rather than bytes - but it is a file-store row all the same, which is what
+    /// gives a feed a media type, a service policy, a sensitivity tier and an
+    /// owner. As free text it had none of those, and nothing could join on it.
+    /// The URL still reaches the clients verbatim: they classify it themselves to
+    /// choose a YouTube player over a direct one, so serving it behind a redirect
+    /// would break the very branch it feeds.</para></summary>
+    public Guid? LiveStreamFileId { get; set; }
 
-    /// <summary>The optional parallel feed carrying sign-language interpretation.
-    /// Non-null adds the sign-language toggle to the live player.</summary>
-    public string? LiveSignLanguageUrl { get; set; }
+    /// <summary>The optional parallel feed carrying sign-language interpretation,
+    /// stored the same way as <see cref="LiveStreamFileId"/>. Non-null adds the
+    /// sign-language toggle to the live player.</summary>
+    public Guid? LiveSignLanguageFileId { get; set; }
 
     /// <summary>The running-transcript line under the player. Typed by an admin,
     /// not generated: there is no speech-to-text integration, and a YouTube feed

@@ -30,6 +30,7 @@ namespace SIMF.Infrastructure.Programme;
 /// </summary>
 internal sealed class AdminSessionService(
     SimfAppDbContext dbContext,
+    IFeedLinkService feedLinks,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     IFileService fileService,
@@ -133,8 +134,16 @@ internal sealed class AdminSessionService(
                 // Carried so the grid Excel export round-trips them.
                 session.Description,
                 session.DescriptionArabic,
-                session.LiveStreamUrl,
-                session.LiveSignLanguageUrl,
+                // The feeds are file-store rows; the wire keeps carrying the URL
+                // itself because both clients classify a feed by reading it.
+                dbContext.StoredFiles
+                    .Where(f => f.Id == session.LiveStreamFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
+                dbContext.StoredFiles
+                    .Where(f => f.Id == session.LiveSignLanguageFileId && f.IsActive)
+                    .Select(f => f.ExternalUrl)
+                    .FirstOrDefault(),
                 session.LiveCaptions,
                 session.LiveCaptionsArabic,
                 session.SeatSelectionModeOverride,
@@ -177,7 +186,7 @@ internal sealed class AdminSessionService(
         // with a real number, that changing the hall or the window will destroy
         // it. One grouped round-trip; no extra endpoint and no extra permission.
         var (reservations, adminBlocks) = await CountActiveHoldingAsync(id, cancellationToken);
-        return ToDetail(session) with
+        return (await ToDetailAsync(session, cancellationToken)) with
         {
             ActiveReservationCount = reservations,
             ActiveAdminBlockCount = adminBlocks,
@@ -281,9 +290,8 @@ internal sealed class AdminSessionService(
             Start = request.Start,
             End = request.End,
             CapacityOverride = request.CapacityOverride,
-            // Live broadcast stream URLs (manual stub provider).
-            LiveStreamUrl = NullIfBlank(request.LiveStreamUrl),
-            LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl),
+            // The live feeds are set after the row exists, below: a file needs an
+            // owner id, and the session has none until it is saved.
             // AI live-caption text (manual stub provider, bilingual).
             LiveCaptions = NullIfBlank(request.LiveCaptions),
             LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic),
@@ -330,6 +338,16 @@ internal sealed class AdminSessionService(
             });
         }
         dbContext.Sessions.Add(session);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        // After the save, because a file row needs a real owner id and the session
+        // has none until it exists. A blank URL leaves the pointer null.
+        session.LiveStreamFileId = await feedLinks.SetAsync(
+            FileService.SessionLiveStream, session.Id,
+            request.LiveStreamUrl, actorUserId, cancellationToken);
+        session.LiveSignLanguageFileId = await feedLinks.SetAsync(
+            FileService.SessionSignLanguage, session.Id,
+            request.LiveSignLanguageUrl, actorUserId, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteSuccessAsync(
@@ -515,9 +533,14 @@ internal sealed class AdminSessionService(
             session.RatingPromptSent = null;
         }
         session.CapacityOverride = request.CapacityOverride;
-        // Live broadcast stream URLs (manual stub provider).
-        session.LiveStreamUrl = NullIfBlank(request.LiveStreamUrl);
-        session.LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl);
+        // The live feeds become file-store rows, which validates each URL against
+        // the same rule the players apply instead of storing whatever was typed.
+        session.LiveStreamFileId = await feedLinks.SetAsync(
+            FileService.SessionLiveStream, session.Id,
+            request.LiveStreamUrl, actorUserId, cancellationToken);
+        session.LiveSignLanguageFileId = await feedLinks.SetAsync(
+            FileService.SessionSignLanguage, session.Id,
+            request.LiveSignLanguageUrl, actorUserId, cancellationToken);
         // AI live-caption text (manual stub provider, bilingual).
         session.LiveCaptions = NullIfBlank(request.LiveCaptions);
         session.LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic);
@@ -773,7 +796,7 @@ internal sealed class AdminSessionService(
         var from = session.Status;
         if (from == status)
         {
-            return ToDetail(session); // idempotent — nothing changed
+            return await ToDetailAsync(session, cancellationToken); // idempotent — nothing changed
         }
 
         if (!AllowedTransitions.Contains((from, status)))
@@ -811,7 +834,7 @@ internal sealed class AdminSessionService(
             "Admin {ActorId} moved Session {Code} ({Id}) {From} -> {To}",
             actorUserId, session.Code, session.Id, from, status);
 
-        return ToDetail(session);
+        return await ToDetailAsync(session, cancellationToken);
     }
 
     public async Task<AdminSessionDetail> UploadRecordingAsync(
@@ -859,7 +882,7 @@ internal sealed class AdminSessionService(
             "Admin {ActorId} uploaded recording for Session {Code} ({Id}), {Bytes} bytes",
             actorUserId, session.Code, session.Id, sizeBytes);
 
-        return ToDetail(session);
+        return await ToDetailAsync(session, cancellationToken);
     }
 
     public async Task<AdminSessionDetail> DeleteRecordingAsync(
@@ -871,7 +894,7 @@ internal sealed class AdminSessionService(
 
         if (session.RecordingFileId is null)
         {
-            return ToDetail(session); // idempotent — nothing to delete
+            return await ToDetailAsync(session, cancellationToken); // idempotent — nothing to delete
         }
 
         var priorFileId = session.RecordingFileId;
@@ -894,7 +917,7 @@ internal sealed class AdminSessionService(
             $"id={session.Id}; code={session.Code}",
             cancellationToken);
 
-        return ToDetail(session);
+        return await ToDetailAsync(session, cancellationToken);
     }
 
     /// <summary>Best-effort retirement of a recording's <c>StoredFile</c>
@@ -1350,7 +1373,8 @@ internal sealed class AdminSessionService(
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private AdminSessionDetail ToDetail(Session session)
+    private async Task<AdminSessionDetail> ToDetailAsync(
+        Session session, CancellationToken cancellationToken)
     {
         var hallSeats = session.Hall?.Capacity ?? 0;
         var effective = session.CapacityOverride ?? hallSeats;
@@ -1404,8 +1428,8 @@ internal sealed class AdminSessionService(
             session.RecordingFileName,
             session.RecordingSizeBytes,
             session.RecordingUploadedAt,
-            session.LiveStreamUrl,
-            session.LiveSignLanguageUrl,
+            await feedLinks.ResolveAsync(session.LiveStreamFileId, cancellationToken),
+            await feedLinks.ResolveAsync(session.LiveSignLanguageFileId, cancellationToken),
             // AI live-caption text.
             session.LiveCaptions,
             session.LiveCaptionsArabic,

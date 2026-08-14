@@ -95,6 +95,59 @@ internal static class OwnerPointerSync
                 row.ImageFileId = fileId;
                 break;
             }
+            case FileService.SessionLiveStream:
+            {
+                var row = await dbContext.Sessions
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.LiveStreamFileId, onlyWhenPointingAt)) { return; }
+                row.LiveStreamFileId = fileId;
+                break;
+            }
+            case FileService.SessionSignLanguage:
+            {
+                var row = await dbContext.Sessions
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.LiveSignLanguageFileId, onlyWhenPointingAt)) { return; }
+                row.LiveSignLanguageFileId = fileId;
+                break;
+            }
+            case FileService.SessionSummaryVideo:
+            {
+                // Owned by the SESSION, not the summary row: a session has at most
+                // one set of minutes, and keying on the session means the link can
+                // be set before the summary exists without a second identifier.
+                var row = await dbContext.SessionSummaries
+                    .FirstOrDefaultAsync(x => x.SessionId == owner, cancellationToken);
+                if (row is null || !Matches(row.SummaryVideoFileId, onlyWhenPointingAt)) { return; }
+                row.SummaryVideoFileId = fileId;
+                break;
+            }
+            case FileService.MediaGalleryVideo:
+            {
+                var row = await dbContext.MediaItems
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.VideoFileId, onlyWhenPointingAt)) { return; }
+                row.VideoFileId = fileId;
+                break;
+            }
+            case FileService.OrganizationLiveStream:
+            {
+                var row = await dbContext.OrganizationProfile
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.LiveStreamFileId, onlyWhenPointingAt)) { return; }
+                row.LiveStreamFileId = fileId;
+                break;
+            }
+            case FileService.OrganizationHeroVideo:
+            {
+                // The one service here that can be either bytes or a link: an
+                // uploaded hero video and a pasted one now write the same column.
+                var row = await dbContext.OrganizationProfile
+                    .FirstOrDefaultAsync(x => x.Id == owner, cancellationToken);
+                if (row is null || !Matches(row.BackgroundVideoFileId, onlyWhenPointingAt)) { return; }
+                row.BackgroundVideoFileId = fileId;
+                break;
+            }
             default:
                 return;
         }

@@ -1,4 +1,4 @@
-# SIMF Centralized File Store — Developer Guide
+﻿# SIMF Centralized File Store — Developer Guide
 
 > **Status:** as-built reference for the D-568 centralized file subsystem (Wave C
 > cutover, D-620…D-628). Companion to the E2E catalogue
@@ -66,6 +66,28 @@ registry is also the file/PII classification register (SAMA A1-3 / NCA ECC 2-7-2
 | `ProgrammeDayImage` | Public | Public | no | Image | ProgrammeDay | no | yes |
 | `Banner` | Public | Public | no | Image | Banner | no | yes |
 | `BoothLogo` | Public | Public | no | Image | Booth | no | yes |
+| `OrganizationHeroVideo` | Public | Public | **no** ¹ | Video | OrganizationProfile | no | yes |
+| `SessionLiveStream` | Public | Public | n/a ² | Video | Session | no | yes |
+| `SessionSignLanguage` | Public | Public | n/a ² | Video | Session | no | yes |
+| `SessionSummaryVideo` | Public | Public | n/a ² | Video | Session | no | yes |
+| `MediaGalleryVideo` | Public | Public | n/a ² | Video | MediaItem | no | yes |
+| `OrganizationLiveStream` | Public | Public | n/a ² | Video | OrganizationProfile | no | yes |
+
+² **The five feed services store no bytes at all.** They are always
+`ExternalLink` rows: SIMF does not host a broadcast, it points at one. Encryption
+is therefore moot, and the URL is served to the client **verbatim rather than
+through the 302** every other external link uses. That is not an inconsistency, it
+is the requirement: both clients decide *how* to play a feed by inspecting the
+string - the player extracts a YouTube id and branches on it, the hero refuses to
+mount unless the last path segment is `.mp4`/`.m3u8` - so an indirected URL is
+loadable and still wrong. `IFeedLinkService` is the only way to write or read one.
+
+An external link for these services is validated against `LiveStreamUrlPolicy`;
+an external link for an **image** service deliberately is not, because an image
+URL is never read by the client (the endpoint 302s and the browser follows), and
+applying the video rule there would reject every CDN logo and the seeded
+placeholders. And no service outside Public tier + Public access may be linked at
+all - a private file must never become a pointer at somebody else's server.
 
 ¹ **`SessionRecording` is deliberately plaintext** (D-568 Wave C S7 / D-625): a
 conference recording is Internal-tier (not PII) and Range/seek streaming (HTTP 206)
