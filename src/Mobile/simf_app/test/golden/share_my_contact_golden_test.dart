@@ -14,9 +14,9 @@ import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import '../features/contacts/_fake_contacts_repo.dart';
 import 'golden_fonts.dart';
 
-/// Render-lock golden of the "Share my contact" screen against the owner-supplied
-/// frame **1701:6062** (مشاركة جهة اتصالي, FDS-014). Regenerate:
-///   flutter test --update-goldens test/golden/share_my_contact_golden_test.dart
+/// Render-lock golden of the "Share my contact" screen against the
+/// owner-supplied frame **1701:6062** (مشاركة جهة اتصالي, FDS-014). Regenerate:
+/// flutter test --update-goldens test/golden/share_my_contact_golden_test.dart
 ///
 /// Frame parity expected: the AppBar shell over the centred QR card (the vCard
 /// QR on a light surface card), the scan hint, the share (.vcf) filled action,

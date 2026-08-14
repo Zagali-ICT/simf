@@ -37,7 +37,9 @@ public static class EmailQueueExtensions
         EmailMessage message,
         string purpose,
         string subjectEmail,
-        Guid subjectUserId,
+        // Null when the recipient has no account yet - a badge holder being
+        // emailed the code that will create one. The audit row already allows it.
+        Guid? subjectUserId,
         IAuditLog auditLog,
         ILogger logger,
         CancellationToken cancellationToken = default)

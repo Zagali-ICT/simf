@@ -3,11 +3,12 @@ import 'package:simf_app/features/requests/data/request_models.dart';
 import 'package:simf_app/features/requests/data/requests_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// D-500 (Wave 5, الطلبات 1408:9726) — data layer for the unified requests feed:
-/// the user's requests across all kinds (`GET /app/my-requests`), the two new
-/// standalone submissions (`POST /app/document-requests`, `/app/badge-requests`),
-/// and the self-cancel (`POST /app/my-requests/cancel`). All approved-only.
-/// Throws [ApiFailure] on a wire error.
+/// D-500 (Wave 5, الطلبات 1408:9726) — data layer for the unified requests
+/// feed: the user's requests across all kinds (`GET /app/my-requests`), the two
+/// new standalone submissions (`POST /app/document-requests`,
+/// `/app/badge-requests`), and the self-cancel (`POST
+/// /app/my-requests/cancel`). All approved-only. Throws [ApiFailure] on a wire
+/// error.
 class RequestsRepository {
   RequestsRepository(this._client);
 

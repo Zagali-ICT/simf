@@ -76,7 +76,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         _video = controller;
         _videoReady = true;
       });
-    } catch (error) {
+    } on Object catch (error) {
       debugPrint('Onboarding background video "$asset" failed to play: $error');
       await controller.dispose();
     }
@@ -104,12 +104,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   /// The globe toggles AR ↔ EN and persists the choice (D-363), matching the
   /// sign-in language control.
   void _toggleLanguage() {
-    final isArabic = ref.read(localeControllerProvider).languageCode == 'ar';
-    unawaited(
-      ref
-          .read(localeControllerProvider.notifier)
-          .setLanguage(isArabic ? 'en' : 'ar'),
-    );
+    // LocaleController.toggle() is, by its own doc, the single code path
+    // for this. Four screens re-derived it.
+    unawaited(ref.read(localeControllerProvider.notifier).toggle());
   }
 
   void _onNext() {

@@ -59,8 +59,8 @@ class RegistrationSuccessScreen extends ConsumerWidget {
             child: Transform.rotate(
               angle: 0.4936, // 28.28°
               child: Container(
-                width: SimfTokens.registrationSuccessScreenWidth,
-                height: SimfTokens.registrationSuccessScreenHeight,
+                width: SimfTokens.sweepBlockWidth,
+                height: SimfTokens.sweepBlockHeight,
                 decoration: BoxDecoration(
                   color: SimfTokens.surfaceTint,
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSheet),

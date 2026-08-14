@@ -10,7 +10,6 @@
     "SIMF-C3|src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart|_buildPlaceOfBirthField() returning Widget in a #-line file (limit #)",
     "SIMF-C3|src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart|_buildPlateField() returning Widget in a #-line file (limit #)",
     "SIMF-C3|src/Mobile/simf_app/lib/features/account/sign_up_visitor_screen.dart|_buildProfileTypeField() returning Widget in a #-line file (limit #)",
-    "SIMF-C3|src/Mobile/simf_app/lib/features/sessions/session_detail_screen.dart|_buildBody() returning Widget in a #-line file (limit #)",
     "SIMF-C3|src/Mobile/simf_app/lib/features/staff/register_visitor_screen.dart|_buildBody() returning Widget in a #-line file (limit #)",
     "SIMF-C3|src/Mobile/simf_app/lib/features/staff/register_visitor_screen.dart|_buildForm() returning Widget in a #-line file (limit #)",
     "SIMF-C3|src/Mobile/simf_app/lib/features/staff/register_visitor_screen.dart|_buildLoadError() returning Widget in a #-line file (limit #)"

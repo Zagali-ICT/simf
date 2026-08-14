@@ -12,7 +12,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// formed a circular dependency (controller → repository → api client →
 /// token source → controller) and the interceptors ended up holding a
 /// never-initialised controller. This test mirrors `main.dart`'s wiring
-/// (now [DeferredAuthTokenSource]) against a header-recording dio adapter
+/// (now `DeferredAuthTokenSource`) against a header-recording dio adapter
 /// replaying the real wire payloads captured from the running backend —
 /// with the OLD wiring it fails (CircularDependencyError / missing
 /// header); with the deferred source it passes.

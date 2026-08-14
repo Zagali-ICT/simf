@@ -4,8 +4,8 @@ import 'package:simf_app/features/sponsors/widgets/sponsor_logo.dart';
 
 /// The square logo chip on a sponsor card — frame's 53×53 box. On the gold hero
 /// card it is gold-filled with a navy edge; on a navy premium card it is
-/// navy-filled with a gold edge. Hosts the real [SponsorLogo] (clipped to fill),
-/// falling back to the acronym initials.
+/// navy-filled with a gold edge. Hosts the real [SponsorLogo] (clipped to
+/// fill), falling back to the acronym initials.
 class BadgeBox extends StatelessWidget {
   const BadgeBox({required this.child, required this.hero, super.key});
 

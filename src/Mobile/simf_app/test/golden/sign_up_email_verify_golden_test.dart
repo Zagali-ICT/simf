@@ -14,16 +14,16 @@ import 'package:simf_app/features/account/sign_up_email_verify_screen.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the sign-up email-verification screen against Figma frame
-/// **505:837** (التحقق بالبريد · Page 006). Regenerate:
-///   flutter test --update-goldens test/golden/sign_up_email_verify_golden_test.dart
+/// **505:837** (التحقق بالبريد · Page 006). Regenerate: flutter test
+/// --update-goldens test/golden/sign_up_email_verify_golden_test.dart
 ///
-/// Frame parity: the navy scaffold + sweep, the back/title header, the gold mail
-/// mark, the أدخل رمز التحقق title, the "sent a code to <email>" lines, the six
-/// OTP boxes, the gold تحقق CTA and the resend row. Captured in the initial
-/// state — the resend cooldown only starts after a resend, so no countdown shows
-/// (resend is immediately available) and there is no active timer (settle is
-/// safe). Locks the layout, typography, colour, spacing and RTL of the
-/// clean-code-frozen page (D-553).
+/// Frame parity: the navy scaffold + sweep, the back/title header, the gold
+/// mail mark, the أدخل رمز التحقق title, the "sent a code to `<email>`" lines,
+/// the six OTP boxes, the gold تحقق CTA and the resend row. Captured in the
+/// initial state — the resend cooldown only starts after a resend, so no
+/// countdown shows (resend is immediately available) and there is no active
+/// timer (settle is safe). Locks the layout, typography, colour, spacing and
+/// RTL of the clean-code-frozen page (D-553).
 void main() {
   setUpAll(loadGoldenFonts);
 

@@ -1,4 +1,4 @@
-﻿using SIMF.Common.Enums;
+using SIMF.Common.Enums;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Profiles;
 
@@ -27,6 +27,18 @@ public interface IUserProfileRepository
     /// used by the ID-image upsert paths.</summary>
     Task<UserProfile?> FindAsync(
         Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>The tracked profile with its Interests, found by its OWN id
+    /// rather than by an account's.
+    ///
+    /// <para>For the one flow that knows the attendee and not an account,
+    /// because there is not one yet: badge activation creating the account it is
+    /// about to link. Distinguished from <see cref="GetWithInterestsAsync"/> by
+    /// name rather than by parameter type, since both ids are
+    /// <see cref="Guid"/> and confusing them matches no row rather than
+    /// failing.</para></summary>
+    Task<UserProfile?> GetByProfileIdWithInterestsAsync(
+        Guid userProfileId, CancellationToken cancellationToken = default);
 
     /// <summary>Stages a new profile row (saved by a later
     /// <see cref="SaveAppChangesAsync"/>).</summary>
@@ -141,7 +153,7 @@ public sealed record ProfileTypeFacts(
     bool IsActive, UserType UserType, bool IsForVisitor, string Name,
     // The VIP-tier flag (VVIP/VIP), so the app profile
     // read can report IsVip for the speaker-meeting CTA gate.
-    bool AllowsVipMeetingSlots,
+    bool IsVipTier,
     // The self-registration picker visibility flag, so the
     // self-service write path (UpsertMineAsync) can reject a self-picked CP-only
     // (IsAppRegisterable=false) operational type, mirroring the server-side filter

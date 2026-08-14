@@ -15,7 +15,10 @@ SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B'],
       seatsPerRow: 3,
       reservedCells: <SeatCell>[
-        SeatCell(rowLabel: 'A', seatNumber: 1, kind: SeatReservationKind.userBooking),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,),
       ],
       myCell: SeatCell(
         rowLabel: 'B',
@@ -78,7 +81,8 @@ class _FakeSeatRepo implements SeatMapRepository {
 }
 
 /// Flattens an [InlineSpan] tree to its non-blank text leaves (Text.rich wraps
-/// the supplied span under a default-style parent, so the real leaves are nested).
+/// the supplied span under a default-style parent, so the real leaves are
+/// nested).
 List<TextSpan> _textLeaves(InlineSpan span) {
   final leaves = <TextSpan>[];
   if (span is TextSpan) {
@@ -106,9 +110,9 @@ Future<void> _pump(
   required SeatMapRepository repo,
   SeatShare? share,
   Locale locale = const Locale('en'),
-  // The page's ListView builds lazily, so anything under the hall card is not in
-  // the tree on the default 800x600 surface. A test that asserts on the action
-  // row asks for a surface tall enough to build it.
+  // The page's ListView builds lazily, so anything under the hall card is not
+  // in the tree on the default 800x600 surface. A test that asserts on the
+  // action row asks for a surface tall enough to build it.
   Size? surface,
 }) async {
   if (surface != null) {
@@ -173,9 +177,9 @@ Future<void> _pump(
 }
 
 /// The action row is the last child of a lazy [ListView], and the hall grid is
-/// tall enough that it is never built at the default surface size — so it has to
-/// be scrolled into view before it can be tapped. `.first` is the screen's own
-/// ListView; the hall card nests two more scrollables below it.
+/// tall enough that it is never built at the default surface size — so it has
+/// to be scrolled into view before it can be tapped. `.first` is the screen's
+/// own ListView; the hall card nests two more scrollables below it.
 Future<void> _tapAction(WidgetTester tester, Finder action) async {
   await tester.scrollUntilVisible(
     action,
@@ -222,11 +226,12 @@ void main() {
     // Both of these assert on the ACTION ROW at the bottom of the page, so both
     // need the tall surface `_pump` documents — the page's ListView builds
     // lazily and the row is not in the tree on the default 800x600. They passed
-    // without it only while the page was short enough for the row to fall inside
-    // the default viewport; the content added above it since (D-767 per-row seat
-    // counts, then the B1 "Change seat" CTA) pushed it out, and the finders
-    // started returning 0 widgets. The buttons themselves are unchanged — this
-    // is the test catching up with the page's height, not a screen regression.
+    // without it only while the page was short enough for the row to fall
+    // inside the default viewport; the content added above it since (D-767
+    // per-row seat counts, then the B1 "Change seat" CTA) pushed it out, and
+    // the finders started returning 0 widgets. The buttons themselves are
+    // unchanged — this is the test catching up with the page's height, not a
+    // screen regression.
     testWidgets('share sends the seat-location text', (tester) async {
       final share = _FakeSeatShare();
       await _pump(
@@ -257,7 +262,8 @@ void main() {
       expect(find.text('MAP'), findsOneWidget);
     });
 
-    testWidgets('B1 — the change-seat action opens the picker and re-reads the '
+    testWidgets(
+        'B1 — the change-seat action opens the picker and re-reads the '
         'grid when the move lands', (tester) async {
       final repo = _FakeSeatRepo(map: _map());
       await _pump(tester, repo: repo, surface: const Size(1000, 2600));
@@ -298,7 +304,8 @@ void main() {
 
       // The surface is tall enough to build the whole page, so this absence is
       // real and not an artefact of lazy list building.
-      expect(find.widgetWithText(OutlinedButton, 'Share location'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Share location'),
+          findsOneWidget,);
       expect(find.widgetWithText(OutlinedButton, 'Change seat'), findsNothing);
     });
 
@@ -319,12 +326,13 @@ void main() {
       // Row B draws all 10 seats; seat number 10 is unique to it (row A has 4),
       // so its numeral renders exactly once — proof of the per-row count.
       expect(find.text('10'), findsOneWidget);
-      expect(find.text('Your seat'), findsOneWidget); // the legend still renders
+      expect(
+          find.text('Your seat'), findsOneWidget,); // the legend still renders
     });
 
     testWidgets('an unconfigured hall shows the unavailable state',
         (tester) async {
-      final empty = SessionSeatMap.fromJson(<String, dynamic>{
+      final empty = SessionSeatMap.fromJson(const <String, dynamic>{
         'rowLabels': <dynamic>[],
         'seatsPerRow': 0,
         'reservedCells': <dynamic>[],

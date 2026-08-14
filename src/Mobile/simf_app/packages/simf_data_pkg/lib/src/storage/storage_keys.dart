@@ -45,8 +45,9 @@ class StorageKeys {
   static const String accessibilityCaptions =
       'simf.prefs.accessibility_captions';
 
-  /// D-495 — the cached Organization / About profile JSON (loaded at splash, read
-  /// app-wide) + its `Last-Modified` token for the conditional-GET revalidation.
+  /// D-495 — the cached Organization / About profile JSON (loaded at splash,
+  /// read app-wide) + its `Last-Modified` token for the conditional-GET
+  /// revalidation.
   static const String orgProfileJson = 'simf.prefs.org_profile_json';
   static const String orgProfileLastModified =
       'simf.prefs.org_profile_last_modified';
@@ -66,7 +67,7 @@ class StorageKeys {
 
   /// D-820 — the cached offline scanning rules for this operator's gates
   /// (allowed profile-type codes + the badge key), so a scanner that boots into
-  /// a dead network still has the last known rules rather than nothing. Value is
-  /// a JSON GateOfflineConfig.
+  /// a dead network still has the last known rules rather than nothing. Value
+  /// is a JSON GateOfflineConfig.
   static const String gateOfflineConfig = 'simf.prefs.gate_offline_config';
 }

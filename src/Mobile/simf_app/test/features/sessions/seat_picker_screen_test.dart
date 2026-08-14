@@ -12,7 +12,10 @@ SessionSeatMap _map() => const SessionSeatMap(
       rowLabels: <String>['A', 'B'],
       seatsPerRow: 3,
       reservedCells: <SeatCell>[
-        SeatCell(rowLabel: 'A', seatNumber: 1, kind: SeatReservationKind.userBooking),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,),
       ],
       activeReservedCount: 1,
       hallCapacity: 6,
@@ -31,14 +34,20 @@ SessionSeatMap _variableMap() => const SessionSeatMap(
       sessionTitle: 'Ragged',
     );
 
-// B1 — the same map, but the caller already holds B1: the picker opens in CHANGE
-// mode (title/hint/CTA switch, no auto-pick, confirm names both seats).
+// B1 — the same map, but the caller already holds B1: the picker opens in
+// CHANGE mode (title/hint/CTA switch, no auto-pick, confirm names both seats).
 SessionSeatMap _heldMap() => const SessionSeatMap(
       rowLabels: <String>['A', 'B'],
       seatsPerRow: 3,
       reservedCells: <SeatCell>[
-        SeatCell(rowLabel: 'A', seatNumber: 1, kind: SeatReservationKind.userBooking),
-        SeatCell(rowLabel: 'B', seatNumber: 1, kind: SeatReservationKind.userBooking),
+        SeatCell(
+            rowLabel: 'A',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,),
+        SeatCell(
+            rowLabel: 'B',
+            seatNumber: 1,
+            kind: SeatReservationKind.userBooking,),
       ],
       myCell: SeatCell(
         rowLabel: 'B',
@@ -149,7 +158,8 @@ class _FakePickerRepo implements SeatMapRepository {
   }
 }
 
-Future<_FakePickerRepo> _pump(WidgetTester tester, {_FakePickerRepo? repo}) async {
+Future<_FakePickerRepo> _pump(WidgetTester tester,
+    {_FakePickerRepo? repo,}) async {
   tester.view.physicalSize = const Size(1000, 2200);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -195,7 +205,8 @@ Future<_FakePickerRepo> _pump(WidgetTester tester, {_FakePickerRepo? repo}) asyn
 
 void main() {
   group('SeatPickerScreen (D-485)', () {
-    testWidgets('renders the grid + hint, and the auto-pick CTA', (tester) async {
+    testWidgets('renders the grid + hint, and the auto-pick CTA',
+        (tester) async {
       await _pump(tester);
       expect(find.text('Opening'), findsOneWidget);
       expect(find.text('Tap an available seat to reserve it'), findsOneWidget);
@@ -205,7 +216,8 @@ void main() {
       );
     });
 
-    testWidgets('tapping a seat SELECTS it (chip appears, no reserve); the '
+    testWidgets(
+        'tapping a seat SELECTS it (chip appears, no reserve); the '
         'Confirm CTA commits it, shows the D-750 alert, then pops on OK',
         (tester) async {
       final repo = await _pump(tester);
@@ -222,8 +234,8 @@ void main() {
       expect(repo.reservedRow, 'A');
       expect(repo.reservedSeat, 2);
       // D-750 — a one-button alert (not the old seatReservedToast snackbar)
-      // explaining the 3-minute pre-start check-in hold rule; the picker has NOT
-      // popped yet (it waits for the acknowledgement).
+      // explaining the 3-minute pre-start check-in hold rule; the picker has
+      // NOT popped yet (it waits for the acknowledgement).
       expect(find.textContaining('Seat reserved successfully'), findsOneWidget);
       expect(find.text('Reserved — pending approval'), findsNothing);
       // OK dismisses the alert and pops back to the launching screen.
@@ -251,7 +263,8 @@ void main() {
       expect(repo.reservedRow, isNull); // still not reserved (select only)
     });
 
-    testWidgets('a variable-width layout draws no phantom seats on the short row',
+    testWidgets(
+        'a variable-width layout draws no phantom seats on the short row',
         (tester) async {
       await _pump(tester, repo: _FakePickerRepo(_variableMap()));
       // Row A has 4 seats, row B has 10 — A5 must not exist, B10 must.
@@ -267,7 +280,8 @@ void main() {
       expect(repo.randomCalls, 1);
     });
 
-    testWidgets('a reserve failure (after select + Confirm) shows the error '
+    testWidgets(
+        'a reserve failure (after select + Confirm) shows the error '
         'toast and keeps the picker usable (busy resets, no pop)',
         (tester) async {
       await _pump(tester, repo: _FakePickerRepo(_map(), failReserve: true));
@@ -281,9 +295,11 @@ void main() {
       expect(find.bySemanticsLabel('A2'), findsOneWidget);
     });
 
-    testWidgets('auto-pick on a FULL session shows "No places remain", not the '
+    testWidgets(
+        'auto-pick on a FULL session shows "No places remain", not the '
         'generic failure (the capacity cap — item 4)', (tester) async {
-      await _pump(tester, repo: _FakePickerRepo(_map(), randomSessionFull: true));
+      await _pump(tester,
+          repo: _FakePickerRepo(_map(), randomSessionFull: true),);
       await tester.tap(find.widgetWithText(FilledButton, 'Auto-pick a seat'));
       await tester.pumpAndSettle();
       // The session-full message shows (not the generic seat-reserve failure),
@@ -298,7 +314,8 @@ void main() {
   });
 
   group('SeatPickerScreen — change seat (B1)', () {
-    testWidgets('an already-held seat switches the picker to CHANGE mode: the '
+    testWidgets(
+        'an already-held seat switches the picker to CHANGE mode: the '
         'change copy, the seat being left, and no auto-pick', (tester) async {
       await _pump(tester, repo: _FakePickerRepo(_heldMap()));
 
@@ -306,7 +323,8 @@ void main() {
         find.textContaining('Tap an available seat to move your booking'),
         findsOneWidget,
       );
-      expect(find.text('Row B · Seat 1'), findsOneWidget); // the seat being left
+      expect(
+          find.text('Row B · Seat 1'), findsOneWidget,); // the seat being left
       expect(
         find.widgetWithText(FilledButton, 'Confirm the change'),
         findsOneWidget,
@@ -322,7 +340,8 @@ void main() {
       );
     });
 
-    testWidgets('confirming names the OLD and the NEW seat, then moves and pops',
+    testWidgets(
+        'confirming names the OLD and the NEW seat, then moves and pops',
         (tester) async {
       final repo = await _pump(tester, repo: _FakePickerRepo(_heldMap()));
 
@@ -362,10 +381,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(repo.movedRow, isNull);
-      expect(find.bySemanticsLabel('A2'), findsOneWidget); // still on the picker
+      expect(
+          find.bySemanticsLabel('A2'), findsOneWidget,); // still on the picker
     });
 
-    testWidgets('losing the race for the destination says the CURRENT seat is '
+    testWidgets(
+        'losing the race for the destination says the CURRENT seat is '
         'kept, and the picker stays usable', (tester) async {
       await _pump(
         tester,
@@ -387,7 +408,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('That seat was just taken — you still have your current seat.'),
+        find.text(
+            'That seat was just taken — you still have your current seat.',),
         findsOneWidget,
       );
       expect(find.bySemanticsLabel('A2'), findsOneWidget);
@@ -401,7 +423,8 @@ void main() {
           _heldMap(),
           moveFailure: const ApiFailure(
             code: 'BOOKING_SESSION_STARTED',
-            message: 'You cannot change your seat after the session has started.',
+            message:
+                'You cannot change your seat after the session has started.',
             httpStatus: 409,
           ),
         ),

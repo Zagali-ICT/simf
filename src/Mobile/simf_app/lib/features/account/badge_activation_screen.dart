@@ -95,10 +95,11 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
       _error = null;
     });
     try {
-      final result = await ref.read(authRepositoryProvider).badgeActivationStart(
-            qrId: widget.qrId,
-            email: widget.needsEmail ? _email.text.trim() : null,
-          );
+      final result =
+          await ref.read(authRepositoryProvider).badgeActivationStart(
+                qrId: widget.qrId,
+                email: widget.needsEmail ? _email.text.trim() : null,
+              );
       if (!mounted) {
         return;
       }
@@ -202,7 +203,9 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
   }
 
   String _passwordRequirementMessage(
-      PasswordRequirement req, AppL10n l10n,) {
+    PasswordRequirement req,
+    AppL10n l10n,
+  ) {
     switch (req) {
       case PasswordRequirement.length:
         return l10n.passwordLength;
@@ -260,7 +263,10 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
                 style: SimfTokens.bodyBeige,
               ),
               const SizedBox(height: SimfTokens.space8),
-              if (_emailStep) ..._emailStepFields(l10n) else ..._codeStepFields(l10n),
+              if (_emailStep)
+                ..._emailStepFields(l10n)
+              else
+                ..._codeStepFields(l10n),
               if (_error != null) ...<Widget>[
                 const SizedBox(height: SimfTokens.space3),
                 Text(

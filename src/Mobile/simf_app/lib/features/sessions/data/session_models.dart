@@ -1,7 +1,13 @@
 import 'package:flutter/foundation.dart';
-
+import 'package:simf_app/core/utils/bilingual.dart';
+import 'package:simf_app/core/utils/local_days.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/sessions/data/session_lifecycle.dart';
+
+// Day grouping moved to core/utils (cross-feature); re-exported so the
+// existing `distinctLocalDays` / `sameLocalDay` call sites here and in
+// ai_summary and presentations keep resolving off this file.
+export 'package:simf_app/core/utils/local_days.dart';
 
 /// The session broadcast lifecycle — mirrors `SIMF.Common.Enums.SessionStatus`
 /// (frozen, int-backed: Scheduled=0, Held=1, Recorded=2, Published=3). The wire
@@ -130,30 +136,7 @@ class SessionSpeaker {
     this.photoRelativePath,
   });
 
-  final String id;
-  final String name;
-  final String nameArabic;
-  final String? title;
-  final String? titleArabic;
-  final int displayOrder;
-  final SessionSpeakerRole role;
-  final int? countryId;
-  final String? countryNameEn;
-  final String? countryNameAr;
-  final String? photoRelativePath;
-
-  String localizedName(bool isArabic) =>
-      _pickRequired(nameArabic, name, isArabic);
-
-  // 2026-07-19 (owner) — the speaker's rank/title in the active locale
-  // (Arabic ↔ English), matching how the name localizes. Null when unset.
-  String? localizedTitle(bool isArabic) =>
-      _pickOptional(titleArabic, title, isArabic);
-
-  String? localizedCountry(bool isArabic) =>
-      _pickOptional(countryNameAr, countryNameEn, isArabic);
-
-  static SessionSpeaker fromJson(Map<String, dynamic> json) => SessionSpeaker(
+  factory SessionSpeaker.fromJson(Map<String, dynamic> json) => SessionSpeaker(
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
@@ -166,6 +149,29 @@ class SessionSpeaker {
         countryNameAr: json['countryNameAr'] as String?,
         photoRelativePath: json['photoRelativePath'] as String?,
       );
+
+  final String id;
+  final String name;
+  final String nameArabic;
+  final String? title;
+  final String? titleArabic;
+  final int displayOrder;
+  final SessionSpeakerRole role;
+  final int? countryId;
+  final String? countryNameEn;
+  final String? countryNameAr;
+  final String? photoRelativePath;
+
+  String localizedName({required bool isArabic}) =>
+      pickLocalized(nameArabic, name, isArabic: isArabic);
+
+  // 2026-07-19 (owner) — the speaker's rank/title in the active locale
+  // (Arabic ↔ English), matching how the name localizes. Null when unset.
+  String? localizedTitle({required bool isArabic}) =>
+      pickLocalizedOrNull(titleArabic, title, isArabic: isArabic);
+
+  String? localizedCountry({required bool isArabic}) =>
+      pickLocalizedOrNull(countryNameAr, countryNameEn, isArabic: isArabic);
 }
 
 /// One row in the cached programme — mirrors
@@ -199,6 +205,29 @@ class SessionListItem {
     this.type,
     this.hasPublishedSummary = false,
   });
+
+  factory SessionListItem.fromJson(Map<String, dynamic> json) =>
+      SessionListItem(
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        hallId: json['hallId'] as String? ?? '',
+        hallName: json['hallName'] as String? ?? '',
+        hallNameArabic: json['hallNameArabic'] as String? ?? '',
+        start: parseWireDateTime(json['start'], 'start'),
+        end: parseWireDateTime(json['end'], 'end'),
+        status: SessionStatus.fromJson(json['status']),
+        speakers: _decodeSpeakers(json['speakers']),
+        description: json['description'] as String?,
+        descriptionArabic: json['descriptionArabic'] as String?,
+        categoryId: json['categoryId'] as String?,
+        categoryName: json['categoryName'] as String?,
+        categoryNameArabic: json['categoryNameArabic'] as String?,
+        primaryThemeColor: json['primaryThemeColor'] as String?,
+        type: SessionType.fromJson(json['type']),
+        hasPublishedSummary: json['hasPublishedSummary'] as bool? ?? false,
+      );
 
   final String id;
   final String code;
@@ -248,39 +277,17 @@ class SessionListItem {
     return minutes < 0 ? 0 : minutes;
   }
 
-  String localizedTitle(bool isArabic) =>
-      _pickRequired(titleArabic, title, isArabic);
+  String localizedTitle({required bool isArabic}) =>
+      pickLocalized(titleArabic, title, isArabic: isArabic);
 
-  String? localizedHall(bool isArabic) =>
-      _pickOptional(hallNameArabic, hallName, isArabic);
+  String? localizedHall({required bool isArabic}) =>
+      pickLocalizedOrNull(hallNameArabic, hallName, isArabic: isArabic);
 
-  String? localizedDescription(bool isArabic) =>
-      _pickOptional(descriptionArabic, description, isArabic);
+  String? localizedDescription({required bool isArabic}) =>
+      pickLocalizedOrNull(descriptionArabic, description, isArabic: isArabic);
 
-  String? localizedCategory(bool isArabic) =>
-      _pickOptional(categoryNameArabic, categoryName, isArabic);
-
-  static SessionListItem fromJson(Map<String, dynamic> json) => SessionListItem(
-        id: json['id'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        hallId: json['hallId'] as String? ?? '',
-        hallName: json['hallName'] as String? ?? '',
-        hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: parseWireDateTime(json['start'], 'start'),
-        end: parseWireDateTime(json['end'], 'end'),
-        status: SessionStatus.fromJson(json['status']),
-        speakers: _decodeSpeakers(json['speakers']),
-        description: json['description'] as String?,
-        descriptionArabic: json['descriptionArabic'] as String?,
-        categoryId: json['categoryId'] as String?,
-        categoryName: json['categoryName'] as String?,
-        categoryNameArabic: json['categoryNameArabic'] as String?,
-        primaryThemeColor: json['primaryThemeColor'] as String?,
-        type: SessionType.fromJson(json['type']),
-        hasPublishedSummary: json['hasPublishedSummary'] as bool? ?? false,
-      );
+  String? localizedCategory({required bool isArabic}) =>
+      pickLocalizedOrNull(categoryNameArabic, categoryName, isArabic: isArabic);
 }
 
 /// The envelope for the cached programme (`PublicSessions = { items: [...] }`).
@@ -289,17 +296,17 @@ class SessionListItem {
 class SessionsPage {
   const SessionsPage(this.items);
 
-  final List<SessionListItem> items;
-
-  static SessionsPage fromJson(Object? data) {
-    final list = (data is Map ? data['items'] : null) as List? ??
-        const <dynamic>[];
+  factory SessionsPage.fromJson(Object? data) {
+    final list =
+        (data is Map ? data['items'] : null) as List? ?? const <dynamic>[];
     final items = list
         .whereType<Map<dynamic, dynamic>>()
         .map((e) => SessionListItem.fromJson(e.cast<String, dynamic>()))
         .toList(growable: false);
     return SessionsPage(items);
   }
+
+  final List<SessionListItem> items;
 }
 
 /// D-452 (Figma 883:2308 "تفاصيل اليوم") — one programme day: a calendar date
@@ -318,6 +325,19 @@ class ProgrammeDay {
     required this.sessions,
   });
 
+  factory ProgrammeDay.fromJson(Map<String, dynamic> json) => ProgrammeDay(
+        id: json['id'] as String? ?? '',
+        date: _parseDate(json['date']),
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        hasImage: json['hasImage'] as bool? ?? false,
+        sessions: (json['sessions'] as List? ?? const <dynamic>[])
+            .whereType<Map<dynamic, dynamic>>()
+            .map((e) => SessionListItem.fromJson(e.cast<String, dynamic>()))
+            .toList(growable: false),
+      );
+
   final String id;
 
   /// The day's calendar date (local midnight — the wire sends a date-only).
@@ -331,21 +351,8 @@ class ProgrammeDay {
   final bool hasImage;
   final List<SessionListItem> sessions;
 
-  String localizedTitle(bool isArabic) =>
-      _pickRequired(titleArabic, title, isArabic);
-
-  static ProgrammeDay fromJson(Map<String, dynamic> json) => ProgrammeDay(
-        id: json['id'] as String? ?? '',
-        date: _parseDate(json['date']),
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-        hasImage: json['hasImage'] as bool? ?? false,
-        sessions: (json['sessions'] as List? ?? const <dynamic>[])
-            .whereType<Map<dynamic, dynamic>>()
-            .map((e) => SessionListItem.fromJson(e.cast<String, dynamic>()))
-            .toList(growable: false),
-      );
+  String localizedTitle({required bool isArabic}) =>
+      pickLocalized(titleArabic, title, isArabic: isArabic);
 }
 
 /// The envelope for the day-grouped programme (`PublicProgrammeDays`).
@@ -353,17 +360,17 @@ class ProgrammeDay {
 class ProgrammeDaysPage {
   const ProgrammeDaysPage(this.days);
 
-  final List<ProgrammeDay> days;
-
-  static ProgrammeDaysPage fromJson(Object? data) {
-    final list = (data is Map ? data['days'] : null) as List? ??
-        const <dynamic>[];
+  factory ProgrammeDaysPage.fromJson(Object? data) {
+    final list =
+        (data is Map ? data['days'] : null) as List? ?? const <dynamic>[];
     final days = list
         .whereType<Map<dynamic, dynamic>>()
         .map((e) => ProgrammeDay.fromJson(e.cast<String, dynamic>()))
         .toList(growable: false);
     return ProgrammeDaysPage(days);
   }
+
+  final List<ProgrammeDay> days;
 }
 
 /// The full detail for one session — mirrors
@@ -399,6 +406,29 @@ class SessionDetail {
     this.displayOrder = 0,
     this.arrivalGraceMinutes = defaultArrivalGraceMinutes,
   });
+
+  factory SessionDetail.fromJson(Map<String, dynamic> json) => SessionDetail(
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        hallId: json['hallId'] as String? ?? '',
+        hallName: json['hallName'] as String? ?? '',
+        hallNameArabic: json['hallNameArabic'] as String? ?? '',
+        start: parseWireDateTime(json['start'], 'start'),
+        end: parseWireDateTime(json['end'], 'end'),
+        speakers: _decodeSpeakers(json['speakers']),
+        description: json['description'] as String?,
+        descriptionArabic: json['descriptionArabic'] as String?,
+        categoryId: json['categoryId'] as String?,
+        categoryName: json['categoryName'] as String?,
+        categoryNameArabic: json['categoryNameArabic'] as String?,
+        type: SessionType.fromJson(json['type']),
+        liveStreamUrl: json['liveStreamUrl'] as String?,
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        arrivalGraceMinutes: (json['arrivalGraceMinutes'] as num?)?.toInt() ??
+            defaultArrivalGraceMinutes,
+      );
 
   final String id;
   final String code;
@@ -465,41 +495,17 @@ class SessionDetail {
   DateTime get startLocal => saudiOf(start);
   DateTime get endLocal => saudiOf(end);
 
-  String localizedTitle(bool isArabic) =>
-      _pickRequired(titleArabic, title, isArabic);
+  String localizedTitle({required bool isArabic}) =>
+      pickLocalized(titleArabic, title, isArabic: isArabic);
 
-  String localizedHall(bool isArabic) =>
-      _pickRequired(hallNameArabic, hallName, isArabic);
+  String localizedHall({required bool isArabic}) =>
+      pickLocalized(hallNameArabic, hallName, isArabic: isArabic);
 
-  String? localizedDescription(bool isArabic) =>
-      _pickOptional(descriptionArabic, description, isArabic);
+  String? localizedDescription({required bool isArabic}) =>
+      pickLocalizedOrNull(descriptionArabic, description, isArabic: isArabic);
 
-  String? localizedCategory(bool isArabic) =>
-      _pickOptional(categoryNameArabic, categoryName, isArabic);
-
-
-  static SessionDetail fromJson(Map<String, dynamic> json) => SessionDetail(
-        id: json['id'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        hallId: json['hallId'] as String? ?? '',
-        hallName: json['hallName'] as String? ?? '',
-        hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: parseWireDateTime(json['start'], 'start'),
-        end: parseWireDateTime(json['end'], 'end'),
-        speakers: _decodeSpeakers(json['speakers']),
-        description: json['description'] as String?,
-        descriptionArabic: json['descriptionArabic'] as String?,
-        categoryId: json['categoryId'] as String?,
-        categoryName: json['categoryName'] as String?,
-        categoryNameArabic: json['categoryNameArabic'] as String?,
-        type: SessionType.fromJson(json['type']),
-        liveStreamUrl: json['liveStreamUrl'] as String?,
-        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-        arrivalGraceMinutes: (json['arrivalGraceMinutes'] as num?)?.toInt() ??
-            defaultArrivalGraceMinutes,
-      );
+  String? localizedCategory({required bool isArabic}) =>
+      pickLocalizedOrNull(categoryNameArabic, categoryName, isArabic: isArabic);
 }
 
 /// The caller's own active seat for a session — the `myCell` cell of
@@ -554,7 +560,6 @@ List<SessionListItem> filterSessions(
   DateTime? localDay,
   String query = '',
 }) {
-  final needle = query.trim().toLowerCase();
   return items.where((session) {
     if (view == SessionsView.upcoming && session.start.isBefore(nowUtc)) {
       return false;
@@ -562,19 +567,49 @@ List<SessionListItem> filterSessions(
     if (localDay != null && !sameLocalDay(session.startLocal, localDay)) {
       return false;
     }
-    if (needle.isEmpty) {
-      return true;
-    }
-    final haystack = <String?>[
-      session.title,
-      session.titleArabic,
-      session.description,
-      session.descriptionArabic,
-      session.code,
-    ].whereType<String>().join(' ').toLowerCase();
-    return haystack.contains(needle);
+    return sessionMatchesQuery(session, query);
   }).toList(growable: false);
 }
+
+/// Whether [session] matches a free-text [query] across its title, description
+/// and code in BOTH languages, case-insensitively. An empty query matches
+/// everything.
+///
+/// One definition, because there were two. This predicate was also written
+/// inline in `sessions_screen.dart`, and only the copy inside [filterSessions]
+/// had tests — while only the inline one actually ran, because
+/// [filterSessions] had no production caller at all. Five tests were passing
+/// over a rule nobody shipped.
+bool sessionMatchesQuery(SessionListItem session, String query) {
+  final needle = query.trim().toLowerCase();
+  if (needle.isEmpty) {
+    return true;
+  }
+  final haystack = <String?>[
+    session.title,
+    session.titleArabic,
+    session.description,
+    session.descriptionArabic,
+    session.code,
+  ].whereType<String>().join(' ').toLowerCase();
+  return haystack.contains(needle);
+}
+
+/// The sessions of [day] the programme screen shows, given the active type tab
+/// and the search box. Input order is preserved (the server returns the day
+/// time-ordered).
+///
+/// Lifted out of the screen's `build()`, which re-derived it on every keystroke
+/// and every rebuild (section 2: no data shaping in build).
+List<SessionListItem> sessionsForDay(
+  ProgrammeDay day, {
+  SessionType? type,
+  String query = '',
+}) => <SessionListItem>[
+  for (final session in day.sessions)
+    if (type == null || session.type == type)
+      if (sessionMatchesQuery(session, query)) session,
+];
 
 /// The distinct device-local calendar days present in [items], ascending — the
 /// data-driven day strip (Page_016: the event's "remaining days"). Each entry
@@ -582,31 +617,6 @@ List<SessionListItem> filterSessions(
 /// a midnight-local [DateTime].
 List<DateTime> sessionDays(List<SessionListItem> items) =>
     distinctLocalDays(items, (session) => session.startLocal);
-
-/// The distinct device-local calendar days spanned by [items], ascending, each
-/// a
-/// midnight-local [DateTime]. [localStart] pulls the device-local start out of
-/// an
-/// item, so every day-grouped list (sessions, presentations, …) shares one
-/// algorithm instead of re-declaring it.
-List<DateTime> distinctLocalDays<T>(
-  Iterable<T> items,
-  DateTime Function(T) localStart,
-) {
-  final byKey = <String, DateTime>{};
-  for (final item in items) {
-    final local = localStart(item);
-    final key = '${local.year}-${local.month}-${local.day}';
-    byKey.putIfAbsent(key, () => DateTime(local.year, local.month, local.day));
-  }
-  return byKey.values.toList()..sort();
-}
-
-/// Whether [a] and [b] fall on the same device-local calendar day (time-of-day-
-/// and argument-order-independent) — the one home for the day-equality
-/// predicate.
-bool sameLocalDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// Decodes a `speakers[]` array (shared by the list item + the detail). A
 /// missing / null array decodes to an empty list — never null on the wire
@@ -629,22 +639,6 @@ DateTime _parseDate(Object? value) {
   return DateTime.fromMillisecondsSinceEpoch(0);
 }
 
-/// Picks the locale value of a required bilingual pair, falling back to the
-/// other language when one side is blank.
-String _pickRequired(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-/// Picks the locale value of an optional bilingual pair; null when both blank.
-String? _pickOptional(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
-}
-
 /// P5.1 / D-241 — the caller's own attendance state for one session.
 /// [arrived] is true while an open attendance row exists (entered, not yet
 /// left). [enter] / [leave] are stored absolute instants — render them through
@@ -657,19 +651,23 @@ class HallAttendanceStatus {
     this.method,
   });
 
+  factory HallAttendanceStatus.fromJson(Map<String, dynamic> json) {
+    return HallAttendanceStatus(
+      arrived: json['arrived'] as bool? ?? false,
+      enter: json['enter'] == null
+          ? null
+          : parseWireDateTime(json['enter'], 'enter'),
+      leave: json['leave'] == null
+          ? null
+          : parseWireDateTime(json['leave'], 'leave'),
+      method: HallAttendanceMethod.fromJson(json['method']),
+    );
+  }
+
   final bool arrived;
   final DateTime? enter;
   final DateTime? leave;
   final HallAttendanceMethod? method;
-
-  static HallAttendanceStatus fromJson(Map<String, dynamic> json) {
-    return HallAttendanceStatus(
-      arrived: json['arrived'] as bool? ?? false,
-      enter: json['enter'] == null ? null : parseWireDateTime(json['enter'], 'enter'),
-      leave: json['leave'] == null ? null : parseWireDateTime(json['leave'], 'leave'),
-      method: HallAttendanceMethod.fromJson(json['method']),
-    );
-  }
 }
 
 /// How the attendee's presence in the hall was recorded — an operator scanning

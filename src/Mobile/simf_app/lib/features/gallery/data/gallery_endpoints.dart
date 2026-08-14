@@ -8,4 +8,10 @@
 /// exactly. Changing one breaks installed builds.
 abstract final class GalleryEndpoints {
   static const String media = '/app/media';
+
+  /// The lighter grid bitmap for one item.
+  static String thumbnail(String id) => '$media/$id/thumbnail';
+
+  /// The full bitmap for one item.
+  static String image(String id) => '$media/$id/image';
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,10 +13,10 @@ import 'package:simf_app/features/accessibility/widgets/accessibility_toggle_row
 
 /// Page 038 — إمكانية الوصول · Accessibility (#38, `/settings/accessibility`).
 ///
-/// Pixel-parity to KSA Figma frame `1116:16630`: the navy [SimfPageShell] shell and
-/// two grouped sections — **العرض** (font size: صغير / متوسط / كبير / أكبر, the
-/// high-contrast switch and the reduce-motion switch) and **الصوت والقراءة**
-/// (the screen-reader switch and the session-captions switch).
+/// Pixel-parity to KSA Figma frame `1116:16630`: the navy [SimfPageShell] shell
+/// and two grouped sections — **العرض** (font size: صغير / متوسط / كبير / أكبر,
+/// the high-contrast switch and the reduce-motion switch) and **الصوت
+/// والقراءة** (the screen-reader switch and the session-captions switch).
 ///
 /// All choices are **persisted** ([AccessibilityController], prefs-backed) and
 /// **applied app-wide**: the text scaler + reduce-motion ride the root
@@ -64,14 +65,15 @@ class AccessibilityScreen extends ConsumerWidget {
             hint: l10n.accessibilityScreenReaderSubtitle,
             value: settings.screenReaderAssist,
             onChanged: (v) {
-              controller.setScreenReaderAssist(v);
-              // Immediate confirmation through the same channel the assist uses.
+              unawaited(controller.setScreenReaderAssist(v));
+              // Immediate confirmation through the same channel the assist
+              // uses.
               if (v) {
-                SemanticsService.sendAnnouncement(
-                  View.of(context),
-                  l10n.accessibilityScreenReaderTitle,
-                  Directionality.of(context),
-                );
+                unawaited(SemanticsService.sendAnnouncement(
+                    View.of(context),
+                    l10n.accessibilityScreenReaderTitle,
+                    Directionality.of(context),
+                  ),);
               }
             },
           ),

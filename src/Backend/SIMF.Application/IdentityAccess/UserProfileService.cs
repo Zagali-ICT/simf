@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
+// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown,
 //        Me_profileComplete flip + male-without-photo,
 //        DisplayName-placeholder-replaced + admin-name-preserved,
@@ -973,7 +973,7 @@ internal sealed class UserProfileService(
         };
 
     // The account's ProfileType-derived flags
-    // for the app: IsVip (AllowsVipMeetingSlots, VVIP/VIP) and IsForVisitor
+    // for the app: IsVip (IsVipTier, VVIP/VIP) and IsForVisitor
     // (audience vs "Other" tier). Resolved from the ProfileType in one lookup and
     // passed into ToResponse (like hasAvatar) rather than read off a nav, so a
     // freshly upserted profile whose ProfileType nav is not loaded still reports
@@ -987,7 +987,7 @@ internal sealed class UserProfileService(
             return (false, true);
         }
         var profileType = await profiles.FindProfileTypeAsync(id, cancellationToken);
-        return (profileType?.AllowsVipMeetingSlots ?? false,
+        return (profileType?.IsVipTier ?? false,
             profileType?.IsForVisitor ?? true);
     }
 

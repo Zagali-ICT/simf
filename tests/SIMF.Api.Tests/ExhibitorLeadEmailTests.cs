@@ -186,6 +186,9 @@ public sealed class ExhibitorLeadEmailTests : IClassFixture<ExhibitorLeadEmailAp
             PlaceOfBirth = string.Empty,
             IsActive = true,
             CreatedAt = SimfClock.Now,
+            // A badge exists only for an admitted attendee, and admission is
+            // read on the profile rather than the account.
+            AdmissionState = AccountState.Approved,
         });
         await appDb.SaveChangesAsync();
     }

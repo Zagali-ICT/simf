@@ -51,18 +51,19 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// raw pixel literals), which is why it read as a different product from the
 /// visitor Create-profile screen. It now composes the SAME shared pieces that
 /// screen uses — [SimfFormScaffold] (back + the shared language pill + crest),
-/// [MaxWidthBody] + [WindowSize] for the responsive card, [SimfLabeledTextField]
-/// / [MobileField] on `simfFieldDecoration`, [SimfPickerField] + the searchable
-/// [LookupSearchSheet] for every lookup, [GenderPillsField], [BeigeTabs],
-/// [AttachmentField] and [TermsAndNextButtons] — plus a camera-or-file
-/// attachment source and an operator-chosen visitor classification.
+/// [MaxWidthBody] + [WindowSize] for the responsive card,
+/// [SimfLabeledTextField] / [MobileField] on `simfFieldDecoration`,
+/// [SimfPickerField] + the searchable [LookupSearchSheet] for every lookup,
+/// [GenderPillsField], [BeigeTabs], [AttachmentField] and [TermsAndNextButtons]
+/// — plus a camera-or-file attachment source and an operator-chosen visitor
+/// classification.
 ///
 /// Route: `RouteNames.staffRegisterVisitor` (`/staff/register-visitor`, #114),
 /// from the staff-only drawer. Data: `profileRepository` (countries / visitor
 /// profile-types / organisations) + `staffRepository.registerVisitor` (+ the
 /// optional id-document / avatar uploads). Perf: one eager lookup load, no
-/// scrolling list. Contract: `StaffWalkInRequest` / `StaffWalkInResult` JSON
-/// is frozen (D-219).
+/// scrolling list. Contract: `StaffWalkInRequest` / `StaffWalkInResult` JSON is
+/// frozen (D-219).
 class StaffRegisterVisitorScreen extends ConsumerStatefulWidget {
   const StaffRegisterVisitorScreen({super.key});
 
@@ -309,9 +310,10 @@ class _StaffRegisterVisitorScreenState
     final repo = ref.read(staffRepositoryProvider);
     try {
       final result = await repo.registerVisitor(request);
-      // Attach the optional images by the new visitor's id. A failed upload does
-      // NOT undo the (already-created) registration, so the operator is offered
-      // a retry of the UPLOAD instead of re-registering the person (DEF-STF-004).
+      // Attach the optional images by the new visitor's id. A failed upload
+      // does NOT undo the (already-created) registration, so the operator is
+      // offered a retry of the UPLOAD instead of re-registering the person
+      // (DEF-STF-004).
       final failed = await _uploadAttachments(repo, result.userId);
       if (!mounted) {
         return;
@@ -320,7 +322,8 @@ class _StaffRegisterVisitorScreenState
         // The registration itself is finished — drop the busy state before the
         // modal so its controls are live (and the CTA is not left spinning).
         setState(() => _submitting = false);
-        await _resolveFailedUploads(l10n, messenger, repo, result.userId, failed);
+        await _resolveFailedUploads(
+            l10n, messenger, repo, result.userId, failed,);
         return;
       }
       messenger
@@ -348,8 +351,8 @@ class _StaffRegisterVisitorScreenState
     }
   }
 
-  /// Moves the server's field-level rejections onto the matching inputs so a 400
-  /// highlights the offending field instead of only raising a toast
+  /// Moves the server's field-level rejections onto the matching inputs so a
+  /// 400 highlights the offending field instead of only raising a toast
   /// (DEF-STF-003). Anything the form has no field for stays in the toast.
   void _applyServerFieldErrors(AppL10n l10n, ApiFailure failure) {
     final errors = <String, _ServerFieldError>{};
@@ -418,8 +421,8 @@ class _StaffRegisterVisitorScreenState
     return (value?.trim() ?? '') == error.rejectedValue ? error.message : null;
   }
 
-  /// 19l — brings the first invalid field into view after a blocked submit.
-  /// The order mirrors the on-screen order so the operator lands on the top-most
+  /// 19l — brings the first invalid field into view after a blocked submit. The
+  /// order mirrors the on-screen order so the operator lands on the top-most
   /// problem, not an arbitrary one.
   void _revealFirstProblem(AppL10n l10n) {
     final anchor = _firstProblemAnchor(l10n)?.currentContext;
@@ -747,9 +750,10 @@ class _StaffRegisterVisitorScreenState
                 controller: _arabicName,
                 maxLength: FieldLimits.profileName,
                 textDirection: TextDirection.rtl,
-                // MERGE (BUG-019 rebuild + BUG-021): the rebuilt field keeps the
-                // shared widget, but the character class is the widened shared one
-                // so tashkeel/tatweel are no longer silently dropped as you type.
+                // MERGE (BUG-019 rebuild + BUG-021): the rebuilt field keeps
+                // the shared widget, but the character class is the widened
+                // shared one so tashkeel/tatweel are no longer silently dropped
+                // as you type.
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.allow(arabicNameCharacters),
                 ],
@@ -1025,7 +1029,9 @@ class _StaffRegisterVisitorScreenState
           child: SimfPickerField(
             fieldKey: 'staffNationalityPicker',
             displayText: hasValue
-                ? (l10n.isArabic ? selected.first.nameArabic : selected.first.name)
+                ? (l10n.isArabic
+                    ? selected.first.nameArabic
+                    : selected.first.name)
                 : l10n.nationalityLabel,
             isPlaceholder: !hasValue,
             onTap: () => unawaited(_pickNationality(l10n)),
@@ -1099,7 +1105,8 @@ class _StaffRegisterVisitorScreenState
             options: <String>[l10n.iqamaSegment, l10n.passportSegment],
             selectedIndex: _docType == VisitorDocType.iqama ? 0 : 1,
             onChanged: (index) => setState(() {
-              _docType = index == 0 ? VisitorDocType.iqama : VisitorDocType.passport;
+              _docType =
+                  index == 0 ? VisitorDocType.iqama : VisitorDocType.passport;
               _documentNumber.clear();
             }),
           ),
@@ -1204,9 +1211,10 @@ class _StaffRegisterVisitorScreenState
   String? _required(AppL10n l10n, String? value) =>
       isBlank(value) ? l10n.requiredField : null;
 
-  // D-700 — mirror the self-service shape + Luhn checks client-side so staff get
-  // instant feedback (the server already enforces the same via
-  // AdminWalkInRegistrationRequestValidator). Empty keeps the "required" message.
+  // D-700 — mirror the self-service shape + Luhn checks client-side so staff
+  // get instant feedback (the server already enforces the same via
+  // AdminWalkInRegistrationRequestValidator). Empty keeps the "required"
+  // message.
   String? _validateNationalId(AppL10n l10n, String? value) {
     final id = value?.trim() ?? '';
     if (id.isEmpty) {
@@ -1233,8 +1241,9 @@ class _StaffRegisterVisitorScreenState
         : l10n.passportInvalid;
   }
 
-  /// Phone is required server-side (Saudi or international); validate inline like
-  /// every other required field, with the same standard shapes as self-service.
+  /// Phone is required server-side (Saudi or international); validate inline
+  /// like every other required field, with the same standard shapes as
+  /// self-service.
   String? _validatePhone(String? value) {
     final l10n = AppL10n.of(context);
     final phone = value?.trim() ?? '';

@@ -10,7 +10,8 @@ import 'package:simf_app/features/requests/widgets/request_action_row.dart';
 /// (delegation) — each shown only when the signed-in user holds the matching
 /// per-user flag ([showSpeaker] / [showDelegation]); the entitled request pills
 /// sit on one row above the gold **"السجل"** history pill. Reuses the shared
-/// [RequestActionButton] so the meetings + requests-history pages keep one control.
+/// [RequestActionButton] so the meetings + requests-history pages keep one
+/// control.
 class MeetingActionRow extends StatelessWidget {
   const MeetingActionRow({
     required this.l10n,

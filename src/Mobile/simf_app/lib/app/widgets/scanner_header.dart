@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// The scanner's navy header band (56-high): a circular navy-deep back button at
-/// the inline start over a centred white title — mirrors `AccountSubHeader` with
-/// `circular: true` (kept local so `app/` doesn't depend on `features/`).
+/// The scanner's navy header band (56-high): a circular navy-deep back button
+/// at the inline start over a centred white title — mirrors `AccountSubHeader`
+/// with `circular: true` (kept local so `app/` doesn't depend on `features/`).
 class ScannerHeader extends StatelessWidget {
   const ScannerHeader({required this.title, required this.onBack, super.key});
 

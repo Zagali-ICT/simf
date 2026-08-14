@@ -46,18 +46,25 @@ public sealed class UserProfileType : BaseAuditEntity
     /// is a checkbox rather than a code change.</summary>
     public MobileAppRole MobileAppRole { get; set; } = MobileAppRole.None;
 
-    /// <summary><b>Despite the name, this no longer gates meeting requests.</b>
-    /// Eligibility to request a speaker meeting moved to the per-user
-    /// <c>UserProfile.AllowsSpeakerMeeting</c> flag so that it no longer
-    /// depends on the attendee's tier. What remains here is the VIP-tier marker
-    /// itself: it decides who may self-reserve a VIP-tier seat, and it is what
-    /// the app receives as <c>isVip</c>. The seeder sets it on the VVIP and VIP
-    /// rows.
+    /// <summary>Marks this type as a VIP audience tier. It decides who may
+    /// self-reserve a VIP-tier seat
+    /// (<c>SeatReservationService.IsVipVisitorAsync</c>) and it is what the app
+    /// receives as <c>isVip</c>. The seeder sets it on the VVIP and VIP rows, and
+    /// nothing else writes it — there is no admin API or Control Panel path, so a
+    /// type created from the Control Panel is never VIP.
     ///
     /// <para>It is a column at all because the test used to be "the profile
     /// type's Name contains 'VIP'", which would wrongly match any future type
-    /// whose name merely embedded those letters.</para></summary>
-    public bool AllowsVipMeetingSlots { get; set; }
+    /// whose name merely embedded those letters.</para>
+    ///
+    /// <para>It does <b>not</b> gate meeting requests. Meeting eligibility is
+    /// assigned per user on <c>UserProfile.AllowsSpeakerMeeting</c> /
+    /// <c>AllowsDelegationMeeting</c>, so two people on the same tier can differ.
+    /// This column was once named for that job and was renamed when those flags
+    /// took it over: a meeting-shaped name reads at the call site as an answer to
+    /// "may this person request a meeting?", which is exactly what it stopped
+    /// answering. The only question it answers is "is this a VIP tier?".</para></summary>
+    public bool IsVipTier { get; set; }
 
     /// <summary>Whether a self-registering user is offered this type in the
     /// mobile sign-up picker. <c>false</c> for operational types an admin

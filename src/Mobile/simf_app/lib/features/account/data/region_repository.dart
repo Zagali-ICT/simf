@@ -1,16 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/features/account/data/account_endpoints.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart'
+    show ProfileRepository;
 import 'package:simf_app/features/account/data/region_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// App-local data layer for the region lookup (D-547): the single public read of
-/// the official Saudi administrative regions, over the authenticated
-/// `GET /app/regions` endpoint (sign-in only). Throws [ApiFailure] (from
-/// `simf_data_pkg`) on a wire error — the picker catches it and falls back to the
-/// const `saudiRegions` list.
+/// App-local data layer for the region lookup (D-547): the single public read
+/// of the official Saudi administrative regions, over the authenticated `GET
+/// /app/regions` endpoint (sign-in only). Throws [ApiFailure] (from
+/// `simf_data_pkg`) on a wire error — the picker catches it and falls back to
+/// the const `saudiRegions` list.
 ///
-/// Kept SEPARATE from [ProfileRepository] (the place-of-birth picker is the only
-/// consumer) to keep the blast radius small (D-545: repo + DTO in
+/// Kept SEPARATE from [ProfileRepository] (the place-of-birth picker is the
+/// only consumer) to keep the blast radius small (D-545: repo + DTO in
 /// `features/<f>/data`, the repo calls the client, never `dio` directly).
 class RegionRepository {
   RegionRepository(this._client);

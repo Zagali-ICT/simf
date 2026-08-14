@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Who a question is addressed to — mirrors `SessionQuestionRecipient`
@@ -68,6 +69,23 @@ class ModeratorQuestion {
     this.pushedAt,
   });
 
+  factory ModeratorQuestion.fromJson(Map<String, dynamic> json) =>
+      ModeratorQuestion(
+        id: json['id'] as String? ?? '',
+        sessionId: json['sessionId'] as String? ?? '',
+        submitterName: json['submittedByDisplayName'] as String? ?? '',
+        questionText: json['questionText'] as String? ?? '',
+        recipient: (json['recipient'] as num?)?.toInt() == 1
+            ? QuestionRecipient.host
+            : QuestionRecipient.speaker,
+        order: (json['order'] as num?)?.toInt() ?? 0,
+        isHidden: json['isHidden'] as bool? ?? false,
+        isPushed: json['isPushed'] as bool? ?? false,
+        createdAt: _utc(json['createdAt']),
+        status: ModeratorQuestionStatus.fromWire(json['status']),
+        pushedAt: json['pushedAt'] == null ? null : _utc(json['pushedAt']),
+      );
+
   final String id;
   final String sessionId;
   final String submitterName;
@@ -92,7 +110,8 @@ class ModeratorQuestion {
 
   /// The same row with a different persisted status — used for the desk's
   /// optimistic update before the server confirms (rolled back on failure).
-  ModeratorQuestion withStatus(ModeratorQuestionStatus next) => ModeratorQuestion(
+  ModeratorQuestion withStatus(ModeratorQuestionStatus next) =>
+      ModeratorQuestion(
         id: id,
         sessionId: sessionId,
         submitterName: submitterName,
@@ -104,23 +123,6 @@ class ModeratorQuestion {
         createdAt: createdAt,
         status: next,
         pushedAt: pushedAt,
-      );
-
-  static ModeratorQuestion fromJson(Map<String, dynamic> json) =>
-      ModeratorQuestion(
-        id: json['id'] as String? ?? '',
-        sessionId: json['sessionId'] as String? ?? '',
-        submitterName: json['submittedByDisplayName'] as String? ?? '',
-        questionText: json['questionText'] as String? ?? '',
-        recipient: (json['recipient'] as num?)?.toInt() == 1
-            ? QuestionRecipient.host
-            : QuestionRecipient.speaker,
-        order: (json['order'] as num?)?.toInt() ?? 0,
-        isHidden: json['isHidden'] as bool? ?? false,
-        isPushed: json['isPushed'] as bool? ?? false,
-        createdAt: _utc(json['createdAt']),
-        status: ModeratorQuestionStatus.fromWire(json['status']),
-        pushedAt: json['pushedAt'] == null ? null : _utc(json['pushedAt']),
       );
 
   /// The endpoint returns a bare `ApiResult<IReadOnlyList<...>>`, so the data
@@ -153,29 +155,8 @@ class ModeratedSession {
     required this.end,
   });
 
-  final String sessionId;
-  final String title;
-  final String titleArabic;
-  final String hallName;
-  final String hallNameArabic;
-  final DateTime start;
-  final DateTime end;
-
-  String localizedTitle(bool isArabic) =>
-      _pick(titleArabic, title, isArabic);
-
-  String localizedHall(bool isArabic) =>
-      _pick(hallNameArabic, hallName, isArabic);
-
-  static String _pick(String arabic, String english, bool isArabic) {
-    final preferred = isArabic ? arabic : english;
-    if (preferred.trim().isNotEmpty) {
-      return preferred;
-    }
-    return isArabic ? english : arabic;
-  }
-
-  static ModeratedSession fromJson(Map<String, dynamic> json) => ModeratedSession(
+  factory ModeratedSession.fromJson(Map<String, dynamic> json) =>
+      ModeratedSession(
         sessionId: json['sessionId'] as String? ?? '',
         title: json['title'] as String? ?? '',
         titleArabic: json['titleArabic'] as String? ?? '',
@@ -184,6 +165,21 @@ class ModeratedSession {
         start: _utc(json['start']),
         end: _utc(json['end']),
       );
+
+  final String sessionId;
+  final String title;
+  final String titleArabic;
+  final String hallName;
+  final String hallNameArabic;
+  final DateTime start;
+  final DateTime end;
+
+  String localizedTitle({required bool isArabic}) =>
+      pickLocalized(titleArabic, title, isArabic: isArabic);
+
+  String localizedHall({required bool isArabic}) =>
+      pickLocalized(hallNameArabic, hallName, isArabic: isArabic);
+
 
   static List<ModeratedSession> listFromData(Object? data) =>
       (data as List? ?? const <dynamic>[])
@@ -196,9 +192,10 @@ class ModeratedSession {
 ///
 /// DEF-MOD-001 / DEF-MOD-002 — every chip is now backed by the PERSISTED
 /// `status`: [fresh] / [accepted] are the Approved rows split by the push flag,
-/// [answered] are the Answered rows, and [rejected] are the Hidden rows the desk
-/// pulls with `?status=Hidden`. Nothing lives only in screen state any more, so
-/// leaving the desk (or a co-moderator on another device) no longer loses work.
+/// [answered] are the Answered rows, and [rejected] are the Hidden rows the
+/// desk pulls with `?status=Hidden`. Nothing lives only in screen state any
+/// more, so leaving the desk (or a co-moderator on another device) no longer
+/// loses work.
 enum ModeratorQueueFilter { all, fresh, accepted, answered, rejected }
 
 DateTime _utc(Object? value) {
@@ -214,6 +211,42 @@ DateTime _utc(Object? value) {
 /// Applies a chip filter to the desk (pure — unit-testable). [desk] is the
 /// working queue from the server (Approved + Answered); [rejected] is the
 /// separately fetched Hidden bucket.
+/// The row count for every filter, in ONE pass over the queue.
+///
+/// The desk derived these as five separate `filterModeratorQueue(...).length`
+/// calls — five walks, each allocating a list only to read its length and throw
+/// it away — on every rebuild, on top of the pass that builds the visible rows.
+///
+/// The three desk predicates are counted independently rather than as an
+/// if/else chain, because they overlap: a question can be both on stage and
+/// answered, and each filter counts it.
+Map<ModeratorQueueFilter, int> moderatorQueueCounts(
+  List<ModeratorQuestion> desk, {
+  List<ModeratorQuestion> rejected = const <ModeratorQuestion>[],
+}) {
+  var fresh = 0;
+  var accepted = 0;
+  var answered = 0;
+  for (final question in desk) {
+    if (!question.isAnswered && !question.isOnStage) {
+      fresh++;
+    }
+    if (question.isOnStage) {
+      accepted++;
+    }
+    if (question.isAnswered) {
+      answered++;
+    }
+  }
+  return <ModeratorQueueFilter, int>{
+    ModeratorQueueFilter.all: desk.length + rejected.length,
+    ModeratorQueueFilter.fresh: fresh,
+    ModeratorQueueFilter.accepted: accepted,
+    ModeratorQueueFilter.answered: answered,
+    ModeratorQueueFilter.rejected: rejected.length,
+  };
+}
+
 List<ModeratorQuestion> filterModeratorQueue(
   List<ModeratorQuestion> desk,
   ModeratorQueueFilter filter, {

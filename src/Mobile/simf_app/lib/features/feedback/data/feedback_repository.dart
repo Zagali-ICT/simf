@@ -34,7 +34,8 @@ class FeedbackRepository {
 
   Future<void> submit({
     required String ratingTypeId,
-    required Map<String, int> answers, String? targetId,
+    required Map<String, int> answers,
+    String? targetId,
     int? overallStars,
     String? comment,
   }) {
@@ -46,7 +47,9 @@ class FeedbackRepository {
         'overallStars': overallStars,
         'comment': comment,
         'answers': answers.entries
-            .map((e) => <String, dynamic>{'questionId': e.key, 'stars': e.value})
+            .map(
+              (e) => <String, dynamic>{'questionId': e.key, 'stars': e.value},
+            )
             .toList(growable: false),
       },
       decodeData: (_) => true,

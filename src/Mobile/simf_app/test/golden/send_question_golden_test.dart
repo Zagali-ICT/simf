@@ -17,13 +17,13 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the About-session / send-a-question screen against Figma
-/// frame **934:3636** (معلومات عن الجلسة). Compare to the frame:
-///   flutter test --update-goldens test/golden/send_question_golden_test.dart
+/// frame **934:3636** (معلومات عن الجلسة). Compare to the frame: flutter test
+/// --update-goldens test/golden/send_question_golden_test.dart
 ///
 /// Frame parity: the "بيانات الجلسة" numbered data block, the "الاسئلة" label
-/// over the fixed 100px tinted composer box, and the bottom-pinned gold submit +
-/// centred reviewed-before-air note (a wide empty gap separates the composer from
-/// the bottom action). RTL.
+/// over the fixed 100px tinted composer box, and the bottom-pinned gold submit
+/// + centred reviewed-before-air note (a wide empty gap separates the composer
+/// from the bottom action). RTL.
 
 SessionDetail _detail() => SessionDetail(
       id: 's1',

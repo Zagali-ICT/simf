@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One news row — mirrors `PublicNewsListItem` (`GET /app/news`).
@@ -16,23 +17,7 @@ class NewsListItem {
     this.imageRelativePath,
   });
 
-  final String id;
-  final String title;
-  final String titleArabic;
-  final String category;
-  final String categoryArabic;
-  final DateTime publishedAt;
-  final String? excerpt;
-  final String? excerptArabic;
-  final String? imageRelativePath;
-
-  String localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
-  String localizedCategory(bool isArabic) =>
-      _pick(categoryArabic, category, isArabic);
-  String? localizedExcerpt(bool isArabic) =>
-      _pickOpt(excerptArabic, excerpt, isArabic);
-
-  static NewsListItem fromJson(Map<String, dynamic> json) => NewsListItem(
+  factory NewsListItem.fromJson(Map<String, dynamic> json) => NewsListItem(
         id: json['id'] as String? ?? '',
         title: json['title'] as String? ?? '',
         titleArabic: json['titleArabic'] as String? ?? '',
@@ -43,6 +28,23 @@ class NewsListItem {
         excerptArabic: json['excerptArabic'] as String?,
         imageRelativePath: json['imageRelativePath'] as String?,
       );
+
+  final String id;
+  final String title;
+  final String titleArabic;
+  final String category;
+  final String categoryArabic;
+  final DateTime publishedAt;
+  final String? excerpt;
+  final String? excerptArabic;
+  final String? imageRelativePath;
+
+  String localizedTitle({required bool isArabic}) =>
+      pickLocalized(titleArabic, title, isArabic: isArabic);
+  String localizedCategory({required bool isArabic}) =>
+      pickLocalized(categoryArabic, category, isArabic: isArabic);
+  String? localizedExcerpt({required bool isArabic}) =>
+      pickLocalizedOrNull(excerptArabic, excerpt, isArabic: isArabic);
 
   /// Reads `PublicNewsPage = { items: [...] }`.
   static List<NewsListItem> listFromData(Object? data) =>
@@ -67,22 +69,7 @@ class NewsArticle {
     this.imageRelativePath,
   });
 
-  final String id;
-  final String title;
-  final String titleArabic;
-  final String body;
-  final String bodyArabic;
-  final String category;
-  final String categoryArabic;
-  final DateTime publishedAt;
-  final String? imageRelativePath;
-
-  String localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
-  String localizedCategory(bool isArabic) =>
-      _pick(categoryArabic, category, isArabic);
-  String localizedBody(bool isArabic) => _pick(bodyArabic, body, isArabic);
-
-  static NewsArticle fromJson(Map<String, dynamic> json) => NewsArticle(
+  factory NewsArticle.fromJson(Map<String, dynamic> json) => NewsArticle(
         id: json['id'] as String? ?? '',
         title: json['title'] as String? ?? '',
         titleArabic: json['titleArabic'] as String? ?? '',
@@ -93,6 +80,23 @@ class NewsArticle {
         publishedAt: _utc(json['publishedAt']),
         imageRelativePath: json['imageRelativePath'] as String?,
       );
+
+  final String id;
+  final String title;
+  final String titleArabic;
+  final String body;
+  final String bodyArabic;
+  final String category;
+  final String categoryArabic;
+  final DateTime publishedAt;
+  final String? imageRelativePath;
+
+  String localizedTitle({required bool isArabic}) =>
+      pickLocalized(titleArabic, title, isArabic: isArabic);
+  String localizedCategory({required bool isArabic}) =>
+      pickLocalized(categoryArabic, category, isArabic: isArabic);
+  String localizedBody({required bool isArabic}) =>
+      pickLocalized(bodyArabic, body, isArabic: isArabic);
 }
 
 DateTime _utc(Object? value) {
@@ -103,17 +107,4 @@ DateTime _utc(Object? value) {
     }
   }
   return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-}
-
-String _pick(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOpt(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
 }

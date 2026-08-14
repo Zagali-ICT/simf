@@ -10,8 +10,8 @@ import 'package:simf_app/features/sessions/widgets/speaker_avatar.dart';
 /// One speaker card (frame 889:2722/889:2737/889:2747): a navy box with a beige
 /// hairline; a 40×40 rounded photo on the inline-start (physical right), with
 /// the name (white 16px) + the country flag over the rank (beige 12px) beside
-/// it. A session **host** carries the gold star glyph + المضيف on that rank line
-/// (PAR-P4a). Tapping opens the speaker profile.
+/// it. A session **host** carries the gold star glyph + المضيف on that rank
+/// line (PAR-P4a). Tapping opens the speaker profile.
 class SessionSpeakerCard extends StatelessWidget {
   const SessionSpeakerCard({
     required this.speaker,
@@ -30,13 +30,13 @@ class SessionSpeakerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = speaker.localizedName(isArabic);
+    final name = speaker.localizedName(isArabic: isArabic);
     final flag = countryFlagEmoji(speaker.countryId);
     final isHost = speaker.role == SessionSpeakerRole.host;
     // The country is now carried by the flag (Figma 889:2726), so the second
     // line is the rank + the host marker only. The rank localizes (Arabic ↔
     // English) to match the name above it (owner 2026-07-19).
-    final title = speaker.localizedTitle(isArabic)?.trim();
+    final title = speaker.localizedTitle(isArabic: isArabic)?.trim();
     final rank = title != null && title.isNotEmpty ? title : null;
 
     return SimfCard(
@@ -125,4 +125,3 @@ class SessionSpeakerCard extends StatelessWidget {
     );
   }
 }
-

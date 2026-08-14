@@ -1,4 +1,15 @@
-include: package:flutter_lints/flutter.yaml
+# analysis_options.yaml — simf_data_pkg
+#
+# Held to the SAME ruleset as the app (`very_good_analysis`), not the weaker
+# `flutter_lints` it carried before. This package is the blast-radius
+# foundation named in CLAUDE.md section 13.3 — every feature repository in the
+# app calls through it — so it is the last place that should be linted more
+# loosely than its callers.
+#
+# The app's own `analysis_options.yaml` is the reference for any rule turned
+# off below; each is off for the reason recorded there, not by preference.
+
+include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
   language:
@@ -16,3 +27,10 @@ linter:
     sort_constructors_first: true
     unawaited_futures: true
     use_super_parameters: true
+
+    # OFF to match the app, whose note reads "full doc coverage is heavy; flip
+    # to true per-package if desired". Turning it on here alone would demand 91
+    # new doc comments in one pass — a documentation project rather than a lint
+    # fix — and would leave the two halves of one codebase disagreeing about
+    # whether a public member needs a comment.
+    public_member_api_docs: false

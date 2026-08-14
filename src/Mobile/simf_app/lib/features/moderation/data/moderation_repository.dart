@@ -5,19 +5,19 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Data layer for the per-session moderator Q&A desk (Figma 758:5307, D-405).
 ///
-/// Every endpoint authorizes on the **per-session `SessionModerator` grant** (or
-/// Administrator) — NOT on the mobile `AppRole.moderator`. A moderator without a
-/// grant for the session gets **403**, which the screen renders as a "not
-/// authorised" state (D-405).
+/// Every endpoint authorizes on the **per-session `SessionModerator` grant**
+/// (or Administrator) — NOT on the mobile `AppRole.moderator`. A moderator
+/// without a grant for the session gets **403**, which the screen renders as a
+/// "not authorised" state (D-405).
 class ModerationRepository {
   ModerationRepository(this._client);
 
   final SimfApiClient _client;
 
-  /// `GET /app/sessions/moderated` — FR-MOD-001: the sessions the signed-in user
-  /// actually holds a per-session grant on. Drives both the session-detail
-  /// affordance (offer the desk only where the grant exists) and the moderator's
-  /// operational home list.
+  /// `GET /app/sessions/moderated` — FR-MOD-001: the sessions the signed-in
+  /// user actually holds a per-session grant on. Drives both the session-detail
+  /// affordance (offer the desk only where the grant exists) and the
+  /// moderator's operational home list.
   Future<List<ModeratedSession>> getMySessions() {
     return _client.get<List<ModeratedSession>>(
       ModerationEndpoints.moderatedSessions,

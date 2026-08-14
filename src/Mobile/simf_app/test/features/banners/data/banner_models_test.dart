@@ -15,14 +15,15 @@ void main() {
         'displayOrder': 3,
       });
       expect(item.id, 'b1');
-      expect(item.titleFor(true), 'مرحبا');
-      expect(item.titleFor(false), 'Welcome');
+      expect(item.titleFor(isArabic: true), 'مرحبا');
+      expect(item.titleFor(isArabic: false), 'Welcome');
       expect(item.imageUrl, 'https://cdn.example/x.jpg');
       expect(item.linkUrl, 'https://example.sa');
       expect(item.displayOrder, 3);
     });
 
-    test('assetImageUrl builds the by-id serve path (no /api/v1 re-append)', () {
+    test('assetImageUrl builds the by-id serve path (no /api/v1 re-append)',
+        () {
       const item = PublicBannerItem(
         id: 'b1',
         title: '',
@@ -37,7 +38,8 @@ void main() {
       );
     });
 
-    test('listFromData reads the {items:[…]} envelope; empty on absent/null', () {
+    test('listFromData reads the {items:[…]} envelope; empty on absent/null',
+        () {
       final list = PublicBannerItem.listFromData(<String, dynamic>{
         'items': <dynamic>[
           <String, dynamic>{'id': 'a', 'displayOrder': 0},

@@ -42,7 +42,8 @@ class _BadgeSignInScreenState extends ConsumerState<BadgeSignInScreen> {
         return;
       }
       if (!result.found) {
-        messenger.showSnackBar(SnackBar(content: Text(l10n.badgeNotRecognised)));
+        messenger
+            .showSnackBar(SnackBar(content: Text(l10n.badgeNotRecognised)));
         return;
       }
       if (result.hasPassword) {

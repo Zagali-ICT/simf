@@ -44,7 +44,8 @@ class SignInAltActions extends StatelessWidget {
               child: Divider(color: SimfTokens.beigeBorder, height: 1),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
               child: Text(
                 l10n.orDividerLabel,
                 style: SimfTokens.bodyGreySm,

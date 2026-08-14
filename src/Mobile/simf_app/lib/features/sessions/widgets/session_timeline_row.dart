@@ -11,10 +11,10 @@ import 'package:simf_app/features/sessions/widgets/session_time_rail.dart';
 /// One المواعيد timeline row (frame 1310:3213 collapsed / 1310:3232 featured):
 /// a navy radius-8 card holding, inline-start→end, the content column (a 14px
 /// gold calendar icon + the gold right-aligned title, the day banner on the
-/// featured row, then the grey description) and a trailing vertical **time rail**
-/// (start time over a hairline connector over the end time). No leading number,
-/// no trailing chevron (the updated frame dropped both). The whole row taps
-/// through to the session detail.
+/// featured row, then the grey description) and a trailing vertical **time
+/// rail** (start time over a hairline connector over the end time). No leading
+/// number, no trailing chevron (the updated frame dropped both). The whole row
+/// taps through to the session detail.
 class SessionTimelineRow extends StatelessWidget {
   const SessionTimelineRow({
     required this.session,
@@ -39,7 +39,7 @@ class SessionTimelineRow extends StatelessWidget {
       hasPublishedSummary: session.hasPublishedSummary,
       status: session.status,
     );
-    final description = session.localizedDescription(isArabic);
+    final description = session.localizedDescription(isArabic: isArabic);
     final descriptionText = description == null
         ? null
         : Text(
@@ -81,16 +81,16 @@ class SessionTimelineRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    // Title line (Figma 1310:3215): the gold right-aligned title
-                    // LEADS at the inline-start (physical right); the 14px gold
-                    // calendar glyph TRAILS at the inline-end (physical left,
-                    // next to the divider) — owner 2026-06-30.
+                    // Title line (Figma 1310:3215): the gold right-aligned
+                    // title LEADS at the inline-start (physical right); the
+                    // 14px gold calendar glyph TRAILS at the inline-end
+                    // (physical left, next to the divider) — owner 2026-06-30.
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Expanded(
                           child: Text(
-                            session.localizedTitle(isArabic),
+                            session.localizedTitle(isArabic: isArabic),
                             textAlign: TextAlign.start,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -130,4 +130,3 @@ class SessionTimelineRow extends StatelessWidget {
     );
   }
 }
-

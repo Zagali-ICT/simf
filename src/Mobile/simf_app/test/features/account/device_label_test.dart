@@ -20,7 +20,6 @@ class _InMemSecureStorage implements SimfSecureStorage {
     values.remove(key);
   }
 
-  @override
   Future<void> deleteAll() async => values.clear();
 
   @override
@@ -41,7 +40,6 @@ class _BrokenSecureStorage implements SimfSecureStorage {
   @override
   Future<void> delete(String key) async => throw Exception('unavailable');
 
-  @override
   Future<void> deleteAll() async => throw Exception('unavailable');
 
   @override
@@ -49,17 +47,11 @@ class _BrokenSecureStorage implements SimfSecureStorage {
 }
 
 class _FakeDeviceInfo implements DeviceInfoSource {
-  _FakeDeviceInfo({
-    this.manufacturer = 'samsung',
-    this.model = 'SM-S911B',
-    this.iosModel = 'iPhone 15 Pro',
-    this.vendorId,
-  });
+  _FakeDeviceInfo({this.manufacturer = 'samsung'});
 
   final String manufacturer;
-  final String model;
-  final String iosModel;
-  final String? vendorId;
+  final String model = 'SM-S911B';
+  final String iosModel = 'iPhone 15 Pro';
 
   @override
   Future<String?> androidName() async => '$manufacturer $model';
@@ -68,7 +60,7 @@ class _FakeDeviceInfo implements DeviceInfoSource {
   Future<String?> iosName() async => iosModel;
 
   @override
-  Future<String?> iosVendorId() async => vendorId;
+  Future<String?> iosVendorId() async => null;
 }
 
 class _ThrowingDeviceInfo implements DeviceInfoSource {
@@ -84,7 +76,8 @@ class _ThrowingDeviceInfo implements DeviceInfoSource {
 
 void main() {
   group('DeviceLabel', () {
-    test('reuses a fingerprint already stored, so the suffix is stable', () async {
+    test('reuses a fingerprint already stored, so the suffix is stable',
+        () async {
       final storage = _InMemSecureStorage()
         ..values[StorageKeys.deviceFingerprint] = 'abcd1234';
 

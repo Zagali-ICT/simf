@@ -9,6 +9,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
 import 'package:simf_app/features/account/widgets/account_sub_header.dart';
 import 'package:simf_app/features/account/widgets/auth_chrome.dart';
@@ -186,11 +187,7 @@ class _SignUpEmailVerifyScreenState
     context.goNamed(RouteNames.signUpForm);
   }
 
-  String _formatCooldown(int seconds) {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
+  String _formatCooldown(int seconds) => formatCountdown(seconds);
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +271,8 @@ class _SignUpEmailVerifyScreenState
       children: <Widget>[
         Text(
           l10n.resendInLabel,
-          style: const TextStyle(color: otpMutedBlue, fontSize: SimfTokens.textMd),
+          style:
+              const TextStyle(color: otpMutedBlue, fontSize: SimfTokens.textMd),
         ),
         const SizedBox(width: SimfTokens.signUpEmailVerifyScreenWidth),
         Text(

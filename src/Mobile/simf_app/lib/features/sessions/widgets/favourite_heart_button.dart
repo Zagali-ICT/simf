@@ -7,11 +7,12 @@ import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// The المفضلة heart toggle shown on a session card (Figma 1388:8392 / 1388:9067)
-/// — a 32px gold square: solid gold + a filled white heart when favourited, a
-/// gold-50% square + an outline white heart otherwise (the frame's two states).
-/// Watches the shared [sessionFavouritesProvider] so a toggle here updates every
-/// card across both screens; reverts + shows a toast if the server rejects it.
+/// The المفضلة heart toggle shown on a session card (Figma 1388:8392 /
+/// 1388:9067) — a 32px gold square: solid gold + a filled white heart when
+/// favourited, a gold-50% square + an outline white heart otherwise (the
+/// frame's two states). Watches the shared [sessionFavouritesProvider] so a
+/// toggle here updates every card across both screens; reverts + shows a toast
+/// if the server rejects it.
 class FavouriteHeartButton extends ConsumerWidget {
   const FavouriteHeartButton({
     required this.sessionId,
@@ -64,7 +65,11 @@ class FavouriteHeartButton extends ConsumerWidget {
   Widget _glyph(bool isFavourite) {
     final icon = isFavourite ? filledIcon : outlineIcon;
     if (icon != null) {
-      return Icon(icon, size: SimfTokens.favouriteHeartButtonSize, color: SimfTokens.surface);
+      return Icon(
+        icon,
+        size: SimfTokens.favouriteHeartButtonSize,
+        color: SimfTokens.surface,
+      );
     }
     return SimfSvgIcon(
       isFavourite ? filledAsset : outlineAsset,

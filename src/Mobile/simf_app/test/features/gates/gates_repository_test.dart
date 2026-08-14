@@ -22,10 +22,10 @@ final _client = SimfApiClient.build(
 /// real `recordScanOrQueue` / `flushPending` over a real `GateScanQueue`.
 class _StubGates extends GatesRepository {
   _StubGates(
-    SimfApiClient client,
-    GateScanQueue queue,
-    GateOfflineConfigCache offlineConfig,
-  ) : super(client, queue, offlineConfig);
+    super._client,
+    super._queue,
+    super._offlineConfig,
+  );
 
   /// When set, the next `recordScan` throws it; otherwise it returns
   /// `successResult`. A network failure is `ApiFailure(httpStatus: null)`.
@@ -121,7 +121,8 @@ void main() {
       final remaining = await repo.flushPending();
       expect(remaining, 0);
       expect(repo.pendingCount(), 0);
-      // The retry used the ORIGINAL per-scan key (idempotent replay, no double).
+      // The retry used the ORIGINAL per-scan key (idempotent replay, no
+      // double).
       expect(repo.recordedKeys, <String>['KEY-1', 'KEY-1']);
     });
 

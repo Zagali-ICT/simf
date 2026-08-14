@@ -57,6 +57,13 @@ public sealed class OperationalRateLimitExemptionTests : IClassFixture<SimfApiFa
         ["/api/v1/app/gates/{gateId:guid}/scans"] = "Gates.Operate — the door scan.",
         ["/api/v1/app/gates/{gateId:guid}/visitors/list"] = "Gates.Operate — the operator's roster lookup.",
         ["/api/v1/app/gates/offline-config"] = "Gates.Operate — cached rules + badge key for an offline gate.",
+        // Exempt for the same reason offline-config is, and it has to be the
+        // same answer for both: a venue's scanners sit behind one NAT, so the
+        // per-IP cap counts the whole fleet as one caller. A device that can
+        // fetch its rules but not the people it is expecting is back to
+        // abstaining at the door, which is the queue this endpoint exists to
+        // remove. The response is bounded by hall capacity, not event size.
+        ["/api/v1/app/gates/offline-roster"] = "Gates.Operate — the reserved attendees an offline hall door is expecting.",
 
         // The desks. One call per walk-in, in bursts.
         ["/api/v1/admin/visitors/register-onsite"] = "Visitors.RegisterOnsite — CP walk-in desk.",

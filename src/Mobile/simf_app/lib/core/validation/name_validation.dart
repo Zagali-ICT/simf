@@ -27,9 +27,10 @@ bool isNameLettersOnly(String value, RegExp lettersOnly) =>
     lettersOnly.hasMatch(value);
 
 /// True when [value] is at least 2 whitespace-separated parts (owner: a full
-/// name needs at least two parts, D-683). No upper cap — an Arabic name can carry
-/// more, and length is already bounded by the field's maxLength. The caller
-/// trims and has already confirmed the value is non-empty + letters-only.
+/// name needs at least two parts, D-683). No upper cap — an Arabic name can
+/// carry more, and length is already bounded by the field's maxLength. The
+/// caller trims and has already confirmed the value is non-empty +
+/// letters-only.
 bool hasFullNameParts(String value) {
   final parts = value.split(RegExp(r'\s+')).length;
   return parts >= 2;

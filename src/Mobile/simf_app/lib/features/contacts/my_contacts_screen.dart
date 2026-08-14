@@ -15,12 +15,12 @@ import 'package:simf_app/features/contacts/widgets/saved_contact_sheet.dart';
 import 'package:simf_app/features/contacts/widgets/saved_contact_tile.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// My Contacts (SIMF-FDS-014 §5.6, D-286). **Auth-gated** (Approved only). Lists
-/// the cards the visitor saved (`GET /app/contacts`, resolved on read — no PII
-/// snapshot). A row opens a detail sheet to **export** the saved card as a vCard
-/// (`GET /app/contacts/{id}/vcard`) or **remove** it (`DELETE /app/contacts/{id}`,
-/// soft-delete). The app-bar scan action opens the scanner to add more. UI is
-/// interim (final visuals from SIMF-VID-001).
+/// My Contacts (SIMF-FDS-014 §5.6, D-286). **Auth-gated** (Approved only).
+/// Lists the cards the visitor saved (`GET /app/contacts`, resolved on read —
+/// no PII snapshot). A row opens a detail sheet to **export** the saved card as
+/// a vCard (`GET /app/contacts/{id}/vcard`) or **remove** it (`DELETE
+/// /app/contacts/{id}`, soft-delete). The app-bar scan action opens the scanner
+/// to add more. UI is interim (final visuals from SIMF-VID-001).
 class MyContactsScreen extends ConsumerStatefulWidget {
   const MyContactsScreen({super.key});
 
@@ -147,4 +147,3 @@ class _MyContactsScreenState extends ConsumerState<MyContactsScreen> {
     );
   }
 }
-

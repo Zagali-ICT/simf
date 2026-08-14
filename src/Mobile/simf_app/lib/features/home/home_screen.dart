@@ -6,33 +6,19 @@ import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/banners/data/banner_models.dart';
 import 'package:simf_app/features/banners/data/banners_repository.dart';
+import 'package:simf_app/features/home/data/home_repository.dart';
 import 'package:simf_app/features/home/home_greeting.dart';
 import 'package:simf_app/features/home/widgets/guest_home.dart';
 import 'package:simf_app/features/home/widgets/operational_homes.dart';
 import 'package:simf_app/features/home/widgets/visitor_home.dart';
-import 'package:simf_app/features/myarea/data/myarea_models.dart';
-import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
-import 'package:simf_app/features/news/news_screen.dart' show newsListProvider;
+import 'package:simf_app/features/news/data/news_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 // Re-export the greeting helpers so `homeGreeting` / `homePostTime` stay
 // importable from this file (the home widget tests reference them here).
 export 'home_greeting.dart';
-
-/// Best-effort signed-in profile for the greeting (the real name + avatar live
-/// App-side on the dashboard, not in the Identity-issued auth token). Resolves
-/// to null while loading / on error (e.g. a not-yet-approved 403), in which
-/// case the greeting falls back to a name-less salute (never the email).
-final homeProfileProvider =
-    FutureProvider.autoDispose<MyAreaDashboard?>((ref) async {
-  try {
-    return await ref.watch(myAreaRepositoryProvider).getDashboard();
-  } on ApiFailure {
-    return null;
-  }
-});
 
 /// Page 013 — الرئيسية · Home (router / landing screen #13, `path=/`),
 /// rebuilt to the KSA frames: guest = 758:2910 (owner-picked), signed-in =
@@ -69,8 +55,8 @@ class HomeScreen extends ConsumerWidget {
     if (role == AppRole.guest || pendingApproval) {
       return GuestHome(l10n: l10n, pendingApproval: pendingApproval);
     }
-    // Focused operational roles (D-519): each lands on a home that surfaces only
-    // its own pages, not the visitor experience.
+    // Focused operational roles (D-519): each lands on a home that surfaces
+    // only its own pages, not the visitor experience.
     if (role == AppRole.staff) {
       return StaffHome(l10n: l10n);
     }
@@ -95,9 +81,9 @@ class HomeScreen extends ConsumerWidget {
     // The post card builds `{base}/app/assets/NewsImage/{id}/image`; the base
     // already includes `/api/v1` (same anonymous D-357 route as the news list).
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    // Bi-Meeting rework — the "اللقاءات الثنائية" tile shows to anyone entitled to
-    // request a meeting (speaker OR delegation flag); hidden otherwise (they can't
-    // reach the meetings page anyway).
+    // Bi-Meeting rework — the "اللقاءات الثنائية" tile shows to anyone entitled
+    // to request a meeting (speaker OR delegation flag); hidden otherwise (they
+    // can't reach the meetings page anyway).
     final canRequestMeetings =
         ref.watch(currentUserMeetingAccessProvider).value?.any ?? false;
     // The rotating hero (#43): the active home banners + the edition config.
@@ -108,8 +94,8 @@ class HomeScreen extends ConsumerWidget {
           orElse: () => const <PublicBannerItem>[],
         );
     final orgProfile = ref.watch(orgProfileProvider);
-    // Build #13 — the "Meet People Like You" tile is hidden when the CP switch is
-    // off. Best-effort (default true / fail-open) while site-settings loads.
+    // Build #13 — the "Meet People Like You" tile is hidden when the CP switch
+    // is off. Best-effort (default true / fail-open) while site-settings loads.
     final partnerDirectoryEnabled = ref.watch(siteSettingsProvider).maybeWhen(
           data: (s) => s.partnerDirectoryEnabled,
           orElse: () => true,
@@ -122,7 +108,11 @@ class HomeScreen extends ConsumerWidget {
         ..invalidate(newsListProvider)
         ..invalidate(homeProfileProvider)
         ..invalidate(bannersProvider)
-        ..invalidate(currentUserMeetingAccessProvider)
+        // The meeting-access provider is a SELECTOR over the cached profile
+        // read, so invalidating it alone would recompute off the same stale
+        // row and the gesture would quietly stop re-fetching. Invalidate the
+        // source instead.
+        ..invalidate(myProfileProvider)
         ..invalidate(siteSettingsProvider);
       try {
         await Future.wait<void>(<Future<void>>[
@@ -145,7 +135,7 @@ class HomeScreen extends ConsumerWidget {
       l10n: l10n,
       onRefresh: onRefresh,
       name: _greetingName(
-        profile?.identity.localizedName(l10n.isArabic),
+        profile?.identity.localizedName(isArabic: l10n.isArabic),
         user?.displayName,
         isVisitor: profile?.identity.isVisitor ?? true,
       ),

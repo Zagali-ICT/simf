@@ -2,7 +2,8 @@
 
 > **Authority:** SIMF E2E test catalogue (D-133 / D-245). This page was split
 > from the requests-history feed by **D-745** (owner 2026-07-11): the Home
-> "اللقاءات الثنائية" tile now opens this **VIP-only** meetings page; the full
+> "اللقاءات الثنائية" tile now opens this meetings page, gated on the per-user
+> meeting-eligibility flags (D-760, superseding D-745's VIP-only rule); the full
 > requests log stays on [`mobile-requests.md`](mobile-requests.md) (طلباتي, My
 > Area). Namespace `MOBMEET` is fresh — the retired `MOBMTG`/`MMM` ids are not
 > reused (stable-id rule).
@@ -16,26 +17,27 @@
 | **Auth setup** | An approved app account whose profile has **`allowsSpeakerMeeting`** and/or **`allowsDelegationMeeting`** = true (bi-meeting rework — replaces the VIP gate); a non-entitled approved account for the gate cases. TOTP via `Get-Totp` — never a literal secret. |
 | **Last reviewed** | 2026-07-22 |
 
-> **⚑ Bi-meeting rework update (2026-07-22).** The page is no longer "VIP-only": access is
-> gated by the two per-user flags via `currentUserMeetingAccessProvider`
+> **How access works here (bi-meeting rework, D-760).** The page is **not** VIP-only: access
+> is gated by the two per-user flags via `currentUserMeetingAccessProvider`
 > (`MeetingAccess { speaker, delegation, any }`, from `allowsSpeakerMeeting` /
-> `allowsDelegationMeeting`). The single "طلب جديد" button is **replaced by two flag-gated
-> buttons** in `MeetingActionRow` — **"طلب مقابلة متحدث"** (`requestSpeakerMeeting`, shown when
+> `allowsDelegationMeeting`), which are admin-assigned on the profile row and do not follow
+> the VVIP/VIP tier. The Home tile shows when `access.any`. `MeetingActionRow` renders **two
+> flag-gated buttons** — **"طلب مقابلة متحدث"** (`requestSpeakerMeeting`, shown when
 > `access.speaker`, opens the speaker `MeetingRequestSheet`) and **"طلب اجتماع وفد"**
 > (`requestDelegationMeeting`, shown when `access.delegation`, opens the delegation sheet —
 > [`mobile-delegation-request.md`](mobile-delegation-request.md)) — with **السجل** (Log)
-> below. The Home tile shows when `access.any`. The in-screen no-access text is now
+> below; there is no single "طلب جديد" button. The in-screen no-access text is
 > **"اللقاءات الثنائية متاحة للحسابات المصرَّح لها فقط"** / "Bilateral meetings are available to
-> authorised accounts only" (`meetingAccessRequired`), replacing the old VIP-only copy. Where
-> the scenarios below say "طلب جديد" / "VIP" / the old copy, read them per this banner. Widget
-> tests: `meetings_screen_test.dart` (8/8) asserts the two buttons + the gate + the new copy.
+> authorised accounts only" (`meetingAccessRequired`). Widget tests:
+> `meetings_screen_test.dart` (8/8) asserts the two buttons + the gate + the copy. The
+> scenarios below are written to this rule directly — no mental substitution needed.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-MOBMEET-001 | Golden: VIP sees approved + upcoming meetings, newest first | happy | P0 | _to author_ |
-| E2E-MOBMEET-002 | Create a new meeting (طلب جديد → speaker picker → slot → send) | happy | P0 | _to author_ |
+| E2E-MOBMEET-001 | Golden: an entitled account sees approved + upcoming meetings, newest first | happy | P0 | _to author_ |
+| E2E-MOBMEET-002 | Create a new meeting ("طلب مقابلة متحدث" → speaker picker → slot → send) | happy | P0 | _to author_ |
 | E2E-MOBMEET-003 | Speaker picker shows photo + name + country flag; selection loads slots | happy | P0 | _to author_ |
 | E2E-MOBMEET-004 | "السجل" opens the requests-history page (طلباتي) | nav | P1 | _to author_ |
 | E2E-MOBMEET-005 | Only approved + upcoming meetings appear (pending/rejected/past excluded) | filter | P0 | _to author_ |
@@ -56,12 +58,13 @@
 
 ```gherkin
 Feature: Bilateral meetings list
-  As an approved VIP attendee
+  As an approved attendee entitled to bilateral meetings
   I want to see my confirmed, upcoming bilateral meetings
   So that I know who I am meeting and when
 
 Background:
-  Given I am signed in as an approved VIP account
+  Given I am signed in as an approved account whose profile has
+        allowsSpeakerMeeting = true and allowsDelegationMeeting = true
   And I have an ACCEPTED speaker meeting with "د. محمد العمري" at a future slot
   And I have an ACCEPTED delegation meeting with "France" at a future slot
 
@@ -145,9 +148,9 @@ Scenario: A speaker-meeting card opens the speaker profile
 
 ```gherkin
 Scenario: No upcoming approved meetings
-  Given I am a VIP with no approved upcoming meetings
+  Given I am an entitled account with no approved upcoming meetings
   When I open /meetings
-  Then the "طلب جديد / السجل" row still shows
+  Then the request/السجل button row still shows, per my flags
   And below it the empty state "لا توجد مقابلات بعد." is shown
   And pull-to-refresh works
 ```
@@ -186,7 +189,7 @@ Scenario: A single-flag account sees only its button
 ```gherkin
 Scenario: The feed fails to load
   Given GET /app/my-requests returns 500
-  When I open /meetings as a VIP
+  When I open /meetings as an entitled account
   Then the error state "تعذّر تحميل طلباتك" with a retry is shown
   When I tap retry (or pull to refresh) and the feed recovers
   Then the meetings list renders

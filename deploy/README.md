@@ -11,8 +11,8 @@ SIMF web apps and deploy them to IIS, mirroring the V10 ERP pipeline.
 | SimfWeb | `src/Website/SIMF.Web/SIMF.Web.csproj` | `web/SIMF.Web.zip` | site `SIMF.WEB`, path `D:\System\v1.0.1\web` |
 | SimfEdge | `src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj` | `edge/SIMF.MobileEdge.zip` | site `SIMF.EDGE`, path `D:\System\v1.0.1\edge` |
 
-All four packages deploy to **each of the two servers** — `Pre-production` and
-`Production` — so there is one deployment job per server, and each package keeps
+All four packages deploy to **each of the two servers** — `SIMF-Prod` (pre-production) and
+`SIM-RNSF` (production) — so there is one deployment job per server, and each package keeps
 its own environment script on that server. The **mobile edge** is the presentation tier
 for the mobile clients: a YARP reverse proxy published at `edge.simrsnf.com` that
 forwards only `/api/v1/app/**` inward. See
@@ -48,10 +48,11 @@ Build, Test & Publish ──▶ Deploy to IIS
 > ### ⚠️ The test gates are OFF by default (D-887)
 >
 > `runTests` defaults to **`false`**, so an ordinary run **does not test**. It
-> skips the fast suites (~920 tests, including the Control Panel permission and
-> navigation gates), `SIMF.Api.Tests` (2272 integration tests, including the
-> anonymous-endpoint allow-list), the LocalDB provisioning that serves them, and
-> the Flutter and BadgeDesk stages.
+> skips the fast suites, `SIMF.Api.Tests`, the LocalDB provisioning that serves
+> them, and the Flutter and BadgeDesk stages. The full list of what that covers,
+> and what each one was catching, is in the `runTests` comment in
+> [`azure-pipelines.yml`](../azure-pipelines.yml) — kept in one place so the two
+> cannot drift apart.
 >
 > **A green run with `runTests` off means the code compiles and the packages
 > publish. It says nothing about behaviour, permissions or the security
@@ -63,9 +64,9 @@ Build, Test & Publish ──▶ Deploy to IIS
 > The steps use a `condition:`, never `enabled: false`, so they stay listed as
 > **skipped** in the run summary rather than disappearing from it.
 - **Deploy to IIS** — **TWO** deployment jobs, one per Azure DevOps
-  **Environment**, because the estate is two servers: **`Pre-production`** and
-  **`Production`** (`SIMF APP 01`). Each server hosts all four sites, so each
-  job checks out the repo, downloads `drop`, and runs the shared steps in
+  **Environment**, because the estate is two servers: **`SIMF-Prod`**
+  (pre-production) and **`SIM-RNSF`** (production, `SIMF APP 01`). Each server
+  hosts all four sites, so each job downloads `drop` and runs the shared steps in
   [`deploy-all-packages.yml`](deploy-all-packages.yml) — four calls to
   [`pipeline-deploy-one.ps1`](pipeline-deploy-one.ps1), each extracting one zip
   and handing one site to [`iis-deploy.ps1`](iis-deploy.ps1), which stops the
@@ -85,11 +86,34 @@ Two tick boxes in the **Run pipeline** dialog, both **on** by default:
 | `deployPreProduction` | Deploy to Pre-production | The pre-production job is omitted |
 | `deployProduction` | Deploy to Production | The production job is omitted |
 
-And one that is **off** by default:
+And three that are **off** by default:
 
-| Parameter | Label | Default |
-|-----------|-------|---------|
-| `runTests` | Run the test gates (slow) | **`false`** |
+| Parameter | Label | Default | Notes |
+|-----------|-------|---------|-------|
+| `runTests` | Run the test gates (slow) | **`false`** | The .NET suites + LocalDB |
+| `runMobileApp` | Run the Flutter app stage | **`false`** | Independent of `runTests` |
+| `runBadgeDesk` | Run the offline badge desk stage | **`false`** | Independent of `runTests` |
+
+The last two are **disabled, not deferred** (D-889): ticking `runTests` on for a
+merge-gating run does **not** bring them back — each needs its own box. Neither
+was ever a `Deploy` dependency, so neither blocked a deployment; on the single
+self-hosted `Default` agent they competed for it, which is the wall-clock this
+buys back.
+
+Each is the **only** signal of its kind, so know what stops being checked:
+
+- **MobileApp** — the only CI proof the Flutter app analyses, passes its suites,
+  and still **compiles for Android from a clean checkout**. That last gate exists
+  because of a real escape: a `.gitignore` rule for build output also matched a
+  Pigeon source shipping with the vendored video plugin, so `flutter build apk`
+  failed on a clean clone while every developer machine stayed green. `analyze`
+  and `test` are blind to it — the Android half of a federated plugin is never
+  compiled on the host VM.
+- **BadgeDesk** — the only build signal for `SIMF.BadgeDesk`, which sits outside
+  `SIMF.slnx` deliberately (Windows-only: WinForms + DPAPI + native printing) and
+  references `SIMF.Common` and `SIMF.Contracts`. Renaming `EventBadgeCodec`,
+  `OfflineBadgeId` or `OfflineBadgeRegistration` now breaks the only tool that
+  mints badges, with nothing reporting it until a desk fails to open at the venue.
 
 Untick **both** and the whole `Deploy` stage is omitted — build, test and
 publish still run and the `drop` artifact is still produced, so a build-only run
@@ -102,12 +126,16 @@ environment's deployment history, so an untouched environment would show a
 deployment that never happened.
 
 > **A deployment job does not clone the repository.** Azure Pipelines states it
-> outright: *"A deployment job doesn't automatically clone the source repo. You
-> can check out the source repo within your job with `checkout: self`."* The
-> deploy scripts live in the repository and the `drop` artifact carries only the
-> published apps, so `deploy-all-packages.yml` opens with `checkout: self`.
-> Without it every deploy step fails with "the term
-> `…/deploy/pipeline-deploy-one.ps1` is not recognized".
+> outright: *"A deployment job doesn't automatically clone the source repo."* So
+> the two scripts the deploy steps run — `pipeline-deploy-one.ps1` and the
+> `iis-deploy.ps1` it calls — are **staged into the `drop` artifact** by the
+> Build stage and run from `$(Pipeline.Workspace)\drop\deploy\` (D-888).
+>
+> The first version used `checkout: self` instead, which pulled the whole
+> repository and its history onto each production server every run to obtain
+> 12 KB of PowerShell. They are named individually rather than copied with
+> `deploy/*.ps1`, because the filled `set-env-*.ps1` in that folder hold
+> production secrets and must never reach a build artifact.
 
 ## Building a package locally (`publish.ps1`)
 
@@ -178,10 +206,12 @@ Service, only the `Workers` block in `ops.ps1` changes.
 .\ops.ps1 -Action Install -Target Edge -CertThumbprint <thumbprint>
 ```
 
-On a per-server estate each box installs only its own target. `-Target All`
-remains for a single box that still runs everything; `ops.ps1` refuses to install
-while `-ApiHost` and `-EdgeHost` name the same host, since two sites cannot share
-a hostname.
+Each of the two servers hosts all four sites, so **`-Target All` is the normal
+case** on both `SIMF-Prod` and `SIM-RNSF` (D-886); the individual targets
+remain for installing or restarting one site at a time. `ops.ps1` refuses to
+install while `-ApiHost` and `-EdgeHost` name the same host, since two sites
+cannot share a hostname — so the API and the edge need distinct hostnames on the
+same box.
 
 TLS bindings and the CA certificate are configured separately (see the HLD /
 SIMF-OPS-001); `Install` creates the HTTP binding only.
@@ -208,48 +238,87 @@ These are **placeholders** — set them to the real SIMF server values:
    rights to install an MSI), then creates/starts the instance. Installing
    LocalDB on the agent once removes the per-run download.
 2. ~~**`environment` names**~~ — **no longer a placeholder.** The pipeline names
-   the two real Azure DevOps **Environments**, `Pre-production` and
-   `Production`; each must have its server registered as a VM resource so the
-   deployment job runs on that machine.
+   the two real Azure DevOps **Environments**, both of which exist with their
+   server registered as a VM resource:
 
-   **Azure DevOps creates an environment on first reference.** A name here that
-   matches no registered environment does not fail the run — it quietly adds an
-   empty one to the portal. That is how the portal came to list four
-   `SIMF-Prod-Api` / `-Cp` / `-Web` / `-Edge` entries nobody had created, under
-   the earlier one-server-per-package reading of the estate. **Delete those four
-   in Pipelines → Environments**; they hold no resources and no history worth
-   keeping. `PipelineTestGateTests.The_pipeline_deploys_only_to_the_two_real_environments`
-   now fails the build if a third name appears.
+   > ### ⚠️ The names lie — do not "correct" them
+   >
+   > | Environment | Is actually | Server |
+   > |---|---|---|
+   > | **`SIMF-Prod`** | **PRE-production** | the pre-production box |
+   > | **`SIM-RNSF`** | **PRODUCTION** | `SIMF APP 01` |
+   >
+   > The one that reads like production is not. Anyone who "fixes" this mapping
+   > on sight deploys straight to production believing they are rehearsing.
+   > Trust the job names and `displayName`s in `azure-pipelines.yml`, not the
+   > environment string. Pinned by `PipelineTestGateTests` (D-896).
 
-   **The names must match the portal exactly**, including case and the hyphen in
-   `Pre-production`. If the registered names differ, change the two
-   `environment:` blocks in `azure-pipelines.yml` **and** the `expected` array in
-   that test together — the test pins the YAML to a reviewed list, and it cannot
-   see the portal.
+   **A missing environment cannot be created by the pipeline.** Azure DevOps
+   auto-creates an environment named by a pipeline **only when the YAML was
+   edited in the Azure Pipelines web editor**, because only then does it know
+   which user to attribute the new environment to. This repository is edited
+   locally and pushed, so a missing environment instead fails the run with
+   *"Environment X could not be found. The environment does not exist or has not
+   been authorized for use."*
 
-3. **Each server registered as a VM resource** inside its environment. Both jobs
-   declare `resourceType: virtualMachine`, so the steps run **on that machine**
-   rather than on the build agent:
+   That asymmetry explains the four stray `SIMF-Prod-Api` / `-Cp` / `-Web` /
+   `-Edge` entries in the portal: they were created by a web-editor save, not by
+   anyone deliberately registering them. **Delete those four in Pipelines →
+   Environments** — they hold no resources and no history worth keeping.
+
+   `PipelineTestGateTests.The_pipeline_deploys_only_to_the_two_real_environments`
+   fails the build if a name outside the reviewed set appears, so the mistake
+   surfaces at build time rather than as either a portal mess or a failed deploy.
+
+   **The names must match the portal exactly**, including case. They are
+   `SIMF-Prod` and `SIM-RNSF` — not `Pre-production`/`Production`, which were
+   assumed once and broke every deploy until corrected (D-896). If they ever
+   change, edit the two `environment:` values in `azure-pipelines.yml` **and**
+   the `expected` array in that test together — the test pins the YAML to a
+   reviewed list and cannot see the portal.
+
+3. **Both servers are registered as VM resources**, so the deployment steps run
+   on the machine rather than on the build agent. To re-register one, or to add
+   a third: the environment → **Add resource** → **Virtual machines**, copy the
+   script, run it **as Administrator on that server**, then confirm the machine
+   appears on the environment's **Resources** tab.
+
+   The script embeds a PAT that expires three hours after it is generated; if it
+   lapses, reopen the environment and select **Add resource** for a fresh one.
+
+   > **Both SIMF servers also run a `Default` pool agent.** An environment VM
+   > resource is a **second** agent on that box, so the script prompts for an
+   > agent name and it must be **unique** — reusing the pool agent's name
+   > collides. The two are separate on purpose: the pool agent runs `Build`, the
+   > environment agent runs that server's deployment job.
+
+   If the environment exists but the run still cannot find it, it is the second
+   half of the error message: **Security → Pipeline permissions** on that
+   environment, and authorize this pipeline.
+
+   Both jobs use the explicit form, so the steps run **on that machine** rather
+   than on the build agent:
 
    ```yaml
    environment:
-     name: Production
+     name: SIM-RNSF
      resourceType: virtualMachine
    ```
 
-   This is not decoration. A bare `environment: Production` is also legal — as
-   an abstract shell that only records deployment history — and then the steps
-   run on the `pool` agent, which would have `iis-deploy.ps1` stop, mirror and
-   restart IIS sites **on the build box** and report success. Register the VM
-   with the script from **Pipelines → Environments → the environment → Add
-   resource → Virtual machines**.
+   **This is not decoration.** With the bare `environment: 'SIM-RNSF'` form, a
+   VM resource that is ever removed or unregistered does not fail — the
+   environment silently degrades to a history-recording shell and the steps fall
+   back to the `Default` pool agent, which has an agent on **both** servers. The
+   deploy would land on an arbitrary machine and report success. `resourceType`
+   turns that silent mis-deploy into an immediate failure.
 
-   A run reporting **no matching resources** means the machine is not registered.
-   Register it; do not fall back to the bare form, which turns a loud failure
-   into a deploy onto the wrong machine. Azure's documentation warns that
-   `resourceType` is case-sensitive while its own examples disagree on the
-   casing, so if the VM *is* registered and still does not match, try
-   `VirtualMachine`.
+   **Order matters.** This line was added once *before* the VM resources
+   existed and broke every deploy with "Environment could not be found" until it
+   was reverted (D-896). If a run reports **no matching resources**, the server
+   is not registered — register it, do **not** drop back to the bare form, which
+   trades a loud failure for a wrong-machine deploy. Azure's documentation warns
+   the value is case-sensitive while its own examples disagree on the casing, so
+   if the VM *is* registered and still does not match, try `VirtualMachine`.
 4. **IIS site names + physical paths** — the `-ApiSiteName/-ApiPath`,
    `-CpSiteName/-CpPath`, `-WebSiteName/-WebPath` and `-EdgeSiteName/-EdgePath`
    arguments in the `Deploy to IIS` step. The IIS sites + app pools must already
@@ -267,15 +336,25 @@ Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
 
 | Script | Server | Key groups |
 |--------|--------|-----------|
-| [set-env-api.template.ps1](set-env-api.template.ps1) | SimfAPI | The bulk, ~62 keys: `SIMF_ConnectionStrings__*`, `SIMF_Jwt__*`, `SIMF_FileStorage__*`, `SIMF_Email__*`, `SIMF_SuperAdmin__*`, `SIMF_Seed__DemoPassword`, `SIMF_Ai__*`, `SIMF_MeetingLinks__*`, `SIMF_Cors__WebAppOrigins__n`, `SIMF_RateLimit__*`, `SIMF_WalkInMode__*`, `SIMF_Swagger__*` |
-| [set-env-cp.template.ps1](set-env-cp.template.ps1) | SimfCP | `SIMF_Api__BaseUrl`, `SIMF_Session__LifetimeHours`, `SIMF_DataProtection__KeyRingPath` |
-| [set-env-web.template.ps1](set-env-web.template.ps1) | SimfWeb | `SIMF_Api__BaseUrl`, `SIMF_DataProtection__KeyRingPath` |
-| [set-env-edge.template.ps1](set-env-edge.template.ps1) | SimfEdge | `SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address`, `SIMF_ReverseProxy__KnownProxies__0` |
+| [set-env-api.template.ps1](set-env-api.template.ps1) | SimfAPI | The bulk, ~62 keys: `SIMF_API_ConnectionStrings__*`, `SIMF_API_Jwt__*`, `SIMF_API_FileStorage__*`, `SIMF_API_Email__*`, `SIMF_API_SuperAdmin__*`, `SIMF_API_Seed__DemoPassword`, `SIMF_API_Ai__*`, `SIMF_API_MeetingLinks__*`, `SIMF_API_Cors__WebAppOrigins__n`, `SIMF_API_RateLimit__*`, `SIMF_API_WalkInMode__*`, `SIMF_API_Swagger__*` |
+| [set-env-cp.template.ps1](set-env-cp.template.ps1) | SimfCP | `SIMF_CP_Api__BaseUrl`, `SIMF_CP_Session__LifetimeHours`, `SIMF_CP_DataProtection__KeyRingPath` |
+| [set-env-web.template.ps1](set-env-web.template.ps1) | SimfWeb | `SIMF_WEB_Api__BaseUrl`, `SIMF_WEB_DataProtection__KeyRingPath` |
+| [set-env-edge.template.ps1](set-env-edge.template.ps1) | SimfEdge | `SIMF_EDGE_ReverseProxy__Clusters__api__Destinations__primary__Address`, `SIMF_EDGE_ReverseProxy__KnownProxies__0` |
 | [configure-prod-env.ps1](configure-prod-env.ps1) | any (`-Target`) | Generates the missing crypto keys, prompts for the rest, verifies, restarts the pool, health-checks |
 | [clear-env.ps1](clear-env.ps1) | any (`-Target`) | Removes the Machine-scope `SIMF_*` secrets (keeps the shared non-secret config unless `-Full`) |
 
-All four carry `ASPNETCORE_ENVIRONMENT` and `SIMF_Storage__LogDirectory`, because
-every host reads both.
+All four carry `ASPNETCORE_ENVIRONMENT` and a log directory, because every host
+reads both — but the log key is per-host like the rest: `SIMF_API_`,
+`SIMF_CP_`, `SIMF_WEB_` and `SIMF_EDGE_` each prefix their own
+`Storage__LogDirectory`.
+
+**The prefix is per host, and a bare `SIMF_` one binds to nothing.** The names
+above were written before the split and are the actual keys, verbatim from the
+templates. Setting the pre-split form leaves the host reading its built-in
+default instead — for the API that means no connection string and a boot
+failure, which reads as a broken deployment rather than as a mistyped variable.
+`clear-env.ps1` is the one place a bare `SIMF_*` is still right: it sweeps the
+whole namespace on purpose, and knows all four prefixes.
 
 ### One script per server - read this before deploying
 
@@ -293,7 +372,7 @@ file would then have meant shipping the API's connection strings, SMTP password
 and encryption keys to three servers that never read them.
 
 **The estate is not one server per package (D-886).** It is **two** servers,
-`Pre-production` and `Production`, each hosting all four sites - so all four
+`SIMF-Prod` and `SIM-RNSF`, each hosting all four sites - so all four
 scripts run on the same box, and the last-writer problem the 2026-08-06 merge
 solved would be back, were it not already solved a second way. What actually
 keeps them apart now is the **prefix per application** below
