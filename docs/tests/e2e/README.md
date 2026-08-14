@@ -54,7 +54,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..011 |
 | `/admin/visitors/vip/export` | [`cp-vip-export.md`](cp-vip-export.md) | E2E-VIPX-001..008 |
 | `/admin/delegates` | [`cp-admin-delegates.md`](cp-admin-delegates.md) | E2E-DLG-001..012 |
-| `/admin/visitors/badge-batches` | [`cp-admin-badge-batches.md`](cp-admin-badge-batches.md) | E2E-BBT-001..009 |
+| `/admin/visitors/badge-batches` | [`cp-admin-badge-batches.md`](cp-admin-badge-batches.md) | E2E-BBT-001..015 |
 | `/admin/attendees` | [`cp-admin-attendees.md`](cp-admin-attendees.md) | E2E-ATT-001..016 |
 | `/admin/print-bag` | [`cp-admin-print-bag.md`](cp-admin-print-bag.md) | E2E-PRT-001..011 |
 | `/admin/interests` | [`cp-admin-interests.md`](cp-admin-interests.md) | E2E-INT-001..013 |
@@ -189,6 +189,7 @@ endpoint or the hosted worker that owns the behaviour.
 
 | Surface | File | Scenarios |
 |---------|------|-----------|
+| `POST /app/auth/badge-activation/*` — an attendee with no account creates one from their badge (D-885) | [`api-badge-account-creation.md`](api-badge-account-creation.md) | E2E-BAC-001..008 |
 | `POST /app/auth/badge-activation/complete` — badge self-claim captures the claimer's profile | [`api-badge-self-claim-profile.md`](api-badge-self-claim-profile.md) | E2E-BSC-001..009 |
 | `GET /app/programme/sessions?categoryId=` — server-side theme/category filter | [`api-programme-category-filter.md`](api-programme-category-filter.md) | E2E-PCF-001..007 |
 | Meeting check-in export (speaker + delegation grids) | [`api-meeting-checkin-export.md`](api-meeting-checkin-export.md) | E2E-MCX-001..008 |

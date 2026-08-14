@@ -93,4 +93,40 @@ Scenario: E2E-BBT-009 The desk renders correctly in Arabic (RTL)
   When the admin opens "/admin/visitors/badge-batches"
   Then the grid, status pills, and both dialogs render right-to-left
   And there is no horizontal overflow (scrollWidth == clientWidth)
+
+# D-878 — an order carries a name, and can be topped up.
+
+Scenario: E2E-BBT-011 An order carries a name in both languages
+  Given the admin is generating a bulk order
+  When they leave either name field empty and confirm
+  Then the form refuses with "Give the order a name in both English and Arabic"
+   And nothing is posted
+  When they enter "Ministry of Interior Team" and "فريق وزارة الداخلية" and confirm
+  Then the order is created and its list row shows that name beside its counts
+
+Scenario: E2E-BBT-012 Top-up mints immediately and moves both denormalised fields
+  Given an order "Ministry of Interior Team" of Normal x 10 + VIP x 5
+  When the admin tops it up with VIP x 3
+  Then 3 more badges exist against that order
+   And TotalCount reads 18
+   And CountsSummary reads "Normal x 10 + VIP x 8" - the added tier is FOLDED
+       into the existing one, not appended as a second "VIP x 3" entry
+
+Scenario: E2E-BBT-013 A revoked order cannot be topped up
+  Given an order that has been revoked
+  When the admin tries to top it up
+  Then the API answers 409 and no badge is minted
+
+Scenario: E2E-BBT-014 The direct-registration order cannot be topped up
+  Given the seeded direct-registration order, where everyone who registered
+    themselves is filed
+  When the admin tries to top it up
+  Then the API answers 409 - it is not a badge order, and minting into it would
+    invent attendees nobody asked for
+
+Scenario: E2E-BBT-015 Top-up is gated on BulkGenerate, not ManageBatches
+  Given an account WITH "Visitors.ManageBatches" but WITHOUT "Visitors.BulkGenerate"
+  When it calls the top-up API
+  Then the response is 403 - re-emailing or revoking an order is a different
+    authority from creating more of it
 ```
