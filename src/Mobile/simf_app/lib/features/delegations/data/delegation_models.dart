@@ -126,6 +126,38 @@ class Delegations {
   final int countryCount;
   final int totalParticipants;
   final List<DelegationItem> items;
+
+  /// The countries whose flag the stats strip can show. Lifted out of
+  /// `DelegationsBody.build`, which re-walked the list on every rebuild.
+  List<DelegationItem> get flagItems =>
+      items.where((item) => item.flagEmoji.isNotEmpty).toList(growable: false);
+
+  /// The cards to show: the free-text [query], narrowed to one country when a
+  /// stats-strip flag is selected.
+  List<DelegationItem> visible({
+    String query = '',
+    String? countryCode,
+  }) =>
+      items.where(
+        (item) =>
+            (countryCode == null || item.countryCode == countryCode) &&
+            item.matches(query),
+      )
+      .toList(growable: false);
+
+  /// The selected country's name in the active language, for the active-filter
+  /// chip. Null when nothing is selected, or when the code matches no row.
+  String? selectedCountryName(String? countryCode, {required bool isArabic}) {
+    if (countryCode == null) {
+      return null;
+    }
+    for (final item in items) {
+      if (item.countryCode == countryCode) {
+        return item.localizedCountry(isArabic: isArabic);
+      }
+    }
+    return null;
+  }
 }
 
 DateTime? _parseDate(Object? value) =>

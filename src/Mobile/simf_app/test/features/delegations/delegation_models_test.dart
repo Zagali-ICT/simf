@@ -132,4 +132,56 @@ void main() {
       expect(item.localizedCountrySubtitle(isArabic: true), 'United States');
     });
   });
+
+  group('Delegations list rules', () {
+    // These three were derived inside DelegationsBody.build, so nothing tested
+    // them. The interesting one is the flag filter combining with the search.
+    final page = Delegations(
+      countryCount: 3,
+      totalParticipants: 30,
+      items: <DelegationItem>[
+        _item(), // US, the fixture default — a code that yields a flag
+        _item(code: 'EG', name: 'Egypt', nameAr: 'مصر'),
+        // A code that yields no flag: the strip must skip it.
+        _item(code: 'XXX', name: 'Nowhere', nameAr: 'لا مكان'),
+      ],
+    );
+
+    test('flagItems drops rows whose code yields no flag', () {
+      expect(page.flagItems.map((i) => i.countryCode), <String>['US', 'EG']);
+    });
+
+    test('visible with no filters returns everything, in order', () {
+      expect(page.visible().map((i) => i.countryCode).toList(), hasLength(3));
+    });
+
+    test('visible narrows to the selected country', () {
+      expect(
+        page.visible(countryCode: 'EG').map((i) => i.countryCode),
+        <String>['EG'],
+      );
+    });
+
+    test('visible applies the free-text query in both languages', () {
+      expect(page.visible(query: 'Egypt').map((i) => i.countryCode),
+          <String>['EG'],);
+      expect(page.visible(query: 'مصر').map((i) => i.countryCode),
+          <String>['EG'],);
+    });
+
+    test('the flag filter and the query compose to nothing when they conflict',
+        () {
+      expect(page.visible(query: 'Egypt', countryCode: 'US'), isEmpty);
+    });
+
+    test('selectedCountryName follows the active language', () {
+      expect(page.selectedCountryName('EG', isArabic: false), 'Egypt');
+      expect(page.selectedCountryName('EG', isArabic: true), 'مصر');
+    });
+
+    test('selectedCountryName is null for no selection or an unknown code', () {
+      expect(page.selectedCountryName(null, isArabic: false), isNull);
+      expect(page.selectedCountryName('ZZ', isArabic: false), isNull);
+    });
+  });
 }
