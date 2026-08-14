@@ -8,7 +8,7 @@
 # so it runs with no arguments:
 #   .\publish-app-web.ps1
 #   .\publish-app-web.ps1 `
-#       -ApiBase  "https://api.simrsnf.com/api/v1" `
+#       -ApiBase  "https://edge.simrsnf.com/api/v1" `
 #       -OutDir   "D:\SIMF\System\V1.0.0\publish" `
 #       [-AppKey  "<prod app key>"] `
 #       [-SupportPhone "+9665XXXXXXXX"] [-SupportEmail "support@..."] `
@@ -20,6 +20,10 @@
 # Notes:
 # - The API base is COMPILED IN (--dart-define); changing it means re-running
 #   this script — there is no runtime config file.
+# - It points at the EDGE, not the API. This bundle runs in a browser, and the
+#   API is not published to the internet: api.simrsnf.com resolves inside the
+#   estate only. The edge publishes /api/v1/app/**, which is the whole surface
+#   this build calls.
 # - If the IIS site's origin differs from the API host, set the API's
 #   Cors:WebAppOrigins to the site origin (see docs/deploy/SIMF-AppWeb-IIS-Deploy.md).
 
@@ -30,7 +34,11 @@ param(
     # that: it stops the script being runnable from CI and teaches people to
     # type past it. The check below enforces the same thing and also catches the
     # mistake a prompt never could, a base missing the /api/v1 route prefix.
-    [string] $ApiBase = 'https://api.simrsnf.com/api/v1',
+    #
+    # The EDGE, because this bundle is a browser client and the API is internal
+    # to the estate. Pointed at api.simrsnf.com it would compile cleanly, deploy
+    # cleanly, and then fail to resolve for every visitor.
+    [string] $ApiBase = 'https://edge.simrsnf.com/api/v1',
     [string] $OutDir  = 'D:\SIMF\System\V1.0.0\publish',
     [string] $AppKey = '',
     [string] $SupportPhone = '',

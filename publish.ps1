@@ -20,8 +20,10 @@
 #   every reminder four times.
 # - The mobile edge is included here because a handover or manual release built
 #   from this script IS the package that gets installed. It used to build three
-#   apps while the pipeline built four, so a hand-built package silently had no
-#   edge and api.simrsnf.com had nothing to answer it.
+#   apps while the pipeline built four, so a hand-built package silently shipped
+#   without the edge at all.
+# - Each package deploys to its OWN server. deploy\iis-deploy.ps1 takes every
+#   site pair independently, so a per-server run passes only its own.
 # - This script builds and publishes ONLY. It sets no configuration and no
 #   secrets - those are Machine-scope environment variables applied on the
 #   server by deploy\set-env.ps1 (SIMF-OPS-001 section 6).

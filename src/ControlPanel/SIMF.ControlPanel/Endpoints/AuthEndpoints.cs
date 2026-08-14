@@ -38,11 +38,10 @@ internal static class AuthEndpoints
             // The API issues roles as ClaimTypes.Role; with the standard
             // claim-type mapping in JwtSecurityTokenHandler that arrives back
             // as the same long-form URI, so match on either form.
-            return token.Claims
+            return [.. token.Claims
                 .Where(claim => claim.Type == ClaimTypes.Role
                     || claim.Type == "role")
-                .Select(claim => claim.Value)
-                .ToArray();
+                .Select(claim => claim.Value)];
         }
         catch (Exception)
         {
@@ -74,10 +73,9 @@ internal static class AuthEndpoints
                 return [];
             }
             var token = handler.ReadJwtToken(accessToken);
-            return token.Claims
+            return [.. token.Claims
                 .Where(claim => claim.Type == PermissionCatalog.ClaimType)
-                .Select(claim => claim.Value)
-                .ToArray();
+                .Select(claim => claim.Value)];
         }
         catch (Exception)
         {
@@ -119,7 +117,7 @@ internal static class AuthEndpoints
         // issues the authentication cookie, then sends the user to the shell.
         // Intentionally anonymous — it runs before the cookie exists; the
         // single-use, short-lived ticket reference is the control.
-        routes.MapGet("/auth/complete", async (
+        _ = routes.MapGet("/auth/complete", static async (
             string reference, SignInTicketStore tickets, HttpContext http) =>
         {
             var logger = AuthLog.Of(http);

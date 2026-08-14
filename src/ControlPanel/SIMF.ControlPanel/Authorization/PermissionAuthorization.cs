@@ -1,7 +1,8 @@
-using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using SIMF.Common;
+using System.Collections.Concurrent;
+using System.Security.Claims;
 
 namespace SIMF.ControlPanel.Authorization;
 
@@ -24,10 +25,9 @@ public sealed class PermissionRequirement(string code) : IAuthorizationRequireme
 /// <c>perm</c> claims contain the required code or the wildcard.</summary>
 public sealed class PermissionAuthorizationHandler : AuthorizationHandler<PermissionRequirement>
 {
-    protected override Task HandleRequirementAsync(
-        AuthorizationHandlerContext context, PermissionRequirement requirement)
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
     {
-        foreach (var claim in context.User.FindAll(PermissionCatalog.ClaimType))
+        foreach (Claim claim in context.User.FindAll(PermissionCatalog.ClaimType))
         {
             if (claim.Value == PermissionCatalog.Wildcard || claim.Value == requirement.Code)
             {
@@ -42,9 +42,9 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
 
 /// <summary>Materialises a permission policy (<c>perm:&lt;code&gt;</c>) on
 /// demand; any other policy name falls through to the default provider.</summary>
-public sealed class PermissionPolicyProvider : IAuthorizationPolicyProvider
+public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> options) : IAuthorizationPolicyProvider
 {
-    private readonly DefaultAuthorizationPolicyProvider fallback;
+    private readonly DefaultAuthorizationPolicyProvider fallback = new(options);
 
     /// <summary>One built policy per code, for the lifetime of the process.
     ///
@@ -63,18 +63,21 @@ public sealed class PermissionPolicyProvider : IAuthorizationPolicyProvider
     /// instead of an equal new one.</para></summary>
     private readonly ConcurrentDictionary<string, AuthorizationPolicy> permissionPolicies = new(StringComparer.Ordinal);
 
-    public PermissionPolicyProvider(IOptions<AuthorizationOptions> options) =>
-        fallback = new DefaultAuthorizationPolicyProvider(options);
+    public Task<AuthorizationPolicy> GetDefaultPolicyAsync()
+    {
+        return fallback.GetDefaultPolicyAsync();
+    }
 
-    public Task<AuthorizationPolicy> GetDefaultPolicyAsync() => fallback.GetDefaultPolicyAsync();
-
-    public Task<AuthorizationPolicy?> GetFallbackPolicyAsync() => fallback.GetFallbackPolicyAsync();
+    public Task<AuthorizationPolicy?> GetFallbackPolicyAsync()
+    {
+        return fallback.GetFallbackPolicyAsync();
+    }
 
     public Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
         if (PermissionCatalog.IsPermissionPolicy(policyName))
         {
-            var policy = permissionPolicies.GetOrAdd(policyName, static name =>
+            AuthorizationPolicy policy = permissionPolicies.GetOrAdd(policyName, static name =>
                 new AuthorizationPolicyBuilder()
                     .RequireAuthenticatedUser()
                     .AddRequirements(new PermissionRequirement(PermissionCatalog.CodeFromPolicy(name)))
@@ -96,6 +99,8 @@ public sealed class PermissionPolicyProvider : IAuthorizationPolicyProvider
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
 public sealed class RequirePermissionAttribute : AuthorizeAttribute
 {
-    public RequirePermissionAttribute(string permissionCode) =>
+    public RequirePermissionAttribute(string permissionCode)
+    {
         Policy = PermissionCatalog.PolicyFor(permissionCode);
+    }
 }

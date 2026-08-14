@@ -1,8 +1,8 @@
 # SIMF.MobileEdge — deployment guide
 
-The mobile presentation tier. A YARP reverse proxy that takes over the public
-`api.simrsnf.com` name and forwards only the mobile surface to an API that is no
-longer published at all.
+The mobile presentation tier. A YARP reverse proxy published at
+`edge.simrsnf.com` that forwards only the mobile surface to an API which is not
+published to the internet at all.
 
 - **Project:** `src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj`
 - **Artifact:** `edge/SIMF.MobileEdge.zip`, or `publish\edge` from `publish.ps1`
@@ -11,10 +11,17 @@ longer published at all.
 
 ## Why it exists
 
-The Flutter app compiles its API base URL in, so the public hostname cannot change
-without a store release on both platforms. The edge takes that hostname over, which
-lets the API move to a private address and stop being published. Installed apps
-need no rebuild.
+It is the only public entry point for the mobile clients, which lets the API stop
+being published to the internet: the app reaches `edge.simrsnf.com`, the edge
+reaches the API inside the estate, and nothing outside can address the API at all.
+
+**It needs a mobile release.** `build_config.dart` compiles the base URL in
+(`String.fromEnvironment`, default `https://api.simrsnf.com/api/v1`), so an
+installed app talks to the API directly and knows nothing about the edge. Routing
+mobile traffic through it means rebuilding with `--dart-define` pointing at
+`edge.simrsnf.com` and shipping to both stores. Withdrawing the API's public DNS
+record and shipping that release must land together, or the installed app has
+nothing to reach in between.
 
 It deliberately does almost nothing: no reshaping, no aggregation, no business
 logic. The shipped mobile wire contract is append-only (D-219), so every field the
@@ -33,10 +40,10 @@ needs no rebuild — but the published path set stays a deliberate allow-list. T
 is what keeps `/api/v1/admin/**` unreachable through the edge.
 
 **Consequence for the Control Panel.** The CP calls `/api/v1/admin/**`
-(`SimfAdminClient`). Once the edge owns `api.simrsnf.com`, `SIMF_Api__BaseUrl` must
-point at the API's **private** address, or every admin page 404s while the mobile
-app carries on working. CP and Website are server-side callers in the presentation
-zone; they reach the application zone directly and never traverse the public edge.
+(`SimfAdminClient`), which the edge has no route for. `SIMF_Api__BaseUrl` therefore
+points CP and Website at `api.simrsnf.com` directly: they are server-side callers
+in the presentation zone and never traverse the public edge. Pointing either at
+`edge.simrsnf.com` would 404 every admin page.
 
 ## Addressing
 
@@ -45,12 +52,12 @@ the API certificate has to validate, and no public CA issues one for a bare addr
 
 | | Name | Internet | Hosting |
 |---|---|---|---|
-| Edge (tier 1) | `api.simrsnf.com` | yes, via the WAF/LB | IIS site `SIMF.EDGE` |
-| API (tier 2) | private, e.g. `api-int.simrsnf.local` | no | IIS site `SIMF.API` |
+| Edge (tier 1) | `edge.simrsnf.com` | yes, via the WAF/LB | IIS site `SIMF.EDGE` |
+| API (tier 2) | `api.simrsnf.com`, internal to the estate | no | IIS site `SIMF.API` |
 
-**Two certificates:** the public one for `api.simrsnf.com`, moved to the edge site
-at cutover, and an internal one for the API's private name so the edge, CP and
-Website can validate it. The internal one is the one that gets forgotten.
+**Two certificates:** a public one for `edge.simrsnf.com`, and one for
+`api.simrsnf.com` so the edge, CP and Website can validate the API. The second is
+the one that gets forgotten, because it is internal.
 
 ## Configuration
 
@@ -59,7 +66,7 @@ than 502-ing every app user or trusting an unverified header.
 
 | Variable | Value |
 |---|---|
-| `SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address` | the API's **private** HTTPS address. Never `api.simrsnf.com`, or the edge forwards to the load balancer and back to itself. |
+| `SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address` | the API's HTTPS address inside the estate, e.g. `https://api.simrsnf.com/`. Never `edge.simrsnf.com`, which is this host: the edge would forward through the load balancer back to itself. |
 | `SIMF_ReverseProxy__KnownProxies__0` | the WAF / load balancer address. Without it `X-Forwarded-For` is unverified, and any caller can spoof its source address past the API's rate limiter and into the audit log. |
 
 It also reads `SIMF_Storage__LogDirectory` and writes to
@@ -68,13 +75,14 @@ CP and Website. This host is internet-facing and the first thing a mobile reques
 touches, so its log is where an incident starts; the app-pool identity needs write
 access there. `ops.ps1` grants it.
 
-Production values arrive as `SIMF_`-prefixed Machine-scope environment variables
-(`deploy/set-env.ps1`); the host strips the prefix. Restart the app pool after
-changing them so `w3wp` picks them up.
+Production values arrive as `SIMF_`-prefixed Machine-scope environment variables,
+set on this server by `deploy/set-env-edge.ps1` (filled from
+`set-env-edge.template.ps1`); the host strips the prefix. Restart the app pool
+after changing them so `w3wp` picks them up.
 
 ## Availability
 
-Run **two nodes**, not one. Once the edge owns the public name it carries 100% of
+Run **two nodes**, not one. Once the app is pointed at it, the edge carries 100% of
 mobile traffic, so a single instance turns a four-node API into a single point of
 failure — an availability regression made in the name of security. It is a
 stateless proxy: no affinity, no shared state, no key ring. Size it from peak
@@ -86,45 +94,52 @@ unhealthy takes the edge out of rotation for a fault it cannot fix, turning one
 outage into two. The trade-off is that a downstream outage is invisible to the LB
 by design, so end-to-end monitoring has to live somewhere else.
 
-## Install and cut over
+## Install and deploy
 
 ```powershell
-# 1. Create the site and pool. -ApiHost must be the API's PRIVATE name; the
-#    script refuses to install while it still matches -EdgeHost.
-.\deploy\ops.ps1 -Action Install -Target Edge `
-    -ApiHost api-int.simrsnf.local -EdgePort 12343 -CertThumbprint <thumbprint>
+# 1. Create the site and pool on the edge server.
+.\deploy\ops.ps1 -Action Install -Target Edge -EdgePort 12343 -CertThumbprint <thumbprint>
 
-# 2. Fill in and run set-env.ps1 on the server (as Administrator).
+# 2. Fill in and run set-env-edge.ps1 on that server (as Administrator).
+#    BOTH of its variables are boot gates.
 
-# 3. Deploy the files.
-.\deploy\iis-deploy.ps1 -ArtifactRoot .\publish `
-    -EdgeSiteName "SIMF.EDGE" -EdgePath "D:\System\v1.0.1\edge"
+# 3. Deploy this package to that server.
+.\deploy\pipeline-deploy-one.ps1 -Package edge -ZipName SIMF.MobileEdge.zip `
+    -SiteName SIMF.EDGE -SitePath D:\System\v1.0.1\edge -Drop <drop> -Root <root>
 ```
 
-4. Move the `api.simrsnf.com` certificate binding to the edge site.
+4. Publish `edge.simrsnf.com` in DNS and bind its certificate to the edge site.
 5. Firewall: presentation to application on 443. Resolve the key-ring rule noted
    against `SIMF_DataProtection__KeyRingPath` first, or CP and Website will not boot.
-6. Repoint DNS `api.simrsnf.com` at the edge, and unpublish the API.
-7. Restart all app pools.
+6. Restart the edge app pool.
 
-**Rollback** is a DNS change: point `api.simrsnf.com` back at the API and republish
-it. No app release either way, which is the whole reason for taking the public name.
+At this point the edge is live and serving, and **no client is using it yet** -
+installed apps still reach the API directly. Two steps remain, and they are a
+release decision rather than a deployment one:
+
+7. Ship a mobile release built with `--dart-define` pointing at `edge.simrsnf.com`.
+8. Once that release has reached users, withdraw the API's public DNS record.
+
+**Rollback** before step 8 costs nothing: no client depends on the edge, so
+removing it affects nobody. After step 8 it is a DNS change, restoring the API's
+public record.
 
 ## Verifying a deployment
 
 | Check | Expected |
 |---|---|
-| `GET https://api.simrsnf.com/health` | `healthy` |
+| `GET https://edge.simrsnf.com/health` | `healthy` |
 | A call under `/api/v1/app/*` through the edge | succeeds, and the JSON is **byte-identical** to the same call made directly against the API |
-| `GET /api/v1/admin/anything` through the edge | **404** — the admin surface is not reachable here |
+| `GET https://edge.simrsnf.com/api/v1/admin/anything` | **404** - the admin surface is not reachable here |
 | Edge started with an empty destination address | refuses to start, naming the missing variable |
 | Edge started with empty `KnownProxies` outside Development | refuses to start, naming the missing variable |
 | Response headers | `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Content-Security-Policy` |
 | API audit log after a call through the edge | shows the **client's** address, not the edge's, proving `X-Forwarded-For` is honoured |
-| The real Flutter app pointed at `api.simrsnf.com` | signs in and loads sessions with no rebuild |
+| A Flutter build made with `--dart-define` for `edge.simrsnf.com` | signs in and loads sessions through the edge |
+| The Control Panel | still reaches `api.simrsnf.com` directly and loads an admin grid |
 
 ## Related
 
-- `deploy/README.md` — pipeline, `ops.ps1`, `set-env.ps1`, and the cutover section
+- `deploy/README.md` - pipeline, `ops.ps1`, the per-server env scripts, and the mobile edge section
 - `src/Edge/SIMF.MobileEdge/Program.cs` — the host, and the reasoning in its comments
 - `tests/SIMF.Api.Tests/Operations/MobileEdgeRoutingTests.cs` — route allow-list tests

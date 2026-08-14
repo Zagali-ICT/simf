@@ -11,11 +11,12 @@ SIMF web apps and deploy them to IIS, mirroring the V10 ERP pipeline.
 | SimfWeb | `src/Website/SIMF.Web/SIMF.Web.csproj` | `web/SIMF.Web.zip` | site `SIMF.WEB`, path `D:\System\v1.0.1\web` |
 | SimfEdge | `src/Edge/SIMF.MobileEdge/SIMF.MobileEdge.csproj` | `edge/SIMF.MobileEdge.zip` | site `SIMF.EDGE`, path `D:\System\v1.0.1\edge` |
 
-The **mobile edge** is the presentation tier for the mobile clients: a YARP
-reverse proxy that publishes only `/api/v1/app/**` and forwards it to the API on
-its private address. See
-[the cutover section](#the-mobile-edge-and-the-apisimrsnfcom-cutover) before
-deploying it, because it changes what `SIMF_Api__BaseUrl` must be set to.
+Each package deploys to its **own server**, so each has its own environment
+script and its own deployment job. The **mobile edge** is the presentation tier
+for the mobile clients: a YARP reverse proxy published at `edge.simrsnf.com` that
+forwards only `/api/v1/app/**` inward. See
+[the mobile edge section](#the-mobile-edge-at-edgesimrsnfcom) before deploying
+it: routing the app through it needs a mobile store release.
 
 All four sites and the SQL Server are addressed by hostname, not by IP: every
 certificate bypass was removed on 2026-08-08, so the API certificate has to
@@ -43,9 +44,12 @@ Build, Test & Publish ──▶ Deploy to IIS
   `dotnet build -c Release` → `dotnet test` (a failing test stops the pipeline,
   per SIMF-OPS-001 §5) → `dotnet publish` each app (zipped) → publish artifact
   `drop`.
-- **Deploy to IIS** — downloads `drop`, extracts the four zips, then runs
-  [`iis-deploy.ps1`](iis-deploy.ps1) which stops each site + app pool, releases
-  file locks, `robocopy /MIR`s the files, and restarts.
+- **Deploy to IIS** — FOUR deployment jobs, one per server, each bound to its
+  own Azure DevOps Environment. Each downloads `drop`, extracts only its own
+  zip via [`pipeline-deploy-one.ps1`](pipeline-deploy-one.ps1), and hands only
+  its own site to [`iis-deploy.ps1`](iis-deploy.ps1), which stops the site +
+  app pool, releases file locks, `robocopy /MIR`s the files, and restarts.
+  Order: **API**, then **CP** and **Web** in parallel, then **Edge** last.
 
 ## Building a package locally (`publish.ps1`)
 
@@ -81,8 +85,8 @@ inherited the failure until someone remembered the flag. No caller passes it
 now.
 
 The script builds and packages **only**. It applies no configuration and no
-secrets — those remain Machine-scope environment variables set on the server by
-`set-env.ps1`, below.
+secrets — those remain Machine-scope environment variables set on each server by
+its own `set-env-{api|cp|web|edge}.ps1`, below.
 
 ## Operating the sites (`ops.ps1`)
 
@@ -112,12 +116,14 @@ Service, only the `Workers` block in `ops.ps1` changes.
 .\ops.ps1 -Action Status
 .\ops.ps1 -Action Restart -Target Workers
 .\ops.ps1 -Action Install -Target All -ApiPort 12340 -CpPort 12341 -WebPort 12342 `
-    -EdgePort 12343 -ApiHost api-int.simrsnf.local
+    -EdgePort 12343
+.\ops.ps1 -Action Install -Target Edge -CertThumbprint <thumbprint>
 ```
 
-Installing the edge requires `-ApiHost` to be the API's **private** name: the edge
-takes `api.simrsnf.com`, and `ops.ps1` refuses to install while both still resolve
-to the same hostname.
+On a per-server estate each box installs only its own target. `-Target All`
+remains for a single box that still runs everything; `ops.ps1` refuses to install
+while `-ApiHost` and `-EdgeHost` name the same host, since two sites cannot share
+a hostname.
 
 TLS bindings and the CA certificate are configured separately (see the HLD /
 SIMF-OPS-001); `Install` creates the HTTP binding only.
@@ -143,8 +149,10 @@ These are **placeholders** — set them to the real SIMF server values:
    needs outbound access to `community.chocolatey.org` + the package source, and
    rights to install an MSI), then creates/starts the instance. Installing
    LocalDB on the agent once removes the per-run download.
-2. **`environment` name** (`SIMF-Prod` placeholder) — register an Azure DevOps
-   **Environment** of this name and bind it to the SIMF server.
+2. **`environment` names** (`SIMF-Prod-Api`, `-Cp`, `-Web`, `-Edge`
+   placeholders) — register FOUR Azure DevOps **Environments**, one per server,
+   and bind each to that machine's agent. One Environment covering the whole
+   estate would put every package back on one box.
 3. **IIS site names + physical paths** — the `-ApiSiteName/-ApiPath`,
    `-CpSiteName/-CpPath`, `-WebSiteName/-WebPath` and `-EdgeSiteName/-EdgePath`
    arguments in the `Deploy to IIS` step. The IIS sites + app pools must already
@@ -160,46 +168,65 @@ Per SIMF-OPS-001 §6, production overrides and every secret are applied as
 templates here carry **empty values**; fill them on the server, run **as
 Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
 
-| Script | Service | Key groups |
-|--------|---------|-----------|
-| [set-env.template.ps1](set-env.template.ps1) | SimfAPI + SimfCP + SimfWeb | Every variable the deployment needs: `SIMF_ConnectionStrings__*`, `SIMF_Jwt__*`, `SIMF_FileStorage__*`, `SIMF_Storage__*`, `SIMF_Email__*`, `SIMF_SuperAdmin__*`, `SIMF_Seed__DemoPassword`, `SIMF_Ai__*`, `SIMF_MeetingLinks__*`, `SIMF_ReverseProxy__KnownProxies__n`, `SIMF_Cors__WebAppOrigins__n`, `SIMF_RateLimit__*`, `SIMF_WalkInMode__*`, `SIMF_Swagger__*`, `SIMF_Api__BaseUrl`, `SIMF_Session__LifetimeHours`, `ASPNETCORE_ENVIRONMENT` |
-| [configure-prod-env.ps1](configure-prod-env.ps1) | SimfAPI (runbook) | Generates the missing crypto keys, prompts for the rest, verifies, restarts the pools, health-checks |
-| [clear-env.ps1](clear-env.ps1) | all | Removes the Machine-scope `SIMF_*` secrets (keeps the shared non-secret config unless `-Full`) |
+| Script | Server | Key groups |
+|--------|--------|-----------|
+| [set-env-api.template.ps1](set-env-api.template.ps1) | SimfAPI | The bulk, ~62 keys: `SIMF_ConnectionStrings__*`, `SIMF_Jwt__*`, `SIMF_FileStorage__*`, `SIMF_Email__*`, `SIMF_SuperAdmin__*`, `SIMF_Seed__DemoPassword`, `SIMF_Ai__*`, `SIMF_MeetingLinks__*`, `SIMF_Cors__WebAppOrigins__n`, `SIMF_RateLimit__*`, `SIMF_WalkInMode__*`, `SIMF_Swagger__*` |
+| [set-env-cp.template.ps1](set-env-cp.template.ps1) | SimfCP | `SIMF_Api__BaseUrl`, `SIMF_Session__LifetimeHours`, `SIMF_DataProtection__KeyRingPath` |
+| [set-env-web.template.ps1](set-env-web.template.ps1) | SimfWeb | `SIMF_Api__BaseUrl`, `SIMF_DataProtection__KeyRingPath` |
+| [set-env-edge.template.ps1](set-env-edge.template.ps1) | SimfEdge | `SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address`, `SIMF_ReverseProxy__KnownProxies__0` |
+| [configure-prod-env.ps1](configure-prod-env.ps1) | any (`-Target`) | Generates the missing crypto keys, prompts for the rest, verifies, restarts the pool, health-checks |
+| [clear-env.ps1](clear-env.ps1) | any (`-Target`) | Removes the Machine-scope `SIMF_*` secrets (keeps the shared non-secret config unless `-Full`) |
 
-### One script for all four sites — read this before deploying
+All four carry `ASPNETCORE_ENVIRONMENT` and `SIMF_Storage__LogDirectory`, because
+every host reads both.
 
-Until 2026-08-06 there were three scripts, one per service. They wrote to the
-same Machine-scope namespace and overlapped on `ASPNETCORE_ENVIRONMENT`,
-`SIMF_Api__BaseUrl`, `SIMF_Api__AllowSelfSignedCertificate` (since retired) and
-`SIMF_Storage__LogDirectory`, each noting that "running both is fine, the last
-writer wins". That holds only while the copies agree; edit one and the box
-silently takes whichever ran last. They are now a single file, so a deployment
-is: **the pipeline publishes, an operator runs one script, restart the pools.**
+### One script per server - read this before deploying
 
-Its filled form carries every production secret, so the repository tracks
-**`set-env.template.ps1`** and **`.gitignore` deliberately ignores
-`set-env.ps1`**, which is the filled overlay you create on the server:
+The file count has moved twice, and the reasoning differs each time. Until
+2026-08-06 there were three scripts, one per service, all running on one box:
+they wrote to the same Machine-scope namespace and overlapped on several keys,
+each noting "running both is fine, the last writer wins" - true only while the
+copies agree. They were merged into one file, because one file cannot disagree
+with itself.
+
+On 2026-08-12 the estate moved to **one server per package**, which removes that
+collision outright: a variable set on the Website host is not visible on the API
+host, so there is no last writer. Keeping one file would instead mean shipping
+the API's connection strings, SMTP password and encryption keys to three servers
+that never read them - a worse problem than the one the merge solved.
+
+So the scripts split again, one per package, and the keys that legitimately
+appear in more than one file are pinned by `Shared_keys_agree_across_templates`
+in `DeploymentEnvTemplateTests`: same value, same `Secret` flag, or the build
+fails. `Gate` is deliberately allowed to differ, because it records whether
+**that** host refuses to start without the value.
+
+A deployment is therefore: **the pipeline publishes and deploys each package to
+its own server, an operator runs that server's one script, restart that pool.**
+
+Each filled form carries production values, so the repository tracks the four
+**`.template.ps1`** files and **`.gitignore` deliberately ignores the filled
+`set-env-{api,cp,web,edge}.ps1`** you create on each server:
 
 ```powershell
-Copy-Item .\deploy\set-env.template.ps1 .\deploy\set-env.ps1
-# fill the Secret entries in set-env.ps1 on the server, then run as Administrator
-.\deploy\set-env.ps1
+# on the API server
+Copy-Item .\deploy\set-env-api.template.ps1 .\deploy\set-env-api.ps1
+# fill the Secret entries in set-env-api.ps1 on the server, then run as Administrator
+.\deploy\set-env-api.ps1
 ```
 
 Every entry marked `Secret = $true` ships **empty**, and a test fails the build
 if one is ever committed with a value. Non-secret settings that are identical on
-every SIMF box (the environment name, the loopback API URL, the storage roots)
-ship **pre-filled**, so an operator fills roughly a dozen secrets rather than
-sixty variables. Non-secret settings that differ per site — public origins,
-proxy IPs, the SMTP host — are marked `SITE-SPECIFIC` and also ship empty.
+every SIMF box (the environment name, the storage roots) ship **pre-filled**, so
+an operator fills roughly a dozen secrets rather than sixty variables. Non-secret
+settings that differ per site - public origins, proxy IPs, the SMTP host - are
+marked `SITE-SPECIFIC` and also ship empty.
 
-**Never delete the `.gitignore` entry for `set-env.ps1` to make it
-trackable — that commits live production credentials.** Edit the template
-instead; it is the shared, reviewable copy. Each variable in the template
-carries a comment saying what breaks when it is missing, including the three
-Production **boot gates** (`SIMF_FileStorage__EncryptionKey`,
-`SIMF_Storage__UserIdDocumentEncryptionKey`, `SIMF_Ai__PromptHash__Secret`) that
-stop the API starting at all.
+**Never delete a `.gitignore` entry for a filled `set-env-*.ps1` to make it
+trackable - that commits live production credentials.** Edit the matching
+template instead; it is the shared, reviewable copy. Each variable carries a
+comment saying what breaks when it is missing, including the Production **boot
+gates** that stop a host starting at all.
 
 ### First-time provisioning — `configure-prod-env.ps1`
 
@@ -222,28 +249,91 @@ server. Run it **as Administrator**; it is safe to re-run.
 5. **Restarts** the IIS app pools and **health-checks** the API.
 
 ```powershell
-.\deploy\configure-prod-env.ps1                # full provisioning pass
-.\deploy\configure-prod-env.ps1 -VerifyOnly    # audit only, changes nothing
-.\deploy\configure-prod-env.ps1 -SkipPrompts   # keys + verify, no prompts
+.\deploy\configure-prod-env.ps1 -Target Api               # this server's full pass
+.\deploy\configure-prod-env.ps1 -Target Edge -VerifyOnly  # audit only, changes nothing
+.\deploy\configure-prod-env.ps1 -Target Cp -SkipPrompts   # keys + verify, no prompts
 ```
 
-Naming uses the **`SIMF_` project prefix** + the ASP.NET Core double-underscore
-convention (`SIMF_Section__Key`). Each app registers
-`AddEnvironmentVariables("SIMF_")` (branch `feature/env-var-prefix`), which
-strips the prefix, so `SIMF_ConnectionStrings__SimfAppDb` binds to
-`ConnectionStrings:SimfAppDb`. **Exception:** `ASPNETCORE_ENVIRONMENT` is
-host-level (read before configuration sources load) and stays **un-prefixed**.
+**Pass `-Target`.** Each key and prompt declares which packages read it, and the
+runbook asks only for that server's set. Unscoped it would ask an operator on the
+Website host for a database connection string that host never reads, and then
+write that credential into a machine with no reason to hold one. `-Target All`
+remains for a single box that still runs everything.
+
+### Naming — one prefix per application
+
+Each application reads its **own** prefix, plus the ASP.NET Core
+double-underscore convention:
+
+| Application | Prefix | Example |
+|---|---|---|
+| SimfAPI | `SIMF_API_` | `SIMF_API_ConnectionStrings__SimfAppDb` → `ConnectionStrings:SimfAppDb` |
+| SimfCP | `SIMF_CP_` | `SIMF_CP_Api__BaseUrl` → `Api:BaseUrl` |
+| SimfWeb | `SIMF_WEB_` | `SIMF_WEB_Storage__LogDirectory` → `Storage:LogDirectory` |
+| SimfEdge | `SIMF_EDGE_` | `SIMF_EDGE_ReverseProxy__KnownProxies__0` → `ReverseProxy:KnownProxies:0` |
+
+**Why not one shared `SIMF_`?** Machine scope is shared by every process on a
+box. While all four hosts read one common prefix, two SIMF applications on one
+server could not be given different values for the same key: there was a single
+`SIMF_Storage__LogDirectory` and a single `SIMF_Api__BaseUrl` between them,
+shared whether that was wanted or not. The Control Panel's `Session:LifetimeHours`
+and the API's `Session:TimeoutHours` sat in the same namespace under one section
+name. A prefix per application removes that.
+
+Be precise about what it is: **a naming boundary, not a security one.** Any
+process on the box can still read any variable whatever it is called. The real
+isolation is that each server receives only its own package's values, which is
+what the four separate scripts deliver.
+
+**Exception:** `ASPNETCORE_ENVIRONMENT` is host-level — read before any
+configuration source loads — so it stays **un-prefixed** and is set identically
+on every server.
+
 Each script skips empty values (so an unedited run never sets blanks) and lists
 which keys are `[REQUIRED]` / `[SECRET]`. Generate the secret keys per
-SIMF-OPS-001 §B.3. Machine-scope variables are shared across all apps on the box
-(so `SIMF_Api__BaseUrl` / `ASPNETCORE_ENVIRONMENT` are common to CP + Web).
+SIMF-OPS-001 §B.3.
 
-## The mobile edge and the `api.simrsnf.com` cutover
+### Upgrading a server provisioned before 2026-08-12
 
-The edge exists so the API can stop being published. The installed Flutter app
-compiles its base URL in (`https://api.simrsnf.com/api/v1`), so the public name
-cannot change without a store release on both platforms; the edge therefore
-**takes that name over** and forwards only the mobile surface inward.
+This change is **not backward compatible**, deliberately: honouring the old
+`SIMF_` names as a fallback would keep alive the very collision the split
+removes. Each host therefore **refuses to start** when it finds pre-split
+variables, naming them and the script that fixes it — rather than booting and
+reporting an encryption key missing while the value sits there under its former
+name.
+
+Per server, in this order:
+
+```powershell
+# 1. Provision the new namespace (fill the template's copy first).
+.\deploy\set-env-api.ps1            # or -cp / -web / -edge on that box
+
+# 2. Remove the pre-split variables the host now refuses to start alongside.
+.\deploy\clear-env.ps1 -Full
+
+# 3. Restart that server's app pool.
+.\deploy\ops.ps1 -Action Restart -Target Api
+```
+
+Step 2 after step 1, not before: clearing first leaves the box with no
+configuration at all if step 1 is interrupted.
+
+## The mobile edge at `edge.simrsnf.com`
+
+The edge is the presentation tier for the mobile clients: a YARP reverse proxy
+that publishes only `/api/v1/app/**` and forwards it inward, so the API can stop
+being published to the internet.
+
+It is served on its **own** name. `api.simrsnf.com` stays with the API and is
+reserved for it, resolving inside the estate only.
+
+**This needs a mobile app release.** `build_config.dart` compiles the base URL in
+(`String.fromEnvironment`, default `https://api.simrsnf.com/api/v1`), so an
+installed app talks to the API directly and knows nothing about the edge. Routing
+mobile traffic through it means rebuilding with `--dart-define` pointing at
+`edge.simrsnf.com` and shipping to both stores. **Withdrawing the API's public DNS
+record and shipping that release have to land together**, or the installed app has
+nothing to reach in between.
 
 **Addressing.** Hostnames, never raw IPs: every certificate bypass was removed on
 2026-08-08, so the API's certificate has to validate and no public CA issues one
@@ -251,52 +341,50 @@ for a bare address.
 
 | | Name | Internet? | Hosting |
 |---|---|---|---|
-| Edge (tier 1) | `api.simrsnf.com` | yes, via the WAF/LB | IIS site `SIMF.EDGE` |
-| API (tier 2) | private, e.g. `api-int.simrsnf.local` | no | IIS site `SIMF.API` |
+| Edge (tier 1) | `edge.simrsnf.com` | yes, via the WAF/LB | IIS site `SIMF.EDGE` |
+| API (tier 2) | `api.simrsnf.com`, internal to the estate | no | IIS site `SIMF.API` |
 
 **Two certificates are needed** and the second is the one that gets forgotten:
-the public certificate for `api.simrsnf.com` (moved to the edge site at cutover),
-and an internal certificate for the API's private name, so the edge, the Control
-Panel and the Website can all validate it.
+a public certificate for `edge.simrsnf.com`, and one for `api.simrsnf.com` so the
+edge, the Control Panel and the Website can all validate the API.
 
-**The trap.** The edge publishes exactly one route, `/api/v1/app/**`. The Control
-Panel calls `/api/v1/admin/**`. If `SIMF_Api__BaseUrl` is left pointing at
-`api.simrsnf.com` after the cutover, every admin page 404s while the mobile app
-keeps working, which reads as "the CP is broken" rather than "the cutover is
-half-done". CP and Web are server-side callers in the presentation zone: point
-them at the API's **private** address and never through the public front door.
+**What the edge does NOT serve.** It publishes exactly one route,
+`/api/v1/app/**`. The Control Panel calls `/api/v1/admin/**`, which the edge has
+no route for, so `SIMF_Api__BaseUrl` points CP and Web at `api.simrsnf.com`
+directly. They are server-side callers in the presentation zone and never
+traverse the public front door.
 
-**Availability.** Run the edge on **two nodes**, not one. Once it owns the public
-name it carries 100% of mobile traffic, so a single instance turns a four-node API
-into a single point of failure. It is a stateless proxy, so a second node needs no
-affinity and no shared state.
+**Availability.** Run the edge on **two nodes**, not one. Once the app is pointed
+at it, it carries 100% of mobile traffic, so a single instance turns a four-node
+API into a single point of failure. It is a stateless proxy, so a second node
+needs no affinity and no shared state.
 
 **Order of operations.**
 
 ```powershell
-# 1. On the edge server (as Administrator). -ApiHost must be the API's PRIVATE
-#    name; the script refuses to install if it still matches -EdgeHost.
-.\ops.ps1 -Action Install -Target Edge -ApiHost api-int.simrsnf.local -CertThumbprint <thumbprint>
+# 1. On the edge server, as Administrator.
+.\ops.ps1 -Action Install -Target Edge -CertThumbprint <thumbprint>
 
-# 2. Fill in set-env.ps1 on each server, then run it as Administrator.
-#    Both edge variables are BOOT GATES - it refuses to start without them.
-#      SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address = the API's private https address
+# 2. Fill in set-env-edge.ps1 on that server and run it as Administrator.
+#    BOTH edge variables are BOOT GATES - it refuses to start without them.
+#      SIMF_ReverseProxy__Clusters__api__Destinations__primary__Address = https://api.simrsnf.com/
 #      SIMF_ReverseProxy__KnownProxies__0                               = the WAF / load balancer address
-#      SIMF_Api__BaseUrl                                                = the same private API address (the CP fix)
 
-# 3. Deploy, then restart the pools so w3wp picks up the machine variables.
-.\iis-deploy.ps1 -ArtifactRoot .\publish -EdgeSiteName "SIMF.EDGE" -EdgePath "D:\System\v1.0.1\edge" ...
+# 3. Deploy this package to that server.
+.\pipeline-deploy-one.ps1 -Package edge -ZipName SIMF.MobileEdge.zip `
+    -SiteName SIMF.EDGE -SitePath D:\System\v1.0.1\edge -Drop <drop> -Root <root>
 ```
 
-4. Move the `api.simrsnf.com` certificate binding to the edge site.
+4. Publish `edge.simrsnf.com` in DNS and bind its certificate to the edge site.
 5. Firewall: presentation to application on 443; application to data on 1433 and
    445. Resolve the key-ring rule noted against `SIMF_DataProtection__KeyRingPath`
-   in the template first, or the CP and Website will not boot.
-6. **Repoint DNS** `api.simrsnf.com` at the edge, and unpublish the API.
+   in the CP and Web templates first, or neither host boots.
+6. Ship the mobile release built against `edge.simrsnf.com`.
+7. Only then withdraw the API's public DNS record.
 
-**Rollback** is a DNS change: point `api.simrsnf.com` back at the API and
-republish it. No app release is involved either way, which is the whole reason
-for taking the public name.
+**Rollback** before step 7 costs nothing: the installed app is still reaching the
+API directly, so removing the edge affects no client. After step 7 it is a DNS
+change, restoring the API's public record.
 
 Full component guide:
 [`docs/deploy/SIMF-MobileEdge-Deploy.md`](../docs/deploy/SIMF-MobileEdge-Deploy.md).

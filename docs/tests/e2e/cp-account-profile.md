@@ -176,7 +176,7 @@ Scenario: Regenerate the recovery-code batch
 ```gherkin
 Scenario: A valid password change signs the user out
   Given the user is on /account/profile
-  When they fill Current password = "[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"
+  When they fill Current password = "[REDACTED - supply via SIMF_API_SuperAdmin__TempPassword]"
   And New password = "Bb@987654321"
   And Confirm new password = "Bb@987654321"
   And click "Update password"
@@ -262,7 +262,7 @@ Scenario: Confirming enrolment with a wrong code shows a bilingual error
 ```gherkin
 Scenario: Mismatched new password is rejected without signing out
   Given the user is on /account/profile
-  When they fill Current password = "[REDACTED - supply via SIMF_SuperAdmin__TempPassword]"
+  When they fill Current password = "[REDACTED - supply via SIMF_API_SuperAdmin__TempPassword]"
   And New password = "Bb@987654321"
   And Confirm new password = "different"
   And click "Update password"

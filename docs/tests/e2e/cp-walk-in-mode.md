@@ -23,11 +23,11 @@ API host and restarting the app pool, or by editing `appsettings.Production.json
 restart).
 
 ```
-SIMF_WalkInMode__Enabled          = true    # master; everything else is inert without it
-SIMF_WalkInMode__ExpiresAtUtc     = 2026-11-05T20:00:00Z
-SIMF_WalkInMode__QuickRegister    = true
-SIMF_WalkInMode__AutoApprove      = true
-SIMF_WalkInMode__SessionWalkIn    = true
+SIMF_API_WalkInMode__Enabled          = true    # master; everything else is inert without it
+SIMF_API_WalkInMode__ExpiresAtUtc     = 2026-11-05T20:00:00Z
+SIMF_API_WalkInMode__QuickRegister    = true
+SIMF_API_WalkInMode__AutoApprove      = true
+SIMF_API_WalkInMode__SessionWalkIn    = true
 ```
 
 **Disarm:** set `Enabled` to `false` (or let `ExpiresAtUtc` pass). Every rule

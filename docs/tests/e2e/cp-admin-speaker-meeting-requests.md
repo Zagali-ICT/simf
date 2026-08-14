@@ -627,7 +627,7 @@ Scenario: E2E-SMR-025 — the public link base URL is unset
   Then the API returns 409 MEETING_LINKS_NOT_CONFIGURED
   And the error names the setting to fix (bilingual)
   And no MeetingActionToken row exists and the row is still Pending
-  # OPS: set SIMF_MeetingLinks__PublicWebBaseUrl in QA and Production
+  # OPS: set SIMF_API_MeetingLinks__PublicWebBaseUrl in QA and Production
   # (SIMF-OPS-001 §6.0).
 ```
 
@@ -805,7 +805,7 @@ and `SIMF.ControlPanel.Tests/SpeakerMeetingRequestsReopenProxyTests`
   `FakeEmailQueue` so the speaker-facing mail is asserted deterministically) and
   [`tests/SIMF.Api.Tests/SpeakerMeetingLinksUnsetTests.cs`](../../../tests/SIMF.Api.Tests/SpeakerMeetingLinksUnsetTests.cs)
   (A24 — boots the API with `MeetingLinks:PublicWebBaseUrl` unset).
-- **Ops prerequisite (QA A24).** `SIMF_MeetingLinks__PublicWebBaseUrl` **must** be set in
+- **Ops prerequisite (QA A24).** `SIMF_API_MeetingLinks__PublicWebBaseUrl` **must** be set in
   QA and Production — see SIMF-OPS-001 §6.0. Without it the Approve and Resend actions
   return `MEETING_LINKS_NOT_CONFIGURED` (409) by design; Confirm and Accept-without-a-hall
   are unaffected.
