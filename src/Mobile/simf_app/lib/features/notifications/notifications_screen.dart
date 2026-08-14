@@ -280,25 +280,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return SimfPullToRefresh(
+      return SimfRefreshableMessage(
         onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfErrorState(
-            message: l10n.notificationsError,
-            retryLabel: l10n.retryLabel,
-            onRetry: () => unawaited(_load()),
-          ),
+        child: SimfErrorState(
+          message: l10n.notificationsError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
         ),
       );
     }
     if (_items.isEmpty) {
-      return SimfPullToRefresh(
+      return SimfRefreshableMessage(
         onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfEmptyState(
-            icon: Icons.notifications_none_outlined,
-            message: l10n.notificationsEmpty,
-          ),
+        child: SimfEmptyState(
+          icon: Icons.notifications_none_outlined,
+          message: l10n.notificationsEmpty,
         ),
       );
     }

@@ -34,26 +34,22 @@ class FaqScreen extends ConsumerWidget {
       onBack: () => backOrHome(context),
       body: faq.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => SimfPullToRefresh(
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: onRefresh,
-          child: SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.faqError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(faqProvider),
-            ),
+          child: SimfErrorState(
+            message: l10n.faqError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(faqProvider),
           ),
         ),
         data: (groups) {
           final hasEntries = groups.any((g) => g.entries.isNotEmpty);
           if (!hasEntries) {
-            return SimfPullToRefresh(
+            return SimfRefreshableMessage(
               onRefresh: onRefresh,
-              child: SimfPullableHost(
-                child: SimfEmptyState(
-                  icon: Icons.help_outline,
-                  message: l10n.faqEmpty,
-                ),
+              child: SimfEmptyState(
+                icon: Icons.help_outline,
+                message: l10n.faqEmpty,
               ),
             );
           }

@@ -62,25 +62,21 @@ class MediaPartnersScreen extends ConsumerWidget {
           Expanded(
             child: partners.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => SimfPullToRefresh(
+              error: (_, __) => SimfRefreshableMessage(
                 onRefresh: onRefresh,
-                child: SimfPullableHost(
-                  child: SimfErrorState(
-                    message: l10n.mediaPartnersError,
-                    retryLabel: l10n.retryLabel,
-                    onRetry: () => ref.invalidate(mediaPartnersProvider),
-                  ),
+                child: SimfErrorState(
+                  message: l10n.mediaPartnersError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () => ref.invalidate(mediaPartnersProvider),
                 ),
               ),
               data: (items) {
                 if (items.isEmpty) {
-                  return SimfPullToRefresh(
+                  return SimfRefreshableMessage(
                     onRefresh: onRefresh,
-                    child: SimfPullableHost(
-                      child: SimfEmptyState(
-                        icon: Icons.campaign_outlined,
-                        message: l10n.mediaPartnersEmpty,
-                      ),
+                    child: SimfEmptyState(
+                      icon: Icons.campaign_outlined,
+                      message: l10n.mediaPartnersEmpty,
                     ),
                   );
                 }

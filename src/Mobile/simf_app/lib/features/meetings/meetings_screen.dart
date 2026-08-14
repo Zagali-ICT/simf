@@ -133,14 +133,12 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
   Widget _meetingsBody(AppL10n l10n, MeetingAccess access) {
     return ref.watch(myMeetingRequestsProvider).when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => SimfPullToRefresh(
+          error: (_, __) => SimfRefreshableMessage(
             onRefresh: _refresh,
-            child: SimfPullableHost(
-              child: SimfErrorState(
-                message: l10n.requestsError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(myRequestsProvider),
-              ),
+            child: SimfErrorState(
+              message: l10n.requestsError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => ref.invalidate(myRequestsProvider),
             ),
           ),
           data: (items) => _buildList(l10n, access, items),

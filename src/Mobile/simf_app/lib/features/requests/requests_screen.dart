@@ -114,14 +114,12 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
       onBack: () => backOrHome(context),
       body: ref.watch(myRequestsProvider).when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => SimfPullToRefresh(
+            error: (_, __) => SimfRefreshableMessage(
               onRefresh: _refresh,
-              child: SimfPullableHost(
-                child: SimfErrorState(
-                  message: l10n.requestsError,
-                  retryLabel: l10n.retryLabel,
-                  onRetry: () => ref.invalidate(myRequestsProvider),
-                ),
+              child: SimfErrorState(
+                message: l10n.requestsError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => ref.invalidate(myRequestsProvider),
               ),
             ),
             data: (items) => _buildBody(l10n, items),

@@ -45,26 +45,22 @@ class MeetPeopleScreen extends ConsumerWidget {
       onBack: () => backOrHome(context),
       body: directory.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => SimfPullToRefresh(
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: onRefresh,
-          child: SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.meetPeopleError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(partnerDirectoryProvider),
-            ),
+          child: SimfErrorState(
+            message: l10n.meetPeopleError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(partnerDirectoryProvider),
           ),
         ),
         data: (entries) {
           final isArabic = l10n.isArabic;
           if (entries.isEmpty) {
-            return SimfPullToRefresh(
+            return SimfRefreshableMessage(
               onRefresh: onRefresh,
-              child: SimfPullableHost(
-                child: SimfEmptyState(
-                  icon: Icons.people_outline,
-                  message: l10n.meetPeopleEmpty,
-                ),
+              child: SimfEmptyState(
+                icon: Icons.people_outline,
+                message: l10n.meetPeopleEmpty,
               ),
             );
           }

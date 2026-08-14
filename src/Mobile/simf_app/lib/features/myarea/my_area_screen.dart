@@ -188,14 +188,12 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   Widget _buildErrorState(AppL10n l10n) {
     // Pull-to-refresh also retries: the error surface is hosted in a scrollable
     // so SimfPullToRefresh's gesture fires even though the content is short.
-    return SimfPullToRefresh(
+    return SimfRefreshableMessage(
       onRefresh: _load,
-      child: SimfPullableHost(
-        child: SimfErrorState(
-          message: l10n.myAreaError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => unawaited(_load()),
-        ),
+      child: SimfErrorState(
+        message: l10n.myAreaError,
+        retryLabel: l10n.retryLabel,
+        onRetry: () => unawaited(_load()),
       ),
     );
   }

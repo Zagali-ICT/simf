@@ -63,25 +63,21 @@ class NewsScreen extends ConsumerWidget {
               // viewport-filling scroll view so the gesture fires on short
               // content. onRefresh invalidates [newsListProvider] and awaits
               // the re-fetch.
-              error: (_, __) => SimfPullToRefresh(
+              error: (_, __) => SimfRefreshableMessage(
                 onRefresh: () => _refresh(ref),
-                child: SimfPullableHost(
-                  child: SimfErrorState(
-                    message: l10n.newsError,
-                    retryLabel: l10n.retryLabel,
-                    onRetry: () => ref.invalidate(newsListProvider),
-                  ),
+                child: SimfErrorState(
+                  message: l10n.newsError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () => ref.invalidate(newsListProvider),
                 ),
               ),
               data: (items) {
                 if (items.isEmpty) {
-                  return SimfPullToRefresh(
+                  return SimfRefreshableMessage(
                     onRefresh: () => _refresh(ref),
-                    child: SimfPullableHost(
-                      child: SimfEmptyState(
-                        icon: Icons.article_outlined,
-                        message: l10n.newsEmpty,
-                      ),
+                    child: SimfEmptyState(
+                      icon: Icons.article_outlined,
+                      message: l10n.newsEmpty,
                     ),
                   );
                 }

@@ -147,25 +147,21 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       );
     }
     if (_notFound) {
-      return SimfPullToRefresh(
+      return SimfRefreshableMessage(
         onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfEmptyState(
-            icon: Icons.person_off_outlined,
-            message: l10n.speakerNotFound,
-          ),
+        child: SimfEmptyState(
+          icon: Icons.person_off_outlined,
+          message: l10n.speakerNotFound,
         ),
       );
     }
     if (_error || _speaker == null) {
-      return SimfPullToRefresh(
+      return SimfRefreshableMessage(
         onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfErrorState(
-            message: l10n.speakerProfileError,
-            retryLabel: l10n.retryLabel,
-            onRetry: () => unawaited(_load()),
-          ),
+        child: SimfErrorState(
+          message: l10n.speakerProfileError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
         ),
       );
     }

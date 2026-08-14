@@ -131,14 +131,12 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
       // Pull-to-refresh also works in the error state so the user can pull to
       // retry (the short error content is hosted in the shared
       // always-scrollable SimfPullableHost so the gesture fires).
-      return SimfPullToRefresh(
+      return SimfRefreshableMessage(
         onRefresh: _load,
-        child: SimfPullableHost(
-          child: SimfErrorState(
-            message: l10n.boothsError,
-            retryLabel: l10n.retryLabel,
-            onRetry: () => unawaited(_load()),
-          ),
+        child: SimfErrorState(
+          message: l10n.boothsError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
         ),
       );
     }
