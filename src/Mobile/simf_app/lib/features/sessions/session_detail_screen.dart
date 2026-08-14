@@ -21,6 +21,7 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/widgets/session_arrival_action.dart';
 import 'package:simf_app/features/sessions/widgets/session_detail_body.dart';
 import 'package:simf_app/features/sessions/widgets/session_detail_header.dart';
+import 'package:simf_app/features/sessions/widgets/session_detail_states.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -321,29 +322,15 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     // account presents as guest). Reading the raw `appRole` here showed the
     // moderate action to an unapproved moderator, who was then bounced Home.
     final role = roleOf(ref.watch(authControllerProvider));
-    // Moderator (محاور) entry to the Q&A desk (D-405). Moderator-EXCLUSIVE
-    // (D-519): Staff no longer inherits it (the focused role model dropped the
-    // isAtLeast ladder). The server still enforces the per-session
-    // SessionModerator grant (403).
-    //
-    // FR-MOD-001 — the role alone is NOT the gate any more. The grant is
-    // per-session, so the icon used to appear on every session in the programme
-    // and the missing grant was only discoverable as a 403 after the tap. The
-    // action now needs a CONFIRMED grant for this session; while the discovery
-    // call is in flight, or if it failed, no action is offered (an icon that
-    // 403s is worse than none — the moderator's own home lists their sessions
-    // and surfaces the failure there with a retry).
+    // Moderator (محاور) entry to the Q&A desk (D-405); the grant is per-session,
+    // so an empty set while the discovery call is in flight offers no action.
     final moderatedSessionIds = ref.watch(myModeratedSessionsProvider).maybeWhen(
-          data: (sessions) =>
-              sessions.map((s) => s.sessionId).toSet(),
+          data: (sessions) => sessions.map((s) => s.sessionId).toSet(),
           orElse: () => const <String>{},
         );
-    final canModerate = role == AppRole.moderator &&
-        moderatedSessionIds.contains(widget.sessionId);
-    // D-771 — Staff entry to the seating desk. Staff and Moderator are disjoint
-    // focused roles (D-519), so the two never compete for the header's single
-    // trailing slot. UX gate only — the server enforces Seating.Assist (403).
-    final canAssistSeating = role == AppRole.staff;
+    final canModerate =
+        canModerateSession(role, moderatedSessionIds, widget.sessionId);
+    final canSeat = canAssistSeating(role);
     return SimfPageShell(
       tab: SimfTab.sessions,
       // The frame's chrome is the standard circled back + centred title; the
@@ -352,76 +339,43 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       header: SessionDetailHeader(
         title: l10n.sessionDetailTitle,
         onBack: () => backOrHome(context),
-        actionIcon: canAssistSeating
-            ? Icons.event_seat_outlined
-            : Icons.forum_outlined,
+        actionIcon:
+            canSeat ? Icons.event_seat_outlined : Icons.forum_outlined,
         moderateTooltip: canModerate
             ? l10n.moderatorManageQuestions
-            : (canAssistSeating ? l10n.staffSeatingTitle : null),
+            : (canSeat ? l10n.staffSeatingTitle : null),
         onModerate: canModerate
-            ? () => context.pushNamed(
-                  RouteNames.sessionModerate,
-                  pathParameters: <String, String>{
-                    RouteParams.sessionId: widget.sessionId,
-                  },
-                )
-            : (canAssistSeating
-                ? () => context.pushNamed(
-                      RouteNames.staffSeating,
-                      pathParameters: <String, String>{
-                        RouteParams.sessionId: widget.sessionId,
-                      },
-                    )
+            ? () => _pushWithSessionId(RouteNames.sessionModerate)
+            : (canSeat
+                ? () => _pushWithSessionId(RouteNames.staffSeating)
                 : null),
       ),
-      body: _buildBody(l10n),
+      body: SessionDetailStates(
+        loading: _loading,
+        notFound: _notFound,
+        failed: _error || _detail == null,
+        onRefresh: _load,
+        l10n: l10n,
+        onRetry: () => unawaited(_load()),
+        // Built eagerly, so only reference state that survives every branch:
+        // the loaded body reads `_detail!`, which is why it is guarded by the
+        // same `failed` flag the states widget switches on.
+        child: _detail == null
+            ? const SizedBox.shrink()
+            // The speaker avatars resolve
+            // `{base}/app/assets/SpeakerPhoto/{id}/image` (the D-357
+            // SpeakerPhoto asset); the base already includes `/api/v1`.
+            : _detailBody(l10n, ref.read(simfDataConfigProvider).baseUrl),
+      ),
     );
   }
 
-  Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    // The not-found / error states are hosted in an always-scrollable list so a
-    // pull-down still fires SimfPullToRefresh (pull to retry) even though they render a
-    // short, centred surface.
-    if (_notFound) {
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: <Widget>[
-            SimfEmptyState(
-              icon: Icons.event_busy_outlined,
-              message: l10n.sessionNotFound,
-            ),
-          ],
-        ),
+  void _pushWithSessionId(String route) => context.pushNamed(
+        route,
+        pathParameters: <String, String>{
+          RouteParams.sessionId: widget.sessionId,
+        },
       );
-    }
-    if (_error || _detail == null) {
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: <Widget>[
-            SimfErrorState(
-              message: l10n.sessionDetailError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => unawaited(_load()),
-            ),
-          ],
-        ),
-      );
-    }
-    // The speaker avatars resolve `{base}/app/assets/SpeakerPhoto/{id}/image`
-    // (the D-357 SpeakerPhoto asset); the base already includes `/api/v1`.
-    final baseUrl = ref.read(simfDataConfigProvider).baseUrl;
-    return SimfPullToRefresh(
-      onRefresh: _load,
-      child: _detailBody(l10n, baseUrl),
-    );
-  }
 
   /// The scrolling detail itself. The check-in strip goes in as the body's
   /// `header` — the list's FIRST CHILD — rather than being stacked above it:

@@ -36,6 +36,36 @@ bool canAskQuestion(AppRole role) =>
     role == AppRole.guest ||
     routeAllowsRole(RouteNames.sendQuestion, role);
 
+/// Whether the moderator's Q&A-desk action is offered in the detail header.
+///
+/// Moderator-EXCLUSIVE (D-519): Staff no longer inherits it, the focused role
+/// model having dropped the isAtLeast ladder. The server still enforces the
+/// per-session SessionModerator grant with a 403.
+///
+/// FR-MOD-001 - the role alone is NOT the gate. The grant is per-session, so
+/// the icon used to appear on every session in the programme and a missing
+/// grant was only discoverable as a 403 after the tap. A CONFIRMED grant for
+/// THIS session is required; while the discovery call is in flight, or if it
+/// failed, [moderatedSessionIds] is empty and no action is offered. An icon
+/// that 403s is worse than none - the moderator's own home lists their
+/// sessions and surfaces the failure there with a retry.
+bool canModerateSession(
+  AppRole role,
+  Set<String> moderatedSessionIds,
+  String sessionId,
+) =>
+    role == AppRole.moderator && moderatedSessionIds.contains(sessionId);
+
+/// D-771 - Staff entry to the seating desk. Staff and Moderator are disjoint
+/// focused roles (D-519), so the two never compete for the header's single
+/// trailing slot. UX gate only; the server enforces Seating.Assist with a 403.
+///
+/// Unlike its siblings above this asks the role directly rather than
+/// [routeAllowsRole]. That is the shipped behaviour and is preserved verbatim
+/// here; whether it should ask the router's table instead is a real question,
+/// but it is a behaviour change and does not belong in a structural move.
+bool canAssistSeating(AppRole role) => role == AppRole.staff;
+
 /// Whether the hall check-in strip is offered. Three gates, each for its own
 /// reason:
 ///
