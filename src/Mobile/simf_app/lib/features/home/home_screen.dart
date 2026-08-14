@@ -6,6 +6,7 @@ import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/banners/data/banner_models.dart';
 import 'package:simf_app/features/banners/data/banners_repository.dart';
+import 'package:simf_app/features/home/home_greeting.dart';
 import 'package:simf_app/features/home/widgets/guest_home.dart';
 import 'package:simf_app/features/home/widgets/operational_homes.dart';
 import 'package:simf_app/features/home/widgets/visitor_home.dart';
@@ -146,6 +147,7 @@ class HomeScreen extends ConsumerWidget {
       name: _greetingName(
         profile?.identity.localizedName(l10n.isArabic),
         user?.displayName,
+        isVisitor: profile?.identity.isVisitor ?? true,
       ),
       highlights: highlights,
       banners: banners,
@@ -161,11 +163,20 @@ class HomeScreen extends ConsumerWidget {
 /// The greeting name: the App profile name when known, otherwise a name-less
 /// salute — never the email (the auth display name is the email for accounts
 /// created without a separate display name).
-String _greetingName(String? profileName, String? authName) {
+///
+/// Shortened for visitors only, by [greetingDisplayName].
+String _greetingName(
+  String? profileName,
+  String? authName, {
+  required bool isVisitor,
+}) {
   final profile = profileName?.trim() ?? '';
   if (profile.isNotEmpty) {
-    return profile;
+    return greetingDisplayName(profile, isVisitor: isVisitor);
   }
   final auth = authName?.trim() ?? '';
-  return auth.contains('@') ? '' : auth;
+  if (auth.contains('@')) {
+    return '';
+  }
+  return greetingDisplayName(auth, isVisitor: isVisitor);
 }

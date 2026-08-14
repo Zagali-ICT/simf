@@ -92,10 +92,12 @@ internal sealed class QrResolver(
             profileRow.profileTypeName,
             profileRow.profileTypeNameAr,
             profileRow.profileTypePageColor,
-            // Falls back to the profile's own name, which is what a badge is
-            // printed from and what an operator sees on the paper in front of
-            // them; the account display name is only richer when there is one.
-            userRow?.DisplayName ?? profileRow.Name,
+            // The profile name wins. It is what the badge is printed from and
+            // what the operator sees on the paper in front of them, and the
+            // profile is the attendee record (D-877) — the account may not exist
+            // at all for a walk-in. SimfUser.DisplayName serves the greeting and
+            // nothing else, and can still hold a sign-up placeholder.
+            profileRow.Name,
             profileRow.NameArabic);
     }
 

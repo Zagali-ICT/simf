@@ -15,6 +15,19 @@ namespace SIMF.Domain.IdentityAccess;
 /// </summary>
 public class SimfUser : IdentityUser<Guid>
 {
+    /// <summary>The person's <b>full</b> name, and it exists to serve exactly one
+    /// thing: the greeting. The app's welcome header and the Control Panel's
+    /// signed-in-user label read it; nothing else should.
+    ///
+    /// <para>Everywhere else reads the full name from <c>UserProfile</c>, which is
+    /// the attendee record (D-877). Any shortening — the visitor greeting takes
+    /// the first two words — is a presentation rule applied at render time, never
+    /// stored here.</para>
+    ///
+    /// <para>It is not always a real name yet: sign-up seeds it with the email
+    /// address and bulk badge generation seeds "{ProfileType} #{n}", each replaced
+    /// once the holder supplies one. Callers that must not show a placeholder
+    /// check for those shapes rather than trusting the column.</para></summary>
     public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>Registered, the default, is the state before the email is
