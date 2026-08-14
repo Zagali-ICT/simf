@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 
 /// One FAQ question/answer pair (`GET /app/faq` → groups[].entries[]). Bilingual;
 /// the localized getters fall back to the other language when one side is blank.
@@ -27,9 +28,9 @@ class FaqEntry {
   final String answerArabic;
 
   String localizedQuestion({required bool isArabic}) =>
-      _pick(isArabic, questionArabic, question);
+      pickLocalized(questionArabic, question, isArabic: isArabic);
   String localizedAnswer({required bool isArabic}) =>
-      _pick(isArabic, answerArabic, answer);
+      pickLocalized(answerArabic, answer, isArabic: isArabic);
 }
 
 /// One FAQ group with its ordered active entries.
@@ -59,13 +60,5 @@ class FaqGroup {
   final List<FaqEntry> entries;
 
   String localizedName({required bool isArabic}) =>
-      _pick(isArabic, nameArabic, name);
-}
-
-/// Arabic-first/English-first pick with a fall back to the populated side.
-String _pick(bool isArabic, String arabic, String english) {
-  if (isArabic) {
-    return arabic.trim().isNotEmpty ? arabic : english;
-  }
-  return english.trim().isNotEmpty ? english : arabic;
+      pickLocalized(nameArabic, name, isArabic: isArabic);
 }

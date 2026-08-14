@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/local_days.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/sessions/data/session_lifecycle.dart';
@@ -162,15 +163,15 @@ class SessionSpeaker {
   final String? photoRelativePath;
 
   String localizedName({required bool isArabic}) =>
-      _pickRequired(nameArabic, name, isArabic);
+      pickLocalized(nameArabic, name, isArabic: isArabic);
 
   // 2026-07-19 (owner) — the speaker's rank/title in the active locale
   // (Arabic ↔ English), matching how the name localizes. Null when unset.
   String? localizedTitle({required bool isArabic}) =>
-      _pickOptional(titleArabic, title, isArabic);
+      pickLocalizedOrNull(titleArabic, title, isArabic: isArabic);
 
   String? localizedCountry({required bool isArabic}) =>
-      _pickOptional(countryNameAr, countryNameEn, isArabic);
+      pickLocalizedOrNull(countryNameAr, countryNameEn, isArabic: isArabic);
 }
 
 /// One row in the cached programme — mirrors
@@ -277,16 +278,16 @@ class SessionListItem {
   }
 
   String localizedTitle({required bool isArabic}) =>
-      _pickRequired(titleArabic, title, isArabic);
+      pickLocalized(titleArabic, title, isArabic: isArabic);
 
   String? localizedHall({required bool isArabic}) =>
-      _pickOptional(hallNameArabic, hallName, isArabic);
+      pickLocalizedOrNull(hallNameArabic, hallName, isArabic: isArabic);
 
   String? localizedDescription({required bool isArabic}) =>
-      _pickOptional(descriptionArabic, description, isArabic);
+      pickLocalizedOrNull(descriptionArabic, description, isArabic: isArabic);
 
   String? localizedCategory({required bool isArabic}) =>
-      _pickOptional(categoryNameArabic, categoryName, isArabic);
+      pickLocalizedOrNull(categoryNameArabic, categoryName, isArabic: isArabic);
 }
 
 /// The envelope for the cached programme (`PublicSessions = { items: [...] }`).
@@ -351,7 +352,7 @@ class ProgrammeDay {
   final List<SessionListItem> sessions;
 
   String localizedTitle({required bool isArabic}) =>
-      _pickRequired(titleArabic, title, isArabic);
+      pickLocalized(titleArabic, title, isArabic: isArabic);
 }
 
 /// The envelope for the day-grouped programme (`PublicProgrammeDays`).
@@ -495,16 +496,16 @@ class SessionDetail {
   DateTime get endLocal => saudiOf(end);
 
   String localizedTitle({required bool isArabic}) =>
-      _pickRequired(titleArabic, title, isArabic);
+      pickLocalized(titleArabic, title, isArabic: isArabic);
 
   String localizedHall({required bool isArabic}) =>
-      _pickRequired(hallNameArabic, hallName, isArabic);
+      pickLocalized(hallNameArabic, hallName, isArabic: isArabic);
 
   String? localizedDescription({required bool isArabic}) =>
-      _pickOptional(descriptionArabic, description, isArabic);
+      pickLocalizedOrNull(descriptionArabic, description, isArabic: isArabic);
 
   String? localizedCategory({required bool isArabic}) =>
-      _pickOptional(categoryNameArabic, categoryName, isArabic);
+      pickLocalizedOrNull(categoryNameArabic, categoryName, isArabic: isArabic);
 }
 
 /// The caller's own active seat for a session — the `myCell` cell of
@@ -636,23 +637,6 @@ DateTime _parseDate(Object? value) {
     }
   }
   return DateTime.fromMillisecondsSinceEpoch(0);
-}
-
-/// Picks the locale value of a required bilingual pair, falling back to the
-/// other language when one side is blank.
-String _pickRequired(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-/// Picks the locale value of an optional bilingual pair; null when both blank.
-String? _pickOptional(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value =
-      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
 }
 
 /// P5.1 / D-241 — the caller's own attendance state for one session.

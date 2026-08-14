@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Visitor-to-visitor contact sharing (SIMF-FDS-014 §5.4–5.7, D-286). All three
@@ -81,19 +82,19 @@ class VisitorCard {
 
   /// Name for the active locale (Arabic primary, English fallback).
   String localizedName({required bool isArabic}) =>
-      _pick(nameArabic, name, isArabic);
+      pickLocalized(nameArabic, name, isArabic: isArabic);
 
   /// Job title for the active locale, or null when none is set.
   String? localizedJobTitle({required bool isArabic}) =>
-      _nullIfBlank(_pick(jobTitleArabic, jobTitle, isArabic));
+      pickLocalizedOrNull(jobTitleArabic, jobTitle, isArabic: isArabic);
 
   /// Organisation for the active locale, or null when none is set.
   String? localizedOrganisation({required bool isArabic}) =>
-      _nullIfBlank(_pick(organisationArabic, organisation, isArabic));
+      pickLocalizedOrNull(organisationArabic, organisation, isArabic: isArabic);
 
   /// Country for the active locale, or null when none is set.
   String? localizedCountry({required bool isArabic}) =>
-      _nullIfBlank(_pick(countryNameArabic, countryName, isArabic));
+      pickLocalizedOrNull(countryNameArabic, countryName, isArabic: isArabic);
 }
 
 /// One row in the caller's *My Contacts* list — resolved on read from the
@@ -143,11 +144,11 @@ class SavedContactRow {
   final DateTime? savedAt;
 
   String localizedName({required bool isArabic}) =>
-      _pick(nameArabic, name, isArabic);
+      pickLocalized(nameArabic, name, isArabic: isArabic);
 
   /// Job title for the active locale, or null when none is set.
   String? localizedJobTitle({required bool isArabic}) =>
-      _nullIfBlank(_pick(jobTitleArabic, jobTitle, isArabic));
+      pickLocalizedOrNull(jobTitleArabic, jobTitle, isArabic: isArabic);
 
   /// Reads the My-Contacts payload (a bare list, or `{ items: [...] }`).
   static List<SavedContactRow> listFromData(Object? data) {
@@ -158,11 +159,3 @@ class SavedContactRow {
         .toList(growable: false);
   }
 }
-
-String _pick(String? ar, String? en, bool isArabic) {
-  final a = ar?.trim() ?? '';
-  final e = en?.trim() ?? '';
-  return isArabic ? (a.isNotEmpty ? a : e) : (e.isNotEmpty ? e : a);
-}
-
-String? _nullIfBlank(String value) => value.trim().isEmpty ? null : value;

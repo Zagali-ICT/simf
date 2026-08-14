@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One downloadable session presentation — App "عروض الجلسات" (Figma
@@ -54,10 +54,10 @@ class PresentationItem {
   DateTime get sessionStartLocal => saudiOf(sessionStart);
 
   String localizedSessionTitle({required bool isArabic}) =>
-      _pickRequired(sessionTitleArabic, sessionTitle, isArabic);
+      pickLocalized(sessionTitleArabic, sessionTitle, isArabic: isArabic);
 
   String? localizedSpeaker({required bool isArabic}) =>
-      _pickOptional(speakerNameArabic, speakerName, isArabic);
+      pickLocalizedOrNull(speakerNameArabic, speakerName, isArabic: isArabic);
 }
 
 /// The envelope for the public presentations list (`PublicPresentations`).
@@ -76,18 +76,4 @@ class PresentationsPage {
   }
 
   final List<PresentationItem> items;
-}
-
-String _pickRequired(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOptional(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value =
-      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
 }

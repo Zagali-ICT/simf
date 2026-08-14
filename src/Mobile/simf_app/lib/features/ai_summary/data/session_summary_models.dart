@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One published session summary — mirrors
@@ -68,27 +69,21 @@ class SessionSummary {
   /// player.
   final String? summaryVideoUrl;
 
-  String _picked(String ar, String en, bool isArabic) {
-    final a = ar.trim();
-    final e = en.trim();
-    return isArabic ? (a.isNotEmpty ? a : e) : (e.isNotEmpty ? e : a);
-  }
-
   /// The key-points block in the active language (may be empty).
   String localizedKeyPoints({required bool isArabic}) =>
-      _picked(keyPointsArabic, keyPoints, isArabic);
+      pickLocalized(keyPointsArabic, keyPoints, isArabic: isArabic);
 
   /// The recommendations block in the active language (may be empty).
   String localizedRecommendations({required bool isArabic}) =>
-      _picked(recommendationsArabic, recommendations, isArabic);
+      pickLocalized(recommendationsArabic, recommendations, isArabic: isArabic);
 
   /// The speakers block in the active language (may be empty).
   String localizedSpeakers({required bool isArabic}) =>
-      _picked(speakersArabic, speakers, isArabic);
+      pickLocalized(speakersArabic, speakers, isArabic: isArabic);
 
   /// The full-text block in the active language (may be empty).
   String localizedFullText({required bool isArabic}) =>
-      _picked(fullTextArabic, fullText, isArabic);
+      pickLocalized(fullTextArabic, fullText, isArabic: isArabic);
 
   /// The localized key points split into one bullet per non-empty line.
   List<String> keyPointsLines({required bool isArabic}) {

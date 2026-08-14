@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// Who a question is addressed to — mirrors `SessionQuestionRecipient`
@@ -174,18 +175,11 @@ class ModeratedSession {
   final DateTime end;
 
   String localizedTitle({required bool isArabic}) =>
-      _pick(titleArabic, title, isArabic);
+      pickLocalized(titleArabic, title, isArabic: isArabic);
 
   String localizedHall({required bool isArabic}) =>
-      _pick(hallNameArabic, hallName, isArabic);
+      pickLocalized(hallNameArabic, hallName, isArabic: isArabic);
 
-  static String _pick(String arabic, String english, bool isArabic) {
-    final preferred = isArabic ? arabic : english;
-    if (preferred.trim().isNotEmpty) {
-      return preferred;
-    }
-    return isArabic ? english : arabic;
-  }
 
   static List<ModeratedSession> listFromData(Object? data) =>
       (data as List? ?? const <dynamic>[])

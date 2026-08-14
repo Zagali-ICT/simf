@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 
 /// Media kind — mirrors `MediaKind` (int wire: Image=0, Video=1).
 enum MediaKind {
@@ -58,15 +59,7 @@ class MediaItem {
   final bool hasThumbnail;
 
   String? localizedTitle({required bool isArabic}) =>
-      _pick(titleArabic, title, isArabic);
+      pickLocalizedOrNull(titleArabic, title, isArabic: isArabic);
   String? localizedAlbum({required bool isArabic}) =>
-      _pick(albumArabic, album, isArabic);
-}
-
-String? _pick(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value =
-      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
+      pickLocalizedOrNull(albumArabic, album, isArabic: isArabic);
 }

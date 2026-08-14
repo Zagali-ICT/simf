@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 
 /// One past edition — mirrors `PublicArchiveEdition` (`GET /app/archive`). Note
 /// the wire names are `titleEn`/`titleAr` and `summaryEn`/`summaryAr`.
@@ -42,9 +43,9 @@ class ArchiveEdition {
   final String? coverImageRelativePath;
 
   String localizedTitle({required bool isArabic}) =>
-      _pick(titleAr, titleEn, isArabic);
+      pickLocalized(titleAr, titleEn, isArabic: isArabic);
   String? localizedSummary({required bool isArabic}) =>
-      _pickOpt(summaryAr, summaryEn, isArabic);
+      pickLocalizedOrNull(summaryAr, summaryEn, isArabic: isArabic);
 
   static List<ArchiveEdition> listFromData(Object? data) =>
       ((data is Map ? data['items'] : null) as List? ?? const <dynamic>[])
@@ -116,13 +117,13 @@ class ArchiveEditionDetail {
   final List<ArchivePastSpeaker> pastSpeakers;
 
   String localizedTitle({required bool isArabic}) =>
-      _pick(titleAr, titleEn, isArabic);
+      pickLocalized(titleAr, titleEn, isArabic: isArabic);
   String? localizedSummary({required bool isArabic}) =>
-      _pickOpt(summaryAr, summaryEn, isArabic);
+      pickLocalizedOrNull(summaryAr, summaryEn, isArabic: isArabic);
   String? localizedLocation({required bool isArabic}) =>
-      _pickOpt(locationAr, locationEn, isArabic);
+      pickLocalizedOrNull(locationAr, locationEn, isArabic: isArabic);
   String? localizedDateLabel({required bool isArabic}) =>
-      _pickOpt(dateLabelAr, dateLabelEn, isArabic);
+      pickLocalizedOrNull(dateLabelAr, dateLabelEn, isArabic: isArabic);
 
   static List<T> _list<T>(
     Object? raw,
@@ -160,7 +161,7 @@ class ArchiveMediaItem {
 
   bool get isVideo => kind == 1;
   String? localizedCaption({required bool isArabic}) =>
-      _pickOpt(captionAr, captionEn, isArabic);
+      pickLocalizedOrNull(captionAr, captionEn, isArabic: isArabic);
 }
 
 /// One past-edition session title — mirrors `PublicArchiveSessionTitle`.
@@ -178,7 +179,7 @@ class ArchiveSessionTitle {
   final String titleAr;
 
   String localized({required bool isArabic}) =>
-      _pick(titleAr, titleEn, isArabic);
+      pickLocalized(titleAr, titleEn, isArabic: isArabic);
 }
 
 /// One past speaker — mirrors `PublicArchivePastSpeaker`.
@@ -205,19 +206,9 @@ class ArchivePastSpeaker {
   // D-456 — optional country (ISO 3166-1 numeric) for the corner flag.
   final int? countryId;
 
-  String localized({required bool isArabic}) => _pick(nameAr, nameEn, isArabic);
-}
-
-String _pick(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOpt(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value =
-      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
+  String localized({required bool isArabic}) => pickLocalized(
+    nameAr,
+    nameEn,
+    isArabic: isArabic,
+  );
 }

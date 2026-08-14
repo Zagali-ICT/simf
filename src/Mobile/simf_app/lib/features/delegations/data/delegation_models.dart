@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One delegation card — an invited country with its head of delegation, date
@@ -49,18 +50,18 @@ class DelegationItem {
   final DateTime? departureDate;
 
   String localizedCountry({required bool isArabic}) =>
-      _pickRequired(countryNameArabic, countryName, isArabic);
+      pickLocalized(countryNameArabic, countryName, isArabic: isArabic);
 
   /// The country name in the *other* language (shown as the card's subtitle).
   String localizedCountrySubtitle({required bool isArabic}) =>
       isArabic ? countryName.trim() : countryNameArabic.trim();
 
   String? localizedHead({required bool isArabic}) =>
-      _pickOptional(headNameArabic, headName, isArabic);
+      pickLocalizedOrNull(headNameArabic, headName, isArabic: isArabic);
 
   /// The head-of-delegation's title/rank in the active locale (owner 2026-07-19).
   String? localizedHeadTitle({required bool isArabic}) =>
-      _pickOptional(headTitleArabic, headTitle, isArabic);
+      pickLocalizedOrNull(headTitleArabic, headTitle, isArabic: isArabic);
 
   bool get hasHead =>
       (headName != null && headName!.trim().isNotEmpty) ||
@@ -144,20 +145,6 @@ String _flagEmoji(String code) {
     return '';
   }
   return String.fromCharCode(base + first) + String.fromCharCode(base + second);
-}
-
-String _pickRequired(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOptional(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value =
-      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
 }
 
 /// Bi-Meeting rework — one bookable meeting slot offered by a delegation

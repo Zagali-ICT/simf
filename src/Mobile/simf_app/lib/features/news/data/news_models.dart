@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One news row — mirrors `PublicNewsListItem` (`GET /app/news`).
@@ -39,11 +40,11 @@ class NewsListItem {
   final String? imageRelativePath;
 
   String localizedTitle({required bool isArabic}) =>
-      _pick(titleArabic, title, isArabic);
+      pickLocalized(titleArabic, title, isArabic: isArabic);
   String localizedCategory({required bool isArabic}) =>
-      _pick(categoryArabic, category, isArabic);
+      pickLocalized(categoryArabic, category, isArabic: isArabic);
   String? localizedExcerpt({required bool isArabic}) =>
-      _pickOpt(excerptArabic, excerpt, isArabic);
+      pickLocalizedOrNull(excerptArabic, excerpt, isArabic: isArabic);
 
   /// Reads `PublicNewsPage = { items: [...] }`.
   static List<NewsListItem> listFromData(Object? data) =>
@@ -91,11 +92,11 @@ class NewsArticle {
   final String? imageRelativePath;
 
   String localizedTitle({required bool isArabic}) =>
-      _pick(titleArabic, title, isArabic);
+      pickLocalized(titleArabic, title, isArabic: isArabic);
   String localizedCategory({required bool isArabic}) =>
-      _pick(categoryArabic, category, isArabic);
+      pickLocalized(categoryArabic, category, isArabic: isArabic);
   String localizedBody({required bool isArabic}) =>
-      _pick(bodyArabic, body, isArabic);
+      pickLocalized(bodyArabic, body, isArabic: isArabic);
 }
 
 DateTime _utc(Object? value) {
@@ -106,18 +107,4 @@ DateTime _utc(Object? value) {
     }
   }
   return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-}
-
-String _pick(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOpt(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value =
-      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
 }

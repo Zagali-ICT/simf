@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-
 import 'package:simf_app/core/country_flag.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
 /// One row in the public speakers list — mirrors
@@ -48,11 +48,11 @@ class SpeakerSummary {
   final String? photoRelativePath;
 
   String localizedName({required bool isArabic}) =>
-      _pick(nameArabic, name, isArabic);
+      pickLocalized(nameArabic, name, isArabic: isArabic);
   String? localizedRank({required bool isArabic}) =>
-      _pickOpt(rankArabic, rank, isArabic);
+      pickLocalizedOrNull(rankArabic, rank, isArabic: isArabic);
   String? localizedCountry({required bool isArabic}) =>
-      _pickOpt(countryNameAr, countryNameEn, isArabic);
+      pickLocalizedOrNull(countryNameAr, countryNameEn, isArabic: isArabic);
 }
 
 /// One of a speaker's scheduled sessions — mirrors
@@ -94,9 +94,9 @@ class SpeakerSession {
   DateTime get startLocal => saudiOf(start);
 
   String localizedTitle({required bool isArabic}) =>
-      _pick(titleArabic, title, isArabic);
+      pickLocalized(titleArabic, title, isArabic: isArabic);
   String? localizedHall({required bool isArabic}) =>
-      _pickOpt(hallNameArabic, hallName, isArabic);
+      pickLocalizedOrNull(hallNameArabic, hallName, isArabic: isArabic);
 }
 
 /// The full public speaker profile — mirrors
@@ -194,11 +194,11 @@ class SpeakerDetail {
   final List<SpeakerSession> sessions;
 
   String localizedName({required bool isArabic}) =>
-      _pick(nameArabic, name, isArabic);
+      pickLocalized(nameArabic, name, isArabic: isArabic);
   String? localizedRank({required bool isArabic}) =>
-      _pickOpt(rankArabic, rank, isArabic);
+      pickLocalizedOrNull(rankArabic, rank, isArabic: isArabic);
   String? localizedCountry({required bool isArabic}) =>
-      _pickOpt(countryNameAr, countryNameEn, isArabic);
+      pickLocalizedOrNull(countryNameAr, countryNameEn, isArabic: isArabic);
 
   /// The nationality flag emoji for the profile header (Figma 908-2110),
   /// resolved from the ISO 3166-1 numeric [countryId] via the shared
@@ -208,13 +208,21 @@ class SpeakerDetail {
   String? get flagEmoji => countryFlagEmoji(countryId);
 
   String? localizedBio({required bool isArabic}) =>
-      _pickOpt(bioArabic, bio, isArabic);
+      pickLocalizedOrNull(bioArabic, bio, isArabic: isArabic);
   String? localizedQualifications({required bool isArabic}) =>
-      _pickOpt(qualificationsArabic, qualifications, isArabic);
+      pickLocalizedOrNull(
+        qualificationsArabic,
+        qualifications,
+        isArabic: isArabic,
+      );
   String? localizedTraining({required bool isArabic}) =>
-      _pickOpt(trainingExperienceArabic, trainingExperience, isArabic);
+      pickLocalizedOrNull(
+        trainingExperienceArabic,
+        trainingExperience,
+        isArabic: isArabic,
+      );
   String? localizedAwards({required bool isArabic}) =>
-      _pickOpt(awardsArabic, awards, isArabic);
+      pickLocalizedOrNull(awardsArabic, awards, isArabic: isArabic);
 }
 
 DateTime _utc(Object? value) {
@@ -225,20 +233,6 @@ DateTime _utc(Object? value) {
     }
   }
   return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-}
-
-String _pick(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOpt(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value =
-      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
 }
 
 /// D-474 (#11) — one bookable meeting slot offered by a speaker.

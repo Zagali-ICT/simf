@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 
 /// One sponsor — mirrors `SIMF.Contracts.*.PublicSponsor`. Note the wire names
 /// are `nameEn` / `nameAr` (not `name`/`nameArabic`). The social/contact cluster
@@ -130,30 +131,16 @@ class SponsorDetail {
   final String? countryNameAr;
 
   String localizedName({required bool isArabic}) =>
-      _pickRequired(nameAr, nameEn, isArabic);
+      pickLocalized(nameAr, nameEn, isArabic: isArabic);
 
   String? localizedAbout({required bool isArabic}) =>
-      _pickOptional(aboutArabic, about, isArabic);
+      pickLocalizedOrNull(aboutArabic, about, isArabic: isArabic);
 
   String? localizedCity({required bool isArabic}) =>
-      _pickOptional(cityArabic, city, isArabic);
+      pickLocalizedOrNull(cityArabic, city, isArabic: isArabic);
 
   String? localizedCountry({required bool isArabic}) =>
-      _pickOptional(countryNameAr, countryNameEn, isArabic);
-}
-
-String _pickRequired(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOptional(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value =
-      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
+      pickLocalizedOrNull(countryNameAr, countryNameEn, isArabic: isArabic);
 }
 
 /// A tier band of sponsors — mirrors `PublicSponsorTierGroup`.

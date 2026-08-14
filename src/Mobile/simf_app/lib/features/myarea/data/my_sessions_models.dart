@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-
+import 'package:simf_app/core/utils/bilingual.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart'
     show SessionStatus;
@@ -87,16 +87,16 @@ class MyAreaSessionItem {
       status == SessionStatus.recorded || status == SessionStatus.published;
 
   String localizedTitle({required bool isArabic}) =>
-      _pickRequired(titleArabic, title, isArabic);
+      pickLocalized(titleArabic, title, isArabic: isArabic);
 
   String? localizedHall({required bool isArabic}) =>
-      _pickOptional(hallNameAr, hallNameEn, isArabic);
+      pickLocalizedOrNull(hallNameAr, hallNameEn, isArabic: isArabic);
 
   String? localizedCategory({required bool isArabic}) =>
-      _pickOptional(categoryNameAr, categoryNameEn, isArabic);
+      pickLocalizedOrNull(categoryNameAr, categoryNameEn, isArabic: isArabic);
 
   String? localizedSpeaker({required bool isArabic}) =>
-      _pickOptional(speakerNameAr, speakerNameEn, isArabic);
+      pickLocalizedOrNull(speakerNameAr, speakerNameEn, isArabic: isArabic);
 }
 
 /// The envelope for the "my sessions" list (`MyAreaSessions = { items: [...]
@@ -116,18 +116,4 @@ class MyAreaSessions {
   }
 
   final List<MyAreaSessionItem> items;
-}
-
-String _pickRequired(String arabic, String english, bool isArabic) {
-  final ar = arabic.trim();
-  final en = english.trim();
-  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-}
-
-String? _pickOptional(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value =
-      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:simf_app/core/utils/bilingual.dart';
 
 /// The venue-map node kind — mirrors `SIMF.Common.Enums.VenueMapNodeKind`
 /// (frozen: Hall=0, Zone=1, Booth=2, PointOfInterest=3). [fromJson] decodes
@@ -162,7 +163,7 @@ class BoothSummary {
   final String? countryNameArabic;
 
   String? localizedCountry({required bool isArabic}) =>
-      _pick(countryNameArabic, countryName, isArabic);
+      pickLocalizedOrNull(countryNameArabic, countryName, isArabic: isArabic);
 
   String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();
@@ -171,13 +172,17 @@ class BoothSummary {
   }
 
   String? localizedExhibitor({required bool isArabic}) =>
-      _pick(exhibitorNameArabic, exhibitorName, isArabic);
+      pickLocalizedOrNull(
+        exhibitorNameArabic,
+        exhibitorName,
+        isArabic: isArabic,
+      );
 
   String? localizedSector({required bool isArabic}) =>
-      _pick(sectorArabic, sector, isArabic);
+      pickLocalizedOrNull(sectorArabic, sector, isArabic: isArabic);
 
   String? localizedHallName({required bool isArabic}) =>
-      _pick(hallNameArabic, hallName, isArabic);
+      pickLocalizedOrNull(hallNameArabic, hallName, isArabic: isArabic);
 }
 
 /// A booth detail — the summary plus the description paragraph
@@ -285,27 +290,21 @@ class BoothDetail {
   }
 
   String? localizedExhibitor({required bool isArabic}) =>
-      _pick(exhibitorNameArabic, exhibitorName, isArabic);
+      pickLocalizedOrNull(
+        exhibitorNameArabic,
+        exhibitorName,
+        isArabic: isArabic,
+      );
 
   String? localizedDescription({required bool isArabic}) =>
-      _pick(descriptionArabic, description, isArabic);
+      pickLocalizedOrNull(descriptionArabic, description, isArabic: isArabic);
 
   String? localizedHallName({required bool isArabic}) =>
-      _pick(hallNameArabic, hallName, isArabic);
+      pickLocalizedOrNull(hallNameArabic, hallName, isArabic: isArabic);
 
   String? localizedCountry({required bool isArabic}) =>
-      _pick(countryNameArabic, countryName, isArabic);
+      pickLocalizedOrNull(countryNameArabic, countryName, isArabic: isArabic);
 
   String? localizedCity({required bool isArabic}) =>
-      _pick(cityArabic, city, isArabic);
-}
-
-/// Picks the locale-appropriate value of a bilingual pair, falling back to the
-/// other language, then to null when both are empty.
-String? _pick(String? arabic, String? english, bool isArabic) {
-  final ar = arabic?.trim() ?? '';
-  final en = english?.trim() ?? '';
-  final value =
-      isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
-  return value.isEmpty ? null : value;
+      pickLocalizedOrNull(cityArabic, city, isArabic: isArabic);
 }
