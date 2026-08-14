@@ -94,7 +94,6 @@ public sealed class CreateNewsRequest
     public string BodyArabic { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string CategoryArabic { get; set; } = string.Empty;
-    public string? ImageRelativePath { get; set; }
     public DateTime PublishedAt { get; set; }
     public int DisplayOrder { get; set; }
 }
@@ -110,7 +109,6 @@ public class UpdateNewsRequest
     public string BodyArabic { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string CategoryArabic { get; set; } = string.Empty;
-    public string? ImageRelativePath { get; set; }
     public DateTime PublishedAt { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;

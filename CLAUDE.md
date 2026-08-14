@@ -331,8 +331,12 @@ argued for on its own.
 
 | Context | Migration |
 |---|---|
-| `SimfAppDbContext` | `App/20260814115348_InitialCreate` |
+| `SimfAppDbContext` | `App/20260814150708_InitialCreate` |
 | `SimfIdentityDbContext` | `Identity/20260814115334_InitialCreate` |
+
+The App id moved from `20260814115348` when the image pipeline landed under the
+carve-out below and re-minted it — which is the carve-out working as written,
+not a breach. Identity was untouched by that work.
 
 Both are create-only — no `Alter` / `Add` / `Rename` / `Drop` — so the pair IS
 the schema. **The rule is what is frozen, not those two ids:** they were minted
@@ -356,13 +360,23 @@ the frozen surface is the **whole `src/Shared/SIMF.Common/Enums/` directory**
 (58 enums), not the nine names D-110 listed as if exhaustive; and D-110's
 `UserType.Other` reference is stale — D-186 removed it and reserved slot `1`.
 
-**One carve-out, already sanctioned.** The per-entity image pipeline
-(`docs/SIMF-Remaining-Work-Register.md` §2.1) adds App tables/columns and is
-explicitly slated to land *before* the freeze-seal; `feat/media-one-store`
-carries it, converting the remaining `*RelativePath` strings to `*FileId` FKs,
-which **drops columns** and forces one more regeneration. It may land under this
-carve-out without a new lift. Merging it re-mints the App migration id, so
-update the table above when it does. **Nothing else** gets that treatment.
+**One carve-out, already sanctioned — mostly spent, and it closes itself.** The
+per-entity image pipeline (`docs/SIMF-Remaining-Work-Register.md` §2.1) adds App
+tables/columns and was explicitly slated to land *before* the freeze-seal;
+`feat/media-one-store` carried the bulk of it, converting `*RelativePath`
+strings to `*FileId` FKs — which **drops columns** and re-minted the App
+migration id in the table above.
+
+Two pointers are knowingly unconverted — `ArchivePastSpeaker.PhotoRelativePath`
+and `ArchiveMediaItem.Url` — and that work is in flight. **The carve-out stays
+open for exactly those two**, because closing it mid-conversion would put a
+half-finished pipeline behind an owner lift for no benefit.
+
+It closes on evidence rather than on a date: the remaining pointers are counted
+down by `tests/SIMF.Domain.Tests/MediaPointerRatchetTests.cs`, whose list only
+ever shrinks, and **when that list empties the carve-out is spent**. Any pointer
+conversion beyond those two needs a new lift. **Nothing else** gets this
+treatment.
 
 **Named as NOT built, so nobody reads a lift above as still open:**
 

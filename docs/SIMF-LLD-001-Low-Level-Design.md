@@ -325,19 +325,39 @@ application level.
 
 ## 6. Backend feature design
 
-### 6.1 Storage services
+### 6.1 File storage
 
-All under `src/Backend/SIMF.Infrastructure/`, filesystem-backed, rows hold relative paths:
+**One store, one shape.** D-568 replaced the seven bespoke per-entity storage
+services (`IAvatarStorage`, `ISessionRecordingStorage`, `ISpeakerPresentationStorage`
+and the rest) with a single `StoredFile` table, and D-626 deleted them. Nothing in
+`src/` implements a per-entity file store any more, and no row holds a relative path.
 
-| Concern | Interface / class | Notes |
-|---------|-------------------|-------|
-| Avatars | `IAvatarStorage` / `FilesystemAvatarStorage` | `Storage:AvatarBase` |
-| ID documents | `EncryptedUserIdDocumentStorage` | AES-encrypted at rest (`Storage:UserIdDocumentEncryptionKey`) |
-| VIP photos | `FilesystemVipPhotoStorage` | |
-| Session recordings | `ISessionRecordingStorage` / `FilesystemSessionRecordingStorage` | range-served via stream token |
-| Speaker presentations | `ISpeakerPresentationStorage` / `FilesystemSpeakerPresentationStorage` | |
-| Media images | `IMediaImageStorage` / `FilesystemMediaImageStorage` | |
-| Unified asset library | `IImageAssetStorage` / `FilesystemImageAssetStorage` | D-357 |
+| Piece | Type | Role |
+|-------|------|------|
+| The row | `StoredFile` (`dbo.StoredFiles`) | Metadata, and the one place a file is described |
+| The bytes | `IFileStorageProvider` / `FilesystemFileStorageProvider` | The only production writer of media bytes; rooted at `FileStorage:RootPath`, path-traversal guarded |
+| The pipeline | `IFileService` | Malware scan, magic-byte allow-list, canonical MIME, SHA-256, encryption at rest, audit |
+| The admin front door | `IAssetService` | Maps `AssetCategory` to `FileService`; one active file per (category, owner) |
+
+A `StoredFile` carries what a string column never could: `SourceType`
+(`Upload` = bytes on disk under `StorageKey`, `ExternalLink` = a URL referenced in
+place, served by redirect), `FileType` checked against the per-service allow-list,
+`Service` (which decides access control, encryption, retention and disposal),
+`SensitivityTier`, `IsDeletable` / `RetainUntil` for legal hold, and the
+`OwnerEntityType` / `OwnerEntityId` pair the download authorisation check reads.
+Policy lives in `FileServicePolicy`, permissions in `AssetPermissionRegistry`.
+
+**How an owning row points at its file.** A typed `Guid? XFileId` with a real
+foreign key into `StoredFiles`, `OnDelete(Restrict)`, and deliberately no
+navigation property: nothing walks from an owning row to its file, because bytes
+are fetched through `IFileService` by id. The one exception is
+`SimfUser.AvatarFileId`, which stays a bare typed Guid with no constraint —
+`StoredFiles` lives in `SIMF_App` and SQL Server has no cross-database foreign-key
+syntax, so D-157 keeps it a logical reference. See D-885 and D-888.
+
+Deletion is soft throughout: `StoredFileService.DeleteAsync` and `ForceDeleteAsync`
+(the PDPL erasure path) both flip `IsActive`, and no code removes a `StoredFiles`
+row. That is why `Restrict` should never fire, and why it is worth declaring.
 
 PII fields are encrypted through `IPiiEncryptor`; a boot guard requires the key in production.
 
@@ -408,7 +428,7 @@ Configurations are applied via `ApplyConfigurationsFromAssembly` from
 
 | Entity | Table | Key columns / notes |
 |--------|-------|---------------------|
-| `SimfUser` | AspNetUsers | `Id` (Guid); `DisplayName`, `AccountState`, `UserType`, `PasswordChangeRequired`, `SecurityStamp`, `PasswordChangedAtUtc`, `LastSuccessfulSignInAtUtc`, `AvatarRelativePath` |
+| `SimfUser` | AspNetUsers | `Id` (Guid); `DisplayName`, `AccountState`, `UserType`, `PasswordChangeRequired`, `SecurityStamp`, `PasswordChangedAtUtc`, `LastSuccessfulSignInAtUtc`, `AvatarFileId` (logical reference to `StoredFiles` in the App DB; no FK, D-157) |
 | `SimfRole` | AspNetRoles | `Id`; `IsBaseline` |
 | `Permission` | Permissions | `Code`, `Page`, `Action`, `DisplayName` |
 | `RolePermission` | RolePermissions | composite (`RoleId`,`PermissionId`) |

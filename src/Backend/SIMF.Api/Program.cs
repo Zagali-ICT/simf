@@ -131,6 +131,10 @@ builder.Services.AddLeasedHostedService<SIMF.Api.HostedServices.RetentionSweepWo
 // The audit log reads the request context; the API supplies it from HttpContext.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
+// The hero video's absolute URL is composed at read time now, and only the API
+// can see the request its origin falls back to.
+builder.Services.AddScoped<SIMF.Application.Abstractions.IPublicApiOriginProvider,
+    SIMF.Api.Infrastructure.HttpPublicApiOriginProvider>();
 
 // In-memory cache backs the per-IP bearer-rejection
 // throttle in JwtBearerSetup.AuditRejectionAsync so an attacker

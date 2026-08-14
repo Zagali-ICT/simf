@@ -533,6 +533,11 @@ public static class DependencyInjection
         // are gone (AssetService is retained, rewritten onto IFileService).
         services.AddScoped<SIMF.Application.Assets.Abstractions.IAssetService,
             SIMF.Infrastructure.Assets.AssetService>();
+        // The externally hosted feeds — live streams, sign language, the summary
+        // and gallery videos, the hero background — held in that same store.
+        services.AddScoped<SIMF.Application.Files.Abstractions.IFeedLinkService,
+            SIMF.Infrastructure.Files.FeedLinkService>();
+        services.AddScoped<SIMF.Infrastructure.Configuration.HeroVideoUrlResolver>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IPublicBoothService,
             SIMF.Infrastructure.Exhibition.PublicBoothService>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IAdminBoothService,

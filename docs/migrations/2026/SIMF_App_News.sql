@@ -12,7 +12,8 @@
    >>> PLACEHOLDER content — one "Highlights" article so the app's news
        strip is not empty. Replace / extend with the client's real 2026
        news items. The hero image is uploaded/linked by an editor via the
-       Control Panel (ImageRelativePath is left NULL here).
+       Control Panel; this seed names no image column, so the article's
+       ImageFileId stays NULL until one is attached.
    ===================================================================== */
 
 SET QUOTED_IDENTIFIER ON;

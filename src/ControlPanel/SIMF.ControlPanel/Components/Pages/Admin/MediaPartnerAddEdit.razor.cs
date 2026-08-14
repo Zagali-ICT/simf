@@ -33,7 +33,6 @@ public partial class MediaPartnerAddEdit
         {
             _model.Name = Initial.Name;
             _model.NameArabic = Initial.NameArabic;
-            _model.LogoRelativePath = Initial.LogoRelativePath ?? string.Empty;
             _model.Url = Initial.Url ?? string.Empty;
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
@@ -165,7 +164,6 @@ public partial class MediaPartnerAddEdit
     private AdminCreateMediaPartnerRequest BuildCreateRequest(FormValues form) => new(
         _model.Name.Trim(),
         _model.NameArabic.Trim(),
-        NullIfBlank(_model.LogoRelativePath),
         NullIfBlank(_model.Url),
         form.DisplayOrder,
         Email: NullIfBlank(_model.Email),
@@ -185,7 +183,6 @@ public partial class MediaPartnerAddEdit
     {
         Name = _model.Name.Trim(),
         NameArabic = _model.NameArabic.Trim(),
-        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
         Url = NullIfBlank(_model.Url),
         DisplayOrder = form.DisplayOrder,
         IsActive = _model.IsActive,
@@ -218,7 +215,6 @@ public partial class MediaPartnerAddEdit
     {
         public string Name { get; set; } = string.Empty;
         public string NameArabic { get; set; } = string.Empty;
-        public string LogoRelativePath { get; set; } = string.Empty;
         public string Url { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string PhonePrimary { get; set; } = string.Empty;

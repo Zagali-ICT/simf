@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/SpeakerPresentationsTests.cs
+﻿// Tests: SIMF.Api.Tests/SpeakerPresentationsTests.cs
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -17,7 +17,7 @@ namespace SIMF.Infrastructure.Programme;
 /// <summary>Admin management of speaker presentation
 /// files. The bytes live in the unified
 /// <c>StoredFile</c> store (Internal tier, encrypted at rest); the row keeps only
-/// the metadata + the bare-Guid pointer in <c>StoredFileName</c>. Both Speaker and
+/// the metadata + the foreign key in <c>StoredFileId</c>. Both Speaker and
 /// Session are real FKs on <see cref="SimfAppDbContext"/>, so the session title is
 /// resolved in the same context.</summary>
 internal sealed class AdminSpeakerPresentationService(
@@ -97,7 +97,7 @@ internal sealed class AdminSpeakerPresentationService(
         // Store the bytes in the unified StoredFile store (Internal tier,
         // encrypted at rest, owner = the presentation). IFileService runs the full
         // pipeline (malware scan, magic-byte allow-list, canonical MIME, SHA-256,
-        // audit), so the standalone scanner call is gone. StoredFileName holds the
+        // audit), so the standalone scanner call is gone. StoredFileId holds the
         // bare-Guid pointer to the StoredFile.
         var result = await fileService.UploadAsync(
             new UploadFileCommand(
@@ -111,7 +111,7 @@ internal sealed class AdminSpeakerPresentationService(
             SpeakerId = speakerId,
             SessionId = sessionId,
             FileName = safeName,
-            StoredFileName = result.Id.ToString(),
+            StoredFileId = result.Id,
             ContentType = string.IsNullOrWhiteSpace(contentType)
                 ? "application/octet-stream" : contentType,
             SizeBytes = content.Length,
@@ -143,14 +143,14 @@ internal sealed class AdminSpeakerPresentationService(
     {
         var row = await db.SpeakerPresentations.AsNoTracking()
             .Where(p => p.Id == presentationId && p.IsActive)
-            .Select(p => new { p.StoredFileName, p.ContentType, p.FileName })
+            .Select(p => new { p.StoredFileId, p.ContentType, p.FileName })
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null)
         {
             return null;
         }
         var bytes = await PresentationFileReader.ReadBytesAsync(
-            db, fileStorage, row.StoredFileName, cancellationToken);
+            db, fileStorage, row.StoredFileId, cancellationToken);
         return bytes is null ? null : (bytes, row.ContentType, row.FileName);
     }
 
@@ -175,18 +175,15 @@ internal sealed class AdminSpeakerPresentationService(
         // Retire the StoredFile (soft-delete + unlink bytes). Best-effort:
         // the row is already deactivated (source of truth), so a delete failure must
         // not fail the operation. SpeakerPresentation is DeletableDefault:true.
-        if (Guid.TryParse(presentation.StoredFileName, out var fileId))
+        try
         {
-            try
-            {
-                await fileService.DeleteAsync(fileId, actorUserId, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(
-                    ex, "StoredFile retirement failed for presentation {PresentationId} (file {FileId}); the row is deactivated.",
-                    presentation.Id, fileId);
-            }
+            await fileService.DeleteAsync(presentation.StoredFileId, actorUserId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex, "StoredFile retirement failed for presentation {PresentationId} (file {FileId}); the row is deactivated.",
+                presentation.Id, presentation.StoredFileId);
         }
 
         await auditLog.WriteSuccessAsync(

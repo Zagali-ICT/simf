@@ -93,7 +93,9 @@ public sealed class UpdateMediaPartnerRequest
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
-    public string? LogoRelativePath { get; set; }
+    // No logo field: a logo is attached through the asset endpoints. A request
+    // property nothing reads only invites over-posting a value that silently
+    // does nothing.
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
@@ -134,7 +136,6 @@ public sealed class UpdateMediaPartnerEndpoint(IAdminMediaPartnerService service
                 {
                     Name = req.Name,
                     NameArabic = req.NameArabic,
-                    LogoRelativePath = req.LogoRelativePath,
                     Url = req.Url,
                     DisplayOrder = req.DisplayOrder,
                     IsActive = req.IsActive,

@@ -31,7 +31,9 @@ public sealed class ExportSponsorsEndpoint(IAdminSponsorService service, IGridEx
         new("NameEn", row => row.NameEn),
         new("NameAr", row => row.NameAr),
         new("Tier", row => row.TierName),
-        new("LogoRelativePath", row => row.LogoRelativePath),
+        // No logo column: a logo is a file in the store, not a cell. Exporting
+        // the retired path field would write a column that is always blank, and
+        // a blank column reads as data loss rather than as a design.
         new("Url", row => row.Url),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
@@ -93,7 +95,6 @@ public sealed class ImportSponsorsEndpoint(IAdminSponsorService service, IGridEx
             NameEn = nameEn,
             NameAr = nameAr,
             Tier = tier,
-            LogoRelativePath = NullIfBlank(row.Cells.GetValueOrDefault("LogoRelativePath", string.Empty)),
             Url = NullIfBlank(row.Cells.GetValueOrDefault("Url", string.Empty)),
             DisplayOrder = int.TryParse(
                 row.Cells.GetValueOrDefault("DisplayOrder", string.Empty), out var order) ? order : 0,

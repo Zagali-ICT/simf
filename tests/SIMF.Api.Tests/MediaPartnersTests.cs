@@ -51,7 +51,7 @@ public sealed class MediaPartnersTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/media-partners",
             new AdminCreateMediaPartnerRequest(
                 $"Public Visible {Guid.NewGuid():N}", "شبكة ظاهرة للعموم",
-                "media-partners/pvn.png", "https://pvn.example", 4100),
+                "https://pvn.example", 4100),
             token);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
         var id = (await create.Content
@@ -81,12 +81,12 @@ public sealed class MediaPartnersTests : IClassFixture<SimfApiFactory>
         var low = await PostAuthAsync(
             "/api/v1/admin/media-partners",
             new AdminCreateMediaPartnerRequest(
-                $"Order Low {Guid.NewGuid():N}", "ترتيب منخفض", null, null, 4200),
+                $"Order Low {Guid.NewGuid():N}", "ترتيب منخفض", null, 4200),
             token);
         var high = await PostAuthAsync(
             "/api/v1/admin/media-partners",
             new AdminCreateMediaPartnerRequest(
-                $"Order High {Guid.NewGuid():N}", "ترتيب مرتفع", null, null, 4300),
+                $"Order High {Guid.NewGuid():N}", "ترتيب مرتفع", null, 4300),
             token);
 
         var lowId = (await low.Content

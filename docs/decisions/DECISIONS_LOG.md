@@ -1,4 +1,4 @@
-# SIMF Decisions Log
+﻿# SIMF Decisions Log
 
 Implementation decisions and assumptions that are not (or not yet) captured in a
 controlled document. Each entry is dated and explains the reasoning, per the

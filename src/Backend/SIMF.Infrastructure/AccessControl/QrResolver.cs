@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/GateScanTests.cs, SIMF.Api.Tests/OfflineBadgeUploadTests.cs
+﻿// Tests: SIMF.Api.Tests/GateScanTests.cs, SIMF.Api.Tests/OfflineBadgeUploadTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SIMF.Application.AccessControl.Abstractions;
@@ -101,11 +101,16 @@ internal sealed class QrResolver(
             profileRow.profileTypeName,
             profileRow.profileTypeNameAr,
             profileRow.profileTypePageColor,
-            // Falls back to the profile's own name, which is what a badge is
-            // printed from and what an operator sees on the paper in front of
-            // them; the account display name is only richer when there is one.
-            userRow?.DisplayName ?? profileRow.Name,
+            // The profile name wins. It is what the badge is printed from and
+            // what the operator sees on the paper in front of them, and the
+            // profile is the attendee record — the account may not exist
+            // at all for a walk-in. SimfUser.DisplayName serves the greeting and
+            // nothing else, and can still hold a sign-up placeholder.
+            profileRow.Name,
             profileRow.NameArabic,
+            // Kept from main, and not optional: BadgeBatchId is what the badge
+            // self-claim guard reads to tell a bulk-order badge from a walk-in's,
+            // and EditionYear is the only expiry a minted QR has.
             profileRow.BadgeBatchId,
             profileRow.EditionYear);
     }

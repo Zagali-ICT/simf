@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/OrganizationProfileTests.cs
+﻿// Tests: SIMF.Api.Tests/OrganizationProfileTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -10,6 +10,7 @@ using SIMF.Contracts.Organization;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Organization;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Application.Files.Abstractions;
 
 namespace SIMF.Infrastructure.Configuration;
 
@@ -22,6 +23,8 @@ namespace SIMF.Infrastructure.Configuration;
 internal sealed class OrganizationProfileAdminService(
     SimfAppDbContext db,
     IOrganizationProfileReadService readCache,
+    IFeedLinkService feedLinks,
+    HeroVideoUrlResolver heroVideo,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<OrganizationProfileAdminService> logger) : IOrganizationProfileAdminService
@@ -52,7 +55,10 @@ internal sealed class OrganizationProfileAdminService(
             ? $"app/assets/{AssetCategory.OrganizationLogo}/{OrganizationProfile.SingletonId}/image"
             : null;
 
-        return OrganizationProfileMapper.ToResponse(profile, about, details, logoUrl);
+        return OrganizationProfileMapper.ToResponse(
+            profile, about, details, logoUrl,
+            await feedLinks.ResolveAsync(profile.LiveStreamFileId, cancellationToken),
+            await heroVideo.ResolveAsync(profile.BackgroundVideoFileId, cancellationToken));
     }
 
     public async Task UpdateAsync(
@@ -92,8 +98,15 @@ internal sealed class OrganizationProfileAdminService(
         profile.ContactPhone = Trim(request.ContactPhone, 64);
         profile.ContactEmail = Trim(request.ContactEmail, 256);
         profile.ContactWebsite = ValidateUrl(request.ContactWebsite, "website");
-        profile.LiveStreamUrl = ValidateUrl(request.LiveStreamUrl, "live-stream link");
-        profile.BackgroundVideoUrl = ValidateUrl(request.BackgroundVideoUrl, "background video link");
+        // The two feeds become file-store rows. The store validates the URL
+        // against the players' own rule, which ValidateUrl never did: it demanded
+        // only an absolute http(s) URL, so an admin could save a link neither
+        // client could play and see an empty hero with no error to explain it.
+        profile.LiveStreamFileId = await feedLinks.SetAsync(
+            FileService.OrganizationLiveStream, OrganizationProfile.SingletonId,
+            request.LiveStreamUrl, actorUserId, cancellationToken);
+        profile.BackgroundVideoFileId = await SetHeroVideoAsync(
+            profile, request.BackgroundVideoUrl, actorUserId, cancellationToken);
         profile.FacebookUrl = ValidateUrl(request.Facebook, "Facebook link");
         profile.XUrl = ValidateUrl(request.X, "X link");
         profile.InstagramUrl = ValidateUrl(request.Instagram, "Instagram link");
@@ -219,6 +232,34 @@ internal sealed class OrganizationProfileAdminService(
         var v = (raw ?? string.Empty).Trim();
         if (v.Length == 0) { return null; }
         return v.Length > max ? v[..max] : v;
+    }
+
+    /// <summary>Set the hero video from the admin form without destroying an
+    /// uploaded one that nobody touched.
+    ///
+    /// <para>The profile save is a full-document upsert and the form shows the
+    /// current hero URL in the same box an admin pastes into, so an unrelated edit
+    /// — changing the contact phone — resubmits it. The guard is "unchanged means
+    /// unchanged": if the incoming value is what we would have resolved anyway,
+    /// nothing happens. That deliberately asks nothing about the URL's shape,
+    /// which is exactly what the two old predicates did — a full-string comparison
+    /// here against a suffix test in the Control Panel, one question answered two
+    /// ways that disagreed whenever the configured base URL changed.</para></summary>
+    private async Task<Guid?> SetHeroVideoAsync(
+        OrganizationProfile profile, string? incoming, Guid actorUserId,
+        CancellationToken cancellationToken)
+    {
+        var current = await heroVideo.ResolveAsync(profile.BackgroundVideoFileId, cancellationToken);
+        var trimmed = (incoming ?? string.Empty).Trim();
+
+        if (string.Equals(current ?? string.Empty, trimmed, StringComparison.OrdinalIgnoreCase))
+        {
+            return profile.BackgroundVideoFileId;
+        }
+
+        return await feedLinks.SetAsync(
+            FileService.OrganizationHeroVideo, OrganizationProfile.SingletonId,
+            trimmed, actorUserId, cancellationToken);
     }
 
     private static string? ValidateUrl(string? raw, string field)

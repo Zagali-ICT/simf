@@ -65,7 +65,11 @@ internal sealed class PublicCmsService(
             .OrderBy(b => b.DisplayOrder).ThenBy(b => b.Start)
             .Select(b => new PublicBanner(
                 b.Id, b.Title, b.TitleArabic, b.Body, b.BodyArabic,
-                b.ImageUrl, b.LinkUrl, b.Start, b.End, b.DisplayOrder))
+                // ImageUrl stays on the wire (append-only) but is always null
+                // now: the app's primary path is /app/assets/Banner/{id}/image,
+                // which serves an upload and 302s an ExternalLink alike, so the
+                // pasted-URL fallback it used to feed has nothing left to do.
+                null, b.LinkUrl, b.Start, b.End, b.DisplayOrder))
             .ToListAsync(cancellationToken);
         return new PublicBanners(rows);
     }
