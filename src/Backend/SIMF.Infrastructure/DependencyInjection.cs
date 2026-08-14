@@ -660,12 +660,12 @@ public static class DependencyInjection
         SIMF.Infrastructure.Ai.AiAuditDetail.ConfigureHmacKey(
             configuration.GetValue<string?>(
                 $"{SIMF.Infrastructure.Ai.AiOptions.SectionName}:PromptHash:Secret"));
-        // Install the keyed-HMAC key for AccountCode (OTP)
-        // hashing; reuses the JWT signing key (a required, boot-validated secret).
+        // Install the keyed-HMAC keys for AccountCode (OTP) hashing and for the
+        // speaker action-link tokens. Both take the JWT signing key — a required,
+        // boot-validated secret — as their master, and each derives its own subkey
+        // from it, so passing one value here does not give them one key.
         SIMF.Application.IdentityAccess.AccountCodeHasher.ConfigureKey(
             configuration[$"{SIMF.Common.Options.JwtOptions.SectionName}:SigningKey"]);
-        // Install the keyed-HMAC key for the speaker
-        // action-link tokens; reuses the same boot-validated JWT signing key.
         SIMF.Application.MeetingRequests.MeetingActionTokenHasher.ConfigureKey(
             configuration[$"{SIMF.Common.Options.JwtOptions.SectionName}:SigningKey"]);
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider,

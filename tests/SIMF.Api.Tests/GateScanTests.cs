@@ -1,4 +1,4 @@
-// Tests cover the 13-step constraint engine in GateOperatorService:
+﻿// Tests cover the 13-step constraint engine in GateOperatorService:
 // step 2 (operator not assigned → 403); step 3 (QR_UNKNOWN); step 6
 // (HOLDER_NOT_APPROVED); step 11 (PROFILE_TYPE_NOT_ALLOWED + L-15 empty-
 // filtered-list denies all); step 12 (5-second duplicate absorption + Both-
@@ -611,8 +611,10 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             Name = "Test Visitor",
             NationalityId = 682, // ISO 3166-1 numeric — SA
             PlaceOfBirth = "Riyadh",
-            // The gate reads admission here, not on the account, so this has to
-            // carry the same answer the caller asked for.
+            // The gate reads admission off the PROFILE, so `approved` has to drive
+            // this and not only the account above. Left at its PendingApproval
+            // default, every holder is refused HolderNotApproved before the gate
+            // ever reaches the allow-list or direction checks the test is about.
             AdmissionState = approved ? AccountState.Approved : AccountState.PendingApproval,
             CreatedAt = SimfClock.Now,
         });

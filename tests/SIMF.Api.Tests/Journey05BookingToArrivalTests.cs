@@ -1,4 +1,4 @@
-// Journey BF-05 (docs/tests/SIMF-Business-Flows.md § BF-05, E2E-BF-05-001) — one
+﻿// Journey BF-05 (docs/tests/SIMF-Business-Flows.md § BF-05, E2E-BF-05-001) — one
 // seat travelling from booking to recorded attendance, in one run.
 //
 // Both halves already had tests, separately: SeatReservationsTests drives the
@@ -311,10 +311,11 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
                 NameArabic = nameArabic,
                 NationalityId = 682,   // ISO 3166-1 numeric — SA
                 PlaceOfBirth = "Riyadh",
-                CreatedAt = SimfClock.Now,
-                // A badge exists only for an admitted attendee, and admission is
-                // read on the profile rather than the account.
+                // The hall door reads admission off the PROFILE; left at its
+                // PendingApproval default the holder is refused before the seat
+                // confirmation this journey exists to prove.
                 AdmissionState = AccountState.Approved,
+                CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
         }

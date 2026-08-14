@@ -32,14 +32,21 @@ internal sealed class SecondFactorTokenRepository(SimfIdentityDbContext dbContex
         return affected == 1;
     }
 
-    public Task IncrementAttemptCountAsync(
-        Guid tokenId, CancellationToken cancellationToken = default) =>
-        dbContext.SecondFactorTokens
+    public async Task<int> IncrementAttemptCountAsync(
+        Guid tokenId, CancellationToken cancellationToken = default)
+    {
+        await dbContext.SecondFactorTokens
             .Where(token => token.Id == tokenId)
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(
                     token => token.AttemptCount, token => token.AttemptCount + 1),
                 cancellationToken);
+        return await dbContext.SecondFactorTokens
+            .AsNoTracking()
+            .Where(token => token.Id == tokenId)
+            .Select(token => token.AttemptCount)
+            .SingleAsync(cancellationToken);
+    }
 
     public async Task UpdateAsync(SecondFactorToken token, CancellationToken cancellationToken = default)
     {

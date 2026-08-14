@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs
+﻿// Tests: SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs
 using System.Globalization;
 using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;

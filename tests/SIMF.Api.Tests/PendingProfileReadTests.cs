@@ -225,7 +225,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var user = await db.Users.SingleAsync(u => u.Id == otherId);
-            user.AvatarRelativePath = Guid.NewGuid().ToString();
+            user.AvatarFileId = Guid.NewGuid();
             await db.SaveChangesAsync();
         }
 
@@ -256,7 +256,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var user = await db.Users.SingleAsync(u => u.Id == otherId);
-            user.AvatarRelativePath = Guid.NewGuid().ToString();
+            user.AvatarFileId = Guid.NewGuid();
             await db.SaveChangesAsync();
         }
 

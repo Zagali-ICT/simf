@@ -26,11 +26,63 @@ public class PipelineTestGateTests
 {
     private static readonly string RepoRoot = FindRepoRoot();
 
-    private static string Pipeline() =>
+    /// The root pipeline file, read once. Every test here asserts over the same
+    /// checked-in text, so re-reading a 39 KB file per test buys nothing.
+    private static readonly string PipelineYaml =
         File.ReadAllText(Path.Combine(RepoRoot, "azure-pipelines.yml"));
+
+    /// The root pipeline PLUS every YAML template it references.
+    ///
+    /// <para>Steps that move into a template must not fall out from under the
+    /// guards below. When the four deploy steps were extracted to
+    /// `deploy/deploy-all-packages.yml`, `No_pipeline_step_is_disabled` was
+    /// still reading the root file alone - so `enabled: false` on a deploy step
+    /// would have passed the very check written to catch a silently disabled
+    /// step, which is the failure this whole class exists for. Anything
+    /// asserting "no step in this pipeline does X" reads THIS, not
+    /// <see cref="PipelineYaml"/>.</para>
+    private static readonly IReadOnlyList<(string Path, string Text)> PipelineFiles = ReadPipelineFiles();
+
+    private static string Pipeline() => PipelineYaml;
+
+    private static IReadOnlyList<(string Path, string Text)> ReadPipelineFiles()
+    {
+        var files = new List<(string Path, string Text)> { ("azure-pipelines.yml", PipelineYaml) };
+
+        // Distinct: both deployment jobs reference the same template, and a file
+        // read twice would report every finding in it twice.
+        foreach (var relative in ReferencedTemplates(PipelineYaml).Distinct(StringComparer.Ordinal))
+        {
+            var full = Path.Combine(RepoRoot, relative.Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(full))
+            {
+                files.Add((relative, File.ReadAllText(full)));
+            }
+        }
+
+        return files;
+    }
+
+    /// Every YAML path the given pipeline text references with `- template:`.
+    private static IEnumerable<string> ReferencedTemplates(string yaml) =>
+        yaml.Split('\n')
+            .Select(l => l.Trim())
+            .Where(l => !l.StartsWith('#'))
+            .Select(l => Regex.Match(l, @"^-\s*template:\s*(?<path>[^\s@#]+\.ya?ml)"))
+            .Where(m => m.Success)
+            .Select(m => m.Groups["path"].Value);
 
     /// Every test project under tests/ must be run by SOME stage. A new project
     /// that nothing references is a suite that only ever passes locally.
+    ///
+    /// <para>READ THIS BEFORE TRUSTING IT. Since D-887 the test steps carry
+    /// `condition: eq(parameters.runTests, 'true')` and that parameter DEFAULTS
+    /// TO FALSE, so an ordinary run references every suite and executes none of
+    /// them. This test therefore proves a project is WIRED UP, not that CI ever
+    /// runs it - which is a materially weaker claim than the one it was written
+    /// to make. It is kept because the wiring still has to be right for the
+    /// `runTests` runs that gate a merge, and because a project dropped from
+    /// the list would otherwise never come back when the gates go on.</para>
     [Fact]
     public void Every_test_project_is_referenced_by_the_pipeline()
     {
@@ -64,35 +116,44 @@ public class PipelineTestGateTests
     /// clean-clone Android compile gate — free to be disabled without a murmur.
     /// The pipeline carries no `enabled: false` today, so the blanket rule costs
     /// nothing and removes the judgement call about which steps "count".</para>
+    ///
+    /// <para>Reads the root pipeline AND every template it references
+    /// (<see cref="PipelineFiles"/>). Extracting steps into a template must not
+    /// be a way out from under this check.</para>
     [Fact]
     public void No_pipeline_step_is_disabled()
     {
-        var lines = Pipeline().Split('\n');
         var disabled = new List<string>();
 
-        for (var i = 0; i < lines.Length; i++)
+        foreach (var (path, text) in PipelineFiles)
         {
-            // The flag as a YAML KEY, not the words inside a comment that warns
-            // against using it.
-            if (lines[i].TrimStart().StartsWith('#')
-                || !lines[i].TrimStart().StartsWith("enabled: false", StringComparison.Ordinal))
-            {
-                continue;
-            }
+            var lines = text.Split('\n');
 
-            // Look back for the step this flag belongs to.
-            disabled.Add(
-                Enumerable.Range(0, i)
+            for (var i = 0; i < lines.Length; i++)
+            {
+                // The flag as a YAML KEY, not the words inside a comment that
+                // warns against using it.
+                if (lines[i].TrimStart().StartsWith('#')
+                    || !lines[i].TrimStart().StartsWith("enabled: false", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                // Look back for the step this flag belongs to.
+                var step = Enumerable.Range(0, i)
                     .Reverse()
                     .Select(j => lines[j])
                     .FirstOrDefault(l => l.Contains("displayName:", StringComparison.Ordinal))
                     ?.Trim()
-                ?? $"(step at line {i + 1})");
+                    ?? $"(step at line {i + 1})";
+
+                disabled.Add($"{path}: {step}");
+            }
         }
 
         Assert.True(
             disabled.Count == 0,
-            "A step is disabled in azure-pipelines.yml. Use a `condition:` that states "
+            "A step is disabled in the pipeline. Use a `condition:` that states "
             + "when it should run instead, so the reason is visible in the run summary "
             + "rather than hidden in the YAML:\n"
             + string.Join('\n', disabled));
@@ -184,6 +245,122 @@ public class PipelineTestGateTests
             + "step will fail on a clean checkout even though it passes wherever the "
             + "file happens to exist locally. Check .gitignore — `[Bb]in/` matches any "
             + "directory named bin at any depth, including Dart package entrypoints.\n"
+            + string.Join('\n', missing));
+    }
+
+    /// <summary>
+    /// The pipeline may name ONLY the two Azure DevOps Environments that exist.
+    ///
+    /// <para>Azure DevOps CREATES an environment the first time a deployment job
+    /// names one, so a name matching no real machine does not fail the run - it
+    /// silently registers another environment with no resources behind it. The
+    /// pipeline named four (`SIMF-Prod-Api`, `-Cp`, `-Web`, `-Edge`) on an
+    /// earlier reading of the estate as one server per package, and the portal
+    /// duly listed four environments nobody had registered. The estate is two
+    /// servers (D-886), so two environments is the whole truth.</para>
+    ///
+    /// <para>This is the same shape of guard as the anonymous-endpoint
+    /// allow-list: the wrong count is invisible in a green run and shows up in
+    /// the portal weeks later, so it is pinned to a reviewed set rather than to
+    /// a comment.</para>
+    /// </summary>
+    [Fact]
+    public void The_pipeline_deploys_only_to_the_two_real_environments()
+    {
+        string[] expected = ["Pre-production", "Production"];
+
+        var lines = Pipeline().Split('\n');
+        var named = new List<string>();
+
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var line = lines[i].Trim();
+            if (line.StartsWith('#'))
+            {
+                continue;
+            }
+
+            var inline = Regex.Match(line, @"^environment:\s*'?(?<name>[^'#\s]+)'?");
+            if (inline.Success)
+            {
+                named.Add(inline.Groups["name"].Value);
+                continue;
+            }
+
+            // The full form: `environment:` on its own line, `name:` beneath it.
+            if (line != "environment:")
+            {
+                continue;
+            }
+
+            // Only the block that belongs to this key - stop at the next list
+            // item, so a `name:` further down the file is never mistaken for
+            // this environment's.
+            var name = "(unreadable)";
+            for (var j = i + 1; j < lines.Length; j++)
+            {
+                var candidate = lines[j].Trim();
+                if (candidate.StartsWith("- ", StringComparison.Ordinal))
+                {
+                    break;
+                }
+
+                var match = Regex.Match(candidate, @"^name:\s*'?(?<name>[^'#\s]+)'?");
+                if (match.Success)
+                {
+                    name = match.Groups["name"].Value;
+                    break;
+                }
+            }
+
+            named.Add(name);
+        }
+
+        Assert.NotEmpty(named);
+
+        var distinct = named.Distinct(StringComparer.Ordinal).ToArray();
+        var unexpected = distinct.Except(expected, StringComparer.Ordinal).ToArray();
+
+        Assert.True(
+            unexpected.Length == 0,
+            "azure-pipelines.yml names an Azure DevOps Environment that is not one of the "
+            + "two SIMF has: " + string.Join(", ", unexpected)
+            + ". Azure DevOps CREATES an environment on first reference, so this does not "
+            + "fail the run - it adds an empty environment to the portal. The estate is two "
+            + "servers (D-886): Pre-production and Production. Fix the name, or register the "
+            + "new environment and add it here with the machine it binds to.");
+
+        var missing = expected.Except(distinct, StringComparer.Ordinal).ToArray();
+
+        Assert.True(
+            missing.Length == 0,
+            "azure-pipelines.yml no longer deploys to: " + string.Join(", ", missing)
+            + ". Both environments are deployed by default; a run holds one back with the "
+            + "`deployPreProduction` / `deployProduction` parameters at queue time, NOT by "
+            + "deleting its job.");
+    }
+
+    /// <summary>
+    /// Every YAML template the pipeline references must be in the repository.
+    ///
+    /// <para>The sibling check above does this for `dart run` scripts, after the
+    /// convention gate spent weeks pointing at a file `.gitignore` had excluded.
+    /// A `- template:` reference fails the same way and is worse: the pipeline
+    /// does not compile at all, so nothing runs, including the gates that would
+    /// have reported it.</para>
+    /// </summary>
+    [Fact]
+    public void Every_yaml_template_the_pipeline_references_exists_in_the_repository()
+    {
+        var missing = ReferencedTemplates(PipelineYaml)
+            .Select(p => p.Replace('/', Path.DirectorySeparatorChar))
+            .Where(relative => !File.Exists(Path.Combine(RepoRoot, relative)))
+            .ToArray();
+
+        Assert.True(
+            missing.Length == 0,
+            "azure-pipelines.yml references a YAML template that is NOT in the repository, "
+            + "so the pipeline will not compile and no stage runs at all:\n"
             + string.Join('\n', missing));
     }
 

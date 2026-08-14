@@ -181,12 +181,14 @@ function Robocopy-MirrorWithRetry([string]$From, [string]$To, [int]$MaxAttempts 
 }
 
 # The SIMF apps, in deploy order. Each joins the run only when its site name AND
-# its physical path are both supplied: on a per-server estate a job passes just
-# its own pair, and on a single box an operator can still pass all four.
+# its physical path are both supplied, so one call can deploy a single site or
+# all four. The pipeline passes one pair per call (see pipeline-deploy-one.ps1);
+# an operator deploying by hand can pass all four at once.
 #
-# The API is first and the mobile edge last, which matters when they do share a
-# machine: everything calls the API, and the edge is the public front door, so it
-# should be the last thing to start accepting traffic.
+# The API is first and the mobile edge last, which matters because they DO share
+# a machine on both SIMF servers (D-886): everything calls the API, and the edge
+# is the public front door, so it should be the last thing to start accepting
+# traffic.
 $candidates = @(
     @{ Name = "API";  Site = $ApiSiteName;  Path = $ApiPath;  Folder = "api"  },
     @{ Name = "CP";   Site = $CpSiteName;   Path = $CpPath;   Folder = "cp"   },

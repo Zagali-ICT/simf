@@ -1,3 +1,6 @@
+// Tests: SIMF.Api.Tests/AuthFlow.cs (recovers the plaintext from Code by
+//        brute force, proving the column holds a hash) and
+//        SIMF.Api.Tests/RetentionPurgeServiceTests.cs (expiry purge).
 using SIMF.Common.Enums;
 
 namespace SIMF.Domain.IdentityAccess;
@@ -5,7 +8,8 @@ namespace SIMF.Domain.IdentityAccess;
 /// <summary>
 /// A single-use, time-limited code sent to someone, for verifying an email
 /// address or resetting a password. One table serves both, distinguished by
-/// <see cref="Purpose"/>.
+/// <see cref="Purpose"/>. The row holds only a keyed hash of the code
+/// (<see cref="Code"/>) — the code itself is emailed and never persisted.
 /// </summary>
 public class AccountCode
 {
@@ -37,6 +41,10 @@ public class AccountCode
 
     public AccountCodePurpose Purpose { get; set; }
 
+    /// <summary>The keyed HMAC of the code, never the code itself. Written only by
+    /// <c>AccountCodeHasher.Hash</c>, and only ever compared against another hash of
+    /// a submitted value — nothing queries this column, so assigning a plaintext
+    /// code here would silently defeat the hashing rather than fail.</summary>
     public string Code { get; set; } = string.Empty;
 
     /// <summary>Saudi local time.</summary>

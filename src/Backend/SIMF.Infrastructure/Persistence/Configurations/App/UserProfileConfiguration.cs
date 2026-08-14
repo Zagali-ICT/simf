@@ -1,6 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Organisations;
+using SIMF.Domain.Files;
 using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -111,7 +112,31 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.HasIndex(profile => profile.ReferenceNumber)
             .IsUnique()
             .HasFilter("[ReferenceNumber] IS NOT NULL");
-        builder.Property(profile => profile.IdImageRelativePath).HasMaxLength(256);
+        // The ID document and the VIP photo are real foreign keys into the one
+        // file store. Configured without a navigation property on purpose: no
+        // code path walks from a profile to its file (bytes are always fetched
+        // through IFileService by id), and a navigation on an encrypted,
+        // sensitive document is an invitation to Include() it into ordinary
+        // profile reads. This is the deliberate difference from the
+        // Organisation and Region keys below, which do carry navigations
+        // because callers genuinely traverse them.
+        //
+        // Restrict, not Cascade: deleting a file must never silently delete the
+        // registrant. In practice the constraint should never fire, because
+        // StoredFileService deactivates rows rather than removing them, which
+        // is exactly why the key is worth having: it turns "should never" into
+        // "cannot".
+        builder.HasIndex(profile => profile.IdImageFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(profile => profile.IdImageFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(profile => profile.VipPhotoFileId);
+        builder.HasOne<StoredFile>()
+            .WithMany()
+            .HasForeignKey(profile => profile.VipPhotoFileId)
+            .OnDelete(DeleteBehavior.Restrict);
         // VVIP/VIP extras (موج welcome-message integration). Nullable,
         // only set for VVIP/VIP. Lengths match the FluentValidation + UI.
         builder.Property(profile => profile.MawjId).HasMaxLength(64);
@@ -119,7 +144,6 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // Arabic twin, same length as Honorific.
         builder.Property(profile => profile.HonorificArabic).HasMaxLength(64);
         builder.Property(profile => profile.PreferredLanguage).HasMaxLength(16);
-        builder.Property(profile => profile.VipPhotoRelativePath).HasMaxLength(260);
 
         // QrId on UserProfile. 12-char Crockford base32, unique
         // (only minted for Approved rows so most rows are null —

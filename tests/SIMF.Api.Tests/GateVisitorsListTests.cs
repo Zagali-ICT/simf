@@ -1,4 +1,4 @@
-// D-160 — POST /api/v1/app/gates/{gateId}/visitors/list — cursor-paged
+﻿// D-160 — POST /api/v1/app/gates/{gateId}/visitors/list — cursor-paged
 // view of scans at a single gate, backed by the D-158 snapshot columns.
 using System.Net;
 using System.Net.Http.Headers;
@@ -245,10 +245,11 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
             Name = displayName,
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
-            CreatedAt = SimfClock.Now,
-            // A badge exists only for an admitted attendee, and admission is
-            // read on the profile rather than the account.
+            // The gate reads admission off the PROFILE; left at its PendingApproval
+            // default the scan is denied HolderNotApproved and never reaches the
+            // list this test is about.
             AdmissionState = AccountState.Approved,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return qrId;

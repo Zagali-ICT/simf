@@ -1,11 +1,14 @@
 # =============================================================================
 # SIMF - deploy ONE package to THIS server (called by the Deploy stage).
 #
-# Each package now runs on its own box, so each deployment job extracts only its
-# own zip and hands only its own site to iis-deploy.ps1. The single job that
-# extracted all four zips and deployed them together assumed one machine; on a
-# per-server estate it would have had each agent unpack three packages it must
-# never install.
+# One call deploys one package. The estate is two servers, each hosting all four
+# sites (D-886), so a deployment job calls this four times rather than once with
+# four pairs: a failure then names the package in the run summary, and a by-hand
+# redeploy of a single site is the same command the pipeline runs.
+#
+# (It was written when each package was expected to run on its own box. That
+# reading of the estate was withdrawn by D-886; the one-package-per-call shape
+# outlived it on its own merits, which is why the script is unchanged.)
 #
 #   .\deploy\pipeline-deploy-one.ps1 `
 #       -Package edge -ZipName SIMF.MobileEdge.zip `

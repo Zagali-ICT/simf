@@ -176,9 +176,12 @@ public class UserProfile : BaseAuditEntity
     /// message goes out in.</summary>
     public string? PreferredLanguage { get; set; }
 
-    /// <summary>Relative path of a separate high-resolution VIP photo, distinct
-    /// from the account avatar and held in the VIP-photo store.</summary>
-    public string? VipPhotoRelativePath { get; set; }
+    /// <summary>A separate high-resolution VIP photo, distinct from the account
+    /// avatar, as its row in the unified file store. A real foreign key, unlike
+    /// the avatar: both this row and <c>StoredFile</c> live in the App database,
+    /// so the constraint is legal here and the database keeps it honest.
+    /// Null for everyone who is not VVIP or VIP.</summary>
+    public Guid? VipPhotoFileId { get; set; }
 
     /// <summary>Marks the profile as a delegation member (وفد); a delegate is
     /// otherwise an ordinary visitor. The create path refuses the flag unless the
@@ -276,11 +279,16 @@ public class UserProfile : BaseAuditEntity
     /// </summary>
     public string? RejectionReasonArabic { get; set; }
 
-    /// <summary>Relative path of the ID-image file inside the unified store
-    /// rooted at <c>FileStorage:RootPath</c>, under its <c>IdDocument</c> folder.
-    /// The bytes are envelope-encrypted on disk and never sit in the row. Null
-    /// when no image has been uploaded.</summary>
-    public string? IdImageRelativePath { get; set; }
+    /// <summary>The registrant's ID document, as its row in the unified file
+    /// store. A real foreign key: both sides live in the App database. The bytes
+    /// are envelope-encrypted and never sit in this row. Null when nothing has
+    /// been uploaded.
+    ///
+    /// <para>This was <c>IdImageRelativePath</c>, and its comment described a
+    /// path "inside the unified store rooted at <c>FileStorage:RootPath</c>,
+    /// under its <c>IdDocument</c> folder" long after the column had stopped
+    /// holding anything of the sort.</para></summary>
+    public Guid? IdImageFileId { get; set; }
 
     // The five accessibility choices the app used to keep in device preferences
     // ONLY, so they never followed the user to a second device and did not

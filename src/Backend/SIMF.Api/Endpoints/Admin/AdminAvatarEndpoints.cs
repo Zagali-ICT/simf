@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_visitor_avatar_sets_path,
+﻿// Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_visitor_avatar_sets_path,
 //        Avatar_family_guard_confines_each_route_to_its_own_family — the per-family scope guard)
 using FastEndpoints;
 using SIMF.Api.Endpoints.Account;
@@ -63,7 +63,7 @@ public abstract class AdminAvatarUploadEndpointBase(
         using var stream = new MemoryStream();
         await file.CopyToAsync(stream, ct);
         // SetAvatarAsync validates size (2 MB) + MIME + magic bytes, stores the
-        // file and sets SimfUser.AvatarRelativePath for the subject.
+        // file and sets SimfUser.AvatarFileId for the subject.
         var response = await accountService.SetAvatarAsync(
             SubjectId, stream.ToArray(), file.ContentType ?? string.Empty, ct);
         await Send.OkAsync(ApiResult<AvatarResponse>.Ok(response), ct);

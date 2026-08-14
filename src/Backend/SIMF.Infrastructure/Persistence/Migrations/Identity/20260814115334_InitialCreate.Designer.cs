@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     [DbContext(typeof(SimfIdentityDbContext))]
-    [Migration("20260813234407_InitialCreate")]
+    [Migration("20260814115334_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -488,9 +488,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<string>("AvatarRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<Guid?>("AvatarFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()

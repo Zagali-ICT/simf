@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
+﻿// Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
 //        idempotency, baseline lookups + core content,
 //        2FA-disable-persists-across-reseed, demo-account matrix,
 //        demo-image repair when the bytes or the row have gone);
@@ -1487,8 +1487,8 @@ public sealed class IdentitySeeder(
     /// <para>The bytes go through the ordinary <see cref="IFileService"/> pipeline —
     /// the ID document and the avatar are encrypted-at-rest services, so they can
     /// NOT be pre-placed on disk like the public speaker photos. The
-    /// pointers written back (<c>UserProfile.IdImageRelativePath</c> /
-    /// <c>SimfUser.AvatarRelativePath</c>) are the bare StoredFile ids, exactly as
+    /// pointers written back (<c>UserProfile.IdImageFileId</c> /
+    /// <c>SimfUser.AvatarFileId</c>) are the bare StoredFile ids, exactly as
     /// the upload endpoints write them.</para>
     ///
     /// <para>Idempotent and self-healing: an account is re-seeded only when its
@@ -1518,27 +1518,27 @@ public sealed class IdentitySeeder(
                 continue;
             }
 
-            if (await NeedsReseedAsync(profile.IdImageRelativePath, cancellationToken))
+            if (await NeedsReseedAsync(profile.IdImageFileId, cancellationToken))
             {
                 var idDocument = await fileService.UploadAsync(
                     new UploadFileCommand(
                         FileService.IdDocument, user.Id, DemoIdDocumentPng,
                         "demo-id-document.png", "image/png", user.Id, FailClosed: false),
                     cancellationToken);
-                profile.IdImageRelativePath = idDocument.Id.ToString();
+                profile.IdImageFileId = idDocument.Id;
                 profile.UpdatedAt = timeProvider.SimfNow();
                 await appDbContext.SaveChangesAsync(cancellationToken);
                 seeded++;
             }
 
-            if (await NeedsReseedAsync(user.AvatarRelativePath, cancellationToken))
+            if (await NeedsReseedAsync(user.AvatarFileId, cancellationToken))
             {
                 var avatar = await fileService.UploadAsync(
                     new UploadFileCommand(
                         FileService.Avatar, user.Id, DemoAvatarPng,
                         "demo-avatar.png", "image/png", user.Id, FailClosed: false),
                     cancellationToken);
-                user.AvatarRelativePath = avatar.Id.ToString();
+                user.AvatarFileId = avatar.Id;
                 await accounts.UpdateAsync(user).EnsureSuccessAsync();
                 seeded++;
             }
@@ -1557,5 +1557,14 @@ public sealed class IdentitySeeder(
         if (string.IsNullOrEmpty(pointer)) { return true; }
         if (!Guid.TryParse(pointer, out var fileId)) { return true; }
         return !await fileService.ContentExistsAsync(fileId, cancellationToken);
+    }
+
+    /// <summary>The same test for a pointer that is already a real
+    /// <see cref="Guid"/>. There is no "not an id at all" case to consider here,
+    /// which is the whole point of having retyped the column.</summary>
+    private async Task<bool> NeedsReseedAsync(Guid? fileId, CancellationToken cancellationToken)
+    {
+        if (fileId is not { } id) { return true; }
+        return !await fileService.ContentExistsAsync(id, cancellationToken);
     }
 }

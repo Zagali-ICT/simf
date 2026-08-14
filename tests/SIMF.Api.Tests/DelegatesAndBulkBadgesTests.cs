@@ -707,7 +707,7 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         Assert.Null(minted.UserId);
         Assert.Empty(minted.Interests);
         Assert.Equal(0, minted.NationalityId);
-        Assert.Null(minted.IdImageRelativePath);
+        Assert.Null(minted.IdImageFileId);
     }
 
     private async Task<Guid> BatchIdForTypeAsync(Guid profileTypeId)

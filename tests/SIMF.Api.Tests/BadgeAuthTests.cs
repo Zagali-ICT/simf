@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -285,10 +285,11 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
             Name = "Badge Holder",
             NameArabic = "حامل الشارة",
             QrId = qrId,
-            CreatedAt = SimfClock.Now,
-            // A badge exists only for an admitted attendee, and admission is
-            // read on the profile rather than the account.
+            // Admission is profile-owned: the QR resolver reads this, not the
+            // account's AccountState, so the default PendingApproval would make
+            // an otherwise-approved badge resolve as not-found.
             AdmissionState = AccountState.Approved,
+            CreatedAt = SimfClock.Now,
         });
         await appDb.SaveChangesAsync();
         return (user.Id, qrId);

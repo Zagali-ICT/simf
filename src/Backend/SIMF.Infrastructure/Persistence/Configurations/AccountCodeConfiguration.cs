@@ -1,3 +1,5 @@
+// Tests: SIMF.Api.Tests/AuthFlow.cs (the Code column holds a hash, recovered
+//        by brute force) and SIMF.Api.Tests/RetentionPurgeServiceTests.cs.
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.IdentityAccess;

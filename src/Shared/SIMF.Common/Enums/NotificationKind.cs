@@ -249,8 +249,8 @@ public enum NotificationKind
     /// <summary>A biometric device key was enrolled on the account. The cheapest
     /// detection control there is: enrolment binds a credential that survives a
     /// session revoke, so the owner has to be able to see one appear that they
-    /// did not ask for. An appended value, which the enum freeze allows because
-    /// it shadows no existing name or number.</summary>
+    /// did not ask for. An appended value with a fresh integer, which the enum
+    /// freeze permits because it shadows no existing name or number.</summary>
     [Display(Description = "DeviceKeyEnrolled", ResourceType = typeof(ResNotificationKind))]
     DeviceKeyEnrolled = 61,
 }
