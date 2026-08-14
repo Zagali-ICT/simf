@@ -9,7 +9,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 
 /// Text style for the value typed into a SIMF form field.
 const TextStyle simfInputStyle = TextStyle(
-  fontSize: 14,
+  fontSize: SimfTokens.textMd,
   fontWeight: FontWeight.w500,
   color: SimfTokens.inputInk,
 );
@@ -18,7 +18,7 @@ const TextStyle simfInputStyle = TextStyle(
 /// forgot / reset password screens, where [simfInputStyle]'s dark ink would be
 /// unreadable against the navy background.
 const TextStyle simfInputStyleOnNavy = TextStyle(
-  fontSize: 14,
+  fontSize: SimfTokens.textMd,
   fontWeight: FontWeight.w500,
   color: SimfTokens.surface,
 );
