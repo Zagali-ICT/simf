@@ -21,8 +21,8 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// Perf: one request, a short list (capped at five active keys server-side), so
 ///   a plain builder over an in-memory list with no pagination.
 /// Contract: revoking THIS device's key must also clear the local private half,
-///   which `AuthController.revokeDeviceKey` owns, or the app would still offer a
-///   Face-ID button backed by a dead credential.
+///   which `AuthController.revokeDeviceKey` owns, or the app would still
+///   offer a Face-ID button backed by a dead credential.
 class MyDevicesScreen extends ConsumerStatefulWidget {
   const MyDevicesScreen({super.key});
 
@@ -103,7 +103,9 @@ class _MyDevicesScreenState extends ConsumerState<MyDevicesScreen> {
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _busyId = device.id);
     try {
-      await ref.read(authControllerProvider.notifier).revokeDeviceKey(device.id);
+      await ref
+          .read(authControllerProvider.notifier)
+          .revokeDeviceKey(device.id);
       if (!mounted) {
         return;
       }

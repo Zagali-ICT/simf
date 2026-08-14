@@ -20,10 +20,14 @@ import '../accessibility/_fake_prefs.dart';
 /// A badge for profile-type code 1, edition 2026, under the fixture key,
 /// produced by the C# encoder. See offline_badge_test.dart.
 const String visitorBadge =
+    // A C# encoder token; wrapping breaks the character-for-character compare.
+    // ignore: lines_longer_than_80_chars
     '15F9NADHE9H94MTGBNK7WMMWB6Q3GTDED9NMBF161ZHXRFWS8KFRCYG8SWRCQ0NP1EJQ0SQXAS0NRA';
 
 /// Profile-type code 7 — a type the perimeter gate below does not admit.
 const String partnerBadge =
+    // A C# encoder token; wrapping breaks the character-for-character compare.
+    // ignore: lines_longer_than_80_chars
     '1CVTC4V9WG32MWFARN461D6MK7EZ7A0B7SW1S7QZW4EJCXYSYSFBCZ3M69YD16B3TP591QT4GPXPRG';
 
 void main() {

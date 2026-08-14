@@ -28,7 +28,7 @@ extension ApiFailureL10n on ApiFailure {
     // than a generic message that leaves them stuck.
     if (code == ApiErrorCodes.validationFailed && details.isNotEmpty) {
       final specifics = details
-          .map((detail) => detail.localized(l10n.isArabic).trim())
+          .map((detail) => detail.localized(isArabic: l10n.isArabic).trim())
           .where((text) => text.isNotEmpty)
           .toList();
       if (specifics.isNotEmpty) {

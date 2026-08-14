@@ -259,7 +259,8 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
           activeThumbColor: SimfTokens.accent,
           // Ignore taps while a toggle is in flight, so a double-tap can't
           // register (or revoke) two device keys and desync local/server state.
-          onChanged: _busy ? null : (turnOn) => unawaited(_toggle(l10n, turnOn)),
+          onChanged:
+              _busy ? null : (turnOn) => unawaited(_toggle(l10n, turnOn)),
         ),
         // S10 — the way into My Devices. Shown whenever biometrics are
         // available rather than only when this device is enrolled, because the
@@ -271,8 +272,10 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
             l10n.myDevicesManage,
             style: const TextStyle(color: SimfTokens.surface),
           ),
-          trailing: const Icon(Icons.chevron_right,
-              color: SimfTokens.beigeBorder),
+          trailing: const Icon(
+            Icons.chevron_right,
+            color: SimfTokens.beigeBorder,
+          ),
           onTap: () => unawaited(
             context.pushNamed(RouteNames.myDevices).then((_) {
               if (mounted) {
