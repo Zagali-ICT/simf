@@ -311,6 +311,10 @@ public sealed class Journey05BookingToArrivalTests : IClassFixture<SimfApiFactor
                 NameArabic = nameArabic,
                 NationalityId = 682,   // ISO 3166-1 numeric — SA
                 PlaceOfBirth = "Riyadh",
+                // The hall door reads admission off the PROFILE; left at its
+                // PendingApproval default the holder is refused before the seat
+                // confirmation this journey exists to prove.
+                AdmissionState = AccountState.Approved,
                 CreatedAt = SimfClock.Now,
             });
             await appDb.SaveChangesAsync();
