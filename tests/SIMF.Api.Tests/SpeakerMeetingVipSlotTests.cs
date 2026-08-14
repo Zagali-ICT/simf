@@ -29,11 +29,11 @@ namespace SIMF.Api.Tests;
 /// <c>UserProfile.AllowsSpeakerMeeting</c> flag. What these tests actually
 /// exercise is that flag.</para>
 ///
-/// <para><b>Known coverage gap.</b> <c>CreateVisitorAsync(bool vip)</c> sets the
-/// profile TYPE and the per-user flag from the same bool, so no test here can tell
-/// the two gates apart: they would all still pass if the tier gate were reinstated.
-/// Pinning D-760 needs two cases this class does not have — VIP tier with the flag
-/// false expecting 403, and Normal tier with the flag true expecting 200.</para>
+/// <para>The single-bool <c>CreateVisitorAsync(bool vip)</c> sets the profile TYPE
+/// and the per-user flag together, so a test using it cannot on its own tell the
+/// two gates apart — it would still pass if the tier gate were reinstated. The two
+/// tests named <c>*_pins_D760_*</c> use the two-argument overload to set them
+/// APART, one per direction, which is what actually pins the decoupling.</para>
 /// </summary>
 public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
 {
@@ -87,9 +87,9 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
     {
         // Requesting a speaker meeting needs the per-user AllowsSpeakerMeeting
         // flag (D-760, replacing the D-729 VIP-tier gate), even for a topic-only
-        // request (no slot): an ineligible requester is rejected up front. The
-        // helper below sets the flag and the tier together, so "vip: false" here
-        // means "flag false" — see the class remark on that conflation.
+        // request (no slot): an ineligible requester is rejected up front. This
+        // helper sets the flag and the tier together, so "vip: false" means both
+        // are false; the two _pins_D760_ tests below separate them.
         var speakerId = await SeedSpeakerWithWindowAsync();
         var (plain, _) = await CreateVisitorAsync(vip: false);
 
@@ -121,6 +121,75 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
             vip);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_vip_tier_without_the_per_user_flag_pins_D760_and_is_403()
+    {
+        // D-760, direction 1 — the VVIP/VIP tier does NOT grant a speaker meeting.
+        // This exact account WAS eligible under D-729, so the test fails if the
+        // tier gate is ever reinstated. Topic-only, to isolate the eligibility
+        // gate from the slot rules.
+        var speakerId = await SeedSpeakerWithWindowAsync();
+        var (token, userId) = await CreateVisitorAsync(
+            vipTier: true, allowsSpeakerMeeting: false);
+
+        Assert.True(
+            await ReadTierIsVipAsync(userId),
+            "the fixture must assign a genuine VIP tier, or this proves nothing");
+
+        var response = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speakerId}/meeting-requests",
+            new SubmitSpeakerMeetingRequestRequest
+            {
+                RequesterName = "VIP Guest",
+                Subject = "Topic-only meeting",
+            },
+            token);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_normal_tier_with_the_per_user_flag_pins_D760_and_is_ok()
+    {
+        // D-760, direction 2 — eligibility is admin-assigned per user, so a
+        // Normal-tier attendee carrying the flag may request a meeting. This
+        // account was refused under D-729.
+        var speakerId = await SeedSpeakerWithWindowAsync();
+        var (token, userId) = await CreateVisitorAsync(
+            vipTier: false, allowsSpeakerMeeting: true);
+
+        Assert.False(
+            await ReadTierIsVipAsync(userId),
+            "the fixture must assign a non-VIP tier, or this proves nothing");
+
+        var response = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speakerId}/meeting-requests",
+            new SubmitSpeakerMeetingRequestRequest
+            {
+                RequesterName = "Plain Visitor",
+                Subject = "Topic-only meeting",
+            },
+            token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    /// <summary><c>AllowsVipMeetingSlots</c> of the profile type assigned to
+    /// <paramref name="userId"/> — the same hop
+    /// <c>SeatReservationService.IsVipVisitorAsync</c> makes. The two D-760 tests
+    /// assert it so that a fixture which stopped setting the tier would fail loudly
+    /// instead of quietly turning them into duplicates of the tests above.</summary>
+    private async Task<bool> ReadTierIsVipAsync(Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await appDb.UserProfiles.AsNoTracking()
+            .Where(p => p.UserId == userId && p.ProfileTypeId != null)
+            .Join(appDb.ProfileTypes.AsNoTracking(),
+                p => p.ProfileTypeId, t => (Guid?)t.Id, (p, t) => t.AllowsVipMeetingSlots)
+            .FirstOrDefaultAsync();
     }
 
     [Fact]
@@ -377,9 +446,28 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
         return speaker.Id;
     }
 
-    private async Task<(string Token, Guid UserId)> CreateVisitorAsync(bool vip)
+    /// <summary>The common case: VIP tier AND the per-user speaker-meeting flag
+    /// move together. Every pre-D-760 test uses this, which is exactly why none of
+    /// them can tell the two gates apart — see the two-argument overload.</summary>
+    private Task<(string Token, Guid UserId)> CreateVisitorAsync(bool vip) =>
+        CreateVisitorAsync(vipTier: vip, allowsSpeakerMeeting: vip);
+
+    /// <summary>Create an approved visitor with the VIP TIER
+    /// (<c>ProfileType.AllowsVipMeetingSlots</c>) and the per-user
+    /// <c>UserProfile.AllowsSpeakerMeeting</c> flag set INDEPENDENTLY, which is
+    /// what D-760 decoupled.
+    ///
+    /// <para>The tier flag is written here rather than left to whatever the seeder
+    /// put on the row, so a test asserting "a genuine VIP tier is still refused"
+    /// cannot pass vacuously against a fixture that quietly stopped being VIP. The
+    /// value written always matches the tier the name implies (VIP row true, Normal
+    /// row false), so sharing these seeded rows across tests stays safe.</para>
+    /// </summary>
+    private async Task<(string Token, Guid UserId)> CreateVisitorAsync(
+        bool vipTier, bool allowsSpeakerMeeting)
     {
-        var email = $"smr-{(vip ? "vip" : "plain")}-{Guid.NewGuid():N}@simf.test";
+        var label = $"{(vipTier ? "vip" : "plain")}{(allowsSpeakerMeeting ? "-ok" : "")}";
+        var email = $"smr-{label}-{Guid.NewGuid():N}@simf.test";
         Guid userId;
         Guid profileTypeId;
         using (var scope = _factory.Services.CreateScope())
@@ -388,7 +476,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
             var user = new SimfUser
             {
                 UserName = email, Email = email, EmailConfirmed = true,
-                DisplayName = vip ? "VIP Guest" : "Plain Visitor",
+                DisplayName = vipTier ? "VIP Guest" : "Plain Visitor",
                 AccountState = AccountState.Approved,
                 UserType = UserType.Visitor,
             };
@@ -396,7 +484,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
             userId = user.Id;
 
             var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            var typeName = vip ? "VIP" : "Normal";
+            var typeName = vipTier ? "VIP" : "Normal";
             var type = await appDb.ProfileTypes.FirstOrDefaultAsync(p => p.Name == typeName);
             if (type is null)
             {
@@ -409,6 +497,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
                 };
                 appDb.ProfileTypes.Add(type);
             }
+            type.AllowsVipMeetingSlots = vipTier;
             profileTypeId = type.Id;
             appDb.UserProfiles.Add(new UserProfile
             {
@@ -416,7 +505,7 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
                 UserId = userId,
                 ProfileTypeId = profileTypeId,
                 // Bi-Meeting rework — eligibility is now the per-user flag, not the tier.
-                AllowsSpeakerMeeting = vip,
+                AllowsSpeakerMeeting = allowsSpeakerMeeting,
                 Name = user.DisplayName, NameArabic = user.DisplayName,
                 CreatedAt = SimfClock.Now,
             });
