@@ -2,8 +2,8 @@ using System.Runtime.CompilerServices;
 
 // Exposes SIMF.Web's internal surface to the test project so the bUnit page
 // tests and the site-content mapper tests can exercise the internal helpers
-// directly (SiteContentEndpoints, PublicEditions, CultureEndpoint,
-// AppRenderMode). InternalsVisibleTo is assembly-wide; it does NOT expose
+// directly (SiteContentEndpoints, PublicEditions, CultureEndpoint).
+// InternalsVisibleTo is assembly-wide; it does NOT expose
 // private members. Test-enablement only, no runtime behaviour change, and the
 // test assembly is non-packable so nothing ships.
 //
