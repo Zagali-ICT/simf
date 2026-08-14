@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_search_field.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/widgets/speaker_list_card.dart';
@@ -33,9 +34,22 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// text.
 ///
 /// Route: `RouteNames.speakers`.
-/// Data: [simfDataConfigProvider], [speakersRepositoryProvider].
+/// Data: [speakersListProvider] over [speakersRepositoryProvider], plus
+///       [simfDataConfigProvider] for the photo base URL.
 /// Perf: mixed — ListView.separated builds on demand; ListView builds every
 ///       child up front.
+/// The speaker directory (`GET /app/speakers`).
+///
+/// Only the LOAD moves here. Unlike the fully-converted screens, this one keeps
+/// its `ConsumerStatefulWidget`, because `_query` and `_alphaSorted` are real
+/// UI state that belongs to the widget and has no server behind it — the
+/// search box and the A→Z toggle. Converting the load alone is the whole point
+/// of the phase; sweeping local UI state into providers as well would be a
+/// different, worse change.
+final speakersListProvider = FutureProvider.autoDispose<List<SpeakerSummary>>(
+  (ref) => ref.watch(speakersRepositoryProvider).getSpeakers(),
+);
+
 class SpeakersScreen extends ConsumerStatefulWidget {
   const SpeakersScreen({super.key});
 
@@ -44,45 +58,13 @@ class SpeakersScreen extends ConsumerStatefulWidget {
 }
 
 class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
-  bool _loading = true;
-  bool _error = false;
-  List<SpeakerSummary> _speakers = const <SpeakerSummary>[];
   // Frame 908:1744 — client-side search + alphabetical sort over the loaded
   // list. Default preserves the API's curated order; the sort control toggles
   // an A→Z alphabetical sort.
   String _query = '';
   bool _alphaSorted = false;
 
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-    });
-    try {
-      final speakers = await ref.read(speakersRepositoryProvider).getSpeakers();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _speakers = speakers;
-        _loading = false;
-      });
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _error = true;
-        _loading = false;
-      });
-    }
-  }
+  Future<void> _refresh() => refreshAsync(ref, speakersListProvider.future);
 
   @override
   Widget build(BuildContext context) {
@@ -98,47 +80,47 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
   }
 
   Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: SimfTokens.accent),
-      );
-    }
-    if (_error) {
-      // Hosted in a scrollable so pull-to-refresh works in the error state
-      // (lets the user pull to retry).
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: <Widget>[
-            SimfErrorState(
-              message: l10n.speakersError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => unawaited(_load()),
+    return ref.watch(speakersListProvider).when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: SimfTokens.accent),
+          ),
+          // Both states are hosted in a scrollable so a pull still works and
+          // the user can retry by pulling.
+          error: (_, __) => SimfPullToRefresh(
+            onRefresh: _refresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: <Widget>[
+                SimfErrorState(
+                  message: l10n.speakersError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () => ref.invalidate(speakersListProvider),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
-    }
-    if (_speakers.isEmpty) {
-      // Hosted in a scrollable so pull-to-refresh works in the empty state.
-      return SimfPullToRefresh(
-        onRefresh: _load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: <Widget>[
-            SimfEmptyState(
-              icon: Icons.groups_outlined,
-              message: l10n.speakersEmpty,
-            ),
-          ],
-        ),
-      );
-    }
+          ),
+          data: (speakers) => speakers.isEmpty
+              ? SimfPullToRefresh(
+                  onRefresh: _refresh,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: <Widget>[
+                      SimfEmptyState(
+                        icon: Icons.groups_outlined,
+                        message: l10n.speakersEmpty,
+                      ),
+                    ],
+                  ),
+                )
+              : _buildDirectory(l10n, speakers),
+        );
+  }
+
+  Widget _buildDirectory(AppL10n l10n, List<SpeakerSummary> speakers) {
     final isArabic = l10n.isArabic;
     // The card builds `{base}/app/assets/SpeakerPhoto/{id}/image` for the avatar.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    final visible = _visibleSpeakers(isArabic);
+    final visible = _visibleSpeakers(speakers, isArabic);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -171,7 +153,7 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
         ),
         Expanded(
           child: SimfPullToRefresh(
-            onRefresh: _load,
+            onRefresh: _refresh,
             child: visible.isEmpty
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -216,8 +198,12 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
   }
 
   /// The loaded speakers after the search query + alphabetical sort (908:1744).
-  List<SpeakerSummary> _visibleSpeakers(bool isArabic) => visibleSpeakers(
-        _speakers,
+  List<SpeakerSummary> _visibleSpeakers(
+    List<SpeakerSummary> speakers,
+    bool isArabic,
+  ) =>
+      visibleSpeakers(
+        speakers,
         _query,
         isArabic: isArabic,
         alphaSorted: _alphaSorted,
