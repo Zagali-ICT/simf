@@ -136,12 +136,43 @@ nearly half phantom.
    `^\s*bool _loading` across `lib` — 11 of the plan's set were converted or
    deleted in earlier waves. Do not work from the number.
 
-   **5 of 24 converted.** `terms`, `news_article`, `my_contacts` (full — the
-   screen ends up a `ConsumerWidget`); `speakers`, `booths` (partial — the LOAD
-   moves, local UI state such as a search box or a sort toggle stays, so the
-   screen stays `ConsumerStatefulWidget`). Both shapes are proven; every one of
-   the five kept its existing tests passing **unchanged**, which is the signal
-   the state machine is faithful.
+   **9 of 24 converted**, all with their existing tests passing **unchanged** —
+   which is the signal that says the state machine is faithful, not merely
+   green. Four provider shapes emerged, and picking the right one is the whole
+   job:
+
+   | Shape | When | Examples |
+   |---|---|---|
+   | **Fold to null** | a server outcome genuinely means "nothing to show" | `terms` (404 + empty body), `news_article` / `speaker_profile` (404 = gone) |
+   | **No fold** | "empty" is already an empty list | `my_contacts`, `booths`, `sessions` |
+   | **Stay an error, branch in `error`** | the outcome is a failure with its own copy | `my_visitors` (403 = "not linked to a booth yet") |
+   | **Gate inside the provider** | the screen must not call the endpoint at all | `my_area` (Approved-only, L-5) |
+
+   Orthogonally, the screen either becomes a `ConsumerWidget` (`terms`,
+   `news_article`, `my_contacts`, `my_visitors`) or stays stateful because it
+   owns real UI state — a search box, a sort toggle, a tab index (`speakers`,
+   `booths`, `sessions`, `speaker_profile`, `my_area`).
+
+   **The remaining 15 are the intricate half, and here is what makes each hard**
+   — measured by reading them, so the next pass does not discover it mid-edit:
+
+   * `notifications` — `_onTapItem` flips ONE item read locally, deliberately
+     avoiding a reload. A provider cannot be mutated, so preserving that needs
+     a local `Set<String>` overlay merged at render; invalidating instead would
+     add a network round-trip per tap. Also has a mark-all-read side effect on
+     inbox open (`ref.listen` on the provider).
+   * `venue_map` — two parallel reads combined into derived maps
+     (`_positions`, `_boothById`), plus `_focusTargetBooth()` moving a
+     `TransformationController` when data arrives. Same `ref.listen` shape.
+   * `session_summary` — the selected session id can CHANGE (a picker), so the
+     family key is state; `_selectedId == null` must not call at all.
+   * `session_detail` — the plan's flagged screen: the
+     `SimfRefreshableMessage` swap **moves the render**, so its goldens are
+     re-locked in the same changeset with the diff inspected.
+   * `gate_scan`, `live_broadcast`, `session_moderate` — camera / video /
+     moderation-queue side effects around the load.
+   * `badge` — four pull-to-refresh tests assert per-branch behaviour, and
+     `test/repo/pull_to_refresh_coverage_test.dart` keys on widget names.
 
    **`terms_screen` is the template** (commit `0a6bf182`). What made it work,
    in order:
