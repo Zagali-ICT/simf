@@ -108,7 +108,11 @@ class HomeScreen extends ConsumerWidget {
         ..invalidate(newsListProvider)
         ..invalidate(homeProfileProvider)
         ..invalidate(bannersProvider)
-        ..invalidate(currentUserMeetingAccessProvider)
+        // The meeting-access provider is a SELECTOR over the cached profile
+        // read, so invalidating it alone would recompute off the same stale
+        // row and the gesture would quietly stop re-fetching. Invalidate the
+        // source instead.
+        ..invalidate(myProfileProvider)
         ..invalidate(siteSettingsProvider);
       try {
         await Future.wait<void>(<Future<void>>[

@@ -112,6 +112,9 @@ class _MyMobileScreenState extends ConsumerState<MyMobileScreen> {
       await ref.read(profileRepositoryProvider).upsertMyProfile(
             profile.toUpsertRequest(mobile: normalizePhone(_mobile.text)),
           );
+      // The shared profile read is cached (not autoDispose), so a save that
+      // does not invalidate it leaves every selector on the pre-save row.
+      ref.invalidate(myProfileProvider);
       if (!mounted) {
         return;
       }

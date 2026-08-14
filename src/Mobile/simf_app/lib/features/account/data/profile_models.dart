@@ -276,9 +276,12 @@ class UserProfileResponse {
   final String? qrId;
 
   /// D-729 (owner item 15) — true when the account's tier is VVIP/VIP
-  /// (server-computed from ProfileType.AllowsVipMeetingSlots). Gates the
-  /// "request a speaker meeting" CTA to VIP guests. Append-only wire field
-  /// (defaults false when an older server omits it).
+  /// (server-computed from ProfileType.IsVipTier). It used to gate
+  /// the "request a speaker meeting" CTA; the Bi-Meeting rework (D-760) moved
+  /// that to [allowsSpeakerMeeting], so **no screen reads this today**. Kept
+  /// because the server still sends it and it stays part of the frozen wire
+  /// contract (D-219). Append-only wire field (defaults false when an older
+  /// server omits it).
   final bool isVip;
 
   /// Bi-Meeting rework — the admin-assigned per-user flag that lets this

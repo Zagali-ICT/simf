@@ -26,9 +26,11 @@ class RequestActionRow extends StatelessWidget {
   final VoidCallback onNew;
   final ValueChanged<AppRequestStatus?> onSelect;
 
-  /// D-729 — the "طلب جديد" new-meeting-request button is VIP-only (the request
-  /// endpoint rejects non-VIP callers), so it is hidden for non-VIP viewers;
-  /// the "السجل" log/filter button always shows.
+  /// The "طلب جديد" new-meeting-request button needs the per-user
+  /// allowsSpeakerMeeting eligibility (D-760, which replaced the D-729
+  /// VIP-tier gate — the endpoint 403s an ineligible caller), so it is
+  /// hidden for viewers without it; the "السجل" log/filter button always
+  /// shows.
   final bool showNew;
 
   @override

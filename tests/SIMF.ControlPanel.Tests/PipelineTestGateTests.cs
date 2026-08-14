@@ -251,13 +251,15 @@ public class PipelineTestGateTests
     /// <summary>
     /// The pipeline may name ONLY the two Azure DevOps Environments that exist.
     ///
-    /// <para>Azure DevOps CREATES an environment the first time a deployment job
-    /// names one, so a name matching no real machine does not fail the run - it
-    /// silently registers another environment with no resources behind it. The
-    /// pipeline named four (`SIMF-Prod-Api`, `-Cp`, `-Web`, `-Edge`) on an
-    /// earlier reading of the estate as one server per package, and the portal
-    /// duly listed four environments nobody had registered. The estate is two
-    /// servers (D-886), so two environments is the whole truth.</para>
+    /// <para>A name matching no registered environment fails in one of two
+    /// ways, neither of them at the point the mistake is made. Edited in the
+    /// Azure Pipelines WEB EDITOR, Azure DevOps knows who is making the change
+    /// and silently CREATES the environment - which is how `SIMF-Prod-Api`,
+    /// `-Cp`, `-Web` and `-Edge` came to sit in the portal with nothing behind
+    /// them. Edited anywhere else and pushed, as this repository is, the
+    /// deploy run FAILS with "Environment X could not be found". So the cost is
+    /// either an invisible mess in the portal or a broken deploy. The estate is
+    /// two servers (D-886), so two environments is the whole truth.</para>
     ///
     /// <para>This is the same shape of guard as the anonymous-endpoint
     /// allow-list: the wrong count is invisible in a green run and shows up in
@@ -267,7 +269,11 @@ public class PipelineTestGateTests
     [Fact]
     public void The_pipeline_deploys_only_to_the_two_real_environments()
     {
-        string[] expected = ["Pre-production", "Production"];
+        // The names as REGISTERED in the portal, not as they read. `SIMF-Prod`
+        // is the PRE-PRODUCTION server; `SIM-RNSF` is production (SIMF APP 01).
+        // Confirmed with the owner after a deploy failed against invented names
+        // (D-891). Do not "correct" either one.
+        string[] expected = ["SIMF-Prod", "SIM-RNSF"];
 
         var lines = Pipeline().Split('\n');
         var named = new List<string>();
@@ -325,10 +331,12 @@ public class PipelineTestGateTests
             unexpected.Length == 0,
             "azure-pipelines.yml names an Azure DevOps Environment that is not one of the "
             + "two SIMF has: " + string.Join(", ", unexpected)
-            + ". Azure DevOps CREATES an environment on first reference, so this does not "
-            + "fail the run - it adds an empty environment to the portal. The estate is two "
-            + "servers (D-886): Pre-production and Production. Fix the name, or register the "
-            + "new environment and add it here with the machine it binds to.");
+            + ". The estate is two servers (D-886): Pre-production and Production. An "
+            + "unregistered name does not fail at build time on its own - edited in the "
+            + "Azure Pipelines web editor it is created silently and clutters the portal; "
+            + "edited locally and pushed it fails the DEPLOY with 'Environment could not be "
+            + "found'. Fix the name, or create the environment in the portal, register its "
+            + "server as a VM resource, and add it here.");
 
         var missing = expected.Except(distinct, StringComparer.Ordinal).ToArray();
 

@@ -38,7 +38,7 @@ public sealed record SessionSeatMap(
     // caller may not book. An older app ignores the key and renders as before.
     IReadOnlyList<SeatTier>? SeatTiers = null,
     // Appended: whether the CALLER is a VIP-tier visitor (their
-    // ProfileType.AllowsVipMeetingSlots — the same flag the app reads as isVip).
+    // ProfileType.IsVipTier — the same flag the app reads as isVip).
     // The app uses it to grey out VIP rows for a non-VIP visitor; the server
     // re-checks it on every reserve, so this is a UX hint, never the gate.
     bool CallerIsVip = false);

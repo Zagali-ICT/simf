@@ -116,10 +116,10 @@ class RouteNames {
   // (D-745).
   static const String requests = 'requests';
 
-  // D-745 (owner 2026-07-11) — the VIP bilateral-meetings page (اللقاءات
-  // الثنائية, Figma 1408:9726), split from the requests-history feed above.
-  // Reached from the Home VIP-only tile; the full history stays on [requests]
-  // in My-Area.
+  // D-745 (owner 2026-07-11) — the bilateral-meetings page (اللقاءات الثنائية,
+  // Figma 1408:9726), split from the requests-history feed above. Reached from
+  // the Home tile, shown only to accounts carrying per-user meeting eligibility
+  // (D-760); the full history stays on [requests] in My-Area.
   static const String meetings = 'meetings';
 
   // Bi-Meeting rework — the other-party confirm screen, reached by tapping a
@@ -131,7 +131,7 @@ class RouteNames {
 
   // (B18: bilateralMeetings + savedMeetings removed with routes 204 / 206 —
   //  ComingSoon sentinels with no screen and no caller left. The Home
-  //  "اللقاءات الثنائية" tile opens the real VIP [meetings] page (D-745); the
+  //  "اللقاءات الثنائية" tile opens the real [meetings] page (D-745); the
   //  My-Area saved-meetings stat went with the D-609 screen deletion, which had
   //  already removed savedSessions the same way.)
 

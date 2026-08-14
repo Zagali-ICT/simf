@@ -810,15 +810,26 @@ stages:
 # servers: `Pre-production` and `Production` (D-886). Each server hosts all four
 # SIMF sites, so each job deploys all four packages to its own machine.
 #
-# WHY THIS IS PINNED BY A TEST. Azure DevOps CREATES an environment on first
-# reference: a name that matches no real machine does not fail the run, it
-# quietly registers another environment with no resources behind it. This file
-# previously named four - `SIMF-Prod-Api`, `-Cp`, `-Web`, `-Edge` - on the
-# earlier one-server-per-package reading of the estate, and the portal duly
-# listed four environments nobody had registered. A wrong name here is therefore
-# invisible in the run and visible only in the portal weeks later, which is why
+# WHY THIS IS PINNED BY A TEST. A name here that matches no registered
+# environment fails in ONE of two ways, and which one depends on how the YAML
+# was edited (Azure Pipelines, Environments FAQ):
+#
+#   * edited in the Azure Pipelines WEB EDITOR - Azure DevOps knows who is
+#     making the change, so it CREATES the environment silently. This is how
+#     `SIMF-Prod-Api`, `-Cp`, `-Web` and `-Edge` came to sit in the portal with
+#     nothing behind them, under the earlier one-server-per-package reading of
+#     the estate. Nobody registered them; a run did.
+#   * edited in ANY OTHER editor and pushed - which is how this repository is
+#     worked on - Azure DevOps has no user to attribute the creation to, so the
+#     run FAILS with "Environment X could not be found."
+#
+# So a wrong name is either an invisible mess in the portal or a failed deploy
+# run, and never a build failure at the point the mistake is made. That is why
 # `PipelineTestGateTests.The_pipeline_deploys_only_to_the_two_real_environments`
-# fails the build on a fifth rather than leaving it to be noticed.
+# fails the build on a name outside the reviewed set.
+#
+# THE TWO ENVIRONMENTS MUST BE CREATED BY HAND, with their servers registered as
+# VM resources. See deploy/README.md; this file cannot do it.
 #
 # THE TWO JOBS RUN IN PARALLEL. There is deliberately no `dependsOn` between
 # them: pre-production and production deploy at the same time, off the same
@@ -832,24 +843,40 @@ stages:
 # at all - a skipped job still writes to the environment's history and would
 # read as a deployment that happened.
 #
-# EACH JOB NAMES `resourceType`, NOT THE ENVIRONMENT ALONE. A bare
-# `environment: Production` is also legal - as "an abstract shell to record
-# deployment history" - and then the steps run on the POOL agent declared at the
-# top of this file. That would have iis-deploy.ps1 stop, mirror and restart IIS
-# sites ON THE BUILD BOX and report success, which is the exact shape of failure
-# this pipeline pins tests against: a provisioning problem wearing a green tick.
-# Naming the resource type removes the ambiguity - "Any steps that you define in
-# a deployment job with a virtual machine resource runs against that virtual
-# machine and not against the agent in the pool" (Azure Pipelines, Deployment
-# jobs). Each environment holds ONE server, so the type alone selects it and no
-# resource name has to be repeated here.
+# ################## THE NAMES LIE. READ THIS BEFORE EDITING. ##################
 #
-# If a run reports NO MATCHING RESOURCES, that server is not registered as a VM
-# resource in its environment. Register it - do NOT drop back to the bare form,
-# which converts a loud failure into a deploy onto the wrong machine. Azure's
-# own documentation disagrees with itself on the casing of this value while
-# warning that it is case-sensitive, so `VirtualMachine` is the first thing to
-# try if the resource IS registered and still does not match.
+#   `SIMF-Prod`  is the PRE-PRODUCTION server.
+#   `SIM-RNSF`   is PRODUCTION (SIMF APP 01).
+#
+# That is not a typo and not a mistake in this file - those are the environment
+# names as registered in the portal, and the one that reads like production is
+# not. Anyone "correcting" this mapping on sight will deploy straight to
+# production while believing they are rehearsing. The job names and displayNames
+# below say which is which; trust those, not the environment string.
+# #############################################################################
+#
+# Both environments have their server registered as a VM resource, and each job
+# names `resourceType: virtualMachine` so the steps run ON that machine: "Any
+# steps that you define in a deployment job with a virtual machine resource runs
+# against that virtual machine and not against the agent in the pool" (Azure
+# Pipelines, Deployment jobs). Each environment holds one server, so the type
+# alone selects it and no resource name is repeated here.
+#
+# WHAT THIS BUYS, and why it is worth the strictness: with the BARE form, a VM
+# resource that is ever removed or unregistered does not fail - the environment
+# silently degrades to a history-recording shell and the steps fall back to the
+# `Default` pool agent, which has an agent on BOTH servers. The deploy would
+# then land on an arbitrary machine and report success. `resourceType` turns
+# that silent mis-deploy into an immediate failure.
+#
+# ORDER MATTERS, AND GETTING IT WRONG CAUSED AN OUTAGE (D-891). This line was
+# added once BEFORE the VM resources existed, and every deploy failed with
+# "Environment could not be found" until it was reverted. If a run reports NO
+# MATCHING RESOURCES, the server is not registered - register it, do NOT drop
+# back to the bare form, which trades a loud failure for a wrong-machine deploy.
+# Azure's docs warn this value is case-sensitive while their own examples
+# disagree on it, so `VirtualMachine` is the first thing to try if the resource
+# IS registered and still does not match.
 - ${{ if or(eq(parameters.deployPreProduction, true), eq(parameters.deployProduction, true)) }}:
   - stage: Deploy
     displayName: 'Deploy to IIS'
@@ -858,9 +885,10 @@ stages:
     jobs:
     - ${{ if eq(parameters.deployPreProduction, true) }}:
       - deployment: DeployPreProduction
-        displayName: 'Pre-production server'
+        displayName: 'Pre-production server (SIMF-Prod)'
+        # NOT a typo, and NOT production. See the naming warning above.
         environment:
-          name: 'Pre-production'
+          name: 'SIMF-Prod'
           resourceType: virtualMachine
         strategy:
           runOnce:
@@ -870,9 +898,10 @@ stages:
 
     - ${{ if eq(parameters.deployProduction, true) }}:
       - deployment: DeployProduction
-        displayName: 'Production server (SIMF APP 01)'
+        displayName: 'Production server (SIMF APP 01 / SIM-RNSF)'
+        # THIS is production. See the naming warning above.
         environment:
-          name: 'Production'
+          name: 'SIM-RNSF'
           resourceType: virtualMachine
         strategy:
           runOnce:

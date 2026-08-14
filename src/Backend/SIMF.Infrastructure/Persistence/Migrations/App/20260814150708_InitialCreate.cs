@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -439,7 +439,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     IsForVisitor = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     PageColor = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
                     MobileAppRole = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, defaultValue: "None"),
-                    AllowsVipMeetingSlots = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    IsVipTier = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     IsAppRegisterable = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     ShowInPartnerDirectory = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     Code = table.Column<short>(type: "smallint", nullable: false, defaultValue: (short)0),

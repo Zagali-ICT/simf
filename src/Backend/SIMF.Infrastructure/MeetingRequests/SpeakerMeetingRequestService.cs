@@ -954,7 +954,7 @@ internal sealed class SpeakerMeetingRequestService(
 
     // Bi-Meeting rework — eligibility gate: the requester's per-user
     // UserProfile.AllowsSpeakerMeeting flag (admin-assigned), replacing the former
-    // VIP-tier test (ProfileType.AllowsVipMeetingSlots) so eligibility to request a
+    // VIP-tier test (ProfileType.IsVipTier) so eligibility to request a
     // speaker meeting is decoupled from the audience tier.
     private async Task<bool> AllowsSpeakerMeetingAsync(Guid userId, CancellationToken cancellationToken)
     {

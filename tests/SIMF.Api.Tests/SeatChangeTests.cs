@@ -325,7 +325,7 @@ public sealed class SeatChangeTests : IClassFixture<SimfApiFactory>
     }
 
     /// <summary>An approved visitor with a profile type. The VIP tier reuses the
-    /// existing notion (<c>AllowsVipMeetingSlots</c>), same as the D-771 tests.</summary>
+    /// existing notion (<c>IsVipTier</c>), same as the D-771 tests.</summary>
     private async Task<(string Token, Guid UserId)> SignInVisitorAsync(bool vip)
     {
         var email = $"move-visitor-{Guid.NewGuid():N}@simf.test";
@@ -380,7 +380,7 @@ public sealed class SeatChangeTests : IClassFixture<SimfApiFactory>
             PageColor = "#000000",
             IsForVisitor = true,
             MobileAppRole = MobileAppRole.None,
-            AllowsVipMeetingSlots = allowsVip,
+            IsVipTier = allowsVip,
             IsActive = true,
             CreatedAt = SimfClock.Now,
         };

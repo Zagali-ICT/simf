@@ -199,7 +199,7 @@ public class UserProfile : BaseAuditEntity
 
     /// <summary>Admin-assigned eligibility to request a <b>speaker meeting</b>.
     /// It replaced the VIP-tier test
-    /// (<see cref="UserProfileType.AllowsVipMeetingSlots"/>) as the requester
+    /// (<see cref="UserProfileType.IsVipTier"/>) as the requester
     /// gate, so eligibility no longer follows the tier; the speaker must still
     /// opt in through <c>Speaker.AllowsMeetingRequests</c>.</summary>
     public bool AllowsSpeakerMeeting { get; set; }

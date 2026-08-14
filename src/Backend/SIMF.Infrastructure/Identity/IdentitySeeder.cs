@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
+// Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
 //        idempotency, baseline lookups + core content,
 //        2FA-disable-persists-across-reseed, demo-account matrix,
 //        demo-image repair when the bytes or the row have gone);
@@ -296,15 +296,21 @@ public sealed class IdentitySeeder(
             "VIP", "كبار الشخصيات", "#0E7490", // deep teal
             isVisitor: true, MobileAppRole.None, cancellationToken);
 
-        // The VVIP + VIP audience tiers may book VIP
-        // speaker-meeting slots. AllowsVipMeetingSlots defaults false for every
-        // other type; flip these two after seeding (idempotent — runs each boot).
-        // This is the source of truth the meeting-request service now reads,
-        // replacing its former "profile-type Name contains 'VIP'" substring test.
+        // Mark the VVIP + VIP audience tiers as the VIP tier. Despite its name
+        // the flag no longer has anything to do with meetings: it decides who may
+        // self-reserve a VIP-tier SEAT (SeatReservationService.IsVipVisitorAsync)
+        // and it is what the app receives as UserProfileResponse.IsVip. Speaker
+        // meetings moved to the per-user UserProfile.AllowsSpeakerMeeting flag.
+        // It defaults false for every other type; flip these two after seeding
+        // (idempotent — runs each boot). This flag, rather than the former
+        // "profile-type Name contains 'VIP'" substring test, is the source of
+        // truth, so a future type whose name merely embeds those letters is not
+        // wrongly treated as VIP. It is seeder-owned: no admin API or Control
+        // Panel path writes it.
         await appDbContext.ProfileTypes
             .Where(profileType => profileType.Name == "VVIP" || profileType.Name == "VIP")
             .ExecuteUpdateAsync(
-                setters => setters.SetProperty(profileType => profileType.AllowsVipMeetingSlots, true),
+                setters => setters.SetProperty(profileType => profileType.IsVipTier, true),
                 cancellationToken);
 
         // Seed one demo user account per user type / profile type
