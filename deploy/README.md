@@ -238,14 +238,22 @@ These are **placeholders** — set them to the real SIMF server values:
    `Production`; each must have its server registered as a VM resource so the
    deployment job runs on that machine.
 
-   **Azure DevOps creates an environment on first reference.** A name here that
-   matches no registered environment does not fail the run — it quietly adds an
-   empty one to the portal. That is how the portal came to list four
-   `SIMF-Prod-Api` / `-Cp` / `-Web` / `-Edge` entries nobody had created, under
-   the earlier one-server-per-package reading of the estate. **Delete those four
-   in Pipelines → Environments**; they hold no resources and no history worth
-   keeping. `PipelineTestGateTests.The_pipeline_deploys_only_to_the_two_real_environments`
-   now fails the build if a third name appears.
+   **You must create both by hand — the pipeline cannot.** Azure DevOps
+   auto-creates an environment named by a pipeline **only when the YAML was
+   edited in the Azure Pipelines web editor**, because only then does it know
+   which user to attribute the new environment to. This repository is edited
+   locally and pushed, so a missing environment instead fails the run with
+   *"Environment X could not be found. The environment does not exist or has not
+   been authorized for use."*
+
+   That asymmetry explains the four stray `SIMF-Prod-Api` / `-Cp` / `-Web` /
+   `-Edge` entries in the portal: they were created by a web-editor save, not by
+   anyone deliberately registering them. **Delete those four in Pipelines →
+   Environments** — they hold no resources and no history worth keeping.
+
+   `PipelineTestGateTests.The_pipeline_deploys_only_to_the_two_real_environments`
+   fails the build if a name outside the reviewed set appears, so the mistake
+   surfaces at build time rather than as either a portal mess or a failed deploy.
 
    **The names must match the portal exactly**, including case and the hyphen in
    `Pre-production`. If the registered names differ, change the two
@@ -253,9 +261,25 @@ These are **placeholders** — set them to the real SIMF server values:
    that test together — the test pins the YAML to a reviewed list, and it cannot
    see the portal.
 
-3. **Each server registered as a VM resource** inside its environment. Both jobs
-   declare `resourceType: virtualMachine`, so the steps run **on that machine**
-   rather than on the build agent:
+3. **Create the environments, then register each server as a VM resource** inside
+   its own environment. Both jobs declare `resourceType: virtualMachine`, so the
+   steps run **on that machine** rather than on the build agent:
+
+   ```
+   Pipelines → Environments → Create environment
+      Name: Pre-production   → Resource: Virtual machines → Next
+      Name: Production       → Resource: Virtual machines → Next
+   ```
+
+   Copy the registration script each one shows and run it **as Administrator on
+   that server**. The script embeds a PAT that expires three hours after it is
+   generated; if it lapses, reopen the environment and select **Add resource**
+   for a fresh one. Then confirm the machine appears on the environment's
+   **Resources** tab.
+
+   If the environment exists but the run still cannot find it, it is the second
+   half of the error message: **Security → Pipeline permissions** on that
+   environment, and authorize this pipeline.
 
    ```yaml
    environment:

@@ -804,15 +804,26 @@ stages:
 # servers: `Pre-production` and `Production` (D-886). Each server hosts all four
 # SIMF sites, so each job deploys all four packages to its own machine.
 #
-# WHY THIS IS PINNED BY A TEST. Azure DevOps CREATES an environment on first
-# reference: a name that matches no real machine does not fail the run, it
-# quietly registers another environment with no resources behind it. This file
-# previously named four - `SIMF-Prod-Api`, `-Cp`, `-Web`, `-Edge` - on the
-# earlier one-server-per-package reading of the estate, and the portal duly
-# listed four environments nobody had registered. A wrong name here is therefore
-# invisible in the run and visible only in the portal weeks later, which is why
+# WHY THIS IS PINNED BY A TEST. A name here that matches no registered
+# environment fails in ONE of two ways, and which one depends on how the YAML
+# was edited (Azure Pipelines, Environments FAQ):
+#
+#   * edited in the Azure Pipelines WEB EDITOR - Azure DevOps knows who is
+#     making the change, so it CREATES the environment silently. This is how
+#     `SIMF-Prod-Api`, `-Cp`, `-Web` and `-Edge` came to sit in the portal with
+#     nothing behind them, under the earlier one-server-per-package reading of
+#     the estate. Nobody registered them; a run did.
+#   * edited in ANY OTHER editor and pushed - which is how this repository is
+#     worked on - Azure DevOps has no user to attribute the creation to, so the
+#     run FAILS with "Environment X could not be found."
+#
+# So a wrong name is either an invisible mess in the portal or a failed deploy
+# run, and never a build failure at the point the mistake is made. That is why
 # `PipelineTestGateTests.The_pipeline_deploys_only_to_the_two_real_environments`
-# fails the build on a fifth rather than leaving it to be noticed.
+# fails the build on a name outside the reviewed set.
+#
+# THE TWO ENVIRONMENTS MUST BE CREATED BY HAND, with their servers registered as
+# VM resources. See deploy/README.md; this file cannot do it.
 #
 # THE TWO JOBS RUN IN PARALLEL. There is deliberately no `dependsOn` between
 # them: pre-production and production deploy at the same time, off the same
