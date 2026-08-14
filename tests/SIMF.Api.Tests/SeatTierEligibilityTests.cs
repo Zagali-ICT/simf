@@ -289,7 +289,7 @@ public sealed class SeatTierEligibilityTests : IClassFixture<SimfApiFactory>
     }
 
     /// <summary>Signs in an approved visitor and gives them a profile type. The
-    /// VIP tier reuses the EXISTING notion — <c>AllowsVipMeetingSlots</c>, the flag
+    /// VIP tier reuses the EXISTING notion — <c>IsVipTier</c>, the flag
     /// the seeder sets on the VVIP + VIP rows — rather than a parallel one.</summary>
     private async Task<(string Token, Guid UserId)> SignInVisitorAsync(bool vip)
     {
@@ -383,7 +383,7 @@ public sealed class SeatTierEligibilityTests : IClassFixture<SimfApiFactory>
             PageColor = "#000000",
             IsForVisitor = isForVisitor,
             MobileAppRole = mobileAppRole,
-            AllowsVipMeetingSlots = allowsVip,
+            IsVipTier = allowsVip,
             IsActive = true,
             CreatedAt = SimfClock.Now,
         };

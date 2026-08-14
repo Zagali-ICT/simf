@@ -178,7 +178,7 @@ public sealed class SpeakerMeetingEligibilityAndSlotTests : IClassFixture<SimfAp
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    /// <summary><c>AllowsVipMeetingSlots</c> of the profile type assigned to
+    /// <summary><c>IsVipTier</c> of the profile type assigned to
     /// <paramref name="userId"/> — the same hop
     /// <c>SeatReservationService.IsVipVisitorAsync</c> makes. The two D-760 tests
     /// assert it so that a fixture which stopped setting the tier would fail loudly
@@ -190,7 +190,7 @@ public sealed class SpeakerMeetingEligibilityAndSlotTests : IClassFixture<SimfAp
         return await appDb.UserProfiles.AsNoTracking()
             .Where(p => p.UserId == userId && p.ProfileTypeId != null)
             .Join(appDb.ProfileTypes.AsNoTracking(),
-                p => p.ProfileTypeId, t => (Guid?)t.Id, (p, t) => t.AllowsVipMeetingSlots)
+                p => p.ProfileTypeId, t => (Guid?)t.Id, (p, t) => t.IsVipTier)
             .FirstOrDefaultAsync();
     }
 
@@ -198,7 +198,7 @@ public sealed class SpeakerMeetingEligibilityAndSlotTests : IClassFixture<SimfAp
     public async Task The_user_profile_read_reports_IsVip_from_the_tier()
     {
         // D-729 (owner item 15) — UserProfileResponse.IsVip mirrors the assigned
-        // tier's AllowsVipMeetingSlots. It no longer gates the speaker CTA: D-760
+        // tier's IsVipTier. It no longer gates the speaker CTA: D-760
         // moved that to the per-user AllowsSpeakerMeeting. The field is still
         // served, and the tier itself still decides VIP-tier seat self-reservation
         // (SeatReservationService.IsVipVisitorAsync), so this stays covered.
@@ -456,7 +456,7 @@ public sealed class SpeakerMeetingEligibilityAndSlotTests : IClassFixture<SimfAp
             vipTier: vipAndEligible, allowsSpeakerMeeting: vipAndEligible);
 
     /// <summary>Create an approved visitor with the VIP TIER
-    /// (<c>ProfileType.AllowsVipMeetingSlots</c>) and the per-user
+    /// (<c>ProfileType.IsVipTier</c>) and the per-user
     /// <c>UserProfile.AllowsSpeakerMeeting</c> flag set INDEPENDENTLY, which is
     /// what D-760 decoupled.
     ///
@@ -500,7 +500,7 @@ public sealed class SpeakerMeetingEligibilityAndSlotTests : IClassFixture<SimfAp
                 };
                 appDb.ProfileTypes.Add(type);
             }
-            type.AllowsVipMeetingSlots = vipTier;
+            type.IsVipTier = vipTier;
             profileTypeId = type.Id;
             appDb.UserProfiles.Add(new UserProfile
             {

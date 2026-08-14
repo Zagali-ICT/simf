@@ -47,7 +47,7 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
 
         // VIP meeting-slot eligibility (replaces the Name
         // substring hack). Default false; the seeder flips VVIP/VIP to true.
-        builder.Property(profileType => profileType.AllowsVipMeetingSlots)
+        builder.Property(profileType => profileType.IsVipTier)
             .HasDefaultValue(false)
             .IsRequired();
 

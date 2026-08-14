@@ -88,7 +88,7 @@ public sealed class UserProfileResponse
 
     /// <summary>True when the account's assigned
     /// <c>ProfileType</c> is a VIP tier
-    /// (<c>AllowsVipMeetingSlots</c>, i.e. VVIP / VIP). It used to show the
+    /// (<c>IsVipTier</c>, i.e. VVIP / VIP). It used to show the
     /// "request a speaker meeting" affordance; that gate is now
     /// <see cref="AllowsSpeakerMeeting"/> below, so do NOT read this one for
     /// meetings. What the tier still decides server-side is VIP-tier seat

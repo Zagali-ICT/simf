@@ -235,7 +235,7 @@ class UserProfileResponse {
   final String? qrId;
 
   /// D-729 (owner item 15) — true when the account's tier is VVIP/VIP
-  /// (server-computed from ProfileType.AllowsVipMeetingSlots). It used to gate
+  /// (server-computed from ProfileType.IsVipTier). It used to gate
   /// the "request a speaker meeting" CTA; the Bi-Meeting rework (D-760) moved
   /// that to [allowsSpeakerMeeting], so **no screen reads this today**. Kept
   /// because the server still sends it and it stays part of the frozen wire

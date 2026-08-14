@@ -1,4 +1,4 @@
-﻿using SIMF.Common.Enums;
+using SIMF.Common.Enums;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Profiles;
 
@@ -141,7 +141,7 @@ public sealed record ProfileTypeFacts(
     bool IsActive, UserType UserType, bool IsForVisitor, string Name,
     // The VIP-tier flag (VVIP/VIP), so the app profile
     // read can report IsVip for the speaker-meeting CTA gate.
-    bool AllowsVipMeetingSlots,
+    bool IsVipTier,
     // The self-registration picker visibility flag, so the
     // self-service write path (UpsertMineAsync) can reject a self-picked CP-only
     // (IsAppRegisterable=false) operational type, mirroring the server-side filter

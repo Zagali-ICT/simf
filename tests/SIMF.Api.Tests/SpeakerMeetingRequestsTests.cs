@@ -926,14 +926,14 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
             ?? throw new InvalidOperationException($"User {email} was not found.");
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var vipType = await appDb.ProfileTypes
-            .FirstOrDefaultAsync(p => p.AllowsVipMeetingSlots && p.IsForVisitor);
+            .FirstOrDefaultAsync(p => p.IsVipTier && p.IsForVisitor);
         if (vipType is null)
         {
             vipType = new UserProfileType
             {
                 Id = Guid.NewGuid(),
                 Name = "VIP", NameArabic = "VIP", PageColor = "#FFD700",
-                IsForVisitor = true, AllowsVipMeetingSlots = true, IsActive = true,
+                IsForVisitor = true, IsVipTier = true, IsActive = true,
                 CreatedAt = SimfClock.Now,
             };
             appDb.ProfileTypes.Add(vipType);

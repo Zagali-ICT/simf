@@ -9,7 +9,7 @@ namespace SIMF.Common.Enums;
 /// <item><see cref="Normal"/> — the general audience row. Any approved visitor
 /// may self-reserve a seat in it.</item>
 /// <item><see cref="Vip"/> — reserved for the VIP audience tiers. Only a visitor
-/// whose <c>ProfileType.AllowsVipMeetingSlots</c> is set (the seeded VVIP + VIP
+/// whose <c>ProfileType.IsVipTier</c> is set (the seeded VVIP + VIP
 /// rows — the same flag the app already surfaces as <c>isVip</c>) may
 /// self-reserve; everyone else is rejected with
 /// <c>SEAT_TIER_NOT_ELIGIBLE</c>.</item>

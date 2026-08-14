@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
+// Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
 //        idempotency, baseline lookups + core content,
 //        2FA-disable-persists-across-reseed, demo-account matrix,
 //        demo-image repair when the bytes or the row have gone);
@@ -310,7 +310,7 @@ public sealed class IdentitySeeder(
         await appDbContext.ProfileTypes
             .Where(profileType => profileType.Name == "VVIP" || profileType.Name == "VIP")
             .ExecuteUpdateAsync(
-                setters => setters.SetProperty(profileType => profileType.AllowsVipMeetingSlots, true),
+                setters => setters.SetProperty(profileType => profileType.IsVipTier, true),
                 cancellationToken);
 
         // Seed one demo user account per user type / profile type

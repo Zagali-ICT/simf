@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -134,7 +134,7 @@ internal sealed class UserProfileRepository(
             .Where(p => p.Id == profileTypeId)
             .Select(p => new ProfileTypeFacts(
                 p.IsActive, SIMF.Common.Enums.UserType.Visitor,
-                p.IsForVisitor, p.Name, p.AllowsVipMeetingSlots, p.IsAppRegisterable))
+                p.IsForVisitor, p.Name, p.IsVipTier, p.IsAppRegisterable))
             .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Guid>> FilterActiveInterestIdsAsync(
