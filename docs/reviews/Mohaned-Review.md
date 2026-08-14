@@ -900,6 +900,22 @@ gates the key material rather than the code path that reaches it. The server
 contract is unchanged: still a SubjectPublicKeyInfo in and an ES256 verify, as
 `DeviceKey.cs:12-17` already notes.
 
+**Bind to the CURRENT biometric set, not just to hardware.** Hardware binding
+alone leaves a hole that is easier to walk through than key extraction: an
+attacker with two minutes on an unlocked phone enrols their own fingerprint and
+can then use the victim's credential indefinitely, because the key only asks for
+"a" biometric. Android's
+`KeyGenParameterSpec.Builder.setInvalidatedByBiometricEnrollment` invalidates the
+key when a new fingerprint or face is enrolled; on iOS the equivalent is the
+`kSecAccessControlBiometryCurrentSet` access-control flag rather than
+`biometryAny`. Both mean the credential dies when the biometric set changes,
+which is the behaviour a user assumes they already have.
+
+The cost is a support case this does not currently generate: a user who adds a
+fingerprint loses biometric sign-in and must re-enrol. That is the correct
+trade for a credential, and it is the same thing a bank app does, but it should
+be a stated decision rather than a surprise.
+
 **Rollout decision needed.** Existing software-held keys cannot be migrated into
 hardware. Every enrolled user must re-enrol, which means a forced revocation plus
 a prompt. That is a user-visible event and needs its own owner decision on timing.

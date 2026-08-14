@@ -27,11 +27,25 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// auth and transport, and platform plugins do not belong in it. The label is
 /// resolved here and passed into the `label` parameter that already exists.
 class DeviceLabel {
-  const DeviceLabel(this._secureStorage, {DeviceInfoPlugin? deviceInfo})
-      : _deviceInfo = deviceInfo;
+  const DeviceLabel(
+    this._secureStorage, {
+    DeviceInfoSource? deviceInfo,
+    DevicePlatform? platform,
+  })  : _deviceInfo = deviceInfo,
+        _platform = platform;
 
   final SimfSecureStorage _secureStorage;
-  final DeviceInfoPlugin? _deviceInfo;
+  final DeviceInfoSource? _deviceInfo;
+
+  DeviceInfoSource get _source => _deviceInfo ?? const PluginDeviceInfoSource();
+
+  /// The platform to resolve for. Injectable because `Platform.isAndroid` is
+  /// fixed at `false` under the unit-test VM, which left the two branches that
+  /// actually run in production reachable only from a physical device. A label
+  /// that is only ever exercised by its own fallback is not a tested label.
+  final DevicePlatform? _platform;
+
+  DevicePlatform get _resolvedPlatform => _platform ?? DevicePlatform.current();
 
   /// The server rejects anything longer, so the guard is mandatory.
   static const int maxLength = 64;
@@ -53,18 +67,16 @@ class DeviceLabel {
   }
 
   Future<String> _deviceName() async {
-    final plugin = _deviceInfo ?? DeviceInfoPlugin();
     try {
-      if (Platform.isAndroid) {
-        final info = await plugin.androidInfo;
-        return '${info.manufacturer} ${info.model}'.trim();
+      final name = switch (_resolvedPlatform) {
+        DevicePlatform.android => await _source.androidName(),
+        DevicePlatform.ios => await _source.iosName(),
+        DevicePlatform.other => null,
+      };
+      if (name != null && name.trim().isNotEmpty) {
+        return name.trim();
       }
-      if (Platform.isIOS) {
-        final info = await plugin.iosInfo;
-        final model = info.modelName.trim();
-        return model.isNotEmpty ? model : info.utsname.machine.trim();
-      }
-    } catch (_) {
+    } on Object {
       // A plugin failure must never block an enrolment. Fall through.
     }
     return fallbackName;
@@ -106,12 +118,11 @@ class DeviceLabel {
   }
 
   Future<String?> _fingerprintSource() async {
-    if (!Platform.isIOS) {
+    if (_resolvedPlatform != DevicePlatform.ios) {
       return null;
     }
-    final plugin = _deviceInfo ?? DeviceInfoPlugin();
     try {
-      final vendorId = (await plugin.iosInfo).identifierForVendor?.trim();
+      final vendorId = (await _source.iosVendorId())?.trim();
       if (vendorId != null && vendorId.isNotEmpty) {
         return vendorId;
       }
@@ -141,6 +152,62 @@ class DeviceLabel {
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
     return cleaned.isEmpty ? fallbackName : cleaned;
+  }
+}
+
+/// The three values [DeviceLabel] needs from the device, behind a seam a test
+/// can fill. `AndroidDeviceInfo` and `IosDeviceInfo` can only be built from a
+/// large platform map, so faking the plugin type directly costs more than it
+/// proves. Narrowing to three strings leaves [PluginDeviceInfoSource] as the
+/// only untested code, and it holds nothing but field reads.
+abstract class DeviceInfoSource {
+  Future<String?> androidName();
+
+  Future<String?> iosName();
+
+  Future<String?> iosVendorId();
+}
+
+/// The real one. Deliberately trivial: everything worth testing lives in
+/// [DeviceLabel], which is testable because this is injectable.
+class PluginDeviceInfoSource implements DeviceInfoSource {
+  const PluginDeviceInfoSource();
+
+  @override
+  Future<String?> androidName() async {
+    final info = await DeviceInfoPlugin().androidInfo;
+    return '${info.manufacturer} ${info.model}';
+  }
+
+  @override
+  Future<String?> iosName() async {
+    final info = await DeviceInfoPlugin().iosInfo;
+    final model = info.modelName.trim();
+    return model.isNotEmpty ? model : info.utsname.machine;
+  }
+
+  @override
+  Future<String?> iosVendorId() async =>
+      (await DeviceInfoPlugin().iosInfo).identifierForVendor;
+}
+
+/// Which of the two real branches [DeviceLabel] should take. Only exists so a
+/// test can select one: `Platform` itself cannot be faked.
+enum DevicePlatform {
+  android,
+  ios,
+
+  /// Anything else, including the unit-test VM and desktop.
+  other;
+
+  static DevicePlatform current() {
+    if (Platform.isAndroid) {
+      return DevicePlatform.android;
+    }
+    if (Platform.isIOS) {
+      return DevicePlatform.ios;
+    }
+    return DevicePlatform.other;
   }
 }
 

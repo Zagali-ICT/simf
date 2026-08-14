@@ -66,6 +66,9 @@
 | E2E-MBSU-020 | A label carrying `;`, `=` or a newline is rejected, so it cannot forge a field in the audit detail | edge | P0 | authored ✓ (backend theory, 3 cases) |
 | E2E-MBSU-021 | Enrolling past the 5-key cap retires an older key; the key just enrolled always survives | edge | P1 | authored ✓ (backend test) |
 | E2E-MBSU-022 | A revoked key and an id that never existed give byte-identical challenge responses | edge | P1 | authored ✓ (backend test) |
+| E2E-MBSU-023 | Enrolling names the device: the row's `Label` is `{manufacturer} {model} · {8 hex}` on Android, or the marketing model on iOS, never the old `SIMF mobile` constant | happy | P0 | authored ✓ (unit + screen tests) |
+| E2E-MBSU-024 | Two devices under one account produce two distinguishable labels | happy | P1 | authored ✓ (unit test: the suffix is per-install) |
+| E2E-MBSU-025 | Re-enrolling on the same install reuses the same fingerprint suffix | edge | P1 | authored ✓ (unit test) |
 | E2E-MBSU-ELS-001 | Element inventory — every control the page wires is present, accessibly named, and correctly gated (no selection: selection-gated buttons present **and disabled**; one row selected: they enable). Asserted in **LTR and RTL**, expected-vs-actual against `tools/qa/predicted_inventory.py`. | element | P1 | _to author_ |
 | E2E-MBSU-ELS-002 | Element health — no dead control, no broken image, and every same-origin link and asset returns < 400. Console reports zero errors and `scrollWidth == clientWidth` (no horizontal overflow). | element | P1 | _to author_ |
 
@@ -353,6 +356,64 @@ Scenario: Revoked and never-existed are indistinguishable
 ```
 
 **Evidence:** `DeviceKeySignInTests.A_revoked_key_and_an_unknown_key_are_indistinguishable`.
+
+### E2E-MBSU-023 — The enrolled device is named (D-884)
+
+```gherkin
+Scenario Outline: The label carries the real device, not a constant
+  Given a signed-in approved visitor on <platform>
+  When the user completes the biometric step-up
+  Then the created device key's label is "<name> · <8 hex>"
+  And it is NOT the string "SIMF mobile"
+  And it is 64 characters or fewer
+
+  Examples:
+    | platform | name             |
+    | Android  | samsung SM-S911B |
+    | iOS      | iPhone 15 Pro    |
+```
+
+**Why the platform column is testable off-device:** `DeviceLabel` takes an
+injectable `DevicePlatform` and `DeviceInfoSource` precisely so these two rows
+are exercised by the suite. Before that they were reachable only from physical
+hardware, which meant the only branch the tests ever ran was the fallback.
+
+**Residual, and stated rather than implied:** the real
+`PluginDeviceInfoSource` reads `manufacturer`, `model`, `modelName` and
+`identifierForVendor` from `device_info_plus`, and those four reads are the one
+part still unproven until this runs on a device.
+
+**Evidence:** `device_label_test` group "the real device branches";
+`biometric_step_up_screen_test` asserts the resolved label reaches
+`enrolDeviceKey`.
+
+### E2E-MBSU-024 — Two devices are distinguishable
+
+```gherkin
+Scenario: One account, two enrolled devices
+  Given the account has enrolled a device key on a phone
+  When it enrols another on a tablet
+  Then the two labels differ
+  And an operator reading the DeviceKeys rows can tell them apart
+```
+
+The defect this closes: every row in production read `SIMF mobile`, so a phone
+and a tablet were indistinguishable, including to an administrator revoking one.
+
+### E2E-MBSU-025 — The suffix is stable per install
+
+```gherkin
+Scenario: Re-enrolling on the same device keeps its identity
+  Given a device that has enrolled once and then disabled Face ID
+  When the user enables it again on the same install
+  Then the fingerprint suffix is unchanged
+```
+
+The fingerprint is minted once into secure storage and reused, so a
+disable-then-enable cycle does not look like a different device.
+
+**Evidence:** `device_label_test` — "mints a fingerprint once and reuses it on
+the next enrolment".
 
 ### E2E-MBSU-015 — Sign-in Face-ID device-PIN fallback + explicit errors
 
