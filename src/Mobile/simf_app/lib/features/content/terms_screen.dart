@@ -28,7 +28,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// with retry (L-6). Guest+.
 ///
 /// Route: `RouteNames.terms`.
-/// Data: [termsBlockProvider] over [contentRepositoryProvider].
+/// Data: [contentRepositoryProvider], [termsBlockProvider].
 /// Perf: no list — a single-screen layout.
 
 /// The terms block, or **null for the empty state**.

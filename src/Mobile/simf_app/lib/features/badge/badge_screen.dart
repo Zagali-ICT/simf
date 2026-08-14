@@ -29,8 +29,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// pending state; load failures keep the retry surface (Page_014 L-1).
 ///
 /// Route: `RouteNames.badge`.
-/// Data: [authControllerProvider], [myAreaRepositoryProvider],
-///       [referenceNumberProvider].
+/// Data: [authControllerProvider], [badgeIdentityProvider],
+///       [myAreaRepositoryProvider], [referenceNumberProvider].
 /// Perf: ListView builds every child up front — correct for a short static
 ///       page, a defect on a data feed.
 /// The badge identity, or **null when the account is not Approved**.

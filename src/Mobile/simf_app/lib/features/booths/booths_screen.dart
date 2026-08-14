@@ -35,7 +35,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///   short-name initials when the booth has no uploaded logo.
 ///
 /// Route: `RouteNames.booths`.
-/// Data: [simfDataConfigProvider], [venueMapRepositoryProvider].
+/// Data: [boothsListProvider], [simfDataConfigProvider],
+///       [venueMapRepositoryProvider].
 /// Perf: lazy — builds children on demand (ListView.separated).
 /// The exhibition booths (`GET /app/booths`).
 ///

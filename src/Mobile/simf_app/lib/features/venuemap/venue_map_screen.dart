@@ -34,7 +34,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// card (the card names the selection).
 ///
 /// Route: `RouteNames.venueMap`.
-/// Data: [simfDataConfigProvider], [venueMapRepositoryProvider].
+/// Data: [simfDataConfigProvider], [venueMapDataProvider],
+///       [venueMapRepositoryProvider].
 /// Perf: no list — a single-screen layout.
 // The design-space canvas the normalised node coordinates map onto. Moved out
 // of the State so the provider can derive positions without one.

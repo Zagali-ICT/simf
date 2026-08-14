@@ -29,7 +29,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// gate locks the toggle to its one direction (no CP round-trip to switch).
 ///
 /// Route: `RouteNames.gateScanner`.
-/// Data: [gatesRepositoryProvider].
+/// Data: [gatesRepositoryProvider], [operatorGatesProvider].
 /// Perf: no list — a single-screen layout.
 /// The gates this operator is assigned to (`GET /app/gates/my-assignments`).
 ///

@@ -34,8 +34,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// text.
 ///
 /// Route: `RouteNames.speakers`.
-/// Data: [speakersListProvider] over [speakersRepositoryProvider], plus
-///       [simfDataConfigProvider] for the photo base URL.
+/// Data: [simfDataConfigProvider], [speakersListProvider],
+///       [speakersRepositoryProvider].
 /// Perf: mixed — ListView.separated builds on demand; ListView builds every
 ///       child up front.
 /// The speaker directory (`GET /app/speakers`).

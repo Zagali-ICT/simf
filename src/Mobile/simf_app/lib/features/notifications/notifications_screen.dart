@@ -86,7 +86,7 @@ enum _NotifFilter { all, sessions, vip }
 /// trailing "mark all read" action clears every unread.
 ///
 /// Route: `RouteNames.notifications`.
-/// Data: [notificationsRepositoryProvider].
+/// Data: [notificationsListProvider], [notificationsRepositoryProvider].
 /// Perf: no list — a single-screen layout.
 /// The inbox (`GET /app/notifications`).
 ///

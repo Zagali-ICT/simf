@@ -44,7 +44,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///
 /// Route: `RouteNames.myArea`.
 /// Data: [authControllerProvider], [avatarBustProvider],
-///       [myAreaRepositoryProvider], [referenceNumberProvider].
+///       [myAreaDashboardProvider], [myAreaRepositoryProvider],
+///       [referenceNumberProvider].
 /// Perf: ListView builds every child up front — correct for a short static
 ///       page, a defect on a data feed.
 /// The My-Area dashboard, or **null when the account is not Approved**.

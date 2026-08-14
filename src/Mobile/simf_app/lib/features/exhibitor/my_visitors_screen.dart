@@ -26,7 +26,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// languages.
 ///
 /// Route: `RouteNames.myVisitors`.
-/// Data: [exhibitorRepositoryProvider].
+/// Data: [exhibitorRepositoryProvider], [myVisitorsProvider].
 /// Perf: lazy — builds children on demand (ListView.separated).
 /// The booth's captured leads (`GET /app/exhibitor/visitors`).
 ///

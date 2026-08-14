@@ -12,7 +12,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// news list via an imperative route (the screen has no go_router entry).
 ///
 /// Route: `RouteNames.newsArticle`.
-/// Data: [newsArticleProvider] over [newsRepositoryProvider].
+/// Data: [newsArticleProvider], [newsRepositoryProvider].
 /// Perf: ListView builds every child up front — correct for a short static
 ///       page, a defect on a data feed.
 

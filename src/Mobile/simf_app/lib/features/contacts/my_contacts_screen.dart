@@ -23,7 +23,7 @@ import 'package:simf_app/features/contacts/widgets/saved_contact_tile.dart';
 /// to add more. UI is interim (final visuals from SIMF-VID-001).
 ///
 /// Route: `RouteNames.myContacts`.
-/// Data: [savedContactsProvider] over [contactsRepositoryProvider].
+/// Data: [contactsRepositoryProvider], [savedContactsProvider].
 /// Perf: lazy — builds children on demand (ListView.builder).
 
 /// The visitor's saved contact cards (`GET /app/contacts`).

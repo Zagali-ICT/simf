@@ -41,7 +41,8 @@ enum _SummaryTab { keyPoints, recommendations, speakers }
 /// already-published text rather than triggering generation.
 ///
 /// Route: `RouteNames.aiSummary`.
-/// Data: [programmeSessionsProvider], [sessionSummaryRepositoryProvider].
+/// Data: [programmeSessionsProvider], [sessionSummaryProvider],
+///       [sessionSummaryRepositoryProvider].
 /// Perf: ListView builds every child up front — correct for a short static
 ///       page, a defect on a data feed.
 /// One session's AI summary, or **null when none is published yet** (a 404).

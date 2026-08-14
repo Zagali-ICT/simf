@@ -35,7 +35,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// a 403, shown as the "not a moderator for this session" state.
 ///
 /// Route: `RouteNames.sessionModerate`.
-/// Data: [moderationRepositoryProvider].
+/// Data: [moderationRepositoryProvider], [moderatorQueuesProvider].
 /// Perf: lazy — builds children on demand (ListView.builder).
 /// The moderator's two server-owned buckets: the working desk (Approved +
 /// Answered) and the rejected (Hidden) rows.

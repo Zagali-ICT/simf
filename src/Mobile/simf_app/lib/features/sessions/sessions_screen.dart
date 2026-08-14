@@ -38,7 +38,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// session_timeline_row).
 ///
 /// Route: `RouteNames.sessions`.
-/// Data: [sessionsRepositoryProvider], [simfDataConfigProvider].
+/// Data: [programmeDaysProvider], [sessionsRepositoryProvider],
+///       [simfDataConfigProvider].
 /// Perf: lazy — builds children on demand (SliverList).
 /// The programme days (`GET /app/sessions/days`).
 ///
