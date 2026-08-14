@@ -105,10 +105,10 @@ never presented as the target having no availability.
 ## 6. Data flow
 
 ```
-Home "اللقاءات الثنائية" tile (VIP only) → /meetings
-  → MeetingsScreen watches currentUserIsVipProvider
-      → non-VIP: VIP-only state
-      → VIP: upcomingMeetingsProvider = myRequestsProvider filtered to
+Home "اللقاءات الثنائية" tile (eligible accounts only) → /meetings
+  → MeetingsScreen watches currentUserMeetingAccessProvider (D-760)
+      → MeetingAccess.any == false: not-eligible state
+      → eligible: upcomingMeetingsProvider = myRequestsProvider filtered to
              (status == Accepted) && meeting-kind && (no slot | slot in future)
   → GET /app/my-requests (approved-only) → filter client-side → MeetingCards
 طلب جديد → MeetingRequestSheet → POST …/meeting-requests → invalidate feed

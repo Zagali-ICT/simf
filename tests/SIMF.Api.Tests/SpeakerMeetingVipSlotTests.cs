@@ -113,7 +113,10 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
     public async Task The_user_profile_read_reports_IsVip_from_the_tier()
     {
         // D-729 (owner item 15) — UserProfileResponse.IsVip mirrors the assigned
-        // tier's AllowsVipMeetingSlots; the app uses it to gate the speaker CTA.
+        // tier's AllowsVipMeetingSlots. It no longer gates the speaker CTA: D-760
+        // moved that to the per-user AllowsSpeakerMeeting. The field is still
+        // served, and the tier itself still decides VIP-tier seat self-reservation
+        // (SeatReservationService.IsVipVisitorAsync), so this stays covered.
         var (vip, _) = await CreateVisitorAsync(vip: true);
         var (plain, _) = await CreateVisitorAsync(vip: false);
 

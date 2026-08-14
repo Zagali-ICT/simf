@@ -166,40 +166,24 @@ final referenceNumberProvider = FutureProvider.autoDispose<String?>((ref) async 
   }
 });
 
-/// D-729 (owner item 15) — whether the signed-in user is a VIP tier (VVIP/VIP,
-/// server-computed from ProfileType.AllowsVipMeetingSlots). Gates the speaker
-/// "request a meeting" CTA to VIP guests; the endpoint enforces the same rule.
+/// Bi-Meeting rework (D-760) — the signed-in user's two admin-assigned
+/// meeting-eligibility flags (speaker / delegation). They REPLACE the VIP
+/// tier as the Bi-Meeting gate, so eligibility no longer follows the
+/// audience tier: the gates read [MeetingAccess.speaker] /
+/// [MeetingAccess.delegation] / [MeetingAccess.any], and one profile read
+/// serves both flags. [MeetingAccess.none] for guests / on error.
 ///
-/// D-731 — the speaker profile is a **Guest+ browse** surface, and the profile
-/// GET behind this sits on the shared per-IP "auth" rate-limit bucket (sign-in /
-/// OTP / sign-up). So this provider (a) short-circuits guests with NO network
-/// call — a guest can never be VIP — and (b) is **not** autoDispose, so the flag
-/// is cached across speaker-profile opens (fetched once, NOT re-fetched on every
-/// open); browsing many speakers therefore can't drain the auth budget for
-/// co-located attendees behind one venue IP. It [watch]es the auth controller,
-/// so it re-fetches on any auth transition (sign-in/out, token refresh/reload,
-/// or the D-563 stamp-roll + token revoke that follows an admin account-type
-/// change) — the cache tracks the live tier and never goes stale. False for
-/// guests / non-VIP / on error.
-final currentUserIsVipProvider = FutureProvider<bool>((ref) async {
-  final auth = ref.watch(authControllerProvider);
-  if (auth is! AuthStateSignedIn) {
-    return false;
-  }
-  try {
-    final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
-    return profile.isVip;
-  } on ApiFailure {
-    return false;
-  }
-});
-
-/// Bi-Meeting rework — the signed-in user's two admin-assigned meeting-eligibility
-/// flags (speaker / delegation), which REPLACE the VIP tier as the Bi-Meeting gate.
-/// Same guest short-circuit + non-autoDispose caching + auth-transition re-fetch as
-/// [currentUserIsVipProvider] (one profile read serves both flags; the gates read
-/// [MeetingAccess.speaker] / [.delegation] / [.any]). [MeetingAccess.none] for
-/// guests / on error.
+/// D-731 — the speaker profile is a **Guest+ browse** surface, and the
+/// profile GET behind this sits on the shared per-IP "auth" rate-limit
+/// bucket (sign-in / OTP / sign-up). So this provider (a) short-circuits
+/// guests with NO network call — a guest is never eligible — and (b) is
+/// **not** autoDispose, so the flags are cached across speaker-profile opens
+/// (fetched once, NOT re-fetched on every open); browsing many speakers
+/// therefore can't drain the auth budget for co-located attendees behind one
+/// venue IP. It watches the auth controller, so it re-fetches on any auth
+/// transition (sign-in/out, token refresh/reload, or the D-563 stamp-roll +
+/// token revoke that follows an admin account-type change) — the cache
+/// tracks live eligibility and never goes stale.
 final currentUserMeetingAccessProvider =
     FutureProvider<MeetingAccess>((ref) async {
   final auth = ref.watch(authControllerProvider);

@@ -278,23 +278,27 @@ Scenario: The VIP slot is picked from day cards then time chips (light sheet)
   When the visitor enters a subject, taps a time chip and taps "ارسال الطلب" (Send request)
   Then the POST body's slotStart/slotEnd equal the chosen slot
   # The slot always matches a published availability slot, so the server
-  # (which 409s a non-free slot and 403s a non-VIP) accepts it.
+  # (which 409s a non-free slot and 403s an ineligible account) accepts it.
 ```
 
-### E2E-MOB020-018 — Speaker meeting is VIP-only (D-729, owner item 15)
+### E2E-MOB020-018 — Speaker meeting needs the per-user eligibility flag (D-760; was VIP-only under D-729)
 
 ```gherkin
-Scenario: Only a VIP guest sees and can use the request-meeting CTA
+Scenario: Only an account with allowsSpeakerMeeting sees and can use the CTA
   Given a speaker whose allowsMeetingRequests is true
   When a GUEST views the speaker profile
   Then the "Request meeting" CTA is NOT shown
-  When a signed-in NON-VIP visitor views the speaker profile
-  Then the "Request meeting" CTA is NOT shown (isVip=false on the profile read)
-  When a signed-in VIP (VVIP/VIP tier) visitor views the speaker profile
+  When a signed-in visitor whose allowsSpeakerMeeting is false views the profile
+  Then the "Request meeting" CTA is NOT shown
+  # True for a VVIP/VIP-tier visitor too: since D-760 the audience tier no longer
+  # grants the CTA, so a VIP without the flag does not see it.
+  When a signed-in visitor whose allowsSpeakerMeeting is true views the profile
   Then the "Request meeting" CTA IS shown and opens the meeting sheet
+  # True for a Normal-tier visitor too: eligibility is admin-assigned per user on
+  # the profile row, not inherited from the tier.
   # Server backstop: POST /api/v1/app/speakers/{id}/meeting-requests returns 403
-  # for a non-VIP even without a slot (the whole request is VIP-only, not just
-  # slot-booking).
+  # FORBIDDEN for an ineligible account even without a slot (the whole request is
+  # gated, not just slot-booking).
 ```
 
 ### E2E-MOB020-019 — Arabic rank in the profile hero
