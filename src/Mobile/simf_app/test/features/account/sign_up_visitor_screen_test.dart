@@ -919,5 +919,26 @@ void main() {
       expect(find.widgetWithText(FilledButton, 'Next'), findsOneWidget);
       expect(repo.loadCalls, greaterThanOrEqualTo(2));
     });
+
+    // Regression: the birth-region name used to be re-synced from inside
+    // build(). Assigning to a TextEditingController notifies its listeners, and
+    // the attached EditableText answers by marking itself dirty — during the
+    // build phase, which Flutter forbids. It only fired when the stored name
+    // differed from the localized one, i.e. a Saudi registrant with a region
+    // selected in the OTHER language, and no test loaded a profile in Arabic.
+    testWidgets(
+      'loads a Saudi profile in Arabic without writing to the controller '
+      'during build, and shows the region in Arabic',
+      (tester) async {
+        final repo = _FakeProfileRepository()..profile = _completeProfile();
+
+        await _pump(tester, repo, locale: const Locale('ar'));
+
+        expect(tester.takeException(), isNull);
+        // The stored value is the English 'Riyadh'; the field must show the
+        // Arabic name for the same region code.
+        expect(find.text('منطقة الرياض'), findsWidgets);
+      },
+    );
   });
 }
