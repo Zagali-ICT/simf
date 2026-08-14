@@ -8,10 +8,12 @@ SessionListItem _session({
   String title = 'Session',
   String code = 'S-1',
   String? description,
+  SessionType? type,
 }) {
   return SessionListItem(
     id: id,
     code: code,
+    type: type,
     title: title,
     titleArabic: '',
     hallId: 'h1',
@@ -288,6 +290,83 @@ void main() {
         item.phase(DateTime.utc(2026, 11, 24, 11)),
         SessionPhase.ended,
       );
+    });
+  });
+
+  group('sessionMatchesQuery + sessionsForDay', () {
+    // These two are the rule the PROGRAMME SCREEN runs. filterSessions was
+    // tested and had no production caller, while the screen carried its own
+    // copy of the predicate untested; extracting one definition is what makes
+    // these tests cover what ships.
+    final talk = _session(
+      id: 'talk',
+      start: DateTime.utc(2026, 11, 24, 9),
+      title: 'Naval logistics',
+      code: 'S-11',
+      description: 'Supply chains at sea',
+    );
+    final workshop = _session(
+      id: 'workshop',
+      start: DateTime.utc(2026, 11, 24, 11),
+      title: 'Sonar workshop',
+      code: 'W-2',
+      type: SessionType.workshop,
+    );
+
+    ProgrammeDay dayOf(List<SessionListItem> sessions) => ProgrammeDay(
+      id: 'd1',
+      date: DateTime.utc(2026, 11, 24),
+      title: 'Day one',
+      titleArabic: 'اليوم الأول',
+      displayOrder: 1,
+      hasImage: false,
+      sessions: sessions,
+    );
+
+    test('an empty or blank query matches everything', () {
+      expect(sessionMatchesQuery(talk, ''), isTrue);
+      expect(sessionMatchesQuery(talk, '   '), isTrue);
+    });
+
+    test('matches the title, the description and the code', () {
+      expect(sessionMatchesQuery(talk, 'logistics'), isTrue);
+      expect(sessionMatchesQuery(talk, 'supply'), isTrue);
+      expect(sessionMatchesQuery(talk, 'S-11'), isTrue);
+      expect(sessionMatchesQuery(talk, 'sonar'), isFalse);
+    });
+
+    test('matching ignores case and surrounding space', () {
+      expect(sessionMatchesQuery(talk, '  NAVAL  '), isTrue);
+    });
+
+    test('sessionsForDay with no filters returns the day in its own order', () {
+      final result = sessionsForDay(dayOf(<SessionListItem>[talk, workshop]));
+      expect(result.map((s) => s.id), <String>['talk', 'workshop']);
+    });
+
+    test('sessionsForDay applies the type tab', () {
+      final result = sessionsForDay(
+        dayOf(<SessionListItem>[talk, workshop]),
+        type: SessionType.workshop,
+      );
+      expect(result.map((s) => s.id), <String>['workshop']);
+    });
+
+    test('sessionsForDay applies the search box', () {
+      final result = sessionsForDay(
+        dayOf(<SessionListItem>[talk, workshop]),
+        query: 'sonar',
+      );
+      expect(result.map((s) => s.id), <String>['workshop']);
+    });
+
+    test('the type tab and the search box compose', () {
+      final result = sessionsForDay(
+        dayOf(<SessionListItem>[talk, workshop]),
+        type: SessionType.workshop,
+        query: 'logistics',
+      );
+      expect(result, isEmpty);
     });
   });
 }

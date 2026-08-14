@@ -559,7 +559,6 @@ List<SessionListItem> filterSessions(
   DateTime? localDay,
   String query = '',
 }) {
-  final needle = query.trim().toLowerCase();
   return items.where((session) {
     if (view == SessionsView.upcoming && session.start.isBefore(nowUtc)) {
       return false;
@@ -567,19 +566,49 @@ List<SessionListItem> filterSessions(
     if (localDay != null && !sameLocalDay(session.startLocal, localDay)) {
       return false;
     }
-    if (needle.isEmpty) {
-      return true;
-    }
-    final haystack = <String?>[
-      session.title,
-      session.titleArabic,
-      session.description,
-      session.descriptionArabic,
-      session.code,
-    ].whereType<String>().join(' ').toLowerCase();
-    return haystack.contains(needle);
+    return sessionMatchesQuery(session, query);
   }).toList(growable: false);
 }
+
+/// Whether [session] matches a free-text [query] across its title, description
+/// and code in BOTH languages, case-insensitively. An empty query matches
+/// everything.
+///
+/// One definition, because there were two. This predicate was also written
+/// inline in `sessions_screen.dart`, and only the copy inside [filterSessions]
+/// had tests — while only the inline one actually ran, because
+/// [filterSessions] had no production caller at all. Five tests were passing
+/// over a rule nobody shipped.
+bool sessionMatchesQuery(SessionListItem session, String query) {
+  final needle = query.trim().toLowerCase();
+  if (needle.isEmpty) {
+    return true;
+  }
+  final haystack = <String?>[
+    session.title,
+    session.titleArabic,
+    session.description,
+    session.descriptionArabic,
+    session.code,
+  ].whereType<String>().join(' ').toLowerCase();
+  return haystack.contains(needle);
+}
+
+/// The sessions of [day] the programme screen shows, given the active type tab
+/// and the search box. Input order is preserved (the server returns the day
+/// time-ordered).
+///
+/// Lifted out of the screen's `build()`, which re-derived it on every keystroke
+/// and every rebuild (section 2: no data shaping in build).
+List<SessionListItem> sessionsForDay(
+  ProgrammeDay day, {
+  SessionType? type,
+  String query = '',
+}) => <SessionListItem>[
+  for (final session in day.sessions)
+    if (type == null || session.type == type)
+      if (sessionMatchesQuery(session, query)) session,
+];
 
 /// The distinct device-local calendar days present in [items], ascending — the
 /// data-driven day strip (Page_016: the event's "remaining days"). Each entry

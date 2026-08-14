@@ -6,7 +6,6 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/sessions/data/presentation_repository.dart';
 import 'package:simf_app/features/sessions/data/presentation_summary_gate.dart';
-import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/widgets/presentations_body.dart';
 
@@ -46,11 +45,7 @@ class _SessionPresentationsScreenState
     // The programme drives the تحميل summary-ready gate; keyed by sessionId. It
     // is usually already cached (Home loaded it) — while it isn't, the map is
     // empty and [presentationSummaryReady] falls back to the row's own start.
-    final sessionsById = <String, SessionListItem>{
-      for (final s in ref.watch(programmeSessionsProvider).valueOrNull ??
-          const <SessionListItem>[])
-        s.id: s,
-    };
+    final sessionsById = ref.watch(programmeSessionsByIdProvider);
 
     return SimfPageShell(
       title: l10n.sessionPresentationsTitle,
