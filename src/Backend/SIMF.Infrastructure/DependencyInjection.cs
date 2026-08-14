@@ -115,6 +115,16 @@ public static class DependencyInjection
         // the per-request IRequestContext. Registered BEFORE the row-audit
         // interceptor below so the stamped values land in the audit trail.
         services.AddScoped<AuditStampingSaveChangesInterceptor>();
+        // Stamps the open edition year onto every new attendee record. Singleton
+        // cache behind it, because the year changes about once a year and is read
+        // on nearly every attendee write and every gate scan.
+        services.AddSingleton<
+            SIMF.Infrastructure.Editions.IEventEditionCache,
+            SIMF.Infrastructure.Editions.EventEditionCache>();
+        services.AddScoped<SIMF.Infrastructure.Editions.EditionStampingSaveChangesInterceptor>();
+        services.AddScoped<
+            SIMF.Application.Editions.Abstractions.IEventEditionService,
+            SIMF.Infrastructure.Editions.EventEditionService>();
 
         // EnableRetryOnFailure covers the transient SQL errors of an Always On
         // failover.
@@ -132,6 +142,8 @@ public static class DependencyInjection
                 sql.EnableRetryOnFailure();
             }).AddInterceptors(
                 sp.GetRequiredService<AuditStampingSaveChangesInterceptor>(),
+                sp.GetRequiredService<
+                    SIMF.Infrastructure.Editions.EditionStampingSaveChangesInterceptor>(),
                 sp.GetRequiredService<RowAuditingSaveChangesInterceptor>()));
 
         // ASP.NET Core Identity — UserManager / RoleManager over the EF stores.

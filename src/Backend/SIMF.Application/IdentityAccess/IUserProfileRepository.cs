@@ -28,6 +28,18 @@ public interface IUserProfileRepository
     Task<UserProfile?> FindAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>The tracked profile with its Interests, found by its OWN id
+    /// rather than by an account's.
+    ///
+    /// <para>For the one flow that knows the attendee and not an account,
+    /// because there is not one yet: badge activation creating the account it is
+    /// about to link. Distinguished from <see cref="GetWithInterestsAsync"/> by
+    /// name rather than by parameter type, since both ids are
+    /// <see cref="Guid"/> and confusing them matches no row rather than
+    /// failing.</para></summary>
+    Task<UserProfile?> GetByProfileIdWithInterestsAsync(
+        Guid userProfileId, CancellationToken cancellationToken = default);
+
     /// <summary>Stages a new profile row (saved by a later
     /// <see cref="SaveAppChangesAsync"/>).</summary>
     void Add(UserProfile profile);

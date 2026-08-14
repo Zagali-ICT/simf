@@ -47,8 +47,22 @@ last year's badge at the gate is only correct if the holder has a route to a
 current one. Plan the re-issue as part of opening the year, not as something
 support handles per person at the door.
 
-A printed badge is **78 characters** (80 in the extreme case of a three-digit
-profile-type code). That is why `GateScans.QrIdAtScan` is `nvarchar(96)`.
+A printed badge is **exactly 78 characters**, always: the payload is
+fixed-width, so there is no typical case and no extreme one. That is why
+`GateScans.QrIdAtScan` is `nvarchar(96)`.
+
+There is also an `EditionYear` in each desk's `appsettings.json`, and it must
+match the year open on the API. A desk stamping any other year prints badges
+every gate refuses.
+
+> **This payload replaced an older one, so `BadgeKeyVersion` MUST be bumped
+> before the first desk prints.** The old format was a profile-type code and a
+> desk sequence. A scanner running an older build decrypts a new-format badge
+> successfully and only then fails to read the fields — and it reports that as a
+> *forged badge* rather than abstaining, offline, where no server can overrule
+> it. Bumping the version makes that scanner see a key version it does not hold,
+> which it already treats as "cannot judge, queue it". Roll out in the order in
+> the checklist below: API first, then every scanner confirmed, then the desks.
 
 ---
 
@@ -87,6 +101,7 @@ Edit `appsettings.json` beside `SIMF.BadgeDesk.exe`:
 {
   "DeskNumber": 3,
   "DeskLabel": "Desk 3 — north entrance",
+  "EditionYear": 2026,
   "BadgeKey": "<the same base64 key>",
   "BadgeKeyVersion": 1,
   "ApiBaseUrl": "https://api.simf.example",

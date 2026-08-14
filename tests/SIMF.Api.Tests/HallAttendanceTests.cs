@@ -444,23 +444,11 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
                 UserType = UserType.Visitor,
             };
             await users.CreateAsync(user, AuthFlow.Password);
-
-            // Attendance is keyed by the attendee PROFILE, not the account: the
-            // profile is the attendee record, so an account carrying none is
-            // refused with AttendeeProfileMissing rather than opening a row that
-            // resolves to nobody. Seeding only the Identity user made every call
-            // here a 403.
-            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            appDb.UserProfiles.Add(new UserProfile
-            {
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                Name = "Attendance Visitor",
-                NameArabic = "زائر الحضور",
-                AdmissionState = AccountState.Approved,
-                CreatedAt = SimfClock.Now,
-            });
-            await appDb.SaveChangesAsync();
+            // Attendance is keyed by the attendee record, which approval creates
+            // in production; this helper creates the account directly, so it has
+            // to create one too or every arrival is refused.
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            await TestAttendeeProfiles.EnsureForAccountAsync(db, user.Id);
         }
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",

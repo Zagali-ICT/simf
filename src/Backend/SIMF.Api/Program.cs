@@ -592,6 +592,13 @@ if (!app.Environment.IsEnvironment("Testing"))
     // 'Other' UserType until Identity catches up.
     await services.GetRequiredService<SimfAppDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<SimfIdentityDbContext>().Database.MigrateAsync();
+    // Warm the open-edition year before anything can write an attendee. The
+    // stamp that puts the year on a new attendee record reads this cache, and a
+    // cold cache stamps nothing — which the gate then admits, so the omission
+    // would be silent. Reading it once here is what makes the stamp reliable
+    // from the first request rather than from the first gate scan.
+    await services.GetRequiredService<
+        SIMF.Application.Editions.Abstractions.IEventEditionService>().GetOpenYearAsync();
     await services.GetRequiredService<IdentitySeeder>().SeedAsync();
     // The built-in rating types (App + Session) must exist in every environment
     // so the app + the end-of-session worker resolve them by code. Idempotent.

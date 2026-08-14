@@ -202,6 +202,32 @@ tests. A bUnit harness with mocked `IJSRuntime` /
 runtime behaviour (Escape closes the dropdown, focus jumps to `<main>`
 on skip-link, etc.). Scope: a separate test-tooling increment.
 
+### 3.10 `BadgeBatch.CountsSummary` is English-only in an Arabic UI
+
+Found 2026-08-14 driving `/admin/visitors/badge-batches` in Arabic.
+The **Contents** column, and the top-up dialog that echoes it, render
+`Normal × 4 + VIP × 3` with the **English** tier names while the rest of
+the page is Arabic. `CountsSummary` is a single denormalised string
+built server-side from `UserProfileType.Name`
+(`AdminAccountService.Bulk.cs`, `MergeCountsSummary`), so there is no
+Arabic side to fall back to — unlike the order name, which is a proper
+bilingual pair.
+
+Pre-existing (the field was English-only before the top-up work) and
+not a defect of it, but it is a visible bilingual gap on a page the
+owner reads in Arabic. Two shapes to choose between:
+
+- store the breakdown **structurally** (the `(type, count)` pairs) and
+  render it per culture, which also retires the string-parsing in
+  `MergeCountsSummary`; or
+- keep the string and add an Arabic twin, which is cheaper but keeps
+  two denormalised fields in step instead of one.
+
+The first is the better end state and is the one to cost first. Note
+that whichever is chosen, `MergeCountsSummary` currently parses its own
+`" × "`-delimited output back into counts, so the parse and the render
+must move together.
+
 ### 3.8 `myComment.txt` drain — TRIAGED (H31 — D-089)
 
 The owner's working note at repo root was triaged item-by-item; the

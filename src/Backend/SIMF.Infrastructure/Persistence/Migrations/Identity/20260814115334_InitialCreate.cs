@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -155,7 +155,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PendingEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Purpose = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -407,6 +409,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 name: "IX_AccountCodes_UserId_Purpose",
                 table: "AccountCodes",
                 columns: new[] { "UserId", "Purpose" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountCodes_UserProfileId_Purpose",
+                table: "AccountCodes",
+                columns: new[] { "UserProfileId", "Purpose" },
+                filter: "[UserProfileId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DeviceKeys_UserId_PublicKey",

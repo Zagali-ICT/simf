@@ -135,6 +135,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    NameArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     CountsSummary = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
                     TotalCount = table.Column<int>(type: "int", nullable: false),
                     IsDelegate = table.Column<bool>(type: "bit", nullable: false),
@@ -298,6 +300,22 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EmailTemplates", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EventEdition",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Year = table.Column<int>(type: "int", nullable: false),
+                    OpenedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastClosedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    OpenedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    LastReissueCount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EventEdition", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -1299,7 +1317,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     JobTitleArabic = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValue: new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0")),
+                    EditionYear = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     ShowInMeetLikeYou = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     SaudiMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     InternationalMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -1314,7 +1333,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     AllowsDelegationMeeting = table.Column<bool>(type: "bit", nullable: false),
                     AllowsSpeakerMeeting = table.Column<bool>(type: "bit", nullable: false),
                     ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    AdmissionState = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    AdmissionState = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false, defaultValue: "PendingApproval"),
                     StateChangedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     StateChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     QrId = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
@@ -2559,6 +2578,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 values: new object[] { new Guid("00000000-0000-0000-0000-000000000002"), true, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null });
 
             migrationBuilder.InsertData(
+                table: "BadgeBatches",
+                columns: new[] { "Id", "CountsSummary", "CreatedAt", "CreatedBy", "DeletedAt", "IsActive", "IsDelegate", "Name", "NameArabic", "RecipientEmail", "TotalCount", "UpdatedAt", "UpdatedBy" },
+                values: new object[] { new Guid("0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"), "Direct registration", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("00000000-0000-0000-0000-000000000000"), null, true, false, "Direct registration", "تسجيل مباشر", null, 0, null, null });
+
+            migrationBuilder.InsertData(
                 table: "Countries",
                 columns: new[] { "Id", "Code", "CreatedAt", "DelegationArrivalDate", "DelegationDepartureDate", "DisplayOrder", "HeadOfDelegationUserProfileId", "IsActive", "IsInvited", "Name", "NameArabic", "PhonePrefix", "UpdatedAt" },
                 values: new object[,]
@@ -2621,6 +2645,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     { 840, "US", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 200, null, true, false, "United States", "الولايات المتحدة الأمريكية", "+1", null },
                     { 887, "YE", new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, 130, null, true, false, "Yemen", "اليمن", "+967", null }
                 });
+
+            migrationBuilder.InsertData(
+                table: "EventEdition",
+                columns: new[] { "Id", "LastClosedAt", "LastReissueCount", "OpenedAt", "OpenedByUserId", "Year" },
+                values: new object[] { new Guid("00000000-0000-0000-0000-000000000003"), null, 0, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, 2026 });
 
             migrationBuilder.InsertData(
                 table: "OrganizationProfile",
@@ -3755,6 +3784,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "EmailTemplates");
+
+            migrationBuilder.DropTable(
+                name: "EventEdition");
 
             migrationBuilder.DropTable(
                 name: "ExhibitorMemberships");

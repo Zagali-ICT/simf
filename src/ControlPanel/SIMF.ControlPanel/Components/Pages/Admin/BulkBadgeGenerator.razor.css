@@ -15,8 +15,21 @@
     display: flex;
 }
 
+/* Who the order is for — the two name fields, side by side above the add row.
+   Its own class rather than a second __add: this is not a row you add from, and
+   sharing the class made a positional lookup for the count field find a name
+   field instead. */
+.simf-bulk-builder__name {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    align-items: end;
+    margin-block-end: var(--space-4);
+}
+
 @media (max-width: 640px) {
-    .simf-bulk-builder__add {
+    .simf-bulk-builder__add,
+    .simf-bulk-builder__name {
         grid-template-columns: 1fr;
         align-items: stretch;
     }

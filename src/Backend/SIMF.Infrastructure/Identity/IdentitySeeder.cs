@@ -473,11 +473,14 @@ public sealed class IdentitySeeder(
     /// <see cref="PermissionCatalog"/>. The catalogue seed is add-only, so an
     /// already-seeded database keeps orphan <c>Permission</c> rows (and any custom
     /// <c>RolePermission</c> grants) until they are removed here. Bookings.Approve /
-    /// Bookings.Reject went with the booking approval step.</summary>
+    /// Bookings.Reject went with the booking approval step; Editions.Close was
+    /// seeded but never gated anything, and a year is only ever closed by opening
+    /// the next one.</summary>
     private static readonly string[] RetiredPermissionCodes =
     [
         "Bookings.Approve",
         "Bookings.Reject",
+        "Editions.Close",
     ];
 
     /// <summary>Idempotent cleanup of retired permissions: delete any
