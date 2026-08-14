@@ -145,11 +145,39 @@ parameters:
   type: boolean
   default: false
 
+# The `Default` pool has an agent on BOTH SIMF servers, so this job runs on
+# whichever is free - including the PRODUCTION box, while it is serving traffic.
+# That is why a run can die with "We stopped hearing from agent": a four-app
+# Release build plus the vulnerability scan and the SBOM is a heavy, bursty load
+# to put on a live IIS server, and which server gets it changes run to run.
+#
+# TO PIN THE BUILD TO ONE MACHINE (recommended - do this on the agent, then
+# uncomment `demands` below; adding it before the capability exists leaves the
+# job queued forever with no agent to match, which is why it ships commented,
+# the same reason the SAST/DAST blocks further down are scaffolds):
+#
+#   1. Azure DevOps -> Project settings -> Agent pools -> Default -> the
+#      PRE-PRODUCTION agent -> Capabilities -> add a user capability
+#      `SIMF_ROLE` = `build`.
+#   2. Uncomment the two `demands` lines.
+#
+# Deployment jobs are unaffected: they bind to their environment's VM resource,
+# not to this pool, so pinning the build does not pin the deploy.
 pool:
   name: Default   # PLACEHOLDER: self-hosted agent pool with the .NET 10 SDK (build) + IIS (deploy)
+  # demands:
+  # - SIMF_ROLE -equals build
 
 variables:
   buildConfiguration: 'Release'
+  # Stop MSBuild leaving worker processes alive after a build.
+  #
+  # Node reuse is a developer-machine optimisation: msbuild.exe stays resident
+  # for about 15 minutes so the next build starts faster. On a build agent it
+  # buys nothing - the next run is usually not for hours - and on THESE agents
+  # it is actively harmful, because they are also the IIS servers. Idle MSBuild
+  # nodes hold memory on a live box between runs and accumulate across runs.
+  MSBUILDDISABLENODEREUSE: 1
 
 stages:
 - stage: Build
