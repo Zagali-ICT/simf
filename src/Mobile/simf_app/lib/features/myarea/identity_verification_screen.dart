@@ -112,7 +112,7 @@ class _IdentityVerificationScreenState
       _camera = controller;
       setState(() => _cameraReady = true);
       await controller.startImageStream(_onFrame);
-    } catch (_) {
+    } on Object catch (_) {
       // Camera / ML Kit unavailable or permission denied — show the "camera
       // required" message (no gallery: identity capture is live-image-only).
       if (mounted) {
@@ -160,7 +160,7 @@ class _IdentityVerificationScreenState
         return;
       }
       await _advance();
-    } catch (_) {
+    } on Object catch (_) {
       // Transient frame error — ignore and keep streaming.
     } finally {
       _processing = false;
@@ -181,7 +181,7 @@ class _IdentityVerificationScreenState
         _forwardFrame = await shot.readAsBytes();
         _forwardName = shot.name;
         await controller.startImageStream(_onFrame);
-      } catch (_) {
+      } on Object catch (_) {
         // The capture failed — the flow keeps verifying liveness; a null
         // forward frame is retaken from the live camera on finish.
       }
@@ -211,7 +211,7 @@ class _IdentityVerificationScreenState
         final shot = await controller.takePicture();
         bytes = await shot.readAsBytes();
         _forwardName = shot.name;
-      } catch (_) {
+      } on Object catch (_) {
         // Fall through to the camera-required state below.
       }
     }
@@ -342,7 +342,7 @@ class _IdentityVerificationScreenState
         }
         await controller.dispose();
       }
-    } catch (_) {
+    } on Object catch (_) {
       // Already disposed — ignore.
     }
     await _detector?.close();

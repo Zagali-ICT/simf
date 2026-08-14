@@ -62,7 +62,7 @@ Future<void> runBiometricSignIn({
     await notifier.signInWithDeviceKey();
   } on AuthFailure catch (failure) {
     onError(failure.source.localizedMessage(l10n));
-  } catch (e) {
+  } on Object catch (e) {
     // Non-AuthFailure (for example a FormatException from reloadCurrentUser
     // before the defence in signInWithDeviceKey was added): captured so the
     // session routing below still happens. Shown in a SnackBar AFTER routing,

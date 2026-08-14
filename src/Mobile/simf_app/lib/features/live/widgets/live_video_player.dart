@@ -83,7 +83,7 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
           autoPlay: true,
           params: const YoutubePlayerParams(showFullscreenButton: true),
         )..setFullScreenListener(_onFullScreenChanged);
-      } catch (_) {
+      } on Object catch (_) {
         // A failure building the IFrame controller degrades to the error
         // surface rather than crashing the screen (Page_025 L-7).
         _error = true;
@@ -119,7 +119,7 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
         return;
       }
       setState(() => _videoReady = true);
-    } catch (_) {
+    } on Object catch (_) {
       if (!mounted) {
         return;
       }
@@ -137,7 +137,7 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
       }
       setState(() => _videoReady = true);
       unawaited(controller.play());
-    } catch (_) {
+    } on Object catch (_) {
       // ANY failure — a malformed URL (Uri.parse), an unreachable stream, or a
       // codec error — surfaces the error/retry state rather than spinning
       // forever or crashing the screen (Page_025 L-7).

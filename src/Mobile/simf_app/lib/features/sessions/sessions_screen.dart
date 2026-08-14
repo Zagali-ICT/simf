@@ -96,7 +96,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
     unawaited(context.pushNamed(
         RouteNames.sessionDetail,
         pathParameters: <String, String>{RouteParams.sessionId: session.id},
-      ));
+      ),);
   }
 
   /// The empty-list message for the active type tab — "no workshops" under

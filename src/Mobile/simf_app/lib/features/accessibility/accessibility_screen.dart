@@ -73,7 +73,7 @@ class AccessibilityScreen extends ConsumerWidget {
                     View.of(context),
                     l10n.accessibilityScreenReaderTitle,
                     Directionality.of(context),
-                  ));
+                  ),);
               }
             },
           ),

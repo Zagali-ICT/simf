@@ -194,7 +194,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             'code': 'Session',
             'targetId': item.relatedEntityId!,
           },
-        ));
+        ),);
       return;
     }
     // "بطاقتك الذكية جاهزة" (AccountApproved) and BookingConfirmed both land on

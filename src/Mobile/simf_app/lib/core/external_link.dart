@@ -10,7 +10,7 @@ Future<void> launchExternalUri(
 }) async {
   try {
     await launchUrl(uri, mode: mode);
-  } catch (_) {
+  } on Object catch (_) {
     // No handler / malformed URI — keep the user on the page.
   }
 }

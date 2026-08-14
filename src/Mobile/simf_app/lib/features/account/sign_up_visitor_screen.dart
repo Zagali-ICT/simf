@@ -464,7 +464,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _idImageBytes = bytes;
         _idImageName = file.name;
       });
-    } catch (_) {
+    } on Object catch (_) {
       // The gallery is unavailable — the required-ID gate on Next reports it.
     }
   }

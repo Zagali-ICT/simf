@@ -101,7 +101,7 @@ class BiometricAuth {
         default:
           return LocalAuthOutcome.unavailable;
       }
-    } catch (_) {
+    } on Object catch (_) {
       return LocalAuthOutcome.unavailable;
     }
   }
@@ -117,7 +117,7 @@ class BiometricAuth {
       }
       final available = await _localAuth.getAvailableBiometrics();
       return available.isNotEmpty;
-    } catch (_) {
+    } on Object catch (_) {
       return false;
     }
   }
@@ -127,7 +127,7 @@ class BiometricAuth {
   Future<bool> isEnabled() async {
     try {
       return await _auth.hasEnrolledDeviceKey();
-    } catch (_) {
+    } on Object catch (_) {
       return false;
     }
   }

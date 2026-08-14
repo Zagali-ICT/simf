@@ -67,7 +67,7 @@ class _HeroBackgroundVideoState extends State<HeroBackgroundVideo> {
         _videoReady = true;
       });
       unawaited(controller.play());
-    } catch (_) {
+    } on Object catch (_) {
       // A malformed URL, an unreachable stream, or a codec error degrades to
       // the navy fill rather than spinning forever or crashing home. Dispose
       // the controller we created so a failed mount never leaks a native

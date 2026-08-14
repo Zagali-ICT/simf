@@ -34,7 +34,7 @@ class _ScreenAnnouncerState extends ConsumerState<ScreenAnnouncer> {
       bool assist;
       try {
         assist = ref.read(accessibilityControllerProvider).screenReaderAssist;
-      } catch (_) {
+      } on Object catch (_) {
         // Accessibility DI not wired (e.g. a widget test that builds a
         // SimfPageShell without overriding the controller). The announcer is
         // best-effort and must never break a page, so skip silently.
@@ -48,7 +48,7 @@ class _ScreenAnnouncerState extends ConsumerState<ScreenAnnouncer> {
           View.of(context),
           l10n.accessibilityScreenAnnouncement(title),
           Directionality.of(context),
-        ));
+        ),);
     });
   }
 

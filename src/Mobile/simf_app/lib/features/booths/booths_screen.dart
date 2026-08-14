@@ -81,7 +81,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
     unawaited(context.pushNamed(
         RouteNames.exhibitorDetail,
         pathParameters: <String, String>{RouteParams.boothId: booth.id},
-      ));
+      ),);
   }
 
   // #9 — the booth's "أرشدني" CTA opens the venue map focused on this booth
@@ -90,7 +90,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
     unawaited(context.pushNamed(
         RouteNames.boothMap,
         pathParameters: <String, String>{RouteParams.boothId: booth.id},
-      ));
+      ),);
   }
 
   // The booths whose name / exhibitor / sector / code matches the query

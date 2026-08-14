@@ -63,7 +63,7 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
           next,
           duration: MotionDurations.carouselSlide,
           curve: Curves.easeInOut,
-        ));
+        ),);
     });
   }
 

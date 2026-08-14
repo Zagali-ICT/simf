@@ -111,7 +111,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
           baseUrl: ref.read(simfDataConfigProvider).baseUrl,
           l10n: l10n,
         ),
-      ));
+      ),);
   }
 
   Future<void> _copyLink(String url, AppL10n l10n) async {

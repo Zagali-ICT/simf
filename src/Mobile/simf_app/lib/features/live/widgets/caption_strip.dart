@@ -31,7 +31,7 @@ class CaptionStrip extends ConsumerWidget {
     bool captionsEnabled;
     try {
       captionsEnabled = ref.watch(accessibilityControllerProvider).captions;
-    } catch (_) {
+    } on Object catch (_) {
       captionsEnabled = true;
     }
     if (!captionsEnabled) {

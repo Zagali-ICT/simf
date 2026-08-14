@@ -91,7 +91,7 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
           next,
           duration: MotionDurations.carouselSlide,
           curve: Curves.easeInOut,
-        ));
+        ),);
     });
   }
 

@@ -148,7 +148,7 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
-final _outlineStar = find.byIcon(Icons.star_outline_rounded);
+final Finder _outlineStar = find.byIcon(Icons.star_outline_rounded);
 
 Finder _categoryStars(String label) => find.descendant(
       of: find.ancestor(of: find.text(label), matching: find.byType(Row)).first,

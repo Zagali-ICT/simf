@@ -91,6 +91,20 @@ linter:
     unnecessary_statements: true
     use_build_context_synchronously: true
 
+    # OFF, with the measurement rather than a preference. 33 findings, and 32
+    # of them are Riverpod provider declarations. `dart fix` satisfies those by
+    # writing the internal type name —
+    #     final AutoDisposeFutureProviderFamily<ArchiveEditionDetail?, String>
+    #         archiveEditionDetailProvider = FutureProvider.autoDispose…
+    # — which spells the type twice on one line, pushes most of them past 80
+    # columns, and names a class nobody writes by hand. The type is already on
+    # the right-hand side. The 33rd finding was real and is fixed.
+    #
+    # CQP-001 section 5.7: a gate that flags correct code is a gate that gets
+    # switched off, so five rules were narrowed there for the same reason. This
+    # is the same call, recorded the same way (2026-08-14).
+    specify_nonobvious_property_types: false
+
     # --- Flutter performance / widgets ---
     prefer_const_constructors: true
     prefer_const_constructors_in_immutables: true

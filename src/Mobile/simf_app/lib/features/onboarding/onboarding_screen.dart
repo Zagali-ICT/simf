@@ -76,7 +76,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         _video = controller;
         _videoReady = true;
       });
-    } catch (error) {
+    } on Object catch (error) {
       debugPrint('Onboarding background video "$asset" failed to play: $error');
       await controller.dispose();
     }

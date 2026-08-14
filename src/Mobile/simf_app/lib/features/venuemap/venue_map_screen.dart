@@ -217,7 +217,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
           summary: summary,
           detail: detail,
         ),
-      ));
+      ),);
   }
 
   @override
