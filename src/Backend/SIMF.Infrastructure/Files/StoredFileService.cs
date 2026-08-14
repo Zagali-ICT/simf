@@ -200,7 +200,7 @@ internal sealed class StoredFileService(
         CreateExternalLinkCommand command, CancellationToken cancellationToken = default)
     {
         var policy = FileServicePolicies.Resolve(command.Service);
-        var url = ValidateExternalLink(command.Url);
+        var url = ValidateExternalLink(command.Url, policy);
         if (policy.OwnerRequired && (command.OwnerEntityId is null || command.OwnerEntityId == Guid.Empty))
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
@@ -251,7 +251,13 @@ internal sealed class StoredFileService(
 
         file.SourceType = FileSourceType.ExternalLink;
         file.ExternalUrl = url;
-        file.FileType = FileType.Image; // external links back the public image surfaces (logos / covers)
+        // Derived from the policy, not assumed. A hardcoded Image mistyped a video
+        // link, and the download endpoint serves inline only when the file is both
+        // public-tier AND typed Image — so a mistyped video would have been offered
+        // as an inline document rather than a stream.
+        file.FileType = policy.AllowedTypes.Contains(FileType.Image)
+            ? FileType.Image
+            : policy.AllowedTypes.First();
         file.StorageKey = null;
         file.ContentType = null;
         file.SizeBytes = null;
@@ -542,8 +548,30 @@ internal sealed class StoredFileService(
     // target must be a real, public https host. Ported from AssetService.ValidateLink:
     // require https (no cleartext) and reject literal IPs / localhost / internal TLDs
     // so the trusted SIMF domain can't become an open redirect to an internal service.
-    private static string ValidateExternalLink(string url)
+    //
+    // <para>The rule is layered per policy rather than applied uniformly, because
+    // the two kinds of external link are consumed differently. An image link is
+    // never read by the client: the download endpoint 302s and the browser or Dio
+    // follows it, so any public https URL will do — including the extensionless
+    // placeholder URLs the demo seeds use. A VIDEO link rides the wire verbatim and
+    // BOTH clients classify it by inspecting the string (YouTube id, else a
+    // .mp4/.m3u8 suffix), so one that fails that test is not a video they can play,
+    // and storing it would produce a silent empty hero or a player error rather
+    // than a 400 the admin can act on.</para>
+    private static string ValidateExternalLink(string url, FileServicePolicy policy)
     {
+        // A private file must never become a pointer at somebody else's server.
+        // Nothing else stopped POST /files/link naming a Secret or Confidential
+        // service (an ID document, an avatar), which would have created an
+        // unencrypted, unscanned row that bypasses the whole ingest pipeline while
+        // still being served under this system's name.
+        if (policy.Tier != FileSensitivityTier.Public || policy.Access != FileAccessClass.Public)
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "Only public files may be recorded as an external link.",
+                "لا يمكن تسجيل رابط خارجي إلا للملفات العامة.");
+        }
+
         var trimmed = (url ?? string.Empty).Trim();
         if (trimmed.Length is 0 or > 1024
             || !Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
@@ -554,6 +582,21 @@ internal sealed class StoredFileService(
                 "Provide a valid public https URL (max 1024 characters).",
                 "يرجى إدخال رابط https عام صحيح لا يتجاوز 1024 حرفاً.");
         }
+
+        // A video link must additionally survive the clients' own classifier,
+        // which is the same rule LiveStreamUrlPolicy states for a live feed.
+        // Deliberately NOT applied to image services: it accepts only a YouTube
+        // id or a .m3u8/.mp4 suffix, so it would reject every CDN logo, every
+        // seeded placeholder, and the whole "External link" tab.
+        if (policy.AllowedTypes.Contains(FileType.Video)
+            && !policy.AllowedTypes.Contains(FileType.Image)
+            && !LiveStreamUrlPolicy.IsAllowed(trimmed))
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "Provide a YouTube video link or a direct .mp4 / .m3u8 stream URL.",
+                "يرجى إدخال رابط فيديو يوتيوب أو رابط بث مباشر بصيغة mp4 أو m3u8.");
+        }
+
         return trimmed;
     }
 
