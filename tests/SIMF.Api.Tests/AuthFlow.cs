@@ -321,26 +321,84 @@ internal static class AuthFlow
     }
 
     /// <summary>M3 — recover the six-digit plaintext of a stored AccountCode
-    /// hash by brute-forcing it against the configured HMAC key (the test
-    /// process shares the same key as the host that stored it). ~10^6 keyed
-    /// hashes is about a second. Call this anywhere a test reads
+    /// hash against the configured HMAC key (the test process shares the same key
+    /// as the host that stored it). Call this anywhere a test reads
     /// AccountCode.Code to obtain a usable OTP / verification code.</summary>
+    /// <remarks>
+    /// This used to scan the code space one candidate at a time — 10^6 keyed
+    /// hashes worst case, 500,000 expected, about half a second per call by its
+    /// own comment — and the suite calls it hundreds of times per run. The same
+    /// scan now happens ONCE per process and is kept, so every later call is a
+    /// dictionary lookup. The whole space fits: a stored hash is 16 hex chars,
+    /// exactly 64 bits, so it parses losslessly into the ulong key and the table
+    /// is exact rather than probabilistic.
+    /// </remarks>
     public static string RecoverPlaintextCode(string storedHash)
     {
-        for (var i = 0; i < 1_000_000; i++)
+        if (!CodesByHash().TryGetValue(ParseHashKey(storedHash), out var code))
         {
-            var candidate = i.ToString(
-                "D6", System.Globalization.CultureInfo.InvariantCulture);
-            if (SIMF.Application.IdentityAccess.AccountCodeHasher.Hash(candidate) == storedHash)
-            {
-                return candidate;
-            }
+            throw new InvalidOperationException(
+                "Could not recover the plaintext code from its hash (test HMAC key mismatch).");
         }
-        throw new InvalidOperationException(
-            "Could not recover the plaintext code from its hash (test HMAC key mismatch).");
+
+        return code.ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    /// <summary>Forces an account into a given lifecycle state, directly in the database.</summary>
+    // The table is only valid for the key AccountCodeHasher currently holds, and
+    // that key is installed from configuration at host start — so the hash of a
+    // fixed probe code is recorded with the table and re-checked on every call.
+    // A host that installed a different key changes the probe, and the table is
+    // rebuilt rather than confidently returning the wrong code.
+    private const string TableProbeCode = "000000";
+
+    private static readonly object CodeTableGate = new();
+    private static Dictionary<ulong, int>? _codesByHash;
+    private static string? _codeTableProbe;
+
+    private static Dictionary<ulong, int> CodesByHash()
+    {
+        var probe = SIMF.Application.IdentityAccess.AccountCodeHasher.Hash(TableProbeCode);
+
+        lock (CodeTableGate)
+        {
+            if (_codesByHash is not null && _codeTableProbe == probe)
+            {
+                return _codesByHash;
+            }
+
+            var table = new Dictionary<ulong, int>(1_000_000);
+            for (var candidate = 0; candidate < 1_000_000; candidate++)
+            {
+                var text = candidate.ToString(
+                    "D6", System.Globalization.CultureInfo.InvariantCulture);
+                table[ParseHashKey(
+                    SIMF.Application.IdentityAccess.AccountCodeHasher.Hash(text))] = candidate;
+            }
+
+            _codesByHash = table;
+            _codeTableProbe = probe;
+            return table;
+        }
+    }
+
+    private static ulong ParseHashKey(string storedHash) =>
+        ulong.Parse(
+            storedHash,
+            System.Globalization.NumberStyles.HexNumber,
+            System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// Forces an account into a given lifecycle state directly in the database,
+    /// standing in for the admin approval queue.
+    ///
+    /// <para>It deliberately does NOT create the attendee profile that real
+    /// approval stubs (<c>AdminAccountService.EnsureUserProfileAsync</c>): most
+    /// callers here seed their own profile with the fields their test needs, and
+    /// creating a second one collides with the filtered unique index over UserId.
+    /// A test whose visitor must hold an attendee record — anything that books a
+    /// seat, arrives at a hall or is scanned at a booth — calls
+    /// <c>TestAttendeeProfiles.EnsureForAccountAsync</c> after this.</para>
+    /// </summary>
     public static void SetAccountState(SimfApiFactory factory, string email, AccountState state)
     {
         using var scope = factory.Services.CreateScope();

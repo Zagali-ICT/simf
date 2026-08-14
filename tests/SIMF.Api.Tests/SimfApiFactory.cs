@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +31,10 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     // D-157 — two physically separate test databases (one per context).
     private readonly string _identityDatabaseName = $"SIMF_Test_Identity_{Guid.NewGuid():N}";
     private readonly string _appDatabaseName = $"SIMF_Test_App_{Guid.NewGuid():N}";
+
+    /// <summary>Guards <see cref="EnsureDatabaseCreated"/> so the migrate-and-seed
+    /// runs once per factory rather than once per test. See the remarks there.</summary>
+    private bool _databaseReady;
 
     public FakeEmailSender Email { get; } = new();
 
@@ -210,12 +215,53 @@ public class SimfApiFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(Time);
+
+            // PBKDF2 is deliberately slow, and the suite pays for that slowness
+            // thousands of times over: ~10 hashes seeding each fixture, plus a
+            // hash for every user a test creates and a verify for every sign-in
+            // it performs - on the order of 5,000 operations per run. Measured on
+            // this code: 33 ms per operation at the framework default of 100,000
+            // iterations, 0.3 ms at 1,000. That is minutes of a run spent proving
+            // nothing: no test asserts on hashing cost or format, and the stored
+            // V3 hash carries its own iteration count, so hashes written here
+            // always verify here.
+            //
+            // TEST HOST ONLY. Production never configures PasswordHasherOptions
+            // and must keep the framework default - PasswordHasherCostTests fails
+            // the build if this line is ever copied into src/.
+            services.Configure<PasswordHasherOptions>(
+                options => options.IterationCount = 1000);
         });
     }
 
-    /// <summary>Applies the migrations to the test database. Call once per test class.</summary>
+    /// <summary>
+    /// Applies the migrations and runs the seeders once per factory. Test classes
+    /// call it from their constructor; every call after the first returns
+    /// immediately.
+    /// </summary>
+    /// <remarks>
+    /// THE GUARD IS THE POINT, not a micro-optimisation. xUnit constructs a NEW
+    /// instance of the test class for EVERY [Fact], while the IClassFixture
+    /// factory is shared across them - so a class of 12 tests called this 12
+    /// times on the same factory, and 11 of those re-ran two Migrate() calls and
+    /// all five seeders against a database that was already migrated and seeded.
+    /// Measured on IdentitySeederTests: 15.1s for the real call, then 11 repeats
+    /// costing 0.74-1.53s each, about 12s wasted in one class. Across the
+    /// assembly that is roughly 2,000 redundant cycles - the bulk of the suite's
+    /// 38-minute run, and the reason the CI test gate is switched off (D-887).
+    ///
+    /// The seeders are idempotent, so the repeats changed nothing; they only
+    /// cost. Anything that genuinely needs to re-run a seeder does so explicitly
+    /// (IdentitySeederTests, SqlContentSeederTests and DemoOperationalConfigSeeder
+    /// -Tests all resolve the seeder and call it themselves), which is unaffected.
+    /// </remarks>
     public void EnsureDatabaseCreated()
     {
+        if (_databaseReady)
+        {
+            return;
+        }
+
         using var scope = Services.CreateScope();
         var services = scope.ServiceProvider;
         services.GetRequiredService<SimfIdentityDbContext>().Database.Migrate();
@@ -252,6 +298,10 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // SQL seed above creates. Idempotent.
         services.GetRequiredService<SIMF.Infrastructure.Seeding.DemoOperationalConfigSeeder>()
             .SeedAsync().GetAwaiter().GetResult();
+
+        // Set last: a failure part-way through leaves the flag false, so a retry
+        // starts over rather than handing the next test a half-seeded database.
+        _databaseReady = true;
     }
 
     protected override void Dispose(bool disposing)
