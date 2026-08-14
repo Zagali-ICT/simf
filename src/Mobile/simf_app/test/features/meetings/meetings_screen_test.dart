@@ -201,8 +201,8 @@ void main() {
       expect(find.text('Undated Speaker'), findsOneWidget);
     });
 
-    testWidgets("a meeting dated today survives once its start time passes "
-        "(date filter, not instant)", (tester) async {
+    testWidgets('a meeting dated today survives once its start time passes '
+        '(date filter, not instant)', (tester) async {
       // Today at 00:00 local: its DATE is today but its instant is already past,
       // so an instant filter would wrongly drop it — a date filter keeps it.
       final now = DateTime.now();

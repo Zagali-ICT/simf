@@ -82,9 +82,17 @@ lib/
 Tests mirror this under `test/` (e.g. `test/features/auth/sign_in_screen_test.dart`).
 
 Rules:
-- **One public widget per file.** A `_Private` helper widget may share the
-  screen file only if it is <60 lines and used once; otherwise its own file in
-  `widgets/`.
+- **One public widget per file**, with one exception the codebase already
+  relies on: a file may hold a **named cohesive group** whose members are
+  variations on one idea, and be named for that group —
+  `simf_cards.dart`, `simf_states.dart`, `simf_tiles.dart`, `about_cards.dart`,
+  `meeting_slot_pickers.dart`. What is NOT allowed is the heterogeneous file:
+  `live_content.dart` holding a login prompt, a feed toggle, a bullet glyph, a
+  banner, a button and a card shares nothing but a feature, and each of those
+  belongs in its own file. The test is whether the file's name describes all of
+  its contents (2026-08-14).
+  A `_Private` helper widget may share the screen file only if it is <60 lines
+  and used once; otherwise its own file in `widgets/`.
 - File names: `snake_case.dart`. Types: `PascalCase`. Screens end in `_screen`.
 - **Names must describe the real thing** (see §13.1). No placeholder/legacy
   prefixes (`Ksa*`, `Page_NNN`, generic `temp`/`demo`).

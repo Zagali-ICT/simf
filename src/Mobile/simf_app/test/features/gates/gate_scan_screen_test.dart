@@ -431,7 +431,7 @@ void main() {
 
   group('GateScanScreen — deferred gate-console defects', () {
     testWidgets(
-        'DEF-STF-005 — a 403 on load shows the SERVER\'s reason, not '
+        "DEF-STF-005 — a 403 on load shows the SERVER's reason, not "
         'the generic permission copy', (tester) async {
       await _pump(
         tester,

@@ -305,7 +305,7 @@ void main() {
           appRole: role,
         );
 
-    test('allowedRolesForPath returns the route\'s set (or null when open)', () {
+    test("allowedRolesForPath returns the route's set (or null when open)", () {
       expect(allowedRolesForPath(moderate), <AppRole>{AppRole.moderator});
       expect(allowedRolesForPath(gate), <AppRole>{AppRole.staff});
       expect(allowedRolesForPath(register), <AppRole>{AppRole.staff});
