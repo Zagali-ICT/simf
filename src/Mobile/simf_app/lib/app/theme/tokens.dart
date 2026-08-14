@@ -12,9 +12,12 @@ class SimfTokens {
   SimfTokens._();
 
   // Core brand colours — KSA-Project Figma variables (D-359).
-  static const Color navy = Color(0xFF01132D); // "Primary- Color" — dark scaffold
-  static const Color navyDeep = Color(0xFF192B41); // "BG" — boxes/cards on navy
-  static const Color accent = Color(0xFFC9A84C); // "Secondary- Color" — gold
+  /// "Primary- Color" — dark scaffold
+  static const Color navy = Color(0xFF01132D);
+  /// "BG" — boxes/cards on navy
+  static const Color navyDeep = Color(0xFF192B41);
+  /// "Secondary- Color" — gold
+  static const Color accent = Color(0xFFC9A84C);
   static const Color ink = Color(0xFF1A2030);
   static const Color inkMuted = Color(0xFF5A6573);
   static const Color surface = Color(0xFFFFFFFF);
@@ -22,7 +25,8 @@ class SimfTokens {
   static const Color field = Color(0xFFEEF1F4);
   static const Color danger = Color(0xFFA8182A);
   static const Color success = Color(0xFF2E7D32);
-  static const Color warning = Color(0xFFE8932A); // amber — "being answered" (Figma 1461:12227)
+  /// amber — "being answered" (Figma 1461:12227)
+  static const Color warning = Color(0xFFE8932A);
 
   // Moderator desk per-action colours — Figma 1461:12227 (Tailwind red-600 /
   // green-600 / amber-500): reject, answered, being-answered (on-stage).
@@ -45,68 +49,121 @@ class SimfTokens {
   static const Color flagBadgeBorder = Color(0x3627AE60);
 
   // KSA-Project light-surface + auth-flow palette (D-358/D-359).
-  static const Color navySurface = Color(0xFF102238); // elevated navy surface (login bg)
-  static const Color navyHeader = Color(0xFF071832); // darker header block behind the forum title (Figma 1467:12565 / 1461:12565)
-  static const Color navyFill80 = Color(0xCC01132D); // navy #01132D @ 80% — reference-number card fill (registration success 505:1525)
-  static const Color navyFill70 = Color(0xB301132D); // navy #01132D @ 70% — gallery video play-circle fill (Figma 949:4059)
-  static const Color navyFill90 = Color(0xE601132D); // navy #01132D @ 90% — onboarding photo overlay (Figma 148:22)
-  static const Color navyFill60 = Color(0x9901132D); // navy #01132D @ 60% — onboarding VIDEO scrim (owner 2026-07-26: the 90% photo overlay hid the moving footage; 60% keeps white/beige copy legible)
-  static const Color chipBorderNavy = Color(0xFF2A4066); // muted navy border on unselected pills (interests grid, Figma 505:1222)
-  static const Color tileBorderNavy = Color(0xFF253660); // contact-tile border (registration success, Figma 522:2223)
-  static const Color scannerCard = Color(0xFF0F2044); // QR-scanner card fill (Figma 758:4566)
-  static const Color scannerTrack = Color(0xFF132A50); // QR-scanner progress-bar track (Figma 758:4598)
-  static const Color mutedBlue = Color(0xFF8A9CC0); // muted blue caption — OTP countdown + scanner status (Figma 505:987 / 758:4596)
-  static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
-  static const Color beigeFill10 = Color(0x1AC2B8A2); // beige 10% — tier-pill + link-row icon-box fill (Figma rgba(194,184,162,0.1))
-  static const Color beigeBorder40 = Color(0x66C2B8A2); // beige 40% — agenda timeline row divider (Figma 1310:3239 rgba(194,184,162,0.4))
-  static const Color beigeFill50 = Color(0x80C2B8A2); // beige 50% — liveness pending progress dash (Figma 758:4242 rgba(194,184,162,0.5))
-  static const Color goldFill7 = Color(0x12C9A84C); // gold 7% — delegations stats-strip grid (Figma 1426:10771)
-  static const Color goldFill6 = Color(0x0FC9A84C); // gold 6% — delegations head-of-delegation box fill (Figma 1426:10771)
-  static const Color goldBorder15 = Color(0x26C9A84C); // gold 15% — delegations head-of-delegation box border (Figma 1426:10771)
-  static const Color cardBeige = Color(0xFFF1ECE4); // light card surface
-  static const Color goldSoft = Color(0xFFD0AC77); // secondary gold text/icons
-  static const Color goldSoftFill50 = Color(0x80D0AC77); // goldSoft @ 50% — onboarding inactive page dot (Figma 148:22)
-  static const Color headlineInk = Color(0xFF111827); // headings on light surfaces
-  static const Color greyText = Color(0xFF6C7278); // secondary text on light surfaces
-  static const Color calendarBand = Color(0xFFE9EAEC); // #4 — light-grey agenda day-strip band
-  static const Color linkNavy = Color(0xFF00245E); // inline links on light surfaces
-  static const Color inputInk = Color(0xCC111827); // input text on light surfaces (#111827 at 80%)
-  static const Color onGoldMuted = Color(0xFFF0F0F0); // muted text on the gold identity strip (badge 758:1469)
-  static const Color timestampMuted = Color(0xFF4C555F); // notification timestamp (758:2491)
+  /// elevated navy surface (login bg)
+  static const Color navySurface = Color(0xFF102238);
+  /// darker header block behind the forum title (Figma 1467:12565 / 1461:12565)
+  static const Color navyHeader = Color(0xFF071832);
+  /// navy #01132D @ 80% — reference-number card fill (registration success
+  /// 505:1525)
+  static const Color navyFill80 = Color(0xCC01132D);
+  /// navy #01132D @ 70% — gallery video play-circle fill (Figma 949:4059)
+  static const Color navyFill70 = Color(0xB301132D);
+  /// navy #01132D @ 90% — onboarding photo overlay (Figma 148:22)
+  static const Color navyFill90 = Color(0xE601132D);
+  /// navy #01132D @ 60% — onboarding VIDEO scrim (owner 2026-07-26: the 90% photo overlay hid the moving footage; 60% keeps white/beige copy legible)
+  static const Color navyFill60 = Color(0x9901132D);
+  /// muted navy border on unselected pills (interests grid, Figma 505:1222)
+  static const Color chipBorderNavy = Color(0xFF2A4066);
+  /// contact-tile border (registration success, Figma 522:2223)
+  static const Color tileBorderNavy = Color(0xFF253660);
+  /// QR-scanner card fill (Figma 758:4566)
+  static const Color scannerCard = Color(0xFF0F2044);
+  /// QR-scanner progress-bar track (Figma 758:4598)
+  static const Color scannerTrack = Color(0xFF132A50);
+  /// muted blue caption — OTP countdown + scanner status (Figma 505:987 / 758:4596)
+  static const Color mutedBlue = Color(0xFF8A9CC0);
+  /// "Pragraph Color" — borders + on-navy paragraph text
+  static const Color beigeBorder = Color(0xFFC2B8A2);
+  /// beige 10% — tier-pill + link-row icon-box fill (Figma
+  /// rgba(194,184,162,0.1))
+  static const Color beigeFill10 = Color(0x1AC2B8A2);
+  /// beige 40% — agenda timeline row divider (Figma 1310:3239
+  /// rgba(194,184,162,0.4))
+  static const Color beigeBorder40 = Color(0x66C2B8A2);
+  /// beige 50% — liveness pending progress dash (Figma 758:4242
+  /// rgba(194,184,162,0.5))
+  static const Color beigeFill50 = Color(0x80C2B8A2);
+  /// gold 7% — delegations stats-strip grid (Figma 1426:10771)
+  static const Color goldFill7 = Color(0x12C9A84C);
+  /// gold 6% — delegations head-of-delegation box fill (Figma 1426:10771)
+  static const Color goldFill6 = Color(0x0FC9A84C);
+  /// gold 15% — delegations head-of-delegation box border (Figma 1426:10771)
+  static const Color goldBorder15 = Color(0x26C9A84C);
+  /// light card surface
+  static const Color cardBeige = Color(0xFFF1ECE4);
+  /// secondary gold text/icons
+  static const Color goldSoft = Color(0xFFD0AC77);
+  /// goldSoft @ 50% — onboarding inactive page dot (Figma 148:22)
+  static const Color goldSoftFill50 = Color(0x80D0AC77);
+  /// headings on light surfaces
+  static const Color headlineInk = Color(0xFF111827);
+  /// secondary text on light surfaces
+  static const Color greyText = Color(0xFF6C7278);
+  /// #4 — light-grey agenda day-strip band
+  static const Color calendarBand = Color(0xFFE9EAEC);
+  /// inline links on light surfaces
+  static const Color linkNavy = Color(0xFF00245E);
+  /// input text on light surfaces (#111827 at 80%)
+  static const Color inputInk = Color(0xCC111827);
+  /// muted text on the gold identity strip (badge 758:1469)
+  static const Color onGoldMuted = Color(0xFFF0F0F0);
+  /// notification timestamp (758:2491)
+  static const Color timestampMuted = Color(0xFF4C555F);
   // Per-kind notification category-icon colours (Figma 758:2491 palette). Kept
   // distinct from the semantic success/danger so the icons match the mockup's
   // decorative per-kind styling exactly.
-  static const Color notifGreen = Color(0xFF13C296); // Figma "Green/green-500"
-  static const Color notifCoral = Color(0xFFFF6347); // Figma "Primary/primary-500"
-  static const Color codeBoxBeige = Color(0xCCFFF4DC); // pale-beige code chip fill (venue map 758:1358, #FFF4DC @ 80%)
-  static const Color cardShadow = Color(0x29111827); // soft card drop-shadow (headlineInk @ ~16%)
-  static const Color dayInactive = Color(0xFFC2C2C2); // calendar day with no sessions (758:1415)
-  static const Color bannerScrim = Color(0xCC001030); // day-banner bottom gradient #001030 @ 80% (Figma 1310:3232 / 1064:13240)
-  static const Color navInactive = Color(0xFF5E584B); // bottom-nav inactive icon (758:1476)
-  static const Color chatBubbleText = Color(0xFFF0F4FF); // assistant chat-bubble text (1064:13278)
-  static const Color captionText = Color(0xFFDDE4F0); // live AI-caption placeholder text (934:3613)
+  /// Figma "Green/green-500"
+  static const Color notifGreen = Color(0xFF13C296);
+  /// Figma "Primary/primary-500"
+  static const Color notifCoral = Color(0xFFFF6347);
+  /// pale-beige code chip fill (venue map 758:1358, #FFF4DC @ 80%)
+  static const Color codeBoxBeige = Color(0xCCFFF4DC);
+  /// soft card drop-shadow (headlineInk @ ~16%)
+  static const Color cardShadow = Color(0x29111827);
+  /// calendar day with no sessions (758:1415)
+  static const Color dayInactive = Color(0xFFC2C2C2);
+  /// day-banner bottom gradient #001030 @ 80% (Figma 1310:3232 / 1064:13240)
+  static const Color bannerScrim = Color(0xCC001030);
+  /// bottom-nav inactive icon (758:1476)
+  static const Color navInactive = Color(0xFF5E584B);
+  /// assistant chat-bubble text (1064:13278)
+  static const Color chatBubbleText = Color(0xFFF0F4FF);
+  /// live AI-caption placeholder text (934:3613)
+  static const Color captionText = Color(0xFFDDE4F0);
   // Live-broadcast player band (Figma 934:3450): the LIVE pill is a brighter
   // brick-red than the semantic [danger]; the language chip is a translucent
   // dark glassy pill; the resting play button is a translucent-white circle.
-  static const Color liveRed = Color(0xFFC0392B); // LIVE badge fill (934:3609)
-  static const Color scrimBlack55 = Color(0x8C000000); // language chip fill rgba(0,0,0,0.55) (934:3604)
-  static const Color playScrim = Color(0x26FFFFFF); // play-circle fill rgba(255,255,255,0.15) (934:3595)
+  /// LIVE badge fill (934:3609)
+  static const Color liveRed = Color(0xFFC0392B);
+  /// language chip fill rgba(0,0,0,0.55) (934:3604)
+  static const Color scrimBlack55 = Color(0x8C000000);
+  /// play-circle fill rgba(255,255,255,0.15) (934:3595)
+  static const Color playScrim = Color(0x26FFFFFF);
 
   // KSA main-shell disabled palette (W2 frames 512:1492 / 512:1780): the
   // "بطاقتي" locked card and the disabled theme tile render on these.
-  static const Color navyDisabled = Color(0xFF0A1628); // disabled card fill
-  static const Color navyDisabledBorder = Color(0xFF1E3A5F); // disabled card border
-  static const Color navyDisabledText = Color(0xFF4A6080); // disabled label/icon
+  /// disabled card fill
+  static const Color navyDisabled = Color(0xFF0A1628);
+  /// disabled card border
+  static const Color navyDisabledBorder = Color(0xFF1E3A5F);
+  /// disabled label/icon
+  static const Color navyDisabledText = Color(0xFF4A6080);
 
   // On-navy hairlines + muted text + light-surface hairline, straight from
   // Mockup.html (--line / --line-2 / --txt-2 / --txt-3 / --line-light). These
   // drive the dark theme's cards, dividers, borders and secondary text.
-  static const Color line = Color(0x1AFFFFFF); // white 10%
-  static const Color line2 = Color(0x0FFFFFFF); // white 6%
-  static const Color surfaceTint = Color(0x0AFFFFFF); // white 4% (card fill)
-  static const Color txtSecondary = Color(0xA6FFFFFF); // white 65%
-  static const Color txtTertiary = Color(0x66FFFFFF); // white 40%
-  static const Color lineLight = Color(0x140F2238); // navy 8%
+  /// white 10%
+  static const Color line = Color(0x1AFFFFFF);
+  /// white 6%
+  static const Color line2 = Color(0x0FFFFFFF);
+  /// white 4% (card fill)
+  static const Color surfaceTint = Color(0x0AFFFFFF);
+  /// white 65%
+  static const Color txtSecondary = Color(0xA6FFFFFF);
+  /// white 40%
+  static const Color txtTertiary = Color(0x66FFFFFF);
+  /// navy 8%
+  static const Color lineLight = Color(0x140F2238);
 
   // High-contrast accessibility palette (WCAG-boosted; interim, not final
   // design — see SIMF-VID-001). Used only when the Page 038 high-contrast
@@ -133,11 +190,16 @@ class SimfTokens {
 
   // Black scrims over photo / video / camera surfaces, by opacity. Named the
   // same way as [scrimBlack55] so the set reads as one scale.
-  static const Color scrimBlack25 = Color(0x40000000); // scanner card shadow
-  static const Color scrimBlack35 = Color(0x59000000); // scanner viewfinder mask
-  static const Color scrimBlack40 = Color(0x66000000); // scanner busy overlay
-  static const Color scrimBlack50 = Color(0x80000000); // home hero image scrim
-  static const Color scrimWhite90 = Color(0xE6FFFFFF); // radio pill on beige
+  /// scanner card shadow
+  static const Color scrimBlack25 = Color(0x40000000);
+  /// scanner viewfinder mask
+  static const Color scrimBlack35 = Color(0x59000000);
+  /// scanner busy overlay
+  static const Color scrimBlack40 = Color(0x66000000);
+  /// home hero image scrim
+  static const Color scrimBlack50 = Color(0x80000000);
+  /// radio pill on beige
+  static const Color scrimWhite90 = Color(0xE6FFFFFF);
 
   // [accent] at zero alpha — the fade-out stop of the scanner sweep gradient.
   // A token, not `accent.withValues(alpha: 0)`, because the gradient is const.
@@ -147,8 +209,10 @@ class SimfTokens {
   // keeps its reservation-state colour). The two values match the seeded VVIP /
   // VIP profile-type badge colours and the Control Panel's --color-seat-tier-*
   // tokens, so a tier reads identically on a badge, a CP seat plan and the app.
-  static const Color seatTierVvip = Color(0xFFB91C1C); // deep red — protocol
-  static const Color seatTierVip = Color(0xFF0E7490); // deep teal — VIP
+  /// deep red — protocol
+  static const Color seatTierVvip = Color(0xFFB91C1C);
+  /// deep teal — VIP
+  static const Color seatTierVip = Color(0xFF0E7490);
   // A12 — the CONFIRMED seat square: the holder scanned in at the hall gate,
   // so the seat is no longer just held. Mirrors the Control Panel's
   // --color-seat-confirmed (= --color-success, dark #4FA37D) so a confirmed
@@ -163,17 +227,22 @@ class SimfTokens {
   static const double space5 = 20;
   static const double space6 = 24;
   static const double space8 = 32;
-  static const double space10 = 40; // 10*4 extension of the spacing scale (onboarding/splash vertical gaps)
+  /// 10*4 extension of the spacing scale (onboarding/splash vertical gaps)
+  static const double space10 = 40;
 
   // Radii.
   static const double radiusSmall = 4;
-  static const double radius6 = 6; // LIVE badge (Figma 934:3609)
+  /// LIVE badge (Figma 934:3609)
+  static const double radius6 = 6;
   static const double radius = 8;
   static const double radiusLarge = 12;
-  static const double radiusLg = 16; // W2 cards / nav bar top corners
-  static const double radius14 = 14; // exhibitor/sponsor link rows (Figma 1439:11904/11917)
+  /// W2 cards / nav bar top corners
+  static const double radiusLg = 16;
+  /// exhibitor/sponsor link rows (Figma 1439:11904/11917)
+  static const double radius14 = 14;
   static const double radiusXl = 20;
-  static const double radius10 = 10; // delegations head-of-delegation box (Figma 1426:10838)
+  /// delegations head-of-delegation box (Figma 1426:10838)
+  static const double radius10 = 10;
 
   /// Ready-made [BorderRadius] for the default 4px corner (fields, cards,
   /// pills). Use this instead of re-wrapping [radiusSmall] in every widget.
@@ -188,53 +257,90 @@ class SimfTokens {
   // Component metrics (#16 sweep). Fixed component box heights + ratios lifted
   // out of the widgets so no screen carries a raw layout number. Each value is
   // the exact Figma measurement it replaces (behaviour-preserving).
-  static const double controlHeight = 48; // pill / banner / row height (booth code-pill+hall-box, gallery coverage-tab, archive edition-pill/notice/session-title)
-  static const double contactRowHeight = 44; // booth contact-box row (Figma 922:2810)
-  static const double codePillWidth = 109; // booth code pill A-12 (Figma 922:2796) — fixed content width
-  static const double sponsorRowHeight = 72; // sponsor hero/premium row + grid tile (Figma 922:2824)
-  static const double galleryScrimHeight = 40; // archive gallery-tile bottom scrim (Figma 926:3299)
-  static const double mediaTileAspectRatio = 164 / 104; // gallery media tile (Figma 949:4043)
-  static const double scrimOpacityStrong = 0.8; // archive gallery-tile scrim gradient bottom stop
-  static const double bulletTopNudge = 7; // archive bullet disc top-align nudge (Figma 925:3258)
-  static const double headBoxPad = 9; // delegations head-of-delegation box padding (Figma 1426:10838)
-  static const double gap2 = 2; // off-grid 2px micro-gap (below the space-4 scale)
-  static const double gap6 = 6; // off-grid 6px micro-gap (below the space-4 scale)
-  static const double gap18 = 18; // off-grid 18px gap (forum-guide step content -> caret, Figma 1426:11374)
-  static const double newsThumbWidth = 155; // news card thumbnail tile (Figma 958:2202)
-  static const double newsThumbHeight = 85; // news card thumbnail tile (Figma 958:2202)
-  static const double partnerCardAspectRatio = 163.5 / 104; // media-partners grid tile (Figma 958:2246)
-  static const double onboardCarouselHeight = 170; // onboarding step carousel viewport (Figma 148:22)
-  static const double statsStripHeight = 100; // delegations decorative stats-strip map (Figma 1426:10781)
-  static const double mapControlSize = 40; // venue-map floating zoom/locate control square (Figma 758:1358)
-  static const double tapTarget = 44; // minimum touch-target height — venue-map direct-me button (Figma 758:1358)
-  static const double dayCardWidth = 58; // meeting-request day card (Figma 1776:4975)
-  static const double dayCardHeight = 64; // meeting-request day card + its picker row (Figma 1776:5052)
+  /// pill / banner / row height (booth code-pill+hall-box, gallery coverage-tab, archive edition-pill/notice/session-title)
+  static const double controlHeight = 48;
+  /// booth contact-box row (Figma 922:2810)
+  static const double contactRowHeight = 44;
+  /// booth code pill A-12 (Figma 922:2796) — fixed content width
+  static const double codePillWidth = 109;
+  /// sponsor hero/premium row + grid tile (Figma 922:2824)
+  static const double sponsorRowHeight = 72;
+  /// archive gallery-tile bottom scrim (Figma 926:3299)
+  static const double galleryScrimHeight = 40;
+  /// gallery media tile (Figma 949:4043)
+  static const double mediaTileAspectRatio = 164 / 104;
+  /// archive gallery-tile scrim gradient bottom stop
+  static const double scrimOpacityStrong = 0.8;
+  /// archive bullet disc top-align nudge (Figma 925:3258)
+  static const double bulletTopNudge = 7;
+  /// delegations head-of-delegation box padding (Figma 1426:10838)
+  static const double headBoxPad = 9;
+  /// off-grid 2px micro-gap (below the space-4 scale)
+  static const double gap2 = 2;
+  /// off-grid 6px micro-gap (below the space-4 scale)
+  static const double gap6 = 6;
+  /// off-grid 18px gap (forum-guide step content -> caret, Figma 1426:11374)
+  static const double gap18 = 18;
+  /// news card thumbnail tile (Figma 958:2202)
+  static const double newsThumbWidth = 155;
+  /// news card thumbnail tile (Figma 958:2202)
+  static const double newsThumbHeight = 85;
+  /// media-partners grid tile (Figma 958:2246)
+  static const double partnerCardAspectRatio = 163.5 / 104;
+  /// onboarding step carousel viewport (Figma 148:22)
+  static const double onboardCarouselHeight = 170;
+  /// delegations decorative stats-strip map (Figma 1426:10781)
+  static const double statsStripHeight = 100;
+  /// venue-map floating zoom/locate control square (Figma 758:1358)
+  static const double mapControlSize = 40;
+  /// minimum touch-target height — venue-map direct-me button (Figma 758:1358)
+  static const double tapTarget = 44;
+  /// meeting-request day card (Figma 1776:4975)
+  static const double dayCardWidth = 58;
+  /// meeting-request day card + its picker row (Figma 1776:5052)
+  static const double dayCardHeight = 64;
 
   // #16 S3 — chatbot (Figma 1064:13275) + quick-reply strip metrics.
-  static const double radiusTail = 2; // chat-bubble inner-bottom tail corner
-  static const double chatBubblePadH = 15; // chat-bubble horizontal text inset
-  static const double chatBubbleMaxWidth = 288; // chat-bubble max width
-  static const double sendSquareSize = 24; // composer send-button box
-  static const double quickReplyStripHeight = 34; // quick-reply chip strip
+  /// chat-bubble inner-bottom tail corner
+  static const double radiusTail = 2;
+  /// chat-bubble horizontal text inset
+  static const double chatBubblePadH = 15;
+  /// chat-bubble max width
+  static const double chatBubbleMaxWidth = 288;
+  /// composer send-button box
+  static const double sendSquareSize = 24;
+  /// quick-reply chip strip
+  static const double quickReplyStripHeight = 34;
 
   // #16 S3 — ai_summary section-heading gold bar (Figma 1072:14660).
   static const double headingBarWidth = 4;
   static const double headingBarHeight = 20;
 
   // #16 S3 — home (Figma 758:1183+) metrics.
-  static const double hairlineWide = 0.8; // social-button border (follow-us)
-  static const double liveBadgeSize = 60; // home LIVE banner مباشر badge square
-  static const double highlightSlideHeight = 170; // highlights carousel slide
-  static const double heroBannerHeight = 160; // home hero banner strip
-  static const double navTileHeight = 80; // home tall nav-tile min height
+  /// social-button border (follow-us)
+  static const double hairlineWide = 0.8;
+  /// home LIVE banner مباشر badge square
+  static const double liveBadgeSize = 60;
+  /// highlights carousel slide
+  static const double highlightSlideHeight = 170;
+  /// home hero banner strip
+  static const double heroBannerHeight = 160;
+  /// home tall nav-tile min height
+  static const double navTileHeight = 80;
 
   // #16 S3 — requests card icon-box + status-chip metrics (Figma 1408:9761+).
-  static const double requestIconBox = 32; // gold type-icon box on a request card
-  static const double statusChipHeight = 32; // status filter chip height
-  static const double statusChipPadH = 13; // status filter chip horizontal padding
-  static const double chipFillActiveOpacity = 0.24; // selected chip fill alpha
-  static const double chipFillOpacity = 0.12; // resting chip fill alpha
-  static const double chipBorderOpacity = 0.2; // resting chip border alpha
+  /// gold type-icon box on a request card
+  static const double requestIconBox = 32;
+  /// status filter chip height
+  static const double statusChipHeight = 32;
+  /// status filter chip horizontal padding
+  static const double statusChipPadH = 13;
+  /// selected chip fill alpha
+  static const double chipFillActiveOpacity = 0.24;
+  /// resting chip fill alpha
+  static const double chipFillOpacity = 0.12;
+  /// resting chip border alpha
+  static const double chipBorderOpacity = 0.2;
 
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
@@ -242,12 +348,16 @@ class SimfTokens {
   static const double textSm = 12;
   static const double textMd = 14;
   static const double textLg = 16;
-  static const double textTitle = 18; // KSA "Sub-title 18" (Phase-0 type scale)
+  /// KSA "Sub-title 18" (Phase-0 type scale)
+  static const double textTitle = 18;
   static const double textXl = 20;
-  static const double textXxl = 22; // exhibitor/sponsor name (Figma 1439:11894)
-  static const double text24 = 24; // registration-status headline (Figma 1701:3803)
+  /// exhibitor/sponsor name (Figma 1439:11894)
+  static const double textXxl = 22;
+  /// registration-status headline (Figma 1701:3803)
+  static const double text24 = 24;
   static const double textHero = 28;
-  static const double text32 = 32; // staff register-visitor headline number
+  /// staff register-visitor headline number
+  static const double text32 = 32;
 
   // Named text styles — built incrementally per screen (§5.1). The font family
   // comes from the theme; these bundle only colour/size/weight/line-height so a
@@ -787,7 +897,8 @@ class SimfTokens {
   // the gold inline-span colour, the colourless submit label (rides the
   // theme font + FilledButton foreground per D-546/D-549), and the tight
   // numbered session-data line (leading 1.3, tighter than the 1.5 body).
-  static const double questionBoxHeight = 100; // tinted question textarea box
+  /// tinted question textarea box
+  static const double questionBoxHeight = 100;
   static const TextStyle textAccent = TextStyle(color: accent);
   static const TextStyle labelSemiboldSm = TextStyle(
     fontSize: textSm,
@@ -802,21 +913,29 @@ class SimfTokens {
   // gates (Figma 758:4651+) — the gold QR-glyph tile box, the 2px emphasis
   // border (shared with the moderator boxes), and the disabled / subtle-tint
   // opacity stops on the setup + verdict cards.
-  static const double qrTileSize = 134; // setup gold QR-glyph tile box
+  /// setup gold QR-glyph tile box
+  static const double qrTileSize = 134;
   // 2px emphasis border (gate tile, moderator boxes).
   static const double borderThick = 2;
-  static const double opacityDisabled = 0.5; // disabled control (Opacity)
-  static const double opacityDisabledFill = 0.4; // disabled button fill alpha
-  static const double opacityDisabledText = 0.6; // disabled button text alpha
-  static const double fillOpacitySubtle = 0.08; // gold/verdict subtle tint fill
+  /// disabled control (Opacity)
+  static const double opacityDisabled = 0.5;
+  /// disabled button fill alpha
+  static const double opacityDisabledFill = 0.4;
+  /// disabled button text alpha
+  static const double opacityDisabledText = 0.6;
+  /// gold/verdict subtle tint fill
+  static const double fillOpacitySubtle = 0.08;
   // moderation — the moderator desk (Figma 805:1876 / 1461:12565 / 1462:12236):
   // filter-chip bar, navy header, question card + its three action buttons.
   // radius5 is shared with the live AI-caption badge.
   static const double radius5 = 5;
   static const double moderatorFilterChipHeight = 58;
-  static const double moderatorChipBorderWidth = 1.18; // off-scale hairline
-  static const double moderatorCountBadgeSize = 28; // chip count-badge square
-  static const double moderatorCardTopBorderWidth = 8; // gold card top accent
+  /// off-scale hairline
+  static const double moderatorChipBorderWidth = 1.18;
+  /// chip count-badge square
+  static const double moderatorCountBadgeSize = 28;
+  /// gold card top accent
+  static const double moderatorCardTopBorderWidth = 8;
   static const double moderatorActionButtonHeight = 88;
   static const double moderatorActionShadowBlur = 10;
   static const double moderatorActionShadowOffsetY = 8;
@@ -857,11 +976,16 @@ class SimfTokens {
   // live (Figma 934:3450+) — LIVE/language-chip pads, the 16:9 player band
   // (5 uses), the fixed HH:mm time-chip + AI-caption badge boxes, and the two
   // white body styles. bodyWhiteRegularSm is shared with the sessions timeline.
-  static const double gap5 = 5; // off-grid 5px micro-gap
-  static const double gap10 = 10; // off-grid 10px chip padding
-  static const double videoAspectRatio = 16 / 9; // live player band
-  static const double timeChipWidth = 53; // upcoming-session HH:mm chip
-  static const double aiBadgeSize = 20; // AI live-caption badge box
+  /// off-grid 5px micro-gap
+  static const double gap5 = 5;
+  /// off-grid 10px chip padding
+  static const double gap10 = 10;
+  /// live player band
+  static const double videoAspectRatio = 16 / 9;
+  /// upcoming-session HH:mm chip
+  static const double timeChipWidth = 53;
+  /// AI live-caption badge box
+  static const double aiBadgeSize = 20;
   static const TextStyle bodyWhiteRegularSm = TextStyle(
     color: surface,
     fontSize: textSm,
@@ -876,33 +1000,52 @@ class SimfTokens {
   // sessions (Figma 758:5307+) — seat-map caps / legend swatches / row-label
   // column / seat corner; the my-seat + header action chip; the day banner +
   // calendar-strip cell; the meta icon box; type-tab; time rail; seat marker.
-  static const double actionChipHeight = 34; // my-seat + header action chip
-  static const double seatCapDefault = 40; // my-seat seat-square cap
-  static const double seatCapPicker = 52; // seat-picker seat-square cap
+  /// my-seat + header action chip
+  static const double actionChipHeight = 34;
+  /// my-seat seat-square cap
+  static const double seatCapDefault = 40;
+  /// seat-picker seat-square cap
+  static const double seatCapPicker = 52;
   static const double seatViewportMaxHeight =
       340; // seat-map viewport height before the grid scrolls vertically
-  static const double seatSwatchSm = 14; // my-seat legend swatch
-  static const double seatSwatchLg = 16; // picker + available legend swatch
+  /// my-seat legend swatch
+  static const double seatSwatchSm = 14;
+  /// picker + available legend swatch
+  static const double seatSwatchLg = 16;
   // D-771 — the staff seating desk (tablet): the body's reading-width cap and
   // the guest-photo square on the result card.
   static const double staffSeatingMaxWidth = 960;
   static const double staffSeatingPhotoSize = 64;
-  static const double seatRowLabelWidth = 12; // seat-map row column (1 letter)
+  /// seat-map row column (1 letter)
+  static const double seatRowLabelWidth = 12;
   static const double seatRowLabelCharWidth =
       10; // row column grows this-per-char for multi-char labels (VVIP/A001)
-  static const double radiusSeat = 3; // seat square / legend swatch corner
-  static const double seatMarkerInner = 20; // reservation seat-marker inner
-  static const double dayBannerHeight = 85; // programme day banner
-  static const double dayStripCellWidth = 52; // programme calendar-day cell
-  static const double metaIconBox = 24; // session-card meta icon box
-  static const double typeTabHeight = 41; // session type-tab cell
-  static const double timeRailMinHeight = 44; // timeline time-rail min height
-  static const double timeRailWidth = 48; // timeline time-rail column width
-  static const double opacityHalf = 0.5; // 50% (resting favourite heart)
-  static const double seatFillOpacity = 0.15; // reservation seat-marker fill
-  static const double seatNumberSize = 18; // centred numeral inside a seat cell
-  static const double seatStateIconSize = 12; // reserved/your-seat LEGEND icon
-  static const double seatCellIconSize = 24; // reserved/your-seat in-cell icon
+  /// seat square / legend swatch corner
+  static const double radiusSeat = 3;
+  /// reservation seat-marker inner
+  static const double seatMarkerInner = 20;
+  /// programme day banner
+  static const double dayBannerHeight = 85;
+  /// programme calendar-day cell
+  static const double dayStripCellWidth = 52;
+  /// session-card meta icon box
+  static const double metaIconBox = 24;
+  /// session type-tab cell
+  static const double typeTabHeight = 41;
+  /// timeline time-rail min height
+  static const double timeRailMinHeight = 44;
+  /// timeline time-rail column width
+  static const double timeRailWidth = 48;
+  /// 50% (resting favourite heart)
+  static const double opacityHalf = 0.5;
+  /// reservation seat-marker fill
+  static const double seatFillOpacity = 0.15;
+  /// centred numeral inside a seat cell
+  static const double seatNumberSize = 18;
+  /// reserved/your-seat LEGEND icon
+  static const double seatStateIconSize = 12;
+  /// reserved/your-seat in-cell icon
+  static const double seatCellIconSize = 24;
   // Western-digit seat numeral (w600, height 1) centred in the square. OnDark =
   // light on the reserved/available dark cells; OnGold = navy on the gold
   // selected / "mine" cell.

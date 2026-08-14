@@ -1,3 +1,10 @@
+// The 80-column rule does not apply to a translation table: you cannot shorten
+// a sentence to fit a column, and the alternative - adjacent-string splitting
+// like `'... and ' 'try again.'` - would permanently break exact-match grep on
+// the very strings the E2E catalogues assert on screen. Every row over the
+// limit in this file is a user-facing sentence, checked before this was added.
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'package:flutter/widgets.dart';
 
 /// Hand-rolled localisation lookup — every user-facing string in the app.
