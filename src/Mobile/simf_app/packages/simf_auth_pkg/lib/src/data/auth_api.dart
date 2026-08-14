@@ -1,13 +1,12 @@
+import 'package:simf_auth_pkg/src/data/dto/badge_auth_dtos.dart';
+import 'package:simf_auth_pkg/src/data/dto/current_user_dto.dart';
+import 'package:simf_auth_pkg/src/data/dto/device_key_dtos.dart';
+import 'package:simf_auth_pkg/src/data/dto/sign_in_request.dart';
+import 'package:simf_auth_pkg/src/data/dto/sign_in_response.dart';
+import 'package:simf_auth_pkg/src/data/dto/sign_up_request.dart';
+import 'package:simf_auth_pkg/src/data/dto/token_payload_dto.dart';
+import 'package:simf_auth_pkg/src/data/dto/verify_email_request.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import 'dto/badge_auth_dtos.dart';
-import 'dto/current_user_dto.dart';
-import 'dto/device_key_dtos.dart';
-import 'dto/sign_in_request.dart';
-import 'dto/sign_in_response.dart';
-import 'dto/sign_up_request.dart';
-import 'dto/token_payload_dto.dart';
-import 'dto/verify_email_request.dart';
 
 /// Thin layer over [SimfApiClient] that owns the auth endpoint paths.
 ///
@@ -135,7 +134,8 @@ class AuthApi {
   }
 
   // Device-key (biometric) sign-in — backend D-172.
-  Future<DeviceKeyEntryDto> registerDeviceKey(RegisterDeviceKeyRequest request) {
+  Future<DeviceKeyEntryDto> registerDeviceKey(
+      RegisterDeviceKeyRequest request,) {
     return _client.post<DeviceKeyEntryDto>(
       '/app/auth/device-keys',
       body: request.toJson(),

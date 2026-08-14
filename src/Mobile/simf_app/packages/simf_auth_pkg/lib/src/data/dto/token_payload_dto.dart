@@ -1,7 +1,6 @@
 import 'package:meta/meta.dart';
-
-import '../../domain/session.dart';
-import 'current_user_dto.dart';
+import 'package:simf_auth_pkg/src/data/dto/current_user_dto.dart';
+import 'package:simf_auth_pkg/src/domain/session.dart';
 
 /// The shared token payload returned by `/auth/sign-in`, `/auth/verify-totp`,
 /// and `/auth/refresh` (SIMF-API-001 §12.2 / §12.4).

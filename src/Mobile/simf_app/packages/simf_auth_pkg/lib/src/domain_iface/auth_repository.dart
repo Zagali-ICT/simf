@@ -1,5 +1,5 @@
-import '../domain/current_user.dart';
-import '../domain/session.dart';
+import 'package:simf_auth_pkg/src/domain/current_user.dart';
+import 'package:simf_auth_pkg/src/domain/session.dart';
 
 /// The auth feature's repository interface.
 ///
@@ -9,7 +9,7 @@ import '../domain/session.dart';
 abstract class AuthRepository {
   /// Sign in with email + password.
   ///
-  /// Returns either a [Session] (standard user) or a [SignInChallenge]
+  /// Returns either a [Session] (standard user) or a `SignInChallenge`
   /// (admin user, TOTP required). Throws an `AuthFailure` on failure
   /// (via the mapper in `domain/auth_failure.dart`).
   Future<SignInResult> signIn({
@@ -76,14 +76,21 @@ abstract class AuthRepository {
   /// sign-in; when false, `needsEmail` says whether the holder must supply an
   /// email (no real one on file) and `maskedEmail` is the on-file address shown
   /// when they don't.
-  Future<({bool found, bool hasPassword, String? displayName, bool needsEmail, String? maskedEmail})>
-      resolveBadge({required String qrId});
+  Future<
+      ({
+        bool found,
+        bool hasPassword,
+        String? displayName,
+        bool needsEmail,
+        String? maskedEmail
+      })> resolveBadge({required String qrId});
 
   /// D-738 — finish sign-in for a resolved has-password badge holder with only
   /// their password. The server resolves the user from the qrId and runs the
   /// full existing password + OTP pipeline; returns a [Session] or an
   /// [SignInOtpChallenge] exactly like [signIn]. An unknown / non-approved /
-  /// passwordless qrId fails as the same generic invalid-credentials `AuthFailure`.
+  /// passwordless qrId fails as the same generic invalid-credentials
+  /// `AuthFailure`.
   Future<SignInResult> signInWithBadge({
     required String qrId,
     required String password,
@@ -91,7 +98,8 @@ abstract class AuthRepository {
 
   /// Part B — email a verification code to begin activating a passwordless
   /// badge account. Returns where the code went (masked) + its lifetime.
-  Future<({String maskedEmail, int codeExpiresInSeconds})> badgeActivationStart({
+  Future<({String maskedEmail, int codeExpiresInSeconds})>
+      badgeActivationStart({
     required String qrId,
     String? email,
   });

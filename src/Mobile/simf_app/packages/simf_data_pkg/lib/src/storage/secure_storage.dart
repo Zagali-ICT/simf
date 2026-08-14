@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import 'storage_keys.dart';
+import 'package:simf_data_pkg/src/storage/storage_keys.dart';
 
 /// Thin wrapper over `flutter_secure_storage` for the tokens and any other
 /// secret persisted by the app.

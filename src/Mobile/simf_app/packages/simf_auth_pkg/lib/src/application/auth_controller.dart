@@ -2,19 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_auth_pkg/src/application/auth_providers.dart';
+import 'package:simf_auth_pkg/src/data/auth_api.dart';
+import 'package:simf_auth_pkg/src/data/auth_repository_impl.dart';
+import 'package:simf_auth_pkg/src/data/device_key_client.dart';
+import 'package:simf_auth_pkg/src/domain/app_role.dart';
+import 'package:simf_auth_pkg/src/domain/auth_failure.dart';
+import 'package:simf_auth_pkg/src/domain/current_user.dart';
+import 'package:simf_auth_pkg/src/domain/preferred_language.dart';
+import 'package:simf_auth_pkg/src/domain/registration_status.dart';
+import 'package:simf_auth_pkg/src/domain/session.dart';
+import 'package:simf_auth_pkg/src/domain_iface/auth_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../data/auth_api.dart';
-import '../data/auth_repository_impl.dart';
-import 'auth_providers.dart';
-import '../data/device_key_client.dart';
-import '../domain/app_role.dart';
-import '../domain/auth_failure.dart';
-import '../domain/current_user.dart';
-import '../domain/preferred_language.dart';
-import '../domain/registration_status.dart';
-import '../domain/session.dart';
-import '../domain_iface/auth_repository.dart';
 
 /// The state surfaced by the [AuthController]. A screen watches this and
 /// renders sign-in vs signed-in views.
@@ -118,8 +117,8 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   /// unlike [refresh], does **not** sign the user out on failure — it returns
   /// `false` and leaves the session in place, so the guard can show its 30s
   /// "stay signed in?" warning instead of an abrupt, unannounced sign-out.
-  /// Shares the single-flight with [refresh] (below) so a concurrent 401 refresh
-  /// and this proactive one never rotate the same token twice.
+  /// Shares the single-flight with [refresh] (below) so a concurrent 401
+  /// refresh and this proactive one never rotate the same token twice.
   Future<bool> tryRefresh() => _sharedRefresh();
 
   /// Single-flight (D-443): when several requests 401 at the same moment — e.g.
@@ -156,8 +155,8 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
       return true;
     } on AuthFailure {
       // Do NOT sign out here — the caller decides. [refresh] (the 401 path)
-      // clears the session; [tryRefresh] (the proactive guard path) leaves it in
-      // place so a 30s warning can precede any sign-out (D-737).
+      // clears the session; [tryRefresh] (the proactive guard path) leaves it
+      // in place so a 30s warning can precede any sign-out (D-737).
       return false;
     }
   }
@@ -165,10 +164,10 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   @override
   Future<void> onSessionExpired() => _signedOutCleanup();
 
-  /// Clears every trace of the session (storage + in-memory tokens) and flips to
-  /// signed-out. The single place both the 401 [refresh] path and
-  /// [onSessionExpired] converge, so a dead session is always torn down the same
-  /// way.
+  /// Clears every trace of the session (storage + in-memory tokens) and flips
+  /// to signed-out. The single place both the 401 [refresh] path and
+  /// [onSessionExpired] converge, so a dead session is always torn down the
+  /// same way.
   Future<void> _signedOutCleanup() async {
     await _clearSessionStorage();
     _accessToken = null;
@@ -184,7 +183,8 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     bool rememberSession = true,
   }) async {
     // #9 — gate durable session persistence on "Keep me logged in"; carried
-    // through to the OTP step (same controller) and honoured by _persistSession.
+    // through to the OTP step (same controller) and honoured by
+    // _persistSession.
     _rememberSession = rememberSession;
     final result = await _repository.signIn(email: email, password: password);
     switch (result) {
@@ -238,10 +238,10 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     await reloadCurrentUser();
   }
 
-  /// #12 — re-issue the emailed sign-in OTP for the in-progress ticket, in place
-  /// (no return to sign-in). The same ticket stays valid, so [AuthState] is
-  /// unchanged; returns the resend-button cooldown in seconds. No-op (-1) when
-  /// not awaiting an OTP.
+  /// #12 — re-issue the emailed sign-in OTP for the in-progress ticket, in
+  /// place (no return to sign-in). The same ticket stays valid, so [AuthState]
+  /// is unchanged; returns the resend-button cooldown in seconds. No-op (-1)
+  /// when not awaiting an OTP.
   Future<int> resendOtp() async {
     final current = state;
     if (current is! AuthStateAwaitingOtp) {
@@ -268,8 +268,9 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   }
 
   /// Sign-up step 2 (Page 006): verify the emailed 6-digit code. Moves the
-  /// account Registered → EmailVerified; issues **no** session (anonymous flow).
-  /// Throws [AuthFailure] on a wrong/expired/capped code for the caller to map.
+  /// account Registered → EmailVerified; issues **no** session (anonymous
+  /// flow). Throws [AuthFailure] on a wrong/expired/capped code for the caller
+  /// to map.
   Future<void> verifyEmail({
     required String email,
     required String code,
@@ -369,9 +370,10 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     return id != null && id.isNotEmpty;
   }
 
-  /// Biometric re-open (Page_003 L-2): challenge → sign → sign-in-with-device-key
-  /// → tokens. The caller gates this behind a successful on-device biometric
-  /// prompt (local_auth). No-op if no device key is enrolled.
+  /// Biometric re-open (Page_003 L-2): challenge → sign →
+  /// sign-in-with-device-key → tokens. The caller gates this behind a
+  /// successful on-device biometric prompt (local_auth). No-op if no device key
+  /// is enrolled.
   Future<void> signInWithDeviceKey() async {
     final id = await _secureStorage.read(StorageKeys.deviceKeyId);
     final privateKey = await _secureStorage.read(StorageKeys.deviceKeyPrivate);
@@ -395,7 +397,7 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     _setSignedIn(session);
     try {
       await reloadCurrentUser();
-    } catch (_) {
+    } on Object catch (_) {
       // Best-effort — the user is signed in; a hydrate failure must not
       // skip the post-sign-in navigation.
     }
@@ -409,7 +411,7 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     if (id != null && id.isNotEmpty) {
       try {
         await _repository.revokeDeviceKey(id);
-      } catch (_) {
+      } on Object catch (_) {
         // Best-effort: clearing the local key below disables the biometric
         // path even if the server revoke fails (the orphaned server key is
         // unusable without the private key we are about to delete).
@@ -419,12 +421,12 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     // skip the other (either left behind would keep the biometric path alive).
     try {
       await _secureStorage.delete(StorageKeys.deviceKeyId);
-    } catch (_) {
+    } on Object catch (_) {
       // best-effort
     }
     try {
       await _secureStorage.delete(StorageKeys.deviceKeyPrivate);
-    } catch (_) {
+    } on Object catch (_) {
       // best-effort
     }
   }
@@ -473,7 +475,7 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
           if (raw is Map<String, dynamic>) {
             cachedUser = _restoreCurrentUserFromMap(raw);
           }
-        } catch (_) {
+        } on Object catch (_) {
           cachedUser = null;
         }
       }
@@ -534,7 +536,7 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
         _refreshToken = null;
         state = const AuthStateSignedOut();
       }
-    } catch (_) {
+    } on Object catch (_) {
       // Any unexpected failure (e.g. secure-storage throwing on a corrupt
       // keystore) must never strand the app on the splash (Logic L-6): fall
       // back to the signed-out entry.

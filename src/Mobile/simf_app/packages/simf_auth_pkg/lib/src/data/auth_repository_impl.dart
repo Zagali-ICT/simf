@@ -1,17 +1,16 @@
+import 'package:simf_auth_pkg/src/data/auth_api.dart';
+import 'package:simf_auth_pkg/src/data/device_key_client.dart';
+import 'package:simf_auth_pkg/src/data/dto/badge_auth_dtos.dart';
+import 'package:simf_auth_pkg/src/data/dto/device_key_dtos.dart';
+import 'package:simf_auth_pkg/src/data/dto/sign_in_request.dart';
+import 'package:simf_auth_pkg/src/data/dto/sign_in_response.dart';
+import 'package:simf_auth_pkg/src/data/dto/sign_up_request.dart';
+import 'package:simf_auth_pkg/src/data/dto/verify_email_request.dart';
+import 'package:simf_auth_pkg/src/domain/auth_failure.dart';
+import 'package:simf_auth_pkg/src/domain/current_user.dart';
+import 'package:simf_auth_pkg/src/domain/session.dart';
+import 'package:simf_auth_pkg/src/domain_iface/auth_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-
-import '../domain/auth_failure.dart';
-import '../domain/current_user.dart';
-import '../domain/session.dart';
-import '../domain_iface/auth_repository.dart';
-import 'auth_api.dart';
-import 'device_key_client.dart';
-import 'dto/badge_auth_dtos.dart';
-import 'dto/device_key_dtos.dart';
-import 'dto/sign_in_request.dart';
-import 'dto/sign_in_response.dart';
-import 'dto/sign_up_request.dart';
-import 'dto/verify_email_request.dart';
 
 /// The default [AuthRepository] implementation. Wraps [AuthApi] and turns
 /// raw [ApiFailure]s into typed [AuthFailure]s.
@@ -168,8 +167,14 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<({bool found, bool hasPassword, String? displayName, bool needsEmail, String? maskedEmail})>
-      resolveBadge({required String qrId}) async {
+  Future<
+      ({
+        bool found,
+        bool hasPassword,
+        String? displayName,
+        bool needsEmail,
+        String? maskedEmail
+      })> resolveBadge({required String qrId}) async {
     final data = await _guard(
       () => _api.resolveBadge(ResolveBadgeRequest(qrId: qrId)),
     );
@@ -183,7 +188,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<({String maskedEmail, int codeExpiresInSeconds})> badgeActivationStart({
+  Future<({String maskedEmail, int codeExpiresInSeconds})>
+      badgeActivationStart({
     required String qrId,
     String? email,
   }) async {
@@ -194,7 +200,8 @@ class AuthRepositoryImpl implements AuthRepository {
     );
     return (
       maskedEmail: data['maskedEmail'] as String? ?? '',
-      codeExpiresInSeconds: (data['codeExpiresInSeconds'] as num?)?.toInt() ?? 0,
+      codeExpiresInSeconds:
+          (data['codeExpiresInSeconds'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -238,7 +245,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<String> sendBiometricStepUp() async {
-    final result = await _guard(() => _api.sendBiometricStepUp());
+    final result = await _guard(_api.sendBiometricStepUp);
     return result.maskedEmail;
   }
 
@@ -280,6 +287,11 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       return await call();
     } on ApiFailure catch (failure) {
+      // `AuthFailure` is this package's typed error channel: a sealed
+      // hierarchy the controller catches and switches over exhaustively.
+      // Making it extend Exception to satisfy the lint would buy nothing and
+      // cost the exhaustiveness, which is the whole reason it is sealed.
+      // ignore: only_throw_errors
       throw mapAuthFailure(failure);
     }
   }
