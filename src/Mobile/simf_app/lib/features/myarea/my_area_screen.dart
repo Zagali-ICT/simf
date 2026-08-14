@@ -16,7 +16,7 @@ import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_dashboard_body.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_identity_card.dart';
-import 'package:simf_app/features/myarea/widgets/my_area_rows.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_more_row.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 

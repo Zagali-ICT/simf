@@ -9,7 +9,10 @@ import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/widgets/my_area_identity_card.dart';
-import 'package:simf_app/features/myarea/widgets/my_area_rows.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_more_row.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_schedule_group_header.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_schedule_row.dart';
+import 'package:simf_app/features/myarea/widgets/my_area_share_tile.dart';
 import 'package:simf_app/features/sessions/data/session_favourites.dart';
 
 /// The Approved-user My-Area dashboard body (frame 213:963 / 758:1283): the
