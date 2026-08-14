@@ -36,7 +36,7 @@ class SpeakerListCard extends StatelessWidget {
     // trailing (left, in RTL) edge of the name — NOT a badge on the avatar — and
     // the sub-line carries only the rank.
     final flag = countryFlagEmoji(speaker.countryId);
-    final label = speaker.localizedRank(isArabic)?.trim() ?? '';
+    final label = speaker.localizedRank(isArabic: isArabic)?.trim() ?? '';
     final flip = !isArabic;
 
     return SimfCard(
@@ -67,7 +67,7 @@ class SpeakerListCard extends StatelessWidget {
                     children: <Widget>[
                       Flexible(
                         child: Text(
-                          speaker.localizedName(isArabic),
+                          speaker.localizedName(isArabic: isArabic),
                           textAlign: TextAlign.start,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

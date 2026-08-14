@@ -123,13 +123,13 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     final l10n = AppL10n.of(context);
     final speaker = _speaker;
     final isArabic = l10n.isArabic;
-    final rank = speaker?.localizedRank(isArabic)?.trim();
+    final rank = speaker?.localizedRank(isArabic: isArabic)?.trim();
     return SimfPageShell(
       onBack: () => backOrHome(context),
       header: SpeakerProfileHeader(
         title: speaker == null
             ? l10n.speakerProfileTitle
-            : speaker.localizedName(isArabic),
+            : speaker.localizedName(isArabic: isArabic),
         rank: rank,
         flag: speaker?.flagEmoji ?? '',
         onBack: () => backOrHome(context),
@@ -184,13 +184,13 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     final canRequestSpeakerMeeting =
         ref.watch(currentUserMeetingAccessProvider).value?.speaker ?? false;
     final sections = <SpeakerCvSection>[
-      SpeakerCvSection(l10n.cvBio, speaker.localizedBio(isArabic)),
+      SpeakerCvSection(l10n.cvBio, speaker.localizedBio(isArabic: isArabic)),
       SpeakerCvSection(
         l10n.cvQualifications,
-        speaker.localizedQualifications(isArabic),
+        speaker.localizedQualifications(isArabic: isArabic),
       ),
-      SpeakerCvSection(l10n.cvTraining, speaker.localizedTraining(isArabic)),
-      SpeakerCvSection(l10n.cvAwards, speaker.localizedAwards(isArabic)),
+      SpeakerCvSection(l10n.cvTraining, speaker.localizedTraining(isArabic: isArabic)),
+      SpeakerCvSection(l10n.cvAwards, speaker.localizedAwards(isArabic: isArabic)),
     ].where((s) => s.body != null).toList();
     final activeCv =
         sections.isEmpty ? 0 : _activeCv.clamp(0, sections.length - 1);
@@ -220,8 +220,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         SpeakerAvatar(
           imageUrl:
               AssetUrls.image(baseUrl, AssetKind.speakerPhoto, speaker.id),
-          initials: speakerInitials(speaker.localizedName(isArabic)),
-          name: speaker.localizedName(isArabic),
+          initials: speakerInitials(speaker.localizedName(isArabic: isArabic)),
+          name: speaker.localizedName(isArabic: isArabic),
         ),
         const SizedBox(height: SimfTokens.space8 + SimfTokens.space2), // 40
         if (sections.isNotEmpty) ...<Widget>[

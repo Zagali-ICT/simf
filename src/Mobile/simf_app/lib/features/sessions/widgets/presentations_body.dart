@@ -134,7 +134,7 @@ class PresentationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final speaker = item.localizedSpeaker(isArabic);
+    final speaker = item.localizedSpeaker(isArabic: isArabic);
 
     return SimfCard(
       onTap: () => _openDetail(context),
@@ -152,7 +152,7 @@ class PresentationCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Text(
-                        item.localizedSessionTitle(isArabic),
+                        item.localizedSessionTitle(isArabic: isArabic),
                         textAlign: TextAlign.start,
                         style: SimfTokens.labelWhiteMedium,
                       ),

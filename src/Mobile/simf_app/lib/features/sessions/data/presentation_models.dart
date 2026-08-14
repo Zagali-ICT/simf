@@ -52,10 +52,10 @@ class PresentationItem {
   /// wire).
   DateTime get sessionStartLocal => saudiOf(sessionStart);
 
-  String localizedSessionTitle(bool isArabic) =>
+  String localizedSessionTitle({required bool isArabic}) =>
       _pickRequired(sessionTitleArabic, sessionTitle, isArabic);
 
-  String? localizedSpeaker(bool isArabic) =>
+  String? localizedSpeaker({required bool isArabic}) =>
       _pickOptional(speakerNameArabic, speakerName, isArabic);
 }
 

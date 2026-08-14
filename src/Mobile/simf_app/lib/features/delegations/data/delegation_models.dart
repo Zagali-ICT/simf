@@ -48,18 +48,18 @@ class DelegationItem {
   final DateTime? arrivalDate;
   final DateTime? departureDate;
 
-  String localizedCountry(bool isArabic) =>
+  String localizedCountry({required bool isArabic}) =>
       _pickRequired(countryNameArabic, countryName, isArabic);
 
   /// The country name in the *other* language (shown as the card's subtitle).
-  String localizedCountrySubtitle(bool isArabic) =>
+  String localizedCountrySubtitle({required bool isArabic}) =>
       isArabic ? countryName.trim() : countryNameArabic.trim();
 
-  String? localizedHead(bool isArabic) =>
+  String? localizedHead({required bool isArabic}) =>
       _pickOptional(headNameArabic, headName, isArabic);
 
   /// The head-of-delegation's title/rank in the active locale (owner 2026-07-19).
-  String? localizedHeadTitle(bool isArabic) =>
+  String? localizedHeadTitle({required bool isArabic}) =>
       _pickOptional(headTitleArabic, headTitle, isArabic);
 
   bool get hasHead =>
@@ -75,8 +75,8 @@ class DelegationItem {
 
   /// The single leading character of the head's localized name, for the avatar
   /// square. Empty when there is no head.
-  String headInitial(bool isArabic) {
-    final name = localizedHead(isArabic)?.trim() ?? '';
+  String headInitial({required bool isArabic}) {
+    final name = localizedHead(isArabic: isArabic)?.trim() ?? '';
     if (name.isEmpty) {
       return '';
     }

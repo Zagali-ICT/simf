@@ -65,7 +65,7 @@ class ExhibitorDetailScreen extends ConsumerWidget {
   ) {
     final isArabic = l10n.isArabic;
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    final name = booth.localizedExhibitor(isArabic) ?? booth.localizedName(isArabic);
+    final name = booth.localizedExhibitor(isArabic: isArabic) ?? booth.localizedName(isArabic: isArabic);
 
     return EntityDetailScaffold(
       onRefresh: () =>
@@ -95,9 +95,9 @@ class ExhibitorDetailScreen extends ConsumerWidget {
       ),
       name: name,
       locationLine: entityLocationLine(
-        booth.localizedCity(isArabic),
-        booth.localizedCountry(isArabic),
-        isArabic,
+        booth.localizedCity(isArabic: isArabic),
+        booth.localizedCountry(isArabic: isArabic),
+        isArabic: isArabic,
       ),
       countryId: booth.countryId,
       tierPill: booth.tier == null || (booth.tierName ?? '').isEmpty
@@ -111,7 +111,7 @@ class ExhibitorDetailScreen extends ConsumerWidget {
                 RouteNames.boothMap,
                 pathParameters: <String, String>{RouteParams.boothId: booth.id},
               ),
-      about: booth.localizedDescription(isArabic),
+      about: booth.localizedDescription(isArabic: isArabic),
       website: booth.website,
       onWebsite: () => _openWebsite(context, booth.website),
     );

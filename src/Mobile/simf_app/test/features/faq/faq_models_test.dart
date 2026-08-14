@@ -20,11 +20,11 @@ void main() {
       });
 
       expect(group.id, 'g1');
-      expect(group.localizedName(true), 'التسجيل');
-      expect(group.localizedName(false), 'Registration');
+      expect(group.localizedName(isArabic: true), 'التسجيل');
+      expect(group.localizedName(isArabic: false), 'Registration');
       expect(group.entries, hasLength(1));
-      expect(group.entries.first.localizedQuestion(true), 'كيف أسجّل؟');
-      expect(group.entries.first.localizedAnswer(false), 'Use the website.');
+      expect(group.entries.first.localizedQuestion(isArabic: true), 'كيف أسجّل؟');
+      expect(group.entries.first.localizedAnswer(isArabic: false), 'Use the website.');
     });
 
     test('missing entries decodes to an empty list', () {
@@ -45,9 +45,9 @@ void main() {
         answerArabic: 'عربي فقط',
       );
       // Arabic question is blank → falls back to English.
-      expect(entry.localizedQuestion(true), 'English only');
+      expect(entry.localizedQuestion(isArabic: true), 'English only');
       // English answer is blank → falls back to Arabic.
-      expect(entry.localizedAnswer(false), 'عربي فقط');
+      expect(entry.localizedAnswer(isArabic: false), 'عربي فقط');
     });
   });
 }

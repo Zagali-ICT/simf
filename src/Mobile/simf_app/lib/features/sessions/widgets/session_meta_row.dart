@@ -49,9 +49,9 @@ class SessionMetaRow extends StatelessWidget {
           ),
           MetaItem(
             icon: Icons.calendar_today_outlined,
-            label: '${gregorianWeekdayName(start, isArabic)} · '
+            label: '${gregorianWeekdayName(start, isArabic: isArabic)} · '
                 '${start.day.toString().padLeft(2, '0')} '
-                '${gregorianMonthName(start.month, isArabic)}',
+                '${gregorianMonthName(start.month, isArabic: isArabic)}',
           ),
         ],
       ),

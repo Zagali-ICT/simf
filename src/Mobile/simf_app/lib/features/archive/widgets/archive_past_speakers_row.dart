@@ -37,7 +37,7 @@ class ArchivePastSpeakersRow extends StatelessWidget {
       children: <Widget>[
         for (final s in shown)
           ArchivePastSpeakerCard(
-            name: s.localized(isArabic),
+            name: s.localized(isArabic: isArabic),
             photoUrl: s.photoRelativePath,
           ),
         if (overflow > 0)

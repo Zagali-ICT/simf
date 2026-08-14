@@ -62,7 +62,7 @@ class SessionHeaderCard extends StatelessWidget {
     // client's list, OI-2 / D-226), and never on the #29 workshop reduction.
     final category = titleAndTimeOnly
         ? null
-        : detail.localizedCategory(isArabic)?.trim();
+        : detail.localizedCategory(isArabic: isArabic)?.trim();
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: BoxDecoration(
@@ -83,7 +83,7 @@ class SessionHeaderCard extends StatelessWidget {
               ],
               Expanded(
                 child: Text(
-                  detail.localizedTitle(isArabic),
+                  detail.localizedTitle(isArabic: isArabic),
                   textAlign: TextAlign.start,
                   // Frame 889:2705 — 16px SemiBold white title line.
                   style: SimfTokens.labelWhiteSemiboldLgTall,

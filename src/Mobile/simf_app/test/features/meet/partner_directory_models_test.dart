@@ -43,14 +43,14 @@ void main() {
         kind: 'person', id: 'u1', name: '', nameArabic: 'محمد',
         subtitleArabic: 'مهندس',
       );
-      expect(arOnly.localizedName(false), 'محمد'); // en empty → ar fallback
-      expect(arOnly.localizedName(true), 'محمد');
-      expect(arOnly.localizedSubtitle(false), 'مهندس');
-      expect(arOnly.localizedSubtitle(true), 'مهندس');
+      expect(arOnly.localizedName(isArabic: false), 'محمد'); // en empty → ar fallback
+      expect(arOnly.localizedName(isArabic: true), 'محمد');
+      expect(arOnly.localizedSubtitle(isArabic: false), 'مهندس');
+      expect(arOnly.localizedSubtitle(isArabic: true), 'مهندس');
       const noSub = PartnerDirectoryEntry(
         kind: 'person', id: 'u2', name: 'X', nameArabic: 'س',
       );
-      expect(noSub.localizedSubtitle(true), isNull);
+      expect(noSub.localizedSubtitle(isArabic: true), isNull);
     });
 
     test('logoUrl builds the right asset route per kind', () {

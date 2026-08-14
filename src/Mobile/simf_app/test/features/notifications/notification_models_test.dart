@@ -27,9 +27,9 @@ void main() {
       // left untagged: tagging it would let a later toLocal() shift it by the
       // device offset (owner decision 2026-07-31).
       expect(item.createdAt!.isUtc, isFalse);
-      expect(item.localizedTitle(false), 'Session starts soon');
-      expect(item.localizedTitle(true), 'تبدأ الجلسة قريباً');
-      expect(item.localizedBody(false), 'Hall A in 15 minutes.');
+      expect(item.localizedTitle(isArabic: false), 'Session starts soon');
+      expect(item.localizedTitle(isArabic: true), 'تبدأ الجلسة قريباً');
+      expect(item.localizedBody(isArabic: false), 'Hall A in 15 minutes.');
     });
 
     test('a read item parses readAt and isRead true', () {
@@ -50,7 +50,7 @@ void main() {
       expect(item.severity, NotificationSeverity.success);
       expect(item.readAt, isNotNull);
       // Arabic missing → falls back to English.
-      expect(item.localizedTitle(true), 'Confirmed');
+      expect(item.localizedTitle(isArabic: true), 'Confirmed');
     });
 
     test('an unknown or missing severity falls back to info', () {
@@ -62,7 +62,7 @@ void main() {
       final item = NotificationItem.fromJson(const <String, dynamic>{'id': 'n3'});
       expect(item.severity, NotificationSeverity.info);
       expect(item.isRead, isFalse);
-      expect(item.localizedTitle(false), '');
+      expect(item.localizedTitle(isArabic: false), '');
     });
   });
 

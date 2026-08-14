@@ -75,13 +75,13 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
 
     final block = _block;
     final visionBody = (block != null && block.hasBody)
-        ? block.localizedBody(isAr)
+        ? block.localizedBody(isArabic: isAr)
         : l10n.aboutHeroBody;
 
-    final forumName = (profile != null && profile.nameFor(isAr).isNotEmpty)
-        ? profile.nameFor(isAr)
+    final forumName = (profile != null && profile.nameFor(isArabic: isAr).isNotEmpty)
+        ? profile.nameFor(isArabic: isAr)
         : l10n.aboutForumName;
-    final forumTitle = profile != null ? profile.titleFor(isAr) : '';
+    final forumTitle = profile != null ? profile.titleFor(isArabic: isAr) : '';
     final statusBadge = profile != null
         ? '${l10n.aboutStatus(profile.status)} · ${profile.currentYear}'
         : null;
@@ -95,7 +95,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           aboutCards.add(const SizedBox(height: SimfTokens.space4));
         }
         aboutCards.add(
-          AboutTextCard(title: item.titleFor(isAr), body: item.textFor(isAr)),
+          AboutTextCard(title: item.titleFor(isArabic: isAr), body: item.textFor(isArabic: isAr)),
         );
       }
     } else {
@@ -110,7 +110,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     // The "details" list — driven by the profile's details when present.
     final detailRows = (profile != null && profile.details.isNotEmpty)
         ? profile.details
-            .map((d) => (d.nameFor(isAr), d.valueFor(isAr)))
+            .map((d) => (d.nameFor(isArabic: isAr), d.valueFor(isArabic: isAr)))
             .toList()
         : <(String, String)>[
             (l10n.aboutDetailYearLabel, l10n.aboutDetailYearValue),

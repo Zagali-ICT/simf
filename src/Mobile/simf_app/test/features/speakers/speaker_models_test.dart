@@ -15,9 +15,9 @@ void main() {
         'photoRelativePath': 'speakers/1.jpg',
         'displayOrder': 3,
       });
-      expect(s.localizedName(true), 'القبطان ريف');
-      expect(s.localizedName(false), 'Capt. Reef');
-      expect(s.localizedCountry(true), 'السعودية');
+      expect(s.localizedName(isArabic: true), 'القبطان ريف');
+      expect(s.localizedName(isArabic: false), 'Capt. Reef');
+      expect(s.localizedCountry(isArabic: true), 'السعودية');
       expect(s.displayOrder, 3);
     });
   });
@@ -51,15 +51,15 @@ void main() {
           },
         ],
       });
-      expect(d.localizedBio(false), 'A bio');
-      expect(d.localizedQualifications(false), 'Quals');
-      expect(d.localizedAwards(false), isNull); // null pair → null
+      expect(d.localizedBio(isArabic: false), 'A bio');
+      expect(d.localizedQualifications(isArabic: false), 'Quals');
+      expect(d.localizedAwards(isArabic: false), isNull); // null pair → null
       expect(d.allowsMeetingRequests, isTrue);
       expect(d.allowsDataSharing, isTrue);
       expect(d.facebookUrl, 'https://fb/x');
       expect(d.websiteUrl, 'https://reef.example.sa'); // D-544
       expect(d.sessions, hasLength(1));
-      expect(d.sessions.single.localizedTitle(true), 'حديث');
+      expect(d.sessions.single.localizedTitle(isArabic: true), 'حديث');
       // Saudi wall-clock carries no zone, so a decoded value must NOT be
       // left untagged: tagging it would let a later toLocal() shift it by the
       // device offset (owner decision 2026-07-31).
@@ -75,7 +75,7 @@ void main() {
       expect(d.allowsMeetingRequests, isFalse);
       expect(d.allowsDataSharing, isFalse);
       expect(d.sessions, isEmpty);
-      expect(d.localizedBio(false), isNull);
+      expect(d.localizedBio(isArabic: false), isNull);
     });
   });
 }

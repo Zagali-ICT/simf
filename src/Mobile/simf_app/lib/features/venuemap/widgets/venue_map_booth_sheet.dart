@@ -41,7 +41,7 @@ class VenueMapBoothSheet extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  booth?.localizedName(isArabic) ?? node.localizedLabel(isArabic),
+                  booth?.localizedName(isArabic: isArabic) ?? node.localizedLabel(isArabic: isArabic),
                   style: SimfTokens.titleBold,
                 ),
               ),
@@ -65,8 +65,8 @@ class VenueMapBoothSheet extends StatelessWidget {
           if (booth != null) ...<Widget>[
             const SizedBox(height: SimfTokens.space2),
             SubLine(
-              booth.localizedExhibitor(isArabic),
-              booth.localizedSector(isArabic),
+              booth.localizedExhibitor(isArabic: isArabic),
+              booth.localizedSector(isArabic: isArabic),
             ),
             const SizedBox(height: SimfTokens.space3),
             FutureBuilder<BoothDetail?>(
@@ -79,7 +79,7 @@ class VenueMapBoothSheet extends StatelessWidget {
                   );
                 }
                 final description =
-                    snapshot.data?.localizedDescription(isArabic);
+                    snapshot.data?.localizedDescription(isArabic: isArabic);
                 if (description == null) {
                   return const SizedBox.shrink();
                 }

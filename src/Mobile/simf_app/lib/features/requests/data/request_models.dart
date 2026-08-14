@@ -145,7 +145,7 @@ class AppRequestItem {
 
   /// The context line under the type headline, in the active locale (AR/EN with
   /// a fallback).
-  String localizedSubtitle(bool isArabic) {
+  String localizedSubtitle({required bool isArabic}) {
     final ar = titleArabic.trim();
     final en = title.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -153,7 +153,7 @@ class AppRequestItem {
 
   /// D-590 — the speaker's rank (the المقابلات subtitle line) in the active
   /// locale (owner 2026-07-19). Null for the non-speaker kinds / when unset.
-  String? localizedRank(bool isArabic) {
+  String? localizedRank({required bool isArabic}) {
     final ar = subtitleArabic?.trim() ?? '';
     final en = subtitle?.trim() ?? '';
     final picked =

@@ -38,9 +38,9 @@ class ArchiveBody extends ConsumerWidget {
     final d = detail.asData?.value;
 
     final summary =
-        d?.localizedSummary(isArabic) ?? selected.localizedSummary(isArabic);
-    final location = d?.localizedLocation(isArabic);
-    final dateLabel = d?.localizedDateLabel(isArabic);
+        d?.localizedSummary(isArabic: isArabic) ?? selected.localizedSummary(isArabic: isArabic);
+    final location = d?.localizedLocation(isArabic: isArabic);
+    final dateLabel = d?.localizedDateLabel(isArabic: isArabic);
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -69,7 +69,7 @@ class ArchiveBody extends ConsumerWidget {
         SimfSectionHeader(title: l10n.archiveTitleLabel),
         const SizedBox(height: SimfTokens.space2),
         ArchiveBullet(
-          text: selected.localizedTitle(isArabic),
+          text: selected.localizedTitle(isArabic: isArabic),
           color: SimfTokens.accent,
           bold: true,
         ),
@@ -112,7 +112,7 @@ class ArchiveBody extends ConsumerWidget {
           const SizedBox(height: SimfTokens.space4),
           for (var i = 0; i < d.sessionTitles.length; i++) ...<Widget>[
             if (i > 0) const SizedBox(height: SimfTokens.space2),
-            ArchiveSessionTitleCard(text: d.sessionTitles[i].localized(isArabic)),
+            ArchiveSessionTitleCard(text: d.sessionTitles[i].localized(isArabic: isArabic)),
           ],
         ],
         if (d != null && d.pastSpeakers.isNotEmpty) ...<Widget>[

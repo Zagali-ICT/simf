@@ -225,7 +225,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
         ),
         children: <Widget>[
           Text(
-            map.localizedSessionTitle(l10n.isArabic) ??
+            map.localizedSessionTitle(isArabic: l10n.isArabic) ??
                 (held == null ? l10n.seatPickerTitle : l10n.seatChangeTitle),
             textAlign: TextAlign.center,
             style: SimfTokens.labelWhiteBoldTitle,

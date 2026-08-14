@@ -47,10 +47,10 @@ class SpeakerSummary {
   final String? countryNameAr;
   final String? photoRelativePath;
 
-  String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
-  String? localizedRank(bool isArabic) =>
+  String localizedName({required bool isArabic}) => _pick(nameArabic, name, isArabic);
+  String? localizedRank({required bool isArabic}) =>
       _pickOpt(rankArabic, rank, isArabic);
-  String? localizedCountry(bool isArabic) =>
+  String? localizedCountry({required bool isArabic}) =>
       _pickOpt(countryNameAr, countryNameEn, isArabic);
 }
 
@@ -92,8 +92,8 @@ class SpeakerSession {
 
   DateTime get startLocal => saudiOf(start);
 
-  String localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
-  String? localizedHall(bool isArabic) =>
+  String localizedTitle({required bool isArabic}) => _pick(titleArabic, title, isArabic);
+  String? localizedHall({required bool isArabic}) =>
       _pickOpt(hallNameArabic, hallName, isArabic);
 }
 
@@ -191,10 +191,10 @@ class SpeakerDetail {
   final int displayOrder;
   final List<SpeakerSession> sessions;
 
-  String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
-  String? localizedRank(bool isArabic) =>
+  String localizedName({required bool isArabic}) => _pick(nameArabic, name, isArabic);
+  String? localizedRank({required bool isArabic}) =>
       _pickOpt(rankArabic, rank, isArabic);
-  String? localizedCountry(bool isArabic) =>
+  String? localizedCountry({required bool isArabic}) =>
       _pickOpt(countryNameAr, countryNameEn, isArabic);
 
   /// The nationality flag emoji for the profile header (Figma 908-2110),
@@ -204,12 +204,12 @@ class SpeakerDetail {
   /// helper the speaker list card uses.
   String? get flagEmoji => countryFlagEmoji(countryId);
 
-  String? localizedBio(bool isArabic) => _pickOpt(bioArabic, bio, isArabic);
-  String? localizedQualifications(bool isArabic) =>
+  String? localizedBio({required bool isArabic}) => _pickOpt(bioArabic, bio, isArabic);
+  String? localizedQualifications({required bool isArabic}) =>
       _pickOpt(qualificationsArabic, qualifications, isArabic);
-  String? localizedTraining(bool isArabic) =>
+  String? localizedTraining({required bool isArabic}) =>
       _pickOpt(trainingExperienceArabic, trainingExperience, isArabic);
-  String? localizedAwards(bool isArabic) =>
+  String? localizedAwards({required bool isArabic}) =>
       _pickOpt(awardsArabic, awards, isArabic);
 }
 

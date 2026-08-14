@@ -77,8 +77,8 @@ class MeetPeopleScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final entry = entries[index];
                 return SimfIdentityCell(
-                  title: entry.localizedName(isArabic),
-                  subtitle: entry.localizedSubtitle(isArabic),
+                  title: entry.localizedName(isArabic: isArabic),
+                  subtitle: entry.localizedSubtitle(isArabic: isArabic),
                   imageUrl: entry.logoUrl(baseUrl),
                   countryId: entry.countryId,
                   onTap: _onTapFor(context, entry),

@@ -75,24 +75,24 @@ class SessionSummary {
   }
 
   /// The key-points block in the active language (may be empty).
-  String localizedKeyPoints(bool isArabic) =>
+  String localizedKeyPoints({required bool isArabic}) =>
       _picked(keyPointsArabic, keyPoints, isArabic);
 
   /// The recommendations block in the active language (may be empty).
-  String localizedRecommendations(bool isArabic) =>
+  String localizedRecommendations({required bool isArabic}) =>
       _picked(recommendationsArabic, recommendations, isArabic);
 
   /// The speakers block in the active language (may be empty).
-  String localizedSpeakers(bool isArabic) =>
+  String localizedSpeakers({required bool isArabic}) =>
       _picked(speakersArabic, speakers, isArabic);
 
   /// The full-text block in the active language (may be empty).
-  String localizedFullText(bool isArabic) =>
+  String localizedFullText({required bool isArabic}) =>
       _picked(fullTextArabic, fullText, isArabic);
 
   /// The localized key points split into one bullet per non-empty line.
-  List<String> keyPointsLines(bool isArabic) {
-    return localizedKeyPoints(isArabic)
+  List<String> keyPointsLines({required bool isArabic}) {
+    return localizedKeyPoints(isArabic: isArabic)
         .split('\n')
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)

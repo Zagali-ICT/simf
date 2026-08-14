@@ -40,7 +40,7 @@ class _RequestCardState extends State<RequestCard> {
     final item = widget.item;
     final l10n = widget.l10n;
     final statusColor = requestStatusColor(item.status);
-    final subtitle = item.localizedSubtitle(widget.isArabic);
+    final subtitle = item.localizedSubtitle(isArabic: widget.isArabic);
 
     return Container(
       decoration: BoxDecoration(

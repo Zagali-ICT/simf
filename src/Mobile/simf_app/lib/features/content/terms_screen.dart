@@ -204,7 +204,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
 
   Widget _buildContent(AppL10n l10n) {
     final block = _block!;
-    final body = block.localizedBody(l10n.isArabic);
+    final body = block.localizedBody(isArabic: l10n.isArabic);
     // Each non-empty body line renders as one bullet card (Figma list items).
     final items = body
         .split('\n')

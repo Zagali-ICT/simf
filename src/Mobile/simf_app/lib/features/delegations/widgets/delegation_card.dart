@@ -45,8 +45,8 @@ class DelegationCard extends StatelessWidget {
   }
 
   Widget _identityRow() {
-    final title = item.localizedCountry(isArabic);
-    final subtitle = item.localizedCountrySubtitle(isArabic);
+    final title = item.localizedCountry(isArabic: isArabic);
+    final subtitle = item.localizedCountrySubtitle(isArabic: isArabic);
     // Only show the other-language name when it actually adds information — when
     // a country has just one name the title falls back to it, so the subtitle
     // would otherwise duplicate the title.

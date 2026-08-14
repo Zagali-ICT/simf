@@ -57,8 +57,8 @@ class MediaItem {
   final bool hasImage;
   final bool hasThumbnail;
 
-  String? localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
-  String? localizedAlbum(bool isArabic) => _pick(albumArabic, album, isArabic);
+  String? localizedTitle({required bool isArabic}) => _pick(titleArabic, title, isArabic);
+  String? localizedAlbum({required bool isArabic}) => _pick(albumArabic, album, isArabic);
 }
 
 String? _pick(String? arabic, String? english, bool isArabic) {

@@ -68,7 +68,7 @@ class LiveContentView extends StatelessWidget {
     // FR-702 (owner 2026-07-31) — the organiser's informational notice for this
     // broadcast. Null when the CP left both languages blank, and then nothing is
     // rendered (no empty banner, no reserved space).
-    final notice = session.localizedNotice(isArabic);
+    final notice = session.localizedNotice(isArabic: isArabic);
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -97,7 +97,7 @@ class LiveContentView extends StatelessWidget {
             liveLabel: isLive ? l10n.liveNowLabel : null,
             // P5 — D-439: the admin-set AI caption when present, else the
             // placeholder hint (YouTube CC supplies captions meanwhile).
-            caption: session.localizedCaption(isArabic),
+            caption: session.localizedCaption(isArabic: isArabic),
             captionHint: l10n.liveCaptionHint,
           )
         else if (session.hasRecording)
@@ -133,24 +133,24 @@ class LiveContentView extends StatelessWidget {
                 broadcastLabel(
                   l10n,
                   isLive: isBroadcasting,
-                  hall: session.localizedHall(isArabic),
+                  hall: session.localizedHall(isArabic: isArabic),
                 ),
                 textAlign: TextAlign.start,
                 style: SimfTokens.labelWhiteMediumLg,
               ),
               const SizedBox(height: SimfTokens.space4),
               GoldBullet(
-                text: session.localizedTitle(isArabic),
+                text: session.localizedTitle(isArabic: isArabic),
                 color: SimfTokens.accent,
                 fontWeight: FontWeight.w600,
                 // Frame 934:3616 — the session title bullet is 16px.
                 fontSize: SimfTokens.textLg,
               ),
               // D-433 — the speakers / participants line (frame 934:3617).
-              if (session.localizedSpeakers(isArabic) != null) ...<Widget>[
+              if (session.localizedSpeakers(isArabic: isArabic) != null) ...<Widget>[
                 const SizedBox(height: SimfTokens.space2),
                 GoldBullet(
-                  text: session.localizedSpeakers(isArabic)!,
+                  text: session.localizedSpeakers(isArabic: isArabic)!,
                   color: SimfTokens.beigeBorder,
                 ),
               ],

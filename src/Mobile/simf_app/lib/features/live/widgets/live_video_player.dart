@@ -17,7 +17,7 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 /// (D-721): landscape in fullscreen, back to the app-wide portrait lock out of
 /// it. A pure function so the portrait-lock exception is unit-testable without
 /// the platform channel.
-List<DeviceOrientation> liveFullScreenOrientations(bool isFullScreen) {
+List<DeviceOrientation> liveFullScreenOrientations({required bool isFullScreen}) {
   return isFullScreen
       ? const <DeviceOrientation>[
           DeviceOrientation.landscapeLeft,
@@ -164,7 +164,7 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
   /// portrait again on exit.
   void _onFullScreenChanged(bool isFullScreen) {
     unawaited(
-      SystemChrome.setPreferredOrientations(liveFullScreenOrientations(isFullScreen)),
+      SystemChrome.setPreferredOrientations(liveFullScreenOrientations(isFullScreen: isFullScreen)),
     );
   }
 
@@ -175,7 +175,7 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
     _video?.dispose();
     // Re-assert the portrait lock in case we're torn down mid-fullscreen.
     unawaited(
-      SystemChrome.setPreferredOrientations(liveFullScreenOrientations(false)),
+      SystemChrome.setPreferredOrientations(liveFullScreenOrientations(isFullScreen: false)),
     );
     super.dispose();
   }

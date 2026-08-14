@@ -13,7 +13,7 @@ const List<String> _monthsEn = <String>[
 
 /// The Gregorian month name for [month] (1–12) in the active locale. Out-of-range
 /// input is clamped so a bad date never throws on a card.
-String gregorianMonthName(int month, bool isArabic) {
+String gregorianMonthName(int month, {required bool isArabic}) {
   final index = (month - 1).clamp(0, 11);
   return isArabic ? _monthsAr[index] : _monthsEn[index];
 }

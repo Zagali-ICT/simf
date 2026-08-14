@@ -12,8 +12,8 @@ void main() {
         'isActive': true,
       });
       expect(g.gateId, 'g1');
-      expect(g.localizedName(true), 'البوابة الرئيسية');
-      expect(g.localizedName(false), 'Main Gate');
+      expect(g.localizedName(isArabic: true), 'البوابة الرئيسية');
+      expect(g.localizedName(isArabic: false), 'Main Gate');
       // No directionMode on the wire → the operator-switchable default (D-509).
       expect(g.directionMode, GateDirectionMode.both);
     });
@@ -50,7 +50,7 @@ void main() {
       });
       expect(r.isAllowed, isTrue);
       expect(r.direction, ScanDirection.checkIn);
-      expect(r.userProfile?.localizedName(false), 'Raed');
+      expect(r.userProfile?.localizedName(isArabic: false), 'Raed');
       expect(r.userProfile?.profileTypeName, 'VIP');
       expect(r.denialMessage, isNull);
       // DEF-CHK-004 — no advisory on an ordinary allowed scan.

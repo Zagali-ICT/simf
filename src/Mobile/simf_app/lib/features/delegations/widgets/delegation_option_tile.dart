@@ -44,7 +44,7 @@ class DelegationOptionTile extends StatelessWidget {
               const SizedBox(width: SimfTokens.space3),
               Expanded(
                 child: Text(
-                  delegation.localizedCountry(isArabic),
+                  delegation.localizedCountry(isArabic: isArabic),
                   style: SimfTokens.labelNavyMediumSm,
                   overflow: TextOverflow.ellipsis,
                 ),

@@ -29,7 +29,7 @@ class ContentBlock {
 
   /// The body for the active locale, falling back to the other language when the
   /// requested one is empty (Arabic primary, English secondary — Page_009 L-8).
-  String localizedBody(bool isArabic) {
+  String localizedBody({required bool isArabic}) {
     if (isArabic) {
       return contentArabic.trim().isNotEmpty ? contentArabic : content;
     }

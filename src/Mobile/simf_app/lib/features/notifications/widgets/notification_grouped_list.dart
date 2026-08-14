@@ -84,6 +84,6 @@ class NotificationGroupedList extends StatelessWidget {
     }
     // Localised month name (Arabic on the ar UI) — never the intl English
     // fallback that showed "Jun 10" inside the RTL screen.
-    return '${local.day} ${gregorianMonthName(local.month, isArabic)}';
+    return '${local.day} ${gregorianMonthName(local.month, isArabic: isArabic)}';
   }
 }

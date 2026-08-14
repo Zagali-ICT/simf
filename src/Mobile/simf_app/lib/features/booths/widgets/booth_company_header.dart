@@ -26,12 +26,12 @@ class BoothCompanyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = booth.localizedName(isArabic);
+    final name = booth.localizedName(isArabic: isArabic);
     // PAR-B4 — the exhibitor line is only worth its own row when it actually
     // says something the short name above it does not. The shipped seed carries
     // the SAME string in both fields (SIMF_App_SeedGaps.sql), which rendered the
     // company name twice on every seeded booth card.
-    final exhibitor = booth.localizedExhibitor(isArabic);
+    final exhibitor = booth.localizedExhibitor(isArabic: isArabic);
     final fullName =
         exhibitor != null && exhibitor.trim() != name.trim() ? exhibitor : null;
     final flag = countryFlagEmoji(booth.countryId);

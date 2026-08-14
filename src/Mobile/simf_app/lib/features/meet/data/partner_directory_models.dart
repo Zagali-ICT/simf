@@ -55,13 +55,13 @@ class PartnerDirectoryEntry {
   bool get isSponsor => kind == PartnerDirectoryKind.sponsor;
   bool get isBooth => kind == PartnerDirectoryKind.booth;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();
     final en = name.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
-  String? localizedSubtitle(bool isArabic) {
+  String? localizedSubtitle({required bool isArabic}) {
     final ar = subtitleArabic?.trim() ?? '';
     final en = subtitle?.trim() ?? '';
     final picked = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);

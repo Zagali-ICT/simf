@@ -30,7 +30,7 @@ class SpeakerOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final flag = countryFlagEmoji(speaker.countryId);
-    final rank = speaker.localizedRank(isArabic)?.trim() ?? '';
+    final rank = speaker.localizedRank(isArabic: isArabic)?.trim() ?? '';
     return Material(
       color: SimfTokens.surface,
       borderRadius: SimfTokens.borderRadiusSmall,
@@ -68,7 +68,7 @@ class SpeakerOptionTile extends StatelessWidget {
                       children: <Widget>[
                         Flexible(
                           child: Text(
-                            speaker.localizedName(isArabic),
+                            speaker.localizedName(isArabic: isArabic),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: SimfTokens.labelInkSemibold,

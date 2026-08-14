@@ -25,7 +25,7 @@ class RatingFormQuestion {
   final String textArabic;
   final bool isRequired;
 
-  String localizedText(bool isArabic) {
+  String localizedText({required bool isArabic}) {
     final ar = textArabic.trim();
     final en = text.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -60,7 +60,7 @@ class RatingFormGroup {
   final String nameArabic;
   final List<RatingFormQuestion> questions;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();
     final en = name.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -184,14 +184,14 @@ class RatingFormView {
 
   /// The rated session's title in the active locale, or null when there is no
   /// per-session target (a Global "App" rating).
-  String? localizedTargetName(bool isArabic) {
+  String? localizedTargetName({required bool isArabic}) {
     final ar = (targetNameArabic ?? '').trim();
     final en = (targetName ?? '').trim();
     final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
   }
 
-  String? localizedCommentLabel(bool isArabic) {
+  String? localizedCommentLabel({required bool isArabic}) {
     final ar = (commentLabelArabic ?? '').trim();
     final en = (commentLabel ?? '').trim();
     final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);

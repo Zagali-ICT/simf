@@ -214,14 +214,14 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
       if (q.isEmpty) {
         return true;
       }
-      final name = s.localizedName(isArabic).toLowerCase();
+      final name = s.localizedName(isArabic: isArabic).toLowerCase();
       final rank = (s.rank ?? '').toLowerCase();
       final rankArabic = (s.rankArabic ?? '').toLowerCase();
       return name.contains(q) || rank.contains(q) || rankArabic.contains(q);
     }).toList();
     if (_alphaSorted) {
       list.sort(
-        (a, b) => a.localizedName(isArabic).compareTo(b.localizedName(isArabic)),
+        (a, b) => a.localizedName(isArabic: isArabic).compareTo(b.localizedName(isArabic: isArabic)),
       );
     }
     return list;

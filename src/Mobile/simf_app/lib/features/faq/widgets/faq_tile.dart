@@ -21,8 +21,8 @@ class _FaqTileState extends State<FaqTile> {
 
   @override
   Widget build(BuildContext context) {
-    final question = widget.entry.localizedQuestion(widget.isArabic);
-    final answer = widget.entry.localizedAnswer(widget.isArabic);
+    final question = widget.entry.localizedQuestion(isArabic: widget.isArabic);
+    final answer = widget.entry.localizedAnswer(isArabic: widget.isArabic);
     return SimfCard(
       onTap: () => setState(() => _expanded = !_expanded),
       child: Padding(

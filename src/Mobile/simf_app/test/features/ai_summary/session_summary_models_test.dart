@@ -18,9 +18,9 @@ void main() {
       });
 
       expect(summary.recommendations, 'Invest in coral reefs');
-      expect(summary.localizedSpeakers(false), 'Dr Reef');
-      expect(summary.localizedSpeakers(true), 'د. ريف');
-      expect(summary.localizedFullText(false), 'A long transcript summary.');
+      expect(summary.localizedSpeakers(isArabic: false), 'Dr Reef');
+      expect(summary.localizedSpeakers(isArabic: true), 'د. ريف');
+      expect(summary.localizedFullText(isArabic: false), 'A long transcript summary.');
       expect(summary.generatedByAi, isTrue);
       expect(summary.publishedAt, DateTime(2026, 11, 23, 10, 30));
     });
@@ -32,7 +32,7 @@ void main() {
       expect(summary.generatedByAi, isFalse);
       expect(summary.publishedAt, isNull);
       expect(summary.publishedAt, isNull);
-      expect(summary.keyPointsLines(false), isEmpty);
+      expect(summary.keyPointsLines(isArabic: false), isEmpty);
       // Item #35 — the two video URLs default to null (no players shown).
       expect(summary.recordingUrl, isNull);
       expect(summary.summaryVideoUrl, isNull);
@@ -62,7 +62,7 @@ void main() {
       });
 
       expect(
-        summary.keyPointsLines(false),
+        summary.keyPointsLines(isArabic: false),
         <String>['Alpha', 'Beta', 'Gamma'],
       );
     });
@@ -74,8 +74,8 @@ void main() {
         'generatedByAi': true,
       });
 
-      expect(summary.keyPointsLines(true), <String>['واحد', 'اثنان']);
-      expect(summary.keyPointsLines(false), <String>['One', 'Two']);
+      expect(summary.keyPointsLines(isArabic: true), <String>['واحد', 'اثنان']);
+      expect(summary.keyPointsLines(isArabic: false), <String>['One', 'Two']);
     });
 
     test('falls back to the other language when one side is empty', () {
@@ -85,7 +85,7 @@ void main() {
       });
 
       // Arabic missing → falls back to the English block.
-      expect(summary.keyPointsLines(true), <String>['Only English']);
+      expect(summary.keyPointsLines(isArabic: true), <String>['Only English']);
     });
   });
 }

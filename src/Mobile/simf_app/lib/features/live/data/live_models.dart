@@ -100,14 +100,14 @@ class LiveSession {
   final String? liveNotice;
   final String? liveNoticeArabic;
 
-  String localizedTitle(bool isArabic) {
+  String localizedTitle({required bool isArabic}) {
     if (isArabic) {
       return titleArabic.isNotEmpty ? titleArabic : title;
     }
     return title.isNotEmpty ? title : titleArabic;
   }
 
-  String? localizedHall(bool isArabic) {
+  String? localizedHall({required bool isArabic}) {
     final ar = (hallNameArabic ?? '').trim();
     final en = (hallName ?? '').trim();
     final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -117,7 +117,7 @@ class LiveSession {
   /// P5 — D-439: the AI live-caption text in the active locale, falling back to
   /// the other when one side is blank. Null when neither is set (the strip then
   /// shows the placeholder hint).
-  String? localizedCaption(bool isArabic) {
+  String? localizedCaption({required bool isArabic}) {
     final ar = (liveCaptionsArabic ?? '').trim();
     final en = (liveCaptions ?? '').trim();
     final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -127,7 +127,7 @@ class LiveSession {
   /// FR-702 — the live notice in the active locale, falling back to the other
   /// language when one side is blank. Null when neither is set, and the banner
   /// is then not rendered at all.
-  String? localizedNotice(bool isArabic) {
+  String? localizedNotice({required bool isArabic}) {
     final ar = (liveNoticeArabic ?? '').trim();
     final en = (liveNotice ?? '').trim();
     final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -135,9 +135,9 @@ class LiveSession {
   }
 
   /// The speakers/participants joined for the frame's "·"-bulleted line.
-  String? localizedSpeakers(bool isArabic) {
+  String? localizedSpeakers({required bool isArabic}) {
     final names = speakers
-        .map((s) => s.localized(isArabic))
+        .map((s) => s.localized(isArabic: isArabic))
         .where((n) => n.isNotEmpty)
         .toList(growable: false);
     return names.isEmpty ? null : names.join(' · ');
@@ -157,7 +157,7 @@ class LiveSpeaker {
   final String name;
   final String nameArabic;
 
-  String localized(bool isArabic) {
+  String localized({required bool isArabic}) {
     final ar = nameArabic.trim();
     final en = name.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -188,7 +188,7 @@ class UpcomingSession {
   final String titleArabic;
   final DateTime? start;
 
-  String localizedTitle(bool isArabic) {
+  String localizedTitle({required bool isArabic}) {
     final ar = titleArabic.trim();
     final en = title.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);

@@ -64,7 +64,7 @@ class SponsorDetailScreen extends ConsumerWidget {
   ) {
     final isArabic = l10n.isArabic;
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    final name = sponsor.localizedName(isArabic);
+    final name = sponsor.localizedName(isArabic: isArabic);
 
     return EntityDetailScaffold(
       onRefresh: () =>
@@ -79,15 +79,15 @@ class SponsorDetailScreen extends ConsumerWidget {
       ),
       name: name,
       locationLine: entityLocationLine(
-        sponsor.localizedCity(isArabic),
-        sponsor.localizedCountry(isArabic),
-        isArabic,
+        sponsor.localizedCity(isArabic: isArabic),
+        sponsor.localizedCountry(isArabic: isArabic),
+        isArabic: isArabic,
       ),
       countryId: sponsor.countryId,
       tierPill: sponsor.tierName.isEmpty
           ? null
           : l10n.sponsorTierPill(sponsor.tierName),
-      about: sponsor.localizedAbout(isArabic),
+      about: sponsor.localizedAbout(isArabic: isArabic),
       website: sponsor.url,
       onWebsite: () => _openWebsite(context, sponsor.url),
     );

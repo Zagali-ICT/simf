@@ -116,24 +116,40 @@ class AccessibilityController extends Notifier<AccessibilitySettings> {
     unawaited(_pushToServer());
   }
 
+  // These four are passed as tear-offs to AccessibilityToggleRow's `onChanged`,
+  // which is a ValueChanged<bool>. A named parameter cannot satisfy that
+  // signature, so the rule is asking here for code that does not compile.
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setHighContrast(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityHighContrast, value);
     state = state.copyWith(highContrast: value);
     unawaited(_pushToServer());
   }
 
+  // These four are passed as tear-offs to AccessibilityToggleRow's `onChanged`,
+  // which is a ValueChanged<bool>. A named parameter cannot satisfy that
+  // signature, so the rule is asking here for code that does not compile.
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setReduceMotion(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityReduceMotion, value);
     state = state.copyWith(reduceMotion: value);
     unawaited(_pushToServer());
   }
 
+  // These four are passed as tear-offs to AccessibilityToggleRow's `onChanged`,
+  // which is a ValueChanged<bool>. A named parameter cannot satisfy that
+  // signature, so the rule is asking here for code that does not compile.
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setScreenReaderAssist(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityScreenReader, value);
     state = state.copyWith(screenReaderAssist: value);
     unawaited(_pushToServer());
   }
 
+  // These four are passed as tear-offs to AccessibilityToggleRow's `onChanged`,
+  // which is a ValueChanged<bool>. A named parameter cannot satisfy that
+  // signature, so the rule is asking here for code that does not compile.
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setCaptions(bool value) async {
     await prefs.setBool(StorageKeys.accessibilityCaptions, value);
     state = state.copyWith(captions: value);

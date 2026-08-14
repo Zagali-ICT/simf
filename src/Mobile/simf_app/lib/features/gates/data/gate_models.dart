@@ -44,7 +44,7 @@ class OperatorGate {
   final GateDirectionMode directionMode;
   final bool isActive;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();
     final en = name.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -83,7 +83,7 @@ class GateScanUserProfile {
   final String displayNameArabic;
   final String? profileTypeName;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = displayNameArabic.trim();
     final en = displayName.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);

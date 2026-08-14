@@ -230,7 +230,7 @@ class SeatCell {
 
   /// The locale-appropriate guest note, falling back to the other language, then
   /// null when the admin typed neither.
-  String? localizedGuestHint(bool isArabic) {
+  String? localizedGuestHint({required bool isArabic}) {
     final ar = (guestHintArabic ?? '').trim();
     final en = (guestHint ?? '').trim();
     final primary = isArabic ? ar : en;
@@ -351,7 +351,7 @@ class SessionSeatMap {
   final SeatSelectionMode mode;
 
   /// The locale-appropriate session title (null when neither is present).
-  String? localizedSessionTitle(bool isArabic) {
+  String? localizedSessionTitle({required bool isArabic}) {
     final ar = (sessionTitleArabic ?? '').trim();
     final en = (sessionTitle ?? '').trim();
     final primary = isArabic ? ar : en;

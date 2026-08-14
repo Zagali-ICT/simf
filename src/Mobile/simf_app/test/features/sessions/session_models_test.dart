@@ -83,10 +83,10 @@ void main() {
       });
 
       expect(item.id, 's1');
-      expect(item.localizedTitle(true), 'الافتتاح');
-      expect(item.localizedTitle(false), 'Opening');
-      expect(item.localizedHall(false), 'Main Hall');
-      expect(item.localizedCategory(true), 'جلسة رئيسية');
+      expect(item.localizedTitle(isArabic: true), 'الافتتاح');
+      expect(item.localizedTitle(isArabic: false), 'Opening');
+      expect(item.localizedHall(isArabic: false), 'Main Hall');
+      expect(item.localizedCategory(isArabic: true), 'جلسة رئيسية');
       expect(item.status, SessionStatus.published);
       expect(item.hasPublishedSummary, isTrue);
       // Saudi wall-clock carries no zone, so a decoded value must NOT be
@@ -96,14 +96,14 @@ void main() {
 
       expect(item.speakers, hasLength(1));
       final speaker = item.speakers.single;
-      expect(speaker.localizedName(false), 'Dr Reef');
+      expect(speaker.localizedName(isArabic: false), 'Dr Reef');
       expect(speaker.role, SessionSpeakerRole.host);
       expect(speaker.countryId, 682);
-      expect(speaker.localizedCountry(true), 'السعودية');
+      expect(speaker.localizedCountry(isArabic: true), 'السعودية');
       expect(speaker.photoRelativePath, '/media/sp1.jpg');
       // Owner 2026-07-19 — the speaker rank/title localizes AR/EN.
-      expect(speaker.localizedTitle(true), 'كبير العلماء');
-      expect(speaker.localizedTitle(false), 'Chief Scientist');
+      expect(speaker.localizedTitle(isArabic: true), 'كبير العلماء');
+      expect(speaker.localizedTitle(isArabic: false), 'Chief Scientist');
     });
 
     test('a missing speakers array decodes to an empty list (never null)', () {
@@ -115,8 +115,8 @@ void main() {
         'end': '2026-11-23T07:00:00Z',
       });
       expect(item.speakers, isEmpty);
-      expect(item.localizedDescription(false), isNull);
-      expect(item.localizedCategory(false), isNull);
+      expect(item.localizedDescription(isArabic: false), isNull);
+      expect(item.localizedCategory(isArabic: false), isNull);
       // Append-only wire default: absent hasPublishedSummary decodes to false.
       expect(item.hasPublishedSummary, isFalse);
     });

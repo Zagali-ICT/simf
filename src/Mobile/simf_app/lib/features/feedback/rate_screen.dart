@@ -205,7 +205,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     final children = <Widget>[];
 
     // D-713 (item 8) — the "watched at" context header on a per-session rating.
-    final watchedSession = form.localizedTargetName(isArabic);
+    final watchedSession = form.localizedTargetName(isArabic: isArabic);
     if (watchedSession != null) {
       children.add(RateNavyNoteChip(
         icon: Icons.event_available_outlined,
@@ -254,7 +254,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
 
     // Grouped questions — a section per group.
     for (final group in form.groups) {
-      children.add(SimfSectionHeader(title: group.localizedName(isArabic)));
+      children.add(SimfSectionHeader(title: group.localizedName(isArabic: isArabic)));
       children.add(const SizedBox(height: SimfTokens.space3));
       for (final q in group.questions) {
         children.add(_questionRow(isArabic, q));
@@ -275,7 +275,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
 
     if (form.allowComment) {
       final commentLabel =
-          form.localizedCommentLabel(isArabic) ?? l10n.rateCommentLabel;
+          form.localizedCommentLabel(isArabic: isArabic) ?? l10n.rateCommentLabel;
       children.add(const SizedBox(height: SimfTokens.space5));
       children.add(SimfSectionHeader(title: commentLabel));
       children.add(const SizedBox(height: SimfTokens.space2));
@@ -341,7 +341,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   }
 
   Widget _questionRow(bool isArabic, RatingFormQuestion q) => RateCategoryRow(
-        label: q.localizedText(isArabic),
+        label: q.localizedText(isArabic: isArabic),
         value: _answers[q.id] ?? 0,
         onChanged: (v) => setState(() => _answers[q.id] = v),
       );
@@ -358,6 +358,6 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     final hh = local.hour.toString().padLeft(2, '0');
     final mm = local.minute.toString().padLeft(2, '0');
     return '${local.day.toString().padLeft(2, '0')} '
-        '${gregorianMonthName(local.month, isArabic)} · $hh:$mm';
+        '${gregorianMonthName(local.month, isArabic: isArabic)} · $hh:$mm';
   }
 }

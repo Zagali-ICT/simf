@@ -37,8 +37,8 @@ class SessionSummaryCard extends StatelessWidget {
     // Frame 1388:8439 — 12h "hh:mm a" (e.g. 09:00 AM) on the Saudi wall clock.
     final time = DateFormat('hh:mm a', 'en').format(item.startLocal);
     final speaker = _speakerText();
-    final hall = item.localizedHall(isArabic);
-    final category = item.localizedCategory(isArabic);
+    final hall = item.localizedHall(isArabic: isArabic);
+    final category = item.localizedCategory(isArabic: isArabic);
     // Owner 2026-07-14 — the shared state chips. The summaries list is already
     // all-summarised, so the summary chip is suppressed here (redundant) and the
     // card shows live-now / مسجّل only.
@@ -69,7 +69,7 @@ class SessionSummaryCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Text(
-                        item.localizedTitle(isArabic),
+                        item.localizedTitle(isArabic: isArabic),
                         textAlign: TextAlign.start,
                         style: SimfTokens.labelWhiteMedium,
                       ),
@@ -137,7 +137,7 @@ class SessionSummaryCard extends StatelessWidget {
       return null;
     }
     final primary = item.speakers.first;
-    final name = primary.localizedName(isArabic);
+    final name = primary.localizedName(isArabic: isArabic);
     final title = primary.title?.trim();
     return title == null || title.isEmpty ? name : '$name · $title';
   }

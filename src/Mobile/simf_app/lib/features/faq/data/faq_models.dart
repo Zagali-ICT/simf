@@ -26,9 +26,9 @@ class FaqEntry {
   final String answer;
   final String answerArabic;
 
-  String localizedQuestion(bool isArabic) =>
+  String localizedQuestion({required bool isArabic}) =>
       _pick(isArabic, questionArabic, question);
-  String localizedAnswer(bool isArabic) =>
+  String localizedAnswer({required bool isArabic}) =>
       _pick(isArabic, answerArabic, answer);
 }
 
@@ -58,7 +58,7 @@ class FaqGroup {
   final String nameArabic;
   final List<FaqEntry> entries;
 
-  String localizedName(bool isArabic) => _pick(isArabic, nameArabic, name);
+  String localizedName({required bool isArabic}) => _pick(isArabic, nameArabic, name);
 }
 
 /// Arabic-first/English-first pick with a fall back to the populated side.

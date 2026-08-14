@@ -79,18 +79,18 @@ class VisitorCard {
   final String? countryNameArabic;
 
   /// Name for the active locale (Arabic primary, English fallback).
-  String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
+  String localizedName({required bool isArabic}) => _pick(nameArabic, name, isArabic);
 
   /// Job title for the active locale, or null when none is set.
-  String? localizedJobTitle(bool isArabic) =>
+  String? localizedJobTitle({required bool isArabic}) =>
       _nullIfBlank(_pick(jobTitleArabic, jobTitle, isArabic));
 
   /// Organisation for the active locale, or null when none is set.
-  String? localizedOrganisation(bool isArabic) =>
+  String? localizedOrganisation({required bool isArabic}) =>
       _nullIfBlank(_pick(organisationArabic, organisation, isArabic));
 
   /// Country for the active locale, or null when none is set.
-  String? localizedCountry(bool isArabic) =>
+  String? localizedCountry({required bool isArabic}) =>
       _nullIfBlank(_pick(countryNameArabic, countryName, isArabic));
 }
 
@@ -139,10 +139,10 @@ class SavedContactRow {
   final String? note;
   final DateTime? savedAt;
 
-  String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
+  String localizedName({required bool isArabic}) => _pick(nameArabic, name, isArabic);
 
   /// Job title for the active locale, or null when none is set.
-  String? localizedJobTitle(bool isArabic) =>
+  String? localizedJobTitle({required bool isArabic}) =>
       _nullIfBlank(_pick(jobTitleArabic, jobTitle, isArabic));
 
   /// Reads the My-Contacts payload (a bare list, or `{ items: [...] }`).

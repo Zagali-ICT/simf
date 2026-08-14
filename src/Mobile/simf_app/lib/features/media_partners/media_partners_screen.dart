@@ -108,7 +108,7 @@ class MediaPartnersScreen extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final partner = items[index];
                       return PartnerCard(
-                        name: partner.localizedName(isArabic),
+                        name: partner.localizedName(isArabic: isArabic),
                         logoUrl: partner.logoAssetUrl(baseUrl),
                       );
                     },

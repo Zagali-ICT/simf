@@ -67,14 +67,14 @@ class MyAreaIdentity {
   final bool isVisitor;
 
   /// Name for the active locale (Arabic primary, English fallback — L-8).
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = fullNameAr.trim();
     final en = fullNameEn.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
   /// Tier word for the active locale, or null when no ProfileType is assigned.
-  String? localizedTier(bool isArabic) {
+  String? localizedTier({required bool isArabic}) {
     final ar = tierNameAr?.trim() ?? '';
     final en = tierNameEn?.trim() ?? '';
     final v = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -146,7 +146,7 @@ class MyAreaScheduleItem {
 
   /// Title for the active locale; falls back to the meeting subject when the
   /// item carries no title (a business meeting).
-  String localizedTitle(bool isArabic) {
+  String localizedTitle({required bool isArabic}) {
     final ar = titleAr.trim();
     final en = titleEn.trim();
     final title = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -156,7 +156,7 @@ class MyAreaScheduleItem {
     return subject?.trim() ?? '';
   }
 
-  String? localizedHall(bool isArabic) {
+  String? localizedHall({required bool isArabic}) {
     final ar = hallNameAr?.trim() ?? '';
     final en = hallNameEn?.trim() ?? '';
     final v = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);

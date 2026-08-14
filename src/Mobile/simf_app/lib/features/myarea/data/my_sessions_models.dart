@@ -85,16 +85,16 @@ class MyAreaSessionItem {
   bool get isArchived =>
       status == SessionStatus.recorded || status == SessionStatus.published;
 
-  String localizedTitle(bool isArabic) =>
+  String localizedTitle({required bool isArabic}) =>
       _pickRequired(titleArabic, title, isArabic);
 
-  String? localizedHall(bool isArabic) =>
+  String? localizedHall({required bool isArabic}) =>
       _pickOptional(hallNameAr, hallNameEn, isArabic);
 
-  String? localizedCategory(bool isArabic) =>
+  String? localizedCategory({required bool isArabic}) =>
       _pickOptional(categoryNameAr, categoryNameEn, isArabic);
 
-  String? localizedSpeaker(bool isArabic) =>
+  String? localizedSpeaker({required bool isArabic}) =>
       _pickOptional(speakerNameAr, speakerNameEn, isArabic);
 }
 

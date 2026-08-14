@@ -220,8 +220,8 @@ void main() {
         'logoRelativePath': 'media-partners/reuters.png',
       });
       expect(partner.id, 'p9');
-      expect(partner.localizedName(false), 'Reuters');
-      expect(partner.localizedName(true), 'رويترز');
+      expect(partner.localizedName(isArabic: false), 'Reuters');
+      expect(partner.localizedName(isArabic: true), 'رويترز');
       expect(partner.logoRelativePath, 'media-partners/reuters.png');
     });
 

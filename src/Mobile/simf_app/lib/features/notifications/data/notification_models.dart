@@ -99,13 +99,13 @@ class NotificationItem {
   /// Meetings / Ratings / Account / Vip); null on pre-migration rows.
   final String? group;
 
-  String localizedTitle(bool isArabic) {
+  String localizedTitle({required bool isArabic}) {
     final ar = titleArabic.trim();
     final en = title.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
-  String localizedBody(bool isArabic) {
+  String localizedBody({required bool isArabic}) {
     final ar = bodyArabic.trim();
     final en = body.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);

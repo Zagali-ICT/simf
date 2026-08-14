@@ -51,14 +51,14 @@ class Sponsor {
   // for the corner flag on the logo. Null when unset.
   final int? countryId;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = nameAr.trim();
     final en = nameEn.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
   /// The locale-appropriate tagline, or null when neither language is set.
-  String? localizedTagline(bool isArabic) {
+  String? localizedTagline({required bool isArabic}) {
     final ar = (taglineArabic ?? '').trim();
     final en = (tagline ?? '').trim();
     final primary = isArabic ? ar : en;
@@ -129,16 +129,16 @@ class SponsorDetail {
   final String? countryNameEn;
   final String? countryNameAr;
 
-  String localizedName(bool isArabic) =>
+  String localizedName({required bool isArabic}) =>
       _pickRequired(nameAr, nameEn, isArabic);
 
-  String? localizedAbout(bool isArabic) =>
+  String? localizedAbout({required bool isArabic}) =>
       _pickOptional(aboutArabic, about, isArabic);
 
-  String? localizedCity(bool isArabic) =>
+  String? localizedCity({required bool isArabic}) =>
       _pickOptional(cityArabic, city, isArabic);
 
-  String? localizedCountry(bool isArabic) =>
+  String? localizedCountry({required bool isArabic}) =>
       _pickOptional(countryNameAr, countryNameEn, isArabic);
 }
 

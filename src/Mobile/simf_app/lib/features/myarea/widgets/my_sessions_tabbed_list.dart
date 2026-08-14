@@ -75,9 +75,9 @@ class MySessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final time = TimeOfDay.fromDateTime(item.startLocal).format(context);
-    final category = item.localizedCategory(isArabic);
-    final speaker = item.localizedSpeaker(isArabic);
-    final hall = item.localizedHall(isArabic);
+    final category = item.localizedCategory(isArabic: isArabic);
+    final speaker = item.localizedSpeaker(isArabic: isArabic);
+    final hall = item.localizedHall(isArabic: isArabic);
     final timeText = (category != null && category.isNotEmpty)
         ? '$time · $category'
         : time;
@@ -110,7 +110,7 @@ class MySessionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Text(
-                        item.localizedTitle(isArabic),
+                        item.localizedTitle(isArabic: isArabic),
                         textAlign: TextAlign.start,
                         style: const TextStyle(
                           color: SimfTokens.surface,

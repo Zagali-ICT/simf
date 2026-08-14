@@ -273,7 +273,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     // The setup stage shows the screen title; once scanning, the bar shows the
     // selected "gate • direction" (Figma 4819/4886).
     final showContext = _scanning || _result != null;
-    final gateName = _gate?.localizedName(isArabic) ?? l10n.gateScannerEntry;
+    final gateName = _gate?.localizedName(isArabic: isArabic) ?? l10n.gateScannerEntry;
     final directionForTitle = _result?.direction ?? _direction;
     final title = showContext
         ? '$gateName${directionForTitle == null ? '' : ' • ${_directionLabel(l10n, directionForTitle)}'}'
@@ -393,7 +393,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         l10n: l10n,
         isArabic: isArabic,
         result: result,
-        gateName: _gate!.localizedName(isArabic),
+        gateName: _gate!.localizedName(isArabic: isArabic),
         reference: _lastQr,
         onScanAgain: _scanAgain,
       );

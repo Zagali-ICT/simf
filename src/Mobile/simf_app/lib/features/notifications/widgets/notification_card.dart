@@ -68,12 +68,12 @@ class NotificationCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          item.localizedTitle(isArabic),
+                          item.localizedTitle(isArabic: isArabic),
                           style: SimfTokens.labelWhiteSemiboldLg,
                         ),
                         const SizedBox(height: SimfTokens.gap6),
                         Text(
-                          item.localizedBody(isArabic),
+                          item.localizedBody(isArabic: isArabic),
                           style: SimfTokens.bodyBeigeSm15,
                         ),
                         if (stamp != null) ...<Widget>[

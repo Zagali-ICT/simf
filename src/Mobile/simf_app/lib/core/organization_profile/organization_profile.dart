@@ -128,16 +128,16 @@ class OrgProfile {
   final DateTime? eventStartDate;
   final DateTime? eventEndDate;
 
-  String nameFor(bool isArabic) => isArabic ? nameArabic : name;
-  String titleFor(bool isArabic) => isArabic ? titleArabic : title;
-  String? sloganFor(bool isArabic) => isArabic ? sloganArabic : slogan;
-  String? bioFor(bool isArabic) => isArabic ? bioArabic : bio;
-  String? locationFor(bool isArabic) =>
+  String nameFor({required bool isArabic}) => isArabic ? nameArabic : name;
+  String titleFor({required bool isArabic}) => isArabic ? titleArabic : title;
+  String? sloganFor({required bool isArabic}) => isArabic ? sloganArabic : slogan;
+  String? bioFor({required bool isArabic}) => isArabic ? bioArabic : bio;
+  String? locationFor({required bool isArabic}) =>
       isArabic ? locationTextArabic : locationText;
 
   /// The bilingual formatted event date range (e.g. "23-25 نوفمبر 2026"), or
   /// null when the edition's start / end dates are not both set.
-  String? eventDateRange(bool isArabic) {
+  String? eventDateRange({required bool isArabic}) {
     final start = eventStartDate;
     final end = eventEndDate;
     if (start == null || end == null) {
@@ -203,8 +203,8 @@ class OrgAboutItem {
   final String text;
   final String textArabic;
 
-  String titleFor(bool isArabic) => isArabic ? titleArabic : title;
-  String textFor(bool isArabic) => isArabic ? textArabic : text;
+  String titleFor({required bool isArabic}) => isArabic ? titleArabic : title;
+  String textFor({required bool isArabic}) => isArabic ? textArabic : text;
 }
 
 /// One "detail" row — a bilingual label + a value (e.g. year / date /
@@ -232,9 +232,9 @@ class OrgDetail {
   /// in which case [valueFor] falls back to [value].
   final String? valueArabic;
 
-  String nameFor(bool isArabic) => isArabic ? nameArabic : name;
+  String nameFor({required bool isArabic}) => isArabic ? nameArabic : name;
 
-  String valueFor(bool isArabic) {
+  String valueFor({required bool isArabic}) {
     final ar = valueArabic;
     return isArabic && ar != null && ar.isNotEmpty ? ar : value;
   }

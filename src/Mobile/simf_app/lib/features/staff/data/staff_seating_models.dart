@@ -79,7 +79,7 @@ class StaffSeatOccupant {
   final bool checkedIn;
 
   /// The locale-appropriate name, falling back to the other language.
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = displayNameArabic.trim();
     final en = displayName.trim();
     final primary = isArabic ? ar : en;
@@ -87,7 +87,7 @@ class StaffSeatOccupant {
   }
 
   /// The locale-appropriate VVIP guest note (null when the admin typed neither).
-  String? localizedGuestHint(bool isArabic) {
+  String? localizedGuestHint({required bool isArabic}) {
     final ar = (guestHintArabic ?? '').trim();
     final en = (guestHint ?? '').trim();
     final primary = isArabic ? ar : en;

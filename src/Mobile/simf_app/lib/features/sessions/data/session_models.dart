@@ -161,15 +161,15 @@ class SessionSpeaker {
   final String? countryNameAr;
   final String? photoRelativePath;
 
-  String localizedName(bool isArabic) =>
+  String localizedName({required bool isArabic}) =>
       _pickRequired(nameArabic, name, isArabic);
 
   // 2026-07-19 (owner) — the speaker's rank/title in the active locale
   // (Arabic ↔ English), matching how the name localizes. Null when unset.
-  String? localizedTitle(bool isArabic) =>
+  String? localizedTitle({required bool isArabic}) =>
       _pickOptional(titleArabic, title, isArabic);
 
-  String? localizedCountry(bool isArabic) =>
+  String? localizedCountry({required bool isArabic}) =>
       _pickOptional(countryNameAr, countryNameEn, isArabic);
 }
 
@@ -276,16 +276,16 @@ class SessionListItem {
     return minutes < 0 ? 0 : minutes;
   }
 
-  String localizedTitle(bool isArabic) =>
+  String localizedTitle({required bool isArabic}) =>
       _pickRequired(titleArabic, title, isArabic);
 
-  String? localizedHall(bool isArabic) =>
+  String? localizedHall({required bool isArabic}) =>
       _pickOptional(hallNameArabic, hallName, isArabic);
 
-  String? localizedDescription(bool isArabic) =>
+  String? localizedDescription({required bool isArabic}) =>
       _pickOptional(descriptionArabic, description, isArabic);
 
-  String? localizedCategory(bool isArabic) =>
+  String? localizedCategory({required bool isArabic}) =>
       _pickOptional(categoryNameArabic, categoryName, isArabic);
 }
 
@@ -350,7 +350,7 @@ class ProgrammeDay {
   final bool hasImage;
   final List<SessionListItem> sessions;
 
-  String localizedTitle(bool isArabic) =>
+  String localizedTitle({required bool isArabic}) =>
       _pickRequired(titleArabic, title, isArabic);
 }
 
@@ -495,16 +495,16 @@ class SessionDetail {
   DateTime get startLocal => saudiOf(start);
   DateTime get endLocal => saudiOf(end);
 
-  String localizedTitle(bool isArabic) =>
+  String localizedTitle({required bool isArabic}) =>
       _pickRequired(titleArabic, title, isArabic);
 
-  String localizedHall(bool isArabic) =>
+  String localizedHall({required bool isArabic}) =>
       _pickRequired(hallNameArabic, hallName, isArabic);
 
-  String? localizedDescription(bool isArabic) =>
+  String? localizedDescription({required bool isArabic}) =>
       _pickOptional(descriptionArabic, description, isArabic);
 
-  String? localizedCategory(bool isArabic) =>
+  String? localizedCategory({required bool isArabic}) =>
       _pickOptional(categoryNameArabic, categoryName, isArabic);
 }
 

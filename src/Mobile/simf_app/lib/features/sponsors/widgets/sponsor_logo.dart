@@ -81,8 +81,8 @@ class SponsorLogo extends StatelessWidget {
 /// "SAMI" / "GAMI" chip). The API has no acronym field, so derive initials from
 /// the localized name — the same interim logo-as-initials treatment the badge
 /// strip uses elsewhere.
-String sponsorBadgeText(Sponsor sponsor, bool isArabic) {
-  final name = sponsor.localizedName(isArabic);
+String sponsorBadgeText(Sponsor sponsor, {required bool isArabic}) {
+  final name = sponsor.localizedName(isArabic: isArabic);
   final words = name.trim().split(RegExp(r'\s+'));
   final letters = words
       .where((w) => w.isNotEmpty)

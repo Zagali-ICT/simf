@@ -171,10 +171,10 @@ class ModeratedSession {
   final DateTime start;
   final DateTime end;
 
-  String localizedTitle(bool isArabic) =>
+  String localizedTitle({required bool isArabic}) =>
       _pick(titleArabic, title, isArabic);
 
-  String localizedHall(bool isArabic) =>
+  String localizedHall({required bool isArabic}) =>
       _pick(hallNameArabic, hallName, isArabic);
 
   static String _pick(String arabic, String english, bool isArabic) {

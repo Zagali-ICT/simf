@@ -130,7 +130,7 @@ class HomeScreen extends ConsumerWidget {
       l10n: l10n,
       onRefresh: onRefresh,
       name: _greetingName(
-        profile?.identity.localizedName(l10n.isArabic),
+        profile?.identity.localizedName(isArabic: l10n.isArabic),
         user?.displayName,
       ),
       highlights: highlights,

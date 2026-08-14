@@ -58,8 +58,8 @@ void main() {
       expect(item.headTitle, 'Deputy Minister of Defense');
       expect(item.headTitleArabic, 'نائب وزير الدفاع');
       // Owner 2026-07-19 — the head-of-delegation title localizes AR/EN.
-      expect(item.localizedHeadTitle(true), 'نائب وزير الدفاع');
-      expect(item.localizedHeadTitle(false), 'Deputy Minister of Defense');
+      expect(item.localizedHeadTitle(isArabic: true), 'نائب وزير الدفاع');
+      expect(item.localizedHeadTitle(isArabic: false), 'Deputy Minister of Defense');
       expect(item.arrivalDate, DateTime(2026, 1, 12));
       expect(item.departureDate, DateTime(2026, 1, 15));
       expect(item.hasHead, isTrue);
@@ -96,12 +96,12 @@ void main() {
 
     test('headInitial returns the first character of the localized head', () {
       final item = _item(head: 'James', headAr: 'جيمس');
-      expect(item.headInitial(false), 'J');
-      expect(item.headInitial(true), 'ج');
+      expect(item.headInitial(isArabic: false), 'J');
+      expect(item.headInitial(isArabic: true), 'ج');
     });
 
     test('headInitial is empty when there is no head', () {
-      expect(_item().headInitial(false), '');
+      expect(_item().headInitial(isArabic: false), '');
     });
 
     test('matches filters by country name, code and head', () {
@@ -118,15 +118,15 @@ void main() {
       final item = _item(name: 'France', nameAr: 'فرنسا');
       expect(item.hasHead, isFalse);
       expect(item.hasDateRange, isFalse);
-      expect(item.localizedHead(false), isNull);
+      expect(item.localizedHead(isArabic: false), isNull);
     });
 
     test('localized helpers pick per locale', () {
       final item = _item();
-      expect(item.localizedCountry(false), 'United States');
-      expect(item.localizedCountry(true), 'الولايات المتحدة');
-      expect(item.localizedCountrySubtitle(false), 'الولايات المتحدة');
-      expect(item.localizedCountrySubtitle(true), 'United States');
+      expect(item.localizedCountry(isArabic: false), 'United States');
+      expect(item.localizedCountry(isArabic: true), 'الولايات المتحدة');
+      expect(item.localizedCountrySubtitle(isArabic: false), 'الولايات المتحدة');
+      expect(item.localizedCountrySubtitle(isArabic: true), 'United States');
     });
   });
 }

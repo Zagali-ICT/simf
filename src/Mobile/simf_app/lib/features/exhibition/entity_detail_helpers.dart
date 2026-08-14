@@ -6,7 +6,11 @@ library;
 import 'package:simf_app/features/exhibition/widgets/entity_detail_scaffold.dart' show EntityDetailScaffold;
 
 /// Joins "City، Country" (Arabic comma in RTL); either side may be null.
-String? entityLocationLine(String? city, String? country, bool isArabic) {
+String? entityLocationLine(
+  String? city,
+  String? country, {
+  required bool isArabic,
+}) {
   final parts = <String>[
     if ((city ?? '').trim().isNotEmpty) city!.trim(),
     if ((country ?? '').trim().isNotEmpty) country!.trim(),

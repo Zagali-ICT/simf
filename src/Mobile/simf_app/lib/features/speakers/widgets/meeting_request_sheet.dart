@@ -515,7 +515,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
       if (s.id == _selectedSpeakerId) {
         return true;
       }
-      final name = s.localizedName(isArabic).toLowerCase();
+      final name = s.localizedName(isArabic: isArabic).toLowerCase();
       final rank = (s.rank ?? '').toLowerCase();
       final rankArabic = (s.rankArabic ?? '').toLowerCase();
       return name.contains(q) || rank.contains(q) || rankArabic.contains(q);
@@ -569,9 +569,9 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           final day = days[i];
           return MeetingDayCard(
             key: ValueKey<String>('meeting-day-$i'),
-            weekday: gregorianWeekdayName(day, isArabic),
+            weekday: gregorianWeekdayName(day, isArabic: isArabic),
             dayNumber: day.day,
-            month: gregorianMonthName(day.month, isArabic),
+            month: gregorianMonthName(day.month, isArabic: isArabic),
             selected: _selectedDay != null && sameLocalDay(_selectedDay!, day),
             onTap: () => setState(() {
               _selectedDay = day;

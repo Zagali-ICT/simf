@@ -144,11 +144,11 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
           return InkWell(
             onTap: () => unawaited(_openDetail(v)),
             child: ContactCard(
-              name: card.localizedName(isArabic),
+              name: card.localizedName(isArabic: isArabic),
               available: card.available,
-              jobTitle: card.localizedJobTitle(isArabic),
-              organisation: card.localizedOrganisation(isArabic),
-              country: card.localizedCountry(isArabic),
+              jobTitle: card.localizedJobTitle(isArabic: isArabic),
+              organisation: card.localizedOrganisation(isArabic: isArabic),
+              country: card.localizedCountry(isArabic: isArabic),
               email: card.email,
               saudiMobile: card.saudiMobile,
               internationalMobile: card.internationalMobile,

@@ -184,7 +184,7 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
     final detail = _detail;
     final dataLines = detail == null
         ? const <String>[]
-        : _dataLines(detail.localizedDescription(l10n.isArabic));
+        : _dataLines(detail.localizedDescription(isArabic: l10n.isArabic));
     // Frame 934:3636 — the data block + composer occupy the top (scrollable so a
     // long description + the keyboard never overflow), and the submit + note are
     // pinned to the bottom of the screen (943:3751), not flowed under the box.

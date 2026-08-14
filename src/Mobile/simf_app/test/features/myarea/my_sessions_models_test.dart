@@ -34,11 +34,11 @@ void main() {
       expect(item.status, SessionStatus.published);
       expect(item.durationMinutes, 60);
       expect(item.isArchived, isTrue); // Published counts as archive
-      expect(item.localizedTitle(true), 'الكلمة الرئيسية');
-      expect(item.localizedTitle(false), 'Keynote');
-      expect(item.localizedHall(false), 'Main Hall');
-      expect(item.localizedCategory(true), 'الاقتصاد الرقمي');
-      expect(item.localizedSpeaker(false), 'Dr. Omari');
+      expect(item.localizedTitle(isArabic: true), 'الكلمة الرئيسية');
+      expect(item.localizedTitle(isArabic: false), 'Keynote');
+      expect(item.localizedHall(isArabic: false), 'Main Hall');
+      expect(item.localizedCategory(isArabic: true), 'الاقتصاد الرقمي');
+      expect(item.localizedSpeaker(isArabic: false), 'Dr. Omari');
     });
 
     test('upcoming vs ended derive from the device clock', () {

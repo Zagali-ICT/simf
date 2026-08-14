@@ -38,7 +38,7 @@ class PublicBannerItem {
   final String? imageUrl;
   final String? linkUrl;
 
-  String titleFor(bool isArabic) => isArabic ? titleArabic : title;
+  String titleFor({required bool isArabic}) => isArabic ? titleArabic : title;
 
   /// The uploaded banner image served by the row id. `baseUrl` already includes
   /// `/api/v1`, so it is not re-appended. A 404 (no upload) → the caller falls

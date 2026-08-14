@@ -92,7 +92,7 @@ class SessionDetailBody extends StatelessWidget {
     }
 
     final isArabic = l10n.isArabic;
-    final description = detail.localizedDescription(isArabic);
+    final description = detail.localizedDescription(isArabic: isArabic);
 
     // Owner 2026-07-14 — gate the two header actions on the session's phase:
     // the ملخص الجلسة summary exists only once the session has ENDED (a future /

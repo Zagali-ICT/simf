@@ -33,8 +33,8 @@ class BadgeQrCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isArabic = l10n.isArabic;
-    final name = identity.localizedName(isArabic);
-    final tier = identity.localizedTier(isArabic);
+    final name = identity.localizedName(isArabic: isArabic);
+    final tier = identity.localizedTier(isArabic: isArabic);
     // The identity strip is tinted by the profile type's colour (server value
     // `ProfileType.PageColor`, surfaced as `identity.pageColor`) so each tier's
     // badge is visually distinct; it falls back to the token gold when the

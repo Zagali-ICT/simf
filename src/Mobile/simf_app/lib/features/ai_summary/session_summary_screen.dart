@@ -277,10 +277,10 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     final block = summary == null
         ? ''
         : switch (_tab) {
-            _SummaryTab.keyPoints => summary.localizedKeyPoints(isArabic),
+            _SummaryTab.keyPoints => summary.localizedKeyPoints(isArabic: isArabic),
             _SummaryTab.recommendations =>
-              summary.localizedRecommendations(isArabic),
-            _SummaryTab.speakers => summary.localizedSpeakers(isArabic),
+              summary.localizedRecommendations(isArabic: isArabic),
+            _SummaryTab.speakers => summary.localizedSpeakers(isArabic: isArabic),
           };
     final lines = block
         .split('\n')
@@ -308,7 +308,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
   /// The published full-text paragraph (or the empty note) under the generate
   /// button.
   String _summaryParagraph(AppL10n l10n, bool isArabic) {
-    final text = _summary?.localizedFullText(isArabic).trim() ?? '';
+    final text = _summary?.localizedFullText(isArabic: isArabic).trim() ?? '';
     return text.isEmpty ? l10n.aiSummaryNone : text;
   }
 }

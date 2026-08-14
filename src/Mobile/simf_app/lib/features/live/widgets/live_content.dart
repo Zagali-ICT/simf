@@ -275,7 +275,7 @@ class UpcomingCard extends StatelessWidget {
           children: <Widget>[
             Expanded(
               child: Text(
-                session.localizedTitle(isArabic),
+                session.localizedTitle(isArabic: isArabic),
                 textAlign: TextAlign.start,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

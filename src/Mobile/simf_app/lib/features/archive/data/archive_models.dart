@@ -41,8 +41,8 @@ class ArchiveEdition {
   final String? summaryAr;
   final String? coverImageRelativePath;
 
-  String localizedTitle(bool isArabic) => _pick(titleAr, titleEn, isArabic);
-  String? localizedSummary(bool isArabic) =>
+  String localizedTitle({required bool isArabic}) => _pick(titleAr, titleEn, isArabic);
+  String? localizedSummary({required bool isArabic}) =>
       _pickOpt(summaryAr, summaryEn, isArabic);
 
   static List<ArchiveEdition> listFromData(Object? data) =>
@@ -114,12 +114,12 @@ class ArchiveEditionDetail {
   final List<ArchiveSessionTitle> sessionTitles;
   final List<ArchivePastSpeaker> pastSpeakers;
 
-  String localizedTitle(bool isArabic) => _pick(titleAr, titleEn, isArabic);
-  String? localizedSummary(bool isArabic) =>
+  String localizedTitle({required bool isArabic}) => _pick(titleAr, titleEn, isArabic);
+  String? localizedSummary({required bool isArabic}) =>
       _pickOpt(summaryAr, summaryEn, isArabic);
-  String? localizedLocation(bool isArabic) =>
+  String? localizedLocation({required bool isArabic}) =>
       _pickOpt(locationAr, locationEn, isArabic);
-  String? localizedDateLabel(bool isArabic) =>
+  String? localizedDateLabel({required bool isArabic}) =>
       _pickOpt(dateLabelAr, dateLabelEn, isArabic);
 
   static List<T> _list<T>(
@@ -157,7 +157,7 @@ class ArchiveMediaItem {
   final String? captionAr;
 
   bool get isVideo => kind == 1;
-  String? localizedCaption(bool isArabic) =>
+  String? localizedCaption({required bool isArabic}) =>
       _pickOpt(captionAr, captionEn, isArabic);
 }
 
@@ -175,7 +175,7 @@ class ArchiveSessionTitle {
   final String titleEn;
   final String titleAr;
 
-  String localized(bool isArabic) => _pick(titleAr, titleEn, isArabic);
+  String localized({required bool isArabic}) => _pick(titleAr, titleEn, isArabic);
 }
 
 /// One past speaker — mirrors `PublicArchivePastSpeaker`.
@@ -202,7 +202,7 @@ class ArchivePastSpeaker {
   // D-456 — optional country (ISO 3166-1 numeric) for the corner flag.
   final int? countryId;
 
-  String localized(bool isArabic) => _pick(nameAr, nameEn, isArabic);
+  String localized({required bool isArabic}) => _pick(nameAr, nameEn, isArabic);
 }
 
 String _pick(String arabic, String english, bool isArabic) {

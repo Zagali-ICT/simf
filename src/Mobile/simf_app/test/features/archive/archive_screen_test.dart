@@ -272,8 +272,8 @@ void main() {
         'sessions': 40,
         'speakers': 60,
       });
-      expect(e.localizedTitle(true), 'النسخة الثالثة');
-      expect(e.localizedTitle(false), '3rd Edition');
+      expect(e.localizedTitle(isArabic: true), 'النسخة الثالثة');
+      expect(e.localizedTitle(isArabic: false), '3rd Edition');
       expect(e.attendees, 1200);
     });
   });

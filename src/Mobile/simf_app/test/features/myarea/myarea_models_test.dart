@@ -52,22 +52,22 @@ void main() {
 
       expect(dashboard.identity.fullNameEn, 'Raed Al-Salem');
       expect(dashboard.identity.qrId, 'ABC123');
-      expect(dashboard.identity.localizedTier(true), 'كبار الشخصيات');
-      expect(dashboard.identity.localizedName(false), 'Raed Al-Salem');
+      expect(dashboard.identity.localizedTier(isArabic: true), 'كبار الشخصيات');
+      expect(dashboard.identity.localizedName(isArabic: false), 'Raed Al-Salem');
       expect(dashboard.counters.bookedSessionsCount, 6);
       expect(dashboard.counters.meetingsCount, 3);
       expect(dashboard.todaySchedule, hasLength(2));
 
       final session = dashboard.todaySchedule.first;
       expect(session.isSession, isTrue);
-      expect(session.localizedTitle(false), 'Opening');
-      expect(session.localizedHall(true), 'القاعة أ');
+      expect(session.localizedTitle(isArabic: false), 'Opening');
+      expect(session.localizedHall(isArabic: true), 'القاعة أ');
       expect(session.sessionId, 's1');
 
       final meeting = dashboard.todaySchedule[1];
       expect(meeting.isSession, isFalse);
       // A business meeting carries no title → falls back to its subject.
-      expect(meeting.localizedTitle(false), 'Intro chat');
+      expect(meeting.localizedTitle(isArabic: false), 'Intro chat');
       expect(meeting.end, isNull);
     });
 
@@ -76,7 +76,7 @@ void main() {
 
       expect(dashboard.identity.fullNameEn, '');
       expect(dashboard.identity.qrId, isNull);
-      expect(dashboard.identity.localizedTier(true), isNull);
+      expect(dashboard.identity.localizedTier(isArabic: true), isNull);
       expect(dashboard.counters.bookedSessionsCount, 0);
       expect(dashboard.counters.meetingsCount, 0);
       expect(dashboard.todaySchedule, isEmpty);

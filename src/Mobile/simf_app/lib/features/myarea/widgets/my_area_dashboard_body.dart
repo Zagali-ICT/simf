@@ -38,7 +38,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final isArabic = l10n.isArabic;
     final identity = dashboard.identity;
-    final tier = identity.localizedTier(isArabic);
+    final tier = identity.localizedTier(isArabic: isArabic);
     final enrolled =
         l10n.enrolledInSessions(dashboard.counters.bookedSessionsCount);
     final subtitle = tier == null ? enrolled : '$tier · $enrolled';
@@ -59,7 +59,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         MyAreaIdentityCard(
-          name: identity.localizedName(isArabic),
+          name: identity.localizedName(isArabic: isArabic),
           line: subtitle,
           reference: reference,
           shareLabel: l10n.shareLabel,

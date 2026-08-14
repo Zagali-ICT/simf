@@ -211,7 +211,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
           // تفاصيل اليوم (883:2327 area) — the selected day's OWN title + its logo
           // banner. The "تفاصيل اليوم" label carries the day title (owner: not a
           // static label — it is the day's title).
-          SimfSectionHeader(title: selected.localizedTitle(isArabic)),
+          SimfSectionHeader(title: selected.localizedTitle(isArabic: isArabic)),
           const SizedBox(height: SimfTokens.space3),
           ProgrammeDayBanner(imageUrl: dayImageUrl),
           const SizedBox(height: SimfTokens.space5),

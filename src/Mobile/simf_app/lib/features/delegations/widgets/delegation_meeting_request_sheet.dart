@@ -543,9 +543,9 @@ class _DelegationMeetingRequestSheetState
           final day = days[i];
           return MeetingDayCard(
             key: ValueKey<String>('delegation-day-$i'),
-            weekday: gregorianWeekdayName(day, isArabic),
+            weekday: gregorianWeekdayName(day, isArabic: isArabic),
             dayNumber: day.day,
-            month: gregorianMonthName(day.month, isArabic),
+            month: gregorianMonthName(day.month, isArabic: isArabic),
             selected: _selectedDay != null && sameLocalDay(_selectedDay!, day),
             onTap: () => setState(() {
               _selectedDay = day;

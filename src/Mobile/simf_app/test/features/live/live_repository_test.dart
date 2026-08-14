@@ -42,19 +42,19 @@ void main() {
       final session = decode('English notice.', 'إشعار عربي.');
       expect(session.liveNotice, 'English notice.');
       expect(session.liveNoticeArabic, 'إشعار عربي.');
-      expect(session.localizedNotice(true), 'إشعار عربي.');
-      expect(session.localizedNotice(false), 'English notice.');
+      expect(session.localizedNotice(isArabic: true), 'إشعار عربي.');
+      expect(session.localizedNotice(isArabic: false), 'English notice.');
       // One side only → both locales read the authored side.
       expect(
-        decode('English notice.', null).localizedNotice(true),
+        decode('English notice.', null).localizedNotice(isArabic: true),
         'English notice.',
       );
     });
 
     test('a missing / blank notice is null (the banner is not rendered)', () {
-      expect(decode(null, null).localizedNotice(false), isNull);
-      expect(decode('   ', '').localizedNotice(false), isNull);
-      expect(decode('   ', '').localizedNotice(true), isNull);
+      expect(decode(null, null).localizedNotice(isArabic: false), isNull);
+      expect(decode('   ', '').localizedNotice(isArabic: false), isNull);
+      expect(decode('   ', '').localizedNotice(isArabic: true), isNull);
     });
   });
 }

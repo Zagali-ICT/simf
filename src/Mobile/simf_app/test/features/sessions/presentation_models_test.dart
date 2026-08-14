@@ -27,9 +27,9 @@ void main() {
       expect(item.fileName, 'deck.pdf');
       expect(item.contentType, 'application/pdf');
       expect(item.sizeBytes, 2048);
-      expect(item.localizedSessionTitle(true), 'مستقبل الاستثمار');
-      expect(item.localizedSessionTitle(false), 'Future of Investment');
-      expect(item.localizedSpeaker(false), 'Dr. Omari');
+      expect(item.localizedSessionTitle(isArabic: true), 'مستقبل الاستثمار');
+      expect(item.localizedSessionTitle(isArabic: false), 'Future of Investment');
+      expect(item.localizedSpeaker(isArabic: false), 'Dr. Omari');
     });
 
     test('defaults a missing content type and a missing items array', () {

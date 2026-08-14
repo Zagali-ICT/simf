@@ -38,10 +38,10 @@ class NewsListItem {
   final String? excerptArabic;
   final String? imageRelativePath;
 
-  String localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
-  String localizedCategory(bool isArabic) =>
+  String localizedTitle({required bool isArabic}) => _pick(titleArabic, title, isArabic);
+  String localizedCategory({required bool isArabic}) =>
       _pick(categoryArabic, category, isArabic);
-  String? localizedExcerpt(bool isArabic) =>
+  String? localizedExcerpt({required bool isArabic}) =>
       _pickOpt(excerptArabic, excerpt, isArabic);
 
   /// Reads `PublicNewsPage = { items: [...] }`.
@@ -89,10 +89,10 @@ class NewsArticle {
   final DateTime publishedAt;
   final String? imageRelativePath;
 
-  String localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
-  String localizedCategory(bool isArabic) =>
+  String localizedTitle({required bool isArabic}) => _pick(titleArabic, title, isArabic);
+  String localizedCategory({required bool isArabic}) =>
       _pick(categoryArabic, category, isArabic);
-  String localizedBody(bool isArabic) => _pick(bodyArabic, body, isArabic);
+  String localizedBody({required bool isArabic}) => _pick(bodyArabic, body, isArabic);
 }
 
 DateTime _utc(Object? value) {

@@ -27,8 +27,8 @@ class BoothHallRow extends StatelessWidget {
     final hallAr = booth.hallNameArabic?.trim();
     final hasBoth =
         (hallEn?.isNotEmpty ?? false) && (hallAr?.isNotEmpty ?? false);
-    final fallback = booth.localizedHallName(l10n.isArabic) ??
-        booth.localizedSector(l10n.isArabic) ??
+    final fallback = booth.localizedHallName(isArabic: l10n.isArabic) ??
+        booth.localizedSector(isArabic: l10n.isArabic) ??
         l10n.boothsHallFallback;
     final code = booth.code;
     // Both children are a fixed 48 high; the row must NOT stretch — inside the

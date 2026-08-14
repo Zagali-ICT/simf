@@ -22,7 +22,7 @@ class GalleryMediaTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = item.localizedTitle(isArabic);
+    final title = item.localizedTitle(isArabic: isArabic);
     final isVideo = item.kind == MediaKind.video;
     // Prefer the lighter thumbnail for the grid; fall back to the full image;
     // null when the item carries no bitmap (then the kind icon is shown).

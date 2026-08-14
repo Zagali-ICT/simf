@@ -41,8 +41,8 @@ void main() {
       expect(item.status, AppRequestStatus.pending);
       expect(item.canCancel, isTrue);
       expect(item.eventDate, isNull);
-      expect(item.localizedSubtitle(true), 'شهادة حضور رسمية');
-      expect(item.localizedSubtitle(false), 'Official attendance certificate');
+      expect(item.localizedSubtitle(isArabic: true), 'شهادة حضور رسمية');
+      expect(item.localizedSubtitle(isArabic: false), 'Official attendance certificate');
     });
 
     // Owner 2026-07-19 — the speaker rank (subtitle line) localizes AR/EN.
@@ -56,8 +56,8 @@ void main() {
         'subtitle': 'Professor of Cybersecurity, Oxford',
         'subtitleArabic': 'أستاذة الأمن السيبراني، أكسفورد',
       });
-      expect(both.localizedRank(true), 'أستاذة الأمن السيبراني، أكسفورد');
-      expect(both.localizedRank(false), 'Professor of Cybersecurity, Oxford');
+      expect(both.localizedRank(isArabic: true), 'أستاذة الأمن السيبراني، أكسفورد');
+      expect(both.localizedRank(isArabic: false), 'Professor of Cybersecurity, Oxford');
 
       // Arabic requested but only English present → falls back to English.
       final enOnly = AppRequestItem.fromJson(const <String, dynamic>{
@@ -68,7 +68,7 @@ void main() {
         'status': 0,
         'subtitle': 'Analyst',
       });
-      expect(enOnly.localizedRank(true), 'Analyst');
+      expect(enOnly.localizedRank(isArabic: true), 'Analyst');
 
       // No rank at all → null (the card falls back to the type headline).
       final none = AppRequestItem.fromJson(const <String, dynamic>{
@@ -78,8 +78,8 @@ void main() {
         'titleArabic': 'بولندا',
         'status': 0,
       });
-      expect(none.localizedRank(true), isNull);
-      expect(none.localizedRank(false), isNull);
+      expect(none.localizedRank(isArabic: true), isNull);
+      expect(none.localizedRank(isArabic: false), isNull);
     });
 
     test('parses responseNote and treats blank as null', () {

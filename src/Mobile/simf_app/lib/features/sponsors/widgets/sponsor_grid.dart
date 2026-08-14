@@ -40,8 +40,8 @@ class SponsorGrid extends StatelessWidget {
       itemBuilder: (context, i) => SponsorGridTile(
         id: sponsors[i].id,
         baseUrl: baseUrl,
-        name: sponsors[i].localizedName(isArabic),
-        initials: sponsorBadgeText(sponsors[i], isArabic),
+        name: sponsors[i].localizedName(isArabic: isArabic),
+        initials: sponsorBadgeText(sponsors[i], isArabic: isArabic),
         // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
         onTap: () => context.pushNamed(
           RouteNames.sponsorDetail,

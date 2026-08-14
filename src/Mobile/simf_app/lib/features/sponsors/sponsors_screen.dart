@@ -109,12 +109,12 @@ class SponsorsScreen extends ConsumerWidget {
                     SponsorCard(
                       id: sponsor.id,
                       baseUrl: baseUrl,
-                      name: sponsor.localizedName(isArabic),
-                      badge: sponsorBadgeText(sponsor, isArabic),
+                      name: sponsor.localizedName(isArabic: isArabic),
+                      badge: sponsorBadgeText(sponsor, isArabic: isArabic),
                       // D-432 — prefer the authored tagline (Figma's "الراعي
                       // الاستراتيجي · …" line); fall back to the website link.
                       secondary:
-                          sponsor.localizedTagline(isArabic) ?? sponsor.url,
+                          sponsor.localizedTagline(isArabic: isArabic) ?? sponsor.url,
                       hero: i == 0,
                       // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
                       onTap: () => context.pushNamed(

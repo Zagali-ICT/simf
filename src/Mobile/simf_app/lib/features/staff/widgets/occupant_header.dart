@@ -43,8 +43,8 @@ class OccupantHeader extends StatelessWidget {
         const SizedBox(width: SimfTokens.space3),
         Expanded(
           child: Text(
-            result.localizedGuestHint(l10n.isArabic) ??
-                result.localizedName(l10n.isArabic),
+            result.localizedGuestHint(isArabic: l10n.isArabic) ??
+                result.localizedName(isArabic: l10n.isArabic),
             style: SimfTokens.labelWhiteBoldTitle,
           ),
         ),

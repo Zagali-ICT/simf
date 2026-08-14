@@ -126,7 +126,7 @@ class DelegationsBody extends StatelessWidget {
     }
     for (final item in data.items) {
       if (item.countryCode == selectedCountryCode) {
-        return item.localizedCountry(isArabic);
+        return item.localizedCountry(isArabic: isArabic);
       }
     }
     return null;

@@ -124,8 +124,8 @@ void main() {
       expect(cell.guestHintArabic, 'هذا المقعد محجوز لمعالي الوزير');
       expect(cell.guestHint, isNull);
       // English requested but only Arabic present → falls back rather than blank.
-      expect(cell.localizedGuestHint(false), 'هذا المقعد محجوز لمعالي الوزير');
-      expect(cell.localizedGuestHint(true), 'هذا المقعد محجوز لمعالي الوزير');
+      expect(cell.localizedGuestHint(isArabic: false), 'هذا المقعد محجوز لمعالي الوزير');
+      expect(cell.localizedGuestHint(isArabic: true), 'هذا المقعد محجوز لمعالي الوزير');
     });
 
     test('an ordinary reservation carries no hint', () {
@@ -134,7 +134,7 @@ void main() {
         'seatNumber': 2,
         'kind': 0,
       });
-      expect(cell.localizedGuestHint(true), isNull);
+      expect(cell.localizedGuestHint(isArabic: true), isNull);
     });
   });
 }

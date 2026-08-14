@@ -37,8 +37,8 @@ void main() {
       expect(node.x, 10.5);
       expect(node.y, 20.0);
       expect(node.boothId, 'b1');
-      expect(node.localizedLabel(true), 'جناح A-12');
-      expect(node.localizedLabel(false), 'Booth A-12');
+      expect(node.localizedLabel(isArabic: true), 'جناح A-12');
+      expect(node.localizedLabel(isArabic: false), 'Booth A-12');
     });
   });
 
@@ -57,10 +57,10 @@ void main() {
       });
 
       expect(booth.code, 'A-12');
-      expect(booth.localizedName(false), 'SAMI');
-      expect(booth.localizedName(true), 'سامي');
-      expect(booth.localizedExhibitor(false), 'SAMI Co');
-      expect(booth.localizedSector(true), 'دفاع');
+      expect(booth.localizedName(isArabic: false), 'SAMI');
+      expect(booth.localizedName(isArabic: true), 'سامي');
+      expect(booth.localizedExhibitor(isArabic: false), 'SAMI Co');
+      expect(booth.localizedSector(isArabic: true), 'دفاع');
     });
 
     test('detail adds the localized description', () {
@@ -73,8 +73,8 @@ void main() {
         'descriptionArabic': 'أنظمة بحرية عالمية.',
       });
 
-      expect(detail.localizedDescription(false), 'World-class maritime systems.');
-      expect(detail.localizedDescription(true), 'أنظمة بحرية عالمية.');
+      expect(detail.localizedDescription(isArabic: false), 'World-class maritime systems.');
+      expect(detail.localizedDescription(isArabic: true), 'أنظمة بحرية عالمية.');
     });
 
     test('missing nullable fields resolve to null, not empty strings', () {
@@ -84,8 +84,8 @@ void main() {
         'name': 'X',
         'nameArabic': 'س',
       });
-      expect(booth.localizedExhibitor(false), isNull);
-      expect(booth.localizedSector(false), isNull);
+      expect(booth.localizedExhibitor(isArabic: false), isNull);
+      expect(booth.localizedSector(isArabic: false), isNull);
     });
   });
 }

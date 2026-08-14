@@ -36,10 +36,10 @@ void main() {
         ],
       });
 
-      expect(detail.localizedTitle(true), 'الافتتاح');
-      expect(detail.localizedHall(false), 'Main Hall');
-      expect(detail.localizedDescription(false), 'Welcome');
-      expect(detail.localizedCategory(true), 'جلسة رئيسية');
+      expect(detail.localizedTitle(isArabic: true), 'الافتتاح');
+      expect(detail.localizedHall(isArabic: false), 'Main Hall');
+      expect(detail.localizedDescription(isArabic: false), 'Welcome');
+      expect(detail.localizedCategory(isArabic: true), 'جلسة رئيسية');
       expect(detail.liveStreamUrl, 'https://youtu.be/abcdefghijk');
       expect(detail.hasLiveStream, isTrue);
       expect(detail.displayOrder, 2); // D-567
@@ -52,7 +52,7 @@ void main() {
       final speaker = detail.speakers.single;
       expect(speaker.role, SessionSpeakerRole.host);
       expect(speaker.countryId, 682);
-      expect(speaker.localizedCountry(true), 'السعودية');
+      expect(speaker.localizedCountry(isArabic: true), 'السعودية');
       expect(speaker.photoRelativePath, '/media/sp1.jpg');
     });
 
@@ -64,8 +64,8 @@ void main() {
         'start': '2026-11-23T06:00:00Z',
         'end': '2026-11-23T07:00:00Z',
       });
-      expect(detail.localizedDescription(false), isNull);
-      expect(detail.localizedCategory(false), isNull);
+      expect(detail.localizedDescription(isArabic: false), isNull);
+      expect(detail.localizedCategory(isArabic: false), isNull);
       expect(detail.liveStreamUrl, isNull);
       expect(detail.hasLiveStream, isFalse);
       expect(detail.speakers, isEmpty);

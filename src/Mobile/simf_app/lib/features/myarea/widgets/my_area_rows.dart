@@ -30,7 +30,7 @@ class MyAreaScheduleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final time = _timeFormat.format(saudiOf(item.start));
-    final hall = item.localizedHall(isArabic);
+    final hall = item.localizedHall(isArabic: isArabic);
     return SimfCard(
       onTap: onTap,
       child: Padding(
@@ -51,7 +51,7 @@ class MyAreaScheduleRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: <Widget>[
                   Text(
-                    item.localizedTitle(isArabic),
+                    item.localizedTitle(isArabic: isArabic),
                     style: const TextStyle(
                       color: SimfTokens.surface,
                       fontWeight: FontWeight.w500,

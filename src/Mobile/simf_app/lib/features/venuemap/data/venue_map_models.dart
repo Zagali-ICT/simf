@@ -73,7 +73,7 @@ class VenueMapNode {
 
   bool get isBooth => kind == VenueMapNodeKind.booth;
 
-  String localizedLabel(bool isArabic) {
+  String localizedLabel({required bool isArabic}) {
     final ar = labelArabic.trim();
     final en = label.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
@@ -161,22 +161,22 @@ class BoothSummary {
   final String? countryName;
   final String? countryNameArabic;
 
-  String? localizedCountry(bool isArabic) =>
+  String? localizedCountry({required bool isArabic}) =>
       _pick(countryNameArabic, countryName, isArabic);
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();
     final en = name.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
-  String? localizedExhibitor(bool isArabic) =>
+  String? localizedExhibitor({required bool isArabic}) =>
       _pick(exhibitorNameArabic, exhibitorName, isArabic);
 
-  String? localizedSector(bool isArabic) =>
+  String? localizedSector({required bool isArabic}) =>
       _pick(sectorArabic, sector, isArabic);
 
-  String? localizedHallName(bool isArabic) =>
+  String? localizedHallName({required bool isArabic}) =>
       _pick(hallNameArabic, hallName, isArabic);
 }
 
@@ -278,25 +278,25 @@ class BoothDetail {
   // CompanyLogo via [exhibitorContactId]). Null when the booth has no exhibitor.
   final String? exhibitorId;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();
     final en = name.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
-  String? localizedExhibitor(bool isArabic) =>
+  String? localizedExhibitor({required bool isArabic}) =>
       _pick(exhibitorNameArabic, exhibitorName, isArabic);
 
-  String? localizedDescription(bool isArabic) =>
+  String? localizedDescription({required bool isArabic}) =>
       _pick(descriptionArabic, description, isArabic);
 
-  String? localizedHallName(bool isArabic) =>
+  String? localizedHallName({required bool isArabic}) =>
       _pick(hallNameArabic, hallName, isArabic);
 
-  String? localizedCountry(bool isArabic) =>
+  String? localizedCountry({required bool isArabic}) =>
       _pick(countryNameArabic, countryName, isArabic);
 
-  String? localizedCity(bool isArabic) => _pick(cityArabic, city, isArabic);
+  String? localizedCity({required bool isArabic}) => _pick(cityArabic, city, isArabic);
 }
 
 /// Picks the locale-appropriate value of a bilingual pair, falling back to the

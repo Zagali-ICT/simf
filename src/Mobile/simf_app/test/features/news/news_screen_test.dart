@@ -196,8 +196,8 @@ void main() {
         'categoryArabic': 'صحافة',
         'publishedAt': '2026-11-23T00:00:00Z',
       });
-      expect(a.localizedTitle(false), 'T');
-      expect(a.localizedBody(true), 'نص');
+      expect(a.localizedTitle(isArabic: false), 'T');
+      expect(a.localizedBody(isArabic: true), 'نص');
     });
   });
 }

@@ -29,7 +29,7 @@ class MediaPartner {
   /// arbitrary path / placeholder URL) is kept only to mirror the wire shape.
   final String? logoRelativePath;
 
-  String localizedName(bool isArabic) {
+  String localizedName({required bool isArabic}) {
     final ar = nameArabic.trim();
     final en = name.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
