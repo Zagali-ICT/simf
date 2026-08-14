@@ -203,5 +203,23 @@ internal static partial class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.UpdateArchiveVisibilityAsync(body, token));
         });
+
+        // The yearly edition. Mapped explicitly because this host is a BFF with
+        // no catch-all proxy: a page calling /account/api/... that has no mapping
+        // here compiles cleanly and 404s at runtime.
+        group.MapGet("/admin/editions/current",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetCurrentEditionAsync(token));
+        });
+        group.MapPost("/admin/editions/open",
+            async (AdminOpenEditionRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.OpenEditionAsync(body, token));
+        });
     }
 }

@@ -55,6 +55,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/visitors/vip/export` | [`cp-vip-export.md`](cp-vip-export.md) | E2E-VIPX-001..008 |
 | `/admin/delegates` | [`cp-admin-delegates.md`](cp-admin-delegates.md) | E2E-DLG-001..012 |
 | `/admin/visitors/badge-batches` | [`cp-admin-badge-batches.md`](cp-admin-badge-batches.md) | E2E-BBT-001..015 |
+| `/admin/editions` | [`cp-admin-editions.md`](cp-admin-editions.md) | E2E-CPED-001..010 |
 | `/admin/attendees` | [`cp-admin-attendees.md`](cp-admin-attendees.md) | E2E-ATT-001..016 |
 | `/admin/print-bag` | [`cp-admin-print-bag.md`](cp-admin-print-bag.md) | E2E-PRT-001..011 |
 | `/admin/interests` | [`cp-admin-interests.md`](cp-admin-interests.md) | E2E-INT-001..013 |
@@ -356,10 +357,10 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 196 (96 Control Panel + 69 mobile + 19 Website + 10
+- **Pages catalogued:** 197 (97 Control Panel + 69 mobile + 19 Website + 10
   API-only surfaces + 1 system-wide). One of them — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3105 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3115 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
   functional total is 2706.

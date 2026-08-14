@@ -2364,6 +2364,28 @@
   <data name="Admin.RatingConfig.Groups.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" and every question inside it will be deactivated.</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Title" xml:space="preserve"><value>Delete this question?</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>"{0}" will be deactivated.</value></data>
+  <data name="Module.EventEdition" xml:space="preserve"><value>Event edition</value></data>
+  <data name="Admin.Editions.Title" xml:space="preserve"><value>Event edition</value></data>
+  <data name="Admin.Editions.Desc" xml:space="preserve"><value>The year the forum is currently running. A badge only opens a gate in the year it was issued for.</value></data>
+  <data name="Admin.Editions.Loading" xml:space="preserve"><value>Loading the current edition…</value></data>
+  <data name="Admin.Editions.LoadFailed" xml:space="preserve"><value>The current edition could not be loaded.</value></data>
+  <data name="Admin.Editions.CurrentYear" xml:space="preserve"><value>Open year</value></data>
+  <data name="Admin.Editions.OpenedAt" xml:space="preserve"><value>Opened</value></data>
+  <data name="Admin.Editions.LastClosedAt" xml:space="preserve"><value>Previous year closed</value></data>
+  <data name="Admin.Editions.NeverClosed" xml:space="preserve"><value>No year has been closed yet</value></data>
+  <data name="Admin.Editions.LastReissueCount" xml:space="preserve"><value>Badges cleared by the last opening</value></data>
+  <data name="Admin.Editions.Open.Heading" xml:space="preserve"><value>Open a new year</value></data>
+  <data name="Admin.Editions.Open.Desc" xml:space="preserve"><value>Closes the current year into history and opens the one you enter. Attendees are not deleted — their records stay, labelled with the year they belong to.</value></data>
+  <data name="Admin.Editions.Open.Warning" xml:space="preserve"><value>This clears every attendee's badge. Everyone attending the new year must be issued a new one — plan the re-issue before you do this, not at the door.</value></data>
+  <data name="Admin.Editions.Open.Year" xml:space="preserve"><value>Year to open</value></data>
+  <data name="Admin.Editions.Open.YearHint" xml:space="preserve"><value>Four digits, later than the open year.</value></data>
+  <data name="Admin.Editions.Open.YearInvalid" xml:space="preserve"><value>Enter a four-digit year between 2000 and 2999.</value></data>
+  <data name="Admin.Editions.Open.Action" xml:space="preserve"><value>Open the year</value></data>
+  <data name="Admin.Editions.Open.Confirm.Title" xml:space="preserve"><value>Open a new year?</value></data>
+  <data name="Admin.Editions.Open.Confirm.Message" xml:space="preserve"><value>This closes {1} into history, opens {0}, and clears the badge of every attendee in the system. Each of them will need a new badge before they can pass a gate. This cannot be undone.</value></data>
+  <data name="Admin.Editions.Open.Confirm.Action" xml:space="preserve"><value>Open the year and clear every badge</value></data>
+  <data name="Admin.Editions.Open.Done" xml:space="preserve"><value>Year {0} is open. {1} badge(s) were cleared and need re-issuing.</value></data>
+  <data name="Admin.Editions.Open.Failed" xml:space="preserve"><value>The year could not be opened.</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Common.Retry" xml:space="preserve"><value>Try again</value></data>
   <data name="Admin.BusinessMeetings.Party.KindLabel" xml:space="preserve"><value>Participant type</value></data>

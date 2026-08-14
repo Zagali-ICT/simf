@@ -2357,6 +2357,28 @@
   <data name="Admin.RatingConfig.Groups.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}" وجميع الأسئلة التي تحتوي عليها.</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Title" xml:space="preserve"><value>حذف السؤال؟</value></data>
   <data name="Admin.RatingConfig.Questions.Delete.Confirm.Message" xml:space="preserve"><value>سيتم تعطيل "{0}".</value></data>
+  <data name="Module.EventEdition" xml:space="preserve"><value>نسخة الملتقى</value></data>
+  <data name="Admin.Editions.Title" xml:space="preserve"><value>نسخة الملتقى</value></data>
+  <data name="Admin.Editions.Desc" xml:space="preserve"><value>السنة التي يُقام فيها الملتقى حالياً. لا تفتح الشارة أي بوابة إلا في السنة التي صدرت لها.</value></data>
+  <data name="Admin.Editions.Loading" xml:space="preserve"><value>جارٍ تحميل النسخة الحالية…</value></data>
+  <data name="Admin.Editions.LoadFailed" xml:space="preserve"><value>تعذّر تحميل النسخة الحالية.</value></data>
+  <data name="Admin.Editions.CurrentYear" xml:space="preserve"><value>السنة المفتوحة</value></data>
+  <data name="Admin.Editions.OpenedAt" xml:space="preserve"><value>تاريخ الفتح</value></data>
+  <data name="Admin.Editions.LastClosedAt" xml:space="preserve"><value>إغلاق السنة السابقة</value></data>
+  <data name="Admin.Editions.NeverClosed" xml:space="preserve"><value>لم تُغلق أي سنة بعد</value></data>
+  <data name="Admin.Editions.LastReissueCount" xml:space="preserve"><value>الشارات التي أُلغيت عند آخر فتح</value></data>
+  <data name="Admin.Editions.Open.Heading" xml:space="preserve"><value>فتح سنة جديدة</value></data>
+  <data name="Admin.Editions.Open.Desc" xml:space="preserve"><value>يُغلق السنة الحالية ضمن السجل ويفتح السنة التي تُدخلها. لا يُحذف الحاضرون — تبقى سجلاتهم موسومة بالسنة التي ينتمون إليها.</value></data>
+  <data name="Admin.Editions.Open.Warning" xml:space="preserve"><value>يؤدي هذا إلى إلغاء شارة كل حاضر. يجب إصدار شارة جديدة لكل من سيحضر السنة الجديدة — خطّط لإعادة الإصدار قبل تنفيذ ذلك، لا عند الباب.</value></data>
+  <data name="Admin.Editions.Open.Year" xml:space="preserve"><value>السنة المراد فتحها</value></data>
+  <data name="Admin.Editions.Open.YearHint" xml:space="preserve"><value>أربعة أرقام، ولاحقة للسنة المفتوحة.</value></data>
+  <data name="Admin.Editions.Open.YearInvalid" xml:space="preserve"><value>أدخل سنة من أربعة أرقام بين 2000 و2999.</value></data>
+  <data name="Admin.Editions.Open.Action" xml:space="preserve"><value>افتح السنة</value></data>
+  <data name="Admin.Editions.Open.Confirm.Title" xml:space="preserve"><value>فتح سنة جديدة؟</value></data>
+  <data name="Admin.Editions.Open.Confirm.Message" xml:space="preserve"><value>سيؤدي هذا إلى إغلاق {1} ضمن السجل، وفتح {0}، وإلغاء شارة كل حاضر في النظام. سيحتاج كل منهم إلى شارة جديدة قبل أن يتمكن من عبور أي بوابة. لا يمكن التراجع عن هذا الإجراء.</value></data>
+  <data name="Admin.Editions.Open.Confirm.Action" xml:space="preserve"><value>افتح السنة وألغِ كل الشارات</value></data>
+  <data name="Admin.Editions.Open.Done" xml:space="preserve"><value>السنة {0} مفتوحة الآن. أُلغيت {1} شارة وتحتاج إلى إعادة إصدار.</value></data>
+  <data name="Admin.Editions.Open.Failed" xml:space="preserve"><value>تعذّر فتح السنة.</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Common.Retry" xml:space="preserve"><value>إعادة المحاولة</value></data>
   <data name="Admin.BusinessMeetings.Party.KindLabel" xml:space="preserve"><value>نوع المشارك</value></data>

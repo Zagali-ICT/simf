@@ -123,6 +123,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/organization-profile` | ✅ Real (D-495; hero-video upload D-768) | Administrator | [cp/organization-profile.md](cp/organization-profile.md) | [e2e/cp-organization-profile.md](../tests/e2e/cp-organization-profile.md) |
 | `/admin/contact-inquiries` | ✅ Real (D-464; BFF wired D-649) | Administrator | — | [e2e/cp-contact-inquiries.md](../tests/e2e/cp-contact-inquiries.md) |
 | `/admin/operations` | ✅ Real (D-166) | Operations.View (Edit to save) | [cp/admin-operations.md](cp/admin-operations.md) | [e2e/cp-admin-operations.md](../tests/e2e/cp-admin-operations.md) |
+| `/admin/editions` | ✅ Real (the yearly edition — the open year + the one action that closes it into history and opens the next, clearing every badge for re-issue) | Administrator (`Editions.View` = read; `Editions.Open` = open a year) | [cp/admin-editions.md](cp/admin-editions.md) | [e2e/cp-admin-editions.md](../tests/e2e/cp-admin-editions.md) |
 | `/admin/reports` | ✅ Real | Reports.View | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
 | `/admin/reports/attendance` | ✅ Real | Reports.Attendance | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
 | `/admin/reports/registrations` | ✅ Real | Reports.Registrations | [cp/reports.md](cp/reports.md) | [e2e/cp-reports.md](../tests/e2e/cp-reports.md) |
