@@ -65,4 +65,3 @@ class ModeratorDeskHeader extends StatelessWidget {
     );
   }
 }
-

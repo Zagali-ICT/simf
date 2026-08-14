@@ -106,4 +106,3 @@ class _HighlightsCarouselState extends State<HighlightsCarousel> {
     );
   }
 }
-

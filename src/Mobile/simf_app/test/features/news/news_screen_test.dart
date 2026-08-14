@@ -186,7 +186,7 @@ void main() {
 
   group('NewsArticle.fromJson', () {
     test('binds title + body', () {
-      final a = NewsArticle.fromJson(<String, dynamic>{
+      final a = NewsArticle.fromJson(const <String, dynamic>{
         'id': 'n1',
         'title': 'T',
         'titleArabic': 'ع',

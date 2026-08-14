@@ -115,4 +115,3 @@ class ContactCard extends StatelessWidget {
         .toUpperCase();
   }
 }
-

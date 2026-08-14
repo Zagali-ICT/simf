@@ -98,4 +98,3 @@ class NewsCard extends StatelessWidget {
     return '$dd-$mm-${publishedAt.year}';
   }
 }
-

@@ -43,7 +43,7 @@ final sessionsRepositoryProvider = Provider<SessionsRepository>((ref) {
 /// `hasPublishedSummary`). The session-summaries list, the AI-summary screen,
 /// the join hub and the presentations screen all watch this one provider (the
 /// former per-screen `getSessions()` copies were collapsed onto it).
-final AutoDisposeFutureProvider<List<SessionListItem>> programmeSessionsProvider =
+final programmeSessionsProvider =
     FutureProvider.autoDispose<List<SessionListItem>>(
   (ref) => ref.watch(sessionsRepositoryProvider).getSessions(),
 );

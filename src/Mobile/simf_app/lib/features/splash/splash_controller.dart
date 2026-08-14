@@ -79,7 +79,7 @@ class SplashController extends Notifier<SplashState> {
         onTimeout: () => AppUpdateStatus.upToDate,
       ),
     ]);
-    final updateStatus = results[1] as AppUpdateStatus;
+    final updateStatus = results[1]! as AppUpdateStatus;
 
     if (updateStatus == AppUpdateStatus.forced) {
       state = const SplashUpdateRequired();

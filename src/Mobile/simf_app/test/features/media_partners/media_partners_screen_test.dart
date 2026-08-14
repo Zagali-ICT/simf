@@ -213,7 +213,7 @@ void main() {
     });
 
     test('MediaPartner.fromJson reads the wire fields', () {
-      final partner = MediaPartner.fromJson(<String, dynamic>{
+      final partner = MediaPartner.fromJson(const <String, dynamic>{
         'id': 'p9',
         'name': 'Reuters',
         'nameArabic': 'رويترز',

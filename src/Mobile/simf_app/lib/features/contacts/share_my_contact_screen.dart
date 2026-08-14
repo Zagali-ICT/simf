@@ -240,4 +240,3 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     );
   }
 }
-

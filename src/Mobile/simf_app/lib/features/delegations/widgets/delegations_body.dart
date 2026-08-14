@@ -132,4 +132,3 @@ class DelegationsBody extends StatelessWidget {
     return null;
   }
 }
-

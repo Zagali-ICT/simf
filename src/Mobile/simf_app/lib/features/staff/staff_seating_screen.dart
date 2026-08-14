@@ -305,4 +305,3 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
         SeatTier.normal => l10n.seatTierNormal,
       };
 }
-

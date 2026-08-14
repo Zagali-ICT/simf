@@ -82,4 +82,3 @@ class DelegationCard extends StatelessWidget {
     );
   }
 }
-

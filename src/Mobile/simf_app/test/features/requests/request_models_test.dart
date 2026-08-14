@@ -26,7 +26,7 @@ void main() {
 
   group('AppRequestItem.fromJson', () {
     test('parses every field', () {
-      final item = AppRequestItem.fromJson(<String, dynamic>{
+      final item = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 3,
         'id': 'abc',
         'title': 'Official attendance certificate',
@@ -47,7 +47,7 @@ void main() {
 
     // Owner 2026-07-19 — the speaker rank (subtitle line) localizes AR/EN.
     test('localizedRank picks the speaker rank per locale, with fallback', () {
-      final both = AppRequestItem.fromJson(<String, dynamic>{
+      final both = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 0,
         'id': 's1',
         'title': 'Dr. Sadie Creese',
@@ -60,7 +60,7 @@ void main() {
       expect(both.localizedRank(false), 'Professor of Cybersecurity, Oxford');
 
       // Arabic requested but only English present → falls back to English.
-      final enOnly = AppRequestItem.fromJson(<String, dynamic>{
+      final enOnly = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 0,
         'id': 's2',
         'title': 'X',
@@ -71,7 +71,7 @@ void main() {
       expect(enOnly.localizedRank(true), 'Analyst');
 
       // No rank at all → null (the card falls back to the type headline).
-      final none = AppRequestItem.fromJson(<String, dynamic>{
+      final none = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 1,
         'id': 's3',
         'title': 'Poland',
@@ -83,7 +83,7 @@ void main() {
     });
 
     test('parses responseNote and treats blank as null', () {
-      final withNote = AppRequestItem.fromJson(<String, dynamic>{
+      final withNote = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 3,
         'id': 'r1',
         'title': 'Doc',
@@ -93,7 +93,7 @@ void main() {
       });
       expect(withNote.responseNote, 'Missing passport copy.');
 
-      final blankNote = AppRequestItem.fromJson(<String, dynamic>{
+      final blankNote = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 3,
         'id': 'r2',
         'title': 'Doc',
@@ -103,7 +103,7 @@ void main() {
       });
       expect(blankNote.responseNote, isNull);
 
-      final noKey = AppRequestItem.fromJson(<String, dynamic>{
+      final noKey = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 3,
         'id': 'r3',
         'title': 'Doc',
@@ -114,7 +114,7 @@ void main() {
     });
 
     test('canCancel defaults to false and missing dates fall back', () {
-      final item = AppRequestItem.fromJson(<String, dynamic>{
+      final item = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 0,
         'id': 'x',
         'title': 'Speaker',
@@ -128,7 +128,7 @@ void main() {
     });
 
     test('displayDate prefers the event date when present', () {
-      final item = AppRequestItem.fromJson(<String, dynamic>{
+      final item = AppRequestItem.fromJson(const <String, dynamic>{
         'kind': 2,
         'id': 'b',
         'title': 'Vision 2030 · Main Hall',

@@ -28,7 +28,7 @@ DelegationItem _item({
 void main() {
   group('Delegations.fromData', () {
     test('parses the stats and the item fields', () {
-      final data = Delegations.fromData(<String, dynamic>{
+      final data = Delegations.fromData(const <String, dynamic>{
         'countryCount': 2,
         'totalParticipants': 19,
         'items': <dynamic>[
@@ -74,7 +74,7 @@ void main() {
     });
 
     test('countryCount falls back to the item count when absent', () {
-      final data = Delegations.fromData(<String, dynamic>{
+      final data = Delegations.fromData(const <String, dynamic>{
         'items': <dynamic>[
           <String, dynamic>{'countryId': 1, 'countryCode': 'SA'},
         ],

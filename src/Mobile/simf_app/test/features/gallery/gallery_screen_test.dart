@@ -167,7 +167,7 @@ void main() {
     });
 
     test('MediaItem.fromJson reads image/thumbnail presence', () {
-      final withBoth = MediaItem.fromJson(<String, dynamic>{
+      final withBoth = MediaItem.fromJson(const <String, dynamic>{
         'id': 'm1',
         'kind': 0,
         'imageUrl': '/media/m1/image',
@@ -176,7 +176,7 @@ void main() {
       expect(withBoth.hasImage, isTrue);
       expect(withBoth.hasThumbnail, isTrue);
 
-      final none = MediaItem.fromJson(<String, dynamic>{'id': 'm2', 'kind': 1});
+      final none = MediaItem.fromJson(const <String, dynamic>{'id': 'm2', 'kind': 1});
       expect(none.hasImage, isFalse);
       expect(none.hasThumbnail, isFalse);
     });

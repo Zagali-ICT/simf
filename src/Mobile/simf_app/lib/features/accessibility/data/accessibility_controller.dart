@@ -18,7 +18,7 @@ extension AppTextSizeScale on AppTextSize {
       case AppTextSize.small:
         return 0.85;
       case AppTextSize.normal:
-        return 1.0;
+        return 1;
       case AppTextSize.large:
         return 1.15;
       case AppTextSize.extraLarge:
@@ -215,7 +215,7 @@ class AccessibilitySync {
 }
 
 final accessibilitySyncProvider =
-    Provider<AccessibilitySync>((ref) => AccessibilitySync(ref));
+    Provider<AccessibilitySync>(AccessibilitySync.new);
 
 final accessibilityControllerProvider =
     NotifierProvider<AccessibilityController, AccessibilitySettings>(() {

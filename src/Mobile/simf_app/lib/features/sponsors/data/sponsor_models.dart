@@ -20,6 +20,21 @@ class Sponsor {
     this.countryId,
   });
 
+  factory Sponsor.fromJson(Map<String, dynamic> json) => Sponsor(
+        id: json['id'] as String? ?? '',
+        nameEn: json['nameEn'] as String? ?? '',
+        nameAr: json['nameAr'] as String? ?? '',
+        tierName: json['tierName'] as String? ?? '',
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        logoRelativePath: json['logoRelativePath'] as String?,
+        url: json['url'] as String?,
+        email: json['email'] as String?,
+        phonePrimary: json['phonePrimary'] as String?,
+        tagline: json['tagline'] as String?,
+        taglineArabic: json['taglineArabic'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
+      );
+
   final String id;
   final String nameEn;
   final String nameAr;
@@ -53,21 +68,6 @@ class Sponsor {
     final fallback = isArabic ? en : ar;
     return fallback.isEmpty ? null : fallback;
   }
-
-  static Sponsor fromJson(Map<String, dynamic> json) => Sponsor(
-        id: json['id'] as String? ?? '',
-        nameEn: json['nameEn'] as String? ?? '',
-        nameAr: json['nameAr'] as String? ?? '',
-        tierName: json['tierName'] as String? ?? '',
-        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-        logoRelativePath: json['logoRelativePath'] as String?,
-        url: json['url'] as String?,
-        email: json['email'] as String?,
-        phonePrimary: json['phonePrimary'] as String?,
-        tagline: json['tagline'] as String?,
-        taglineArabic: json['taglineArabic'] as String?,
-        countryId: (json['countryId'] as num?)?.toInt(),
-      );
 }
 
 /// The full sponsor detail — mirrors `SIMF.Contracts.Sponsors.PublicSponsorDetail`
@@ -92,6 +92,27 @@ class SponsorDetail {
     this.countryNameEn,
     this.countryNameAr,
   });
+
+  factory SponsorDetail.fromData(Object? data) {
+    final json = (data as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
+    return SponsorDetail(
+      id: json['id'] as String? ?? '',
+      nameEn: json['nameEn'] as String? ?? '',
+      nameAr: json['nameAr'] as String? ?? '',
+      tier: (json['tier'] as num?)?.toInt() ?? 0,
+      tierName: json['tierName'] as String? ?? '',
+      logoRelativePath: json['logoRelativePath'] as String?,
+      url: json['url'] as String?,
+      about: json['about'] as String?,
+      aboutArabic: json['aboutArabic'] as String?,
+      city: json['city'] as String?,
+      cityArabic: json['cityArabic'] as String?,
+      countryId: (json['countryId'] as num?)?.toInt(),
+      countryNameEn: json['countryNameEn'] as String?,
+      countryNameAr: json['countryNameAr'] as String?,
+    );
+  }
 
   final String id;
   final String nameEn;
@@ -119,27 +140,6 @@ class SponsorDetail {
 
   String? localizedCountry(bool isArabic) =>
       _pickOptional(countryNameAr, countryNameEn, isArabic);
-
-  static SponsorDetail fromData(Object? data) {
-    final json = (data as Map?)?.cast<String, dynamic>() ??
-        const <String, dynamic>{};
-    return SponsorDetail(
-      id: json['id'] as String? ?? '',
-      nameEn: json['nameEn'] as String? ?? '',
-      nameAr: json['nameAr'] as String? ?? '',
-      tier: (json['tier'] as num?)?.toInt() ?? 0,
-      tierName: json['tierName'] as String? ?? '',
-      logoRelativePath: json['logoRelativePath'] as String?,
-      url: json['url'] as String?,
-      about: json['about'] as String?,
-      aboutArabic: json['aboutArabic'] as String?,
-      city: json['city'] as String?,
-      cityArabic: json['cityArabic'] as String?,
-      countryId: (json['countryId'] as num?)?.toInt(),
-      countryNameEn: json['countryNameEn'] as String?,
-      countryNameAr: json['countryNameAr'] as String?,
-    );
-  }
 }
 
 String _pickRequired(String arabic, String english, bool isArabic) {
@@ -164,11 +164,7 @@ class SponsorTierGroup {
     required this.sponsors,
   });
 
-  final int tier;
-  final String tierName;
-  final List<Sponsor> sponsors;
-
-  static SponsorTierGroup fromJson(Map<String, dynamic> json) =>
+  factory SponsorTierGroup.fromJson(Map<String, dynamic> json) =>
       SponsorTierGroup(
         tier: (json['tier'] as num?)?.toInt() ?? 0,
         tierName: json['tierName'] as String? ?? '',
@@ -177,6 +173,10 @@ class SponsorTierGroup {
             .map((e) => Sponsor.fromJson(e.cast<String, dynamic>()))
             .toList(growable: false),
       );
+
+  final int tier;
+  final String tierName;
+  final List<Sponsor> sponsors;
 
   /// Reads `PublicSponsors = { groups: [...] }` into the tier bands.
   static List<SponsorTierGroup> listFromData(Object? data) =>

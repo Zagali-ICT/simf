@@ -70,4 +70,3 @@ class GalleryMediaTile extends StatelessWidget {
     );
   }
 }
-

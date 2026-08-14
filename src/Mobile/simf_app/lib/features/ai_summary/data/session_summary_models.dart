@@ -27,6 +27,26 @@ class SessionSummary {
     this.summaryVideoUrl,
   });
 
+  /// Decodes the `decodeData` payload (a JSON object) into a [SessionSummary].
+  factory SessionSummary.fromData(Object? data) => SessionSummary.fromJson(
+        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
+      );
+
+  factory SessionSummary.fromJson(Map<String, dynamic> json) => SessionSummary(
+        keyPoints: json['keyPoints'] as String? ?? '',
+        keyPointsArabic: json['keyPointsArabic'] as String? ?? '',
+        recommendations: json['recommendations'] as String? ?? '',
+        recommendationsArabic: json['recommendationsArabic'] as String? ?? '',
+        speakers: json['speakers'] as String? ?? '',
+        speakersArabic: json['speakersArabic'] as String? ?? '',
+        fullText: json['fullText'] as String? ?? '',
+        fullTextArabic: json['fullTextArabic'] as String? ?? '',
+        generatedByAi: json['generatedByAi'] as bool? ?? false,
+        publishedAtRaw: json['publishedAt'] as String?,
+        recordingUrl: json['recordingUrl'] as String?,
+        summaryVideoUrl: json['summaryVideoUrl'] as String?,
+      );
+
   final String keyPoints;
   final String keyPointsArabic;
   final String recommendations;
@@ -88,24 +108,4 @@ class SessionSummary {
     }
     return parseWireOrNull(raw);
   }
-
-  static SessionSummary fromJson(Map<String, dynamic> json) => SessionSummary(
-        keyPoints: json['keyPoints'] as String? ?? '',
-        keyPointsArabic: json['keyPointsArabic'] as String? ?? '',
-        recommendations: json['recommendations'] as String? ?? '',
-        recommendationsArabic: json['recommendationsArabic'] as String? ?? '',
-        speakers: json['speakers'] as String? ?? '',
-        speakersArabic: json['speakersArabic'] as String? ?? '',
-        fullText: json['fullText'] as String? ?? '',
-        fullTextArabic: json['fullTextArabic'] as String? ?? '',
-        generatedByAi: json['generatedByAi'] as bool? ?? false,
-        publishedAtRaw: json['publishedAt'] as String?,
-        recordingUrl: json['recordingUrl'] as String?,
-        summaryVideoUrl: json['summaryVideoUrl'] as String?,
-      );
-
-  /// Decodes the `decodeData` payload (a JSON object) into a [SessionSummary].
-  static SessionSummary fromData(Object? data) => SessionSummary.fromJson(
-        (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
-      );
 }

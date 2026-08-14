@@ -21,6 +21,19 @@ class PartnerDirectoryEntry {
     this.countryId,
   });
 
+  factory PartnerDirectoryEntry.fromJson(Map<String, dynamic> json) =>
+      PartnerDirectoryEntry(
+        kind: json['kind'] as String? ?? '',
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        subtitle: json['subtitle'] as String?,
+        subtitleArabic: json['subtitleArabic'] as String?,
+        logoRelativePath: json['logoRelativePath'] as String?,
+        logoContactId: json['logoContactId'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
+      );
+
   final String kind;
   final String id;
   final String name;
@@ -77,19 +90,6 @@ class PartnerDirectoryEntry {
         return null;
     }
   }
-
-  static PartnerDirectoryEntry fromJson(Map<String, dynamic> json) =>
-      PartnerDirectoryEntry(
-        kind: json['kind'] as String? ?? '',
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        subtitle: json['subtitle'] as String?,
-        subtitleArabic: json['subtitleArabic'] as String?,
-        logoRelativePath: json['logoRelativePath'] as String?,
-        logoContactId: json['logoContactId'] as String?,
-        countryId: (json['countryId'] as num?)?.toInt(),
-      );
 
   /// Reads `PartnerDirectoryResponse = { entries: [...] }` into the rows.
   static List<PartnerDirectoryEntry> listFromData(Object? data) =>

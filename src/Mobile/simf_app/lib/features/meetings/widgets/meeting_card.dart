@@ -243,4 +243,3 @@ class MeetingCard extends StatelessWidget {
     return isToday ? l10n.requestTimeToday(date) : l10n.requestDate(date);
   }
 }
-

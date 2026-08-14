@@ -135,4 +135,3 @@ class AboutThemesCard extends StatelessWidget {
     );
   }
 }
-

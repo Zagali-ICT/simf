@@ -5,7 +5,7 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 void main() {
   group('MyAreaSessions.fromData', () {
     test('decodes items, per-user flags, and the bilingual fields', () {
-      final page = MyAreaSessions.fromData(<String, dynamic>{
+      final page = MyAreaSessions.fromData(const <String, dynamic>{
         'items': <dynamic>[
           <String, dynamic>{
             'id': 's1',
@@ -42,7 +42,7 @@ void main() {
     });
 
     test('upcoming vs ended derive from the device clock', () {
-      final item = MyAreaSessionItem.fromJson(<String, dynamic>{
+      final item = MyAreaSessionItem.fromJson(const <String, dynamic>{
         'id': 's2',
         'title': 'Talk',
         'titleArabic': 'جلسة',
@@ -64,7 +64,7 @@ void main() {
 
     test('a missing items array decodes to an empty list', () {
       expect(MyAreaSessions.fromData(null).items, isEmpty);
-      expect(MyAreaSessions.fromData(<String, dynamic>{}).items, isEmpty);
+      expect(MyAreaSessions.fromData(const <String, dynamic>{}).items, isEmpty);
     });
   });
 }

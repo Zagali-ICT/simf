@@ -12,11 +12,7 @@ class MyAreaDashboard {
     required this.todaySchedule,
   });
 
-  final MyAreaIdentity identity;
-  final MyAreaCounters counters;
-  final List<MyAreaScheduleItem> todaySchedule;
-
-  static MyAreaDashboard fromJson(Map<String, dynamic> json) => MyAreaDashboard(
+  factory MyAreaDashboard.fromJson(Map<String, dynamic> json) => MyAreaDashboard(
         identity: MyAreaIdentity.fromJson(_map(json['identity'])),
         counters: MyAreaCounters.fromJson(_map(json['counters'])),
         todaySchedule: (json['todaySchedule'] as List? ?? const <dynamic>[])
@@ -24,6 +20,10 @@ class MyAreaDashboard {
             .map((e) => MyAreaScheduleItem.fromJson(e.cast<String, dynamic>()))
             .toList(growable: false),
       );
+
+  final MyAreaIdentity identity;
+  final MyAreaCounters counters;
+  final List<MyAreaScheduleItem> todaySchedule;
 
   static Map<String, dynamic> _map(Object? v) =>
       (v as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
@@ -42,6 +42,17 @@ class MyAreaIdentity {
     this.pageColor,
     this.isVisitor = true,
   });
+
+  factory MyAreaIdentity.fromJson(Map<String, dynamic> json) => MyAreaIdentity(
+        fullNameAr: json['fullNameAr'] as String? ?? '',
+        fullNameEn: json['fullNameEn'] as String? ?? '',
+        qrId: json['qrId'] as String?,
+        avatarUrl: json['avatarUrl'] as String?,
+        tierNameEn: json['tierNameEn'] as String?,
+        tierNameAr: json['tierNameAr'] as String?,
+        pageColor: json['pageColor'] as String?,
+        isVisitor: json['isVisitor'] as bool? ?? true,
+      );
 
   final String fullNameAr;
   final String fullNameEn;
@@ -69,17 +80,6 @@ class MyAreaIdentity {
     final v = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return v.isEmpty ? null : v;
   }
-
-  static MyAreaIdentity fromJson(Map<String, dynamic> json) => MyAreaIdentity(
-        fullNameAr: json['fullNameAr'] as String? ?? '',
-        fullNameEn: json['fullNameEn'] as String? ?? '',
-        qrId: json['qrId'] as String?,
-        avatarUrl: json['avatarUrl'] as String?,
-        tierNameEn: json['tierNameEn'] as String?,
-        tierNameAr: json['tierNameAr'] as String?,
-        pageColor: json['pageColor'] as String?,
-        isVisitor: json['isVisitor'] as bool? ?? true,
-      );
 }
 
 /// The two stat counters (Page_014 L-2/L-3).
@@ -90,13 +90,13 @@ class MyAreaCounters {
     required this.meetingsCount,
   });
 
-  final int bookedSessionsCount;
-  final int meetingsCount;
-
-  static MyAreaCounters fromJson(Map<String, dynamic> json) => MyAreaCounters(
+  factory MyAreaCounters.fromJson(Map<String, dynamic> json) => MyAreaCounters(
         bookedSessionsCount: (json['bookedSessionsCount'] as num?)?.toInt() ?? 0,
         meetingsCount: (json['meetingsCount'] as num?)?.toInt() ?? 0,
       );
+
+  final int bookedSessionsCount;
+  final int meetingsCount;
 }
 
 /// One row of today's merged schedule (Page_014 L-4). `kind` is `"Session"` or
@@ -113,6 +113,22 @@ class MyAreaScheduleItem {
     this.sessionId,
     this.meetingId,
   });
+
+  factory MyAreaScheduleItem.fromJson(Map<String, dynamic> json) =>
+      MyAreaScheduleItem(
+        kind: json['kind'] as String? ?? '',
+        start: parseWireOrNull(json['start'] as String? ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        end: parseWireOrNull(json['end'] as String? ?? ''),
+        titleEn: json['titleEn'] as String? ?? '',
+        titleAr: json['titleAr'] as String? ?? '',
+        hallNameEn: json['hallNameEn'] as String?,
+        hallNameAr: json['hallNameAr'] as String?,
+        subject: json['subject'] as String?,
+        status: json['status'] as String? ?? '',
+        sessionId: json['sessionId'] as String?,
+        meetingId: json['meetingId'] as String?,
+      );
 
   final String kind;
   final DateTime start;
@@ -146,20 +162,4 @@ class MyAreaScheduleItem {
     final v = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return v.isEmpty ? null : v;
   }
-
-  static MyAreaScheduleItem fromJson(Map<String, dynamic> json) =>
-      MyAreaScheduleItem(
-        kind: json['kind'] as String? ?? '',
-        start: parseWireOrNull(json['start'] as String? ?? '') ??
-            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-        end: parseWireOrNull(json['end'] as String? ?? ''),
-        titleEn: json['titleEn'] as String? ?? '',
-        titleAr: json['titleAr'] as String? ?? '',
-        hallNameEn: json['hallNameEn'] as String?,
-        hallNameAr: json['hallNameAr'] as String?,
-        subject: json['subject'] as String?,
-        status: json['status'] as String? ?? '',
-        sessionId: json['sessionId'] as String?,
-        meetingId: json['meetingId'] as String?,
-      );
 }

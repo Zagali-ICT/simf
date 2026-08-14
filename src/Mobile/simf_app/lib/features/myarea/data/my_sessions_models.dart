@@ -29,6 +29,25 @@ class MyAreaSessionItem {
     this.speakerTitle,
   });
 
+  factory MyAreaSessionItem.fromJson(Map<String, dynamic> json) =>
+      MyAreaSessionItem(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        start: parseWireDateTime(json['start'], 'start'),
+        end: parseWireDateTime(json['end'], 'end'),
+        status: SessionStatus.fromJson(json['status']),
+        attended: json['attended'] as bool? ?? false,
+        isFavourite: json['isFavourite'] as bool? ?? false,
+        hallNameEn: json['hallNameEn'] as String?,
+        hallNameAr: json['hallNameAr'] as String?,
+        categoryNameEn: json['categoryNameEn'] as String?,
+        categoryNameAr: json['categoryNameAr'] as String?,
+        speakerNameEn: json['speakerNameEn'] as String?,
+        speakerNameAr: json['speakerNameAr'] as String?,
+        speakerTitle: json['speakerTitle'] as String?,
+      );
+
   final String id;
   final String title;
   final String titleArabic;
@@ -77,25 +96,6 @@ class MyAreaSessionItem {
 
   String? localizedSpeaker(bool isArabic) =>
       _pickOptional(speakerNameAr, speakerNameEn, isArabic);
-
-  static MyAreaSessionItem fromJson(Map<String, dynamic> json) =>
-      MyAreaSessionItem(
-        id: json['id'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        start: parseWireDateTime(json['start'], 'start'),
-        end: parseWireDateTime(json['end'], 'end'),
-        status: SessionStatus.fromJson(json['status']),
-        attended: json['attended'] as bool? ?? false,
-        isFavourite: json['isFavourite'] as bool? ?? false,
-        hallNameEn: json['hallNameEn'] as String?,
-        hallNameAr: json['hallNameAr'] as String?,
-        categoryNameEn: json['categoryNameEn'] as String?,
-        categoryNameAr: json['categoryNameAr'] as String?,
-        speakerNameEn: json['speakerNameEn'] as String?,
-        speakerNameAr: json['speakerNameAr'] as String?,
-        speakerTitle: json['speakerTitle'] as String?,
-      );
 }
 
 /// The envelope for the "my sessions" list (`MyAreaSessions = { items: [...]
@@ -104,9 +104,7 @@ class MyAreaSessionItem {
 class MyAreaSessions {
   const MyAreaSessions(this.items);
 
-  final List<MyAreaSessionItem> items;
-
-  static MyAreaSessions fromData(Object? data) {
+  factory MyAreaSessions.fromData(Object? data) {
     final list = (data is Map ? data['items'] : null) as List? ??
         const <dynamic>[];
     final items = list
@@ -115,6 +113,8 @@ class MyAreaSessions {
         .toList(growable: false);
     return MyAreaSessions(items);
   }
+
+  final List<MyAreaSessionItem> items;
 }
 
 String _pickRequired(String arabic, String english, bool isArabic) {

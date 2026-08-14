@@ -142,4 +142,3 @@ class SessionSummaryCard extends StatelessWidget {
     return title == null || title.isEmpty ? name : '$name · $title';
   }
 }
-

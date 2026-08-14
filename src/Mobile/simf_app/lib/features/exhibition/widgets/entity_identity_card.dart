@@ -82,4 +82,3 @@ class EntityIdentityCard extends StatelessWidget {
     );
   }
 }
-

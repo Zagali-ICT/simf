@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/features/more/more_screen.dart' show MoreScreen;
 
 /// One entry in the المزيد menu: an icon, the localized title, and the route it
 /// opens. Single source of truth shared by the full-page [MoreScreen] and the

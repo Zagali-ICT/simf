@@ -53,6 +53,28 @@ class NotificationItem {
     this.group,
   });
 
+  factory NotificationItem.fromJson(Map<String, dynamic> json) {
+    final readAtRaw = json['readAt'] as String?;
+    final createdAtRaw = json['createdAt'] as String?;
+    return NotificationItem(
+      id: json['id'] as String? ?? '',
+      kind: json['kind'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      titleArabic: json['titleArabic'] as String? ?? '',
+      body: json['body'] as String? ?? '',
+      bodyArabic: json['bodyArabic'] as String? ?? '',
+      severity: NotificationSeverity.fromName(json['severity'] as String?),
+      isRead: json['isRead'] as bool? ?? false,
+      readAt: readAtRaw == null ? null : parseWireOrNull(readAtRaw),
+      createdAt:
+          createdAtRaw == null ? null : parseWireOrNull(createdAtRaw),
+      relatedEntityType: json['relatedEntityType'] as String?,
+      relatedEntityId: json['relatedEntityId'] as String?,
+      clickUrl: json['clickUrl'] as String?,
+      group: json['group'] as String?,
+    );
+  }
+
   final String id;
   final String kind;
   final String title;
@@ -107,28 +129,6 @@ class NotificationItem {
         clickUrl: clickUrl,
         group: group,
       );
-
-  static NotificationItem fromJson(Map<String, dynamic> json) {
-    final readAtRaw = json['readAt'] as String?;
-    final createdAtRaw = json['createdAt'] as String?;
-    return NotificationItem(
-      id: json['id'] as String? ?? '',
-      kind: json['kind'] as String? ?? '',
-      title: json['title'] as String? ?? '',
-      titleArabic: json['titleArabic'] as String? ?? '',
-      body: json['body'] as String? ?? '',
-      bodyArabic: json['bodyArabic'] as String? ?? '',
-      severity: NotificationSeverity.fromName(json['severity'] as String?),
-      isRead: json['isRead'] as bool? ?? false,
-      readAt: readAtRaw == null ? null : parseWireOrNull(readAtRaw),
-      createdAt:
-          createdAtRaw == null ? null : parseWireOrNull(createdAtRaw),
-      relatedEntityType: json['relatedEntityType'] as String?,
-      relatedEntityId: json['relatedEntityId'] as String?,
-      clickUrl: json['clickUrl'] as String?,
-      group: json['group'] as String?,
-    );
-  }
 
   /// Reads the `GridPage<NotificationDto> = { items: [...] }` envelope into the
   /// notification list.

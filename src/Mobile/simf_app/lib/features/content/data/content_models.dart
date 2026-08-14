@@ -14,6 +14,14 @@ class ContentBlock {
     this.lastUpdatedAt,
   });
 
+  factory ContentBlock.fromJson(Map<String, dynamic> json) => ContentBlock(
+        key: json['key'] as String? ?? '',
+        content: json['content'] as String? ?? '',
+        contentArabic: json['contentArabic'] as String? ?? '',
+        lastUpdatedAt:
+            parseWireOrNull(json['lastUpdatedAt'] as String? ?? ''),
+      );
+
   final String key;
   final String content; // English body (HTML/markdown)
   final String contentArabic; // Arabic body (HTML/markdown)
@@ -30,12 +38,4 @@ class ContentBlock {
 
   bool get hasBody =>
       content.trim().isNotEmpty || contentArabic.trim().isNotEmpty;
-
-  static ContentBlock fromJson(Map<String, dynamic> json) => ContentBlock(
-        key: json['key'] as String? ?? '',
-        content: json['content'] as String? ?? '',
-        contentArabic: json['contentArabic'] as String? ?? '',
-        lastUpdatedAt:
-            parseWireOrNull(json['lastUpdatedAt'] as String? ?? ''),
-      );
 }

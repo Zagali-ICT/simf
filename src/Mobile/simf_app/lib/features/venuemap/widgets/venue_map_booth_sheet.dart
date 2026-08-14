@@ -92,4 +92,3 @@ class VenueMapBoothSheet extends StatelessWidget {
     );
   }
 }
-

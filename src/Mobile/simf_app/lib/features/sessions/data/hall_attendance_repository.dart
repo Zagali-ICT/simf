@@ -74,7 +74,7 @@ final hallAttendanceRepositoryProvider =
 
 /// The caller's attendance state for [sessionId] as one cached async read.
 /// `autoDispose.family` so a fresh mount or an `ref.invalidate` re-fetches.
-final AutoDisposeFutureProviderFamily<HallAttendanceStatus, String> hallAttendanceStatusProvider =
+final hallAttendanceStatusProvider =
     FutureProvider.autoDispose.family<HallAttendanceStatus, String>(
   (ref, sessionId) =>
       ref.watch(hallAttendanceRepositoryProvider).getStatus(sessionId),

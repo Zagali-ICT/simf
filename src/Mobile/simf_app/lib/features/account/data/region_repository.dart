@@ -42,6 +42,6 @@ final regionRepositoryProvider = Provider<RegionRepository>((ref) {
 /// the const `saudiRegions` list on loading or error, so this provider is
 /// allowed to fail without breaking the form (D-547 owner decision: keep the
 /// hardcoded list as an offline fallback).
-final AutoDisposeFutureProvider<List<RegionItem>> regionsProvider = FutureProvider.autoDispose<List<RegionItem>>((ref) {
+final regionsProvider = FutureProvider.autoDispose<List<RegionItem>>((ref) {
   return ref.watch(regionRepositoryProvider).getRegions();
 });

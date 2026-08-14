@@ -291,4 +291,3 @@ class UpcomingCard extends StatelessWidget {
     );
   }
 }
-

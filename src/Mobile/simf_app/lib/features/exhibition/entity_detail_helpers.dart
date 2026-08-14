@@ -1,6 +1,9 @@
 /// Shared pure helpers for the entity-detail screens (exhibitor + sponsor),
 /// which both render [EntityDetailScaffold]. Extracted from the byte-identical
 /// copies that lived in each screen.
+library;
+
+import 'package:simf_app/features/exhibition/widgets/entity_detail_scaffold.dart' show EntityDetailScaffold;
 
 /// Joins "City، Country" (Arabic comma in RTL); either side may be null.
 String? entityLocationLine(String? city, String? country, bool isArabic) {

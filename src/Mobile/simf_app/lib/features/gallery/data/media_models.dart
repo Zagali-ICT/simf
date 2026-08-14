@@ -37,6 +37,17 @@ class MediaItem {
     this.hasThumbnail = false,
   });
 
+  factory MediaItem.fromJson(Map<String, dynamic> json) => MediaItem(
+        id: json['id'] as String? ?? '',
+        kind: MediaKind.fromJson(json['kind']),
+        title: json['title'] as String?,
+        titleArabic: json['titleArabic'] as String?,
+        album: json['album'] as String?,
+        albumArabic: json['albumArabic'] as String?,
+        hasImage: (json['imageUrl'] as String?)?.isNotEmpty ?? false,
+        hasThumbnail: (json['thumbnailUrl'] as String?)?.isNotEmpty ?? false,
+      );
+
   final String id;
   final MediaKind kind;
   final String? title;
@@ -48,17 +59,6 @@ class MediaItem {
 
   String? localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
   String? localizedAlbum(bool isArabic) => _pick(albumArabic, album, isArabic);
-
-  static MediaItem fromJson(Map<String, dynamic> json) => MediaItem(
-        id: json['id'] as String? ?? '',
-        kind: MediaKind.fromJson(json['kind']),
-        title: json['title'] as String?,
-        titleArabic: json['titleArabic'] as String?,
-        album: json['album'] as String?,
-        albumArabic: json['albumArabic'] as String?,
-        hasImage: (json['imageUrl'] as String?)?.isNotEmpty ?? false,
-        hasThumbnail: (json['thumbnailUrl'] as String?)?.isNotEmpty ?? false,
-      );
 }
 
 String? _pick(String? arabic, String? english, bool isArabic) {

@@ -120,8 +120,7 @@ class LiveContentView extends StatelessWidget {
                   showSignLanguage: showSignLanguage,
                   mainLabel: l10n.liveFeedMain,
                   signLabel: l10n.liveFeedSignLanguage,
-                  onChanged: (value) =>
-                      onSignLanguageChanged(value),
+                  onChanged: onSignLanguageChanged,
                 ),
                 const SizedBox(height: SimfTokens.space5),
               ],

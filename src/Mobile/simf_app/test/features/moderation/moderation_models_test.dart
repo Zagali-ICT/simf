@@ -4,7 +4,7 @@ import 'package:simf_app/features/moderation/data/moderation_models.dart';
 void main() {
   group('ModeratorQuestion.fromJson (D-405 wire contract)', () {
     test('parses the moderator row fields', () {
-      final q = ModeratorQuestion.fromJson(<String, dynamic>{
+      final q = ModeratorQuestion.fromJson(const <String, dynamic>{
         'id': 'q1',
         'sessionId': 's1',
         'submittedByDisplayName': 'Raed Al-Salem',
@@ -55,7 +55,7 @@ void main() {
     });
 
     test('DEF-MOD-001: an answered question is no longer on stage', () {
-      final q = ModeratorQuestion.fromJson(<String, dynamic>{
+      final q = ModeratorQuestion.fromJson(const <String, dynamic>{
         'id': 'q',
         'isPushed': true,
         'status': 3,

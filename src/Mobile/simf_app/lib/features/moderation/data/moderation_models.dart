@@ -68,6 +68,23 @@ class ModeratorQuestion {
     this.pushedAt,
   });
 
+  factory ModeratorQuestion.fromJson(Map<String, dynamic> json) =>
+      ModeratorQuestion(
+        id: json['id'] as String? ?? '',
+        sessionId: json['sessionId'] as String? ?? '',
+        submitterName: json['submittedByDisplayName'] as String? ?? '',
+        questionText: json['questionText'] as String? ?? '',
+        recipient: (json['recipient'] as num?)?.toInt() == 1
+            ? QuestionRecipient.host
+            : QuestionRecipient.speaker,
+        order: (json['order'] as num?)?.toInt() ?? 0,
+        isHidden: json['isHidden'] as bool? ?? false,
+        isPushed: json['isPushed'] as bool? ?? false,
+        createdAt: _utc(json['createdAt']),
+        status: ModeratorQuestionStatus.fromWire(json['status']),
+        pushedAt: json['pushedAt'] == null ? null : _utc(json['pushedAt']),
+      );
+
   final String id;
   final String sessionId;
   final String submitterName;
@@ -106,23 +123,6 @@ class ModeratorQuestion {
         pushedAt: pushedAt,
       );
 
-  static ModeratorQuestion fromJson(Map<String, dynamic> json) =>
-      ModeratorQuestion(
-        id: json['id'] as String? ?? '',
-        sessionId: json['sessionId'] as String? ?? '',
-        submitterName: json['submittedByDisplayName'] as String? ?? '',
-        questionText: json['questionText'] as String? ?? '',
-        recipient: (json['recipient'] as num?)?.toInt() == 1
-            ? QuestionRecipient.host
-            : QuestionRecipient.speaker,
-        order: (json['order'] as num?)?.toInt() ?? 0,
-        isHidden: json['isHidden'] as bool? ?? false,
-        isPushed: json['isPushed'] as bool? ?? false,
-        createdAt: _utc(json['createdAt']),
-        status: ModeratorQuestionStatus.fromWire(json['status']),
-        pushedAt: json['pushedAt'] == null ? null : _utc(json['pushedAt']),
-      );
-
   /// The endpoint returns a bare `ApiResult<IReadOnlyList<...>>`, so the data
   /// is the list itself.
   static List<ModeratorQuestion> listFromData(Object? data) =>
@@ -153,6 +153,16 @@ class ModeratedSession {
     required this.end,
   });
 
+  factory ModeratedSession.fromJson(Map<String, dynamic> json) => ModeratedSession(
+        sessionId: json['sessionId'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        hallName: json['hallName'] as String? ?? '',
+        hallNameArabic: json['hallNameArabic'] as String? ?? '',
+        start: _utc(json['start']),
+        end: _utc(json['end']),
+      );
+
   final String sessionId;
   final String title;
   final String titleArabic;
@@ -174,16 +184,6 @@ class ModeratedSession {
     }
     return isArabic ? english : arabic;
   }
-
-  static ModeratedSession fromJson(Map<String, dynamic> json) => ModeratedSession(
-        sessionId: json['sessionId'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        hallName: json['hallName'] as String? ?? '',
-        hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: _utc(json['start']),
-        end: _utc(json['end']),
-      );
 
   static List<ModeratedSession> listFromData(Object? data) =>
       (data as List? ?? const <dynamic>[])

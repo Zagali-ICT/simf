@@ -23,6 +23,19 @@ class SpeakerSummary {
     this.photoRelativePath,
   });
 
+  factory SpeakerSummary.fromJson(Map<String, dynamic> json) => SpeakerSummary(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        rank: json['rank'] as String?,
+        rankArabic: json['rankArabic'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
+        countryNameEn: json['countryNameEn'] as String?,
+        countryNameAr: json['countryNameAr'] as String?,
+        photoRelativePath: json['photoRelativePath'] as String?,
+      );
+
   final String id;
   final String name;
   final String nameArabic;
@@ -39,19 +52,6 @@ class SpeakerSummary {
       _pickOpt(rankArabic, rank, isArabic);
   String? localizedCountry(bool isArabic) =>
       _pickOpt(countryNameAr, countryNameEn, isArabic);
-
-  static SpeakerSummary fromJson(Map<String, dynamic> json) => SpeakerSummary(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-        rank: json['rank'] as String?,
-        rankArabic: json['rankArabic'] as String?,
-        countryId: (json['countryId'] as num?)?.toInt(),
-        countryNameEn: json['countryNameEn'] as String?,
-        countryNameAr: json['countryNameAr'] as String?,
-        photoRelativePath: json['photoRelativePath'] as String?,
-      );
 }
 
 /// One of a speaker's scheduled sessions — mirrors
@@ -70,6 +70,17 @@ class SpeakerSession {
     required this.end,
   });
 
+  factory SpeakerSession.fromJson(Map<String, dynamic> json) => SpeakerSession(
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        hallName: json['hallName'] as String? ?? '',
+        hallNameArabic: json['hallNameArabic'] as String? ?? '',
+        start: _utc(json['start']),
+        end: _utc(json['end']),
+      );
+
   final String id;
   final String code;
   final String title;
@@ -84,17 +95,6 @@ class SpeakerSession {
   String localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
   String? localizedHall(bool isArabic) =>
       _pickOpt(hallNameArabic, hallName, isArabic);
-
-  static SpeakerSession fromJson(Map<String, dynamic> json) => SpeakerSession(
-        id: json['id'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        hallName: json['hallName'] as String? ?? '',
-        hallNameArabic: json['hallNameArabic'] as String? ?? '',
-        start: _utc(json['start']),
-        end: _utc(json['end']),
-      );
 }
 
 /// The full public speaker profile — mirrors
@@ -130,6 +130,37 @@ class SpeakerDetail {
     this.websiteUrl,
     this.photoRelativePath,
   });
+
+  factory SpeakerDetail.fromJson(Map<String, dynamic> json) => SpeakerDetail(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        rank: json['rank'] as String?,
+        rankArabic: json['rankArabic'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
+        countryNameEn: json['countryNameEn'] as String?,
+        countryNameAr: json['countryNameAr'] as String?,
+        bio: json['bio'] as String?,
+        bioArabic: json['bioArabic'] as String?,
+        qualifications: json['qualifications'] as String?,
+        qualificationsArabic: json['qualificationsArabic'] as String?,
+        trainingExperience: json['trainingExperience'] as String?,
+        trainingExperienceArabic: json['trainingExperienceArabic'] as String?,
+        awards: json['awards'] as String?,
+        awardsArabic: json['awardsArabic'] as String?,
+        allowsMeetingRequests: json['allowsMeetingRequests'] as bool? ?? false,
+        allowsDataSharing: json['allowsDataSharing'] as bool? ?? false,
+        facebookUrl: json['facebookUrl'] as String?,
+        linkedInUrl: json['linkedInUrl'] as String?,
+        xUrl: json['xUrl'] as String?,
+        websiteUrl: json['websiteUrl'] as String?,
+        photoRelativePath: json['photoRelativePath'] as String?,
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        sessions: (json['sessions'] as List? ?? const <dynamic>[])
+            .whereType<Map<dynamic, dynamic>>()
+            .map((e) => SpeakerSession.fromJson(e.cast<String, dynamic>()))
+            .toList(growable: false),
+      );
 
   final String id;
   final String name;
@@ -180,37 +211,6 @@ class SpeakerDetail {
       _pickOpt(trainingExperienceArabic, trainingExperience, isArabic);
   String? localizedAwards(bool isArabic) =>
       _pickOpt(awardsArabic, awards, isArabic);
-
-  static SpeakerDetail fromJson(Map<String, dynamic> json) => SpeakerDetail(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        rank: json['rank'] as String?,
-        rankArabic: json['rankArabic'] as String?,
-        countryId: (json['countryId'] as num?)?.toInt(),
-        countryNameEn: json['countryNameEn'] as String?,
-        countryNameAr: json['countryNameAr'] as String?,
-        bio: json['bio'] as String?,
-        bioArabic: json['bioArabic'] as String?,
-        qualifications: json['qualifications'] as String?,
-        qualificationsArabic: json['qualificationsArabic'] as String?,
-        trainingExperience: json['trainingExperience'] as String?,
-        trainingExperienceArabic: json['trainingExperienceArabic'] as String?,
-        awards: json['awards'] as String?,
-        awardsArabic: json['awardsArabic'] as String?,
-        allowsMeetingRequests: json['allowsMeetingRequests'] as bool? ?? false,
-        allowsDataSharing: json['allowsDataSharing'] as bool? ?? false,
-        facebookUrl: json['facebookUrl'] as String?,
-        linkedInUrl: json['linkedInUrl'] as String?,
-        xUrl: json['xUrl'] as String?,
-        websiteUrl: json['websiteUrl'] as String?,
-        photoRelativePath: json['photoRelativePath'] as String?,
-        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-        sessions: (json['sessions'] as List? ?? const <dynamic>[])
-            .whereType<Map<dynamic, dynamic>>()
-            .map((e) => SpeakerSession.fromJson(e.cast<String, dynamic>()))
-            .toList(growable: false),
-      );
 }
 
 DateTime _utc(Object? value) {

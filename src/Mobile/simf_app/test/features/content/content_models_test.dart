@@ -4,7 +4,7 @@ import 'package:simf_app/features/content/data/content_models.dart';
 void main() {
   group('ContentBlock', () {
     test('fromJson maps the wire fields', () {
-      final block = ContentBlock.fromJson(<String, dynamic>{
+      final block = ContentBlock.fromJson(const <String, dynamic>{
         'key': 'terms',
         'content': 'EN body',
         'contentArabic': 'النص العربي',

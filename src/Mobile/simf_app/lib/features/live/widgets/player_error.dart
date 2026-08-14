@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 /// Shown when a live feed fails to load — a terminal error surface with a Retry

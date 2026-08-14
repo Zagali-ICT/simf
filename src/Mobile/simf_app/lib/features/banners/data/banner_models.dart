@@ -17,6 +17,18 @@ class PublicBannerItem {
     this.linkUrl,
   });
 
+  factory PublicBannerItem.fromJson(Map<String, dynamic> json) =>
+      PublicBannerItem(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        body: json['body'] as String? ?? '',
+        bodyArabic: json['bodyArabic'] as String? ?? '',
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        imageUrl: json['imageUrl'] as String?,
+        linkUrl: json['linkUrl'] as String?,
+      );
+
   final String id;
   final String title;
   final String titleArabic;
@@ -33,18 +45,6 @@ class PublicBannerItem {
   /// back to [imageUrl] then a placeholder.
   String assetImageUrl(String baseUrl) =>
       AssetUrls.image(baseUrl, AssetKind.banner, id);
-
-  static PublicBannerItem fromJson(Map<String, dynamic> json) =>
-      PublicBannerItem(
-        id: json['id'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        body: json['body'] as String? ?? '',
-        bodyArabic: json['bodyArabic'] as String? ?? '',
-        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-        imageUrl: json['imageUrl'] as String?,
-        linkUrl: json['linkUrl'] as String?,
-      );
 
   /// Decode the `GET /app/banners` payload (`{ "items": [ … ] }`).
   static List<PublicBannerItem> listFromData(dynamic data) {

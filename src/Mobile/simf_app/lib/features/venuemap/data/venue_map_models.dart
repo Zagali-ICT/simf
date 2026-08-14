@@ -51,6 +51,17 @@ class VenueMapNode {
     this.boothId,
   });
 
+  factory VenueMapNode.fromJson(Map<String, dynamic> json) => VenueMapNode(
+        id: json['id'] as String? ?? '',
+        label: json['label'] as String? ?? '',
+        labelArabic: json['labelArabic'] as String? ?? '',
+        kind: VenueMapNodeKind.fromJson(json['kind']),
+        x: (json['x'] as num?)?.toDouble() ?? 0,
+        y: (json['y'] as num?)?.toDouble() ?? 0,
+        hallId: json['hallId'] as String?,
+        boothId: json['boothId'] as String?,
+      );
+
   final String id;
   final String label;
   final String labelArabic;
@@ -67,17 +78,6 @@ class VenueMapNode {
     final en = label.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
-
-  static VenueMapNode fromJson(Map<String, dynamic> json) => VenueMapNode(
-        id: json['id'] as String? ?? '',
-        label: json['label'] as String? ?? '',
-        labelArabic: json['labelArabic'] as String? ?? '',
-        kind: VenueMapNodeKind.fromJson(json['kind']),
-        x: (json['x'] as num?)?.toDouble() ?? 0,
-        y: (json['y'] as num?)?.toDouble() ?? 0,
-        hallId: json['hallId'] as String?,
-        boothId: json['boothId'] as String?,
-      );
 }
 
 /// A booth summary — mirrors `SIMF.Contracts.Exhibition.PublicBoothSummary`
@@ -107,6 +107,27 @@ class BoothSummary {
     this.countryName,
     this.countryNameArabic,
   });
+
+  factory BoothSummary.fromJson(Map<String, dynamic> json) => BoothSummary(
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        exhibitorName: json['exhibitorName'] as String?,
+        exhibitorNameArabic: json['exhibitorNameArabic'] as String?,
+        sector: json['sector'] as String?,
+        sectorArabic: json['sectorArabic'] as String?,
+        hallId: json['hallId'] as String?,
+        hallName: json['hallName'] as String?,
+        hallNameArabic: json['hallNameArabic'] as String?,
+        officerName: json['officerName'] as String?,
+        officerPhone: json['officerPhone'] as String?,
+        officerEmail: json['officerEmail'] as String?,
+        exhibitorContactId: json['exhibitorContactId'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
+        countryName: json['countryName'] as String?,
+        countryNameArabic: json['countryNameArabic'] as String?,
+      );
 
   final String id;
   final String code;
@@ -157,27 +178,6 @@ class BoothSummary {
 
   String? localizedHallName(bool isArabic) =>
       _pick(hallNameArabic, hallName, isArabic);
-
-  static BoothSummary fromJson(Map<String, dynamic> json) => BoothSummary(
-        id: json['id'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        exhibitorName: json['exhibitorName'] as String?,
-        exhibitorNameArabic: json['exhibitorNameArabic'] as String?,
-        sector: json['sector'] as String?,
-        sectorArabic: json['sectorArabic'] as String?,
-        hallId: json['hallId'] as String?,
-        hallName: json['hallName'] as String?,
-        hallNameArabic: json['hallNameArabic'] as String?,
-        officerName: json['officerName'] as String?,
-        officerPhone: json['officerPhone'] as String?,
-        officerEmail: json['officerEmail'] as String?,
-        exhibitorContactId: json['exhibitorContactId'] as String?,
-        countryId: (json['countryId'] as num?)?.toInt(),
-        countryName: json['countryName'] as String?,
-        countryNameArabic: json['countryNameArabic'] as String?,
-      );
 }
 
 /// A booth detail — the summary plus the description paragraph
@@ -211,6 +211,34 @@ class BoothDetail {
     this.website,
     this.exhibitorId,
   });
+
+  factory BoothDetail.fromJson(Map<String, dynamic> json) => BoothDetail(
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        exhibitorName: json['exhibitorName'] as String?,
+        exhibitorNameArabic: json['exhibitorNameArabic'] as String?,
+        sector: json['sector'] as String?,
+        sectorArabic: json['sectorArabic'] as String?,
+        description: json['description'] as String?,
+        descriptionArabic: json['descriptionArabic'] as String?,
+        hallName: json['hallName'] as String?,
+        hallNameArabic: json['hallNameArabic'] as String?,
+        officerName: json['officerName'] as String?,
+        officerPhone: json['officerPhone'] as String?,
+        officerEmail: json['officerEmail'] as String?,
+        exhibitorContactId: json['exhibitorContactId'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
+        countryName: json['countryName'] as String?,
+        countryNameArabic: json['countryNameArabic'] as String?,
+        city: json['city'] as String?,
+        cityArabic: json['cityArabic'] as String?,
+        tier: (json['tier'] as num?)?.toInt(),
+        tierName: json['tierName'] as String?,
+        website: json['website'] as String?,
+        exhibitorId: json['exhibitorId'] as String?,
+      );
 
   final String id;
   final String code;
@@ -269,34 +297,6 @@ class BoothDetail {
       _pick(countryNameArabic, countryName, isArabic);
 
   String? localizedCity(bool isArabic) => _pick(cityArabic, city, isArabic);
-
-  static BoothDetail fromJson(Map<String, dynamic> json) => BoothDetail(
-        id: json['id'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        exhibitorName: json['exhibitorName'] as String?,
-        exhibitorNameArabic: json['exhibitorNameArabic'] as String?,
-        sector: json['sector'] as String?,
-        sectorArabic: json['sectorArabic'] as String?,
-        description: json['description'] as String?,
-        descriptionArabic: json['descriptionArabic'] as String?,
-        hallName: json['hallName'] as String?,
-        hallNameArabic: json['hallNameArabic'] as String?,
-        officerName: json['officerName'] as String?,
-        officerPhone: json['officerPhone'] as String?,
-        officerEmail: json['officerEmail'] as String?,
-        exhibitorContactId: json['exhibitorContactId'] as String?,
-        countryId: (json['countryId'] as num?)?.toInt(),
-        countryName: json['countryName'] as String?,
-        countryNameArabic: json['countryNameArabic'] as String?,
-        city: json['city'] as String?,
-        cityArabic: json['cityArabic'] as String?,
-        tier: (json['tier'] as num?)?.toInt(),
-        tierName: json['tierName'] as String?,
-        website: json['website'] as String?,
-        exhibitorId: json['exhibitorId'] as String?,
-      );
 }
 
 /// Picks the locale-appropriate value of a bilingual pair, falling back to the

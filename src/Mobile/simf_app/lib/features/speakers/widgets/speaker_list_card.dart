@@ -119,4 +119,3 @@ class SpeakerListCard extends StatelessWidget {
     );
   }
 }
-

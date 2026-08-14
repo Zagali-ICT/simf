@@ -13,11 +13,11 @@ import 'package:simf_app/core/utils/saudi_time.dart';
 class VisitorShareToken {
   const VisitorShareToken(this.token);
 
-  final String token;
-
-  static VisitorShareToken fromData(Object? data) => VisitorShareToken(
+  factory VisitorShareToken.fromData(Object? data) => VisitorShareToken(
         (data is Map ? data['token'] as String? : null) ?? '',
       );
+
+  final String token;
 }
 
 /// A visitor's contact card — projected **live** from their `UserProfile`
@@ -42,6 +42,26 @@ class VisitorCard {
     this.countryName,
     this.countryNameArabic,
   });
+
+  factory VisitorCard.fromData(Object? data) {
+    final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    return VisitorCard(
+      userId: json['userId'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      nameArabic: json['nameArabic'] as String? ?? '',
+      available: json['available'] as bool? ?? false,
+      jobTitle: json['jobTitle'] as String?,
+      jobTitleArabic: json['jobTitleArabic'] as String?,
+      organisation: json['organisation'] as String?,
+      organisationArabic: json['organisationArabic'] as String?,
+      email: json['email'] as String?,
+      saudiMobile: json['saudiMobile'] as String?,
+      internationalMobile: json['internationalMobile'] as String?,
+      countryId: (json['countryId'] as num?)?.toInt(),
+      countryName: json['countryName'] as String?,
+      countryNameArabic: json['countryNameArabic'] as String?,
+    );
+  }
 
   final String userId;
   final String name;
@@ -72,26 +92,6 @@ class VisitorCard {
   /// Country for the active locale, or null when none is set.
   String? localizedCountry(bool isArabic) =>
       _nullIfBlank(_pick(countryNameArabic, countryName, isArabic));
-
-  static VisitorCard fromData(Object? data) {
-    final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
-    return VisitorCard(
-      userId: json['userId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      nameArabic: json['nameArabic'] as String? ?? '',
-      available: json['available'] as bool? ?? false,
-      jobTitle: json['jobTitle'] as String?,
-      jobTitleArabic: json['jobTitleArabic'] as String?,
-      organisation: json['organisation'] as String?,
-      organisationArabic: json['organisationArabic'] as String?,
-      email: json['email'] as String?,
-      saudiMobile: json['saudiMobile'] as String?,
-      internationalMobile: json['internationalMobile'] as String?,
-      countryId: (json['countryId'] as num?)?.toInt(),
-      countryName: json['countryName'] as String?,
-      countryNameArabic: json['countryNameArabic'] as String?,
-    );
-  }
 }
 
 /// One row in the caller's *My Contacts* list — resolved on read from the
@@ -112,6 +112,22 @@ class SavedContactRow {
     this.savedAt,
   });
 
+  factory SavedContactRow.fromData(Object? data) {
+    final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    return SavedContactRow(
+      id: json['id'] as String? ?? '',
+      subjectUserId: json['subjectUserId'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      nameArabic: json['nameArabic'] as String? ?? '',
+      subjectAvailable: json['subjectAvailable'] as bool? ?? false,
+      jobTitle: json['jobTitle'] as String?,
+      jobTitleArabic: json['jobTitleArabic'] as String?,
+      organisation: json['organisation'] as String?,
+      note: json['note'] as String?,
+      savedAt: parseWireOrNull(json['savedAt'] as String? ?? ''),
+    );
+  }
+
   final String id;
   final String subjectUserId;
   final String name;
@@ -128,22 +144,6 @@ class SavedContactRow {
   /// Job title for the active locale, or null when none is set.
   String? localizedJobTitle(bool isArabic) =>
       _nullIfBlank(_pick(jobTitleArabic, jobTitle, isArabic));
-
-  static SavedContactRow fromData(Object? data) {
-    final json = (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
-    return SavedContactRow(
-      id: json['id'] as String? ?? '',
-      subjectUserId: json['subjectUserId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      nameArabic: json['nameArabic'] as String? ?? '',
-      subjectAvailable: json['subjectAvailable'] as bool? ?? false,
-      jobTitle: json['jobTitle'] as String?,
-      jobTitleArabic: json['jobTitleArabic'] as String?,
-      organisation: json['organisation'] as String?,
-      note: json['note'] as String?,
-      savedAt: parseWireOrNull(json['savedAt'] as String? ?? ''),
-    );
-  }
 
   /// Reads the My-Contacts payload (a bare list, or `{ items: [...] }`).
   static List<SavedContactRow> listFromData(Object? data) {

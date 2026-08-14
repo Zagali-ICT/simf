@@ -201,4 +201,3 @@ class _LiveVideoPlayerState extends ConsumerState<LiveVideoPlayer> {
     return const PlayerLoading();
   }
 }
-

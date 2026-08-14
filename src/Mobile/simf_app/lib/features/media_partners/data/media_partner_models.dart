@@ -12,6 +12,13 @@ class MediaPartner {
     this.logoRelativePath,
   });
 
+  factory MediaPartner.fromJson(Map<String, dynamic> json) => MediaPartner(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        nameArabic: json['nameArabic'] as String? ?? '',
+        logoRelativePath: json['logoRelativePath'] as String?,
+      );
+
   final String id;
   final String name;
   final String nameArabic;
@@ -35,11 +42,4 @@ class MediaPartner {
   /// partner's initials.
   String logoAssetUrl(String baseUrl) =>
       AssetUrls.image(baseUrl, AssetKind.mediaPartnerLogo, id);
-
-  static MediaPartner fromJson(Map<String, dynamic> json) => MediaPartner(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        nameArabic: json['nameArabic'] as String? ?? '',
-        logoRelativePath: json['logoRelativePath'] as String?,
-      );
 }

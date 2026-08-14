@@ -138,12 +138,12 @@ final biometricAuthProvider =
     Provider<BiometricAuth>(BiometricAuth.new);
 
 /// The device biometric capability (auto-disposed; re-read after a toggle).
-final AutoDisposeFutureProvider<bool> biometricAvailableProvider = FutureProvider.autoDispose<bool>(
+final biometricAvailableProvider = FutureProvider.autoDispose<bool>(
   (ref) => ref.read(biometricAuthProvider).isAvailable(),
 );
 
 /// Whether Face-ID sign-in is currently enabled on this device.
-final AutoDisposeFutureProvider<bool> biometricEnabledProvider = FutureProvider.autoDispose<bool>(
+final biometricEnabledProvider = FutureProvider.autoDispose<bool>(
   (ref) => ref.read(biometricAuthProvider).isEnabled(),
 );
 

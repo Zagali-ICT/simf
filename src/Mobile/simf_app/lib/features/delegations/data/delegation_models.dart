@@ -22,6 +22,20 @@ class DelegationItem {
     this.departureDate,
   });
 
+  factory DelegationItem.fromJson(Map<String, dynamic> json) => DelegationItem(
+        countryId: (json['countryId'] as num?)?.toInt() ?? 0,
+        countryCode: json['countryCode'] as String? ?? '',
+        countryName: json['countryName'] as String? ?? '',
+        countryNameArabic: json['countryNameArabic'] as String? ?? '',
+        memberCount: (json['memberCount'] as num?)?.toInt() ?? 0,
+        headName: json['headName'] as String?,
+        headNameArabic: json['headNameArabic'] as String?,
+        headTitle: json['headTitle'] as String?,
+        headTitleArabic: json['headTitleArabic'] as String?,
+        arrivalDate: _parseDate(json['arrivalDate']),
+        departureDate: _parseDate(json['departureDate']),
+      );
+
   final int countryId;
   final String countryCode;
   final String countryName;
@@ -82,20 +96,6 @@ class DelegationItem {
         (headName?.toLowerCase().contains(q) ?? false) ||
         (headNameArabic?.toLowerCase().contains(q) ?? false);
   }
-
-  static DelegationItem fromJson(Map<String, dynamic> json) => DelegationItem(
-        countryId: (json['countryId'] as num?)?.toInt() ?? 0,
-        countryCode: json['countryCode'] as String? ?? '',
-        countryName: json['countryName'] as String? ?? '',
-        countryNameArabic: json['countryNameArabic'] as String? ?? '',
-        memberCount: (json['memberCount'] as num?)?.toInt() ?? 0,
-        headName: json['headName'] as String?,
-        headNameArabic: json['headNameArabic'] as String?,
-        headTitle: json['headTitle'] as String?,
-        headTitleArabic: json['headTitleArabic'] as String?,
-        arrivalDate: _parseDate(json['arrivalDate']),
-        departureDate: _parseDate(json['departureDate']),
-      );
 }
 
 /// The delegations payload (`AppDelegations = { countryCount, totalParticipants,
@@ -108,11 +108,7 @@ class Delegations {
     required this.items,
   });
 
-  final int countryCount;
-  final int totalParticipants;
-  final List<DelegationItem> items;
-
-  static Delegations fromData(Object? data) {
+  factory Delegations.fromData(Object? data) {
     final map = data is Map ? data : const <dynamic, dynamic>{};
     final list = (map['items'] as List?) ?? const <dynamic>[];
     final items = list
@@ -125,6 +121,10 @@ class Delegations {
       items: items,
     );
   }
+
+  final int countryCount;
+  final int totalParticipants;
+  final List<DelegationItem> items;
 }
 
 DateTime? _parseDate(Object? value) =>

@@ -77,18 +77,18 @@ class StaffWalkInResult {
     required this.profileTypeName,
   });
 
-  final String userId;
-  final String displayName;
-  final String qrId;
-  final String profileTypeName;
-
-  bool get isPending => qrId.trim().isEmpty;
-
-  static StaffWalkInResult fromJson(Map<String, dynamic> json) =>
+  factory StaffWalkInResult.fromJson(Map<String, dynamic> json) =>
       StaffWalkInResult(
         userId: json['userId'] as String? ?? '',
         displayName: json['displayName'] as String? ?? '',
         qrId: json['qrId'] as String? ?? '',
         profileTypeName: json['profileTypeName'] as String? ?? '',
       );
+
+  final String userId;
+  final String displayName;
+  final String qrId;
+  final String profileTypeName;
+
+  bool get isPending => qrId.trim().isEmpty;
 }

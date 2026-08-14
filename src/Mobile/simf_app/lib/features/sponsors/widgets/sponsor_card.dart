@@ -128,4 +128,3 @@ class SponsorCard extends StatelessWidget {
     );
   }
 }
-

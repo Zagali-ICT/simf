@@ -223,4 +223,3 @@ IconData _kindIcon(AppRequestKind kind) {
       return Icons.person_outline;
   }
 }
-

@@ -4,7 +4,7 @@ import 'package:simf_app/features/faq/data/faq_models.dart';
 void main() {
   group('FaqGroup.fromJson', () {
     test('parses a group with its nested entries', () {
-      final group = FaqGroup.fromJson(<String, dynamic>{
+      final group = FaqGroup.fromJson(const <String, dynamic>{
         'id': 'g1',
         'name': 'Registration',
         'nameArabic': 'التسجيل',
@@ -28,7 +28,7 @@ void main() {
     });
 
     test('missing entries decodes to an empty list', () {
-      final group = FaqGroup.fromJson(<String, dynamic>{
+      final group = FaqGroup.fromJson(const <String, dynamic>{
         'id': 'g2',
         'name': 'Venue',
         'nameArabic': 'المكان',

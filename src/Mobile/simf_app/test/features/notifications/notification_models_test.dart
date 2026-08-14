@@ -4,7 +4,7 @@ import 'package:simf_app/features/notifications/data/notification_models.dart';
 void main() {
   group('NotificationItem.fromJson', () {
     test('decodes the string kind/severity, isRead and localized fields', () {
-      final item = NotificationItem.fromJson(<String, dynamic>{
+      final item = NotificationItem.fromJson(const <String, dynamic>{
         'id': 'n1',
         'kind': 'SessionReminder',
         'title': 'Session starts soon',
@@ -33,7 +33,7 @@ void main() {
     });
 
     test('a read item parses readAt and isRead true', () {
-      final item = NotificationItem.fromJson(<String, dynamic>{
+      final item = NotificationItem.fromJson(const <String, dynamic>{
         'id': 'n2',
         'kind': 'BookingConfirmed',
         'title': 'Confirmed',
@@ -59,7 +59,7 @@ void main() {
         NotificationSeverity.info,
       );
       expect(NotificationSeverity.fromName(null), NotificationSeverity.info);
-      final item = NotificationItem.fromJson(<String, dynamic>{'id': 'n3'});
+      final item = NotificationItem.fromJson(const <String, dynamic>{'id': 'n3'});
       expect(item.severity, NotificationSeverity.info);
       expect(item.isRead, isFalse);
       expect(item.localizedTitle(false), '');

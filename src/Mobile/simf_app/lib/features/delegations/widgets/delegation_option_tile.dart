@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/delegations/data/delegation_models.dart';
+import 'package:simf_app/features/speakers/widgets/speaker_option_tile.dart' show SpeakerOptionTile;
 
 /// One selectable delegation row in the picker — flag + localized country name +
 /// member count, with a selected (gold) outline. Mirrors [SpeakerOptionTile]'s

@@ -32,7 +32,7 @@ void main() {
     });
 
     test('decodes jobTitleArabic from the wire (append-only)', () {
-      final c = VisitorCard.fromData(<String, dynamic>{
+      final c = VisitorCard.fromData(const <String, dynamic>{
         'userId': 'u1',
         'name': 'N',
         'nameArabic': 'ن',
@@ -65,7 +65,7 @@ void main() {
     });
 
     test('decodes jobTitleArabic from the wire', () {
-      final r = SavedContactRow.fromData(<String, dynamic>{
+      final r = SavedContactRow.fromData(const <String, dynamic>{
         'id': 's1',
         'subjectUserId': 'u1',
         'name': 'N',

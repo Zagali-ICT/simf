@@ -263,7 +263,7 @@ void main() {
 
   group('ArchiveEdition.fromJson', () {
     test('binds the En/Ar wire names + stats', () {
-      final e = ArchiveEdition.fromJson(<String, dynamic>{
+      final e = ArchiveEdition.fromJson(const <String, dynamic>{
         'id': 'a1',
         'year': 2025,
         'titleEn': '3rd Edition',

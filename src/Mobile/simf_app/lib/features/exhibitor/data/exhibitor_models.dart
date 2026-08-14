@@ -16,12 +16,7 @@ class ExhibitorVisitor {
     this.note,
   });
 
-  final String id;
-  final DateTime scannedAt;
-  final String? note;
-  final VisitorCard card;
-
-  static ExhibitorVisitor fromData(Object? data) {
+  factory ExhibitorVisitor.fromData(Object? data) {
     final map = data is Map ? data.cast<String, dynamic>() : const <String, dynamic>{};
     return ExhibitorVisitor(
       id: map['id'] as String? ?? '',
@@ -31,6 +26,11 @@ class ExhibitorVisitor {
       card: VisitorCard.fromData(map['card']),
     );
   }
+
+  final String id;
+  final DateTime scannedAt;
+  final String? note;
+  final VisitorCard card;
 
   static List<ExhibitorVisitor> listFromData(Object? data) =>
       (data is List ? data : const <dynamic>[])

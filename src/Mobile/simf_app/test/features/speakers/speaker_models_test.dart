@@ -4,7 +4,7 @@ import 'package:simf_app/features/speakers/data/speaker_models.dart';
 void main() {
   group('SpeakerSummary.fromJson', () {
     test('binds the card fields incl. country', () {
-      final s = SpeakerSummary.fromJson(<String, dynamic>{
+      final s = SpeakerSummary.fromJson(const <String, dynamic>{
         'id': 'sp1',
         'name': 'Capt. Reef',
         'nameArabic': 'القبطان ريف',
@@ -24,7 +24,7 @@ void main() {
 
   group('SpeakerDetail.fromJson', () {
     test('binds CV pairs, gates, social URLs + sessions', () {
-      final d = SpeakerDetail.fromJson(<String, dynamic>{
+      final d = SpeakerDetail.fromJson(const <String, dynamic>{
         'id': 'sp1',
         'name': 'Capt. Reef',
         'nameArabic': 'القبطان ريف',
@@ -67,7 +67,7 @@ void main() {
     });
 
     test('gates + sessions default safely when absent', () {
-      final d = SpeakerDetail.fromJson(<String, dynamic>{
+      final d = SpeakerDetail.fromJson(const <String, dynamic>{
         'id': 'sp2',
         'name': 'X',
         'nameArabic': 'س',

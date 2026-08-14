@@ -133,7 +133,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   void _zoomBy(double factor) {
     final scale = (_transform.value.getMaxScaleOnAxis() * factor)
         .clamp(0.3, 4.0)
-        .toDouble();
+        ;
     final centre = _viewport.center(Offset.zero);
     // Re-anchor the zoom on the viewport centre.
     final scenePoint = _transform.toScene(centre);

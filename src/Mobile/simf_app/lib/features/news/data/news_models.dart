@@ -16,6 +16,18 @@ class NewsListItem {
     this.imageRelativePath,
   });
 
+  factory NewsListItem.fromJson(Map<String, dynamic> json) => NewsListItem(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        category: json['category'] as String? ?? '',
+        categoryArabic: json['categoryArabic'] as String? ?? '',
+        publishedAt: _utc(json['publishedAt']),
+        excerpt: json['excerpt'] as String?,
+        excerptArabic: json['excerptArabic'] as String?,
+        imageRelativePath: json['imageRelativePath'] as String?,
+      );
+
   final String id;
   final String title;
   final String titleArabic;
@@ -31,18 +43,6 @@ class NewsListItem {
       _pick(categoryArabic, category, isArabic);
   String? localizedExcerpt(bool isArabic) =>
       _pickOpt(excerptArabic, excerpt, isArabic);
-
-  static NewsListItem fromJson(Map<String, dynamic> json) => NewsListItem(
-        id: json['id'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        category: json['category'] as String? ?? '',
-        categoryArabic: json['categoryArabic'] as String? ?? '',
-        publishedAt: _utc(json['publishedAt']),
-        excerpt: json['excerpt'] as String?,
-        excerptArabic: json['excerptArabic'] as String?,
-        imageRelativePath: json['imageRelativePath'] as String?,
-      );
 
   /// Reads `PublicNewsPage = { items: [...] }`.
   static List<NewsListItem> listFromData(Object? data) =>
@@ -67,6 +67,18 @@ class NewsArticle {
     this.imageRelativePath,
   });
 
+  factory NewsArticle.fromJson(Map<String, dynamic> json) => NewsArticle(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        body: json['body'] as String? ?? '',
+        bodyArabic: json['bodyArabic'] as String? ?? '',
+        category: json['category'] as String? ?? '',
+        categoryArabic: json['categoryArabic'] as String? ?? '',
+        publishedAt: _utc(json['publishedAt']),
+        imageRelativePath: json['imageRelativePath'] as String?,
+      );
+
   final String id;
   final String title;
   final String titleArabic;
@@ -81,18 +93,6 @@ class NewsArticle {
   String localizedCategory(bool isArabic) =>
       _pick(categoryArabic, category, isArabic);
   String localizedBody(bool isArabic) => _pick(bodyArabic, body, isArabic);
-
-  static NewsArticle fromJson(Map<String, dynamic> json) => NewsArticle(
-        id: json['id'] as String? ?? '',
-        title: json['title'] as String? ?? '',
-        titleArabic: json['titleArabic'] as String? ?? '',
-        body: json['body'] as String? ?? '',
-        bodyArabic: json['bodyArabic'] as String? ?? '',
-        category: json['category'] as String? ?? '',
-        categoryArabic: json['categoryArabic'] as String? ?? '',
-        publishedAt: _utc(json['publishedAt']),
-        imageRelativePath: json['imageRelativePath'] as String?,
-      );
 }
 
 DateTime _utc(Object? value) {

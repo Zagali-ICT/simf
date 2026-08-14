@@ -4,7 +4,7 @@ import 'package:simf_app/features/sponsors/data/sponsor_models.dart';
 void main() {
   group('SponsorDetail.fromData', () {
     test('decodes the about, city, tier, website and country', () {
-      final detail = SponsorDetail.fromData(<String, dynamic>{
+      final detail = SponsorDetail.fromData(const <String, dynamic>{
         'id': 's1',
         'nameEn': 'Aramco',
         'nameAr': 'أرامكو السعودية',
@@ -33,7 +33,7 @@ void main() {
     });
 
     test('optional fields fall back / decode to null', () {
-      final detail = SponsorDetail.fromData(<String, dynamic>{
+      final detail = SponsorDetail.fromData(const <String, dynamic>{
         'id': 's2',
         'nameEn': 'Co',
         'nameAr': '',

@@ -46,4 +46,3 @@ class ArchivePastSpeakersRow extends StatelessWidget {
     );
   }
 }
-

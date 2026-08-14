@@ -12,6 +12,14 @@ class FaqEntry {
     required this.answerArabic,
   });
 
+  factory FaqEntry.fromJson(Map<String, dynamic> json) => FaqEntry(
+        id: (json['id'] ?? '').toString(),
+        question: (json['question'] ?? '').toString(),
+        questionArabic: (json['questionArabic'] ?? '').toString(),
+        answer: (json['answer'] ?? '').toString(),
+        answerArabic: (json['answerArabic'] ?? '').toString(),
+      );
+
   final String id;
   final String question;
   final String questionArabic;
@@ -22,14 +30,6 @@ class FaqEntry {
       _pick(isArabic, questionArabic, question);
   String localizedAnswer(bool isArabic) =>
       _pick(isArabic, answerArabic, answer);
-
-  static FaqEntry fromJson(Map<String, dynamic> json) => FaqEntry(
-        id: (json['id'] ?? '').toString(),
-        question: (json['question'] ?? '').toString(),
-        questionArabic: (json['questionArabic'] ?? '').toString(),
-        answer: (json['answer'] ?? '').toString(),
-        answerArabic: (json['answerArabic'] ?? '').toString(),
-      );
 }
 
 /// One FAQ group with its ordered active entries.
@@ -42,14 +42,7 @@ class FaqGroup {
     required this.entries,
   });
 
-  final String id;
-  final String name;
-  final String nameArabic;
-  final List<FaqEntry> entries;
-
-  String localizedName(bool isArabic) => _pick(isArabic, nameArabic, name);
-
-  static FaqGroup fromJson(Map<String, dynamic> json) => FaqGroup(
+  factory FaqGroup.fromJson(Map<String, dynamic> json) => FaqGroup(
         id: (json['id'] ?? '').toString(),
         name: (json['name'] ?? '').toString(),
         nameArabic: (json['nameArabic'] ?? '').toString(),
@@ -59,6 +52,13 @@ class FaqGroup {
             )
             .toList(),
       );
+
+  final String id;
+  final String name;
+  final String nameArabic;
+  final List<FaqEntry> entries;
+
+  String localizedName(bool isArabic) => _pick(isArabic, nameArabic, name);
 }
 
 /// Arabic-first/English-first pick with a fall back to the populated side.

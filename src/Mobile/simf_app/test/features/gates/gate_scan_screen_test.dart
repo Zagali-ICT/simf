@@ -101,7 +101,7 @@ class _FakeGates implements GatesRepository {
       );
     }
     return result ??
-        GateScanResult.fromJson(<String, dynamic>{'outcome': 0, 'direction': 0});
+        GateScanResult.fromJson(const <String, dynamic>{'outcome': 0, 'direction': 0});
   }
 
   @override
@@ -127,7 +127,7 @@ class _FakeGates implements GatesRepository {
       );
     }
     return result ??
-        GateScanResult.fromJson(<String, dynamic>{'outcome': 0, 'direction': 0});
+        GateScanResult.fromJson(const <String, dynamic>{'outcome': 0, 'direction': 0});
   }
 
   @override
@@ -208,7 +208,7 @@ void main() {
         (tester) async {
       final repo = _FakeGates(
         gates: <OperatorGate>[_gate()],
-        result: GateScanResult.fromJson(<String, dynamic>{
+        result: GateScanResult.fromJson(const <String, dynamic>{
           'outcome': 0,
           'direction': 0,
           'userProfile': <String, dynamic>{
@@ -237,7 +237,7 @@ void main() {
         (tester) async {
       final repo = _FakeGates(
         gates: <OperatorGate>[_gate()],
-        result: GateScanResult.fromJson(<String, dynamic>{
+        result: GateScanResult.fromJson(const <String, dynamic>{
           'outcome': 1,
           'direction': 0,
           'denialReasonCode': 2,

@@ -13,6 +13,7 @@ import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/delegations/widgets/delegation_option_tile.dart';
+import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart' show MeetingRequestSheet;
 import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -606,4 +607,3 @@ class _DelegationMeetingRequestSheetState
     );
   }
 }
-
