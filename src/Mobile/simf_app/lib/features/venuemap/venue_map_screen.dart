@@ -6,6 +6,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/core/utils/refresh.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_app/features/venuemap/widgets/venue_map_booth_sheet.dart';
@@ -35,6 +36,70 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Route: `RouteNames.venueMap`.
 /// Data: [simfDataConfigProvider], [venueMapRepositoryProvider].
 /// Perf: no list — a single-screen layout.
+// The design-space canvas the normalised node coordinates map onto. Moved out
+// of the State so the provider can derive positions without one.
+const double _canvas = 1000;
+const double _pad = 80;
+const double _zoomStep = 1.3;
+
+/// Normalises every node's `(x, y)` onto the canvas once (Page_015 L-4).
+Map<String, Offset> _canvasPositions(List<VenueMapNode> nodes) {
+  if (nodes.isEmpty) {
+    return const <String, Offset>{};
+  }
+  final bounds = VenueMapBounds.of(nodes);
+  return <String, Offset>{
+    for (final node in nodes)
+      node.id: Offset(
+        _pad + bounds.normX(node.x) * (_canvas - 2 * _pad),
+        _pad + bounds.normY(node.y) * (_canvas - 2 * _pad),
+      ),
+  };
+}
+
+/// The map's nodes, plus the two lookups derived from them ONCE.
+///
+/// The derivation used to happen in `setState` after the load, which is what
+/// made those two maps state. Computing them here keeps them beside the data
+/// they come from, and there is exactly one place that can get them out of step
+/// with it: none.
+@immutable
+class VenueMapData {
+  const VenueMapData({
+    required this.nodes,
+    required this.positions,
+    required this.boothById,
+  });
+
+  final List<VenueMapNode> nodes;
+  final Map<String, Offset> positions;
+  final Map<String, BoothSummary> boothById;
+
+  BoothSummary? boothFor(VenueMapNode node) =>
+      node.boothId == null ? null : boothById[node.boothId];
+}
+
+/// The venue map (`GET /app/venue-map/nodes` + `GET /app/booths`).
+final venueMapDataProvider = FutureProvider.autoDispose<VenueMapData>(
+  (ref) async {
+    final repo = ref.watch(venueMapRepositoryProvider);
+    // Both reads in flight together (L-1); the screen is ready when both land.
+    final results = await Future.wait(<Future<Object>>[
+      repo.getNodes(),
+      repo.getBooths(),
+    ]);
+    final nodes = results[0] as List<VenueMapNode>;
+    final booths = results[1] as List<BoothSummary>;
+    return VenueMapData(
+      nodes: nodes,
+      positions: _canvasPositions(nodes),
+      boothById: <String, BoothSummary>{
+        for (final booth in booths) booth.id: booth,
+      },
+    );
+  },
+);
+
 class VenueMapScreen extends ConsumerStatefulWidget {
   const VenueMapScreen({this.targetBoothId, super.key});
 
@@ -47,27 +112,14 @@ class VenueMapScreen extends ConsumerStatefulWidget {
 }
 
 class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
-  // The design-space canvas the normalised node coordinates map onto.
-  static const double _canvas = 1000;
-  static const double _pad = 80;
-  static const double _zoomStep = 1.3;
-
   final TransformationController _transform = TransformationController();
 
-  bool _loading = true;
-  bool _error = false;
-  List<VenueMapNode> _nodes = const <VenueMapNode>[];
   VenueMapNode? _selected;
-
-  // Derived once per load (the node/booth lists are immutable afterwards):
-  // each node's canvas position and the booth lookup by id.
-  Map<String, Offset> _positions = const <String, Offset>{};
-  Map<String, BoothSummary> _boothById = const <String, BoothSummary>{};
 
   @override
   void initState() {
     super.initState();
-    unawaited(_load());
+    unawaited(_focusTargetBooth());
   }
 
   @override
@@ -76,61 +128,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-    });
-    try {
-      final repo = ref.read(venueMapRepositoryProvider);
-      // Both reads in flight together (L-1); the screen is ready when both
-      // land.
-      final results = await Future.wait(<Future<Object>>[
-        repo.getNodes(),
-        repo.getBooths(),
-      ]);
-      if (!mounted) {
-        return;
-      }
-      final nodes = results[0] as List<VenueMapNode>;
-      final booths = results[1] as List<BoothSummary>;
-      setState(() {
-        _nodes = nodes;
-        _positions = _canvasPositions(nodes);
-        _boothById = <String, BoothSummary>{
-          for (final booth in booths) booth.id: booth,
-        };
-        _loading = false;
-      });
-      _focusTargetBooth();
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _error = true;
-        _loading = false;
-      });
-    }
-  }
-
-  BoothSummary? _boothFor(VenueMapNode node) =>
-      node.boothId == null ? null : _boothById[node.boothId];
-
-  /// Normalises every node's `(x, y)` onto the canvas once (Page_015 L-4).
-  static Map<String, Offset> _canvasPositions(List<VenueMapNode> nodes) {
-    if (nodes.isEmpty) {
-      return const <String, Offset>{};
-    }
-    final bounds = VenueMapBounds.of(nodes);
-    return <String, Offset>{
-      for (final node in nodes)
-        node.id: Offset(
-          _pad + bounds.normX(node.x) * (_canvas - 2 * _pad),
-          _pad + bounds.normY(node.y) * (_canvas - 2 * _pad),
-        ),
-    };
-  }
+  Future<void> _refresh() => refreshAsync(ref, venueMapDataProvider.future);
 
   /// The map viewport — the page body's render size at action time.
   Size get _viewport => context.size ?? Size.zero;
@@ -152,9 +150,9 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   }
 
   /// Centres the plane on [node] at a readable scale (the أرشدني action).
-  void _centreOn(VenueMapNode node) {
+  void _centreOn(VenueMapNode node, Map<String, Offset> positions) {
     const scale = 1.5;
-    final position = _positions[node.id] ?? Offset.zero;
+    final position = positions[node.id] ?? Offset.zero;
     _transform.value = Matrix4.identity()
       ..translateByDouble(
         _viewport.width / 2 - position.dx * scale,
@@ -168,13 +166,27 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   /// #9 — select + centre the map on the target booth's node once the nodes
   /// have loaded and (via the post-frame callback) the plane has laid out so
   /// the viewport size is available. A no-op when no target / no matching node.
-  void _focusTargetBooth() {
+  /// Centres the map on the booth this screen was pushed for (#9), once.
+  ///
+  /// Awaits the provider's FIRST future rather than listening for data, so a
+  /// later pull-to-refresh does not yank the camera back to the target after
+  /// the user has panned away.
+  Future<void> _focusTargetBooth() async {
     final target = widget.targetBoothId?.trim();
     if (target == null || target.isEmpty) {
       return;
     }
+    final VenueMapData data;
+    try {
+      data = await ref.read(venueMapDataProvider.future);
+    } on Object {
+      return; // The error branch renders; there is nothing to centre on.
+    }
+    if (!mounted) {
+      return;
+    }
     VenueMapNode? match;
-    for (final node in _nodes) {
+    for (final node in data.nodes) {
       if (node.boothId == target) {
         match = node;
         break;
@@ -187,7 +199,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     setState(() => _selected = node);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _centreOn(node);
+        _centreOn(node, data.positions);
       }
     });
   }
@@ -235,16 +247,12 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   }
 
   Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error) {
-      return _buildError(l10n);
-    }
-    if (_nodes.isEmpty) {
-      return _buildEmpty(l10n);
-    }
-    return _buildMap(l10n);
+    return ref.watch(venueMapDataProvider).when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => _buildError(l10n),
+          data: (data) =>
+              data.nodes.isEmpty ? _buildEmpty(l10n) : _buildMap(l10n, data),
+        );
   }
 
   /// Only the error and empty branches are pull-to-refreshable. The map itself
@@ -252,18 +260,18 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   /// drag — the gesture belongs where the user is otherwise stuck.
   Widget _buildError(AppL10n l10n) {
     return SimfRefreshableMessage(
-      onRefresh: _load,
+      onRefresh: _refresh,
       child: SimfErrorState(
         message: l10n.venueMapError,
         retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+        onRetry: () => ref.invalidate(venueMapDataProvider),
       ),
     );
   }
 
   Widget _buildEmpty(AppL10n l10n) {
     return SimfRefreshableMessage(
-      onRefresh: _load,
+      onRefresh: _refresh,
       child: SimfEmptyState(
         icon: Icons.map_outlined,
         message: l10n.venueMapEmpty,
@@ -271,10 +279,10 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     );
   }
 
-  Widget _buildMap(AppL10n l10n) {
+  Widget _buildMap(AppL10n l10n, VenueMapData data) {
     final isArabic = l10n.isArabic;
     final selected = _selected;
-    final selectedBooth = selected == null ? null : _boothFor(selected);
+    final selectedBooth = selected == null ? null : data.boothFor(selected);
 
     return Stack(
       children: <Widget>[
@@ -293,10 +301,10 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
               height: _canvas,
               child: Stack(
                 children: <Widget>[
-                  for (final node in _nodes)
+                  for (final node in data.nodes)
                     Positioned(
-                      left: (_positions[node.id] ?? Offset.zero).dx - 40,
-                      top: (_positions[node.id] ?? Offset.zero).dy - 40,
+                      left: (data.positions[node.id] ?? Offset.zero).dx - 40,
+                      top: (data.positions[node.id] ?? Offset.zero).dy - 40,
                       width: SimfTokens.venueMapScreenWidth,
                       child: VenueMapMarker(
                         node: node,
@@ -349,7 +357,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
               // `{base}/app/assets/BoothLogo/{id}/image` (the D-357 anonymous
               // asset route), exactly like the booths list.
               baseUrl: ref.watch(simfDataConfigProvider).baseUrl,
-              onDirect: () => _centreOn(selected),
+              onDirect: () => _centreOn(selected, data.positions),
               onDetails: selected.isBooth
                   ? () => _openDetails(selected, selectedBooth)
                   : null,
