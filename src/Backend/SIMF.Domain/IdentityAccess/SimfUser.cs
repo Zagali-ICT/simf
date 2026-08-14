@@ -50,7 +50,8 @@ public class SimfUser : IdentityUser<Guid>
 
     /// <summary>The avatar's <c>StoredFile</c> row in the App database, as a
     /// bare Guid and deliberately not a foreign key: SQL Server has no
-    /// cross-database FK syntax and D-157 forbids the reference anyway, so the
+    /// cross-database FK syntax, and the permanent Identity/App database split
+    /// forbids the reference anyway, so the
     /// service layer owns the link exactly as it does for
     /// <c>UserProfile.UserId</c>. Null means no avatar.
     ///

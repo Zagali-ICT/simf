@@ -200,7 +200,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<int>("AttemptCount")
                         .HasColumnType("int");
 
-                    b.Property<string>("Code")
+                    b.Property<string>("CodeHash")
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");

@@ -1019,7 +1019,7 @@ internal sealed partial class AdminAccountService(
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Purpose = AccountCodePurpose.PasswordReset,
-            Code = AccountCodeHasher.Hash(plaintext),
+            CodeHash = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(inviteLifetime),
         };

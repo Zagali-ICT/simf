@@ -401,7 +401,7 @@ Configurations are applied via `ApplyConfigurationsFromAssembly` from
 | `Permission` | Permissions | `Code`, `Page`, `Action`, `DisplayName` |
 | `RolePermission` | RolePermissions | composite (`RoleId`,`PermissionId`) |
 | `RefreshToken` | RefreshTokens | `UserId`, `TokenHash`, `ExpiresAt`, `RevokedAt`, `RotatedFromId` |
-| `AccountCode` | AccountCodes | `UserId`, `Purpose` (enum), `Code`, `ExpiresAt`, `ConsumedAt`, `AttemptCount` |
+| `AccountCode` | AccountCodes | `UserId`, `Purpose` (enum), `CodeHash` (keyed HMAC, never the code), `ExpiresAt`, `ConsumedAt`, `AttemptCount` |
 | `SecondFactorToken` | SecondFactorTokens | `UserId`, `TokenHash`, `Kind` (enum), `ExpiresAt`, `AttemptCount` |
 | `TotpRecoveryCode` | TotpRecoveryCodes | `UserId`, `CodeHash`, `ConsumedAt` |
 | `DeviceKey` | DeviceKeys | `UserId`, `PublicKey` (ES256 SPKI), `Algorithm`, `CurrentChallenge`, `ChallengeExpiresAt` |
