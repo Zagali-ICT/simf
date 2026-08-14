@@ -98,6 +98,9 @@ class OfflineBadge {
     } on InvalidCipherTextException {
       // The authentication tag did not verify: wrong key or altered bytes.
       return null;
+    // Catching an Error on purpose: this boundary must degrade rather than
+    // crash, and the platform raises an Error rather than an Exception here.
+    // ignore: avoid_catching_errors
     } on ArgumentError {
       return null;
     }

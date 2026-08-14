@@ -43,11 +43,11 @@ class _FakePrefs implements SimfPrefsStorage {
   };
 
   @override
-  String? getString(String key) => _s[key] is String ? _s[key] as String : null;
+  String? getString(String key) => _s[key] is String ? _s[key]! as String : null;
   @override
   Future<bool> setString(String key, String value) async { _s[key] = value; return true; }
   @override
-  bool? getBool(String key) => _s[key] is bool ? _s[key] as bool : null;
+  bool? getBool(String key) => _s[key] is bool ? _s[key]! as bool : null;
   @override
   Future<bool> setBool(String key, bool value) async { _s[key] = value; return true; }
   @override

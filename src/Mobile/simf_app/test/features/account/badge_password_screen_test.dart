@@ -34,6 +34,10 @@ class _FakeController extends AuthController {
     lastQrId = qrId;
     lastPassword = password;
     if (failure != null) {
+      // AuthFailure is a sealed RESULT type: production returns it, never
+      // throws. A fake repository throws it to drive the failure path a screen
+      // handles, so it is deliberately neither an Exception nor an Error.
+      // ignore: only_throw_errors
       throw failure!;
     }
     if (awaitingOtp) {

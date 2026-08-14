@@ -22,10 +22,10 @@ final _client = SimfApiClient.build(
 /// real `recordScanOrQueue` / `flushPending` over a real `GateScanQueue`.
 class _StubGates extends GatesRepository {
   _StubGates(
-    SimfApiClient client,
-    GateScanQueue queue,
-    GateOfflineConfigCache offlineConfig,
-  ) : super(client, queue, offlineConfig);
+    super.client,
+    super.queue,
+    super.offlineConfig,
+  );
 
   /// When set, the next `recordScan` throws it; otherwise it returns
   /// `successResult`. A network failure is `ApiFailure(httpStatus: null)`.

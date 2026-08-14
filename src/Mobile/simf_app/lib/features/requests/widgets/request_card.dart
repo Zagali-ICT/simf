@@ -42,6 +42,10 @@ class _RequestCardState extends State<RequestCard> {
     final statusColor = requestStatusColor(item.status);
     final subtitle = item.localizedSubtitle(isArabic: widget.isArabic);
 
+    // NOT a DecoratedBox. Container insets its child by BoxDecoration.padding,
+    // which is the border dimensions, and this decoration has a border — the
+    // swap moved a golden by 2.42% when it was tried (2026-08-14).
+    // ignore: use_decorated_box
     return Container(
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
