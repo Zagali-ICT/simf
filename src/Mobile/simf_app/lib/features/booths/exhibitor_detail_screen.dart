@@ -22,6 +22,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// [EntityDetailScaffold]: the exhibitor's logo + name, the city·country line,
 /// the tier pill, the stand-code→map row, the "نبذة عن العارض" about, and the
 /// website row. Reads `GET /app/booths/{id}` (the detail extended in Wave 3).
+///
+/// Route: `RouteNames.exhibitorDetail`.
+/// Data: [exhibitorDetailProvider], [simfDataConfigProvider].
+/// Perf: no list — a single-screen layout.
 class ExhibitorDetailScreen extends ConsumerWidget {
   const ExhibitorDetailScreen({required this.boothId, super.key});
 

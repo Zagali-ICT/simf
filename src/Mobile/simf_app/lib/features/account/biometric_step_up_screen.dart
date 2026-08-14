@@ -31,6 +31,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// `build` split into the shared [AccountSubHeader] (D-658) / `_buildContent` /
 /// `_buildSubmitButton` / `_buildResendRow`; the body + CTA capped by
 /// [MaxWidthBody].
+///
+/// Route: `RouteNames.biometricStepUp`.
+/// Data: [authControllerProvider].
+/// Perf: no list — a single-screen layout.
 class BiometricStepUpScreen extends ConsumerStatefulWidget {
   const BiometricStepUpScreen({super.key});
 

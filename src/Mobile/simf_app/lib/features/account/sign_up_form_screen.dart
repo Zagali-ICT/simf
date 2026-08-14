@@ -49,6 +49,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// explicit accept, not a link. This is an owner-mandated addition with no
 /// Figma frame of its own (168:3454 predates it); the golden is re-locked with
 /// the box present. Consent stays client-side (D8) — no wire-contract change.
+///
+/// Route: `RouteNames.signUpForm`.
+/// Data: [authControllerProvider], [localeControllerProvider].
+/// Perf: no list — a single-screen layout.
 class SignUpFormScreen extends ConsumerStatefulWidget {
   const SignUpFormScreen({super.key});
 

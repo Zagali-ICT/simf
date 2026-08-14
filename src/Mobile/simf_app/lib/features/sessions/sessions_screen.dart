@@ -35,6 +35,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// section widgets live in `widgets/` (sessions_search_field,
 /// programme_day_strip, programme_day_banner, session_type_tabs,
 /// session_timeline_row).
+///
+/// Route: `RouteNames.sessions`.
+/// Data: [sessionsRepositoryProvider], [simfDataConfigProvider].
+/// Perf: lazy — builds children on demand (SliverList).
 class SessionsScreen extends ConsumerStatefulWidget {
   const SessionsScreen({super.key});
 

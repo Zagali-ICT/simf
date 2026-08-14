@@ -21,6 +21,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// sponsor's logo + name, the city·country line, the tier pill, the
 /// "نبذة عن الراعي" about, and the website row. No stand-code row (sponsors are
 /// not on the venue map). Reads `GET /app/sponsors/{id}` (Wave 3).
+///
+/// Route: `RouteNames.sponsorDetail`.
+/// Data: [simfDataConfigProvider], [sponsorDetailProvider].
+/// Perf: no list — a single-screen layout.
 class SponsorDetailScreen extends ConsumerWidget {
   const SponsorDetailScreen({required this.sponsorId, super.key});
 

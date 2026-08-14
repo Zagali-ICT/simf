@@ -40,6 +40,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// `POST …/seats/move`. The move is atomic server-side, so a lost race leaves
 /// the visitor on the seat they already had; the picker says so and stays
 /// usable.
+///
+/// Route: `RouteNames.seatPicker`.
+/// Data: [seatMapProvider], [seatMapRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class SeatPickerScreen extends ConsumerStatefulWidget {
   const SeatPickerScreen({required this.sessionId, super.key});
 

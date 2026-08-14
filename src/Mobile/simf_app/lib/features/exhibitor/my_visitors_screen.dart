@@ -23,6 +23,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// sharing). The two lists stay separate pending an owner ruling, so the title
 /// names the booth and a [SimfPageNote] states the difference in both
 /// languages.
+///
+/// Route: `RouteNames.myVisitors`.
+/// Data: [exhibitorRepositoryProvider].
+/// Perf: lazy — builds children on demand (ListView.separated).
 class MyVisitorsScreen extends ConsumerStatefulWidget {
   const MyVisitorsScreen({super.key});
 

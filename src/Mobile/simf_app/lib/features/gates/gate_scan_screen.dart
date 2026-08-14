@@ -26,6 +26,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// with the holder / gate / direction → "سكان مرة أخرى". The دخول/خروج choice
 /// is sent to the server and honoured for a **Both**-mode gate; a fixed In/Out
 /// gate locks the toggle to its one direction (no CP round-trip to switch).
+///
+/// Route: `RouteNames.gateScanner`.
+/// Data: [gatesRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class GateScanScreen extends ConsumerStatefulWidget {
   const GateScanScreen({super.key, this.enableCamera = true});
 

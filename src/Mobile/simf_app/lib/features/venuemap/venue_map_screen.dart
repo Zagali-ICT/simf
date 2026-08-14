@@ -31,6 +31,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// The canvas geometry is **not** mirrored in RTL (physical venue
 /// coordinates, L-3). The old legend strip gave way to the frame's info
 /// card (the card names the selection).
+///
+/// Route: `RouteNames.venueMap`.
+/// Data: [simfDataConfigProvider], [venueMapRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class VenueMapScreen extends ConsumerStatefulWidget {
   const VenueMapScreen({this.targetBoothId, super.key});
 

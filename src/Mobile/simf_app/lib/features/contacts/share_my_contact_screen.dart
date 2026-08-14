@@ -21,6 +21,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// shipped My-Area export (`GET /app/account/contact-card.vcf`). The share
 /// token is separate from the entry `QrId`, so scanning at the gate never
 /// harvests the card. UI is interim (final visuals from SIMF-VID-001).
+///
+/// Route: `RouteNames.shareMyContact`.
+/// Data: [contactsRepositoryProvider], [myAreaRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class ShareMyContactScreen extends ConsumerStatefulWidget {
   const ShareMyContactScreen({super.key});
 

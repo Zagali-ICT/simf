@@ -21,6 +21,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// a vCard (`GET /app/contacts/{id}/vcard`) or **remove** it (`DELETE
 /// /app/contacts/{id}`, soft-delete). The app-bar scan action opens the scanner
 /// to add more. UI is interim (final visuals from SIMF-VID-001).
+///
+/// Route: `RouteNames.myContacts`.
+/// Data: [contactsRepositoryProvider].
+/// Perf: lazy — builds children on demand (ListView.builder).
 class MyContactsScreen extends ConsumerStatefulWidget {
   const MyContactsScreen({super.key});
 

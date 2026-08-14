@@ -31,6 +31,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// profile's nationality picks the field — a Saudi national edits `saudiMobile`
 /// (05XXXXXXXX / +9665XXXXXXXX), everyone else `internationalMobile` (E.164).
 /// The number itself always renders LTR.
+///
+/// Route: `RouteNames.myMobile`.
+/// Data: [profileRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class MyMobileScreen extends ConsumerStatefulWidget {
   const MyMobileScreen({super.key});
 

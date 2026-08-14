@@ -31,6 +31,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// The avatar tile renders the speaker's uploaded SpeakerPhoto asset (D-357),
 /// falling back to the gold anchor glyph when none; the country renders as
 /// text.
+///
+/// Route: `RouteNames.speakers`.
+/// Data: [simfDataConfigProvider], [speakersRepositoryProvider].
+/// Perf: mixed — ListView.separated builds on demand; ListView builds every
+///       child up front.
 class SpeakersScreen extends ConsumerStatefulWidget {
   const SpeakersScreen({super.key});
 

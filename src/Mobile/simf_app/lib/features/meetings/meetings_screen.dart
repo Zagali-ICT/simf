@@ -30,6 +30,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// meetings subset; pull-to-refresh. Contract: reads the D-219-frozen
 /// my-requests feed; VIP enforced server-side (the meeting-request endpoint
 /// 403s non-VIP) and mirrored here in-screen.
+///
+/// Route: `RouteNames.meetings`.
+/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
+///       [myMeetingRequestsProvider], [simfDataConfigProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class MeetingsScreen extends ConsumerStatefulWidget {
   const MeetingsScreen({super.key});
 

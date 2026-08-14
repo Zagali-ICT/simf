@@ -64,6 +64,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// optional id-document / avatar uploads). Perf: one eager lookup load, no
 /// scrolling list. Contract: `StaffWalkInRequest` / `StaffWalkInResult` JSON is
 /// frozen (D-219).
+///
+/// Route: `RouteNames.staffRegisterVisitor`.
+/// Data: [profileRepositoryProvider], [staffRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class StaffRegisterVisitorScreen extends ConsumerStatefulWidget {
   const StaffRegisterVisitorScreen({super.key});
 

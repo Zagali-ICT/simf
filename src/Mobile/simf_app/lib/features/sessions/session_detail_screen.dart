@@ -66,6 +66,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// after hall check-in/out (plus the day / programme-end prompts). This removes
 /// the prompt that used to appear off the sessions list/detail for
 /// non-attendees.
+///
+/// Route: `RouteNames.sessionDetail`.
+/// Data: [authControllerProvider], [myModeratedSessionsProvider],
+///       [seatMapRepositoryProvider], [sessionDetailRepositoryProvider],
+///       [simfDataConfigProvider].
+/// Perf: no list — a single-screen layout.
 class SessionDetailScreen extends ConsumerStatefulWidget {
   const SessionDetailScreen({required this.sessionId, super.key});
 

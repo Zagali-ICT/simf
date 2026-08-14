@@ -32,6 +32,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Authority is the per-session `SessionModerator` grant (or Administrator),
 /// **not** the mobile `AppRole.moderator` — a moderator without the grant gets
 /// a 403, shown as the "not a moderator for this session" state.
+///
+/// Route: `RouteNames.sessionModerate`.
+/// Data: [moderationRepositoryProvider].
+/// Perf: lazy — builds children on demand (ListView.builder).
 class SessionModerateScreen extends ConsumerStatefulWidget {
   const SessionModerateScreen({required this.sessionId, super.key});
 

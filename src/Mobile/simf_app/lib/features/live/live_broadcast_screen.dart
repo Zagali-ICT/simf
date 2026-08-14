@@ -56,6 +56,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// feed URL is sniffed by `YoutubeUrl`: a YouTube link plays via the IFrame
 /// player, anything else (HLS/MP4) via `video_player`. The player widget owns
 /// its own controller lifecycle, so swapping the active URL just rebuilds it.
+///
+/// Route: `RouteNames.liveBroadcast`.
+/// Data: [authControllerProvider], [orgProfileProvider],
+///       [sessionRatePromptTrackerProvider], [siteSettingsProvider].
+/// Perf: no list — a single-screen layout.
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
   const LiveBroadcastScreen({this.sessionId, this.liveUrl, super.key});
 

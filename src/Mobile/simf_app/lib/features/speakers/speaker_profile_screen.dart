@@ -35,6 +35,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// the `MeetingRequestSheet` (the endpoint enforces the same VIP rule); the
 /// opted-in social links (only when `allowsDataSharing`); and the speaker's
 /// sessions (`SpeakerSessionRow`, tap → session detail 17).
+///
+/// Route: `RouteNames.speakerProfile`.
+/// Data: [authControllerProvider], [currentUserMeetingAccessProvider],
+///       [simfDataConfigProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class SpeakerProfileScreen extends ConsumerStatefulWidget {
   const SpeakerProfileScreen({required this.speakerId, super.key});
 

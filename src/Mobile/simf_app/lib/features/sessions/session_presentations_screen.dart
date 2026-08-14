@@ -24,6 +24,10 @@ import 'package:simf_app/features/sessions/widgets/presentations_body.dart';
 /// ([programmeSessionsProvider]) by `sessionId` and reads its
 /// `hasPublishedSummary` — matching the summaries-list filter exactly
 /// ([presentationSummaryReady]).
+///
+/// Route: `RouteNames.sessionPresentations`.
+/// Data: [presentationsProvider], [programmeSessionsByIdProvider].
+/// Perf: no list — a single-screen layout.
 class SessionPresentationsScreen extends ConsumerStatefulWidget {
   const SessionPresentationsScreen({super.key});
 

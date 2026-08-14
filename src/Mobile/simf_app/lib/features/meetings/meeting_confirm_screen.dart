@@ -33,6 +33,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// double-opt-in link lands on the Website's anonymous
 /// `/meeting/confirm?token=` page instead; driving a speaker meeting through
 /// here is a 403/409 by design, which is why the copy names the delegation.
+///
+/// Route: `RouteNames.meetingConfirm`.
+/// Data: [delegationsRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class MeetingConfirmScreen extends ConsumerStatefulWidget {
   const MeetingConfirmScreen({required this.requestId, super.key});
 

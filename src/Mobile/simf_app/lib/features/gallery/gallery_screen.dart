@@ -32,6 +32,10 @@ export 'data/media_repository.dart';
 /// loading spinner and a graceful fall-back to the kind icon when there is no
 /// bitmap or the fetch fails. Video *playback* (opening the external
 /// `VideoUrl`) is still deferred.
+///
+/// Route: `RouteNames.gallery`.
+/// Data: [mediaItemsProvider], [simfDataConfigProvider].
+/// Perf: no list — a single-screen layout.
 class GalleryScreen extends ConsumerWidget {
   const GalleryScreen({super.key});
 

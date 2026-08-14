@@ -27,6 +27,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// centred title header, a vertically-centred hero (a state-coloured ring
 /// around the state icon, a white headline, a beige message), the gold primary
 /// button, and a "تسجيل الخروج" link beneath it.
+///
+/// Route: `RouteNames.registrationStatus`.
+/// Data: [authControllerProvider].
+/// Perf: no list — a single-screen layout.
 class RegistrationStatusScreen extends ConsumerStatefulWidget {
   const RegistrationStatusScreen({super.key});
 

@@ -11,6 +11,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// The full news article (Page_029 detail, `GET /app/news/{id}`). Pushed from the
 /// news list via an imperative route (the screen has no go_router entry).
+///
+/// Route: `RouteNames.newsArticle`.
+/// Data: [newsRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class NewsArticleScreen extends ConsumerStatefulWidget {
   const NewsArticleScreen({required this.newsId, super.key});
 

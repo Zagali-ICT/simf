@@ -83,6 +83,10 @@ enum _NotifFilter { all, sessions, vip }
 /// the list grouped by **اليوم / أمس / date**, and a per-severity category icon
 /// with an unread dot. Tapping an unread row marks it read then refreshes; the
 /// trailing "mark all read" action clears every unread.
+///
+/// Route: `RouteNames.notifications`.
+/// Data: [notificationsRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 

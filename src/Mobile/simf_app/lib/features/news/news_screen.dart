@@ -20,6 +20,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// the news list — each row the horizontal frame-1049:12736 card (thumbnail +
 /// gold date + title; no excerpt) — and tapping a row pushes the article screen
 /// (`GET /app/news/{id}`).
+///
+/// Route: `RouteNames.news`.
+/// Data: [newsListProvider], [simfDataConfigProvider].
+/// Perf: lazy — builds children on demand (ListView.separated).
 class NewsScreen extends ConsumerWidget {
   const NewsScreen({super.key});
 

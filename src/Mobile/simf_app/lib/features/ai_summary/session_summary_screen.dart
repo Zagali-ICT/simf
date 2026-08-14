@@ -40,6 +40,11 @@ enum _SummaryTab { keyPoints, recommendations, speakers }
 /// The summary is **Committee-generated** in the Control Panel (D-237/D-472) —
 /// this screen is a read-only consumer, so the gold button reveals the
 /// already-published text rather than triggering generation.
+///
+/// Route: `RouteNames.aiSummary`.
+/// Data: [programmeSessionsProvider], [sessionSummaryRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class AiSummaryScreen extends ConsumerStatefulWidget {
   const AiSummaryScreen({this.sessionId, super.key});
 

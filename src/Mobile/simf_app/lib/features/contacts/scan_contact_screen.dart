@@ -21,6 +21,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// saving yourself is a 400). A scanned QR that is a **plain vCard with no SIMF
 /// share token** (a foreign phone's contact, an old QR) can't resolve to a live
 /// card, so it is offered straight to the phone's address book instead (D-744).
+///
+/// Route: `RouteNames.scanContact`.
+/// Data: [contactsRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class ScanContactScreen extends ConsumerStatefulWidget {
   const ScanContactScreen({super.key, this.enableCamera = true});
 

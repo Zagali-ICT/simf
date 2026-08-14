@@ -39,6 +39,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// المزيد rows (بطاقتي الذكية، اعدادات الحساب). The language toggle, the
 /// (inert) theme tile, the calendar export and sign-out moved to the shell's
 /// side drawer (D-396).
+///
+/// Route: `RouteNames.myArea`.
+/// Data: [authControllerProvider], [avatarBustProvider],
+///       [myAreaRepositoryProvider], [referenceNumberProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class MyAreaScreen extends ConsumerStatefulWidget {
   const MyAreaScreen({super.key});
 

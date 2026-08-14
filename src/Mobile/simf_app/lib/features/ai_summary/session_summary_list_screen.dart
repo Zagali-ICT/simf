@@ -20,6 +20,10 @@ import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 /// details (#34). Reuses the cached programme (`programmeSessionsProvider`);
 /// the booked set + favourites come from the approved-account reads (empty for
 /// a guest).
+///
+/// Route: `RouteNames.sessionSummaryList`.
+/// Data: [programmeSessionsProvider], [sessionFavouritesProvider].
+/// Perf: lazy — builds children on demand (ListView.builder).
 class SessionSummaryListScreen extends ConsumerStatefulWidget {
   const SessionSummaryListScreen({super.key});
 

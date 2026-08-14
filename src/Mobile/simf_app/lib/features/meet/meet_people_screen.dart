@@ -28,6 +28,10 @@ export 'data/meet_repository.dart';
 /// /app/networking/partner-directory`. Reuses the speakers/sponsors list visual
 /// language via the shared [SimfIdentityCell] (no bespoke Figma node;
 /// owner-approved reuse of the existing list chrome).
+///
+/// Route: `RouteNames.meetPeople`.
+/// Data: [partnerDirectoryProvider], [simfDataConfigProvider].
+/// Perf: lazy — builds children on demand (ListView.separated).
 class MeetPeopleScreen extends ConsumerWidget {
   const MeetPeopleScreen({super.key});
 

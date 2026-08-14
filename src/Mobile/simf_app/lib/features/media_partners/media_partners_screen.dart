@@ -29,6 +29,10 @@ export 'data/media_partners_repository.dart';
 /// route `…/app/assets/MediaPartnerLogo/{id}/image` (the D-357 unified
 /// media-asset pipeline) with a loading spinner and a graceful fall-back to the
 /// partner's initials on a gold tile when there is no logo or the fetch fails.
+///
+/// Route: `RouteNames.mediaPartners`.
+/// Data: [mediaPartnersProvider], [simfDataConfigProvider].
+/// Perf: lazy — builds children on demand (GridView.builder).
 class MediaPartnersScreen extends ConsumerWidget {
   const MediaPartnersScreen({super.key});
 

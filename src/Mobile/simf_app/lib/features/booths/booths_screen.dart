@@ -32,6 +32,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///   renders the booth's own `BoothLogo` asset (D-357) via
 ///   `{base}/app/assets/BoothLogo/{booth.id}/image`, falling back to the booth
 ///   short-name initials when the booth has no uploaded logo.
+///
+/// Route: `RouteNames.booths`.
+/// Data: [simfDataConfigProvider], [venueMapRepositoryProvider].
+/// Perf: lazy — builds children on demand (ListView.separated).
 class BoothsScreen extends ConsumerStatefulWidget {
   const BoothsScreen({super.key});
 

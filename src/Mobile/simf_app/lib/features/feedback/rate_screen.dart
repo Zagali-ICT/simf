@@ -25,6 +25,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// optional overall star row, the server-defined grouped + flat questions (each
 /// a 1–5 star bar) and the optional comment box, prefilled from any existing
 /// submission. `GET /app/feedback/form` then `POST /app/feedback/submit`.
+///
+/// Route: `RouteNames.rate`.
+/// Data: [feedbackRepositoryProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class RateScreen extends ConsumerStatefulWidget {
   const RateScreen({
     super.key,

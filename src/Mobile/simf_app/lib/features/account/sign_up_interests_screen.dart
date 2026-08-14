@@ -34,6 +34,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// `SimfTokens` (`chipBorderNavy` added); the pill extracted to [InterestChip];
 /// header to the shared [AccountSubHeader] (D-658); the body capped by
 /// [MaxWidthBody]. Behaviour + render unchanged — the 505:1083 golden locks it.
+///
+/// Route: `RouteNames.signUpInterests`.
+/// Data: [profileRepositoryProvider].
+/// Perf: no list — a single-screen layout.
 class SignUpInterestsScreen extends ConsumerStatefulWidget {
   const SignUpInterestsScreen({super.key, this.draft, this.editMode = false});
 

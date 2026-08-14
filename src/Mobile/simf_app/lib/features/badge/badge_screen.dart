@@ -27,6 +27,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// bordered **امسح لإضافة شخص** action → the existing contact-QR scanner
 /// (`/contacts/scan`, FDS-014). A pending account (null `qrId`) keeps the
 /// pending state; load failures keep the retry surface (Page_014 L-1).
+///
+/// Route: `RouteNames.badge`.
+/// Data: [authControllerProvider], [myAreaRepositoryProvider],
+///       [referenceNumberProvider].
+/// Perf: ListView builds every child up front — correct for a short static
+///       page, a defect on a data feed.
 class BadgeScreen extends ConsumerStatefulWidget {
   const BadgeScreen({super.key});
 
