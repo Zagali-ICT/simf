@@ -837,30 +837,32 @@ stages:
 # at all - a skipped job still writes to the environment's history and would
 # read as a deployment that happened.
 #
-# THE ENVIRONMENTS ARE NAMED BARE, WITH NO `resourceType`. READ THIS BEFORE
-# "FIXING" IT, because the obvious improvement is the thing that broke deploys
-# on 2026-08-14 (D-891).
+# ################## THE NAMES LIE. READ THIS BEFORE EDITING. ##################
 #
-# Neither environment has a VM resource registered, so each is what the Azure
-# docs call "an abstract shell to record deployment history" and the steps run
-# on the POOL agent declared at the top of this file. The `Default` pool has an
-# agent on BOTH SIMF servers, so a deployment job lands on whichever is free.
+#   `SIMF-Prod`  is the PRE-PRODUCTION server.
+#   `SIM-RNSF`   is PRODUCTION (SIMF APP 01).
 #
-# THAT IS A REAL HAZARD AND IT IS NOT FIXED: `DeployProduction` can run on the
-# pre-production machine and vice versa, because nothing here binds a job to a
-# server. It has always been this way; collapsing four jobs to two did not
-# introduce it.
+# That is not a typo and not a mistake in this file - those are the environment
+# names as registered in the portal, and the one that reads like production is
+# not. Anyone "correcting" this mapping on sight will deploy straight to
+# production while believing they are rehearsing. The job names and displayNames
+# below say which is which; trust those, not the environment string.
+# #############################################################################
 #
-# Adding `resourceType: virtualMachine` IS the correct fix - "Any steps that you
-# define in a deployment job with a virtual machine resource runs against that
-# virtual machine and not against the agent in the pool" (Azure Pipelines,
-# Deployment jobs). But it requires each server to be REGISTERED as a VM
-# resource in its environment first. Add it before that is done and every deploy
-# fails with "could not be found", which is exactly what happened.
+# Both environments have their server registered as a VM resource, so the
+# deployment steps run ON that machine. The names are used BARE, without
+# `resourceType: virtualMachine`. That is deliberate, and the history is worth
+# keeping (D-891): the explicit form was added first, before the VM resources
+# existed, and every deploy failed with "Environment could not be found" until
+# it was reverted. It is safe to add now that the resources are registered, but
+# it is an improvement to make and verify on its own, not to slip in beside a
+# name change.
 #
-# So the order is: register both servers as VM resources (deploy/README.md),
-# confirm they appear on each environment's Resources tab, and only then restore
-# the two `resourceType: virtualMachine` lines. Not before.
+# What the explicit form would buy: if a VM resource is ever removed or
+# unregistered, the bare form SILENTLY falls back to running on the `Default`
+# pool agent - which has an agent on both servers, so the deploy would land on
+# an arbitrary machine and report success. `resourceType` turns that silent
+# mis-deploy into a loud failure.
 - ${{ if or(eq(parameters.deployPreProduction, true), eq(parameters.deployProduction, true)) }}:
   - stage: Deploy
     displayName: 'Deploy to IIS'
@@ -869,8 +871,9 @@ stages:
     jobs:
     - ${{ if eq(parameters.deployPreProduction, true) }}:
       - deployment: DeployPreProduction
-        displayName: 'Pre-production server'
-        environment: 'Pre-production'
+        displayName: 'Pre-production server (SIMF-Prod)'
+        # NOT a typo, and NOT production. See the naming warning above.
+        environment: 'SIMF-Prod'
         strategy:
           runOnce:
             deploy:
@@ -879,8 +882,9 @@ stages:
 
     - ${{ if eq(parameters.deployProduction, true) }}:
       - deployment: DeployProduction
-        displayName: 'Production server (SIMF APP 01)'
-        environment: 'Production'
+        displayName: 'Production server (SIMF APP 01 / SIM-RNSF)'
+        # THIS is production. See the naming warning above.
+        environment: 'SIM-RNSF'
         strategy:
           runOnce:
             deploy:
