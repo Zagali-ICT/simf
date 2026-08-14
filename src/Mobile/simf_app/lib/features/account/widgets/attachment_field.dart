@@ -9,8 +9,9 @@ import 'package:simf_app/features/account/widgets/attach_box.dart';
 /// A file/photo attachment field (Figma 168:2977): a label, an optional hint,
 /// then either the empty 56px attach box or — once [bytes] is set — a preview
 /// row (thumbnail + name + action). Shared by the ID-document and face-photo
-/// fields; [round] makes the thumbnail a circle (face) vs a rounded square (ID).
-/// The screen owns the state + the pick/remove logic ([onAttach]/[onAction]).
+/// fields; [round] makes the thumbnail a circle (face) vs a rounded square
+/// (ID). The screen owns the state + the pick/remove logic
+/// ([onAttach]/[onAction]).
 class AttachmentField extends StatelessWidget {
   const AttachmentField({
     required this.label,

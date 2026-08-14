@@ -85,7 +85,8 @@ class MeetingCard extends StatelessWidget {
     );
   }
 
-  // Row 1 — the kind headline over the rank line, with the flag badge at the end.
+  // Row 1 — the kind headline over the rank line, with the flag badge at the
+  // end.
   Widget _headlineRow() {
     final flag = countryFlagEmoji(item.countryId);
     final rank = item.localizedRank(isArabic: isArabic)?.trim() ?? '';
@@ -203,8 +204,9 @@ class MeetingCard extends StatelessWidget {
     );
   }
 
-  // R9 — the request's status pill (status colour at a soft fill + border with the
-  // localized status label), reusing the requests-feed status palette + opacities.
+  // R9 — the request's status pill (status colour at a soft fill + border with
+  // the localized status label), reusing the requests-feed status palette +
+  // opacities.
   Widget _statusPill() {
     final color = requestStatusColor(item.status);
     return Container(

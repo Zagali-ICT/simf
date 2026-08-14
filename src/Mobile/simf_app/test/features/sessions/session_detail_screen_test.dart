@@ -36,7 +36,8 @@ SessionDetail _detail({
       hallId: 'h1',
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة الرئيسية',
-      // Default: an upcoming session (future) → the D-714 pre-session ask label.
+      // Default: an upcoming session (future) → the D-714 pre-session ask
+      // label.
       start: start ?? DateTime.utc(2026, 11, 23, 6),
       end: end ?? DateTime.utc(2026, 11, 23, 7),
       speakers: <SessionSpeaker>[
@@ -405,11 +406,11 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
-        // The check-in strip mounts on any session at or past its arrival window,
-        // so without this a widget test would resolve the REAL SimfApiClient and
-        // fire a live GET at test.local. flutter_test's mock HttpClient happens to
-        // short-circuit it today, which made the omission invisible rather than
-        // harmless.
+        // The check-in strip mounts on any session at or past its arrival
+        // window, so without this a widget test would resolve the REAL
+        // SimfApiClient and fire a live GET at test.local. flutter_test's mock
+        // HttpClient happens to short-circuit it today, which made the omission
+        // invisible rather than harmless.
         hallAttendanceRepositoryProvider.overrideWithValue(_FakeAttendance()),
         sessionDetailRepositoryProvider.overrideWithValue(repo),
         seatMapRepositoryProvider
@@ -564,8 +565,8 @@ void main() {
       // Speakers section + a speaker card.
       expect(find.text('Speakers'), findsOneWidget);
       expect(find.text('Dr Reef'), findsOneWidget);
-      // The ask-the-host card (shown to everyone — Figma 1056:12876). This is an
-      // upcoming session, so D-714 (GAP-2) shows the pre-session ask label.
+      // The ask-the-host card (shown to everyone — Figma 1056:12876). This is
+      // an upcoming session, so D-714 (GAP-2) shows the pre-session ask label.
       expect(find.text('Ask a question before it starts'), findsOneWidget);
       // The two CTAs.
       expect(
@@ -725,8 +726,8 @@ void main() {
       // D-485 — the pending-approval hint replaced the badge hint.
       expect(find.text('Pending approval'), findsOneWidget);
       // Owner 2026-06-30 — cancel is a plain white line under the CTA row (was
-      // the red link inside the card). A13 — it reads "Cancel booking", matching
-      // the dialog it opens (which is titled "Cancel booking?").
+      // the red link inside the card). A13 — it reads "Cancel booking",
+      // matching the dialog it opens (which is titled "Cancel booking?").
       expect(
         find.widgetWithText(TextButton, 'Cancel booking'),
         findsOneWidget,
@@ -1049,8 +1050,8 @@ void main() {
       );
 
       expect(find.text('My seat'), findsNothing);
-      // Owner 2026-06-30 — no section heading now; one gold join button, unified
-      // label for both modes. Assigned-seat still opens the picker.
+      // Owner 2026-06-30 — no section heading now; one gold join button,
+      // unified label for both modes. Assigned-seat still opens the picker.
       final cta = find.widgetWithText(FilledButton, 'Join the session');
       expect(cta, findsOneWidget);
       await tester.tap(cta);
@@ -1193,11 +1194,11 @@ void main() {
     });
   });
 
-  // Owner 2026-07-22 — the session detail no longer opens the rate form when you
-  // leave an ended session (merely viewing a session is not attending it). Rate
-  // now comes only from watching the live stream (live_broadcast_screen) or the
-  // attendance-gated rate notification. This guards the removed after-view
-  // auto-prompt from regressing back in.
+  // Owner 2026-07-22 — the session detail no longer opens the rate form when
+  // you leave an ended session (merely viewing a session is not attending it).
+  // Rate now comes only from watching the live stream (live_broadcast_screen)
+  // or the attendance-gated rate notification. This guards the removed
+  // after-view auto-prompt from regressing back in.
   group('no rate prompt from the session detail', () {
     testWidgets('an approved attendee leaving an ENDED session is NOT prompted '
         'to rate (rate comes from watching / attendance, not from viewing)',

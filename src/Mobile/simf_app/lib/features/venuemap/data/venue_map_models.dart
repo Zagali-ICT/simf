@@ -4,7 +4,8 @@ import 'package:simf_app/core/utils/bilingual.dart';
 /// The venue-map node kind — mirrors `SIMF.Common.Enums.VenueMapNodeKind`
 /// (frozen: Hall=0, Zone=1, Booth=2, PointOfInterest=3). [fromJson] decodes
 /// tolerantly — the wire value is an int today, but an unknown / string value
-/// resolves to [pointOfInterest] (a generic marker) rather than throwing (D-219).
+/// resolves to [pointOfInterest] (a generic marker) rather than throwing
+/// (D-219).
 enum VenueMapNodeKind {
   hall(0, 'Hall'),
   zone(1, 'Zone'),
@@ -140,7 +141,8 @@ class BoothSummary {
   final String? sectorArabic;
   final String? hallId;
   // D-432 — the hall display name + booth-officer contact now ship on the wire
-  // (server resolves the officer Contact-first, falling back to inline columns).
+  // (server resolves the officer Contact-first, falling back to inline
+  // columns).
   final String? hallName;
   final String? hallNameArabic;
   final String? officerName;
@@ -149,8 +151,9 @@ class BoothSummary {
 
   // P6 — D-440: the exhibitor's Contact id, the owner of the CompanyLogo asset.
   // D-764: the booth card no longer uses this (it renders the booth's own
-  // BoothLogo via booth.id); it stays on the wire and the exhibitor-detail screen
-  // still reads it (via BoothDetail) as the CompanyLogo fallback for its own logo.
+  // BoothLogo via booth.id); it stays on the wire and the exhibitor-detail
+  // screen still reads it (via BoothDetail) as the CompanyLogo fallback for its
+  // own logo.
   final String? exhibitorContactId;
 
   // D-456 — the exhibitor company's country (ISO 3166-1 numeric) for the corner
@@ -280,7 +283,8 @@ class BoothDetail {
 
   // The linked exhibitor's own id — the owner of the exhibitor's ExhibitorLogo
   // asset (the app renders the exhibitor's own logo, falling back to the legacy
-  // CompanyLogo via [exhibitorContactId]). Null when the booth has no exhibitor.
+  // CompanyLogo via [exhibitorContactId]). Null when the booth has no
+  // exhibitor.
   final String? exhibitorId;
 
   String localizedName({required bool isArabic}) {

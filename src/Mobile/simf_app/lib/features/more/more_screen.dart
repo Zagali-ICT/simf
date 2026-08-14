@@ -35,12 +35,12 @@ final _moreProfileProvider =
 });
 
 /// Page 041 — المزيد · More (#41, `/more`, public). Pixel-parity to KSA Figma
-/// frame `1129:17224`: the navy [SimfPageShell] shell, a منطقتي profile header card
-/// (signed-in), three grouped sections (معلومات الملتقى / الإعدادات / قانوني)
-/// of bordered nav rows, the تسجيل الخروج link (signed-in) and the static
-/// version line. Unbuilt entries (Forum guide / FAQ / presentations / Contact
-/// us) route to the ComingSoon placeholder; اكتشف السعودية opens VisitSaudi; the
-/// اللغة row shows the current language and toggles it (D-464).
+/// frame `1129:17224`: the navy [SimfPageShell] shell, a منطقتي profile header
+/// card (signed-in), three grouped sections (معلومات الملتقى / الإعدادات /
+/// قانوني) of bordered nav rows, the تسجيل الخروج link (signed-in) and the
+/// static version line. Unbuilt entries (Forum guide / FAQ / presentations /
+/// Contact us) route to the ComingSoon placeholder; اكتشف السعودية opens
+/// VisitSaudi; the اللغة row shows the current language and toggles it (D-464).
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
 
@@ -50,9 +50,10 @@ class MoreScreen extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider);
     final signedIn = auth is AuthStateSignedIn;
     // D-519 — role-filter the attendee-only rows so a focused Staff/Moderator
-    // never sees a dead link here (the slide-in MoreDrawer filters identically).
-    // D-666 — a not-yet-approved account presents as guest, so the attendee-only
-    // rows (rate) hide for it just like they do for a true guest.
+    // never sees a dead link here (the slide-in MoreDrawer filters
+    // identically). D-666 — a not-yet-approved account presents as guest, so
+    // the attendee-only rows (rate) hide for it just like they do for a true
+    // guest.
     final role = signedIn ? auth.session.user.effectiveAppRole : AppRole.guest;
     final profile =
         signedIn ? ref.watch(_moreProfileProvider).asData?.value : null;
@@ -80,10 +81,11 @@ class MoreScreen extends ConsumerWidget {
                     profile?.identity.localizedName(isArabic: l10n.isArabic) ??
                         auth.session.user.displayName,
                 tier: profile?.identity.localizedTier(isArabic: l10n.isArabic),
-                // My Area IS the Profile tab (RouteNames.myArea). Use go, not push,
-                // so this switches to the existing tab instead of stacking a second
-                // My Area instance on top — that duplicate re-ran its own dashboard
-                // load and hung blank forever (owner-reported, 2026-07-11).
+                // My Area IS the Profile tab (RouteNames.myArea). Use go, not
+                // push, so this switches to the existing tab instead of
+                // stacking a second My Area instance on top — that duplicate
+                // re-ran its own dashboard load and hung blank forever
+                // (owner-reported, 2026-07-11).
                 onTap: () => context.goNamed(RouteNames.myArea),
               ),
               const SizedBox(height: SimfTokens.space5),
@@ -142,8 +144,8 @@ class MoreScreen extends ConsumerWidget {
                   title: l10n.moreAccessibility,
                   onTap: () => context.pushNamed(RouteNames.accessibility),
                 ),
-                // Notifications are auth-only — hide from a not-logged-in guest so
-                // the row doesn't dead-bounce to sign-in (D-669).
+                // Notifications are auth-only — hide from a not-logged-in guest
+                // so the row doesn't dead-bounce to sign-in (D-669).
                 if (signedIn)
                   MoreRow(
                     title: l10n.moreNotifications,

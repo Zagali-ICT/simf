@@ -79,10 +79,10 @@ class ProfileRepository {
     );
   }
 
-  /// Self-service ID-image upload (multipart) — `POST /app/account/user-profile/id-image`.
-  /// 5 MB / jpeg|png|webp guards are server-side (content-type + magic-byte
-  /// verified), so the MIME is derived from [filename] and sent on the file part.
-  /// Returns true on success.
+  /// Self-service ID-image upload (multipart) — `POST
+  /// /app/account/user-profile/id-image`. 5 MB / jpeg|png|webp guards are
+  /// server-side (content-type + magic-byte verified), so the MIME is derived
+  /// from [filename] and sent on the file part. Returns true on success.
   Future<bool> uploadIdImage({
     required List<int> bytes,
     required String filename,
@@ -150,9 +150,9 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository(ref.watch(simfApiClientProvider));
 });
 
-/// Best-effort reference number (`SIMF-2026-…`) for the badge + profile ID line.
-/// It lives on the user-profile (the My-Area dashboard doesn't carry it), so the
-/// badge/profile read it here. Null while loading / on error.
+/// Best-effort reference number (`SIMF-2026-…`) for the badge + profile ID
+/// line. It lives on the user-profile (the My-Area dashboard doesn't carry it),
+/// so the badge/profile read it here. Null while loading / on error.
 final referenceNumberProvider =
     FutureProvider.autoDispose<String?>((ref) async {
   try {
@@ -169,16 +169,16 @@ final referenceNumberProvider =
 /// "request a meeting" CTA to VIP guests; the endpoint enforces the same rule.
 ///
 /// D-731 — the speaker profile is a **Guest+ browse** surface, and the profile
-/// GET behind this sits on the shared per-IP "auth" rate-limit bucket (sign-in /
-/// OTP / sign-up). So this provider (a) short-circuits guests with NO network
-/// call — a guest can never be VIP — and (b) is **not** autoDispose, so the flag
-/// is cached across speaker-profile opens (fetched once, NOT re-fetched on every
-/// open); browsing many speakers therefore can't drain the auth budget for
-/// co-located attendees behind one venue IP. It [watch]es the auth controller,
-/// so it re-fetches on any auth transition (sign-in/out, token refresh/reload,
-/// or the D-563 stamp-roll + token revoke that follows an admin account-type
-/// change) — the cache tracks the live tier and never goes stale. False for
-/// guests / non-VIP / on error.
+/// GET behind this sits on the shared per-IP "auth" rate-limit bucket (sign-in
+/// / OTP / sign-up). So this provider (a) short-circuits guests with NO network
+/// call — a guest can never be VIP — and (b) is **not** autoDispose, so the
+/// flag is cached across speaker-profile opens (fetched once, NOT re-fetched on
+/// every open); browsing many speakers therefore can't drain the auth budget
+/// for co-located attendees behind one venue IP. It [watch]es the auth
+/// controller, so it re-fetches on any auth transition (sign-in/out, token
+/// refresh/reload, or the D-563 stamp-roll + token revoke that follows an admin
+/// account-type change) — the cache tracks the live tier and never goes stale.
+/// False for guests / non-VIP / on error.
 final currentUserIsVipProvider = FutureProvider<bool>((ref) async {
   final auth = ref.watch(authControllerProvider);
   if (auth is! AuthStateSignedIn) {
@@ -192,12 +192,12 @@ final currentUserIsVipProvider = FutureProvider<bool>((ref) async {
   }
 });
 
-/// Bi-Meeting rework — the signed-in user's two admin-assigned meeting-eligibility
-/// flags (speaker / delegation), which REPLACE the VIP tier as the Bi-Meeting gate.
-/// Same guest short-circuit + non-autoDispose caching + auth-transition re-fetch as
-/// [currentUserIsVipProvider] (one profile read serves both flags; the gates read
-/// [MeetingAccess.speaker] / [.delegation] / [.any]). [MeetingAccess.none] for
-/// guests / on error.
+/// Bi-Meeting rework — the signed-in user's two admin-assigned
+/// meeting-eligibility flags (speaker / delegation), which REPLACE the VIP tier
+/// as the Bi-Meeting gate. Same guest short-circuit + non-autoDispose caching +
+/// auth-transition re-fetch as [currentUserIsVipProvider] (one profile read
+/// serves both flags; the gates read [MeetingAccess.speaker] / [.delegation] /
+/// [.any]). [MeetingAccess.none] for guests / on error.
 final currentUserMeetingAccessProvider =
     FutureProvider<MeetingAccess>((ref) async {
   final auth = ref.watch(authControllerProvider);
@@ -215,7 +215,8 @@ final currentUserMeetingAccessProvider =
   }
 });
 
-/// The signed-in user's Bi-Meeting entitlements (admin-assigned per-user flags).
+/// The signed-in user's Bi-Meeting entitlements (admin-assigned per-user
+/// flags).
 class MeetingAccess {
   const MeetingAccess({required this.speaker, required this.delegation});
 

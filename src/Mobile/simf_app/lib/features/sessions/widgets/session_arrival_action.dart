@@ -40,11 +40,11 @@ class SessionArrivalAction extends ConsumerWidget {
 
   final String sessionId;
 
-  /// Whether the session is already over. Only the "not checked in" copy depends
-  /// on it: telling someone to present a badge at the door of a session that
-  /// finished hours ago is an instruction they cannot act on, and an attendee
-  /// attends a handful of sessions out of dozens, so that line would otherwise
-  /// appear on nearly every past session they simply did not go to.
+  /// Whether the session is already over. Only the "not checked in" copy
+  /// depends on it: telling someone to present a badge at the door of a session
+  /// that finished hours ago is an instruction they cannot act on, and an
+  /// attendee attends a handful of sessions out of dozens, so that line would
+  /// otherwise appear on nearly every past session they simply did not go to.
   final bool hasEnded;
 
   final AppL10n l10n;
@@ -58,8 +58,8 @@ class SessionArrivalAction extends ConsumerWidget {
               return _checkedIn(enter, status.leave);
             }
             // No attendance on a finished session: say nothing. The absence is
-            // not news, and the only copy that fits here would be an instruction
-            // that is no longer actionable.
+            // not news, and the only copy that fits here would be an
+            // instruction that is no longer actionable.
             return hasEnded ? const SizedBox.shrink() : _notCheckedIn();
           },
           error: (_, __) => SimfErrorState(

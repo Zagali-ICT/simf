@@ -16,10 +16,11 @@ String _time(DateTime local) {
 }
 
 /// The meta line (frame 889:2698): a clock + time range, a separator dot, and a
-/// calendar + weekday/day, in beige paragraph text. Laid **LTR** so each segment
-/// is icon→text (icon leads at the left, owner 2026-06-30) and the time reads
-/// "09:00 — 10:30" start→end; the time segment sits left, the date segment right
-/// (matching the frame). The Arabic date still renders RTL within its own box.
+/// calendar + weekday/day, in beige paragraph text. Laid **LTR** so each
+/// segment is icon→text (icon leads at the left, owner 2026-06-30) and the time
+/// reads "09:00 — 10:30" start→end; the time segment sits left, the date
+/// segment right (matching the frame). The Arabic date still renders RTL within
+/// its own box.
 class SessionMetaRow extends StatelessWidget {
   const SessionMetaRow(
       {required this.detail, required this.isArabic, super.key,});
@@ -44,8 +45,8 @@ class SessionMetaRow extends StatelessWidget {
           ),
           const Text(
             '·',
-            // Frame 889:2702 — the separator dot is white (#FFFFFF), heavier than
-            // the beige time/date items beside it.
+            // Frame 889:2702 — the separator dot is white (#FFFFFF), heavier
+            // than the beige time/date items beside it.
             style: SimfTokens.labelWhiteBlackLg,
           ),
           MetaItem(

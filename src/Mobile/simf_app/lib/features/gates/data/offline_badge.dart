@@ -7,12 +7,11 @@ import 'package:pointycastle/block/modes/gcm.dart';
 
 /// D-820 — decodes the encrypted badge a desk printed with no network.
 ///
-/// The Dart twin of `SIMF.Common.Badges.EventBadgeCodec` +
-/// `OfflineBadgeId`. **Both sides must agree byte for byte**: the plaintext is
-/// the ASCII string `"{profileTypeCode},{sequence}"`, AES-256-GCM encrypted
-/// with a 12-byte nonce and a full 16-byte tag, and the wire form is one Crockford
-/// base32 key-version character followed by base32 of `nonce || ciphertext ||
-/// tag`.
+/// The Dart twin of `SIMF.Common.Badges.EventBadgeCodec` + `OfflineBadgeId`.
+/// **Both sides must agree byte for byte**: the plaintext is the ASCII string
+/// `"{profileTypeCode},{sequence}"`, AES-256-GCM encrypted with a 12-byte nonce
+/// and a full 16-byte tag, and the wire form is one Crockford base32
+/// key-version character followed by base32 of `nonce || ciphertext || tag`.
 ///
 /// Decode-only on purpose. A scanner never mints a badge, and shipping an
 /// encoder into the app would put a badge factory on every operator's phone.
@@ -173,9 +172,9 @@ class _CrockfordBase32 {
       // agree by construction rather than by luck about integer width.
       buffer &= (1 << bits) - 1;
     }
-    // The encoder left-aligns its final group, so any leftover bits are its zero
-    // padding and there are always fewer than five. Anything else means the
-    // string was truncated or mangled — rejected rather than decoded into
+    // The encoder left-aligns its final group, so any leftover bits are its
+    // zero padding and there are always fewer than five. Anything else means
+    // the string was truncated or mangled — rejected rather than decoded into
     // plausible-looking bytes.
     if (bits >= 5 || buffer != 0) {
       return null;

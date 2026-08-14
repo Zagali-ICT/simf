@@ -313,7 +313,8 @@ class AppL10n {
   String get removeLabel => _t('إزالة', 'Remove');
   String get clearLabel => _t('مسح', 'Clear');
   String get saveLabel => _t('حفظ', 'Save');
-  // Page 007 advances to the interests screen with Next (D-332); Page 007‑01 title.
+  // Page 007 advances to the interests screen with Next (D-332); Page 007‑01
+  // title.
   String get nextLabel => _t('التالي', 'Next');
   String get interestsTitle => _t('اهتماماتي', 'My interests');
   String get profileSavedToast => _t('تم حفظ الملف الشخصى', 'Profile saved');
@@ -702,7 +703,8 @@ class AppL10n {
   String get badgeResolveButton => _t('متابعة', 'Continue');
   // The scanner viewfinder's "actively searching" caption (Figma 758:4596).
   String get scanningCode => _t('جارٍ فحص الرمز...', 'Scanning the code…');
-  // Shared QR-scanner chrome (used by the badge, contact and exhibitor scanners).
+  // Shared QR-scanner chrome (used by the badge, contact and exhibitor
+  // scanners).
   String get qrStopCamera => _t('إيقاف الكاميرا', 'Stop camera');
   String get qrBack => _t('رجوع', 'Back');
   String get qrManualLabel =>
@@ -761,8 +763,8 @@ class AppL10n {
         'الملتقى البحري السعودي الدولي',
         'Saudi International Maritime Forum',
       );
-  // Two lines per the KSA-Project splash frame (Figma 159:573, D-361). The frame
-  // shows Western digits in the date/year, so the Arabic line matches it.
+  // Two lines per the KSA-Project splash frame (Figma 159:573, D-361). The
+  // frame shows Western digits in the date/year, so the Arabic line matches it.
   String get splashEventLine => _t(
         'النسخة الرابعة\n23–25 نوفمبر 2026 · الرياض',
         '4th Edition\n23–25 Nov 2026 · Riyadh',
@@ -826,8 +828,8 @@ class AppL10n {
       );
   String get tileExhibition => _t('المعرض', 'Exhibition');
   String get tileMyBadgeShort => _t('بطاقتي', 'My badge');
-  // BUG-014 — the locked guest badge tile stays intentionally inert; the hint is
-  // the only cue a screen-reader user gets that it is locked and why.
+  // BUG-014 — the locked guest badge tile stays intentionally inert; the hint
+  // is the only cue a screen-reader user gets that it is locked and why.
   String get guestBadgeLockedHint => _t(
         'مقفل — سجّل الدخول لفتح بطاقتك الذكية',
         'Locked — sign in to unlock your smart badge',
@@ -853,13 +855,15 @@ class AppL10n {
 
   /// The GUEST variant of the badge above (Figma 758:2910), which the frame
   /// renders as the Latin abbreviation in both languages. Deliberately not
-  /// translated: the signed-in variant [discoverSaudiBadge] is the localised one.
+  /// translated: the signed-in variant [discoverSaudiBadge] is the localised
+  /// one.
   String get discoverSaudiBadgeShort => _t('KSA', 'KSA');
   String get greetingMorning => _t('صباح الخير', 'Good morning');
   String get greetingEvening => _t('مساء الخير', 'Good evening');
 
   /// The home greeting word (owner 2026-07-21) — a friendly, time-independent
-  /// "مرحبًا" shown above the user's first name, replacing the time-of-day word.
+  /// "مرحبًا" shown above the user's first name, replacing the time-of-day
+  /// word.
   String get greetingWelcome => _t('مرحبًا', 'Welcome');
   String get homeLiveTitle => _t(
         'الجلسة الافتتاحية تُبث الآن',
@@ -879,8 +883,8 @@ class AppL10n {
   String get followUsHandle => '@SIMF_RSNF · الملتقى البحري السعودي الدولي';
   String get discoverSection => _t('اكتشف السعودية', 'Discover Saudi');
   // The top discovery hero banner on the signed-in home (frame 758:1134 node
-  // 758:1203): the gold "اكتشف السعودية" title reuses [discoverSection]; this is
-  // the white sub-line over the event photo.
+  // 758:1203): the gold "اكتشف السعودية" title reuses [discoverSection]; this
+  // is the white sub-line over the event photo.
   String get discoverBannerSubtitle =>
       _t('تعال واكتشف جديدك المفضل', 'Come discover your favourites');
   // ابرز الاحداث — the highlights / latest-news teaser card on the signed-in
@@ -918,12 +922,11 @@ class AppL10n {
   String get identityVerificationTitle =>
       _t('التحقق من الهوية', 'Identity verification');
   // Camera security rules (owner 2026-07-06, D-662): the identity photo must be
-  // a LIVE, human-verified capture — there is no gallery path, so a static image
-  // is never used. The step labels + directional cue + progress bar match Figma
-  // 758:4180 / 4248 / 4316 (D-663).
-  // Owner 2026-07-07 (D-683) — clear, human-friendly commands in big font so the
-  // visitor knows exactly what to do at each liveness step (the terse
-  // Front/Right/Left labels were unclear).
+  // a LIVE, human-verified capture — there is no gallery path, so a static
+  // image is never used. The step labels + directional cue + progress bar match
+  // Figma 758:4180 / 4248 / 4316 (D-663). Owner 2026-07-07 (D-683) — clear,
+  // human-friendly commands in big font so the visitor knows exactly what to do
+  // at each liveness step (the terse Front/Right/Left labels were unclear).
   String get livenessHumanCheckTitle =>
       _t('للتأكد من أنك شخص حقيقي', "To confirm you're a real person");
   String get livenessSmilePrompt => _t('ابتسم من فضلك', 'Please smile');
@@ -968,8 +971,8 @@ class AppL10n {
       _t('تعذّر تنفيذ الإجراء. حاول مرة أخرى.', 'Action failed. Try again.');
 
   // FR-MOD-001 — the moderator's own sessions (GET /app/sessions/moderated), so
-  // the desk is offered only where the per-session grant exists instead of being
-  // discovered as a 403 after the tap.
+  // the desk is offered only where the per-session grant exists instead of
+  // being discovered as a 403 after the tap.
   String get moderatorMySessions => _t('جلساتي', 'My sessions');
   String get moderatorMySessionsEmpty => _t(
         'لم يتم إسنادك إلى أي جلسة بعد.',
@@ -1112,15 +1115,15 @@ class AppL10n {
         'تعذّر تحميل تصنيف الزائر.',
         'Could not load the visitor classification.',
       );
-  // DEF-STF-007 — the classification lookup came back EMPTY, so the operator has
-  // nothing to pick and submit can never pass. Say what to do about it.
+  // DEF-STF-007 — the classification lookup came back EMPTY, so the operator
+  // has nothing to pick and submit can never pass. Say what to do about it.
   String get staffProfileTypeEmptyHelp => _t(
         'لا توجد تصنيفات زوار مفعّلة. اطلب من مسؤول لوحة التحكم إضافة تصنيف زائر ثم أعد المحاولة.',
         'No active visitor classifications exist. Ask a Control Panel administrator to add one, then retry.',
       );
-  // DEF-STF-004 — an attachment upload that fails AFTER the visitor was created.
-  // The account exists; only the file is missing, so the operator retries the
-  // UPLOAD instead of registering the person a second time.
+  // DEF-STF-004 — an attachment upload that fails AFTER the visitor was
+  // created. The account exists; only the file is missing, so the operator
+  // retries the UPLOAD instead of registering the person a second time.
   String get staffUploadFailedTitle => _t(
         'تم تسجيل الزائر — تعذّر رفع المرفقات',
         'Visitor registered — attachments not uploaded',
@@ -1138,8 +1141,9 @@ class AppL10n {
         'The attachments were uploaded.',
       );
   String get staffRegisterAnother => _t('تسجيل زائر آخر', 'Register another');
-  // The My-Area "الجلسات المحفوظة" counter (D-584) — shows the SAVED (favourited)
-  // count and opens الجلسات المحفوظة (1701:8928); Arabic already read "محفوظة".
+  // The My-Area "الجلسات المحفوظة" counter (D-584) — shows the SAVED
+  // (favourited) count and opens الجلسات المحفوظة (1701:8928); Arabic already
+  // read "محفوظة".
   String get statBookedSessions => _t('جلسات محفوظة', 'Saved sessions');
   String get statMeetings => _t('مقابلات', 'Meetings');
   String get statisticsTitle => _t('الإحصائيات', 'Statistics');
@@ -1247,8 +1251,8 @@ class AppL10n {
   String get joinSeatCta => _t('اختر مقعدي', 'Select my seat');
   String get joinOpenCta => _t('انضم إلى الجلسة', 'Join this session');
   // The single gold join button on the session detail (Figma 889:2450, owner
-  // 2026-06-30): one label for both seating modes — open-seating joins in place,
-  // assigned-seat opens the seat picker.
+  // 2026-06-30): one label for both seating modes — open-seating joins in
+  // place, assigned-seat opens the seat picker.
   String get joinSessionCta => _t('الانضمام إلى الجلسة', 'Join the session');
   // D-750 (owner 2026-07-20) — case-1 (open-seating) join CTA: the button reads
   // "register to attend" instead of the generic join label, because an
@@ -1312,9 +1316,9 @@ class AppL10n {
   String get seatPickerRandomCta => _t('اختيار تلقائي', 'Auto-pick a seat');
   String get seatReservedToast =>
       _t('تم الحجز — بانتظار الموافقة', 'Reserved — pending approval');
-  // D-750 — case-2 (assigned-seat) post-reserve success alert body (replaces the
-  // seatReservedToast snackbar): the hold is released if the visitor does not
-  // check in by 3 minutes before the session starts, to free the seat.
+  // D-750 — case-2 (assigned-seat) post-reserve success alert body (replaces
+  // the seatReservedToast snackbar): the hold is released if the visitor does
+  // not check in by 3 minutes before the session starts, to free the seat.
   String get seatReservedAlertBody => _t(
         'تم حجز المقعد بنجاح سيتم الغاء الحجز في حالة عدم تسجيل الدخول للجلسة قبل 3 دقائق قبل بدء الجلسة لاتاحة المقعد لأشخاص اخرين',
         'Seat reserved successfully. The reservation will be cancelled if you do not check in by 3 minutes before the session starts, to free the seat for others.',
@@ -1327,10 +1331,10 @@ class AppL10n {
       'المقعد المختار: الصف $row · مقعد $seat',
       'Selected: Row $row · Seat $seat',);
   String get seatPickerConfirmCta => _t('تأكيد المقعد', 'Confirm my seat');
-  // B1 (owner "change seat") — moving an already-held seat. The picker doubles as
-  // the destination chooser: when the visitor already holds a seat it opens in
-  // CHANGE mode (its own title/hint/CTA) and the confirm step names both seats so
-  // nobody swaps by accident.
+  // B1 (owner "change seat") — moving an already-held seat. The picker doubles
+  // as the destination chooser: when the visitor already holds a seat it opens
+  // in CHANGE mode (its own title/hint/CTA) and the confirm step names both
+  // seats so nobody swaps by accident.
   String get seatChangeCta => _t('تغيير المقعد', 'Change seat');
   String get seatChangeTitle => _t('تغيير مقعدك', 'Change your seat');
   String get seatChangeHint => _t(
@@ -1406,8 +1410,8 @@ class AppL10n {
       );
 
   // D-771 (owner 2026-07-26) — seat TIERS. The tier is real data on the hall
-  // layout: a VVIP row is protocol seating nobody may book, a VIP row is for VIP
-  // guests only, a Normal row is open to every visitor.
+  // layout: a VVIP row is protocol seating nobody may book, a VIP row is for
+  // VIP guests only, a Normal row is open to every visitor.
   String get seatTierVvip => _t('شخصيات بالغة الأهمية', 'VVIP');
   String get seatTierVip => _t('كبار الشخصيات', 'VIP');
   String get seatTierNormal => _t('عادي', 'Normal');
@@ -1604,15 +1608,15 @@ class AppL10n {
         'Could not decline the meeting. Try again.',
       );
 
-  // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
-  // D-479 read-only My-meetings screen).
-  // D-745 (owner 2026-07-11): the requests feed became the history page ("طلباتي")
-  // once the VIP bilateral-meetings page ([meetingsTitle]) split off; the frame
-  // header "اللقاءات الثنائية" (1408:9726) now belongs to that new page.
+  // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes
+  // the D-479 read-only My-meetings screen). D-745 (owner 2026-07-11): the
+  // requests feed became the history page ("طلباتي") once the VIP
+  // bilateral-meetings page ([meetingsTitle]) split off; the frame header
+  // "اللقاءات الثنائية" (1408:9726) now belongs to that new page.
   String get requestsTitle => _t('طلباتي', 'My requests');
 
-  /// The VIP bilateral-meetings page title (اللقاءات الثنائية, Figma 1408:9726) —
-  /// matches the Home tile label [tileBilateralMeetings].
+  /// The VIP bilateral-meetings page title (اللقاءات الثنائية, Figma 1408:9726)
+  /// — matches the Home tile label [tileBilateralMeetings].
   String get meetingsTitle => _t('اللقاءات الثنائية', 'Bilateral meetings');
   String get requestsLink => _t('الطلبات', 'Requests');
   String get requestsEmpty =>
@@ -1650,9 +1654,9 @@ class AppL10n {
   String get requestNew => _t('طلب جديد', 'New request');
   // The نوع الطلب type-picker sheet and its document / badge forms were deleted
   // with new_request_sheet.dart (D-703 flagged it orphaned on 2026-07-08; owner
-  // confirmed deletion 2026-07-28), so their 14 strings went with them. The feed
-  // still RENDERS existing document/badge requests via requestKindDocument /
-  // requestKindBadge below — only the creation UI is gone.
+  // confirmed deletion 2026-07-28), so their 14 strings went with them. The
+  // feed still RENDERS existing document/badge requests via requestKindDocument
+  // / requestKindBadge below — only the creation UI is gone.
 
   // Actions / toasts.
   String get requestCancel => _t('إلغاء الطلب', 'Cancel request');
@@ -1821,7 +1825,8 @@ class AppL10n {
         'منصة سعودية عالمية لدعم الحوار في قضايا الأمن البحري',
         'A Saudi global platform advancing dialogue on maritime-security issues',
       );
-  // Static fallback for the intro paragraph when the CMS `about` block is empty.
+  // Static fallback for the intro paragraph when the CMS `about` block is
+  // empty.
   String get aboutHeroBody => _t(
         'الملتقى البحري السعودي الدولي حدث دولي رفيع المستوى، يجمع القادة '
             'والمسؤولين والخبراء لتبادل التجارب وتعزيز فهم عالمي مشترك لمستقبل '
@@ -1878,9 +1883,9 @@ class AppL10n {
       };
 
   /// D-713 (item 8) — the "watched" context header on a per-session rating: the
-  /// session title + when it was held, so a user arriving from a rate prompt (or
-  /// a notification days later) knows which session they are rating. A blank
-  /// [when] (unknown session time) drops the trailing separator.
+  /// session title + when it was held, so a user arriving from a rate prompt
+  /// (or a notification days later) knows which session they are rating. A
+  /// blank [when] (unknown session time) drops the trailing separator.
   String rateWatchedAt(String session, String when) {
     final base = _t('شاهدت «$session»', 'Watched "$session"');
     return when.isEmpty ? base : '$base · $when';
@@ -1924,8 +1929,8 @@ class AppL10n {
   String get rateThanks => _t('شكراً لتقييمك', 'Thanks for your rating');
   String get rateFailed =>
       _t('تعذّر إرسال التقييم. حاول مرة أخرى.', 'Could not submit. Try again.');
-  // Owner 2026-07-19 — shown when the visitor has not attended what they are trying
-  // to rate (server: 403 RATING_NOT_ATTENDED / form isEligible=false).
+  // Owner 2026-07-19 — shown when the visitor has not attended what they are
+  // trying to rate (server: 403 RATING_NOT_ATTENDED / form isEligible=false).
   String get rateAttendRequired => _t(
         'يمكنك تقييم ما حضرته فقط.',
         'You can only rate something you attended.',
@@ -2082,7 +2087,8 @@ class AppL10n {
   String get moreRateApp => _t('تقييم التطبيق', 'Rate the app');
   String get moreMyAreaCardTitle => _t('منطقتي', 'My area');
 
-  /// The display name of the currently active language (shown on the اللغة row).
+  /// The display name of the currently active language (shown on the اللغة
+  /// row).
   String get languageCurrentName => _t('العربية', 'English');
 
   /// D-736 — the More-menu footer line over the REAL installed version
@@ -2091,7 +2097,8 @@ class AppL10n {
       ? 'SIMF 2026'
       : _t('SIMF 2026 · الإصدار $version', 'SIMF 2026 · v$version');
   // D-668 — About-the-app screen (version / release date / organizer + links).
-  // The release date is a maintained constant (no build-date source in the app).
+  // The release date is a maintained constant (no build-date source in the
+  // app).
   String get aboutAppTitle => _t('عن التطبيق', 'About the app');
   String get aboutAppInfoTitle => _t('معلومات التطبيق', 'App information');
   String get aboutAppReleaseDateLabel => _t('تاريخ الإصدار', 'Release date');
@@ -2150,7 +2157,8 @@ class AppL10n {
   // Figma 1072:13518 — the redesigned session-summary screen.
   String get aiSummarySessionLabel => _t('الجلسة', 'Session');
   // Item #35 (2026-07-20) — labels for the two video players on the summary
-  // surface: the session's FULL live recording and the team's short summary cut.
+  // surface: the session's FULL live recording and the team's short summary
+  // cut.
   String get aiSummaryRecordingLabel => _t('التسجيل الكامل', 'Full recording');
   String get aiSummaryVideoLabel =>
       _t('ملخص الجلسة (فيديو)', 'Session summary (video)');
@@ -2190,11 +2198,11 @@ class AppL10n {
   String sessionDurationMinutes(int minutes) =>
       _t('$minutes دقيقة', '$minutes min');
 
-  // Wave 2 — "my sessions" list, App "تفاصيل الجلسات" (Figma 1388:9067), reached
-  // from the My-Area "my sessions" counter. Four tabs partition the user's
-  // booked / joined sessions.
-  // App title matches Figma 1388:9067 ("عروض الجلسات"); the EN stays "My
-  // sessions" (distinct from the downloadable-slides screen) for clarity.
+  // Wave 2 — "my sessions" list, App "تفاصيل الجلسات" (Figma 1388:9067),
+  // reached from the My-Area "my sessions" counter. Four tabs partition the
+  // user's booked / joined sessions. App title matches Figma 1388:9067 ("عروض
+  // الجلسات"); the EN stays "My sessions" (distinct from the
+  // downloadable-slides screen) for clarity.
   String get mySessionsTitle => _t('عروض الجلسات', 'My sessions');
   String get mySessionsTabUpcoming => _t('القادمة', 'Upcoming');
   String get mySessionsTabAttended => _t('حضرتها', 'Attended');
@@ -2210,7 +2218,8 @@ class AppL10n {
 
   // #8 — Saved sessions, App "الجلسات المحفوظة" (Figma 1701:8928), reached from
   // the My-Area saved-sessions counter. The favourited sessions (المفضلة =
-  // محفوظة) with a saved-count header + category chips over the cached programme.
+  // محفوظة) with a saved-count header + category chips over the cached
+  // programme.
   String get savedSessionsTitle => _t('الجلسات المحفوظة', 'Saved sessions');
   // The gold count-row unit label, rendered as "$count جلسة محفوظة".
   String get savedSessionsCountLabel => _t('جلسة محفوظة', 'saved sessions');
@@ -2231,8 +2240,9 @@ class AppL10n {
   String myMeetingsAllHeader(int count) =>
       _t('جميع المقابلات ($count)', 'All meetings ($count)');
 
-  // Wave 4 — Delegations, App "الوفود" (Figma 1426:10771): the invited countries'
-  // delegations with head of delegation, date range and member count.
+  // Wave 4 — Delegations, App "الوفود" (Figma 1426:10771): the invited
+  // countries' delegations with head of delegation, date range and member
+  // count.
   String get delegationsTitle => _t('الوفود', 'Delegations');
   String get delegationsSearchHint =>
       _t('ابحث عن دولة أو وفد...', 'Search for a country or delegation...');
@@ -2347,7 +2357,8 @@ class AppL10n {
   }
 
   // Wave 3 — exhibitor (Figma 1439:11881) + sponsor (1439:11826) detail screens
-  // (shared template). The tier pill prefixes a localized tier word onto the role.
+  // (shared template). The tier pill prefixes a localized tier word onto the
+  // role.
   String get exhibitorDetailTitle => _t('العارض', 'Exhibitor');
   String get sponsorDetailTitle => _t('الراعي', 'Sponsor');
   String get exhibitorAboutHeader =>
@@ -2413,8 +2424,8 @@ class AppL10n {
   String get sendQuestionSent => _t('تم إرسال سؤالك', 'Your question was sent');
   // DEF-MOD-006 — the copy promised a 5-minute pre-start window the server has
   // never enforced. `SessionQuestionService.SubmitAsync` has NO lower bound (a
-  // future session takes questions ahead of time) and closes them the moment the
-  // session ends; once live, the hall-arrival gate applies. The string now
+  // future session takes questions ahead of time) and closes them the moment
+  // the session ends; once live, the hall-arrival gate applies. The string now
   // describes that behaviour instead of inventing a rule.
   String get sendQuestionNotOpen => _t(
         'الأسئلة مغلقة لهذه الجلسة.',
@@ -2509,11 +2520,12 @@ class AppL10n {
   /// D-519 — the exhibitor home's lead-capture tools section header.
   String get exhibitorToolsSection => _t('أدوات العارض', 'Exhibitor tools');
 
-  // Live broadcast (Page 025). liveNowLabel already exists (reused for the badge).
+  // Live broadcast (Page 025). liveNowLabel already exists (reused for the
+  // badge).
   String get liveBroadcastTitle => _t('البث المباشر', 'Live broadcast');
-  // Login-gate (owner, 2026-07-01): the live stream is login-only — a signed-out
-  // guest sees this prompt (with the shared signInButton label) instead of the
-  // player.
+  // Login-gate (owner, 2026-07-01): the live stream is login-only — a
+  // signed-out guest sees this prompt (with the shared signInButton label)
+  // instead of the player.
   String get liveNeedLogin => _t(
         'سجّل الدخول لمشاهدة البث المباشر.',
         'Sign in to watch the live stream.',
@@ -2538,8 +2550,8 @@ class AppL10n {
   // Media-center hub header — Figma 947:3764 / 1049:12629 renamed the container
   // from "التغطية الإعلامية" to "المركز الاعلامي".
   String get mediaCoverageTitle => _t('المركز الاعلامي', 'Media center');
-  // The news tab label inside the media center — Figma calls it "احدث المستجدات"
-  // (Latest updates), not the bare "الأخبار" screen name.
+  // The news tab label inside the media center — Figma calls it "احدث
+  // المستجدات" (Latest updates), not the bare "الأخبار" screen name.
   String get latestUpdatesTitle => _t('احدث المستجدات', 'Latest updates');
   String get galleryImagesSection => _t('الصور', 'Images');
   String get galleryVideosSection => _t('الفيديوهات', 'Videos');
@@ -2570,9 +2582,10 @@ class AppL10n {
         'Could not play this feed. Try again.',
       );
 
-  // AI assistant (Page 036 · المساعد الذكي) — KSA frame 1064:13066. Backed by the
-  // centralised AI (POST /app/ai/assistance, grounded on the live event context);
-  // the screen opens with the greeting and answers each prompt through that endpoint.
+  // AI assistant (Page 036 · المساعد الذكي) — KSA frame 1064:13066. Backed by
+  // the centralised AI (POST /app/ai/assistance, grounded on the live event
+  // context); the screen opens with the greeting and answers each prompt
+  // through that endpoint.
   String get chatbotTitle => _t('المساعد الذكي', 'AI assistant');
   String get chatbotInputHint => _t('اكتب رسالتك...', 'Type your message…');
   String get chatbotSendTooltip => _t('إرسال', 'Send');

@@ -20,9 +20,9 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// Page 003 — نسيت كلمة المرور · Forgot password (Logic L-6). The KSA-Project
 /// Figma design (node 918:2341): navy surface, the back + centred-title header,
 /// the gold-ringed lock mark, the instruction body, the email field with a mail
-/// glyph, the gold CTA pinned at the bottom, and the "remembered? sign in" foot.
-/// Emails a reset code, then routes to the reset screen with the address carried
-/// forward. The request is enumeration-resistant on the server (always
+/// glyph, the gold CTA pinned at the bottom, and the "remembered? sign in"
+/// foot. Emails a reset code, then routes to the reset screen with the address
+/// carried forward. The request is enumeration-resistant on the server (always
 /// success-shaped), so the app always proceeds to the reset step.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({this.email, super.key});
@@ -158,8 +158,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 keyboardType: TextInputType.emailAddress,
                 maxLength: FieldLimits.email,
                 hintText: l10n.emailHintExample,
-                // The mail glyph matches the hint colour (D-674); as a suffix it
-                // renders at the inline-start (left under RTL), per the frame.
+                // The mail glyph matches the hint colour (D-674); as a suffix
+                // it renders at the inline-start (left under RTL), per the
+                // frame.
                 suffixIcon: const Icon(
                   Icons.mail_outline,
                   color: SimfTokens.greyText,

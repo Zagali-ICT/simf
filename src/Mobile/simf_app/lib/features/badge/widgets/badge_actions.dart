@@ -9,8 +9,8 @@ import 'package:simf_app/features/contacts/scan_contact_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// The role-based QR-page actions (D-426). A visitor reads another visitor's
-/// shared contact (gold-filled "امسح لإضافة شخص") and shares their own (outlined);
-/// an exhibitor scans visitor badges into My Visitors.
+/// shared contact (gold-filled "امسح لإضافة شخص") and shares their own
+/// (outlined); an exhibitor scans visitor badges into My Visitors.
 ///
 /// **DEF-EXH-005:** the branch keys off the signed-in [AppRole], not the
 /// dashboard's `isVisitor` flag. `isVisitor` is false for EVERY partner profile
@@ -55,9 +55,9 @@ class BadgeActions extends StatelessWidget {
               color: SimfTokens.surface,
             ),
             label: l10n.badgeAddPerson,
-            // Open as a self-contained fullscreen modal (NOT a go_router route):
-            // the modal closes reliably via Navigator.pop, sidestepping the
-            // shell-route pop bug that left the scanner stuck (D-426).
+            // Open as a self-contained fullscreen modal (NOT a go_router
+            // route): the modal closes reliably via Navigator.pop, sidestepping
+            // the shell-route pop bug that left the scanner stuck (D-426).
             onTap: () => Navigator.of(context, rootNavigator: true).push<void>(
               MaterialPageRoute<void>(
                 fullscreenDialog: true,

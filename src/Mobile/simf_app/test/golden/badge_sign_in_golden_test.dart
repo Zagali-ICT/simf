@@ -13,11 +13,12 @@ import 'package:simf_app/features/account/badge_sign_in_screen.dart';
 
 import 'golden_fonts.dart';
 
-/// Parity lock for the badge-QR sign-in against Figma node **758:4735** (D-657):
-/// the camera-first viewfinder card — gold corner brackets, scan line, scan
-/// glyph and the scanning caption + progress bar. Captured with the camera off,
-/// so the window shows over the no-camera manual-entry fallback. Regenerate:
-///   flutter test --update-goldens test/golden/badge_sign_in_golden_test.dart
+/// Parity lock for the badge-QR sign-in against Figma node **758:4735**
+/// (D-657): the camera-first viewfinder card — gold corner brackets, scan line,
+/// scan glyph and the scanning caption + progress bar. Captured with the camera
+/// off, so the window shows over the no-camera manual-entry fallback.
+/// Regenerate: flutter test --update-goldens
+/// test/golden/badge_sign_in_golden_test.dart
 void main() {
   setUpAll(loadGoldenFonts);
 

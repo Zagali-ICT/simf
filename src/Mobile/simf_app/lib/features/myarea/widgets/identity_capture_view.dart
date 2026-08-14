@@ -53,8 +53,8 @@ class LiveCaptureView extends StatelessWidget {
 
   Widget _guidance() {
     // The guidance block is laid out left-to-right (icon on the left, label on
-    // the right, and the progress filling left→right) exactly as Figma draws it,
-    // regardless of the app's RTL direction (Figma 758:4180 / 4248 / 4316).
+    // the right, and the progress filling left→right) exactly as Figma draws
+    // it, regardless of the app's RTL direction (Figma 758:4180 / 4248 / 4316).
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Padding(
@@ -62,7 +62,8 @@ class LiveCaptureView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            // Why we're asking — the human-check subtitle, then the big command.
+            // Why we're asking — the human-check subtitle, then the big
+            // command.
             Text(
               humanCheckLabel,
               textAlign: TextAlign.center,

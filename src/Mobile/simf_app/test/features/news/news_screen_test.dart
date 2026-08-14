@@ -31,9 +31,9 @@ const _testConfig = SimfDataConfig(
   deviceType: SimfDeviceType.android,
 );
 
-/// Pumps the News screen inside a GoRouter, mirroring the shell: SimfPageShell and
-/// SimfBottomNav resolve route names, and the inactive media-coverage tabs need
-/// the media-partners + gallery destinations to exist.
+/// Pumps the News screen inside a GoRouter, mirroring the shell: SimfPageShell
+/// and SimfBottomNav resolve route names, and the inactive media-coverage tabs
+/// need the media-partners + gallery destinations to exist.
 Future<void> _pump(
   WidgetTester tester,
   List<Override> overrides, {
@@ -102,8 +102,8 @@ void main() {
       expect(find.text('Media partners'), findsOneWidget);
       expect(find.text('Media gallery'), findsNothing);
 
-      // The frame-1049 card: title, the DD-MM-YYYY date, and the category (shown
-      // both as the on-image chip and the label above the date).
+      // The frame-1049 card: title, the DD-MM-YYYY date, and the category
+      // (shown both as the on-image chip and the label above the date).
       expect(find.text('Forum opens'), findsOneWidget);
       expect(find.text('23-11-2026'), findsOneWidget);
       expect(find.text('Press'), findsWidgets);
@@ -167,10 +167,10 @@ void main() {
       expect(find.text('Retry'), findsOneWidget);
     });
 
-    // D-436 verification rule: confirm the card's RTL layout with a deterministic
-    // Arabic-locale position test. Frame 957:2197 places the thumbnail at the
-    // inline-end (LEFT in RTL) and the text block at the inline-start (RIGHT),
-    // so the thumbnail image sits left of the gold date.
+    // D-436 verification rule: confirm the card's RTL layout with a
+    // deterministic Arabic-locale position test. Frame 957:2197 places the
+    // thumbnail at the inline-end (LEFT in RTL) and the text block at the
+    // inline-start (RIGHT), so the thumbnail image sits left of the gold date.
     testWidgets('lays the thumbnail left of the text in Arabic',
         (tester) async {
       await _pump(

@@ -98,10 +98,10 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   }
 
   /// Runs the guided face-capture / liveness flow (D-404) and uploads the
-  /// returned selfie. On success the avatar bust token is bumped so every avatar
-  /// on screen (home greeting / badge / this card) refetches the new photo
-  /// immediately — the avatar URL is stable, so the token is what forces the
-  /// refresh — and the dashboard reloads for the rest of the identity card.
+  /// returned selfie. On success the avatar bust token is bumped so every
+  /// avatar on screen (home greeting / badge / this card) refetches the new
+  /// photo immediately — the avatar URL is stable, so the token is what forces
+  /// the refresh — and the dashboard reloads for the rest of the identity card.
   Future<void> _changeAvatar() async {
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);

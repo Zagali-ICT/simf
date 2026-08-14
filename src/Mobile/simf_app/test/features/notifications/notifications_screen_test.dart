@@ -494,7 +494,8 @@ void main() {
           ],
         ),
       );
-      // Severity fallback: error → danger + close glyph (not a per-kind colour).
+      // Severity fallback: error → danger + close glyph (not a per-kind
+      // colour).
       expect(find.byIcon(Icons.close_rounded), findsOneWidget);
       expect(iconColor(tester, Icons.close_rounded), SimfTokens.danger);
     });

@@ -80,7 +80,8 @@ class SessionStateChipRow extends StatelessWidget {
 
 /// One state chip — a rounded pill with the label and a trailing dot, matching
 /// the existing مسجّل badge (label then dot). The live chip is red-filled, the
-/// recorded chip gold-filled, the summary-ready chip a gold outline on the card.
+/// recorded chip gold-filled, the summary-ready chip a gold outline on the
+/// card.
 class SessionStateChip extends StatelessWidget {
   const SessionStateChip({required this.kind, required this.label, super.key});
 

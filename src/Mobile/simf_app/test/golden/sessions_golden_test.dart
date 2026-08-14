@@ -118,8 +118,8 @@ final _days = <ProgrammeDay>[
   ),
 ];
 
-/// The screen only calls getDays(); getSessions() returns the flattened list for
-/// completeness (unused by this frame).
+/// The screen only calls getDays(); getSessions() returns the flattened list
+/// for completeness (unused by this frame).
 class _FakeSessionsRepo implements SessionsRepository {
   @override
   Future<List<ProgrammeDay>> getDays() async => _days;

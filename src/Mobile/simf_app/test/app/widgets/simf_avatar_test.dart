@@ -65,7 +65,8 @@ void main() {
       );
 
       // The fallback brand mark is shown — the overridden photo bytes are not
-      // leaked onto a non-current-user avatar (SimfLogo present ⇒ fallback path).
+      // leaked onto a non-current-user avatar (SimfLogo present ⇒ fallback
+      // path).
       expect(find.byType(SimfLogo), findsOneWidget);
     });
 

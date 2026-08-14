@@ -77,7 +77,8 @@ class _FakeLiveRepo implements LiveRepository {
 }
 
 /// Pins the shared org-profile value (null by default → the no-session screen
-/// shows the empty state; a profile with a liveStreamUrl → the global main-live).
+/// shows the empty state; a profile with a liveStreamUrl → the global
+/// main-live).
 class _StubOrgProfile extends OrgProfileController {
   _StubOrgProfile(this._value);
   final OrgProfile? _value;
@@ -146,8 +147,8 @@ Future<GoRouter> _pump(
   AuthController? auth,
   SimfPrefsStorage? prefs,
 }) async {
-  // Tall surface so the whole lazy scroll (player band → title → region notice →
-  // ask-question, or the not-live message) lays out in the test viewport.
+  // Tall surface so the whole lazy scroll (player band → title → region notice
+  // → ask-question, or the not-live message) lays out in the test viewport.
   tester.view.physicalSize = const Size(1200, 2600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -159,8 +160,9 @@ Future<GoRouter> _pump(
         path: '/live',
         builder: (_, state) => LiveBroadcastScreen(sessionId: sessionId),
       ),
-      // Navigating here disposes the live screen so the D-712 after-watch prompt
-      // can fire; the /rate landing echoes its query so the prompt is observable.
+      // Navigating here disposes the live screen so the D-712 after-watch
+      // prompt can fire; the /rate landing echoes its query so the prompt is
+      // observable.
       GoRoute(
         path: '/gone',
         builder: (_, __) => const Scaffold(body: Text('GONE')),
@@ -183,8 +185,9 @@ Future<GoRouter> _pump(
         orgProfileProvider.overrideWith(() => _StubOrgProfile(profile)),
         authControllerProvider.overrideWith(() => auth ?? _SignedIn()),
         simfPrefsStorageProvider.overrideWithValue(prefs ?? FakePrefs()),
-        // Session rating ON by default (fail-open) — isolates the tests from the
-        // real site-settings client. The disabled case pre-warms its own container.
+        // Session rating ON by default (fail-open) — isolates the tests from
+        // the real site-settings client. The disabled case pre-warms its own
+        // container.
         siteSettingsProvider.overrideWith((ref) => _settings()),
       ],
       child: MaterialApp.router(
@@ -307,9 +310,10 @@ void main() {
         sessionId: 's1',
       );
 
-      // #7 (owner) — the ask entry shows only while the session is actually LIVE;
-      // a not-live / recording view (a YouTube archive) offers no ask. (A live
-      // session WITH the ask entry is locked by the live-broadcast golden.)
+      // #7 (owner) — the ask entry shows only while the session is actually
+      // LIVE; a not-live / recording view (a YouTube archive) offers no ask. (A
+      // live session WITH the ask entry is locked by the live-broadcast
+      // golden.)
       expect(find.text('Ask a question'), findsNothing);
     });
 
@@ -509,8 +513,9 @@ void main() {
           ),
         ),
         sessionId: 's1',
-        // video_player can't initialise headless → the player shows the terminal
-        // error surface (not an endless spinner), with a Retry (D-349 / L-7).
+        // video_player can't initialise headless → the player shows the
+        // terminal error surface (not an endless spinner), with a Retry (D-349
+        // / L-7).
         settle: false,
       );
 
@@ -591,8 +596,8 @@ void main() {
           ),
         ),
         sessionId: 's1',
-        // The HLS feed can't initialise headless — the player surfaces its error
-        // state, but the caption strip is a sibling and still renders.
+        // The HLS feed can't initialise headless — the player surfaces its
+        // error state, but the caption strip is a sibling and still renders.
         settle: false,
       );
 
@@ -685,8 +690,8 @@ void main() {
       expect(find.text('RATE s1 Session'), findsOneWidget);
 
       // Re-enter + leave again → not prompted a second time (the shared tracker
-      // already recorded it). The re-mount re-inits the (headless-failing) player,
-      // so pump fixed frames rather than settling on it.
+      // already recorded it). The re-mount re-inits the (headless-failing)
+      // player, so pump fixed frames rather than settling on it.
       router.go('/live');
       await tester.pump(const Duration(milliseconds: 200));
       router.go('/gone');
@@ -846,7 +851,8 @@ void main() {
 
       expect(find.byType(LiveBadge), findsOneWidget);
       expect(find.text('Ask a question'), findsOneWidget);
-      // "يُبث الآن" — asserted in the default English locale as its translation.
+      // "يُبث الآن" — asserted in the default English locale as its
+      // translation.
       expect(find.text('Now broadcasting'), findsOneWidget);
     });
 
@@ -868,7 +874,8 @@ void main() {
 
       expect(find.byType(LiveBadge), findsNothing);
       expect(find.text('Ask a question'), findsNothing);
-      // The archive header reads the neutral session label, not "now broadcasting".
+      // The archive header reads the neutral session label, not "now
+      // broadcasting".
       expect(find.text('Now broadcasting'), findsNothing);
       expect(find.text('Session'), findsOneWidget);
     });

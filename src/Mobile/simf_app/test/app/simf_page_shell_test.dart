@@ -365,8 +365,8 @@ void main() {
         locale: const Locale('ar'),
       );
 
-      // Forced LTR (owner 2026-06-28 "match figma in sub page nav"): back on the
-      // left, the trailing cluster (ending in ☰) on the right.
+      // Forced LTR (owner 2026-06-28 "match figma in sub page nav"): back on
+      // the left, the trailing cluster (ending in ☰) on the right.
       final backDx = tester.getCenter(find.byType(SimfCircledBackButton)).dx;
       final menuDx = tester.getCenter(find.byIcon(Icons.menu)).dx;
       expect(backDx, lessThan(menuDx));

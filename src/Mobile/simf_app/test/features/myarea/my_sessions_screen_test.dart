@@ -31,7 +31,8 @@ MyAreaSessionItem _session({
       id: id,
       title: title,
       titleArabic: title,
-      // upcoming → far future (always "upcoming"); else far past (always ended).
+      // upcoming → far future (always "upcoming"); else far past (always
+      // ended).
       start: upcoming ? DateTime.utc(2099, 1, 1, 6) : DateTime.utc(2020, 1, 1, 6),
       end: upcoming ? DateTime.utc(2099, 1, 1, 7) : DateTime.utc(2020, 1, 1, 7),
       status: status,
@@ -105,7 +106,8 @@ void main() {
     testWidgets('the Attended tab partitions on the attended flag',
         (tester) async {
       await _pump(tester, <MyAreaSessionItem>[
-        // Attended + ended → only on حضرتها; not-attended + future → only on القادمة.
+        // Attended + ended → only on حضرتها; not-attended + future → only on
+        // القادمة.
         _session(id: 's1', title: 'WentTo', attended: true, upcoming: false),
         _session(id: 's2', title: 'ToCome', attended: false),
       ]);

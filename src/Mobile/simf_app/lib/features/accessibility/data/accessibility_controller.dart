@@ -183,7 +183,8 @@ class AccessibilityController extends Notifier<AccessibilitySettings> {
 
   /// Best-effort write-through. A failed sync must never disturb the choice the
   /// user just made: the local prefs are already written and stay authoritative
-  /// until the next successful sync (same contract as `OrgProfileController.warm`).
+  /// until the next successful sync (same contract as
+  /// `OrgProfileController.warm`).
   Future<void> _pushToServer() async {
     try {
       await ref.read(accessibilityPreferencesRepositoryProvider).save(state);

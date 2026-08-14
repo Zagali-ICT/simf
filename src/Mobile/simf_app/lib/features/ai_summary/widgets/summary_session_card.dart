@@ -10,8 +10,8 @@ import 'package:simf_app/features/sessions/data/session_models.dart';
 final DateFormat _agendaTime = DateFormat('hh:mm a', 'en');
 
 /// The "الجلسة" info card (frame 1072:14628): the white Medium label over the
-/// bordered selected-session box (gold title + day·time·duration·hall sub-line),
-/// then that day's agenda timeline.
+/// bordered selected-session box (gold title + day·time·duration·hall
+/// sub-line), then that day's agenda timeline.
 class SummarySessionCard extends StatelessWidget {
   const SummarySessionCard({
     required this.label,

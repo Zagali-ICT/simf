@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
-/// A published CMS content block — mirrors `SIMF.Contracts.Cms.PublicContentBlock`
-/// (`GET /app/content/{key}` → `{ key, content, contentArabic, lastUpdatedAt }`).
-/// Read-only; the app never writes content. Used by the Terms page (key `terms`)
-/// and any future static-content screen.
+/// A published CMS content block — mirrors
+/// `SIMF.Contracts.Cms.PublicContentBlock` (`GET /app/content/{key}` → `{ key,
+/// content, contentArabic, lastUpdatedAt }`). Read-only; the app never writes
+/// content. Used by the Terms page (key `terms`) and any future static-content
+/// screen.
 @immutable
 class ContentBlock {
   const ContentBlock({
@@ -26,8 +27,9 @@ class ContentBlock {
   final String contentArabic; // Arabic body (HTML/markdown)
   final DateTime? lastUpdatedAt;
 
-  /// The body for the active locale, falling back to the other language when the
-  /// requested one is empty (Arabic primary, English secondary — Page_009 L-8).
+  /// The body for the active locale, falling back to the other language when
+  /// the requested one is empty (Arabic primary, English secondary — Page_009
+  /// L-8).
   String localizedBody({required bool isArabic}) {
     if (isArabic) {
       return contentArabic.trim().isNotEmpty ? contentArabic : content;

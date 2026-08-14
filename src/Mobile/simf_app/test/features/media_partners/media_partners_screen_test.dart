@@ -193,7 +193,8 @@ void main() {
     // D-436 verification rule: confirm RTL placement with a deterministic
     // Arabic-locale position test, not a visual claim. In RTL a Row lays its
     // children inline-start→end = right→left, so the first tab (partners) sits
-    // right-most and the second (latest-updates) left — matching frame 947:3764.
+    // right-most and the second (latest-updates) left — matching frame
+    // 947:3764.
     testWidgets('lays the tabs partners→latest right-to-left in Arabic',
         (tester) async {
       await _pump(tester,

@@ -80,7 +80,8 @@ class _IdentityVerificationScreenState
 
   Future<void> _initCamera() async {
     if (kIsWeb) {
-      // No live preview on web — show the "camera required" message (no gallery).
+      // No live preview on web — show the "camera required" message (no
+      // gallery).
       setState(() => _cameraFailed = true);
       return;
     }
@@ -166,8 +167,8 @@ class _IdentityVerificationScreenState
     }
   }
 
-  /// Step passed — on the first (smile) step grab the forward selfie; advance to
-  /// the next step, or finish on the last.
+  /// Step passed — on the first (smile) step grab the forward selfie; advance
+  /// to the next step, or finish on the last.
   Future<void> _advance() async {
     final controller = _camera;
     if (controller == null) {
@@ -194,10 +195,11 @@ class _IdentityVerificationScreenState
     }
   }
 
-  /// Liveness passed. Return the live smile-frame; if it was not grabbed, take a
-  /// final live shot now (the human is verified). There is NO gallery fallback —
-  /// the identity photo must be a live camera image (owner 2026-07-06, D-662);
-  /// if no live frame can be captured, show the "camera required" retry.
+  /// Liveness passed. Return the live smile-frame; if it was not grabbed, take
+  /// a final live shot now (the human is verified). There is NO gallery
+  /// fallback — the identity photo must be a live camera image (owner
+  /// 2026-07-06, D-662); if no live frame can be captured, show the "camera
+  /// required" retry.
   Future<void> _finish() async {
     var bytes = _forwardFrame;
     final controller = _camera;

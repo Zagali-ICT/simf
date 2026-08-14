@@ -180,8 +180,8 @@ Future<void> _pump(WidgetTester tester, _FakeGates repo) async {
   await tester.pumpAndSettle();
 }
 
-/// Walks the new setup → scanner flow (D-509): pick the movement direction, then
-/// open the scanner. Defaults to Entry (دخول).
+/// Walks the new setup → scanner flow (D-509): pick the movement direction,
+/// then open the scanner. Defaults to Entry (دخول).
 Future<void> _openScanner(WidgetTester tester,
     {String direction = 'Entry',}) async {
   await tester.tap(find.text(direction));

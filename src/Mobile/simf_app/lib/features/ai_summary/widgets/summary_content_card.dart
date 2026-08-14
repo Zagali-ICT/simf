@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:simf_app/app/theme/tokens.dart';
 
-/// The active-tab content card (frame 1072:14673): a navy (#01132D) box with the
-/// gold-bar heading (bar on the right) and the bullets / note below.
+/// The active-tab content card (frame 1072:14673): a navy (#01132D) box with
+/// the gold-bar heading (bar on the right) and the bullets / note below.
 class SummaryTabContentCard extends StatelessWidget {
   const SummaryTabContentCard({
     required this.heading,

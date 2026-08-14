@@ -44,8 +44,9 @@ class DelegationsBody extends StatelessWidget {
   /// Clears the flag filter (from the active-filter chip).
   final VoidCallback onClearFilter;
 
-  /// Bi-Meeting rework — when set (the user holds AllowsDelegationMeeting), fired
-  /// with a delegation when its card is tapped to request a meeting with it.
+  /// Bi-Meeting rework — when set (the user holds AllowsDelegationMeeting),
+  /// fired with a delegation when its card is tapped to request a meeting with
+  /// it.
   final void Function(DelegationItem delegation)? onRequestMeeting;
 
   @override

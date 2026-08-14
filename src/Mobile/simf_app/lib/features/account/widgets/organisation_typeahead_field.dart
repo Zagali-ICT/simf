@@ -6,12 +6,13 @@ import 'package:simf_app/core/widgets/simf_field_label.dart';
 import 'package:simf_app/core/widgets/simf_field_style.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 
-/// The organisation (جهة العمل) debounced type-ahead on the sign-up profile step.
+/// The organisation (جهة العمل) debounced type-ahead on the sign-up profile
+/// step.
 ///
-/// Two shapes: once a row is picked it collapses to the chosen name plus a Clear
-/// action; until then it is a search field over the live results. D-375 — fetch
-/// state comes FIRST (spinner while searching, retry on failure), so "no matches"
-/// only ever describes a COMPLETED empty search.
+/// Two shapes: once a row is picked it collapses to the chosen name plus a
+/// Clear action; until then it is a search field over the live results. D-375 —
+/// fetch state comes FIRST (spinner while searching, retry on failure), so "no
+/// matches" only ever describes a COMPLETED empty search.
 ///
 /// Presentation only: the screen owns the controller, the debounce and the
 /// results. Extracted from `sign_up_visitor_screen`.

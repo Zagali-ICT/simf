@@ -10,9 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 /// faithful the real brand fonts must be loaded, otherwise Arabic text falls
 /// back to boxes/Ahem. Call this once from `setUpAll`.
 ///
-/// Loads the bundled brand faces (FSAlbertArabic / Cairo / Inter) from the app's
-/// declared font assets, plus MaterialIcons from the Flutter SDK cache (it ships
-/// with the SDK, not as an app asset) so `Icons.*` glyphs render, not boxes.
+/// Loads the bundled brand faces (FSAlbertArabic / Cairo / Inter) from the
+/// app's declared font assets, plus MaterialIcons from the Flutter SDK cache
+/// (it ships with the SDK, not as an app asset) so `Icons.*` glyphs render, not
+/// boxes.
 Future<void> loadGoldenFonts() async {
   Future<void> load(String family, List<String> assets) async {
     final loader = FontLoader(family);

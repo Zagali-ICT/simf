@@ -18,19 +18,20 @@ import 'golden_fonts.dart';
 
 /// Golden render of the Notifications screen against Figma frame **758:2491**
 /// (الإشعارات). Compare `goldens/notifications_758-2491.png` to the frame:
-///   flutter test --update-goldens test/golden/notifications_golden_test.dart
+/// flutter test --update-goldens test/golden/notifications_golden_test.dart
 ///
 /// Frame parity expected: the search box + الكل / جلسات / VIP filter chips and
-/// مسح الكل action, a day header (here "date"), then borderless navyDeep cards —
-/// each a 40px solid circular **per-kind** category mark (D-531: gold ticket for
-/// an approved account, green check for a session reminder, green card for a
-/// scheduled meeting, coral star for a VIP invitation, coral busy-mark for a
-/// rejection), the bold title + body + "{time} · {day}" line, and the red unread
-/// dot at the top inline-end corner. RTL throughout.
+/// مسح الكل action, a day header (here "date"), then borderless navyDeep cards
+/// — each a 40px solid circular **per-kind** category mark (D-531: gold ticket
+/// for an approved account, green check for a session reminder, green card for
+/// a scheduled meeting, coral star for a VIP invitation, coral busy-mark for a
+/// rejection), the bold title + body + "{time} · {day}" line, and the red
+/// unread dot at the top inline-end corner. RTL throughout.
 ///
-/// The screen auto-marks the inbox read on open (`_openInbox`), which would strip
-/// the unread dots before the shot — so the fake repo throws from `markAllRead`
-/// to preserve the populated unread frame for the parity comparison.
+/// The screen auto-marks the inbox read on open (`_openInbox`), which would
+/// strip the unread dots before the shot — so the fake repo throws from
+/// `markAllRead` to preserve the populated unread frame for the parity
+/// comparison.
 
 NotificationItem _n({
   required String id,

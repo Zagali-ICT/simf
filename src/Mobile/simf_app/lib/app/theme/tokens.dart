@@ -32,13 +32,15 @@ class SimfTokens {
 
   // Request-status colours — الطلبات chips + card borders (Figma 1408:9760+,
   // Tailwind-500): accepted green / rejected red / cancelled grey. Pending
-  // reuses [qStage] (#F59E0B). Chips render the colour at 12% fill + 20% border.
+  // reuses [qStage] (#F59E0B). Chips render the colour at 12% fill + 20%
+  // border.
   static const Color statusAccepted = Color(0xFF22C55E);
   static const Color statusRejected = Color(0xFFEF4444);
   static const Color statusCancelled = Color(0xFF6B7280);
 
-  // D-745 — bilateral-meetings card flag badge (Figma 1408:9726): the nationality
-  // flag emoji on a soft green well (green #27AE60 @ 9% fill + 21% border).
+  // D-745 — bilateral-meetings card flag badge (Figma 1408:9726): the
+  // nationality flag emoji on a soft green well (green #27AE60 @ 9% fill + 21%
+  // border).
   static const Color flagBadgeBg = Color(0x1727AE60);
   static const Color flagBadgeBorder = Color(0x3627AE60);
 
@@ -382,8 +384,8 @@ class SimfTokens {
     color: beigeBorder,
     fontSize: textSm,
   );
-  // Colourless bullet bases — the [ArchiveBullet] text colour is a runtime param,
-  // so these carry only size/weight/height and take `.copyWith(color:)`.
+  // Colourless bullet bases — the [ArchiveBullet] text colour is a runtime
+  // param, so these carry only size/weight/height and take `.copyWith(color:)`.
   static const TextStyle bulletTitle = TextStyle(
     fontSize: textLg,
     fontWeight: FontWeight.w600,
@@ -431,7 +433,8 @@ class SimfTokens {
     fontSize: textXl,
     fontWeight: FontWeight.w700,
   );
-  // venue map (Figma 758:1358) — light info-card subtitle + node-marker caption.
+  // venue map (Figma 758:1358) — light info-card subtitle + node-marker
+  // caption.
   static const TextStyle bodyGreySm = TextStyle(
     color: greyText,
     fontSize: textSm,
@@ -752,7 +755,8 @@ class SimfTokens {
   );
 
   /// Colour-only bodies for text inside a sized parent (list tiles, inline
-  /// hints) — the size comes from the surrounding style, as with [bodyInkMuted].
+  /// hints) — the size comes from the surrounding style, as with
+  /// [bodyInkMuted].
   static const TextStyle bodyGrey = TextStyle(
     color: greyText,
   );
@@ -769,7 +773,8 @@ class SimfTokens {
   );
   // home (Figma 758:1239) — highlights carousel slide title. Most home text
   // reuses S3 tokens (labelWhiteMediumSm, labelGoldSemiboldLg, bodyWhiteSm,
-  // labelGoldBoldLg, labelGoldBold, labelWhiteSemibold, bodyWhiteMd, bodyBeige).
+  // labelGoldBoldLg, labelGoldBold, labelWhiteSemibold, bodyWhiteMd,
+  // bodyBeige).
   static const TextStyle labelWhiteBoldLgTall = TextStyle(
     color: surface,
     fontSize: textLg,
@@ -878,8 +883,8 @@ class SimfTokens {
       340; // seat-map viewport height before the grid scrolls vertically
   static const double seatSwatchSm = 14; // my-seat legend swatch
   static const double seatSwatchLg = 16; // picker + available legend swatch
-  // D-771 — the staff seating desk (tablet): the body's reading-width cap and the
-  // guest-photo square on the result card.
+  // D-771 — the staff seating desk (tablet): the body's reading-width cap and
+  // the guest-photo square on the result card.
   static const double staffSeatingMaxWidth = 960;
   static const double staffSeatingPhotoSize = 64;
   static const double seatRowLabelWidth = 12; // seat-map row column (1 letter)

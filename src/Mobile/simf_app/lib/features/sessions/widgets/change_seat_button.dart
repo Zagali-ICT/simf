@@ -3,9 +3,9 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 
 /// B1 — the "change seat" action: a full-width gold-outlined button under the
-/// frame's action row. Its visible label IS its accessible name, and the leading
-/// icon is decorative (no `semanticLabel`), so a screen reader announces exactly
-/// "تغيير المقعد" / "Change seat" once.
+/// frame's action row. Its visible label IS its accessible name, and the
+/// leading icon is decorative (no `semanticLabel`), so a screen reader
+/// announces exactly "تغيير المقعد" / "Change seat" once.
 class ChangeSeatButton extends StatelessWidget {
   const ChangeSeatButton({required this.l10n, required this.onChangeSeat, super.key});
 

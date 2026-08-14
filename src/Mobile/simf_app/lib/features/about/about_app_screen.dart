@@ -39,8 +39,8 @@ class AboutAppScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     // D-736 — the real installed version (package_info_plus via main()).
     final installedVersion = ref.watch(installedAppVersionProvider);
-    // The edition's org profile (loaded at splash, persisted, null until then) —
-    // reused so "support" shows the same contact the forum-about page does,
+    // The edition's org profile (loaded at splash, persisted, null until then)
+    // — reused so "support" shows the same contact the forum-about page does,
     // never a second hardcoded copy.
     final profile = ref.watch(orgProfileProvider);
     final contactRows = <(String, String)>[

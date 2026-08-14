@@ -126,7 +126,8 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 13, name: RouteNames.home, path: '/', labelAr: 'الرئيسية', labelEn: 'Home'),
   _Route(number: 14, name: RouteNames.myArea, path: '/my-area', labelAr: 'الملف الشخصى', labelEn: 'Profile'),
   _Route(number: 15, name: RouteNames.venueMap, path: '/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
-  // §9 (D-276) — mockup screen 16 renamed Agenda → Sessions (route + path + label).
+  // §9 (D-276) — mockup screen 16 renamed Agenda → Sessions (route + path +
+  // label).
   _Route(number: 16, name: RouteNames.sessions, path: '/sessions', labelAr: 'الجلسات', labelEn: 'Sessions'),
   _Route(number: 17, name: RouteNames.sessionDetail, path: '/sessions/:sessionId', labelAr: 'تفاصيل الجلسة', labelEn: 'Session detail'),
   _Route(number: 18, name: RouteNames.mySeat, path: '/sessions/:sessionId/my-seat', labelAr: 'مقعدي', labelEn: 'My seat'),
@@ -169,14 +170,16 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 41, name: RouteNames.more, path: '/more', labelAr: 'المزيد', labelEn: 'More'),
 
   // FDS-014 visitor contact sharing (D-286; additive, not mockup-numbered →
-  // sentinel numbers 100+ so they never collide with mockup 1–41 or the aux 0s).
+  // sentinel numbers 100+ so they never collide with mockup 1–41 or the aux
+  // 0s).
   _Route(number: 100, name: RouteNames.myContacts, path: '/contacts', labelAr: 'جهات اتصالي', labelEn: 'My Contacts'),
   _Route(number: 101, name: RouteNames.shareMyContact, path: '/contacts/share', labelAr: 'شارك جهة اتصالي', labelEn: 'Share my contact'),
   _Route(number: 102, name: RouteNames.scanContact, path: '/contacts/scan', labelAr: 'مسح رمز QR', labelEn: 'Scan QR'),
   _Route(number: 103, name: RouteNames.identityVerification, path: '/my-area/verify-identity', labelAr: 'التحقق من الهوية', labelEn: 'Identity verification'),
   _Route(number: 104, name: RouteNames.sessionModerate, path: '/sessions/:sessionId/moderate', labelAr: 'أسئلة الجلسة', labelEn: 'Session questions'),
   _Route(number: 105, name: RouteNames.gateScanner, path: '/gates/scan', labelAr: 'مسح البوابة', labelEn: 'Gate scanner'),
-  // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
+  // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s
+  // visitors).
   _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
   // BUG-025 — named for the booth so it is never read as "My Contacts".
   _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زوار جناحي', labelEn: 'My Booth Visitors'),
@@ -186,12 +189,14 @@ const List<_Route> _routes = <_Route>[
   // D-771 — the staff seating desk (approved Staff; server enforces
   // Seating.Assist). Derived from the visitor seat picker (109).
   _Route(number: 118, name: RouteNames.staffSeating, path: '/staff/seating/:sessionId', labelAr: 'إرشاد الضيوف للمقاعد', labelEn: 'Guest seating desk'),
-  // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only), retitled
-  // "طلباتي" once the meetings page split off (D-745).
+  // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only),
+  // retitled "طلباتي" once the meetings page split off (D-745).
   _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'طلباتي', labelEn: 'My requests'),
-  // D-745 — the VIP bilateral-meetings page (اللقاءات الثنائية, Figma 1408:9726).
+  // D-745 — the VIP bilateral-meetings page (اللقاءات الثنائية, Figma
+  // 1408:9726).
   _Route(number: 116, name: RouteNames.meetings, path: '/meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
-  // Bi-Meeting rework — the other-party confirm screen (deep-link from a notification).
+  // Bi-Meeting rework — the other-party confirm screen (deep-link from a
+  // notification).
   _Route(number: 117, name: RouteNames.meetingConfirm, path: '/meeting-confirm', labelAr: 'تأكيد الاجتماع', labelEn: 'Confirm meeting'),
   // (D-609: route 115 My-meetings removed — the screen was deleted; recover it
   //  from git history if it is ever needed again.)
@@ -202,8 +207,9 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 111, name: RouteNames.sessionSummaryList, path: '/session-summaries', labelAr: 'ملخص الجلسات', labelEn: 'Session summaries'),
   // #9 — venue map focused on a booth (booth "أرشدني" CTA; public, pushed).
   _Route(number: 112, name: RouteNames.boothMap, path: '/booths/:boothId/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
-  // #5 (D-710) — My sessions (عروض الجلسات, Figma 1388:9067), approved-attendee;
-  // restored + linked from the More menu (owner reversed the D-609 removal).
+  // #5 (D-710) — My sessions (عروض الجلسات, Figma 1388:9067),
+  // approved-attendee; restored + linked from the More menu (owner reversed the
+  // D-609 removal).
   _Route(number: 113, name: RouteNames.myAreaSessions, path: '/my-sessions', labelAr: 'عروض الجلسات', labelEn: 'My sessions'),
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
@@ -241,9 +247,10 @@ const List<_Route> _auxRoutes = <_Route>[
 ];
 
 /// Screen numbers that need a signed-in user of **any** role (including a
-/// pending/unapproved account, which resolves to [AppRole.guest]). These are the
-/// universal onboarding + account routes everyone signed-in shares; role-specific
-/// pages live in [_routeRoles] instead (a route there is also auth-gated).
+/// pending/unapproved account, which resolves to [AppRole.guest]). These are
+/// the universal onboarding + account routes everyone signed-in shares;
+/// role-specific pages live in [_routeRoles] instead (a route there is also
+/// auth-gated).
 const Set<int> _authenticatedRoutes = <int>{
   7, // Sign up — visitor profile data (AUTH-only, Page_007 L-1)
   701, // Sign up — interests + the single save (AUTH-only, Page_007-01, D-332)
@@ -275,14 +282,14 @@ const Set<int> _authenticatedRoutes = <int>{
 };
 
 /// The clean role→page model (D-519): the explicit set of [AppRole]s allowed to
-/// open each role-restricted route. A route here is **also** auth-gated (it needs
-/// sign-in). A signed-in user whose role is **not in the set** is redirected
-/// home. The server stays the real authority (per-session grant / GateOperator /
-/// Visitors.RegisterOnsite); this is the UX gate that keeps the wrong role out
-/// of the screen AND lets the nav surfaces show only the role's own pages. This
-/// replaced the old min-role `isAtLeast` ladder, which could not express
-/// "Exhibitor = Visitor + extras" or "Staff/Moderator are focused, NOT a
-/// visitor superset".
+/// open each role-restricted route. A route here is **also** auth-gated (it
+/// needs sign-in). A signed-in user whose role is **not in the set** is
+/// redirected home. The server stays the real authority (per-session grant /
+/// GateOperator / Visitors.RegisterOnsite); this is the UX gate that keeps the
+/// wrong role out of the screen AND lets the nav surfaces show only the role's
+/// own pages. This replaced the old min-role `isAtLeast` ladder, which could
+/// not express "Exhibitor = Visitor + extras" or "Staff/Moderator are focused,
+/// NOT a visitor superset".
 const Set<AppRole> _attendee = <AppRole>{AppRole.visitor, AppRole.exhibitor};
 const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   // Attendee features — Visitor + Exhibitor (NOT Staff/Moderator: D-519 focused).
@@ -303,11 +310,12 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
   113: _attendee, // My sessions (D-710, restored — owner reversed the D-609 removal)
-  // 202 (Session presentations — the "الجلسات" list) is PUBLIC (owner 2026-07-22):
-  // a guest opens it from the home "Sessions" tile, so it is intentionally NOT
-  // gated here. Its reads (`GET /app/presentations[/{id}/file]`) are AllowAnonymous.
-  // (D-609: routes 115 My-meetings, 205 Saved-sessions removed — the screens
-  // were deleted, recoverable from git history; 113 My-sessions restored by D-710.)
+  // 202 (Session presentations — the "الجلسات" list) is PUBLIC (owner
+  // 2026-07-22): a guest opens it from the home "Sessions" tile, so it is
+  // intentionally NOT gated here. Its reads (`GET
+  // /app/presentations[/{id}/file]`) are AllowAnonymous. (D-609: routes 115
+  // My-meetings, 205 Saved-sessions removed — the screens were deleted,
+  // recoverable from git history; 113 My-sessions restored by D-710.)
   // Exhibitor-only — lead capture (D-426).
   106: <AppRole>{AppRole.exhibitor}, // Scan visitor badge
   107: <AppRole>{AppRole.exhibitor}, // My Visitors
@@ -316,7 +324,8 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   114: <AppRole>{AppRole.staff}, // Walk-in visitor registration
   118: <AppRole>{AppRole.staff}, // Seating desk (D-771)
   // Moderator-only — the session Q&A desk (D-405). Moderator-EXCLUSIVE now
-  // (D-519): Staff no longer inherits it (the old isAtLeast made Staff >= Moderator).
+  // (D-519): Staff no longer inherits it (the old isAtLeast made Staff >=
+  // Moderator).
   104: <AppRole>{AppRole.moderator}, // Session Q&A desk
 };
 
@@ -659,17 +668,17 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
 /// the redirect gate WITHOUT disposing and recreating every page. An earlier
 /// incrementing-counter key gave every page a new key on each refresh, so a
 /// token proactive-refresh churned all pages — silently dropping in-flight work
-/// on a PUSHED route (e.g. the avatar upload that resumes after the multi-second
-/// liveness, whose caller then read `!mounted`) and reloading screens under it.
-/// go_router disambiguates duplicate locations internally, so `pageKey` does not
-/// collide in Flutter's `_debugCheckDuplicatedPageKeys`.
+/// on a PUSHED route (e.g. the avatar upload that resumes after the
+/// multi-second liveness, whose caller then read `!mounted`) and reloading
+/// screens under it. go_router disambiguates duplicate locations internally, so
+/// `pageKey` does not collide in Flutter's `_debugCheckDuplicatedPageKeys`.
 ///
 /// Builds the go_router instance.
 ///
-/// The redirect logic implements the auth gate (SIMF-MAA-001 §8): a request
-/// for a protected route while signed out gets redirected to sign-in. The
-/// router refreshes on every auth-state change ([refreshListenable]) so the
-/// gate re-runs when the cold-start restore resolves or the session ends.
+/// The redirect logic implements the auth gate (SIMF-MAA-001 §8): a request for
+/// a protected route while signed out gets redirected to sign-in. The router
+/// refreshes on every auth-state change ([refreshListenable]) so the gate
+/// re-runs when the cold-start restore resolves or the session ends.
 GoRouter buildRouter(Ref ref) {
   final authRefresh = _AuthRefreshNotifier(ref);
 

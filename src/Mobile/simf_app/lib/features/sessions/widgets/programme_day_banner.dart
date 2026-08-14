@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/sessions/widgets/day_banner_fallback.dart';
 
-/// The day banner (frame node 1064:13240): the selected day's logo image under a
-/// navy bottom-gradient with the gold anchor badge at the inline-end. A navy
+/// The day banner (frame node 1064:13240): the selected day's logo image under
+/// a navy bottom-gradient with the gold anchor badge at the inline-end. A navy
 /// anchor-glyph box is the no-logo fall-back. 85 high, full width.
 class ProgrammeDayBanner extends StatelessWidget {
   const ProgrammeDayBanner({this.imageUrl, super.key});

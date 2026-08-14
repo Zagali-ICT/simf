@@ -29,8 +29,8 @@ List<DeviceOrientation> liveFullScreenOrientations(
 
 /// The live video surface. Owns its own controller and picks the player by the
 /// URL (D-349): a YouTube link → the IFrame player; anything else (HLS/MP4) →
-/// `video_player`. The parent rebuilds this with a new `ValueKey(url)` to switch
-/// feeds, so this widget only ever binds one URL for its lifetime.
+/// `video_player`. The parent rebuilds this with a new `ValueKey(url)` to
+/// switch feeds, so this widget only ever binds one URL for its lifetime.
 ///
 /// The YouTube path shows a fullscreen button (D-721): entering fullscreen
 /// rotates to landscape and exiting restores portrait — a deliberate,

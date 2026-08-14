@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:simf_app/core/utils/saudi_time.dart';
 
-/// D-500 (Wave 5, الطلبات 1408:9726) — which kind a unified "My requests" row is.
-/// Mirrors the `AppRequestKind` contract (int on the wire). The app renders the
-/// type headline from this value.
+/// D-500 (Wave 5, الطلبات 1408:9726) — which kind a unified "My requests" row
+/// is. Mirrors the `AppRequestKind` contract (int on the wire). The app renders
+/// the type headline from this value.
 enum AppRequestKind {
   speakerMeeting,
   delegationMeeting,
@@ -118,8 +118,9 @@ class AppRequestItem {
   /// for the other kinds, where the card falls back to the meeting-type line.
   final String? subtitle;
 
-  /// 2026-07-19 (owner) — the Arabic twin of [subtitle] (the speaker's rank), so
-  /// the rank line localizes AR/EN. Null for the non-speaker kinds / when unset.
+  /// 2026-07-19 (owner) — the Arabic twin of [subtitle] (the speaker's rank),
+  /// so the rank line localizes AR/EN. Null for the non-speaker kinds / when
+  /// unset.
   final String? subtitleArabic;
 
   /// D-745 — the speaker's id for a speaker meeting, so the bilateral-meetings
@@ -128,8 +129,8 @@ class AppRequestItem {
   final String? speakerId;
 
   /// D-745 — the ISO 3166-1 numeric country id for the meeting card's flag: the
-  /// speaker's nationality (speaker meeting) or the target country (delegation).
-  /// Null when unset / for the non-meeting kinds.
+  /// speaker's nationality (speaker meeting) or the target country
+  /// (delegation). Null when unset / for the non-meeting kinds.
   final int? countryId;
 
   /// R-3 — the admin's response note for a decided request (e.g. the rejection
@@ -163,8 +164,9 @@ class AppRequestItem {
   /// The date shown on the card — the session/meeting slot, else the submit date.
   DateTime get displayDate => eventDate ?? createdAt;
 
-  /// D-745 — the two bilateral-meeting kinds shown on the اللقاءات الثنائية page
-  /// (speaker + delegation); the other kinds live only on the requests history.
+  /// D-745 — the two bilateral-meeting kinds shown on the اللقاءات الثنائية
+  /// page (speaker + delegation); the other kinds live only on the requests
+  /// history.
   bool get isMeetingKind =>
       kind == AppRequestKind.speakerMeeting ||
       kind == AppRequestKind.delegationMeeting;

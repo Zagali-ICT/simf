@@ -535,8 +535,8 @@ void main() {
       await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
 
       // UserProfile.Name / NameArabic are nvarchar(50) and
-      // AdminWalkInRegistrationRequestValidator caps both at 50. The inputs used
-      // to accept 100, so a long name round-tripped into a 400.
+      // AdminWalkInRegistrationRequestValidator caps both at 50. The inputs
+      // used to accept 100, so a long name round-tripped into a 400.
       final fields = find.byType(TextFormField);
       await tester.enterText(fields.at(0), 'ب' * 80);
       await tester.enterText(fields.at(1), 'B' * 80);
@@ -585,7 +585,8 @@ void main() {
         findsOneWidget,
       );
 
-      // Correcting the field drops the server message without another round-trip.
+      // Correcting the field drops the server message without another
+      // round-trip.
       await tester.enterText(find.byType(TextFormField).at(1), 'Raed S');
       await tester.pumpAndSettle();
       expect(

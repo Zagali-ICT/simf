@@ -31,7 +31,8 @@ void main() {
         SeatSelectionMode.fromJson('OpenSeating'),
         SeatSelectionMode.openSeating,
       );
-      // An older server that omits the field → seat-assigned (the safe default).
+      // An older server that omits the field → seat-assigned (the safe
+      // default).
       expect(SeatSelectionMode.fromJson(null), SeatSelectionMode.assignedSeat);
       expect(SeatSelectionMode.fromJson(9), SeatSelectionMode.assignedSeat);
       expect(SeatSelectionMode.openSeating.isOpenSeating, isTrue);

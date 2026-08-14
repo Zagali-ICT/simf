@@ -15,8 +15,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// A fake profile repository — returns canned lookups + a configurable profile,
 /// and records the profile-types filter, so the data screen's load → validate →
-/// Next glue is testable without a real HTTP client. (Reworked D-332: this screen
-/// no longer saves — the upsert moved to the interests screen.)
+/// Next glue is testable without a real HTTP client. (Reworked D-332: this
+/// screen no longer saves — the upsert moved to the interests screen.)
 class _FakeProfileRepository implements ProfileRepository {
   _FakeProfileRepository({
     UserProfileResponse? profile,
@@ -236,7 +236,8 @@ UserProfileResponse _completeProfile({
 }) =>
     UserProfileResponse(
       interestIds: const <String>['i1'],
-      // At least 2 parts in one script (the name rules require a full name, D-683).
+      // At least 2 parts in one script (the name rules require a full name,
+      // D-683).
       arabicName: 'راكان عبدالله أحمد السالم',
       englishName: 'Rakan Abdullah Ahmed Alsalem',
       nationalityCode: 'SA',
@@ -380,8 +381,8 @@ void main() {
 
     testWidgets('a Saudi profile shows the birth-location region dropdown with '
         'the stored region selected (D-469)', (tester) async {
-      // _completeProfile is Saudi with placeOfBirth "Riyadh" (a region name), so
-      // the region dropdown is prefilled (matched from the stored name).
+      // _completeProfile is Saudi with placeOfBirth "Riyadh" (a region name),
+      // so the region dropdown is prefilled (matched from the stored name).
       final repo = _FakeProfileRepository(profile: _completeProfile());
       await _pump(tester, repo);
 
@@ -507,7 +508,8 @@ void main() {
       await tester.tap(find.byKey(picker));
       await tester.pumpAndSettle();
 
-      // The API name (not the const "Eastern Province") is what the sheet shows.
+      // The API name (not the const "Eastern Province") is what the sheet
+      // shows.
       expect(find.text('Eastern API Region'), findsOneWidget);
       expect(find.text('Eastern Province'), findsNothing);
     });

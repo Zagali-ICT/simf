@@ -15,16 +15,16 @@ import 'package:simf_app/features/registration/registration_success_screen.dart'
 import 'golden_fonts.dart';
 
 /// Golden render of the Registration-success screen against Figma frame
-/// **505:1451** (تم التسجيل). Regenerate:
-///   flutter test --update-goldens test/golden/registration_success_golden_test.dart
+/// **505:1451** (تم التسجيل). Regenerate: flutter test --update-goldens
+/// test/golden/registration_success_golden_test.dart
 ///
 /// Frame parity expected: the navy-surface page with the decorative top-right
 /// diagonal sweep, the back + centred title header, a 104px green ring around
-/// the check, the white "تم التسجيل بنجاح" headline over the beige welcome copy,
-/// the navy-80% reference-number card (beige label over the gold LTR
-/// `SIMF-2026-xxxx` mask), the full-width gold حالة التسجيل button + the outlined
-/// الانتقال للرئيسية button, and the تواصل معنا block (title, the call + mail
-/// tiles, the social footer). RTL throughout.
+/// the check, the white "تم التسجيل بنجاح" headline over the beige welcome
+/// copy, the navy-80% reference-number card (beige label over the gold LTR
+/// `SIMF-2026-xxxx` mask), the full-width gold حالة التسجيل button + the
+/// outlined الانتقال للرئيسية button, and the تواصل معنا block (title, the call
+/// + mail tiles, the social footer). RTL throughout.
 ///
 /// Fixed site-settings (no real fetch) so the PNG is stable run-to-run; no
 /// [RegistrationSuccessScreen.referenceNumber] is passed so the deterministic

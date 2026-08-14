@@ -335,7 +335,8 @@ void main() {
       expect(find.text('Q a text'), findsOneWidget);
     });
 
-    // DEF-MOD-001 — a failed write must not leave the optimistic mark on screen.
+    // DEF-MOD-001 — a failed write must not leave the optimistic mark on
+    // screen.
     testWidgets('DEF-MOD-001: a failed answered call rolls the row back',
         (tester) async {
       final repo = _FakeRepo(queue: <ModeratorQuestion>[_q('a')])

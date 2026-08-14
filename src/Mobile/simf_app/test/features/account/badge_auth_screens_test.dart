@@ -10,8 +10,8 @@ import 'package:simf_app/features/account/badge_sign_in_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// Part B (D-430) — widget tests for the badge-QR sign-in / activation screens:
-/// the resolve branch (has-password → sign-in; needs-email → activation) and the
-/// activation email-step render. The camera is off so the manual-entry path
+/// the resolve branch (has-password → sign-in; needs-email → activation) and
+/// the activation email-step render. The camera is off so the manual-entry path
 /// drives the resolve (no native plugin in the test environment).
 class _FakeAuthRepo implements AuthRepository {
   _FakeAuthRepo(this._resolve);
@@ -50,9 +50,9 @@ class _FakeAuthRepo implements AuthRepository {
       throw UnimplementedError(invocation.memberName.toString());
 }
 
-/// Mounts the activation screen directly (skipping the badge-resolve hop) so the
-/// validators can be driven on each step. [needsEmail] selects the email step
-/// (true) or the auto-started code+password step (false).
+/// Mounts the activation screen directly (skipping the badge-resolve hop) so
+/// the validators can be driven on each step. [needsEmail] selects the email
+/// step (true) or the auto-started code+password step (false).
 Widget _activationHost({
   required AuthRepository repo,
   required bool needsEmail,

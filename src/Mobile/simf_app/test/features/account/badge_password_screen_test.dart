@@ -11,8 +11,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// D-738 — a fake AuthController for the badge password step: `build()` returns
 /// SignedOut, and `signInWithBadge` either throws (wrong password) or sets the
-/// AwaitingOtp state (2FA account). The signed-in success path is covered by the
-/// controller unit test (it drives shared post-auth routing).
+/// AwaitingOtp state (2FA account). The signed-in success path is covered by
+/// the controller unit test (it drives shared post-auth routing).
 class _FakeController extends AuthController {
   _FakeController({this.failure, this.awaitingOtp = false});
 

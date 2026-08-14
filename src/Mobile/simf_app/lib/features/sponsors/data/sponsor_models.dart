@@ -48,8 +48,8 @@ class Sponsor {
   // D-432 — optional bilingual tagline shown under the name (Figma 922:2824).
   final String? tagline;
   final String? taglineArabic;
-  // D-456 — the sponsor's country (from the linked Contact), ISO 3166-1 numeric,
-  // for the corner flag on the logo. Null when unset.
+  // D-456 — the sponsor's country (from the linked Contact), ISO 3166-1
+  // numeric, for the corner flag on the logo. Null when unset.
   final int? countryId;
 
   String localizedName({required bool isArabic}) {
@@ -71,10 +71,11 @@ class Sponsor {
   }
 }
 
-/// The full sponsor detail — mirrors `SIMF.Contracts.Sponsors.PublicSponsorDetail`
-/// (`GET /app/sponsors/{id}`, Figma 1439:11826). Adds the "نبذة عن الراعي" about
-/// paragraph + the city to the card cluster; tier / website / country are the same
-/// fields the list carries.
+/// The full sponsor detail — mirrors
+/// `SIMF.Contracts.Sponsors.PublicSponsorDetail` (`GET /app/sponsors/{id}`,
+/// Figma 1439:11826). Adds the "نبذة عن الراعي" about paragraph + the city to
+/// the card cluster; tier / website / country are the same fields the list
+/// carries.
 @immutable
 class SponsorDetail {
   const SponsorDetail({

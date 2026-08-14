@@ -87,8 +87,9 @@ void main() {
         (tester) async {
       await _pump(tester, _withOwnLogo);
       // The exhibitor's own logo (owner = the exhibitor) is the primary source.
-      // (In tests the fake 400 fires the error path, so the CompanyLogo fallback
-      // also mounts nested — production only mounts it if the primary truly 404s.)
+      // (In tests the fake 400 fires the error path, so the CompanyLogo
+      // fallback also mounts nested — production only mounts it if the primary
+      // truly 404s.)
       expect(
         _networkImageUrls(tester),
         contains('http://test.local/api/v1/app/assets/ExhibitorLogo/ex1/image'),
@@ -99,9 +100,9 @@ void main() {
         (tester) async {
       await _pump(tester, _legacyOnly);
       final urls = _networkImageUrls(tester);
-      // No exhibitorId → the tile uses the legacy Contact CompanyLogo route so an
-      // exhibitor that has not re-uploaded its own logo still shows its logo, and
-      // no ExhibitorLogo route is wired at all.
+      // No exhibitorId → the tile uses the legacy Contact CompanyLogo route so
+      // an exhibitor that has not re-uploaded its own logo still shows its
+      // logo, and no ExhibitorLogo route is wired at all.
       expect(
         urls,
         contains('http://test.local/api/v1/app/assets/CompanyLogo/c1/image'),

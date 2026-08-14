@@ -41,7 +41,8 @@ class DelegationMeetingRequestSheet extends ConsumerStatefulWidget {
     super.key,
   });
 
-  /// The delegation to meet, or **null** for the bilateral entry (show the picker).
+  /// The delegation to meet, or **null** for the bilateral entry (show the
+  /// picker).
   final DelegationItem? country;
   final AppL10n l10n;
 
@@ -68,12 +69,14 @@ class _DelegationMeetingRequestSheetState
   bool _delegationsLoaded = false;
   String _query = '';
 
-  // The chosen delegation's real availability slots, loaded once a target is set.
+  // The chosen delegation's real availability slots, loaded once a target is
+  // set.
   List<DelegationSlot> _slots = const <DelegationSlot>[];
   bool _slotsLoading = false;
   // G3 — the slot fetch FAILED (network / server), which is NOT the same as the
-  // delegation having no availability. Kept apart so the sheet can offer a retry
-  // instead of telling the user something untrue and locking the send button.
+  // delegation having no availability. Kept apart so the sheet can offer a
+  // retry instead of telling the user something untrue and locking the send
+  // button.
   bool _slotsError = false;
   DateTime? _selectedDay;
   DelegationSlot? _selectedSlot;
@@ -132,7 +135,8 @@ class _DelegationMeetingRequestSheetState
       final slots = await ref
           .read(delegationsRepositoryProvider)
           .getAvailableSlots(countryId);
-      // Drop a stale response — the user may have switched target while in flight.
+      // Drop a stale response — the user may have switched target while in
+      // flight.
       if (!mounted || countryId != _selected?.countryId) {
         return;
       }
@@ -189,9 +193,9 @@ class _DelegationMeetingRequestSheetState
       return;
     }
     // G3 — a slot is now ALWAYS required. The subject-only bypass is gone: the
-    // server 409s a request against a delegation with no free slot, so sending one
-    // could only ever fail. The send button is disabled in that state; this is
-    // the guard for the picked-a-day-but-not-a-time case.
+    // server 409s a request against a delegation with no free slot, so sending
+    // one could only ever fail. The send button is disabled in that state; this
+    // is the guard for the picked-a-day-but-not-a-time case.
     final slot = _selectedSlot;
     if (slot == null) {
       setState(() => _error = l10n.meetingPickDateTime);
@@ -366,9 +370,10 @@ class _DelegationMeetingRequestSheetState
         ),
       );
 
-  /// G3 — the slot fetch failed: say so and offer a Retry. Deliberately different
-  /// copy from [AppL10n.meetingSlotNone] so a network blip is never read as "this
-  /// delegation has no availability", which would be a lie the user cannot act on.
+  /// G3 — the slot fetch failed: say so and offer a Retry. Deliberately
+  /// different copy from [AppL10n.meetingSlotNone] so a network blip is never
+  /// read as "this delegation has no availability", which would be a lie the
+  /// user cannot act on.
   Widget _slotsRetry(AppL10n l10n) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -580,9 +585,10 @@ class _DelegationMeetingRequestSheetState
   }
 
   /// G3 — disabled while the slots load, and disabled once they are loaded and
-  /// EMPTY (no free slot ⇒ the server would 409), so the user is never invited to
-  /// send a request that cannot succeed. A failed fetch ([_slotsError]) also
-  /// leaves it disabled — the Retry in the slot section is the way forward there.
+  /// EMPTY (no free slot ⇒ the server would 409), so the user is never invited
+  /// to send a request that cannot succeed. A failed fetch ([_slotsError]) also
+  /// leaves it disabled — the Retry in the slot section is the way forward
+  /// there.
   Widget _sendButton(AppL10n l10n) {
     final enabled = !_submitting && !_slotsLoading && _slots.isNotEmpty;
     return Opacity(

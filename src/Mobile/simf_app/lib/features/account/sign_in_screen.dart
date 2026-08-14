@@ -28,23 +28,24 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Page 003 — تسجيل الدخول · Sign in. The KSA-Project Figma design (node
-/// 168:2800), promoted from the D-358 preview to the official sign-in
-/// (D-360); the previous mockup screen is parked in `_legacy_mockup/`.
+/// 168:2800), promoted from the D-358 preview to the official sign-in (D-360);
+/// the previous mockup screen is parked in `_legacy_mockup/`.
 ///
 /// Email + password against `POST /app/auth/sign-in` with the 2FA email-OTP
 /// redirect, the post-sign-in profile-completeness route (D-288), and the
 /// Face-ID device-key path. Face-ID enrolment is offered post-sign-in via the
 /// step-up nudge (D-486/D-738: emailed OTP + OS device-credential confirm), not
-/// auto-enrolled. The email is pre-filled from the last successful sign-in; the design's
-/// "remember me" checkbox gates whether it is stored. The globe language toggle
-/// (top-right, wired to [LocaleController], D-363) and the underlined guest link
-/// (Page_012) round out the screen.
+/// auto-enrolled. The email is pre-filled from the last successful sign-in; the
+/// design's "remember me" checkbox gates whether it is stored. The globe
+/// language toggle (top-right, wired to [LocaleController], D-363) and the
+/// underlined guest link (Page_012) round out the screen.
 ///
 /// Clean-code (D-655): the screen composes the shared account widgets
 /// ([AccountHeader], [AccountTopControls], [AccountCard], [AccountEmailField],
-/// [AccountPasswordField], [AccountRememberForgot], [AccountAuthPrompt]) instead
-/// of local `_build*` copies; the decorative sweep is the shared [SimfAuthSweep];
-/// the back button was removed (it only dead-ended to onboarding — owner).
+/// [AccountPasswordField], [AccountRememberForgot], [AccountAuthPrompt])
+/// instead of local `_build*` copies; the decorative sweep is the shared
+/// [SimfAuthSweep]; the back button was removed (it only dead-ended to
+/// onboarding — owner).
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -152,9 +153,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  /// The design shows the Face-ID button unconditionally. The button gives clear
-  /// feedback for the cases that previously failed silently (D-422):
-  /// (1) the device has no enrolled OS biometric / secured lock; (2) face login
+  /// The design shows the Face-ID button unconditionally. The button gives
+  /// clear feedback for the cases that previously failed silently (D-422): (1)
+  /// the device has no enrolled OS biometric / secured lock; (2) face login
   /// isn't enabled yet (no device key). Otherwise it runs the OS prompt
   /// (biometric-first with a device-PIN fallback, the banking standard — D-738)
   /// then the device-key sign-in. Prompt outcomes are surfaced explicitly: a

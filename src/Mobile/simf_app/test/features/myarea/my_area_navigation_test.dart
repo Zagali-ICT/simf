@@ -14,13 +14,14 @@ import 'package:simf_app/features/myarea/my_area_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-/// Regression guard for the My-Area blank/frozen bug (owner-reported 2026-07-11):
-/// My Area IS the Profile bottom-nav tab, so opening it from the More card must
-/// **switch to that tab** (go), not **push a second copy** on top. The duplicate
-/// instance re-ran its own dashboard load and hung forever. This test drives the
-/// real router shape — `/my-area` lives only inside a StatefulShellRoute branch,
-/// `/more` is a flat pushed route — and asserts exactly one MyAreaScreen exists
-/// after the card tap (two would mean a regression back to `pushNamed`).
+/// Regression guard for the My-Area blank/frozen bug (owner-reported
+/// 2026-07-11): My Area IS the Profile bottom-nav tab, so opening it from the
+/// More card must **switch to that tab** (go), not **push a second copy** on
+/// top. The duplicate instance re-ran its own dashboard load and hung forever.
+/// This test drives the real router shape — `/my-area` lives only inside a
+/// StatefulShellRoute branch, `/more` is a flat pushed route — and asserts
+/// exactly one MyAreaScreen exists after the card tap (two would mean a
+/// regression back to `pushNamed`).
 
 const _config = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',

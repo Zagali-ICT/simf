@@ -27,19 +27,20 @@ const double _scanLineRestRatio = 93 / 300;
 const double _sweepTopInset = 28;
 const double _sweepBottomInset = 30;
 
-/// The QR-scanner viewfinder card from Figma node 758:4735 — a navy card holding
-/// a black camera window (gold corner brackets, a glowing gold scan line and a
-/// centred scan glyph) above a "searching" caption + track.
+/// The QR-scanner viewfinder card from Figma node 758:4735 — a navy card
+/// holding a black camera window (gold corner brackets, a glowing gold scan
+/// line and a centred scan glyph) above a "searching" caption + track.
 ///
 /// The live camera is injected as [camera] (e.g. a `flutter_zxing` reader) so
 /// this widget stays plugin-free and rendable in tests; when it is null the
-/// window paints the brackets + glyph on black (the camera-off / preview state).
+/// window paints the brackets + glyph on black (the camera-off / preview
+/// state).
 ///
 /// D-739 (owner): the gold scan line **sweeps up and down** across the window
-/// while [active] (a live camera is scanning) — the real "scanning" motion — and
-/// rests at the design position otherwise. This is the single shared viewfinder
-/// used by every scanner in the app, so the look + motion are identical
-/// everywhere.
+/// while [active] (a live camera is scanning) — the real "scanning" motion —
+/// and rests at the design position otherwise. This is the single shared
+/// viewfinder used by every scanner in the app, so the look + motion are
+/// identical everywhere.
 class SimfScannerFrame extends StatefulWidget {
   const SimfScannerFrame({
     required this.statusLabel,

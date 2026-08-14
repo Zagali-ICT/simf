@@ -18,13 +18,12 @@ import 'golden_fonts.dart';
 /// family (D-660; `Scaffold(navySurface)` + `AccountSubHeader` + `OtpMark`, the
 /// same as reset-password), so the golden is a render-regression lock rather
 /// than a parity proof (was the beige `SimfFormScaffold`, D-555). Regenerate:
-///   flutter test --update-goldens test/golden/badge_activation_golden_test.dart
+/// flutter test --update-goldens test/golden/badge_activation_golden_test.dart
 ///
-/// Captured in the email-entry step (`needsEmail: true`): the navy scaffold, the
-/// back+title header, the gold lock mark, the "enter your email" intro, the
-/// email field and
-/// the gold "send code" button. (This step does not auto-send, so there is no
-/// async work or timer to settle.)
+/// Captured in the email-entry step (`needsEmail: true`): the navy scaffold,
+/// the back+title header, the gold lock mark, the "enter your email" intro, the
+/// email field and the gold "send code" button. (This step does not auto-send,
+/// so there is no async work or timer to settle.)
 void main() {
   setUpAll(loadGoldenFonts);
 

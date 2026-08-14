@@ -99,8 +99,9 @@ class DelegationItem {
   }
 }
 
-/// The delegations payload (`AppDelegations = { countryCount, totalParticipants,
-/// items: [...] }`) — the two header stats + the per-country cards.
+/// The delegations payload (`AppDelegations = { countryCount,
+/// totalParticipants, items: [...] }`) — the two header stats + the per-country
+/// cards.
 @immutable
 class Delegations {
   const Delegations({

@@ -98,8 +98,9 @@ class VisitorCard {
 }
 
 /// One row in the caller's *My Contacts* list — resolved on read from the
-/// subject's profile (no stored PII snapshot, D-157). [organisation] is a single
-/// field here (the saved-row projection does not carry the Arabic variant).
+/// subject's profile (no stored PII snapshot, D-157). [organisation] is a
+/// single field here (the saved-row projection does not carry the Arabic
+/// variant).
 @immutable
 class SavedContactRow {
   const SavedContactRow({

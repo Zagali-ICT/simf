@@ -149,8 +149,8 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
 
   Widget _desk(AppL10n l10n, SessionSeatMap map) {
     // Tablet (medium and wider) puts the scanner + result beside the hall plan;
-    // a compact phone stacks them. Bucket comes from the shared WindowSize API —
-    // never a hardcoded pixel test.
+    // a compact phone stacks them. Bucket comes from the shared WindowSize API
+    // — never a hardcoded pixel test.
     final wide = !WindowSize.of(context).isCompact;
     final scanner = _scannerCard(l10n);
     final result = _resultCard(l10n);
@@ -202,8 +202,9 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
     );
   }
 
-  /// (a) the shared scanner body — the same viewfinder + manual-entry field every
-  /// other SIMF scanner uses (D-737), so the desk needs no bespoke reader.
+  /// (a) the shared scanner body — the same viewfinder + manual-entry field
+  /// every other SIMF scanner uses (D-737), so the desk needs no bespoke
+  /// reader.
   Widget _scannerCard(AppL10n l10n) {
     return DeskCard(
       child: SimfScannerBody(
@@ -284,7 +285,8 @@ class _StaffSeatingScreenState extends ConsumerState<StaffSeatingScreen> {
   }
 
   /// (b) the hall plan. The SHARED `HallSeatMapCard` in its tappable
-  /// configuration — a tap resolves the seat's occupant rather than selecting it.
+  /// configuration — a tap resolves the seat's occupant rather than selecting
+  /// it.
   Widget _planCard(AppL10n l10n, SessionSeatMap map) {
     return HallSeatMapCard(
       map: map,

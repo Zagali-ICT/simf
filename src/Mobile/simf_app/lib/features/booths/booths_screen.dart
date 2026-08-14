@@ -128,8 +128,8 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
     }
     if (_error) {
       // Pull-to-refresh also works in the error state so the user can pull to
-      // retry (the short error content is hosted in the shared always-scrollable
-      // SimfPullableHost so the gesture fires).
+      // retry (the short error content is hosted in the shared
+      // always-scrollable SimfPullableHost so the gesture fires).
       return SimfPullToRefresh(
         onRefresh: _load,
         child: SimfPullableHost(
@@ -162,8 +162,8 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
           ),
         ),
         Expanded(
-          // Pull-down-from-the-top re-fetches the booths (onRefresh: _load); the
-          // empty / no-match short states use the shared always-scrollable
+          // Pull-down-from-the-top re-fetches the booths (onRefresh: _load);
+          // the empty / no-match short states use the shared always-scrollable
           // SimfPullableHost so the gesture fires; the list itself uses
           // AlwaysScrollableScrollPhysics for the same.
           child: SimfPullToRefresh(

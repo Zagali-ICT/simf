@@ -21,15 +21,15 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// Bilateral meetings — اللقاءات الثنائية · route: [RouteNames.meetings]
 /// Purpose: lists **all** the user's bilateral meeting requests (speaker +
-///   delegation), each carrying its status (pending / accepted / rejected /
-///   cancelled), above the two "request meeting" buttons and the "السجل" link to
-///   the full requests history (R9, D-767; was accepted+upcoming only, D-745).
+/// delegation), each carrying its status (pending / accepted / rejected /
+/// cancelled), above the two "request meeting" buttons and the "السجل" link to
+/// the full requests history (R9, D-767; was accepted+upcoming only, D-745).
 /// Data: [myMeetingRequestsProvider] (a filtered view of [myRequestsProvider] —
-///   `GET /app/my-requests`), gated by [currentUserMeetingAccessProvider].
-/// Figma: 1408:9726 (اللقاءات الثنائية).
-/// Perf: non-lazy ListView over the (small) meetings subset; pull-to-refresh.
-/// Contract: reads the D-219-frozen my-requests feed; VIP enforced server-side
-///   (the meeting-request endpoint 403s non-VIP) and mirrored here in-screen.
+/// `GET /app/my-requests`), gated by [currentUserMeetingAccessProvider]. Figma:
+/// 1408:9726 (اللقاءات الثنائية). Perf: non-lazy ListView over the (small)
+/// meetings subset; pull-to-refresh. Contract: reads the D-219-frozen
+/// my-requests feed; VIP enforced server-side (the meeting-request endpoint
+/// 403s non-VIP) and mirrored here in-screen.
 class MeetingsScreen extends ConsumerStatefulWidget {
   const MeetingsScreen({super.key});
 
@@ -38,9 +38,9 @@ class MeetingsScreen extends ConsumerStatefulWidget {
 }
 
 class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
-  /// "طلب مقابلة متحدث" — open the SPEAKER meeting-request sheet (Figma 1776:5036)
-  /// with the speaker picker. The feed refreshes when the sheet closes so a
-  /// just-submitted meeting can appear once approved.
+  /// "طلب مقابلة متحدث" — open the SPEAKER meeting-request sheet (Figma
+  /// 1776:5036) with the speaker picker. The feed refreshes when the sheet
+  /// closes so a just-submitted meeting can appear once approved.
   Future<void> _openSpeakerMeeting() async {
     final auth = ref.read(authControllerProvider);
     if (auth is! AuthStateSignedIn) {
@@ -76,7 +76,8 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
     );
   }
 
-  /// Shared modal-sheet host for both request flows; refreshes the feed on close.
+  /// Shared modal-sheet host for both request flows; refreshes the feed on
+  /// close.
   Future<void> _openMeetingSheet(WidgetBuilder builder) async {
     await showModalBottomSheet<void>(
       context: context,
@@ -105,7 +106,8 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
     final l10n = AppL10n.of(context);
     // Bi-Meeting rework — gate the whole page on the two per-user meeting flags
     // (speaker OR delegation). Resolve access first so an unentitled user never
-    // briefly sees the list; a failed check is treated as no-access (safe default).
+    // briefly sees the list; a failed check is treated as no-access (safe
+    // default).
     return SimfPageShell(
       title: l10n.meetingsTitle,
       onBack: () => backOrHome(context),

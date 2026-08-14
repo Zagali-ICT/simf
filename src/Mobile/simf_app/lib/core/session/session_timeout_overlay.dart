@@ -27,8 +27,8 @@ class SessionTimeoutOverlay extends StatelessWidget {
     final l10n = AppL10n.of(context);
     // A full-screen modal barrier: BlockSemantics drops the background screen
     // from the a11y tree (a screen reader can't reach the controls behind the
-    // countdown); the scrim + opaque GestureDetector eat pointer events so a tap
-    // outside the card never dismisses the warning or counts as activity.
+    // countdown); the scrim + opaque GestureDetector eat pointer events so a
+    // tap outside the card never dismisses the warning or counts as activity.
     return Positioned.fill(
       child: BlockSemantics(
         child: ColoredBox(

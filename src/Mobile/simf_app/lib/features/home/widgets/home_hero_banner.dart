@@ -13,9 +13,9 @@ import 'package:simf_app/features/home/widgets/hero_background_video.dart';
 import 'package:simf_app/features/home/widgets/hero_image.dart';
 import 'package:simf_app/features/home/widgets/hero_overlay.dart';
 
-/// The home hero (replaces the static discover banner, #43): the forum edition —
-/// name (gold), theme, date range and location — overlaid on a rotating strip of
-/// CP-managed banner images (`GET /app/banners`, each served by row id at
+/// The home hero (replaces the static discover banner, #43): the forum edition
+/// — name (gold), theme, date range and location — overlaid on a rotating strip
+/// of CP-managed banner images (`GET /app/banners`, each served by row id at
 /// `/app/assets/Banner/{id}/image`). Auto-advances every 4 s when there is more
 /// than one banner, with position dots.
 ///
@@ -61,10 +61,10 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
   @override
   void didUpdateWidget(HomeHeroBanner oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // The banner list is delivered asynchronously — the first frame is empty and
-    // the list arrives on a later rebuild (the State is reused, so initState's
-    // timer set-up already ran against an empty list). Re-evaluate the
-    // auto-advance whenever the count changes: clamp the index into the new
+    // The banner list is delivered asynchronously — the first frame is empty
+    // and the list arrives on a later rebuild (the State is reused, so
+    // initState's timer set-up already ran against an empty list). Re-evaluate
+    // the auto-advance whenever the count changes: clamp the index into the new
     // range and (re)start or stop the timer as the count crosses the > 1 line.
     if (widget.banners.length != oldWidget.banners.length) {
       _timer?.cancel();
@@ -76,8 +76,8 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
     }
   }
 
-  // Auto-advance to the next banner every [_interval], wrapping at the end. Only
-  // runs when there is more than one banner (mirrors HighlightsCarousel).
+  // Auto-advance to the next banner every [_interval], wrapping at the end.
+  // Only runs when there is more than one banner (mirrors HighlightsCarousel).
   void _startAutoAdvance() {
     if (widget.banners.length <= 1) {
       return;
@@ -107,10 +107,10 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
     final banners = widget.banners;
     // A CP-configured background video (D-756 / D-761) is the base layer when a
     // playable (direct MP4/HLS) URL is set, taking precedence over the banner
-    // image strip; the edition text overlay + scrim stay on top. A YouTube URL is
-    // not played in-app (an Android WebView can't be clipped into the band — see
-    // D-761) and falls through to the image carousel, which also shows when no
-    // video is set.
+    // image strip; the edition text overlay + scrim stay on top. A YouTube URL
+    // is not played in-app (an Android WebView can't be clipped into the band —
+    // see D-761) and falls through to the image carousel, which also shows when
+    // no video is set.
     final videoUrl = widget.profile?.backgroundVideoUrl;
     final hasVideo = HeroBackgroundVideo.isSupported(videoUrl);
     return SizedBox(

@@ -51,8 +51,9 @@ const _samiWithCountry = BoothSummary(
   countryNameArabic: 'السعودية',
 );
 
-/// Every NetworkImage URL currently in the tree (unwrapping the ResizeImage that
-/// the logo tile's cacheWidth/cacheHeight decode-cap wraps the provider in).
+/// Every NetworkImage URL currently in the tree (unwrapping the ResizeImage
+/// that the logo tile's cacheWidth/cacheHeight decode-cap wraps the provider
+/// in).
 Set<String> _networkImageUrls(WidgetTester tester) => tester
     .widgetList<Image>(find.byType(Image))
     .map((img) => img.image)
@@ -223,8 +224,8 @@ void main() {
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_samiWithLogo]),
       );
-      // The booth renders its own logo (owner = the booth), never the exhibitor's
-      // CompanyLogo — even when the exhibitor has a linked Contact.
+      // The booth renders its own logo (owner = the booth), never the
+      // exhibitor's CompanyLogo — even when the exhibitor has a linked Contact.
       expect(
         _networkImageUrls(tester),
         contains('http://test.local/api/v1/app/assets/BoothLogo/b1/image'),
@@ -291,9 +292,9 @@ void main() {
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_samiWithCountry]),
       );
-      // Figma 922:2556 shows the country as a FLAG tile at the inline-end (left)
-      // of the header — NOT a text line. The flag glyph renders; the country
-      // name text does not.
+      // Figma 922:2556 shows the country as a FLAG tile at the inline-end
+      // (left) of the header — NOT a text line. The flag glyph renders; the
+      // country name text does not.
       expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
       expect(find.text('Saudi Arabia'), findsNothing);
       expect(find.text('السعودية'), findsNothing);

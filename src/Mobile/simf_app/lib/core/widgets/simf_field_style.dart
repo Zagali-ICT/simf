@@ -32,8 +32,8 @@ const OutlineInputBorder _focusedBorder = OutlineInputBorder(
   borderSide: BorderSide(color: SimfTokens.accent),
 );
 
-/// The standard [InputDecoration] for a SIMF form field. Pass [counterText] `''`
-/// to hide the maxLength counter (the auth screens' convention).
+/// The standard [InputDecoration] for a SIMF form field. Pass [counterText]
+/// `''` to hide the maxLength counter (the auth screens' convention).
 InputDecoration simfFieldDecoration({
   String? counterText,
   String? hintText,

@@ -306,13 +306,15 @@ Future<void> _pump(
           localeControllerProvider.overrideWith(
             () => LocaleController(prefs: localePrefs),
           ),
-        // Bi-Meeting rework — the meeting-access flags drive the "اللقاءات الثنائية"
-        // tile; overridden so no real getMyProfile() network call happens.
+        // Bi-Meeting rework — the meeting-access flags drive the "اللقاءات
+        // الثنائية" tile; overridden so no real getMyProfile() network call
+        // happens.
         currentUserMeetingAccessProvider.overrideWith(
           (ref) => MeetingAccess(speaker: isVip, delegation: isVip),
         ),
         // The home LIVE banner resolves the currently-live session id on tap
-        // (D-757); override it (no live session) so a tap never hits the network.
+        // (D-757); override it (no live session) so a tap never hits the
+        // network.
         currentLiveSessionIdProvider.overrideWith((ref) async => null),
         simfDataConfigProvider.overrideWithValue(_testConfig),
         notificationsRepositoryProvider
@@ -330,8 +332,9 @@ Future<void> _pump(
         // #43 — no banners by default, so the hero shows the static fallback
         // (no auto-advance timer) and no real GET /app/banners fetch fires.
         bannersProvider.overrideWith((ref) async => const <PublicBannerItem>[]),
-        // Build #13 — the Home meet-tile visibility reads site-settings; override
-        // it so no real GET /app/site-settings fetch fires (partner directory on).
+        // Build #13 — the Home meet-tile visibility reads site-settings;
+        // override it so no real GET /app/site-settings fetch fires (partner
+        // directory on).
         siteSettingsProvider.overrideWith(
           (ref) async => const SiteSettings(
             registrationMessageAr: '',
@@ -391,7 +394,8 @@ void main() {
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
       // The guest home shows NO notifications bell (owner 2026-06-18): the
       // Figma content/guest frames carry no bell — it lives only on the
-      // signed-in home greeting header. The shared ☰ stays on the guest top bar.
+      // signed-in home greeting header. The shared ☰ stays on the guest top
+      // bar.
       expect(find.byTooltip('Notifications'), findsNothing);
       expect(find.byIcon(Icons.menu), findsOneWidget);
       // The GUEST top bar carries no language pill. The owner's 2026-07-27
@@ -493,12 +497,13 @@ void main() {
       expect(find.textContaining('Ahmed'), findsOneWidget);
       expect(find.byTooltip('Notifications'), findsOneWidget);
       expect(find.text('LIVE'), findsOneWidget);
-      // "عن الملتقى" is now a bordered nav row (SimfLinkRow), not a text header.
-      // (The full three-bar count is asserted on a tall surface in the RTL
-      // group, where every off-screen bar is built.)
+      // "عن الملتقى" is now a bordered nav row (SimfLinkRow), not a text
+      // header. (The full three-bar count is asserted on a tall surface in the
+      // RTL group, where every off-screen bar is built.)
       expect(find.text('About the forum'), findsOneWidget);
-      // The lower sections mount lazily; drag through the list and collect every
-      // label seen (robust to overshoot, unlike per-item scrollUntilVisible).
+      // The lower sections mount lazily; drag through the list and collect
+      // every label seen (robust to overshoot, unlike per-item
+      // scrollUntilVisible).
       final scrollable = find.byType(Scrollable).first;
       final seen = <String>{};
       for (var i = 0; i < 30; i++) {
@@ -786,7 +791,8 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      // The website link shows its label + the gold globe glyph below the socials.
+      // The website link shows its label + the gold globe glyph below the
+      // socials.
       expect(find.text('Website'), findsOneWidget);
       final globe = tester
           .widgetList<SimfSvgIcon>(find.byType(SimfSvgIcon))

@@ -168,7 +168,8 @@ void main() {
       expect(label.style?.color, SimfTokens.navyDisabledText);
 
       // The tap is consumed and dropped (warnIfMissed off — the disabled button
-      // swallows the pointer): no summary, and it doesn't fall through to detail.
+      // swallows the pointer): no summary, and it doesn't fall through to
+      // detail.
       await tester.tap(find.text('Session summary'), warnIfMissed: false);
       await tester.pumpAndSettle();
 

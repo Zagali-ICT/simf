@@ -58,8 +58,8 @@ class EntityDetailScaffold extends StatelessWidget {
   /// The localized tier pill text ("عارض بريميوم"); null hides the pill.
   final String? tierPill;
 
-  /// The stand-code → map row (exhibitor only). [standLabel] is the muted
-  /// "موقع الجناح على الخريطة"; [standCode] the gold code; [onMap] opens the map.
+  /// The stand-code → map row (exhibitor only). [standLabel] is the muted "موقع
+  /// الجناح على الخريطة"; [standCode] the gold code; [onMap] opens the map.
   final String? standLabel;
   final String? standCode;
   final VoidCallback? onMap;
@@ -107,12 +107,13 @@ class EntityDetailScaffold extends StatelessWidget {
                 label: websiteLabel,
                 value: website!.trim(),
                 icon: Icons.public,
-                // Figma 1439:11927 — the website glyph is the simple stroked globe
-                // (circle + meridian + equator), the same asset the auth screens use.
+                // Figma 1439:11927 — the website glyph is the simple stroked
+                // globe (circle + meridian + equator), the same asset the auth
+                // screens use.
                 iconAsset: AppAssets.authGlobe,
                 onTap: onWebsite,
-                // Website row (Figma 1439:11917): navyDeep fill, label above value,
-                // label Bold-12, value SemiBold-14.
+                // Website row (Figma 1439:11917): navyDeep fill, label above
+                // value, label Bold-12, value SemiBold-14.
                 background: SimfTokens.navyDeep,
                 valueOnTop: false,
                 valueSize: SimfTokens.textMd,

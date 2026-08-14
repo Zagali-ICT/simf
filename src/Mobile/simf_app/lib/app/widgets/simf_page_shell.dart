@@ -174,11 +174,12 @@ class SimfPageShell extends StatelessWidget {
             ),
           ),
           // The shared trailing action cluster (bell + language + drawer ☰)
-          // when [showHeaderActions]; otherwise the gold language
-          // globe alone — the Figma sub-page frames (908-1744 …) carry it at the
-          // trailing corner (owner 2026-07-05: add the globe to every sub-page,
-          // superseding the 2026-06-28 back+title-only nav). Its 40-wide box also
-          // balances the 42 back box so the title stays effectively centred.
+          // when [showHeaderActions]; otherwise the gold language globe alone —
+          // the Figma sub-page frames (908-1744 …) carry it at the trailing
+          // corner (owner 2026-07-05: add the globe to every sub-page,
+          // superseding the 2026-06-28 back+title-only nav). Its 40-wide box
+          // also balances the 42 back box so the title stays effectively
+          // centred.
           if (showHeaderActions)
             SimfHeaderActions(showBell: showNotificationsBell)
           else if (showLanguageToggle)
@@ -190,8 +191,8 @@ class SimfPageShell extends StatelessWidget {
               ),
             )
           else
-            // المزيد (1129:17224) drops the header pill; the spacer balances the
-            // 42-wide back box so the title stays centred.
+            // المزيد (1129:17224) drops the header pill; the spacer balances
+            // the 42-wide back box so the title stays centred.
             const SizedBox(
                 width: SimfTokens.simfPageShellWidthSm,
                 height: SimfTokens.simfPageShellHeightSm,),

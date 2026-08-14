@@ -238,7 +238,8 @@ void main() {
 
       await tester.tap(tile);
       await tester.pumpAndSettle();
-      // The destructive-action confirm — nothing is revoked until the user agrees.
+      // The destructive-action confirm — nothing is revoked until the user
+      // agrees.
       expect(
         find.text('Your Face ID sign-in data will be permanently deleted '
             'from this device.'),

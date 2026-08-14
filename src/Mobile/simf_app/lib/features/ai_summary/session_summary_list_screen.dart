@@ -13,12 +13,12 @@ import 'package:simf_app/features/sessions/data/sessions_repository.dart' show p
 import 'package:simf_app/features/sessions/widgets/session_filter_tabs.dart';
 
 /// **Session summaries** — App "ملخص الجلسات" (Figma 1388:8392, Guest+). Every
-/// programme session in a searchable, day-grouped list with three tabs —
-/// الجميع (all), جلساتي (the caller's booked sessions), المفضلة (favourited) —
-/// and the المفضلة heart on each card. Tapping a card opens that session's
-/// AI-summary details (#34). Reuses the cached programme (`programmeSessionsProvider`);
-/// the booked set + favourites come from the approved-account reads (empty for a
-/// guest).
+/// programme session in a searchable, day-grouped list with three tabs — الجميع
+/// (all), جلساتي (the caller's booked sessions), المفضلة (favourited) — and the
+/// المفضلة heart on each card. Tapping a card opens that session's AI-summary
+/// details (#34). Reuses the cached programme (`programmeSessionsProvider`);
+/// the booked set + favourites come from the approved-account reads (empty for
+/// a guest).
 class SessionSummaryListScreen extends ConsumerStatefulWidget {
   const SessionSummaryListScreen({super.key});
 
@@ -148,7 +148,8 @@ class _SessionSummaryListScreenState
                 ),
                 child: Text(
                   l10n.eventDayLabel(dayIndex + 1),
-                  // Frame 1388:8428 — day header is Inter Medium (w500), not w600.
+                  // Frame 1388:8428 — day header is Inter Medium (w500), not
+                  // w600.
                   style: SimfTokens.labelWhiteMediumLg,
                 ),
               ),

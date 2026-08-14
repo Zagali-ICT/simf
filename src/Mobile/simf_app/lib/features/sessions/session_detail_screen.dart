@@ -33,15 +33,15 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// full detail (`GET /app/programme/sessions/{id}`); for a signed-in account it
 /// also reads the seat map and shows the **my-seat card** when the caller holds
 /// an active reservation (`myCell`, approved-only — guest/pending see no card,
-/// L-3). The two CTAs are client-local OS actions: **Add-to-calendar** opens the
-/// device calendar pre-filled from the session (E4); the **Reminder** is
+/// L-3). The two CTAs are client-local OS actions: **Add-to-calendar** opens
+/// the device calendar pre-filled from the session (E4); the **Reminder** is
 /// deferred to the notifications platform pass (D-300).
 ///
 /// Frame mapping (RTL-primary): a navy session **header card** (gold index
 /// badge + ordinal · title · the category tag pill when the session carries a
 /// category (PAR-D3) · clock/calendar meta · the ملخص الجلسة / رابط الجلسة
-/// actions), the وصف الجلسة description card, the المتحدثون speaker cards
-/// (name + rank, the host marked with the gold star + المضيف — PAR-P4a), the gold
+/// actions), the وصف الجلسة description card, the المتحدثون speaker cards (name
+/// + rank, the host marked with the gold star + المضيف — PAR-P4a), the gold
 /// مقعدي my-seat card (row · seat + badge hint + a forward chevron), and the
 /// تذكير (outlined) + أضف إلى تقويمي (gold) CTA row. The section widgets live
 /// in `widgets/` (session_detail_body/header, session_header_card,
@@ -59,12 +59,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// block ONLY (no description, speakers, ask card, seat/join section or
 /// live/summary actions). The CP half reuses the existing session admin.
 ///
-/// **Rating (owner 2026-07-22):** this screen no longer opens the rate form when
-/// you leave an ended session — merely viewing a session is not attending it. The
-/// rate prompt now comes only from actually watching the live stream
-/// (`live_broadcast_screen`) or from the attendance-gated rate notification after
-/// hall check-in/out (plus the day / programme-end prompts). This removes the
-/// prompt that used to appear off the sessions list/detail for non-attendees.
+/// **Rating (owner 2026-07-22):** this screen no longer opens the rate form
+/// when you leave an ended session — merely viewing a session is not attending
+/// it. The rate prompt now comes only from actually watching the live stream
+/// (`live_broadcast_screen`) or from the attendance-gated rate notification
+/// after hall check-in/out (plus the day / programme-end prompts). This removes
+/// the prompt that used to appear off the sessions list/detail for
+/// non-attendees.
 class SessionDetailScreen extends ConsumerStatefulWidget {
   const SessionDetailScreen({required this.sessionId, super.key});
 
@@ -102,13 +103,13 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       _seatMapError = false;
     });
     // NOTE: do NOT invalidate hallAttendanceStatusProvider here. `_load()` runs
-    // from initState(), and ref.invalidate reaches for the ProviderScope through
-    // dependOnInheritedWidgetOfExactType, which Flutter forbids before initState
-    // completes — it threw on every mount of this screen. It is also unnecessary:
-    // the setState above puts the page into its loading state, which unmounts the
-    // check-in strip, and the provider is an autoDispose.family, so it disposes
-    // and re-fetches when the strip remounts. Pull-to-refresh therefore refreshes
-    // the strip already.
+    // from initState(), and ref.invalidate reaches for the ProviderScope
+    // through dependOnInheritedWidgetOfExactType, which Flutter forbids before
+    // initState completes — it threw on every mount of this screen. It is also
+    // unnecessary: the setState above puts the page into its loading state,
+    // which unmounts the check-in strip, and the provider is an
+    // autoDispose.family, so it disposes and re-fetches when the strip
+    // remounts. Pull-to-refresh therefore refreshes the strip already.
     try {
       final repo = ref.read(sessionDetailRepositoryProvider);
       final detail = await repo.getDetail(widget.sessionId);
@@ -143,10 +144,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     }
   }
 
-  /// DEF-MOD-008 — the role the ROUTER gates on. `appRole` and `effectiveAppRole`
-  /// disagree for a signed-in but not-yet-approved account (D-666 presents it as
-  /// a guest), and the router reads the effective one — so a screen that reads
-  /// the raw role offers affordances the router then bounces.
+  /// DEF-MOD-008 — the role the ROUTER gates on. `appRole` and
+  /// `effectiveAppRole` disagree for a signed-in but not-yet-approved account
+  /// (D-666 presents it as a guest), and the router reads the effective one —
+  /// so a screen that reads the raw role offers affordances the router then
+  /// bounces.
   AppRole get _role => roleOf(ref.read(authControllerProvider));
 
   Future<SessionSeatMap?> _safeSeatMap() async {
@@ -217,8 +219,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     if (registered && mounted) {
       await SimfInfoDialog.show(context, title: l10n.joinOpenSuccessBody);
     }
-    // _load() opens with an unguarded setState, so leaving while the dialog is up
-    // would throw "setState after dispose".
+    // _load() opens with an unguarded setState, so leaving while the dialog is
+    // up would throw "setState after dispose".
     if (!mounted) {
       return;
     }
@@ -248,7 +250,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     } on ApiFailure catch (failure) {
       // Surface the backend's localized reason (e.g. "cannot cancel after the
       // session has started", "you have no seat to release") instead of a
-      // generic failure — the generic toast is the reason cancel "looks broken".
+      // generic failure — the generic toast is the reason cancel "looks
+      // broken".
       final reason = failure.message.trim();
       messenger.showSnackBar(
         SnackBar(
@@ -294,8 +297,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     );
   }
 
-  /// رابط الجلسة (Figma 889:2715) — opens the live screen (25) for this session;
-  /// only offered when the detail carries a live feed (`hasLiveStream`).
+  /// رابط الجلسة (Figma 889:2715) — opens the live screen (25) for this
+  /// session; only offered when the detail carries a live feed
+  /// (`hasLiveStream`).
   void _openLive() => context.pushNamed(
         RouteNames.liveBroadcast,
         queryParameters: <String, String>{
@@ -330,8 +334,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     // account presents as guest). Reading the raw `appRole` here showed the
     // moderate action to an unapproved moderator, who was then bounced Home.
     final role = roleOf(ref.watch(authControllerProvider));
-    // Moderator (محاور) entry to the Q&A desk (D-405); the grant is per-session,
-    // so an empty set while the discovery call is in flight offers no action.
+    // Moderator (محاور) entry to the Q&A desk (D-405); the grant is
+    // per-session, so an empty set while the discovery call is in flight offers
+    // no action.
     final moderatedSessionIds =
         ref.watch(myModeratedSessionsProvider).maybeWhen(
               data: (sessions) => sessions.map((s) => s.sessionId).toSet(),
@@ -389,8 +394,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   /// `header` — the list's FIRST CHILD — rather than being stacked above it:
   /// attendance is about this moment, so it must be readable without scrolling
   /// past the description and speakers, but a widget outside the scrollable
-  /// swallows the pull gesture and would break pull-to-refresh at the top of the
-  /// page (the standing owner rule that every data page pulls to refresh).
+  /// swallows the pull gesture and would break pull-to-refresh at the top of
+  /// the page (the standing owner rule that every data page pulls to refresh).
   Widget _detailBody(AppL10n l10n, String baseUrl) {
     return SessionDetailBody(
       detail: _detail!,

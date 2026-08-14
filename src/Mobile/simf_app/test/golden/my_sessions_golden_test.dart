@@ -19,14 +19,15 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the My-Sessions screen against Figma frame **1388:9067**
-/// (عروض الجلسات, Approved account). Compare to the frame:
-///   flutter test --update-goldens test/golden/my_sessions_golden_test.dart
+/// (عروض الجلسات, Approved account). Compare to the frame: flutter test
+/// --update-goldens test/golden/my_sessions_golden_test.dart
 ///
 /// Frame parity expected: the four equal-width القادمة/حضرتها/فاتتني/الأرشيف
-/// filter tabs (the first selected), the "{n} {tab}" count header, then borderless
-/// navyDeep cards — each a title over a clock·time·category line, the
-/// speaker·rank + hall meta row, and the gold المفضلة heart on the trailing edge
-/// (solid+filled when favourited, gold-50%+outline otherwise). RTL throughout.
+/// filter tabs (the first selected), the "{n} {tab}" count header, then
+/// borderless navyDeep cards — each a title over a clock·time·category line,
+/// the speaker·rank + hall meta row, and the gold المفضلة heart on the trailing
+/// edge (solid+filled when favourited, gold-50%+outline otherwise). RTL
+/// throughout.
 ///
 /// The default tab is القادمة (upcoming = start after now), so the items use a
 /// far-future start — permanently "upcoming" regardless of the run date — while
@@ -94,8 +95,8 @@ final _items = <MyAreaSessionItem>[
 ];
 
 /// Seeds the favourites set so ms1 + ms3 render as filled hearts. Overrides the
-/// AsyncNotifier's build() only — toggle() (which would hit the client) is never
-/// invoked because the golden takes no taps.
+/// AsyncNotifier's build() only — toggle() (which would hit the client) is
+/// never invoked because the golden takes no taps.
 class _FakeFavourites extends SessionFavouritesController {
   _FakeFavourites(this._ids);
 

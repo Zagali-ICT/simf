@@ -62,10 +62,10 @@ class SplashController extends Notifier<SplashState> {
   }
 
   Future<void> _run() async {
-    // D-495 — load the edition-generic forum config at the splash: the controller
-    // hydrates instantly from local storage, then this refreshes it from the API
-    // (Last-Modified / 304). Available app-wide afterwards via orgProfileProvider.
-    // Fire-and-forget — never blocks boot.
+    // D-495 — load the edition-generic forum config at the splash: the
+    // controller hydrates instantly from local storage, then this refreshes it
+    // from the API (Last-Modified / 304). Available app-wide afterwards via
+    // orgProfileProvider. Fire-and-forget — never blocks boot.
     unawaited(ref.read(orgProfileProvider.notifier).warm());
 
     final checker = ref.read(appUpdateCheckerProvider);

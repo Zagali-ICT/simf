@@ -37,9 +37,10 @@ class SimfPullToRefresh extends StatelessWidget {
 }
 
 /// Hosts a non-scrolling state (empty / error / a single card) inside a
-/// viewport-tall, always-scrollable box so a wrapping [SimfPullToRefresh] can still
-/// fire its pull-to-refresh gesture on short content. Pair as
-/// `SimfPullToRefresh(onRefresh: …, child: SimfPullableHost(child: SimfEmptyState(…)))`.
+/// viewport-tall, always-scrollable box so a wrapping [SimfPullToRefresh] can
+/// still fire its pull-to-refresh gesture on short content. Pair as
+/// `SimfPullToRefresh(onRefresh: …, child: SimfPullableHost(child:
+/// SimfEmptyState(…)))`.
 class SimfPullableHost extends StatelessWidget {
   const SimfPullableHost({required this.child, super.key});
 
@@ -62,10 +63,11 @@ class SimfPullableHost extends StatelessWidget {
   }
 }
 
-/// A pull-to-refresh host for a short message surface (an error or empty state):
-/// wraps [child] in [SimfPullToRefresh] + [SimfPullableHost] so a one-line
-/// [SimfErrorState] / [SimfEmptyState] stays refreshable and viewport-tall —
-/// the pairing screens would otherwise hand-nest at every list branch.
+/// A pull-to-refresh host for a short message surface (an error or empty
+/// state): wraps [child] in [SimfPullToRefresh] + [SimfPullableHost] so a
+/// one-line [SimfErrorState] / [SimfEmptyState] stays refreshable and
+/// viewport-tall — the pairing screens would otherwise hand-nest at every list
+/// branch.
 class SimfRefreshableMessage extends StatelessWidget {
   const SimfRefreshableMessage({
     required this.onRefresh,

@@ -4,9 +4,9 @@ import 'package:simf_app/features/venuemap/data/venuemap_endpoints.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// App-local data layer for the 2D venue map (Page_015). All three reads are
-/// **public** (`AllowAnonymous`) — a Guest sees the full map. Throws [ApiFailure]
-/// on a wire error; a 404 on the detail means the booth is unknown/inactive
-/// (the popup keeps the summary — Page_015 L-8).
+/// **public** (`AllowAnonymous`) — a Guest sees the full map. Throws
+/// [ApiFailure] on a wire error; a 404 on the detail means the booth is
+/// unknown/inactive (the popup keeps the summary — Page_015 L-8).
 class VenueMapRepository {
   VenueMapRepository(this._client);
 

@@ -10,8 +10,8 @@ import 'package:simf_app/core/sharing/content_sharer_web.dart'
 /// so the OS offers add-to-contact / add-to-calendar rather than plain text. On
 /// web there is no `dart:io` filesystem, so it shares the raw text via the
 /// browser share API. This is the single share path for the app's vCard/ICS
-/// exports (My-Area + Contacts), so the three call sites stay `dart:io`-free and
-/// the project compiles for web.
+/// exports (My-Area + Contacts), so the three call sites stay `dart:io`-free
+/// and the project compiles for web.
 ///
 /// [sharePositionOrigin] is required on iPad / Mac Catalyst — a non-empty
 /// [Rect] within the app's view bounds that anchors the popover. On iPhone and

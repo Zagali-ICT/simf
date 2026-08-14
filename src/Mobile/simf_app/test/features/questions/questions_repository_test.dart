@@ -60,8 +60,9 @@ void main() {
       );
 
       final body = capture.body!;
-      // The core S-5 assertion: the self-assert flag is no longer trusted, so the
-      // app sends it false and lets the server be the authoritative venue gate.
+      // The core S-5 assertion: the self-assert flag is no longer trusted, so
+      // the app sends it false and lets the server be the authoritative venue
+      // gate.
       expect(body['isAtVenue'], isFalse);
       expect(body['questionText'], 'How deep is the reef?');
       expect(body['recipient'], 0);

@@ -15,14 +15,15 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the AI-assistant screen against Figma frame **1064:13066**
-/// (المساعد الذكي). Regenerate:
-///   flutter test --update-goldens test/golden/chatbot_golden_test.dart
+/// (المساعد الذكي). Regenerate: flutter test --update-goldens
+/// test/golden/chatbot_golden_test.dart
 ///
 /// Frame parity expected: the assistant's opening greeting bubble at the
-/// inline-start (navy-deep + a gold "AI" badge), the horizontal quick-reply chip
-/// strip, and the bottom input bar with the gold send square. RTL. Greeting-only
-/// — no sending, and no scripted demo transcript (removed when the screen was
-/// wired to the real `/app/ai/assistance` assistant) — so the PNG is stable.
+/// inline-start (navy-deep + a gold "AI" badge), the horizontal quick-reply
+/// chip strip, and the bottom input bar with the gold send square. RTL.
+/// Greeting-only — no sending, and no scripted demo transcript (removed when
+/// the screen was wired to the real `/app/ai/assistance` assistant) — so the
+/// PNG is stable.
 
 const _testConfig = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',

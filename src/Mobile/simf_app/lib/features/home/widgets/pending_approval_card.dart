@@ -23,15 +23,16 @@ class PendingApprovalCard extends ConsumerWidget {
   final AppL10n l10n;
 
   /// Opens the registration-status gate, then re-fetches the account on return:
-  /// if it was approved there, the auth-state change rebuilds Home into the full
-  /// experience. `pushNamed` uses [context] synchronously before the await, so
-  /// there is no use-after-await on the context.
+  /// if it was approved there, the auth-state change rebuilds Home into the
+  /// full experience. `pushNamed` uses [context] synchronously before the
+  /// await, so there is no use-after-await on the context.
   Future<void> _openStatus(BuildContext context, WidgetRef ref) async {
     await context.pushNamed(RouteNames.registrationStatus);
     try {
       await ref.read(authControllerProvider.notifier).refreshCurrentUser();
     } on AuthFailure {
-      // A stale session flips auth to signed-out and the router gate handles it.
+      // A stale session flips auth to signed-out and the router gate handles
+      // it.
     }
   }
 

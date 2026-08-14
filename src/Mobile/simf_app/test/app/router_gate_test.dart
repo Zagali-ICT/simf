@@ -5,10 +5,10 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
-/// A toggleable auth flag used as the router's [Listenable] refresh source, so a
-/// test can flip "signed in → signed out" and re-run the redirect — exactly the
-/// `refreshListenable`-triggered path that pure `redirectDecision` tests cannot
-/// exercise.
+/// A toggleable auth flag used as the router's [Listenable] refresh source, so
+/// a test can flip "signed in → signed out" and re-run the redirect — exactly
+/// the `refreshListenable`-triggered path that pure `redirectDecision` tests
+/// cannot exercise.
 class _AuthFlag extends ChangeNotifier {
   bool signedIn = true;
   void signOut() {
@@ -22,7 +22,8 @@ void main() {
     test('the My-seat sub-route requires auth (not shadowed by session detail)',
         () {
       // Regression: the old loose prefix match resolved this pattern to the
-      // un-gated session-detail (#17), leaving My-seat (#18) reachable signed-out.
+      // un-gated session-detail (#17), leaving My-seat (#18) reachable
+      // signed-out.
       expect(routePathRequiresAuth('/sessions/:sessionId/my-seat'), isTrue);
     });
 
@@ -55,7 +56,8 @@ void main() {
       expect(routePathRequiresAuth('/'), isFalse);
       expect(routePathRequiresAuth('/map'), isFalse);
       expect(routePathRequiresAuth('/speakers/:speakerId'), isFalse);
-      // D-750 — the agenda + session detail joined the public set (reverses D-576).
+      // D-750 — the agenda + session detail joined the public set (reverses
+      // D-576).
       expect(routePathRequiresAuth('/sessions'), isFalse);
       expect(routePathRequiresAuth('/sessions/:sessionId'), isFalse);
     });
@@ -82,8 +84,9 @@ void main() {
         'a signed-in user on /sign-in is NOT bounced — SignInScreen owns the '
         'post-sign-in route (D-295)', () {
       // Regression: a blunt `/sign-in -> /` redirect fired on the auth-state
-      // change, disposed SignInScreen before _routeAfterSignIn ran, and stranded
-      // profile-incomplete visitors on Home instead of the profile screen.
+      // change, disposed SignInScreen before _routeAfterSignIn ran, and
+      // stranded profile-incomplete visitors on Home instead of the profile
+      // screen.
       expect(
         redirectDecision(
           isInitial: false,

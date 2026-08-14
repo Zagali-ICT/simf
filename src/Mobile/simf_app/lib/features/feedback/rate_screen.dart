@@ -20,11 +20,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Page 040 — تقييم الملتقى · Rate (#40, `/rate`, login-only).
 ///
 /// Dynamic, config-driven rating screen. It fetches the form for a rating type
-/// (resolved by [code] — e.g. "App" / "Session" — or [ratingTypeId]) and optional
-/// [targetId] (a session id for a per-session type), then renders the optional
-/// overall star row, the server-defined grouped + flat questions (each a 1–5 star
-/// bar) and the optional comment box, prefilled from any existing submission.
-/// `GET /app/feedback/form` then `POST /app/feedback/submit`.
+/// (resolved by [code] — e.g. "App" / "Session" — or [ratingTypeId]) and
+/// optional [targetId] (a session id for a per-session type), then renders the
+/// optional overall star row, the server-defined grouped + flat questions (each
+/// a 1–5 star bar) and the optional comment box, prefilled from any existing
+/// submission. `GET /app/feedback/form` then `POST /app/feedback/submit`.
 class RateScreen extends ConsumerStatefulWidget {
   const RateScreen({
     super.key,
@@ -355,10 +355,10 @@ class _RateScreenState extends ConsumerState<RateScreen> {
         onChanged: (v) => setState(() => _answers[q.id] = v),
       );
 
-  /// The "{day} {month} · {HH:MM}" watch time for the header, device-local and in
-  /// the active locale (mirrors the session-header card). Empty when the session
-  /// start is unknown (an older API), in which case the header shows the title
-  /// alone.
+  /// The "{day} {month} · {HH:MM}" watch time for the header, device-local and
+  /// in the active locale (mirrors the session-header card). Empty when the
+  /// session start is unknown (an older API), in which case the header shows
+  /// the title alone.
   String _watchedWhen(bool isArabic, DateTime? start) {
     if (start == null) {
       return '';

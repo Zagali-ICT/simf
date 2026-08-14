@@ -24,11 +24,11 @@ CurrentUser _visitor() => CurrentUser(
       registrationStatus: RegistrationStatus.approved,
     );
 
-/// A signed-in AuthController whose token expiry is fixed and whose tryRefresh /
-/// sign-out are recorded — the same `extends AuthController` + `build()` fake
+/// A signed-in AuthController whose token expiry is fixed and whose tryRefresh
+/// / sign-out are recorded — the same `extends AuthController` + `build()` fake
 /// pattern the live-screen tests use. [tryRefresh] mirrors the real contract:
-/// on failure it returns false and does NOT sign out (that is the whole point of
-/// D-737 — the guard, not the refresh, decides when to warn / sign out).
+/// on failure it returns false and does NOT sign out (that is the whole point
+/// of D-737 — the guard, not the refresh, decides when to warn / sign out).
 class _FakeAuth extends AuthController {
   _FakeAuth(this.expiry);
 
@@ -232,7 +232,8 @@ void main() {
       'overlay — the player keep-alive marks activity every 60s, always under '
       'the 5-min idle limit', (tester) async {
     // Token comfortably alive so the proactive-refresh path never fires; this
-    // isolates the idle path (the "extend session?" overlay) the owner asked about.
+    // isolates the idle path (the "extend session?" overlay) the owner asked
+    // about.
     final auth = _FakeAuth(_t0.add(const Duration(hours: 1)));
     final activity = SessionActivity(now: clock); // lastActivity = t0 (the t=0 mark)
     await tester.pumpWidget(host(auth, activity));
@@ -241,8 +242,8 @@ void main() {
     // Simulate 10 minutes of PASSIVE watching (no taps/scrolls) — double the
     // 5-min idle limit. Step the clock 15s at a time; the real LiveVideoPlayer
     // keep-alive (D-726) marks activity every 60s, so idleFor climbs toward 60s
-    // then resets on each heartbeat and never reaches idleLimit. The overlay must
-    // NOT appear at ANY point during the watch.
+    // then resets on each heartbeat and never reaches idleLimit. The overlay
+    // must NOT appear at ANY point during the watch.
     const totalSteps = 40; // 40 x 15s = 600s = 10 min
     for (var step = 1; step <= totalSteps; step++) {
       final elapsedSeconds = 15 * step;

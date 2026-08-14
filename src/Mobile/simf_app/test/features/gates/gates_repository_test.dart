@@ -121,7 +121,8 @@ void main() {
       final remaining = await repo.flushPending();
       expect(remaining, 0);
       expect(repo.pendingCount(), 0);
-      // The retry used the ORIGINAL per-scan key (idempotent replay, no double).
+      // The retry used the ORIGINAL per-scan key (idempotent replay, no
+      // double).
       expect(repo.recordedKeys, <String>['KEY-1', 'KEY-1']);
     });
 

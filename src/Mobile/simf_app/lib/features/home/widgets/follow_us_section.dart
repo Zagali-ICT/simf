@@ -16,9 +16,9 @@ import 'package:simf_app/features/home/widgets/website_link.dart';
 ///
 /// Owner 2026-06-27: a platform with **no URL is hidden** (not a dead/inert
 /// button), and when **no** social link is set the whole section disappears
-/// (header + row + handle). A set link, when tapped, asks to confirm leaving the
-/// app, then opens it externally. Owns its leading gap so the layout stays tidy
-/// whether it shows or hides.
+/// (header + row + handle). A set link, when tapped, asks to confirm leaving
+/// the app, then opens it externally. Owns its leading gap so the layout stays
+/// tidy whether it shows or hides.
 class FollowUsSection extends ConsumerWidget {
   const FollowUsSection({required this.l10n, super.key});
 
@@ -30,7 +30,8 @@ class FollowUsSection extends ConsumerWidget {
     final social = profile?.social;
     final website = profile?.contactWebsite?.trim() ?? '';
     // (asset, url, label) — the exact Figma beige glyphs (node 758:1186); kept
-    // only when the URL is set so an unconfigured platform is hidden, not inert.
+    // only when the URL is set so an unconfigured platform is hidden, not
+    // inert.
     final links = <(String, String, String)>[
       (AppAssets.socialX, social?.x ?? BuildConfig.socialXUrl, 'X'),
       (
@@ -90,8 +91,9 @@ class FollowUsSection extends ConsumerWidget {
             style: SimfTokens.labelBeigeMediumSm,
           ),
         ],
-        // Owner 2026-07-08 — the org website on Home. No Figma home node carries
-        // it (it also lives on About/Contact); shown only when the CP sets one.
+        // Owner 2026-07-08 — the org website on Home. No Figma home node
+        // carries it (it also lives on About/Contact); shown only when the CP
+        // sets one.
         if (website.isNotEmpty) ...<Widget>[
           const SizedBox(height: SimfTokens.space3),
           WebsiteLink(url: website, label: l10n.websiteLabel),

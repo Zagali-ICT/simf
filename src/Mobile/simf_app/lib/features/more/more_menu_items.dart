@@ -30,7 +30,8 @@ class MoreMenuEntry {
 
   /// When true the entry is shown only to a **signed-in** account — an
   /// auth-required page (e.g. notifications) that a not-logged-in guest cannot
-  /// use, so it should not appear in the menu and dead-bounce to sign-in (D-669).
+  /// use, so it should not appear in the menu and dead-bounce to sign-in
+  /// (D-669).
   final bool signedInOnly;
 }
 

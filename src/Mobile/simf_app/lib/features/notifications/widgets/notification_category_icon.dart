@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 
-/// The solid colour-coded circular category mark. Per Figma 758:2491 the icon is
-/// styled **per notification kind** (a decorative colour + glyph), not per
-/// severity — a gold ticket for an approved account, a green check for a session
-/// reminder, a green card for a confirmed meeting, and a coral mark for a VIP
-/// invitation. Kinds the frame does not document are grouped by meaning
-/// (positive = green, alert/negative = coral, info/account = gold); any unknown /
-/// future kind falls back to its severity colour so the wire stays forward-safe.
+/// The solid colour-coded circular category mark. Per Figma 758:2491 the icon
+/// is styled **per notification kind** (a decorative colour + glyph), not per
+/// severity — a gold ticket for an approved account, a green check for a
+/// session reminder, a green card for a confirmed meeting, and a coral mark for
+/// a VIP invitation. Kinds the frame does not document are grouped by meaning
+/// (positive = green, alert/negative = coral, info/account = gold); any unknown
+/// / future kind falls back to its severity colour so the wire stays
+/// forward-safe.
 class NotificationCategoryIcon extends StatelessWidget {
   const NotificationCategoryIcon({
     required this.kind,
@@ -32,10 +33,10 @@ class NotificationCategoryIcon extends StatelessWidget {
   }
 
   /// (colour, glyph) for a notification kind (`NotificationKind` enum names,
-  /// D-053). The four kinds the frame (758:2491) documents are matched exactly on
-  /// colour; their glyphs match too, except the VIP card — the mockup shows a ✕
-  /// (close-circle) on a *positive* VIP invitation, which reads as an error, so a
-  /// star is used instead (the one deliberate deviation; swap to
+  /// D-053). The four kinds the frame (758:2491) documents are matched exactly
+  /// on colour; their glyphs match too, except the VIP card — the mockup shows
+  /// a ✕ (close-circle) on a *positive* VIP invitation, which reads as an
+  /// error, so a star is used instead (the one deliberate deviation; swap to
   /// `Icons.cancel_rounded` to mirror the mockup literally).
   static (Color, IconData) _styleFor(
     String kind,

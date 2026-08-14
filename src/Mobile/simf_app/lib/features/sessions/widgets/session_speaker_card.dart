@@ -10,8 +10,8 @@ import 'package:simf_app/features/sessions/widgets/speaker_avatar.dart';
 /// One speaker card (frame 889:2722/889:2737/889:2747): a navy box with a beige
 /// hairline; a 40×40 rounded photo on the inline-start (physical right), with
 /// the name (white 16px) + the country flag over the rank (beige 12px) beside
-/// it. A session **host** carries the gold star glyph + المضيف on that rank line
-/// (PAR-P4a). Tapping opens the speaker profile.
+/// it. A session **host** carries the gold star glyph + المضيف on that rank
+/// line (PAR-P4a). Tapping opens the speaker profile.
 class SessionSpeakerCard extends StatelessWidget {
   const SessionSpeakerCard({
     required this.speaker,

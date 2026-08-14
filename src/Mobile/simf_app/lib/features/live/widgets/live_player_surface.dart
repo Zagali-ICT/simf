@@ -7,8 +7,8 @@ import 'package:simf_app/features/live/widgets/live_badges.dart';
 import 'package:simf_app/features/live/widgets/live_video_player.dart';
 
 /// The black live player surface (frame 934:3614): the player fills a 16:9 box
-/// over a black backdrop, with the LIVE badge + language chip in the top row and
-/// the gold-bordered organiser caption strip below the feed.
+/// over a black backdrop, with the LIVE badge + language chip in the top row
+/// and the gold-bordered organiser caption strip below the feed.
 class LivePlayerSurface extends ConsumerStatefulWidget {
   const LivePlayerSurface({
     required this.url,
@@ -20,9 +20,9 @@ class LivePlayerSurface extends ConsumerStatefulWidget {
 
   final String url;
 
-  /// S-3 — the "LIVE" badge label, or null to HIDE the badge when the session is
-  /// not inside its scheduled window (a feed URL may exist before start / after
-  /// end without the session being live).
+  /// S-3 — the "LIVE" badge label, or null to HIDE the badge when the session
+  /// is not inside its scheduled window (a feed URL may exist before start /
+  /// after end without the session being live).
   final String? liveLabel;
 
   /// P5 — D-439: the admin-typed caption text for this session, or null.

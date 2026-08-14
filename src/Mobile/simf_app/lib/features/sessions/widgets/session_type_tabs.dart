@@ -9,13 +9,14 @@ import 'package:simf_app/features/sessions/widgets/type_tab.dart';
 
 /// The three type tabs (frame node 883:2320): الكل (all) / جلسات (sessions) /
 /// ورش العمل (workshops). The active tab is solid gold; the rest are bordered
-/// navy cards. الكل = no type filter. Client-side filter. The old fourth
-/// احداث tab was dropped to match the frame (owner 2026-07-03, D-595-style
-/// call) — event-type sessions remain visible under الكل.
+/// navy cards. الكل = no type filter. Client-side filter. The old fourth احداث
+/// tab was dropped to match the frame (owner 2026-07-03, D-595-style call) —
+/// event-type sessions remain visible under الكل.
 ///
-/// Deliberately NOT the shared [SessionFilterTabs]: this frame boxes equal-width
-/// 41px cells inside a navy container, while the shared bar renders freestanding
-/// hairline pills (1388:8392 family) — different chrome per its frame.
+/// Deliberately NOT the shared [SessionFilterTabs]: this frame boxes
+/// equal-width 41px cells inside a navy container, while the shared bar renders
+/// freestanding hairline pills (1388:8392 family) — different chrome per its
+/// frame.
 class SessionTypeTabs extends StatelessWidget {
   const SessionTypeTabs({
     required this.l10n,

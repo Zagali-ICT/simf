@@ -56,8 +56,8 @@ enum LocalAuthOutcome {
 /// One home for the device's biometric (Face-ID / fingerprint) sign-in: the OS
 /// capability check + prompt (`local_auth`) plus the device-key lifecycle
 /// (query / revoke) on [AuthController]. The sign-in button, the side-menu
-/// toggle, the post-sign-in nudge AND the enrolment step-up all go through this,
-/// so the `local_auth` + device-key wiring has a single owner (D-441).
+/// toggle, the post-sign-in nudge AND the enrolment step-up all go through
+/// this, so the `local_auth` + device-key wiring has a single owner (D-441).
 ///
 /// Enrolment (D-738, banking-standard): the toggle/nudge route to
 /// [BiometricStepUpScreen], which verifies an emailed step-up code AND then
@@ -77,7 +77,8 @@ class BiometricAuth {
   /// maps the result to a [LocalAuthOutcome]. `biometricOnly` is false so the
   /// sheet offers the device PIN/pattern/passcode as a fallback (the banking
   /// standard, and what un-bricks the post-lockout path). Used by BOTH the
-  /// enrolment confirm and the sign-in prompt so the mapping lives in one place.
+  /// enrolment confirm and the sign-in prompt so the mapping lives in one
+  /// place.
   Future<LocalAuthOutcome> confirmDeviceIdentity(String reason) async {
     try {
       final ok = await _localAuth.authenticate(
@@ -189,7 +190,8 @@ Future<void> maybeOfferBiometricEnrolment(
   }
   final l10n = AppL10n.of(context);
   // The root MaterialApp messenger carries the SnackBar across the route change
-  // to the destination, so the nudge is visible on the screen the user lands on.
+  // to the destination, so the nudge is visible on the screen the user lands
+  // on.
   final messenger = ScaffoldMessenger.of(context);
   // The Enable action fires up to 8s later — after the route change that pops
   // the sign-in / OTP screen — so capture the lifetime-safe ProviderContainer +
@@ -317,9 +319,9 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
     );
   }
 
-  /// Confirms the destructive disable: revoking the device key deletes the local
-  /// biometric credential permanently (it can only be re-enrolled, not restored).
-  /// Returns true only when the user explicitly taps Delete.
+  /// Confirms the destructive disable: revoking the device key deletes the
+  /// local biometric credential permanently (it can only be re-enrolled, not
+  /// restored). Returns true only when the user explicitly taps Delete.
   Future<bool> _confirmDisable(AppL10n l10n) {
     return SimfConfirmDialog.show(
       context,

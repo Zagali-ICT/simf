@@ -1,7 +1,7 @@
-// D-426 — exhibitor "My Booth Visitors": empty state, list of captured visitors,
-// and the 403 (not-an-exhibitor) surface.
-// BUG-025 — the list also carries the "these are booth scans, not My Contacts"
-// note so the two features are never confused.
+// D-426 — exhibitor "My Booth Visitors": empty state, list of captured
+// visitors, and the 403 (not-an-exhibitor) surface. BUG-025 — the list also
+// carries the "these are booth scans, not My Contacts" note so the two features
+// are never confused.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

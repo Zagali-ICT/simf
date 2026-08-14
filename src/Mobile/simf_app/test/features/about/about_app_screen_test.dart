@@ -178,8 +178,8 @@ void main() {
 
     testWidgets('an unparseable server version → the generic offer, not garbage',
         (tester) async {
-      // The forced decision is driven by min=2.0.0; latest="soon" is unparseable
-      // and must NOT be rendered as a version (D-736 review fix).
+      // The forced decision is driven by min=2.0.0; latest="soon" is
+      // unparseable and must NOT be rendered as a version (D-736 review fix).
       await _pump(
         tester,
         policy: const AppVersionPolicy(

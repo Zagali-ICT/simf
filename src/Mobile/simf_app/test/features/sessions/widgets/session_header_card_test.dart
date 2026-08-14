@@ -56,7 +56,8 @@ Future<void> _pumpCard(
 }
 
 void main() {
-  // PAR-D3 — the session-detail header card carries the category tag pill again.
+  // PAR-D3 — the session-detail header card carries the category tag pill
+  // again.
   group('SessionHeaderCard category pill (PAR-D3)', () {
     testWidgets('a session WITH a category renders the pill under the title',
         (tester) async {

@@ -1,7 +1,7 @@
-// Tests: B8 — the delegation TARGET can DECLINE an approved meeting from the app
-// (the screen only ever offered Confirm, so their single exit was an admin cancel);
-// A30 — the screen's copy names the DELEGATION explicitly, so it is no longer
-// confusable with the website's `/meeting/confirm?token=` speaker page.
+// Tests: B8 — the delegation TARGET can DECLINE an approved meeting from the
+// app (the screen only ever offered Confirm, so their single exit was an admin
+// cancel); A30 — the screen's copy names the DELEGATION explicitly, so it is no
+// longer confusable with the website's `/meeting/confirm?token=` speaker page.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

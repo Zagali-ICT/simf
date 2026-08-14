@@ -10,9 +10,9 @@ import 'package:flutter/foundation.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 
 /// D-771 (owner 2026-07-26) — one resolved seat occupant, mirroring
-/// `SIMF.Contracts.Sessions.StaffSeatOccupant`. The staff seating desk renders a
-/// single result card from this shape whether the lookup started from a scanned
-/// badge or from a tapped seat.
+/// `SIMF.Contracts.Sessions.StaffSeatOccupant`. The staff seating desk renders
+/// a single result card from this shape whether the lookup started from a
+/// scanned badge or from a tapped seat.
 @immutable
 class StaffSeatOccupant {
   const StaffSeatOccupant({
@@ -71,9 +71,9 @@ class StaffSeatOccupant {
   final String? guestHint;
   final String? guestHintArabic;
 
-  /// True when the guest's photo can be streamed. It MUST be fetched through the
-  /// authenticated bytes path (D-422) — a raw `Image.network` cannot carry the
-  /// bearer token.
+  /// True when the guest's photo can be streamed. It MUST be fetched through
+  /// the authenticated bytes path (D-422) — a raw `Image.network` cannot carry
+  /// the bearer token.
   final bool hasPhoto;
   final String? qrId;
   final bool checkedIn;
@@ -86,7 +86,8 @@ class StaffSeatOccupant {
     return primary.isNotEmpty ? primary : (isArabic ? en : ar);
   }
 
-  /// The locale-appropriate VVIP guest note (null when the admin typed neither).
+  /// The locale-appropriate VVIP guest note (null when the admin typed
+  /// neither).
   String? localizedGuestHint({required bool isArabic}) {
     final ar = (guestHintArabic ?? '').trim();
     final en = (guestHint ?? '').trim();

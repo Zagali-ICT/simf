@@ -150,7 +150,8 @@ void main() {
 
       expect(find.text('Your account was not approved'), findsOneWidget);
       expect(find.text('Continue'), findsNothing);
-      // Even with no primary action, a rejected account can return home (D-666).
+      // Even with no primary action, a rejected account can return home
+      // (D-666).
       expect(find.text('Go to home'), findsOneWidget);
     });
 

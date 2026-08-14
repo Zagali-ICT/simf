@@ -81,7 +81,8 @@ class _FakeSeatRepo implements SeatMapRepository {
 }
 
 /// Flattens an [InlineSpan] tree to its non-blank text leaves (Text.rich wraps
-/// the supplied span under a default-style parent, so the real leaves are nested).
+/// the supplied span under a default-style parent, so the real leaves are
+/// nested).
 List<TextSpan> _textLeaves(InlineSpan span) {
   final leaves = <TextSpan>[];
   if (span is TextSpan) {
@@ -109,9 +110,9 @@ Future<void> _pump(
   required SeatMapRepository repo,
   SeatShare? share,
   Locale locale = const Locale('en'),
-  // The page's ListView builds lazily, so anything under the hall card is not in
-  // the tree on the default 800x600 surface. A test that asserts on the action
-  // row asks for a surface tall enough to build it.
+  // The page's ListView builds lazily, so anything under the hall card is not
+  // in the tree on the default 800x600 surface. A test that asserts on the
+  // action row asks for a surface tall enough to build it.
   Size? surface,
 }) async {
   if (surface != null) {
@@ -176,9 +177,9 @@ Future<void> _pump(
 }
 
 /// The action row is the last child of a lazy [ListView], and the hall grid is
-/// tall enough that it is never built at the default surface size — so it has to
-/// be scrolled into view before it can be tapped. `.first` is the screen's own
-/// ListView; the hall card nests two more scrollables below it.
+/// tall enough that it is never built at the default surface size — so it has
+/// to be scrolled into view before it can be tapped. `.first` is the screen's
+/// own ListView; the hall card nests two more scrollables below it.
 Future<void> _tapAction(WidgetTester tester, Finder action) async {
   await tester.scrollUntilVisible(
     action,
@@ -225,11 +226,12 @@ void main() {
     // Both of these assert on the ACTION ROW at the bottom of the page, so both
     // need the tall surface `_pump` documents — the page's ListView builds
     // lazily and the row is not in the tree on the default 800x600. They passed
-    // without it only while the page was short enough for the row to fall inside
-    // the default viewport; the content added above it since (D-767 per-row seat
-    // counts, then the B1 "Change seat" CTA) pushed it out, and the finders
-    // started returning 0 widgets. The buttons themselves are unchanged — this
-    // is the test catching up with the page's height, not a screen regression.
+    // without it only while the page was short enough for the row to fall
+    // inside the default viewport; the content added above it since (D-767
+    // per-row seat counts, then the B1 "Change seat" CTA) pushed it out, and
+    // the finders started returning 0 widgets. The buttons themselves are
+    // unchanged — this is the test catching up with the page's height, not a
+    // screen regression.
     testWidgets('share sends the seat-location text', (tester) async {
       final share = _FakeSeatShare();
       await _pump(

@@ -118,7 +118,8 @@ class SimfStatTile extends StatelessWidget {
   final String label;
 
   /// Optional tap target. Null (the default) keeps the tile inert — a plain
-  /// statistic; non-null makes the whole card tappable via [SimfCard]'s InkWell.
+  /// statistic; non-null makes the whole card tappable via [SimfCard]'s
+  /// InkWell.
   final VoidCallback? onTap;
 
   @override

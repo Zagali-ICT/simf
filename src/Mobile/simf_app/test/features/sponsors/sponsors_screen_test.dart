@@ -101,7 +101,8 @@ void main() {
     testWidgets(
         'P6 — the lowest tier renders as a logo grid, the top as a hero '
         'card', (tester) async {
-      // Three tiers: top → hero card, middle → premium cards, lowest → the grid.
+      // Three tiers: top → hero card, middle → premium cards, lowest → the
+      // grid.
       const threeTiers = <SponsorTierGroup>[
         SponsorTierGroup(
           tier: 1,

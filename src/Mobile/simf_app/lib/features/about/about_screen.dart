@@ -15,12 +15,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Page 037 — عن الملتقى · About the forum (#37, `/about`, Guest+).
 ///
 /// **Public.** Pixel-parity to the restructured KSA Figma frame `1116:16448`:
-/// the navy [SimfPageShell] shell, the anchor-mark header, the **الرسالة** (mission)
-/// and **الرؤية** (vision) cards, the **تفاصيل الملتقى** details card
+/// the navy [SimfPageShell] shell, the anchor-mark header, the **الرسالة**
+/// (mission) and **الرؤية** (vision) cards, the **تفاصيل الملتقى** details card
 /// (year / date / location) and the **المحاور الرئيسية** themes card with the
-/// four fixed forum themes. The vision paragraph is hydrated from the CMS
-/// (`GET /app/content/{key}`, key `about`, D-173) when present and falls back to
-/// the static bilingual copy otherwise; the mission line, the details and the
+/// four fixed forum themes. The vision paragraph is hydrated from the CMS (`GET
+/// /app/content/{key}`, key `about`, D-173) when present and falls back to the
+/// static bilingual copy otherwise; the mission line, the details and the
 /// themes are the forum's fixed framing (static — no structured CMS block).
 class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
@@ -38,9 +38,9 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     unawaited(_load());
   }
 
-  /// Best-effort hydrate of the vision paragraph from the CMS. Any failure (incl.
-  /// a 404 = key not seeded) leaves [_block] null and the screen renders the
-  /// static fallback paragraph — the page always shows the forum content.
+  /// Best-effort hydrate of the vision paragraph from the CMS. Any failure
+  /// (incl. a 404 = key not seeded) leaves [_block] null and the screen renders
+  /// the static fallback paragraph — the page always shows the forum content.
   Future<void> _load() async {
     try {
       final block =

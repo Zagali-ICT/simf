@@ -24,8 +24,8 @@ class InfoRow extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.all(SimfTokens.space2), // p-8
-      // Icon leads (right edge under RTL), value + sub-label follow to its inline
-      // end — matches Figma 1388:7711.
+      // Icon leads (right edge under RTL), value + sub-label follow to its
+      // inline end — matches Figma 1388:7711.
       child: Row(
         children: <Widget>[
           Container(

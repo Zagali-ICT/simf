@@ -10,18 +10,20 @@ import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/widgets/presentations_body.dart';
 
 /// **Sessions** — App "الجلسات" (Figma 1388:7621, Approved account), reached
-/// from the Home "الجلسات" tile. Sessions grouped by event day, each card a file
-/// icon + the session title + the presenting speaker + a gold تحميل button.
-/// Owner 2026-07-03: tapping a card opens the **session detail** (17), and the
-/// gold تحميل button opens that session's **summary** (ملخص الجلسة, 34) — this
-/// screen no longer downloads the deck bytes. Reads `GET /app/presentations`.
+/// from the Home "الجلسات" tile. Sessions grouped by event day, each card a
+/// file icon + the session title + the presenting speaker + a gold تحميل
+/// button. Owner 2026-07-03: tapping a card opens the **session detail** (17),
+/// and the gold تحميل button opens that session's **summary** (ملخص الجلسة, 34)
+/// — this screen no longer downloads the deck bytes. Reads `GET
+/// /app/presentations`.
 ///
-/// Owner 2026-07-14: the تحميل button is **active only when a summary exists** —
-/// a future/live session's محضر isn't published yet, so its button greys out
-/// (inactive, not hidden). The presentations wire carries no summary flag, so the
-/// gate joins each row to the cached programme ([programmeSessionsProvider]) by
-/// `sessionId` and reads its `hasPublishedSummary` — matching the summaries-list
-/// filter exactly ([presentationSummaryReady]).
+/// Owner 2026-07-14: the تحميل button is **active only when a summary exists**
+/// — a future/live session's محضر isn't published yet, so its button greys out
+/// (inactive, not hidden). The presentations wire carries no summary flag, so
+/// the gate joins each row to the cached programme
+/// ([programmeSessionsProvider]) by `sessionId` and reads its
+/// `hasPublishedSummary` — matching the summaries-list filter exactly
+/// ([presentationSummaryReady]).
 class SessionPresentationsScreen extends ConsumerStatefulWidget {
   const SessionPresentationsScreen({super.key});
 

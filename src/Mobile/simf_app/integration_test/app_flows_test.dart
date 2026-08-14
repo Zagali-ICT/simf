@@ -171,7 +171,8 @@ void main() {
     await _boot(tester, const AuthStateSignedOut());
 
     // The root MaterialApp pins themeMode to dark — the OS light/dark setting
-    // is ignored, so the on-navy screens are never rendered on a light scaffold.
+    // is ignored, so the on-navy screens are never rendered on a light
+    // scaffold.
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.themeMode, ThemeMode.dark);
 
@@ -268,8 +269,8 @@ void main() {
 
   testWidgets('D-694 is targeted: a pending account is STILL sent home from an '
       'attendee-only route (/meet)', (tester) async {
-    // Proves the fix opened exactly route 103, not the whole attendee tier — the
-    // D-666 pending gate still holds everywhere else.
+    // Proves the fix opened exactly route 103, not the whole attendee tier —
+    // the D-666 pending gate still holds everywhere else.
     final container = await _boot(tester, _signedInPendingVisitor());
 
     container.read(routerProvider).goNamed(RouteNames.meetPeople);

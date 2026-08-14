@@ -38,7 +38,8 @@ class SeatMapView extends StatelessWidget {
         children: <Widget>[
           SessionCard(map: map, l10n: l10n),
           // Frame gaps: session card (ends y265) → hall card (y289) = 24; hall
-          // card (ends y699) → actions (y739) = 40 (no 40 in the spacing scale).
+          // card (ends y699) → actions (y739) = 40 (no 40 in the spacing
+          // scale).
           const SizedBox(height: SimfTokens.space6),
           // Read-only defaults = this frame (898:2873): beige available
           // border, 20px seat cap, 14px reserved/mine swatches.

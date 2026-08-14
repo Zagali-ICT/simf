@@ -31,8 +31,8 @@ SessionSeatMap _variableMap() => const SessionSeatMap(
       sessionTitle: 'Ragged',
     );
 
-// B1 — the same map, but the caller already holds B1: the picker opens in CHANGE
-// mode (title/hint/CTA switch, no auto-pick, confirm names both seats).
+// B1 — the same map, but the caller already holds B1: the picker opens in
+// CHANGE mode (title/hint/CTA switch, no auto-pick, confirm names both seats).
 SessionSeatMap _heldMap() => const SessionSeatMap(
       rowLabels: <String>['A', 'B'],
       seatsPerRow: 3,
@@ -222,8 +222,8 @@ void main() {
       expect(repo.reservedRow, 'A');
       expect(repo.reservedSeat, 2);
       // D-750 — a one-button alert (not the old seatReservedToast snackbar)
-      // explaining the 3-minute pre-start check-in hold rule; the picker has NOT
-      // popped yet (it waits for the acknowledgement).
+      // explaining the 3-minute pre-start check-in hold rule; the picker has
+      // NOT popped yet (it waits for the acknowledgement).
       expect(find.textContaining('Seat reserved successfully'), findsOneWidget);
       expect(find.text('Reserved — pending approval'), findsNothing);
       // OK dismisses the alert and pops back to the launching screen.

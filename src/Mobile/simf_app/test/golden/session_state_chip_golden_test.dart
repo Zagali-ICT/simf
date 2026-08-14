@@ -11,15 +11,16 @@ import 'package:simf_app/features/sessions/widgets/session_state_chip.dart';
 
 import 'golden_fonts.dart';
 
-/// Golden of the session-state chips (owner 2026-07-14) so the new UI has visual
-/// regression + a design reference. Deterministic — the chips are rendered by
-/// [SessionChipKind] directly (not phase-derived), so this golden is stable over
-/// time. Regenerate:
-///   flutter test --update-goldens test/golden/session_state_chip_golden_test.dart
+/// Golden of the session-state chips (owner 2026-07-14) so the new UI has
+/// visual regression + a design reference. Deterministic — the chips are
+/// rendered by [SessionChipKind] directly (not phase-derived), so this golden
+/// is stable over time. Regenerate: flutter test --update-goldens
+/// test/golden/session_state_chip_golden_test.dart
 ///
-/// The chips: مباشر الآن (live, red), الملخص متاح (summary ready, gold outline),
-/// مسجّل (recorded, gold fill) — each a rounded pill with a trailing dot, on the
-/// navy card fill they sit on in the agenda / my-sessions / summary cards.
+/// The chips: مباشر الآن (live, red), الملخص متاح (summary ready, gold
+/// outline), مسجّل (recorded, gold fill) — each a rounded pill with a trailing
+/// dot, on the navy card fill they sit on in the agenda / my-sessions / summary
+/// cards.
 
 void main() {
   setUpAll(loadGoldenFonts);

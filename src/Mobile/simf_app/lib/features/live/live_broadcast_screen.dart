@@ -84,10 +84,10 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   GoRouter? _router;
 
   /// Non-null only when this view is eligible to prompt on leave — a signed-in
-  /// approved attendee who actually had a live feed to watch. Captured in [_load]
-  /// so [dispose] never reads a provider from a dead element. Shares the D-690
-  /// tracker + the `Session` rating code, so watching online then leaving the
-  /// (ended) session detail can't double-prompt.
+  /// approved attendee who actually had a live feed to watch. Captured in
+  /// [_load] so [dispose] never reads a provider from a dead element. Shares
+  /// the D-690 tracker + the `Session` rating code, so watching online then
+  /// leaving the (ended) session detail can't double-prompt.
   SessionRatePromptTracker? _rateTracker;
 
   bool get _hasId =>
@@ -107,8 +107,8 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // maybeOf (not of): a bare-MaterialApp test host with no GoRouter leaves this
-    // null, and the leave-prompt simply does not fire.
+    // maybeOf (not of): a bare-MaterialApp test host with no GoRouter leaves
+    // this null, and the leave-prompt simply does not fire.
     _router = GoRouter.maybeOf(context);
   }
 
@@ -119,13 +119,13 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   }
 
   /// D-712 (FDS-007 §C.4 GAP-B, owner item 8) — "online session, live-stream
-  /// close → rate the online session". When an approved attendee leaves the live
-  /// screen for a session that carried a live feed, open the dynamic rate screen
-  /// for it once. Runs from [dispose] (the reliable "left the screen" signal for
-  /// every exit path) and pushes through the captured [GoRouter] on the next
-  /// frame. Forward navigations (ask-a-question, sign-in) keep this screen alive,
-  /// so they do not fire it; the shared tracker dedups it with the D-690
-  /// after-view prompt so a session is rated at most once.
+  /// close → rate the online session". When an approved attendee leaves the
+  /// live screen for a session that carried a live feed, open the dynamic rate
+  /// screen for it once. Runs from [dispose] (the reliable "left the screen"
+  /// signal for every exit path) and pushes through the captured [GoRouter] on
+  /// the next frame. Forward navigations (ask-a-question, sign-in) keep this
+  /// screen alive, so they do not fire it; the shared tracker dedups it with
+  /// the D-690 after-view prompt so a session is rated at most once.
   void _maybePromptRateAfterWatch() {
     final router = _router;
     final tracker = _rateTracker;
@@ -165,16 +165,18 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
         return;
       }
       // D-712 — capture the after-watch rate eligibility: an approved attendee
-      // (a pending account presents as guest via effectiveAppRole and is excluded)
-      // who actually had a live feed to watch. Captured here so [dispose] reuses
-      // the reference instead of reading a provider from a dead element.
+      // (a pending account presents as guest via effectiveAppRole and is
+      // excluded) who actually had a live feed to watch. Captured here so
+      // [dispose] reuses the reference instead of reading a provider from a
+      // dead element.
       final auth = ref.read(authControllerProvider);
       final isApprovedAttendee = auth is AuthStateSignedIn &&
           isAttendeeRole(auth.session.user.effectiveAppRole);
       // 2026-07-22 — respect the CP: no after-watch prompt when the "Session"
-      // rating type is deactivated in RatingConfig (siteSettings.sessionRatingEnabled).
-      // Fail-open (true) while the cached settings load / on error, matching the
-      // server, which also suppresses the notification when the type is off.
+      // rating type is deactivated in RatingConfig
+      // (siteSettings.sessionRatingEnabled). Fail-open (true) while the cached
+      // settings load / on error, matching the server, which also suppresses
+      // the notification when the type is off.
       final sessionRatingEnabled =
           ref.read(siteSettingsProvider).valueOrNull?.sessionRatingEnabled ?? true;
       _rateTracker = isApprovedAttendee &&
@@ -234,9 +236,10 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     );
   }
 
-  /// D-495 — a synthetic live session for the forum's main (global) live stream,
-  /// used when the screen opens without a specific session id. The title is the
-  /// forum name; the feed is the Organization profile's liveStreamUrl.
+  /// D-495 — a synthetic live session for the forum's main (global) live
+  /// stream, used when the screen opens without a specific session id. The
+  /// title is the forum name; the feed is the Organization profile's
+  /// liveStreamUrl.
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -265,10 +268,10 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     }
     if (!_hasId) {
       // D-495 — no session id → play the forum's main (global) live-stream link
-      // from the Organization profile when the admin has configured one; else the
-      // "pick a session" empty state.
-      // When a liveUrl param is provided (e.g. from the home LiveBanner tap), use
-      // it directly without hitting the API or the org profile.
+      // from the Organization profile when the admin has configured one; else
+      // the "pick a session" empty state. When a liveUrl param is provided
+      // (e.g. from the home LiveBanner tap), use it directly without hitting
+      // the API or the org profile.
       final explicitUrl = widget.liveUrl?.trim();
       if (explicitUrl != null && explicitUrl.isNotEmpty) {
         return _content(

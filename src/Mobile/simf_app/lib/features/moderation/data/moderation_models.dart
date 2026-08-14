@@ -192,9 +192,10 @@ class ModeratedSession {
 ///
 /// DEF-MOD-001 / DEF-MOD-002 — every chip is now backed by the PERSISTED
 /// `status`: [fresh] / [accepted] are the Approved rows split by the push flag,
-/// [answered] are the Answered rows, and [rejected] are the Hidden rows the desk
-/// pulls with `?status=Hidden`. Nothing lives only in screen state any more, so
-/// leaving the desk (or a co-moderator on another device) no longer loses work.
+/// [answered] are the Answered rows, and [rejected] are the Hidden rows the
+/// desk pulls with `?status=Hidden`. Nothing lives only in screen state any
+/// more, so leaving the desk (or a co-moderator on another device) no longer
+/// loses work.
 enum ModeratorQueueFilter { all, fresh, accepted, answered, rejected }
 
 DateTime _utc(Object? value) {
