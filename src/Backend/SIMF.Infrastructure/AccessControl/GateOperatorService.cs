@@ -127,6 +127,100 @@ internal sealed class GateOperatorService(
             Gates: rules);
     }
 
+    /// <summary>How long a downloaded roster may be trusted. Long enough to
+    /// survive a session's worth of network loss, short enough that a revocation
+    /// issued after the last sync cannot be honoured indefinitely — which is the
+    /// one thing a device still cannot decide for itself.</summary>
+    private static readonly TimeSpan RosterValidity = TimeSpan.FromHours(12);
+
+    public async Task<GateOfflineRoster> GetOfflineRosterAsync(
+        Guid operatorUserId, DateTime? since,
+        CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.SimfNow();
+
+        // The operator's OWN halls, reached through their own gate assignments.
+        // Same scoping the badge key already gets, and for a stronger reason: a
+        // roster is attendee names and movements, and Gates.Operate is held by
+        // every Staff and Moderator account rather than only the provisioned
+        // tablets.
+        var hallIds = await appDbContext.GateAssignments.AsNoTracking()
+            .Where(assignment => assignment.UserId == operatorUserId && assignment.IsActive)
+            .Join(appDbContext.Gates.AsNoTracking(),
+                assignment => assignment.GateId, gate => gate.Id, (_, gate) => gate)
+            .Where(gate => gate.IsActive && gate.HallId != null)
+            .Select(gate => gate.HallId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (hallIds.Count == 0)
+        {
+            // No hall door to serve, so nothing to expect. An empty roster, not
+            // an error: a perimeter-only operator is an ordinary case.
+            return new GateOfflineRoster(now, now.Add(RosterValidity), []);
+        }
+
+        var reservations = appDbContext.SeatReservations.AsNoTracking()
+            // Only a CONFIRMED, still-held reservation counts. A pending or
+            // rejected request must never read as an admitted seat at the door,
+            // and a released one is somebody else's seat now.
+            .Where(reservation => reservation.Status == BookingStatus.Approved
+                && reservation.ReleasedAt == null
+                && reservation.ReservedForProfileId != null
+                && reservation.Session != null
+                && hallIds.Contains(reservation.Session.HallId));
+
+        if (since is { } cursor)
+        {
+            // The delta. CreatedAt is the only monotonic stamp a reservation
+            // carries, so a device asks for what has appeared since its last
+            // successful sync rather than pulling the hall again.
+            reservations = reservations.Where(reservation => reservation.CreatedAt > cursor);
+        }
+
+        // Projected flat and mapped in memory: the record constructor with a
+        // conditional inside it is not translatable, and forcing it to be would
+        // mean contorting the shape the device consumes to suit the query.
+        var rows = await reservations
+            .Select(reservation => new
+            {
+                ProfileId = reservation.ReservedForProfileId!.Value,
+                reservation.ReservedForProfile!.Name,
+                reservation.ReservedForProfile.NameArabic,
+                TypeCode = reservation.ReservedForProfile.ProfileType!.Code,
+                reservation.ReservedForProfile.AdmissionState,
+                reservation.SessionId,
+                reservation.Session!.Start,
+                reservation.Session.End,
+                reservation.Session.HallId,
+                reservation.RowLabel,
+                reservation.SeatNumber,
+            })
+            .OrderBy(row => row.Start)
+            .ToListAsync(cancellationToken);
+
+        var attendees = rows.Select(row => new GateOfflineRosterEntry(
+            row.ProfileId,
+            row.Name,
+            row.NameArabic,
+            row.TypeCode,
+            // A decided boolean, not the raw state. The device should not be
+            // reimplementing admission rules the server already owns, and a
+            // second copy of that logic is a second thing to get wrong.
+            row.AdmissionState == AccountState.Approved,
+            row.SessionId,
+            row.Start,
+            row.End,
+            row.HallId,
+            // Null for general admission, and for a hall admitted by booking
+            // rather than by seat — the row still says "this person is expected
+            // in this session", which is the question the door asks.
+            row.RowLabel,
+            row.SeatNumber)).ToList();
+
+        return new GateOfflineRoster(now, now.Add(RosterValidity), attendees);
+    }
+
     public async Task<GateScanResult> RecordScanAsync(
         GateScanContext context, CancellationToken cancellationToken = default)
     {

@@ -189,6 +189,7 @@ endpoint or the hosted worker that owns the behaviour.
 
 | Surface | File | Scenarios |
 |---------|------|-----------|
+| `GET /app/gates/offline-roster` — the reserved attendees a hall door is expecting, so a device can decide entry with no network | [`api-gate-offline-roster.md`](api-gate-offline-roster.md) | E2E-GOR-001..010 |
 | `POST /app/auth/badge-activation/*` — an attendee with no account creates one from their badge (D-885) | [`api-badge-account-creation.md`](api-badge-account-creation.md) | E2E-BAC-001..008 |
 | `POST /app/auth/badge-activation/complete` — badge self-claim captures the claimer's profile | [`api-badge-self-claim-profile.md`](api-badge-self-claim-profile.md) | E2E-BSC-001..009 |
 | `GET /app/programme/sessions?categoryId=` — server-side theme/category filter | [`api-programme-category-filter.md`](api-programme-category-filter.md) | E2E-PCF-001..007 |
@@ -355,10 +356,10 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 195 (96 Control Panel + 69 mobile + 19 Website + 9
+- **Pages catalogued:** 196 (96 Control Panel + 69 mobile + 19 Website + 10
   API-only surfaces + 1 system-wide). One of them — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3095 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3105 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
   functional total is 2706.
