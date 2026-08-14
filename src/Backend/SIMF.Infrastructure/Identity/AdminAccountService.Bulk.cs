@@ -985,6 +985,13 @@ internal sealed partial class AdminAccountService
                     // Placeholder default data — filled in when the badge is assigned.
                     NationalityId = 0,
                     IsDelegate = request.IsDelegate,
+                    // Admission is profile-owned, so it must be set here and not
+                    // only on the account above: the QR resolver reads this column,
+                    // and a badge left at the PendingApproval default gets printed,
+                    // handed out, and then refused at the gate.
+                    AdmissionState = AccountState.Approved,
+                    StateChangedAt = now,
+                    StateChangedByUserId = actorUserId,
                     // Back-reference to the persisted batch.
                     BadgeBatchId = badgeBatch.Id,
                     CreatedAt = now,
