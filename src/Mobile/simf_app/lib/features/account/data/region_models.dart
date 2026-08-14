@@ -16,13 +16,13 @@ class RegionItem {
     required this.nameArabic,
   });
 
-  final String code;
-  final String? name;
-  final String nameArabic;
-
-  static RegionItem fromJson(Map<String, dynamic> json) => RegionItem(
+  factory RegionItem.fromJson(Map<String, dynamic> json) => RegionItem(
         code: json['code'] as String? ?? '',
         name: json['name'] as String?,
         nameArabic: json['nameArabic'] as String? ?? '',
       );
+
+  final String code;
+  final String? name;
+  final String nameArabic;
 }

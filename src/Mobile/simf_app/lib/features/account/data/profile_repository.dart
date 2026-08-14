@@ -95,7 +95,7 @@ class ProfileRepository {
       bytes: bytes,
       filename: filename,
       contentType: mimeForFilename(filename),
-      decodeData: (data) => data is bool ? data : true,
+      decodeData: (data) => data is! bool || data,
     );
   }
 
@@ -156,7 +156,7 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 /// Best-effort reference number (`SIMF-2026-…`) for the badge + profile ID line.
 /// It lives on the user-profile (the My-Area dashboard doesn't carry it), so the
 /// badge/profile read it here. Null while loading / on error.
-final referenceNumberProvider = FutureProvider.autoDispose<String?>((ref) async {
+final AutoDisposeFutureProvider<String?> referenceNumberProvider = FutureProvider.autoDispose<String?>((ref) async {
   try {
     final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
     final ref0 = profile.referenceNumber?.trim();
@@ -251,7 +251,7 @@ final avatarBustProvider = StateProvider<int>((ref) => 0);
 /// Re-runs whenever [avatarBustProvider] changes (after an upload). Skips the
 /// fetch entirely for a user with no known avatar who hasn't uploaded this
 /// session, so a photo-less account makes no avatar request.
-final myAvatarBytesProvider =
+final AutoDisposeFutureProvider<Uint8List?> myAvatarBytesProvider =
     FutureProvider.autoDispose<Uint8List?>((ref) async {
   final auth = ref.watch(authControllerProvider);
   if (auth is! AuthStateSignedIn) {

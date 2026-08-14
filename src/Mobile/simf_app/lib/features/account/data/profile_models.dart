@@ -196,6 +196,43 @@ class UserProfileResponse {
     this.jobTitleArabic,
   });
 
+  factory UserProfileResponse.fromJson(Map<String, dynamic> json) {
+    return UserProfileResponse(
+      profileTypeId: json['profileTypeId'] as String?,
+      interestIds: (json['interestIds'] as List<dynamic>? ?? const <dynamic>[])
+          .map((e) => e as String)
+          .toList(),
+      arabicName: json['arabicName'] as String? ?? '',
+      englishName: json['englishName'] as String? ?? '',
+      jobTitle: json['jobTitle'] as String?,
+      nationalityCode: json['nationalityCode'] as String? ?? '',
+      dateOfBirth: json['dateOfBirth'] as String?,
+      placeOfBirth: json['placeOfBirth'] as String? ?? '',
+      isSaudi: json['isSaudi'] as bool? ?? false,
+      nationalId: json['nationalId'] as String?,
+      iqamaNumber: json['iqamaNumber'] as String?,
+      passportNumber: json['passportNumber'] as String?,
+      saudiMobile: json['saudiMobile'] as String?,
+      internationalMobile: json['internationalMobile'] as String?,
+      plateNumber: json['plateNumber'] as String?,
+      plateNumberAr: json['plateNumberAr'] as String?,
+      plateNumberEn: json['plateNumberEn'] as String?,
+      referenceNumber: json['referenceNumber'] as String?,
+      organisationId: json['organisationId'] as String?,
+      gender: AppGender.fromValue((json['gender'] as num?)?.toInt()),
+      hasIdImage: json['hasIdImage'] as bool? ?? false,
+      hasAvatar: json['hasAvatar'] as bool? ?? false,
+      qrId: json['qrId'] as String?,
+      isVip: json['isVip'] as bool? ?? false,
+      allowsSpeakerMeeting: json['allowsSpeakerMeeting'] as bool? ?? false,
+      allowsDelegationMeeting: json['allowsDelegationMeeting'] as bool? ?? false,
+      showInMeetLikeYou: json['showInMeetLikeYou'] as bool? ?? true,
+      isForVisitor: json['isForVisitor'] as bool? ?? true,
+      regionId: json['regionId'] as String?,
+      jobTitleArabic: json['jobTitleArabic'] as String?,
+    );
+  }
+
   final String? profileTypeId;
   final List<String> interestIds;
   final String arabicName;
@@ -278,43 +315,6 @@ class UserProfileResponse {
       hasIdImage &&
       (gender != AppGender.male || hasAvatar);
 
-  static UserProfileResponse fromJson(Map<String, dynamic> json) {
-    return UserProfileResponse(
-      profileTypeId: json['profileTypeId'] as String?,
-      interestIds: (json['interestIds'] as List<dynamic>? ?? const <dynamic>[])
-          .map((e) => e as String)
-          .toList(),
-      arabicName: json['arabicName'] as String? ?? '',
-      englishName: json['englishName'] as String? ?? '',
-      jobTitle: json['jobTitle'] as String?,
-      nationalityCode: json['nationalityCode'] as String? ?? '',
-      dateOfBirth: json['dateOfBirth'] as String?,
-      placeOfBirth: json['placeOfBirth'] as String? ?? '',
-      isSaudi: json['isSaudi'] as bool? ?? false,
-      nationalId: json['nationalId'] as String?,
-      iqamaNumber: json['iqamaNumber'] as String?,
-      passportNumber: json['passportNumber'] as String?,
-      saudiMobile: json['saudiMobile'] as String?,
-      internationalMobile: json['internationalMobile'] as String?,
-      plateNumber: json['plateNumber'] as String?,
-      plateNumberAr: json['plateNumberAr'] as String?,
-      plateNumberEn: json['plateNumberEn'] as String?,
-      referenceNumber: json['referenceNumber'] as String?,
-      organisationId: json['organisationId'] as String?,
-      gender: AppGender.fromValue((json['gender'] as num?)?.toInt()),
-      hasIdImage: json['hasIdImage'] as bool? ?? false,
-      hasAvatar: json['hasAvatar'] as bool? ?? false,
-      qrId: json['qrId'] as String?,
-      isVip: json['isVip'] as bool? ?? false,
-      allowsSpeakerMeeting: json['allowsSpeakerMeeting'] as bool? ?? false,
-      allowsDelegationMeeting: json['allowsDelegationMeeting'] as bool? ?? false,
-      showInMeetLikeYou: json['showInMeetLikeYou'] as bool? ?? true,
-      isForVisitor: json['isForVisitor'] as bool? ?? true,
-      regionId: json['regionId'] as String?,
-      jobTitleArabic: json['jobTitleArabic'] as String?,
-    );
-  }
-
   /// Builds an edit re-save request mirroring every field of the loaded profile
   /// so an interests-only edit (via `copyWith`) re-POSTs the whole profile
   /// without nulling a server-set field. The full upsert is the only write
@@ -374,15 +374,15 @@ class CountryItem {
     required this.nameArabic,
   });
 
-  final String code;
-  final String name;
-  final String nameArabic;
-
-  static CountryItem fromJson(Map<String, dynamic> json) => CountryItem(
+  factory CountryItem.fromJson(Map<String, dynamic> json) => CountryItem(
         code: json['code'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
       );
+
+  final String code;
+  final String name;
+  final String nameArabic;
 }
 
 /// Profile-type picker row — `GET /app/account/profile-types` (E4).
@@ -396,19 +396,19 @@ class ProfileTypeItem {
     this.pageColor,
   });
 
-  final String id;
-  final String name;
-  final String nameArabic;
-  final String? pageColor;
-  final bool isVisitor;
-
-  static ProfileTypeItem fromJson(Map<String, dynamic> json) => ProfileTypeItem(
+  factory ProfileTypeItem.fromJson(Map<String, dynamic> json) => ProfileTypeItem(
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
         pageColor: json['pageColor'] as String?,
         isVisitor: json['isVisitor'] as bool? ?? true,
       );
+
+  final String id;
+  final String name;
+  final String nameArabic;
+  final String? pageColor;
+  final bool isVisitor;
 }
 
 /// Interest picker row — `GET /app/account/interests` (E5).
@@ -421,17 +421,17 @@ class InterestItem {
     required this.displayOrder,
   });
 
-  final String id;
-  final String name;
-  final String nameArabic;
-  final int displayOrder;
-
-  static InterestItem fromJson(Map<String, dynamic> json) => InterestItem(
+  factory InterestItem.fromJson(Map<String, dynamic> json) => InterestItem(
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
       );
+
+  final String id;
+  final String name;
+  final String nameArabic;
+  final int displayOrder;
 }
 
 /// Organisation typeahead row — `GET /app/organisations?search=&top=` (E6).
@@ -445,16 +445,16 @@ class OrganisationItem {
     this.city,
   });
 
-  final String id;
-  final String nameAr;
-  final String? nameEn;
-  final String? city;
-
-  static OrganisationItem fromJson(Map<String, dynamic> json) =>
+  factory OrganisationItem.fromJson(Map<String, dynamic> json) =>
       OrganisationItem(
         id: json['id'] as String? ?? '',
         nameAr: json['nameAr'] as String? ?? '',
         nameEn: json['nameEn'] as String?,
         city: json['city'] as String?,
       );
+
+  final String id;
+  final String nameAr;
+  final String? nameEn;
+  final String? city;
 }

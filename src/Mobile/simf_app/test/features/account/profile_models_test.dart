@@ -39,7 +39,7 @@ void main() {
 
   group('UserProfileResponse.fromJson + isComplete', () {
     test('a saved profile parses and reads as complete', () {
-      final response = UserProfileResponse.fromJson(<String, dynamic>{
+      final response = UserProfileResponse.fromJson(const <String, dynamic>{
         'profileTypeId': 'pt-1',
         'interestIds': <dynamic>['i-1'],
         'arabicName': 'راكان',
@@ -72,7 +72,7 @@ void main() {
     });
 
     test('names present but no interests is still incomplete', () {
-      final response = UserProfileResponse.fromJson(<String, dynamic>{
+      final response = UserProfileResponse.fromJson(const <String, dynamic>{
         'arabicName': 'راكان',
         'englishName': 'Rakan',
         'interestIds': <dynamic>[],
@@ -83,7 +83,7 @@ void main() {
 
     test('hasAvatar decodes and gates the male completeness rule', () {
       // Two-photo split — a male needs BOTH the ID document and the face photo.
-      final maleNoAvatar = UserProfileResponse.fromJson(<String, dynamic>{
+      final maleNoAvatar = UserProfileResponse.fromJson(const <String, dynamic>{
         'interestIds': <dynamic>['i-1'],
         'arabicName': 'محمد عبدالله أحمد الزهراني',
         'englishName': 'Mohammed Abdullah Ahmed Alzahrani',
@@ -94,7 +94,7 @@ void main() {
       expect(maleNoAvatar.hasAvatar, isFalse);
       expect(maleNoAvatar.isComplete, isFalse);
 
-      final maleWithBoth = UserProfileResponse.fromJson(<String, dynamic>{
+      final maleWithBoth = UserProfileResponse.fromJson(const <String, dynamic>{
         'interestIds': <dynamic>['i-1'],
         'arabicName': 'محمد عبدالله أحمد الزهراني',
         'englishName': 'Mohammed Abdullah Ahmed Alzahrani',
@@ -106,7 +106,7 @@ void main() {
     });
 
     test('a profile without the ID document is incomplete for every gender', () {
-      final femaleNoId = UserProfileResponse.fromJson(<String, dynamic>{
+      final femaleNoId = UserProfileResponse.fromJson(const <String, dynamic>{
         'interestIds': <dynamic>['i-1'],
         'arabicName': 'سارة عبدالله أحمد الزهراني',
         'englishName': 'Sara Abdullah Ahmed Alzahrani',
@@ -124,7 +124,7 @@ void main() {
       // A non-Saudi profile with EVERY nullable field set, so a dropped mapping
       // in toUpsertRequest surfaces here (iqama/passport/international mobile are
       // the cohort a naive full-upsert edit would silently wipe).
-      final profile = UserProfileResponse.fromJson(<String, dynamic>{
+      final profile = UserProfileResponse.fromJson(const <String, dynamic>{
         'profileTypeId': 'pt-1',
         'interestIds': <dynamic>['i-1', 'i-2'],
         'arabicName': 'راكان السالم',
@@ -197,7 +197,7 @@ void main() {
     });
 
     test('copyWith swaps ONLY interestIds, preserving region + job title', () {
-      final base = UserProfileResponse.fromJson(<String, dynamic>{
+      final base = UserProfileResponse.fromJson(const <String, dynamic>{
         'interestIds': <dynamic>['old-1'],
         'arabicName': 'راكان',
         'englishName': 'Rakan',

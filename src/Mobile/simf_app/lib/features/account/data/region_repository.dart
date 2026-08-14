@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_app/features/account/data/account_endpoints.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart' show ProfileRepository;
 import 'package:simf_app/features/account/data/region_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -41,6 +42,6 @@ final regionRepositoryProvider = Provider<RegionRepository>((ref) {
 /// the const `saudiRegions` list on loading or error, so this provider is
 /// allowed to fail without breaking the form (D-547 owner decision: keep the
 /// hardcoded list as an offline fallback).
-final regionsProvider = FutureProvider.autoDispose<List<RegionItem>>((ref) {
+final AutoDisposeFutureProvider<List<RegionItem>> regionsProvider = FutureProvider.autoDispose<List<RegionItem>>((ref) {
   return ref.watch(regionRepositoryProvider).getRegions();
 });

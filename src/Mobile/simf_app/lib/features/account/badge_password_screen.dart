@@ -10,6 +10,7 @@ import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
 import 'package:simf_app/core/validation/field_limits.dart';
 import 'package:simf_app/core/validation/required_validation.dart';
+import 'package:simf_app/features/account/badge_activation_screen.dart' show BadgeActivationScreen;
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/account/post_auth_route.dart';
 import 'package:simf_app/features/account/widgets/account_sub_header.dart';

@@ -840,7 +840,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       selectedId: _form.profileTypeId,
       showError: _form.triedSubmit && _form.profileTypeId == null,
       onRetry: () => unawaited(_fetchProfileTypes()),
-      onChanged: (String? id) => setState(() => _form.profileTypeId = id),
+      onChanged: (id) => setState(() => _form.profileTypeId = id),
     );
   }
 
@@ -1000,7 +1000,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       letter2: _plateLetter2,
       letter3: _plateLetter3,
       digits: _plateDigits,
-      onPickLetter: (int position) => unawaited(
+      onPickLetter: (position) => unawaited(
         _pickPlateLetter(l10n, position, _plateLetterSetter(position)),
       ),
       onDigitsChanged: () => setState(_syncPlate),

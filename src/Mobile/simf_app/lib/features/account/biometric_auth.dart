@@ -11,6 +11,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_confirm_dialog.dart';
 import 'package:simf_app/core/motion/motion_durations.dart';
+import 'package:simf_app/features/account/biometric_step_up_screen.dart' show BiometricStepUpScreen;
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// Maps a non-success [LocalAuthOutcome] to a localized message, so the sign-in
@@ -134,15 +135,15 @@ class BiometricAuth {
 }
 
 final biometricAuthProvider =
-    Provider<BiometricAuth>((ref) => BiometricAuth(ref));
+    Provider<BiometricAuth>(BiometricAuth.new);
 
 /// The device biometric capability (auto-disposed; re-read after a toggle).
-final biometricAvailableProvider = FutureProvider.autoDispose<bool>(
+final AutoDisposeFutureProvider<bool> biometricAvailableProvider = FutureProvider.autoDispose<bool>(
   (ref) => ref.read(biometricAuthProvider).isAvailable(),
 );
 
 /// Whether Face-ID sign-in is currently enabled on this device.
-final biometricEnabledProvider = FutureProvider.autoDispose<bool>(
+final AutoDisposeFutureProvider<bool> biometricEnabledProvider = FutureProvider.autoDispose<bool>(
   (ref) => ref.read(biometricAuthProvider).isEnabled(),
 );
 
