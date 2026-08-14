@@ -53,6 +53,44 @@ class SpeakerSummary {
       pickLocalizedOrNull(rankArabic, rank, isArabic: isArabic);
   String? localizedCountry({required bool isArabic}) =>
       pickLocalizedOrNull(countryNameAr, countryNameEn, isArabic: isArabic);
+
+  /// Matches a free-text search over the localized name and BOTH rank
+  /// spellings, so a search finds a speaker whichever language the rank was
+  /// entered in. An empty query matches everything.
+  ///
+  /// Mirrors `DelegationItem.matches`. The speakers screen and the meeting
+  /// request sheet each wrote this predicate out; the sheet adds its own rule
+  /// on top (the already-selected speaker always survives the filter).
+  bool matches(String query, {required bool isArabic}) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) {
+      return true;
+    }
+    return localizedName(isArabic: isArabic).toLowerCase().contains(q) ||
+        (rank ?? '').toLowerCase().contains(q) ||
+        (rankArabic ?? '').toLowerCase().contains(q);
+  }
+}
+
+/// The speakers a list should show for [query], alphabetically by localized
+/// name when [alphaSorted]. Lifted out of `SpeakersScreen`'s build path.
+List<SpeakerSummary> visibleSpeakers(
+  List<SpeakerSummary> speakers,
+  String query, {
+  required bool isArabic,
+  bool alphaSorted = false,
+}) {
+  final list = speakers
+      .where((speaker) => speaker.matches(query, isArabic: isArabic))
+      .toList();
+  if (alphaSorted) {
+    list.sort(
+      (a, b) => a
+          .localizedName(isArabic: isArabic)
+          .compareTo(b.localizedName(isArabic: isArabic)),
+    );
+  }
+  return list;
 }
 
 /// One of a speaker's scheduled sessions — mirrors

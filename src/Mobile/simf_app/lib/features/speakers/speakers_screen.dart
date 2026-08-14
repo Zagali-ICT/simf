@@ -208,24 +208,10 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
   }
 
   /// The loaded speakers after the search query + alphabetical sort (908:1744).
-  List<SpeakerSummary> _visibleSpeakers(bool isArabic) {
-    final q = _query.trim().toLowerCase();
-    final list = _speakers.where((s) {
-      if (q.isEmpty) {
-        return true;
-      }
-      final name = s.localizedName(isArabic: isArabic).toLowerCase();
-      final rank = (s.rank ?? '').toLowerCase();
-      final rankArabic = (s.rankArabic ?? '').toLowerCase();
-      return name.contains(q) || rank.contains(q) || rankArabic.contains(q);
-    }).toList();
-    if (_alphaSorted) {
-      list.sort(
-        (a, b) => a
-            .localizedName(isArabic: isArabic)
-            .compareTo(b.localizedName(isArabic: isArabic)),
+  List<SpeakerSummary> _visibleSpeakers(bool isArabic) => visibleSpeakers(
+        _speakers,
+        _query,
+        isArabic: isArabic,
+        alphaSorted: _alphaSorted,
       );
-    }
-    return list;
-  }
 }

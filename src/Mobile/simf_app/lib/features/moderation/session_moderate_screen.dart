@@ -307,9 +307,6 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
     }
   }
 
-  int _count(ModeratorQueueFilter filter) =>
-      filterModeratorQueue(_desk, filter, rejected: _rejected).length;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -365,9 +362,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
         ModeratorFilterBar(
           l10n: l10n,
           filter: _filter,
-          counts: <ModeratorQueueFilter, int>{
-            for (final f in ModeratorQueueFilter.values) f: _count(f),
-          },
+          counts: moderatorQueueCounts(_desk, rejected: _rejected),
           onChanged: (f) => setState(() => _filter = f),
         ),
         Expanded(

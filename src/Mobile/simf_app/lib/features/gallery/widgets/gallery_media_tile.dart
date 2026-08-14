@@ -24,13 +24,7 @@ class GalleryMediaTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = item.localizedTitle(isArabic: isArabic);
     final isVideo = item.kind == MediaKind.video;
-    // Prefer the lighter thumbnail for the grid; fall back to the full image;
-    // null when the item carries no bitmap (then the kind icon is shown).
-    final tileUrl = item.hasThumbnail
-        ? '$baseUrl/app/media/${item.id}/thumbnail'
-        : item.hasImage
-            ? '$baseUrl/app/media/${item.id}/image'
-            : null;
+    final tileUrl = mediaTileUrl(item, baseUrl);
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
       child: Stack(

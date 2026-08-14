@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_assets.dart';
@@ -35,7 +34,7 @@ class SessionSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Frame 1388:8439 — 12h "hh:mm a" (e.g. 09:00 AM) on the Saudi wall clock.
-    final time = DateFormat('hh:mm a', 'en').format(item.startLocal);
+    final time = formatSaudiTime12(item.startLocal);
     final speaker = _speakerText();
     final hall = item.localizedHall(isArabic: isArabic);
     final category = item.localizedCategory(isArabic: isArabic);

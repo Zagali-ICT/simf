@@ -52,10 +52,7 @@ class SponsorsScreen extends ConsumerWidget {
           ),
         ),
         data: (data) {
-          final visibleGroups = <SponsorTierGroup>[
-            for (final group in data)
-              if (group.sponsors.isNotEmpty) group,
-          ];
+          final visibleGroups = visibleTiers(data);
           if (visibleGroups.isEmpty) {
             return SimfRefreshableMessage(
               onRefresh: onRefresh,

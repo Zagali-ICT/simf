@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:simf_app/core/utils/bilingual.dart';
+import 'package:simf_app/features/gallery/data/gallery_endpoints.dart';
 
 /// Media kind — mirrors `MediaKind` (int wire: Image=0, Video=1).
 enum MediaKind {
@@ -15,6 +16,22 @@ enum MediaKind {
     }
     return MediaKind.image;
   }
+}
+
+/// The bitmap a grid tile should show for [item], or null when it carries
+/// none (the tile then draws its kind icon).
+///
+/// Prefers the lighter thumbnail; falls back to the full image. Lifted out of
+/// `GalleryMediaTile.build`, which also spelled both routes inline rather than
+/// asking [GalleryEndpoints].
+String? mediaTileUrl(MediaItem item, String baseUrl) {
+  if (item.hasThumbnail) {
+    return '$baseUrl${GalleryEndpoints.thumbnail(item.id)}';
+  }
+  if (item.hasImage) {
+    return '$baseUrl${GalleryEndpoints.image(item.id)}';
+  }
+  return null;
 }
 
 /// One media item — mirrors `PublicMediaItem` (`GET /app/media`).

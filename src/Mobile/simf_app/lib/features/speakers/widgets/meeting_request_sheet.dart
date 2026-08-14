@@ -505,21 +505,15 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   /// search behaves identically wherever a speaker is chosen. The already-chosen
   /// speaker is always kept in the list even when it doesn't match the query, so
   /// the picker can never hide (or contradict) the target the form submits to.
-  List<SpeakerSummary> _filteredSpeakers(bool isArabic) {
-    final q = _speakerQuery.trim().toLowerCase();
-    if (q.isEmpty) {
-      return _speakers;
-    }
-    return _speakers.where((s) {
-      if (s.id == _selectedSpeakerId) {
-        return true;
-      }
-      final name = s.localizedName(isArabic: isArabic).toLowerCase();
-      final rank = (s.rank ?? '').toLowerCase();
-      final rankArabic = (s.rankArabic ?? '').toLowerCase();
-      return name.contains(q) || rank.contains(q) || rankArabic.contains(q);
-    }).toList();
-  }
+  /// The picker's rows: the shared match, plus this sheet's own rule that the
+  /// already-selected speaker never filters itself out from under the user.
+  List<SpeakerSummary> _filteredSpeakers(bool isArabic) => _speakers
+      .where(
+        (s) =>
+            s.id == _selectedSpeakerId ||
+            s.matches(_speakerQuery, isArabic: isArabic),
+      )
+      .toList();
 
   /// The picker's type-to-filter field (owner 2026-07-11) — the sheet's beige
   /// field look with a leading magnifier so a VIP can filter a long speaker

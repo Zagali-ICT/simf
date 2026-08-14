@@ -179,6 +179,31 @@ class AppRequestItem {
 
 /// The participation-document kinds the app can request — mirrors
 /// `ParticipationDocumentType` (int on the wire).
+/// The status chip that should actually be active, given what is on screen.
+///
+/// A selected status whose chip has dropped to zero items — the user cancelled
+/// their only pending request, say — falls back to "All", so the screen never
+/// strands them on a chip-less "no results" view. Returns null for "All".
+AppRequestStatus? effectiveRequestFilter(
+  List<AppRequestItem> items,
+  AppRequestStatus? selected,
+) =>
+    (selected != null && items.any((item) => item.status == selected))
+        ? selected
+        : null;
+
+/// The rows to show for [selected], applying [effectiveRequestFilter] first.
+List<AppRequestItem> filterRequests(
+  List<AppRequestItem> items,
+  AppRequestStatus? selected,
+) {
+  final active = effectiveRequestFilter(items, selected);
+  if (active == null) {
+    return items;
+  }
+  return items.where((item) => item.status == active).toList(growable: false);
+}
+
 enum ParticipationDocumentType {
   attendanceCertificate,
   participationLetter,

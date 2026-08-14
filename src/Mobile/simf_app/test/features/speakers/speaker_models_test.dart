@@ -78,4 +78,79 @@ void main() {
       expect(d.localizedBio(isArabic: false), isNull);
     });
   });
+
+  group('SpeakerSummary.matches + visibleSpeakers', () {
+    // The rank branches matter: a speaker's rank may be entered in only one
+    // language, and a search must still find them. The screen and the meeting
+    // sheet each wrote this predicate out before it was shared.
+    const sarah = SpeakerSummary(
+      id: 's1',
+      name: 'Dr. Sarah Al-Otaibi',
+      nameArabic: 'د. سارة العتيبي',
+      displayOrder: 0,
+      rank: 'Rear Admiral',
+    );
+    const omar = SpeakerSummary(
+      id: 's2',
+      name: 'Capt. Omar Nasser',
+      nameArabic: 'النقيب عمر ناصر',
+      displayOrder: 1,
+      rankArabic: 'عميد',
+    );
+
+    test('an empty or blank query matches everyone', () {
+      expect(sarah.matches('', isArabic: false), isTrue);
+      expect(sarah.matches('   ', isArabic: true), isTrue);
+    });
+
+    test('matches the localized name in the active language', () {
+      expect(sarah.matches('sarah', isArabic: false), isTrue);
+      expect(sarah.matches('سارة', isArabic: true), isTrue);
+    });
+
+    test('matches an English rank even while reading Arabic', () {
+      expect(sarah.matches('admiral', isArabic: true), isTrue);
+    });
+
+    test('matches an Arabic rank even while reading English', () {
+      expect(omar.matches('عميد', isArabic: false), isTrue);
+    });
+
+    test('is case-insensitive and ignores surrounding space', () {
+      expect(sarah.matches('  ADMIRAL  ', isArabic: false), isTrue);
+    });
+
+    test('rejects a token in neither the name nor either rank', () {
+      expect(sarah.matches('zzz', isArabic: false), isFalse);
+    });
+
+    test('visibleSpeakers keeps input order unless asked to sort', () {
+      final all = visibleSpeakers(
+        const <SpeakerSummary>[omar, sarah],
+        '',
+        isArabic: false,
+      );
+      expect(all.map((s) => s.id), <String>['s2', 's1']);
+    });
+
+    test('visibleSpeakers sorts by the localized name when asked', () {
+      final sorted = visibleSpeakers(
+        const <SpeakerSummary>[omar, sarah],
+        '',
+        isArabic: false,
+        alphaSorted: true,
+      );
+      // 'Capt. Omar' before 'Dr. Sarah'.
+      expect(sorted.map((s) => s.id), <String>['s2', 's1']);
+    });
+
+    test('visibleSpeakers applies the query', () {
+      final filtered = visibleSpeakers(
+        const <SpeakerSummary>[omar, sarah],
+        'sarah',
+        isArabic: false,
+      );
+      expect(filtered.map((s) => s.id), <String>['s1']);
+    });
+  });
 }
