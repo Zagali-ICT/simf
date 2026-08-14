@@ -2,13 +2,18 @@
 
     python .refactor/lift_trailing_comments.py <file> [<file> ...]
 
-A trailing comment on a `static const` is the one comment shape neither
-`wrap_comments.py` nor `wrap_ignore_reasons.py` will touch: its indentation
-belongs to the code, not to the comment, so re-flowing it in place is not
-possible. Moving it above the declaration solves both problems at once - the
-line fits, and the note becomes a real doc comment the IDE shows on hover.
+A trailing comment on a `static const` is the one comment shape
+`wrap_comments.py` will not touch: its indentation belongs to the code, not to
+the comment, so re-flowing it in place is not possible. Moving it above the
+declaration solves both problems at once - the line fits, and the note becomes
+a real doc comment the IDE shows on hover.
 
 Comment text only. No declaration, value or name is altered.
+
+Deliberately has NO length gate: it lifts EVERY trailing note in the files it
+is handed, not only the over-long ones. Lifting the 57 that overflowed
+`tokens.dart` and leaving the other 82 behind would have left one table
+documented two different ways, which reads worse than the long lines did.
 
 Refuses, rather than guessing:
   * a line that is not exactly `<indent>static const ... ; // <text>`

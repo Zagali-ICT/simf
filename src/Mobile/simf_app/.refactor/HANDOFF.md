@@ -87,14 +87,19 @@ compositions replaced with the shared widget, one widget moved to its own file.
 
 All in `.refactor/`, all refuse rather than guess, all reusable:
 
-* `wrap_comments2.py` — re-flows comment blocks **per paragraph**, wrapping a
-  list item with a hanging indent. Supersedes `wrap_comments.py`, which
-  measured with Python `len` (the analyzer counts **UTF-16 code units**, so an
-  emoji flag undercounts by 2) and refused a whole block if any line was a list
-  item.
-* `wrap_ignore_reasons.py` — re-flows the prose around an `// ignore:` while
-  copying the directive through byte for byte. Needed because wrapping a
-  directive silently stops it suppressing anything.
+* `wrap_comments.py` — re-flows comment blocks **per unit**: a blank line, a
+  list item (hanging indent, so the continuation reads as markdown), an
+  `// ignore:` directive (copied byte for byte, because wrapping one silently
+  stops it suppressing anything) or a run of prose. Measures in **UTF-16 code
+  units**, which is how the analyzer counts — a regional-indicator flag costs 4
+  where Python's `len` sees 2.
+
+  This is the merge of three scripts, and the merge is the lesson: they had
+  drifted into three greedy wrappers with different width accounting, and the
+  UTF-16 fix landed in only one of them. `wrap_ignore_reasons.py` existed only
+  because the original refused directive blocks — and, being a separate copy,
+  never got the fix, so it could not see the blocks it was written for. **If
+  you need a fourth comment behaviour, add a unit kind here; do not fork.**
 * `split_long_strings.py` — splits a literal into two adjacent literals, which
   Dart concatenates at compile time. Never inside a word, an escape or an
   interpolation.

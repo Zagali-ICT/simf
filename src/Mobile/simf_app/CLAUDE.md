@@ -468,8 +468,15 @@ restarting the app. `SimfPageShell` only DEFINES the refresh widgets; applying t
 is opt-in per screen, which is why a grep for the widget names reads as coverage
 when it is not.
 
-**Exempt screens, with the reason — this list is the audit's baseline, so a new
-screen not on it and not refreshable is a defect, not a judgement call:**
+**The baseline is `test/repo/pull_to_refresh_coverage_test.dart`, not this
+table.** That test enumerates every screen that fetches and asserts the ones
+without a refresh hook are exactly its reviewed `_exempt` map — so a new screen
+that loads data and forgets the pull fails the build, and a screen that
+legitimately should not have one fails until it is added there *with its
+reason*. The table below explains the **categories** and is the place to read
+why; it is not a second copy to keep in step, and it deliberately does not
+match entry-for-entry (`guest` and `forum_guide` appear here because they have
+no pull, but they never fetch, so the test has nothing to excuse).
 
 | Screen(s) | Why exempt |
 |---|---|

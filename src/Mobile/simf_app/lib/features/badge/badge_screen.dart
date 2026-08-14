@@ -106,12 +106,24 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
   /// `_load()` re-checks approval by construction — the dashboard 403s while
   /// unapproved and that 403 is what sets the pending state.
   ///
-  /// A signed-OUT visitor has no account to fetch, so the gesture completes
-  /// without a call rather than firing a 401.
+  /// A signed-OUT visitor has nothing to re-fetch, so the gesture completes
+  /// without a call. That guard is about the PULL only — `build` still watches
+  /// [referenceNumberProvider], which has no guest short-circuit, so a guest
+  /// already fired one profile read on mount. Fixing that belongs to the
+  /// provider, not here.
+  ///
+  /// The reference number is re-read unconditionally, and deliberately: it is
+  /// rendered only on the issued-badge branch, so re-reading it while the
+  /// pending state shows looks like waste — but that is exactly the transition
+  /// this method exists for. The provider is `autoDispose` and swallows a
+  /// failure to `null`, so a pending account holds a null it will never shed on
+  /// its own; without this the newly-approved badge would show the `qrId` tail
+  /// fallback instead of its real `SIMF-2026-…` reference.
   Future<void> _refresh() async {
     if (_signedOut) {
       return;
     }
+    // Two independent endpoints (dashboard + profile), so they run together.
     await Future.wait<void>(<Future<void>>[
       _load(),
       refreshAsync(ref, referenceNumberProvider.future),
@@ -167,7 +179,10 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
         child: SimfErrorState(
           message: l10n.badgeError,
           retryLabel: l10n.retryLabel,
-          onRetry: () => unawaited(_load()),
+          // The same refresh the pull runs: the button used to call `_load`
+          // alone, so tapping Retry and pulling on the very same surface did
+          // two different things.
+          onRetry: () => unawaited(_refresh()),
         ),
       );
     }
