@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/errors/api_error_l10n.dart';
 import 'package:simf_app/core/responsive/max_width_body.dart';
+import 'package:simf_app/core/utils/saudi_time.dart';
 import 'package:simf_app/core/widgets/simf_auth_sweep.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/account/widgets/account_sub_header.dart';
@@ -82,11 +83,7 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
     });
   }
 
-  String get _countdownLabel {
-    final m = (_secondsLeft ~/ 60).toString().padLeft(2, '0');
-    final s = (_secondsLeft % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
+  String get _countdownLabel => formatCountdown(_secondsLeft);
 
   bool get _canSubmit => _code.text.trim().length == 6 && !_verifying;
 

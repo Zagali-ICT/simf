@@ -153,4 +153,21 @@ void main() {
       expect(formatDateTime12h(local, isArabic: true), '04:45 م');
     });
   });
+
+  group('formatCountdown', () {
+    test('pads both fields to two digits', () {
+      expect(formatCountdown(0), '00:00');
+      expect(formatCountdown(9), '00:09');
+      expect(formatCountdown(60), '01:00');
+    });
+
+    test('carries minutes past ten', () {
+      expect(formatCountdown(599), '09:59');
+      expect(formatCountdown(600), '10:00');
+    });
+
+    test('does not wrap at an hour — these timers never run that long', () {
+      expect(formatCountdown(3600), '60:00');
+    });
+  });
 }
