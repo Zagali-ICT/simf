@@ -290,6 +290,52 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
         Assert.Equal(before, await DirectRegistrationMemberCountAsync());
     }
 
+    [Fact]
+    public async Task The_list_carries_a_bilingual_breakdown_but_not_for_direct_registration()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var normal = await NamedVisitorProfileTypeAsync("ListNormal");
+
+        await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                Name = "Breakdown order",
+                NameArabic = "طلب التفصيل",
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = normal.Id, Count = 2 },
+                },
+            },
+            admin);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/badge-batches/list", new GridQuery { Top = 100 }, admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminBadgeBatchSummary>>>())!.Data!;
+
+        // A real order carries the tiers, with BOTH names, so the reader renders in
+        // the language it is reading rather than being handed English prose.
+        var order = page.Items.Single(row => row.Name == "Breakdown order");
+        var tier = Assert.Single(order.Tiers!);
+        Assert.Equal(normal.Name, tier.Name);
+        Assert.Equal("نوع اختباري", tier.NameArabic);
+        Assert.Equal(2, tier.Count);
+
+        // The direct-registration order does NOT. It is not a badge order - it is
+        // where self-registrations are filed - so its summary stays prose instead of
+        // growing one entry per profile type as the event runs.
+        var direct = page.Items.SingleOrDefault(
+            row => row.Id == BadgeBatch.DirectRegistrationId);
+        if (direct is not null)
+        {
+            Assert.True(
+                direct.Tiers is null || direct.Tiers.Count == 0,
+                "the direct-registration order must keep its prose summary");
+        }
+    }
+
     private async Task<int> DirectRegistrationMemberCountAsync()
     {
         using var scope = _factory.Services.CreateScope();

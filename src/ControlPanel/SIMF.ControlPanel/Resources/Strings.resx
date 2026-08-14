@@ -3788,6 +3788,7 @@
   <data name="Admin.BadgeBatches.Revoke.Confirm" xml:space="preserve"><value>Revoke</value></data>
   <data name="Admin.BadgeBatches.Revoke.Done" xml:space="preserve"><value>Revoked {0} account(s).</value></data>
   <data name="Admin.BadgeBatches.TopUp" xml:space="preserve"><value>Add more badges</value></data>
+  <data name="Admin.BadgeBatches.DirectRegistration" xml:space="preserve"><value>Self-registrations</value></data>
   <data name="Admin.BadgeBatches.TopUp.Title" xml:space="preserve"><value>Add more badges to this order</value></data>
   <data name="Admin.BadgeBatches.TopUp.Count" xml:space="preserve"><value>How many to add</value></data>
   <data name="Admin.BadgeBatches.TopUp.Confirm" xml:space="preserve"><value>Add and mint</value></data>

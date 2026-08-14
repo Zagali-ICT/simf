@@ -202,31 +202,39 @@ tests. A bUnit harness with mocked `IJSRuntime` /
 runtime behaviour (Escape closes the dropdown, focus jumps to `<main>`
 on skip-link, etc.). Scope: a separate test-tooling increment.
 
-### 3.10 `BadgeBatch.CountsSummary` is English-only in an Arabic UI
+### 3.10 `BadgeBatch.CountsSummary` was English-only in an Arabic UI — DONE
 
-Found 2026-08-14 driving `/admin/visitors/badge-batches` in Arabic.
-The **Contents** column, and the top-up dialog that echoes it, render
-`Normal × 4 + VIP × 3` with the **English** tier names while the rest of
-the page is Arabic. `CountsSummary` is a single denormalised string
-built server-side from `UserProfileType.Name`
-(`AdminAccountService.Bulk.cs`, `MergeCountsSummary`), so there is no
-Arabic side to fall back to — unlike the order name, which is a proper
-bilingual pair.
+Found 2026-08-14 driving `/admin/visitors/badge-batches` in Arabic: the
+**Contents** column rendered `Normal × 4 + VIP × 3` with the **English**
+tier names while the rest of the page was Arabic, because
+`CountsSummary` is a single denormalised English string with no Arabic
+side to fall back to.
 
-Pre-existing (the field was English-only before the top-up work) and
-not a defect of it, but it is a visible bilingual gap on a page the
-owner reads in Arabic. Two shapes to choose between:
+Fixed the same day, by the first of the two shapes this item proposed
+and **without a schema change**: the breakdown is derived on read from
+the member rows, carrying BOTH names per tier
+(`AdminBadgeBatchSummary.Tiers`), and the page composes it in the
+language being read. One grouped query per page of the list, not one
+per row. The stored string stays as the audit record and as the
+fallback for an order whose members are gone, so nothing gained a
+second writable copy.
 
-- store the breakdown **structurally** (the `(type, count)` pairs) and
-  render it per culture, which also retires the string-parsing in
-  `MergeCountsSummary`; or
-- keep the string and add an Arabic twin, which is cheaper but keeps
-  two denormalised fields in step instead of one.
+Two things the live check caught that the tests had not:
 
-The first is the better end state and is the one to cost first. Note
-that whichever is chosen, `MergeCountsSummary` currently parses its own
-`" × "`-delimited output back into counts, so the parse and the render
-must move together.
+- Deriving tiers for the **direct-registration** order replaced its
+  short prose with every profile type present — nine entries and
+  growing with each registrant, in a column sized for "Normal × 4".
+  It is not a badge order, so it is excluded and carries
+  `IsDirectRegistration` instead.
+- Its stored prose is the English literal "Direct registration", so
+  falling back to it left one English cell in an otherwise Arabic
+  table. It now renders a localised label
+  (`Admin.BadgeBatches.DirectRegistration`).
+
+`MergeCountsSummary` still parses its own `" × "`-delimited output to
+maintain the stored string. That is now display-irrelevant, and could
+be retired if the stored summary is ever dropped — which would be a
+schema change and is not proposed here.
 
 ### 3.8 `myComment.txt` drain — TRIAGED (H31 — D-089)
 

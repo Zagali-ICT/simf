@@ -3,6 +3,7 @@
 // and renders each row's contents + active/revoked status. The re-email / revoke
 // actions are exercised end-to-end by the API integration tests
 // (SIMF.Api.Tests/DelegatesAndBulkBadgesTests).
+using System.Globalization;
 using Bunit;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -55,6 +56,100 @@ public sealed class BadgeBatchesPageTests : CpComponentTestBase
                     },
                     total: 2, skip: 0, top: 20)));
         return RenderComponent<BadgeBatchesPage>();
+    }
+
+    // The Contents column used to render BadgeBatch.CountsSummary, ONE English
+    // string built server-side, so an otherwise-Arabic page showed "Normal × 4 +
+    // VIP × 3". The server now derives the breakdown carrying both names and the
+    // page composes it in the language being read.
+
+    private static AdminBadgeBatchSummary OrderWithTiers() =>
+        new(ActiveId, "Normal × 4 + VIP × 3", 7, false, null, SimfClock.Now, true,
+            "Ministry of Interior Team", "فريق وزارة الداخلية",
+            new List<AdminBadgeBatchTier>
+            {
+                new("Normal", "عادي", 4),
+                new("VIP", "كبار الشخصيات", 3),
+            });
+
+    private IRenderedComponent<BadgeBatchesPage> RenderOrder(AdminBadgeBatchSummary row)
+    {
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.ViewBatches));
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        StubProfileTypes();
+        JSInterop.Setup<ApiResult<GridPage<AdminBadgeBatchSummary>>>(
+                "simfAccount.postJson",
+                inv => ((string)inv.Arguments[0]!).Contains("badge-batches/list"))
+            .SetResult(ApiResult<GridPage<AdminBadgeBatchSummary>>.Ok(
+                GridPage<AdminBadgeBatchSummary>.Of(
+                    new List<AdminBadgeBatchSummary> { row }, total: 1, skip: 0, top: 20)));
+        return RenderComponent<BadgeBatchesPage>();
+    }
+
+    [Fact]
+    public void The_contents_column_reads_in_Arabic_under_an_Arabic_culture()
+    {
+        using var _ = new CultureScope("ar");
+
+        var cut = RenderOrder(OrderWithTiers());
+
+        Assert.Contains("عادي × 4", cut.Markup);
+        Assert.Contains("كبار الشخصيات × 3", cut.Markup);
+        // The English tier names must be gone, not merely accompanied.
+        Assert.DoesNotContain("Normal ×", cut.Markup);
+        Assert.DoesNotContain("VIP ×", cut.Markup);
+    }
+
+    [Fact]
+    public void The_contents_column_reads_in_English_under_an_English_culture()
+    {
+        using var _ = new CultureScope("en");
+
+        var cut = RenderOrder(OrderWithTiers());
+
+        Assert.Contains("Normal × 4", cut.Markup);
+        Assert.Contains("VIP × 3", cut.Markup);
+    }
+
+    [Fact]
+    public void An_order_with_no_breakdown_falls_back_to_the_stored_summary()
+    {
+        // Not the direct-registration row: an ordinary order whose members are gone
+        // must still render its stored summary rather than going blank.
+        using var _ = new CultureScope("ar");
+
+        var cut = RenderOrder(new(
+            ActiveId, "Normal × 4 + VIP × 3", 7, false, null, SimfClock.Now, true,
+            "Emptied order", "طلب مُفرَّغ", Tiers: null));
+
+        Assert.Contains("Normal × 4 + VIP × 3", cut.Markup);
+    }
+
+    [Fact]
+    public void The_direct_registration_row_uses_a_localised_label_not_the_stored_prose()
+    {
+        // It is not a badge order, so it carries no tiers and its stored summary is
+        // the English literal "Direct registration". Echoing that left one English
+        // cell in an otherwise Arabic table.
+        using var _ = new CultureScope("ar");
+
+        var cut = RenderOrder(new(
+            ActiveId, "Direct registration", 0, false, null, SimfClock.Now, true,
+            "Direct registration", "التسجيل المباشر",
+            Tiers: null, IsDirectRegistration: true));
+
+        Assert.Contains("Admin.BadgeBatches.DirectRegistration", cut.Markup);
+    }
+
+    private sealed class CultureScope : IDisposable
+    {
+        private readonly CultureInfo _previous = CultureInfo.CurrentUICulture;
+
+        public CultureScope(string name) =>
+            CultureInfo.CurrentUICulture = new CultureInfo(name);
+
+        public void Dispose() => CultureInfo.CurrentUICulture = _previous;
     }
 
     [Fact]

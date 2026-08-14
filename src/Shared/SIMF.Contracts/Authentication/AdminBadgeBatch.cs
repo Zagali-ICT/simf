@@ -15,6 +15,14 @@ namespace SIMF.Contracts.Authentication;
 /// <param name="IsActive">False once the batch has been revoked.</param>
 /// <param name="Name">Who the order is for, in English.</param>
 /// <param name="NameArabic">The Arabic twin of <paramref name="Name"/>.</param>
+/// <param name="Tiers">The breakdown with both languages of each tier name, so a
+/// reader can render it in the language they are reading. Derived from the member
+/// rows on read, NOT stored: <paramref name="CountsSummary"/> is a single English
+/// string, so an Arabic page rendering it showed English tier names.</param>
+/// <param name="IsDirectRegistration">The seeded order self-registrations are filed
+/// against. It carries no <paramref name="Tiers"/> on purpose - it is not a badge
+/// order - and its stored summary is English prose, so a reader is expected to
+/// render its own localised label rather than echo that prose.</param>
 public sealed record AdminBadgeBatchSummary(
     Guid Id,
     string CountsSummary,
@@ -26,7 +34,14 @@ public sealed record AdminBadgeBatchSummary(
     // Appended rather than placed first, so the shipped positional shape of the
     // record is undisturbed for anything constructing it by position.
     string Name = "",
-    string NameArabic = "");
+    string NameArabic = "",
+    IReadOnlyList<AdminBadgeBatchTier>? Tiers = null,
+    bool IsDirectRegistration = false);
+
+/// <summary>One tier inside an order's breakdown — the profile type and how many
+/// badges of it the order holds, carrying BOTH names so the caller renders in its
+/// own language rather than being handed a pre-composed English string.</summary>
+public sealed record AdminBadgeBatchTier(string Name, string NameArabic, int Count);
 
 /// <summary>Body of <c>POST /admin/visitors/badge-batches/top-up</c> — adds more
 /// badges to an order that already exists. The badges are minted immediately,
