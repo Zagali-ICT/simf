@@ -929,7 +929,7 @@ internal sealed partial class AdminAccountService
 
         created = await MintBadgesAsync(
             plan, badgeBatch, request.IsDelegate, actorUserId, now,
-            badgeArtifacts, cancellationToken);
+            startingSequence: 0, badgeArtifacts, cancellationToken);
 
         await auditLog.WriteSuccessAsync(
             AuditEvents.AdminBulkBadgesGenerated,
@@ -1009,6 +1009,10 @@ internal sealed partial class AdminAccountService
         bool isDelegate,
         Guid actorUserId,
         DateTime now,
+        // Where the printed numbering continues from. Zero on a first order; the
+        // order's existing count on a top-up, so the second batch of badges reads
+        // #11 upward rather than starting again at #1 and printing two of each.
+        int startingSequence,
         List<(string ProfileTypeName, int Seq, string QrId)>? badgeArtifacts,
         CancellationToken cancellationToken)
     {
@@ -1017,7 +1021,7 @@ internal sealed partial class AdminAccountService
         {
             for (var i = 0; i < batch.Count; i++)
             {
-                var displayName = $"{profileType.Name} #{badgeBatch.TotalCount + minted + 1}";
+                var displayName = $"{profileType.Name} #{startingSequence + minted + 1}";
                 var profile = new UserProfile
                 {
                     Id = Guid.NewGuid(),
@@ -1084,7 +1088,8 @@ internal sealed partial class AdminAccountService
         var plan = await PlanBadgeOrderAsync(request.Batches, cancellationToken);
         var now = timeProvider.SimfNow();
         var minted = await MintBadgesAsync(
-            plan, badgeBatch, badgeBatch.IsDelegate, actorUserId, now, null, cancellationToken);
+            plan, badgeBatch, badgeBatch.IsDelegate, actorUserId, now,
+            startingSequence: badgeBatch.TotalCount, badgeArtifacts: null, cancellationToken);
 
         // TotalCount and CountsSummary are denormalised from the member rows, so
         // both move together. Updating one and not the other leaves the orders
@@ -1244,37 +1249,49 @@ internal sealed partial class AdminAccountService
                 "The badge batch was not found or is already revoked.",
                 "لم يتم العثور على دفعة الشارات أو أنها ملغاة بالفعل.");
 
-        // Disable every account the batch minted, reusing the type-scoped bulk-delete
-        // path (audience Visitors) so each account's disable + token-revoke + audit is
-        // identical to a manual bulk delete. This crosses databases: these SimfUsers
-        // live in the Identity DB — disabled first, THEN the App-DB batch is
-        // deactivated as a separate unit of work (no distributed transaction).
-        var memberIds = await appDbContext.UserProfiles
+        var now = timeProvider.SimfNow();
+
+        // Revoking an order has to stop its BADGES, and a badge is admitted on
+        // the attendee's own admission state — so that is what moves. Disabling
+        // only the accounts would have left every badge in the order still
+        // opening every gate, because most of them have no account at all.
+        var revoked = await appDbContext.UserProfiles
+            .Where(profile => profile.BadgeBatchId == batch.Id
+                && profile.AdmissionState != AccountState.Disabled)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(profile => profile.AdmissionState, AccountState.Disabled)
+                    .SetProperty(profile => profile.StateChangedAt, now)
+                    .SetProperty(profile => profile.StateChangedByUserId, (Guid?)actorUserId),
+                cancellationToken);
+
+        // Any member who went on to create an app account loses that too, reusing
+        // the type-scoped bulk-delete path so the disable + token-revoke + audit
+        // is identical to a manual bulk delete. Most members have none. This
+        // crosses databases and is deliberately a SEPARATE unit of work from the
+        // profile update above — there is no distributed transaction, and the
+        // profile side is the one that decides entry, so it goes first.
+        var memberAccountIds = await appDbContext.UserProfiles
             .AsNoTracking()
-            // Only members that HAVE an account, because what follows deletes
-            // accounts. A batch member without one has nothing to delete here;
-            // revoking its badge is a profile-side concern.
             .Where(profile => profile.BadgeBatchId == batch.Id
                 && profile.UserId != null)
             .Select(profile => profile.UserId!.Value)
             .ToListAsync(cancellationToken);
 
-        var revoked = 0;
-        if (memberIds.Count > 0)
+        if (memberAccountIds.Count > 0)
         {
-            var deleteResult = await BulkDeleteUsersByKindAsync(
+            await BulkDeleteUsersByKindAsync(
                 actorUserId, UserType.Visitor, requirePartnerScope: false,
                 new AdminBulkDeleteRequest
                 {
-                    Ids = memberIds,
+                    Ids = memberAccountIds,
                     Reason = $"Badge batch {batch.Id} revoked",
                 },
                 cancellationToken);
-            revoked = deleteResult.Deleted;
         }
 
         batch.Deactivate();
-        batch.UpdatedAt = timeProvider.SimfNow();
+        batch.UpdatedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteSuccessAsync(

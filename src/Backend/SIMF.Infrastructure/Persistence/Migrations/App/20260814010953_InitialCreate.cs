@@ -303,6 +303,22 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
+                name: "EventEdition",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Year = table.Column<int>(type: "int", nullable: false),
+                    OpenedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastClosedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    OpenedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    LastReissueCount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EventEdition", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "FaqGroups",
                 columns: table => new
                 {
@@ -1240,6 +1256,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     BadgeBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EditionYear = table.Column<int>(type: "int", nullable: false),
                     ShowInMeetLikeYou = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     SaudiMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     InternationalMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -2618,6 +2635,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.InsertData(
+                table: "EventEdition",
+                columns: new[] { "Id", "LastClosedAt", "LastReissueCount", "OpenedAt", "OpenedByUserId", "Year" },
+                values: new object[] { new Guid("00000000-0000-0000-0000-000000000003"), null, 0, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, 2026 });
+
+            migrationBuilder.InsertData(
                 table: "OrganizationProfile",
                 columns: new[] { "Id", "BackgroundVideoUrl", "Bio", "BioArabic", "ContactEmail", "ContactPhone", "ContactWebsite", "CreatedAt", "CreatedBy", "CurrentYear", "DeletedAt", "EventEndDate", "EventStartDate", "FacebookUrl", "InstagramUrl", "IsActive", "Latitude", "LinkedInUrl", "LiveStreamUrl", "LocationText", "LocationTextArabic", "Longitude", "Name", "NameArabic", "PartnerDirectoryEnabled", "RegistrationSuccessMessage", "RegistrationSuccessMessageArabic", "ReleaseDate", "Slogan", "SloganArabic", "SnapchatUrl", "Status", "SysVersion", "TikTokUrl", "Title", "TitleArabic", "UpdatedAt", "UpdatedBy", "Version", "VersionDate", "XUrl", "YouTubeUrl" },
                 values: new object[] { new Guid("00000000-0000-0000-0000-000000000003"), null, null, null, null, null, null, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new Guid("00000000-0000-0000-0000-000000000000"), 2026, null, new DateTime(2026, 4, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, null, true, null, null, null, "Saudi Arabia", "السعودية", null, "The International Maritime Forum", "الملتقى الدولي البحري", true, "Congratulations, welcome to the Fourth Saudi Forum.", "تهانينا، مرحباً بكم في الملتقى السعودي الرابع.", null, null, null, null, 1, null, null, "The Saudi International Maritime Forum", "الملتقى البحري السعودي الدولي", null, null, "1.0.0", null, null, null });
@@ -3740,6 +3762,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "EmailTemplates");
+
+            migrationBuilder.DropTable(
+                name: "EventEdition");
 
             migrationBuilder.DropTable(
                 name: "ExhibitorMemberships");

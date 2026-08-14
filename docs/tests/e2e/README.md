@@ -355,10 +355,10 @@ again without failing the build. They had been left at the 2026-06-02 figures �
 "74 pages / ~1044 scenarios" — while the catalogue more than doubled, and were
 being quoted in planning as if current.
 
-- **Pages catalogued:** 194 (96 Control Panel + 69 mobile + 19 Website + 8
-  API-only surfaces + 1 system-wide). One of the 193 — `cp-admin-companies.md` —
+- **Pages catalogued:** 195 (96 Control Panel + 69 mobile + 19 Website + 9
+  API-only surfaces + 1 system-wide). One of them — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3087 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3095 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
   functional total is 2706.

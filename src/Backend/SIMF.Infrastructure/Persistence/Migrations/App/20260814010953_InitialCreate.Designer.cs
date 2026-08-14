@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260814000151_InitialCreate")]
+    [Migration("20260814010953_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -2477,6 +2477,41 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("VisitorShareTokens", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Editions.EventEdition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LastClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LastReissueCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OpenedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("OpenedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EventEdition", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000003"),
+                            LastReissueCount = 0,
+                            OpenedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Year = 2026
+                        });
+                });
+
             modelBuilder.Entity("SIMF.Domain.Email.EmailTemplate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4050,6 +4085,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("EditionYear")
+                        .HasColumnType("int");
 
                     b.Property<int>("Gender")
                         .HasColumnType("int");

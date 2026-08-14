@@ -64,8 +64,10 @@ internal sealed class AdminApprovalReadService(
             .Where(p => p.QrId == normalised)
             .Select(p => new
             {
+                p.Id,
                 p.UserId,
                 p.QrId,
+                p.Name,
                 ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
                 ProfileTypeNameArabic = p.ProfileType != null ? p.ProfileType.NameArabic : null,
                 ProfileTypeColor = p.ProfileType != null ? p.ProfileType.PageColor : null,
@@ -73,30 +75,29 @@ internal sealed class AdminApprovalReadService(
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null) { return null; }
 
-        // Pair the profile row with the owner so we can return the
-        // badge-name + email the printable view renders.
-        // This response is read straight back by the desk that just registered
-        // someone, and its contract is keyed by account id, so it only answers
-        // for a registration that produced one. A desk registration that
-        // creates no account has nothing to look up here and reads as not
-        // found, exactly as an unknown id does.
-        if (row.UserId is not { } registeredUserId) { return null; }
-
-        var user = await dbContext.Users
-            .AsNoTracking()
-            .Where(u => u.Id == registeredUserId)
-            .Select(u => new { u.Email, u.DisplayName })
-            .SingleOrDefaultAsync(cancellationToken);
-        if (user is null) { return null; }
+        // The owner's email and self-chosen display name, when there IS an owner.
+        // Most badges have none: a bulk order prints them long before anyone
+        // claims one, so requiring an account here would have made the print-bag
+        // station answer "no badge found" for every badge in the box.
+        var user = row.UserId is { } registeredUserId
+            ? await dbContext.Users
+                .AsNoTracking()
+                .Where(u => u.Id == registeredUserId)
+                .Select(u => new { u.Email, u.DisplayName })
+                .SingleOrDefaultAsync(cancellationToken)
+            : null;
 
         return new AdminWalkInRegistrationResponse(
-            registeredUserId,
-            user.Email ?? string.Empty,
-            user.DisplayName,
+            row.UserId ?? Guid.Empty,
+            user?.Email ?? string.Empty,
+            // The account's display name when there is one; otherwise the name
+            // the badge was actually printed from.
+            user?.DisplayName ?? row.Name,
             row.QrId ?? string.Empty,
             row.ProfileTypeName ?? string.Empty,
             row.ProfileTypeNameArabic ?? string.Empty,
-            row.ProfileTypeColor ?? "#244A77");
+            row.ProfileTypeColor ?? "#244A77",
+            row.Id);
     }
 
     /// <summary>Any-state full profile read scoped to the

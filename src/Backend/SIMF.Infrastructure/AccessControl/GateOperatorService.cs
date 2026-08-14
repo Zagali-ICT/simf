@@ -13,6 +13,7 @@ using SIMF.Common.Enums;
 using SIMF.Common.Options;
 using SIMF.Contracts.Gates;
 using SIMF.Domain.AccessControl;
+using SIMF.Domain.Editions;
 using SIMF.Infrastructure.Persistence;
 using SIMF.Common;
 
@@ -200,8 +201,18 @@ internal sealed class GateOperatorService(
         var denialCtx = DenialContext.From(resolution);
         var coldStart = ResolveDirection(snapshot, context.Request.RequestedDirection, null);
 
-        // Steps 5–9: per-row predicate → denial reason, ordered. Step 9.5
-        // (time-window) is still a reserved hook — no row here today. Step 11.5
+        // The year currently open. A badge carries the edition it was issued for,
+        // and last year's must not open this year's gate — which is the only
+        // expiry a minted QR has ever had, this resolver having matched on value
+        // alone until now.
+        var openEditionYear = await appDbContext.EventEdition
+            .AsNoTracking()
+            .Where(edition => edition.Id == EventEdition.SingletonId)
+            .Select(edition => (int?)edition.Year)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        // Steps 5–9: per-row predicate → denial reason, ordered. Step 9.5 is the
+        // edition check, a reserved hook until now. Step 11.5
         // (booking-required) is implemented and runs after the
         // allow-list below, because it needs the resolved direction.
         var simpleChecks = new (bool failed, DenialReasonCode reason)[]
@@ -214,6 +225,15 @@ internal sealed class GateOperatorService(
             (resolution.IsLockedOut,                          DenialReasonCode.HolderLocked),
             (resolution.ProfileTypeId is not null && !resolution.ProfileTypeActive,
                                                               DenialReasonCode.ProfileTypeInactive),
+            // Step 9.5 — the badge is from a closed edition. Deliberately NOT
+            // given a distinct operator message: a scan must never tell the
+            // holder which half of the check failed. A zero on the record means
+            // the attendee predates the column, and is left alone rather than
+            // locked out by a schema change.
+            (openEditionYear is { } openYear
+                && resolution.EditionYear != 0
+                && resolution.EditionYear != openYear,
+                                                              DenialReasonCode.OutsideTimeWindow),
         };
         foreach (var (failed, reason) in simpleChecks)
         {

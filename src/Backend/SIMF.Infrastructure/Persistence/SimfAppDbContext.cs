@@ -97,6 +97,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// <summary>Archive visibility switch.</summary>
     public DbSet<ArchiveVisibility> ArchiveVisibility => Set<ArchiveVisibility>();
 
+    /// <summary>The year the forum is currently running.</summary>
+    public DbSet<SIMF.Domain.Editions.EventEdition> EventEdition =>
+        Set<SIMF.Domain.Editions.EventEdition>();
+
     /// <summary>Country lookup (ISO 3166-1 numeric Id; admin-managed
     /// CRUD; seeded with ~56 priority countries on first migration).</summary>
     public DbSet<Country> Countries => Set<Country>();

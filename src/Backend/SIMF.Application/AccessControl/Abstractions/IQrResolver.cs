@@ -63,4 +63,8 @@ public sealed record QrResolution(
     string? ProfileTypePageColor,
     string DisplayName,
     string DisplayNameArabic,
-    Guid? BadgeBatchId = null);
+    Guid? BadgeBatchId = null,
+    // The edition year this attendee was registered for. The gate refuses a
+    // badge whose year is not the open one — which is the only expiry a minted
+    // QR has ever had, the resolver having matched on value alone before.
+    int EditionYear = 0);

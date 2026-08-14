@@ -127,6 +127,16 @@ public class UserProfile : BaseAuditEntity
 
     public SIMF.Domain.Badges.BadgeBatch? BadgeBatch { get; set; }
 
+    /// <summary>The edition year this attendee was registered for, and the year
+    /// their badge is valid in. Stamped from the open edition at creation.
+    ///
+    /// <para>Closing a year does not delete its attendees — their records stay,
+    /// labelled with the year they belong to, which is what makes an edition a
+    /// queryable dimension rather than a date range. Opening the next year
+    /// clears their QR, so a returning attendee is re-issued rather than left
+    /// holding a badge that every door refuses.</para></summary>
+    public int EditionYear { get; set; }
+
     /// <summary>Whether this profile appears in the "Meet People Like You"
     /// recommendations and the partner directory. The column defaults to true, so
     /// a row stays visible until the user opts out, and the admin-side master

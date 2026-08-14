@@ -105,11 +105,13 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
         Assert.All(badges, badge =>
         {
             Assert.Matches(MintedQrPattern, badge.QrId);
-            // Approved + passwordless + a placeholder login is not cosmetic detail:
-            // it is precisely the triple the auth leg branches on further down.
-            Assert.Equal(AccountState.Approved, badge.AccountState);
-            Assert.False(badge.HasPassword);
-            Assert.EndsWith("@simf.local", badge.LoginEmail, StringComparison.OrdinalIgnoreCase);
+            // Approved on the ATTENDEE, and no account at all. Both halves are
+            // load-bearing further down: the first is what opens a gate, and the
+            // second is what sends the app to the create-an-account screen.
+            // Ordering a thousand badges used to create a thousand dormant
+            // passwordless accounts; it now creates none.
+            Assert.Equal(AccountState.Approved, badge.AdmissionState);
+            Assert.False(badge.HasAccount);
             Assert.True(badge.IsDelegate);
         });
         // One request, one batch row — the unit a later re-email / revoke acts on.
@@ -127,17 +129,18 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
         var printed = (await lookup.Content
             .ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!.Data!;
         Assert.Equal(claimed.QrId, printed.QrId);
-        Assert.Equal(claimed.UserId, printed.UserId);
-        Assert.Equal(claimed.LoginEmail, printed.Email);
+        // No account behind it yet, so no login address to show the desk. The
+        // badge still resolves, which is the point: it is the ATTENDEE the desk
+        // is looking up, not a sign-in.
         Assert.Equal(profileTypeName, printed.ProfileTypeName);
 
         // -- 3. The holder scans it in the app ---------------------------------
         var resolved = await ResolveAsync(claimed.QrId);
         Assert.True(resolved.Found);
         Assert.False(resolved.HasPassword);
-        // NeedsEmail is true ONLY because step 1 synthesized an @simf.local login.
-        // This assertion is the load-bearing one: it is where the mint leg's choice
-        // decides which screen the app shows.
+        // NeedsEmail is true because the badge has no account behind it at all.
+        // This assertion is the load-bearing one: it is where the mint leg's
+        // choice decides which screen the app shows.
         Assert.True(resolved.NeedsEmail);
         Assert.Null(resolved.MaskedEmail);
         // The greeting names the badge that was minted, not just "an account".
@@ -158,9 +161,10 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
         Assert.Equal(ActivationCodeLifetimeSeconds, started.CodeExpiresInSeconds);
 
         // The API never returns the code, so read it from SIMF_Identity — and read
-        // it BY the user id the QR resolved to. That is the join: the OTP belongs to
-        // the bulk-generated account, not merely to "an account that got a code".
-        var code = await LatestActivationCodeAsync(claimed.UserId);
+        // it BY the ATTENDEE the QR resolved to. That is the join: the OTP belongs
+        // to this badge, not merely to "someone who got a code". Before an account
+        // exists the code is keyed by the profile, which is the only id there is.
+        var code = await LatestActivationCodeForProfileAsync(claimed.ProfileId);
         Assert.NotNull(code);
 
         // -- 5. Activation complete: first password + attach the email ---------
@@ -179,13 +183,20 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
             .ReadFromJsonAsync<ApiResult<BadgeActivationCompleteResponse>>())!.Data!;
         Assert.True(completed.Activated);
 
+        Guid claimedAccountId;
         using (var scope = _factory.Services.CreateScope())
         {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var profile = await appDb.UserProfiles.AsNoTracking()
+                .SingleAsync(p => p.Id == claimed.ProfileId);
+            // Created BY the activation and linked to this attendee. Step 1 wrote
+            // no account, so this is the moment one comes into existence.
+            Assert.NotNull(profile.UserId);
+            claimedAccountId = profile.UserId!.Value;
+
             var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
-            var account = await users.FindByIdAsync(claimed.UserId.ToString());
+            var account = await users.FindByIdAsync(claimedAccountId.ToString());
             Assert.NotNull(account);
-            // Rebound in place: same account id from step 1, but the placeholder
-            // login has become the holder's real, confirmed, password-bearing one.
             Assert.Equal(holderEmail, account!.Email);
             Assert.Equal(holderEmail, account.UserName);
             Assert.True(account.EmailConfirmed);
@@ -194,7 +205,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
 
         // The printed QR must survive activation — the holder keeps using the same
         // physical badge, so a re-mint here would silently invalidate every sheet.
-        Assert.Equal(claimed.QrId, await ProfileQrIdAsync(claimed.UserId));
+        Assert.Equal(claimed.QrId, await ProfileQrIdAsync(claimedAccountId));
 
         // -- 6. Sign in with the new credentials -------------------------------
         var badgeSignIn = await _client.PostAsJsonAsync(
@@ -211,7 +222,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
         Assert.NotEmpty(signedIn.Tokens!.AccessToken);
         // The end of the chain closes on its beginning: the session belongs to the
         // account bulk-generate created, reached only through the badge's QR.
-        Assert.Equal(claimed.UserId, signedIn.Tokens.User.Id);
+        Assert.Equal(claimedAccountId, signedIn.Tokens.User.Id);
         Assert.Equal(holderEmail, signedIn.Tokens.User.Email);
 
         // The attached email is a credential in its own right now — the holder can
@@ -228,7 +239,7 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
         var emailSignedIn = (await emailSignIn.Content
             .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
         Assert.NotNull(emailSignedIn.Tokens);
-        Assert.Equal(claimed.UserId, emailSignedIn.Tokens!.User.Id);
+        Assert.Equal(claimedAccountId, emailSignedIn.Tokens!.User.Id);
 
         // -- The other badge of the same batch is untouched --------------------
         // Activation attached one holder's email and password to ONE badge. Its
@@ -315,64 +326,39 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
     /// profile fields paired with the Identity-DB account fields. D-157 forbids a
     /// cross-database join, so the two contexts are read separately and matched in
     /// memory — the same shape the production code uses for a cross-store read.</summary>
+    /// <summary>A badge as it comes off the minter: an ATTENDEE record with a
+    /// printed QR and no account at all. The account is created later, by the
+    /// holder, out of the badge - which is the journey below.</summary>
     private sealed record MintedBadge(
-        Guid UserId,
+        Guid ProfileId,
         string QrId,
         Guid BatchId,
         bool IsDelegate,
         string DisplayName,
-        string LoginEmail,
-        AccountState AccountState,
-        bool HasPassword);
+        AccountState AdmissionState,
+        bool HasAccount);
 
     private async Task<IReadOnlyList<MintedBadge>> MintedBadgesAsync(Guid profileTypeId)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var identityDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
 
-        var profiles = await appDb.UserProfiles
+        // One query, one database. The mint no longer writes anything to
+        // Identity, so joining to it would only ever return nothing.
+        return await appDb.UserProfiles
             .AsNoTracking()
             .Where(profile => profile.ProfileTypeId == profileTypeId
                 && profile.QrId != null
                 && profile.BadgeBatchId != BadgeBatch.DirectRegistrationId)
-            .Select(profile => new
-            {
-                profile.UserId,
-                profile.QrId,
+            .Select(profile => new MintedBadge(
+                profile.Id,
+                profile.QrId!,
                 profile.BadgeBatchId,
                 profile.IsDelegate,
-            })
+                profile.Name,
+                profile.AdmissionState,
+                profile.UserId != null))
             .ToListAsync();
-
-        var userIds = profiles.Select(profile => profile.UserId).ToList();
-        var accounts = await identityDb.Users
-            .AsNoTracking()
-            .Where(user => userIds.Contains(user.Id))
-            .Select(user => new
-            {
-                user.Id,
-                user.DisplayName,
-                user.Email,
-                user.AccountState,
-                user.PasswordHash,
-            })
-            .ToListAsync();
-
-        return profiles
-            .Join(accounts,
-                profile => profile.UserId,
-                account => account.Id,
-                (profile, account) => new MintedBadge(
-                    account.Id,
-                    profile.QrId!,
-                    profile.BadgeBatchId,
-                    profile.IsDelegate,
-                    account.DisplayName,
-                    account.Email ?? string.Empty,
-                    account.AccountState,
-                    !string.IsNullOrEmpty(account.PasswordHash)))
-            .ToList();
     }
 
     private async Task<string> ProfileQrIdAsync(Guid userId)
@@ -402,6 +388,22 @@ public sealed class Journey01DelegationToSignInTests : IClassFixture<SimfApiFact
     /// to plaintext. The row stores a keyed hash (M3), so the only way a test can
     /// obtain the six digits the holder would read in their inbox is AuthFlow's
     /// brute-force helper — the same route BadgeAuthTests takes.</summary>
+    /// <summary>The code issued to an ATTENDEE, before any account exists. Keyed
+    /// by the profile, which is the only id there is at that point.</summary>
+    private async Task<string?> LatestActivationCodeForProfileAsync(Guid profileId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var identityDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var hash = await identityDb.AccountCodes
+            .Where(code => code.UserProfileId == profileId
+                && code.Purpose == AccountCodePurpose.BadgeActivationOtp
+                && code.ConsumedAt == null)
+            .OrderByDescending(code => code.CreatedAt)
+            .Select(code => code.Code)
+            .FirstOrDefaultAsync();
+        return hash is null ? null : AuthFlow.RecoverPlaintextCode(hash);
+    }
+
     private async Task<string?> LatestActivationCodeAsync(Guid userId)
     {
         using var scope = _factory.Services.CreateScope();

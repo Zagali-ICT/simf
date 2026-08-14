@@ -485,12 +485,17 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
     [Fact]
     public async Task Bulk_generated_badge_profile_is_incomplete_so_self_claim_prompts_the_profile_stage()
     {
-        // #10 Phase 4 (Option A) — the self-claim capture is delivered by the existing
-        // D-374 flow with NO new code: a bulk-badge placeholder has no interests and no
-        // ID image, so IsProfileCompleteAsync is false. When the badge holder activates
-        // (sets a password) and signs in, /app/users/me returns profileComplete=false
-        // and the app's routeAfterAuth forces the add-profile stage. This pins that
-        // the placeholder is genuinely flagged incomplete.
+        // The self-claim capture is delivered by the existing profile-completeness
+        // flow with no new code: a bulk-minted badge carries no interests, no ID
+        // image and a zero nationality, so it reads as incomplete. When the holder
+        // activates the badge — which is what creates their account — and signs
+        // in, /app/users/me returns profileComplete=false and the app forces the
+        // add-profile stage.
+        //
+        // Asserted on the ATTENDEE rather than through an account, because the
+        // mint no longer creates one: a badge sits in a box for months before
+        // anybody claims it. These are the same fields completeness reads once an
+        // account is linked.
         var admin = await CreateAdministratorAndSignInAsync();
         var typeId = await FreshVisitorProfileTypeAsync();
         await PostAuthAsync(
@@ -505,13 +510,16 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<BulkBadgeEmailAp
 
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var userId = await appDb.UserProfiles
-            .Where(p => p.ProfileTypeId == typeId && p.UserId != null)
-            .Select(p => p.UserId!.Value)
+        var minted = await appDb.UserProfiles
+            .AsNoTracking()
+            .Include(p => p.Interests)
+            .Where(p => p.ProfileTypeId == typeId)
             .FirstAsync();
-        var profiles = scope.ServiceProvider
-            .GetRequiredService<SIMF.Application.IdentityAccess.IUserProfileService>();
-        Assert.False(await profiles.IsProfileCompleteAsync(userId));
+
+        Assert.Null(minted.UserId);
+        Assert.Empty(minted.Interests);
+        Assert.Equal(0, minted.NationalityId);
+        Assert.Null(minted.IdImageRelativePath);
     }
 
     private async Task<Guid> BatchIdForTypeAsync(Guid profileTypeId)

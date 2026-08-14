@@ -55,6 +55,7 @@ internal sealed class QrResolver(
                 profile.Name,
                 profile.NameArabic,
                 profile.BadgeBatchId,
+                profile.EditionYear,
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (profileRow is null) { return null; }
@@ -98,7 +99,8 @@ internal sealed class QrResolver(
             // them; the account display name is only richer when there is one.
             userRow?.DisplayName ?? profileRow.Name,
             profileRow.NameArabic,
-            profileRow.BadgeBatchId);
+            profileRow.BadgeBatchId,
+            profileRow.EditionYear);
     }
 
     public string ToStoredQrId(string scanned)
