@@ -130,15 +130,23 @@ nearly half phantom.
 
 ### Next, in order
 
-1. **Decision 7 — the `AsyncValue` conversions. THE ONLY PHASE LEFT.**
+1. **Decision 7 — the `AsyncValue` conversions. 22 of 24 DONE; the last 2 are
+   device-blocked.**
 
-   **Re-measured: 24 screens, not the plan's 35.** Grep
+   Only `sign_up_visitor_screen` and `register_visitor_screen` still hand-roll
+   `bool _loading` — the same two screens D-666 blocks from being split, for the
+   same reason: their face-capture path needs on-device verification that a
+   green golden demonstrably does not provide. Convert them in the session that
+   has a device attached, alongside the split.
+
+   **Re-measured at the start: 24 screens, not the plan's 35.** Grep
    `^\s*bool _loading` across `lib` — 11 of the plan's set were converted or
    deleted in earlier waves. Do not work from the number.
 
-   **15 of 24 converted**, all with their existing tests passing **unchanged** —
-   which is the signal that says the state machine is faithful, not merely
-   green. Five shapes emerged, and picking the right one is the whole job:
+   **22 of 24 converted**, every one with its existing tests passing
+   **unchanged** — which is the signal that says the state machine is faithful,
+   not merely green. Five shapes emerged, and picking the right one is the whole
+   job:
 
    | Shape | When | Examples |
    |---|---|---|
@@ -167,22 +175,24 @@ nearly half phantom.
    owns real UI state — a search box, a sort toggle, a tab index (`speakers`,
    `booths`, `sessions`, `speaker_profile`, `my_area`).
 
-   **The 9 left, and what makes each one hard** — read, not guessed:
+   **Two findings worth carrying into the last two screens:**
 
-   * `live_broadcast` — **attempted and reverted deliberately; give it a
-     dedicated pass.** Four things interlock: a login gate that must not fetch
-     for a guest, an id-LESS global-feed path that bypasses the session read
-     entirely, an optional upcoming-sessions strip that swallows its own
-     failure, and the D-712 rate prompt whose tracker is captured during the
-     load *specifically* so `dispose` never reads a provider from a dead
-     element. The branching lives inside `build`/`_buildBody`, not a flat
-     `_body`, so a range-based edit is the wrong tool — convert it by hand.
-   * `session_detail` — the plan's flagged screen: the `SimfRefreshableMessage`
-     swap **moves the render**, so its goldens are re-locked in the same
-     changeset with the diff inspected.
-   * Wave 2 (submit spinners, the weaker case): `sign_up_interests`,
-     `share_my_contact`, `rate`, `my_mobile`, `registration_status`.
-   * **Device-blocked**: `sign_up_visitor`, `register_visitor`.
+   * **The plan's "wave 2 is just submit spinners" is wrong.** All five had a
+     REAL data load with the submit flag beside it. The load converts; the flag
+     stays. Expect the same of the two blocked screens.
+   * **`session_detail` did NOT need its goldens re-locked**, though the plan
+     said it would. Its render goes through a shared states widget taking
+     `loading`/`notFound`/`failed` BOOLEANS, so feeding those from the
+     `AsyncValue` leaves the tree untouched. The render only moves if you ALSO
+     swap the host for `SimfRefreshableMessage`, which is a separate change this
+     phase never needed. Check for that pattern before assuming a re-lock.
+
+   **Editing tool note, learned twice.** Range-based Python replacements
+   silently swallowed a `build` method (`live_broadcast`), two closing braces
+   (`rate`) and a whole `_toggleInterest` (`sign_up_interests`) — every one
+   caught by the analyzer, but each cost a revert or a recovery from git. On a
+   screen whose branching lives inside `build` rather than a flat `_body`, use
+   targeted `Edit` calls instead.
 
    **`terms_screen` is the template** (commit `0a6bf182`). What made it work,
    in order:
