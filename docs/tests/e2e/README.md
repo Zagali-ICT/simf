@@ -374,6 +374,39 @@ being quoted in planning as if current.
   weak point** — most still read `_to author_`, meaning written but never driven,
   so treat the counts above as *authored* coverage, not *executed* coverage.
 
+### Route-level regression sweep — 2026-08-14 (profile / edition / badge programme)
+
+The closing gate of the profile-owned-admission programme re-drove **every live
+route** in both languages, because that work touches the profile row nearly every
+Control Panel page reads. Driven through the Chrome DevTools MCP against locally
+running hosts, on a database built from scratch by the programme's migrations.
+
+- **Control Panel** — 91 routes × EN + AR = 182 page drives. 90 render; the 91st,
+  `/admin/companies`, correctly serves the CP's own "Page not found" inside the
+  signed-in shell, which is what this index already records as **retired**.
+- **Website** — 18 routes × EN + AR = 36 page drives, including `/sessions/{id}`
+  with a real session id and `/meeting/confirm` with no token (its invalid-link
+  state, which is the expected render).
+- **Per page, machine-checked, not eyeballed:** `scrollWidth == clientWidth` (no
+  horizontal overflow), zero broken images, zero sub-requests returning >= 400,
+  zero console errors, a live Blazor circuit, and — on the Arabic pass —
+  `dir="rtl"` plus zero untranslated resource keys leaking through as literals.
+- **Result: 218 page drives, zero failures**, and one defect found (below).
+
+**What this pass proves, and what it does not.** It proves every route renders,
+in both directions, without errors or broken assets — a genuine regression gate
+for a change this wide. It is **not** an execution of the 3115 Coverage-matrix
+scenarios: those assert per-page CRUD outcomes and are still governed by the
+`Status` columns above. The mobile files (69) and API-only files (10) are not
+browser-drivable at all and are covered instead by the Flutter suites and
+`tests/SIMF.Api.Tests`.
+
+**Defect found:** `/meeting/confirm` renders with **no `<title>` element**. It is
+the only Website page carrying `@rendermode InteractiveServerNoPrerender`, and
+`App.razor`'s `<HeadOutlet />` is static, so its `<PageTitle>` has no outlet to
+reach on the first response. Content and behaviour are correct; the tab shows a
+bare URL. Logged as out-of-scope for that programme rather than fixed inside it.
+
 ### Scenario ids are a primary key — keep them unique
 
 `tools/testbook/build_testbook.py` groups by scenario id when it projects this
