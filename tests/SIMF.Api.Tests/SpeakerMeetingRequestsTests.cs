@@ -900,10 +900,11 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         // D-373 — registration enables 2FA; this auth plumbing needs the
         // direct-token path (the admin-disabled scenario).
         AuthFlow.DisableTwoFactor(_factory, email);
-        // D-729 (owner item 15) — speaker meetings are now VIP-only, so the
-        // flow requester used by these submit + admin-respond tests must be a
-        // VIP tier (AllowsVipMeetingSlots). The dedicated VIP-gate coverage lives
-        // in SpeakerMeetingVipSlotTests.
+        // Speaker meetings need the per-user AllowsSpeakerMeeting flag (D-760,
+        // replacing the D-729 VIP-tier gate), so the flow requester used by these
+        // submit + admin-respond tests must carry it. The helper below grants the
+        // flag and assigns a VIP tier; the dedicated eligibility-gate coverage
+        // lives in SpeakerMeetingVipSlotTests.
         await AssignVipProfileAsync(email);
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",

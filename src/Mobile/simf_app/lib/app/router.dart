@@ -299,7 +299,8 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   // it must be reachable by a pending sign-up account (D-694).
   108: _attendee, // Requests feed (D-500, approved-only)
   116: _attendee, // Bilateral meetings (D-745) — role gate keeps guest/staff/
-  // moderator out; VIP-only is enforced in-screen + server-side, not here.
+  // moderator out; per-user meeting eligibility (D-760) is enforced in-screen +
+  // server-side, not here.
   117: _attendee, // Meeting confirm (Bi-Meeting) — the other-party confirm screen;
   // eligibility (target-delegation member) is enforced server-side.
   109: _attendee, // Seat picker (D-485)

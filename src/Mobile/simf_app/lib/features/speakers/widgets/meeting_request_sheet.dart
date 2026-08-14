@@ -29,8 +29,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///
 /// D-709 (item 6, FDS-013 §15.4 GAP-4) — the date + time come from the speaker's
 /// **real availability slots** (`GET /app/speakers/{id}/available-slots`), NOT a
-/// free client-side grid; this **reverts D-703**. Booking a slot is VIP-gated by
-/// the server (a 403 surfaces "VIP only").
+/// free client-side grid; this **reverts D-703**. Sending a request is gated by
+/// the server on the per-user `allowsSpeakerMeeting` flag (D-760, replacing the
+/// VIP-tier gate); a 403 surfaces `meetingNotEnabled`.
 ///
 /// G3 (owner 2026-07-30, supersedes D-767 R1) — with **no free slot** the request
 /// can no longer be sent subject-only: the sheet shows the "no slots" notice and

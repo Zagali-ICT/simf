@@ -20,9 +20,20 @@ using Xunit;
 namespace SIMF.Api.Tests;
 
 /// <summary>
-/// D-474 (#11, Group G phase 1b) — a VIP picks a free slot from a speaker's
-/// availability windows; only VIP/VVIP may book a slot; the team accepts and the
-/// requester is notified in-app (the speaker is emailed — async, not asserted here).
+/// D-474 (#11, Group G phase 1b) — an eligible requester picks a free slot from a
+/// speaker's availability windows; the team accepts and the requester is notified
+/// in-app (the speaker is emailed — async, not asserted here).
+///
+/// <para>The class name and its "vip" vocabulary predate D-760, which moved
+/// eligibility off the VVIP/VIP tier onto the per-user
+/// <c>UserProfile.AllowsSpeakerMeeting</c> flag. What these tests actually
+/// exercise is that flag.</para>
+///
+/// <para><b>Known coverage gap.</b> <c>CreateVisitorAsync(bool vip)</c> sets the
+/// profile TYPE and the per-user flag from the same bool, so no test here can tell
+/// the two gates apart: they would all still pass if the tier gate were reinstated.
+/// Pinning D-760 needs two cases this class does not have — VIP tier with the flag
+/// false expecting 403, and Normal tier with the flag true expecting 200.</para>
 /// </summary>
 public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
 {
@@ -74,8 +85,11 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task A_non_vip_topic_only_request_is_403()
     {
-        // D-729 (owner item 15) — requesting a speaker meeting is now VIP-only,
-        // even a topic-only request (no slot): a non-VIP is rejected up front.
+        // Requesting a speaker meeting needs the per-user AllowsSpeakerMeeting
+        // flag (D-760, replacing the D-729 VIP-tier gate), even for a topic-only
+        // request (no slot): an ineligible requester is rejected up front. The
+        // helper below sets the flag and the tier together, so "vip: false" here
+        // means "flag false" — see the class remark on that conflation.
         var speakerId = await SeedSpeakerWithWindowAsync();
         var (plain, _) = await CreateVisitorAsync(vip: false);
 

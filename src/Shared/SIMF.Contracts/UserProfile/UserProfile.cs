@@ -88,9 +88,11 @@ public sealed class UserProfileResponse
 
     /// <summary>True when the account's assigned
     /// <c>ProfileType</c> is a VIP tier
-    /// (<c>AllowsVipMeetingSlots</c>, i.e. VVIP / VIP). The app uses it to
-    /// show the "request a speaker meeting" affordance to VIP guests only;
-    /// the endpoint enforces the same rule server-side. Append-only field.</summary>
+    /// (<c>AllowsVipMeetingSlots</c>, i.e. VVIP / VIP). It used to show the
+    /// "request a speaker meeting" affordance; that gate is now
+    /// <see cref="AllowsSpeakerMeeting"/> below, so do NOT read this one for
+    /// meetings. What the tier still decides server-side is VIP-tier seat
+    /// self-reservation. Append-only field.</summary>
     public bool IsVip { get; set; }
 
     /// <summary>Admin-assigned per-user eligibility to request a

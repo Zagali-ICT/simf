@@ -8,12 +8,8 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 /// GET on the shared per-IP "auth" rate-limit bucket, and is watched by the
 /// Guest+ speaker-profile browse screen. These tests lock the two properties
 /// that keep browsing from draining the sign-in/OTP budget: a guest makes NO
-/// profile call, and a signed-in session fetches the flags exactly once.
-///
-/// This file used to cover `currentUserIsVipProvider`, which carried the same
-/// two guarantees while the VIP tier was the speaker-meeting gate. D-760 moved
-/// the gate to the per-user flags and left that provider with no callers, so
-/// it was deleted and its coverage moved here rather than being dropped.
+/// profile call, and a signed-in session fetches the flags exactly once. The
+/// mapping tests in between only check which flag lands where.
 
 /// Records every profile fetch so a test can assert the network was (not) hit.
 class _RecordingProfileRepo implements ProfileRepository {
@@ -26,19 +22,7 @@ class _RecordingProfileRepo implements ProfileRepository {
   @override
   Future<UserProfileResponse> getMyProfile() async {
     getMyProfileCalls++;
-    return _profile(speaker: speaker, delegation: delegation);
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) =>
-      throw UnimplementedError(invocation.memberName.toString());
-}
-
-UserProfileResponse _profile({
-  required bool speaker,
-  required bool delegation,
-}) =>
-    UserProfileResponse(
+    return UserProfileResponse(
       interestIds: const <String>[],
       arabicName: 'x',
       englishName: 'x',
@@ -51,6 +35,12 @@ UserProfileResponse _profile({
       allowsSpeakerMeeting: speaker,
       allowsDelegationMeeting: delegation,
     );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError(invocation.memberName.toString());
+}
 
 CurrentUser _user() => CurrentUser(
       id: 'u1',
@@ -113,45 +103,30 @@ void main() {
       );
     });
 
-    test('a signed-in eligible user resolves both flags with one fetch',
-        () async {
-      final repo = _RecordingProfileRepo(speaker: true, delegation: true);
-      final container = _container(controller: _SignedIn(), repo: repo);
+    // The two flags are independent, so walk the whole truth table: either one
+    // alone opens the Bi-Meeting feed ([MeetingAccess.any]), and neither flag
+    // may leak into the other.
+    void mapsThrough({required bool speaker, required bool delegation}) {
+      test('signed-in maps speaker=$speaker delegation=$delegation', () async {
+        final repo =
+            _RecordingProfileRepo(speaker: speaker, delegation: delegation);
+        final container = _container(controller: _SignedIn(), repo: repo);
 
-      final access =
-          await container.read(currentUserMeetingAccessProvider.future);
+        final access =
+            await container.read(currentUserMeetingAccessProvider.future);
 
-      expect(access.speaker, isTrue);
-      expect(access.delegation, isTrue);
-      expect(access.any, isTrue);
-      expect(repo.getMyProfileCalls, 1);
-    });
+        expect(access.speaker, speaker);
+        expect(access.delegation, delegation);
+        expect(access.any, speaker || delegation);
+      });
+    }
 
-    test('the two flags are independent — speaker only', () async {
-      final repo = _RecordingProfileRepo(speaker: true);
-      final container = _container(controller: _SignedIn(), repo: repo);
+    mapsThrough(speaker: true, delegation: true);
+    mapsThrough(speaker: true, delegation: false);
+    mapsThrough(speaker: false, delegation: true);
+    mapsThrough(speaker: false, delegation: false);
 
-      final access =
-          await container.read(currentUserMeetingAccessProvider.future);
-
-      expect(access.speaker, isTrue);
-      expect(access.delegation, isFalse);
-      expect(access.any, isTrue, reason: 'one entitlement opens the feed');
-    });
-
-    test('a signed-in ineligible user resolves none', () async {
-      final repo = _RecordingProfileRepo();
-      final container = _container(controller: _SignedIn(), repo: repo);
-
-      final access =
-          await container.read(currentUserMeetingAccessProvider.future);
-
-      expect(access.any, isFalse);
-      expect(repo.getMyProfileCalls, 1);
-    });
-
-    test('the flags are cached across reads under a stable session',
-        () async {
+    test('the flags are cached across reads under a stable session', () async {
       final repo = _RecordingProfileRepo(speaker: true);
       final container = _container(controller: _SignedIn(), repo: repo);
 
