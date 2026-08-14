@@ -13,6 +13,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sessions;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -443,6 +444,23 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
                 UserType = UserType.Visitor,
             };
             await users.CreateAsync(user, AuthFlow.Password);
+
+            // Attendance is keyed by the attendee PROFILE, not the account: the
+            // profile is the attendee record, so an account carrying none is
+            // refused with AttendeeProfileMissing rather than opening a row that
+            // resolves to nobody. Seeding only the Identity user made every call
+            // here a 403.
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.UserProfiles.Add(new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Name = "Attendance Visitor",
+                NameArabic = "زائر الحضور",
+                AdmissionState = AccountState.Approved,
+                CreatedAt = SimfClock.Now,
+            });
+            await appDb.SaveChangesAsync();
         }
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",
