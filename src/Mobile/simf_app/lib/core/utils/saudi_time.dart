@@ -159,3 +159,14 @@ String formatDateTime12h(DateTime local, {required bool isArabic}) =>
       minute: local.minute,
       isArabic: isArabic,
     );
+
+/// A countdown as `mm:ss`, zero-padded — the OTP resend timers.
+///
+/// Written out three times before this (the email-OTP, sign-up-email-verify
+/// and biometric-step-up screens), byte-identical apart from whether the
+/// seconds arrived as a field or a parameter.
+String formatCountdown(int seconds) {
+  final m = (seconds ~/ 60).toString().padLeft(2, '0');
+  final s = (seconds % 60).toString().padLeft(2, '0');
+  return '$m:$s';
+}

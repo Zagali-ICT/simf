@@ -49,33 +49,21 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
       onBack: () => backOrHome(context),
       body: editions.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        // Pull-to-retry: a scrollable error state under SimfPullToRefresh.
-        error: (_, __) => SimfPullToRefresh(
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: _refresh,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: <Widget>[
-              SimfErrorState(
-                message: l10n.archiveError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(archiveEditionsProvider),
-              ),
-            ],
+          child: SimfErrorState(
+            message: l10n.archiveError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(archiveEditionsProvider),
           ),
         ),
         data: (items) {
           if (items.isEmpty) {
-            // Pull-to-retry: a scrollable empty state under SimfPullToRefresh.
-            return SimfPullToRefresh(
+            return SimfRefreshableMessage(
               onRefresh: _refresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: <Widget>[
-                  SimfEmptyState(
-                    icon: Icons.bookmark_outline,
-                    message: l10n.archiveEmpty,
-                  ),
-                ],
+              child: SimfEmptyState(
+                icon: Icons.bookmark_outline,
+                message: l10n.archiveEmpty,
               ),
             );
           }

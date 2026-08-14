@@ -167,6 +167,35 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // D-469/D-470 — the birth-region picker is code-keyed, so the stored name
+    // has to be re-read in the active language when the user toggles it.
+    //
+    // This belongs here and not in build(): assigning to a
+    // TextEditingController notifies its listeners, and doing that during the
+    // build phase is what Flutter forbids. didChangeDependencies is the hook
+    // that fires on exactly the change this needs to react to — the
+    // Localizations inherited widget above us.
+    _syncBirthRegionName(isArabic: AppL10n.of(context).isArabic);
+  }
+
+  /// Re-reads [_placeOfBirth] from the selected region code in the active
+  /// language. A no-op unless a Saudi registrant has picked a region: for a
+  /// non-Saudi registrant the field is free text, and both the picker and the
+  /// nationality switch already maintain the value inside their own setState.
+  void _syncBirthRegionName({required bool isArabic}) {
+    if (!_isSaudi || _birthRegionCode == null) {
+      return;
+    }
+    final name =
+        _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic) ?? '';
+    if (_placeOfBirth.text != name) {
+      _placeOfBirth.text = name;
+    }
+  }
+
+  @override
   void dispose() {
     _organisationDebounce?.cancel();
     _arabicName.dispose();
@@ -977,13 +1006,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     final regionName = _birthRegionCode == null
         ? null
         : _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic);
-    // Keep the stored name in the active locale while a region is selected, so a
-    // language toggle re-syncs the submitted value (the picker is code-keyed).
-    if (_isSaudi &&
-        _birthRegionCode != null &&
-        _placeOfBirth.text != (regionName ?? '')) {
-      _placeOfBirth.text = regionName ?? '';
-    }
     return PlaceOfBirthField(
       l10n: l10n,
       isSaudi: _isSaudi,

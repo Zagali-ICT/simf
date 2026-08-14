@@ -34,13 +34,10 @@ Future<void> runBiometricSignIn({
   }
 
   // (2) Face login needs a device key, enrolled on a prior sign-in.
-  bool enrolled;
-  try {
-    enrolled = await notifier.hasEnrolledDeviceKey();
-  } catch (_) {
-    enrolled = false;
-  }
-  if (!enrolled) {
+  // BiometricAuth owns the device-key wiring (D-441) and already degrades a
+  // failed secure-storage read to "not enrolled"; this used to re-write that
+  // try/catch around the same notifier BiometricAuth itself reads.
+  if (!await biometric.isEnabled()) {
     onError(l10n.biometricNotEnrolled);
     return;
   }

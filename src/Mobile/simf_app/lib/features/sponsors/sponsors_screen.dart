@@ -43,17 +43,12 @@ class SponsorsScreen extends ConsumerWidget {
       showSweep: true,
       body: groups.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => SimfPullToRefresh(
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: onRefresh,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: <Widget>[
-              SimfErrorState(
-                message: l10n.sponsorsError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(sponsorGroupsProvider),
-              ),
-            ],
+          child: SimfErrorState(
+            message: l10n.sponsorsError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(sponsorGroupsProvider),
           ),
         ),
         data: (data) {
@@ -62,16 +57,11 @@ class SponsorsScreen extends ConsumerWidget {
               if (group.sponsors.isNotEmpty) group,
           ];
           if (visibleGroups.isEmpty) {
-            return SimfPullToRefresh(
+            return SimfRefreshableMessage(
               onRefresh: onRefresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: <Widget>[
-                  SimfEmptyState(
-                    icon: Icons.workspace_premium_outlined,
-                    message: l10n.sponsorsEmpty,
-                  ),
-                ],
+              child: SimfEmptyState(
+                icon: Icons.workspace_premium_outlined,
+                message: l10n.sponsorsEmpty,
               ),
             );
           }
