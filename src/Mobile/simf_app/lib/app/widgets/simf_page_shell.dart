@@ -6,26 +6,24 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/app/theme/app_assets.dart';
 import 'package:simf_app/app/theme/tokens.dart';
-import 'package:simf_app/app/widgets/avatar_fallback.dart';
 import 'package:simf_app/app/widgets/more_drawer.dart';
 import 'package:simf_app/app/widgets/screen_announcer.dart';
-import 'package:simf_app/app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
-import 'package:simf_app/app/widgets/simf_image_viewer.dart';
 import 'package:simf_app/app/widgets/simf_language_toggle.dart';
-import 'package:simf_app/app/widgets/simf_svg_icon.dart';
-import 'package:simf_app/features/account/data/profile_repository.dart'
-    show myAvatarBytesProvider;
+import 'package:simf_app/app/widgets/simf_nav_controls.dart';
+import 'package:simf_app/app/widgets/simf_sweep_background.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart'
     show unreadNotificationCountProvider;
 
 // One widget group per file (CLAUDE.md §1). Re-exported here so the ~489
 // existing `simf_page_shell.dart` imports across the app keep resolving.
+export 'simf_avatar.dart';
 export 'simf_cards.dart';
+export 'simf_nav_controls.dart';
 export 'simf_refresh.dart';
 export 'simf_states.dart';
+export 'simf_sweep_background.dart';
 export 'simf_tiles.dart';
 
 /// Shared KSA main-shell chrome for the Wave-2 in-app pages (frames
@@ -33,45 +31,6 @@ export 'simf_tiles.dart';
 /// page scaffold with the standard header, plus the card / tile / list-row /
 /// state-surface building blocks every page composes. One widget per
 /// repeated frame element — pages never copy-paste shell markup.
-
-/// The standard back action: pop a pushed route when possible; otherwise, if
-/// we are one of the in-shell bottom-nav tabs (Agenda / Badge / Profile), switch
-/// the shell back to the Home tab; else navigate home.
-///
-/// The in-shell tabs never leave the shell's `/` location, so `context.canPop()`
-/// is false and a bare `goNamed(home)` navigates to `/` while already at `/` —
-/// a no-op that leaves the back chevron dead. Switching the shell tab is what
-/// actually returns those tabs to Home (mirrors the bottom nav's `_shellOrGo`).
-void backOrHome(BuildContext context) {
-  if (context.canPop()) {
-    context.pop();
-    return;
-  }
-  final shell = SimfShellScope.maybeOf(context);
-  if (shell != null) {
-    shell.switchTab(tabIndex(SimfTab.home));
-    return;
-  }
-  context.goNamed(RouteNames.home);
-}
-
-/// A standard AppBar leading back button for raw-`AppBar` screens. Always shows
-/// (unlike the auto-leading, which vanishes when the screen is the navigator
-/// root after a resume / deep-link, trapping the user) and always works:
-/// [backOrHome] pops when it can, else lands on home. Use as
-/// `appBar: AppBar(leading: const SimfBackButton(), ...)`. (D-426)
-class SimfBackButton extends StatelessWidget {
-  const SimfBackButton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back),
-      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-      onPressed: () => backOrHome(context),
-    );
-  }
-}
 
 /// The navy page scaffold: background, optional decorative sweep, a
 /// forced-LTR header (circled back chevron at the left, centred title — the
@@ -242,73 +201,6 @@ class SimfPageShell extends StatelessWidget {
   }
 }
 
-/// The circled back chevron (dark circle, white chevron). By default the glyph
-/// always points left — the D-363 forced-LTR header pattern still used by the
-/// speakers / session-detail / speaker-profile headers. In the shared
-/// natural-direction [SimfPageShell] header [mirrorInRtl] is set, so the chevron
-/// mirrors to point right under RTL, where the leading control sits at the
-/// inline start (physical right).
-class SimfCircledBackButton extends StatelessWidget {
-  const SimfCircledBackButton({
-    required this.onBack,
-    this.mirrorInRtl = false,
-    super.key,
-  });
-
-  final VoidCallback onBack;
-
-  /// Mirror the chevron horizontally under RTL. Only the natural-direction
-  /// shell header opts in; forced-LTR headers keep the always-left chevron.
-  final bool mirrorInRtl;
-
-  @override
-  Widget build(BuildContext context) {
-    final flip = mirrorInRtl && Directionality.of(context) == TextDirection.rtl;
-    return IconButton(
-      onPressed: onBack,
-      // The chevron is an SVG with no text, so without this the control had no
-      // accessible name at all — a screen reader announced a bare "button" on
-      // the ~18 screens that carry the shared header (BUG-003). The localized
-      // Material string keeps it bilingual with no new l10n key.
-      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-      style: IconButton.styleFrom(
-        backgroundColor: SimfTokens.navyDeep,
-        shape: const CircleBorder(),
-      ),
-      // Figma frames use the iconamoon chevron, not a Material back-arrow.
-      icon: Transform.flip(
-        flipX: flip,
-        child: const SimfSvgIcon(
-          AppAssets.icBack,
-          size: SimfTokens.simfPageShellSizeMd,
-          color: SimfTokens.surface,
-        ),
-      ),
-    );
-  }
-}
-
-/// The circled drawer ☰ control (same dark circle as [SimfCircledBackButton]) — opens
-/// the shell's side menu. Lives in the shared header's trailing controller.
-class SimfMenuButton extends StatelessWidget {
-  const SimfMenuButton({required this.onTap, super.key});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: onTap,
-      tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
-      style: IconButton.styleFrom(
-        backgroundColor: SimfTokens.navyDeep,
-        shape: const CircleBorder(),
-      ),
-      icon: const Icon(Icons.menu, color: SimfTokens.surface, size: SimfTokens.simfPageShellSizeSm),
-    );
-  }
-}
-
 /// The shared trailing action cluster on every in-app page's top nav (owner
 /// 2026-06-27): the notifications bell and the menu ☰ — each a **gold glyph in
 /// a navy rounded box** (frame 758:1136), so the top nav is identical on the
@@ -431,97 +323,3 @@ class SimfHeaderActions extends ConsumerWidget {
     );
   }
 }
-
-/// The decorative rotated sweep block from the KSA entry frames (28.28°,
-/// white-4% fill) — the single home for the transform (the auth chrome
-/// consumes it too).
-class SimfSweepBackground extends StatelessWidget {
-  const SimfSweepBackground({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      top: -156,
-      left: 60,
-      child: Transform.rotate(
-        angle: 0.4936,
-        child: Container(
-          width: SimfTokens.simfPageShellWidthMd,
-          height: SimfTokens.simfPageShellHeightMd,
-          decoration: const BoxDecoration(
-            color: SimfTokens.surfaceTint,
-            borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radiusSheet)),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The gold rounded-square avatar (home header 203:1238 / profile identity
-/// cards). When [currentUser] is true it shows the **signed-in user's** photo,
-/// fetched as authenticated bytes via [myAvatarBytesProvider] (the avatar
-/// endpoint is bearer-gated and behind self-signed TLS, so a bare
-/// `Image.network` can't load it) and refreshed immediately after an upload via
-/// the avatar bust token. Otherwise — and whenever no photo is available — it
-/// renders the brand-mark fallback. [name] drives the accessibility label only.
-///
-/// Owner 2026-07-26 — set [enableFullScreen] on a DISPLAY-ONLY photo (the badge
-/// card) so tapping it opens the picture full size from the already-fetched
-/// bytes (D-422: the avatar endpoint is bearer-gated, so the viewer paints a
-/// [MemoryImage], never a bare `Image.network`). It stays off where the tap
-/// already means something else (My-Area's change-photo affordance).
-class SimfAvatar extends ConsumerWidget {
-  const SimfAvatar({
-    required this.name,
-    this.currentUser = false,
-    this.size = 42,
-    this.enableFullScreen = false,
-    super.key,
-  });
-
-  final String name;
-
-  /// True for the signed-in user's own avatar (home / badge / my-area). False
-  /// for any other person's avatar (e.g. a question submitter) — that always
-  /// shows the fallback, never the signed-in user's photo.
-  final bool currentUser;
-  final double size;
-
-  /// Opens the photo full size on tap. Only honoured when a real photo is
-  /// shown — the brand-mark fallback has nothing to enlarge.
-  final bool enableFullScreen;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final fallback = AvatarFallback(size: size);
-    Widget child = fallback;
-    MemoryImage? photo;
-    if (currentUser) {
-      final bytes = ref.watch(myAvatarBytesProvider).asData?.value;
-      if (bytes != null && bytes.isNotEmpty) {
-        photo = MemoryImage(bytes);
-        child = Image(
-          image: photo,
-          fit: BoxFit.cover,
-          gaplessPlayback: true,
-          errorBuilder: (_, __, ___) => fallback,
-        );
-      }
-    }
-    final label = name.trim().isEmpty ? null : name;
-    final box = ClipRRect(
-      borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
-      child: SizedBox(width: size, height: size, child: child),
-    );
-    if (!enableFullScreen || photo == null) {
-      return Semantics(image: true, label: label, child: box);
-    }
-    return SimfTapToEnlarge(
-      image: photo,
-      label: label ?? '',
-      child: box,
-    );
-  }
-}
-
