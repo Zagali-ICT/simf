@@ -1,4 +1,4 @@
-namespace SIMF.Domain.Archive;
+﻿namespace SIMF.Domain.Archive;
 
 /// <summary>
 /// One past speaker of an archive edition, and a snapshot child of
@@ -19,9 +19,14 @@ public sealed class ArchivePastSpeaker
     /// <summary>The primary surface.</summary>
     public string NameAr { get; set; } = string.Empty;
 
-    /// <summary>A path under the media root, never an absolute URL — the same
-    /// convention live speakers and sponsors use.</summary>
-    public string? PhotoRelativePath { get; set; }
+    /// <summary>The speaker's photo, as a row in <c>StoredFiles</c> keyed here.
+    ///
+    /// <para>It was an admin-typed URL, and that was a deliberate choice rather
+    /// than an oversight: the edition's children were replaced wholesale on every
+    /// save, so an uploaded file owned by a child id would have been orphaned the
+    /// next time anybody pressed Save. The children keep their ids now, which is
+    /// what makes a real per-row upload possible.</para></summary>
+    public Guid? PhotoFileId { get; set; }
 
     /// <summary>ISO 3166-1 numeric, driving the corner flag in the app. No
     /// navigation: names are resolved on read, as they are for a live

@@ -1091,6 +1091,7 @@
   <data name="Admin.OrganizationProfile.Field.BioEn" xml:space="preserve"><value>Bio (EN)</value></data>
   <data name="Admin.OrganizationProfile.Field.BioAr" xml:space="preserve"><value>Bio (AR)</value></data>
   <data name="Admin.OrganizationProfile.Field.CurrentYear" xml:space="preserve"><value>Current year</value></data>
+  <data name="Admin.OrganizationProfile.Field.Logo" xml:space="preserve"><value>Forum logo</value></data>
   <data name="Admin.OrganizationProfile.Field.Status" xml:space="preserve"><value>Status</value></data>
   <data name="Admin.OrganizationProfile.Status.Soon" xml:space="preserve"><value>Soon</value></data>
   <data name="Admin.OrganizationProfile.Status.Open" xml:space="preserve"><value>Open</value></data>
@@ -3034,6 +3035,20 @@
   <data name="Admin.Archive.Field.Gallery" xml:space="preserve"><value>Gallery — one per line: url | image|video | caption</value></data>
   <data name="Admin.Archive.Field.SessionTitles" xml:space="preserve"><value>Session titles — one per line: arabic | english</value></data>
   <data name="Admin.Archive.Field.PastSpeakers" xml:space="preserve"><value>Past speakers — one per line: arabic | english | photo path</value></data>
+  <data name="Admin.Archive.Gallery.IndexLabel" xml:space="preserve"><value>Gallery item</value></data>
+  <data name="Admin.Archive.Gallery.Empty" xml:space="preserve"><value>No gallery items yet.</value></data>
+  <data name="Admin.Archive.Gallery.Add" xml:space="preserve"><value>Add gallery item</value></data>
+  <data name="Admin.Archive.Gallery.Kind" xml:space="preserve"><value>Type</value></data>
+  <data name="Admin.Archive.Gallery.KindImage" xml:space="preserve"><value>Image</value></data>
+  <data name="Admin.Archive.Gallery.KindVideo" xml:space="preserve"><value>Video</value></data>
+  <data name="Admin.Archive.Gallery.Caption" xml:space="preserve"><value>Caption</value></data>
+  <data name="Admin.Archive.Gallery.VideoUrl" xml:space="preserve"><value>Video link</value></data>
+  <data name="Admin.Archive.PastSpeaker.IndexLabel" xml:space="preserve"><value>Past speaker</value></data>
+  <data name="Admin.Archive.PastSpeaker.Empty" xml:space="preserve"><value>No past speakers yet.</value></data>
+  <data name="Admin.Archive.PastSpeaker.Add" xml:space="preserve"><value>Add past speaker</value></data>
+  <data name="Admin.Archive.PastSpeaker.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Archive.PastSpeaker.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Archive.PastSpeaker.CountryId" xml:space="preserve"><value>Country code (ISO 3166-1 numeric)</value></data>
   <data name="Admin.Archive.Field.IsActive" xml:space="preserve"><value>Active (visible in public archive)</value></data>
 
   <!-- D-199 — Ratings admin read-only view. -->

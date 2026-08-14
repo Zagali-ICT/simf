@@ -1,4 +1,4 @@
-// D-199 — admin Archive edition CRUD: create/get/list roundtrip,
+﻿// D-199 — admin Archive edition CRUD: create/get/list roundtrip,
 // duplicate-year 409, and auth gating.
 using System.Net;
 using System.Net.Http.Headers;
@@ -232,9 +232,11 @@ public sealed class AdminArchiveTests : IClassFixture<SimfApiFactory>
                 Speakers = 12,
                 Gallery = new List<ArchiveMediaItemInput>
                 {
-                    new() { Kind = 0, Url = "archive/2011/a.png", DisplayOrder = 0 },
-                    new() { Kind = 0, Url = "archive/2011/b.png", DisplayOrder = 1 },
-                    new() { Kind = 1, Url = "archive/2011/c.mp4", DisplayOrder = 2 },
+                    // An image row's picture is uploaded against the row, so its
+                    // Url is ignored; a VIDEO row carries a real external link.
+                    new() { Kind = 0, DisplayOrder = 0 },
+                    new() { Kind = 0, DisplayOrder = 1 },
+                    new() { Kind = 1, Url = "https://cdn.example.com/2011/c.mp4", DisplayOrder = 2 },
                 },
                 SessionTitles = new List<ArchiveSessionTitleInput>
                 {
@@ -258,8 +260,10 @@ public sealed class AdminArchiveTests : IClassFixture<SimfApiFactory>
 
         // Each child list returns at its authored count (no cartesian multiplication)
         // and in ascending DisplayOrder (ToDetail re-sorts by DisplayOrder).
+        // The two image rows carry no url until a picture is uploaded against
+        // them; the video row carries the link it was authored with.
         Assert.Equal(
-            new[] { "archive/2011/a.png", "archive/2011/b.png", "archive/2011/c.mp4" },
+            new[] { string.Empty, string.Empty, "https://cdn.example.com/2011/c.mp4" },
             detail.Gallery!.Select(g => g.Url).ToArray());
         Assert.Equal(
             new[] { "Opening", "Closing" },
@@ -272,8 +276,11 @@ public sealed class AdminArchiveTests : IClassFixture<SimfApiFactory>
     // R1 audit (#27) — a child-list string over its EF column limit must be a
     // clean bilingual 400 (archive_edition_invalid), NOT a SQL-truncation 500.
     // 2009 is outside the seeded (2022–2025) and other-test year ranges.
+    // The gallery's length rule moved with the column: there is no Url column to
+    // overflow any more, so the bound that survives is the external link's own
+    // (1024), enforced by the file store when the video link is recorded.
     [Fact]
-    public async Task Create_with_over_length_gallery_url_is_ARCHIVE_EDITION_INVALID_400()
+    public async Task Create_with_over_length_gallery_video_link_is_rejected()
     {
         var admin = await CreateAdministratorAndSignInAsync();
         var response = await PostAuthAsync("/api/v1/admin/archive",
@@ -287,13 +294,16 @@ public sealed class AdminArchiveTests : IClassFixture<SimfApiFactory>
                 Speakers = 1,
                 Gallery = new List<ArchiveMediaItemInput>
                 {
-                    // Url column is nvarchar(512); 600 chars must be rejected.
-                    new() { Kind = 0, Url = new string('u', 600), DisplayOrder = 0 },
+                    // Over the external link's 1024-character bound.
+                    new()
+                    {
+                        Kind = 1,
+                        Url = "https://cdn.example.com/" + new string('u', 1100) + ".mp4",
+                        DisplayOrder = 0,
+                    },
                 },
             }, admin);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.ArchiveEditionInvalid, body.Error!.Code);
     }
 
     // -- helpers --

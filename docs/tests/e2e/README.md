@@ -1,4 +1,4 @@
-# SIMF E2E test catalogue
+﻿# SIMF E2E test catalogue
 
 | | |
 |--|--|
@@ -357,7 +357,7 @@ being quoted in planning as if current.
 - **Pages catalogued:** 194 (96 Control Panel + 69 mobile + 19 Website + 8
   API-only surfaces + 1 system-wide). One of the 193 — `cp-admin-companies.md` —
   is **retired**: its route was renamed away and it now carries no live scenarios.
-- **Total scenarios:** 3087 Coverage-matrix rows, every id distinct. That
+- **Total scenarios:** 3088 Coverage-matrix rows, every id distinct. That
   includes the **360** generated element-sweep rows (`E2E-{NS}-ELS-001/002`, two
   per live page — see `tools/qa/generate_els_rows.py`); the hand-authored
   functional total is 2706.

@@ -21,8 +21,11 @@ namespace SIMF.Domain.Organization;
 /// </summary>
 public sealed class OrganizationProfile : BaseAuditEntity
 {
-    public static readonly Guid SingletonId =
-        Guid.Parse("00000000-0000-0000-0000-000000000003");
+    /// <summary>The fixed singleton id. The literal lives in
+    /// <see cref="SIMF.Common.OrganizationProfileIds"/> so the Control Panel — which
+    /// cannot reference the domain — addresses the same row rather than keeping a
+    /// second copy of the Guid that nothing would notice drifting.</summary>
+    public static readonly Guid SingletonId = SIMF.Common.OrganizationProfileIds.Singleton;
 
     public OrganizationProfile()
     {

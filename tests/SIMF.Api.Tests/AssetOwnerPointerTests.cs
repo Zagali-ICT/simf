@@ -1,4 +1,4 @@
-// The typed pointer an owning row holds to its file — Sponsor.LogoFileId,
+﻿// The typed pointer an owning row holds to its file — Sponsor.LogoFileId,
 // MediaPartner.LogoFileId, News.ImageFileId, ArchiveEdition.CoverImageFileId,
 // Banner.ImageFileId — must track that owner's active asset through every
 // transition AssetService can perform.
@@ -160,6 +160,42 @@ public sealed class AssetOwnerPointerTests : IClassFixture<SimfApiFactory>
         Assert.Null(pointer);
     }
 
+    // The archive's two child categories. These shipped with NO case in
+    // OwnerPointerSync at all, so the upload succeeded, the file served, the
+    // Control Panel preview rendered it - and the pointer stayed null, which is
+    // the one thing the public read gates on. Every archive picture would have
+    // been invisible in the app. Nothing failed: the serve path resolves by owner
+    // pair, so only the pointer knew, and only these assertions ask it.
+    [Fact]
+    public async Task Uploading_a_past_speaker_photo_points_the_speaker_row_at_it()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var speakerId = await SeedArchivePastSpeakerAsync();
+
+        var resp = await UploadAsync("ArchivePastSpeakerPhoto", speakerId, token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var fileId = await ActiveAssetIdAsync(speakerId, token);
+        var pointer = await ReadAsync(db => db.ArchivePastSpeakers
+            .Where(x => x.Id == speakerId).Select(x => x.PhotoFileId).FirstAsync());
+        Assert.Equal(fileId, pointer);
+    }
+
+    [Fact]
+    public async Task Uploading_a_gallery_image_points_the_gallery_row_at_it()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var itemId = await SeedArchiveMediaItemAsync();
+
+        var resp = await UploadAsync("ArchiveGalleryImage", itemId, token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var fileId = await ActiveAssetIdAsync(itemId, token);
+        var pointer = await ReadAsync(db => db.ArchiveMediaItems
+            .Where(x => x.Id == itemId).Select(x => x.MediaFileId).FirstAsync());
+        Assert.Equal(fileId, pointer);
+    }
+
     // The six categories whose owning row carries no pointer column reach the
     // same code path and must simply fall through it. A speaker photo is the
     // one to pin: its pointer column was dropped by this same programme, so a
@@ -262,6 +298,62 @@ public sealed class AssetOwnerPointerTests : IClassFixture<SimfApiFactory>
         NameArabic = "المتحدث",
         IsActive = true,
     }));
+
+    // Both archive children are snapshot rows of an edition, so the edition has
+    // to exist first; neither carries an active flag of its own.
+    private async Task<Guid> SeedArchivePastSpeakerAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var edition = await NewEditionAsync(db);
+        var speaker = new SIMF.Domain.Archive.ArchivePastSpeaker
+        {
+            Id = Guid.NewGuid(),
+            ArchiveEditionId = edition.Id,
+            NameEn = "Pointer Past Speaker",
+            NameAr = "\u0645\u062a\u062d\u062f\u062b",
+            DisplayOrder = 0,
+        };
+        db.ArchivePastSpeakers.Add(speaker);
+        await db.SaveChangesAsync();
+        return speaker.Id;
+    }
+
+    private async Task<Guid> SeedArchiveMediaItemAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var edition = await NewEditionAsync(db);
+        var item = new SIMF.Domain.Archive.ArchiveMediaItem
+        {
+            Id = Guid.NewGuid(),
+            ArchiveEditionId = edition.Id,
+            Kind = SIMF.Common.Enums.ArchiveMediaKind.Image,
+            CaptionEn = "Pointer gallery item",
+            DisplayOrder = 0,
+        };
+        db.ArchiveMediaItems.Add(item);
+        await db.SaveChangesAsync();
+        return item.Id;
+    }
+
+    private static async Task<ArchiveEdition> NewEditionAsync(SimfAppDbContext db)
+    {
+        var year = await db.ArchiveEditions.AnyAsync()
+            ? await db.ArchiveEditions.MaxAsync(x => x.Year) + 1
+            : 2100;
+        var edition = new ArchiveEdition
+        {
+            Id = Guid.NewGuid(),
+            Year = year,
+            TitleEn = "Pointer Edition",
+            TitleAr = "\u0627\u0644\u0646\u0633\u062e\u0629",
+            IsActive = true,
+        };
+        db.ArchiveEditions.Add(edition);
+        await db.SaveChangesAsync();
+        return edition;
+    }
 
     private Task<HttpResponseMessage> UploadAsync(string category, Guid owner, string token)
     {

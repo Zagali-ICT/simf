@@ -1,4 +1,4 @@
-namespace SIMF.Common.Enums;
+﻿namespace SIMF.Common.Enums;
 
 /// <summary>Which entity family a <c>StoredFile</c> belongs to. With
 /// <c>StoredFile.OwnerEntityId</c> (a bare logical Guid, never a DB FK) it
@@ -29,4 +29,10 @@ public enum FileOwnerEntityType
     Banner = 13,
     Booth = 14,
     Exhibitor = 15,
+
+    /// <summary>One past edition's speaker row.</summary>
+    ArchivePastSpeaker = 16,
+
+    /// <summary>One past edition's gallery row.</summary>
+    ArchiveMediaItem = 17,
 }
