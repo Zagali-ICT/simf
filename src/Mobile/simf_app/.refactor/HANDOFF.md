@@ -136,8 +136,15 @@ nearly half phantom.
    `^\s*bool _loading` across `lib` — 11 of the plan's set were converted or
    deleted in earlier waves. Do not work from the number.
 
-   **`terms_screen` is the proven template** (commit `0a6bf182`). What made it
-   work, in order:
+   **5 of 24 converted.** `terms`, `news_article`, `my_contacts` (full — the
+   screen ends up a `ConsumerWidget`); `speakers`, `booths` (partial — the LOAD
+   moves, local UI state such as a search box or a sort toggle stays, so the
+   screen stays `ConsumerStatefulWidget`). Both shapes are proven; every one of
+   the five kept its existing tests passing **unchanged**, which is the signal
+   the state machine is faithful.
+
+   **`terms_screen` is the template** (commit `0a6bf182`). What made it work,
+   in order:
    1. A `FutureProvider.autoDispose` that folds the screen's EXTRA states into
       the data type. Terms had `_empty` beside `_loading`/`_error`; returning
       `ContentBlock?` and mapping both "nothing to show" cases (a 404, and a
@@ -160,12 +167,35 @@ nearly half phantom.
    `register_visitor` looked like sites and are not. Check the RENDER before
    fixing: `register_visitor`'s `_loadError` is never displayed.
 
+   **The 19 left**, wave 1 (genuine data loads) first, per the plan:
+
+   | Wave 1 — data loads | Wave 2 — submit spinners (the weaker case) |
+   |---|---|
+   | `ai_summary/session_summary` | `account/sign_up_interests` |
+   | `badge` * | `account/sign_up_visitor` **(device-blocked)** |
+   | `exhibitor/my_visitors` | `contacts/share_my_contact` |
+   | `gates/gate_scan` | `feedback/rate` |
+   | `live/live_broadcast` | `myarea/my_mobile` |
+   | `moderation/session_moderate` | `registration/registration_status` |
+   | `myarea/my_area` | `staff/register_visitor` **(device-blocked)** |
+   | `notifications` | |
+   | `sessions/session_detail` * | |
+   | `sessions/sessions` | |
+   | `speakers/speaker_profile` | |
+   | `venuemap/venue_map` | |
+
+   \* carries extra care: `badge`'s four pull-to-refresh tests assert per-branch
+   behaviour, and `session_detail` is the screen the plan flags where swapping
+   to `SimfRefreshableMessage` **moves the render** (a bare `ListView`
+   top-aligns the state; the shared host centres it in a viewport-tall box), so
+   its goldens are re-locked in the same changeset with the diff inspected.
+
    Two more things to know:
    * `test/repo/pull_to_refresh_coverage_test.dart` keys on widget NAMES. A
      shared async-body widget that owns the refresh will need that regex
      extended, deliberately, in the same changeset.
    * The 21 screens whose `Perf:` line reads "builds every child up front" are
-     a DIFFERENT population from these 24 — list laziness is its own pass.
+     a DIFFERENT population from these — list laziness is its own pass.
 2. The surviving read-audit rows: DOC-HEADER (largely absorbed by Decision 5),
    NAMING, and the genuinely data-driven NON-LAZY-LIST subset.
    **ONE-WIDGET-PER-FILE is closed**: the three heterogeneous files are split
