@@ -1178,8 +1178,6 @@ class SimfTokens {
   static const double registrationSuccessMarkSize = 40;
   static const double registrationSuccessMarkWidthMd = 104;
   static const double registrationSuccessMarkWidthSm = 2.4;
-  static const double registrationSuccessScreenHeight = 323;
-  static const double registrationSuccessScreenWidth = 313;
   static const double requestActionRowSize = 14;
   static const double requestCardSizeMd = 20;
   static const double requestCardSizeSm = 16;
@@ -1216,8 +1214,12 @@ class SimfTokens {
   static const double signUpVisitorHeaderAvatarSize = 24;
   static const double signUpVisitorScreenFontSize = 13;
   static const double signUpVisitorScreenMaxWidth = 560;
-  static const double simfAuthSweepHeight = 323;
-  static const double simfAuthSweepWidth = 313;
+  // The decorative diagonal sweep block: one 313x323 box drawn by four
+  // surfaces — the auth chrome, the page shell, Terms and the
+  // registration-success screen. It carried four pairs of names before, one
+  // per caller, which read as four different sizes.
+  static const double sweepBlockWidth = 313;
+  static const double sweepBlockHeight = 323;
   static const double simfBottomNavHeight = 64;
   static const double simfBottomNavItemSize = 24;
   static const double simfCardsHeightMd = 64;
@@ -1234,11 +1236,9 @@ class SimfTokens {
   static const double simfFormScaffoldMaxWidth = 560;
   static const double simfIdentityCellSize = 20;
   static const double simfLanguageToggleWidth = 48;
-  static const double simfPageShellHeightMd = 323;
   static const double simfPageShellHeightSm = 42;
   static const double simfPageShellSizeMd = 24;
   static const double simfPageShellSizeSm = 20;
-  static const double simfPageShellWidthMd = 313;
   static const double simfPageShellWidthSm = 42;
   static const double simfRadioPillFontSize = 14;
   static const double simfRadioPillHeightLg = 48;
@@ -1282,10 +1282,8 @@ class SimfTokens {
   static const double tappableAvatarWidth = 1.5;
   static const double termsAndNextButtonsStrokeWidth = 2;
   static const double termsBulletCardWidth = 0.2;
-  static const double termsScreenHeightMd = 323;
   static const double termsScreenHeightSm = 56;
   static const double termsScreenSize = 20;
-  static const double termsScreenWidth = 313;
   static const double thumbnailHeight = 22;
   static const double thumbnailStrokeWidth = 2;
   static const double thumbnailWidth = 22;

@@ -112,8 +112,8 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
             child: Transform.rotate(
               angle: 0.4936, // 28.28°
               child: Container(
-                width: SimfTokens.termsScreenWidth,
-                height: SimfTokens.termsScreenHeightMd,
+                width: SimfTokens.sweepBlockWidth,
+                height: SimfTokens.sweepBlockHeight,
                 decoration: BoxDecoration(
                   color: SimfTokens.surfaceTint,
                   borderRadius: BorderRadius.circular(SimfTokens.radiusSheet),
