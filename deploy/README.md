@@ -277,6 +277,14 @@ These are **placeholders** — set them to the real SIMF server values:
    for a fresh one. Then confirm the machine appears on the environment's
    **Resources** tab.
 
+   > **Both SIMF servers already run a `Default` pool agent.** Registering a
+   > server as an environment VM resource installs a **second** agent on that
+   > box, so the script will prompt for an agent name and you must give it a
+   > **unique** one (`SIMF-PREPROD-ENV` / `SIMF-PROD-ENV` rather than the
+   > default). Reusing the existing agent's name collides with the pool agent
+   > that builds. The two agents are separate on purpose: the pool agent runs
+   > `Build`, the environment agent runs that server's deployment job.
+
    If the environment exists but the run still cannot find it, it is the second
    half of the error message: **Security → Pipeline permissions** on that
    environment, and authorize this pipeline.
